@@ -17,6 +17,7 @@
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/testing/testing.h"
+#include "imgui.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/geometry/scalar.h"
 #include "include/core/SkRSXform.h"
@@ -27,8 +28,14 @@ namespace testing {
 
 using namespace flutter;
 
+namespace {
+SkRect GetCullRect(ISize window_size) {
+  return SkRect::MakeSize(SkSize::Make(window_size.width, window_size.height));
+}
+}  // namespace
+
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kYellow());
@@ -48,7 +55,7 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
   // Bug: https://github.com/flutter/flutter/issues/131576
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kYellow());
@@ -66,7 +73,7 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
 }
 
 TEST_P(AiksTest, ColorMatrixFilterSubpassCollapseOptimization) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   const float matrix[20] = {
       -1.0, 0,    0,    1.0, 0,  //
@@ -91,7 +98,7 @@ TEST_P(AiksTest, ColorMatrixFilterSubpassCollapseOptimization) {
 }
 
 TEST_P(AiksTest, LinearToSrgbFilterSubpassCollapseOptimization) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColorFilter(DlLinearToSrgbGammaColorFilter::kInstance);
@@ -108,7 +115,7 @@ TEST_P(AiksTest, LinearToSrgbFilterSubpassCollapseOptimization) {
 }
 
 TEST_P(AiksTest, SrgbToLinearFilterSubpassCollapseOptimization) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColorFilter(DlLinearToSrgbGammaColorFilter::kInstance);
@@ -125,7 +132,7 @@ TEST_P(AiksTest, SrgbToLinearFilterSubpassCollapseOptimization) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kBlue());
@@ -141,7 +148,7 @@ TEST_P(AiksTest, TranslucentSaveLayerDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithBlendColorFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kBlue());
@@ -162,7 +169,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendColorFilterDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kBlue());
@@ -184,7 +191,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kBlue());
@@ -205,7 +212,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, ImageFilteredUnboundedSaveLayerWithUnboundedContents) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.Scale(GetContentScale().x, GetContentScale().y);
 
   DlPaint save_paint;
@@ -230,7 +237,7 @@ TEST_P(AiksTest, ImageFilteredUnboundedSaveLayerWithUnboundedContents) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
   builder.DrawImage(image, {100, 100}, {});
@@ -245,7 +252,7 @@ TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixColorFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
   builder.DrawImage(image, {100, 100}, {});
@@ -267,7 +274,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixColorFilterDrawsCorrectly) {
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
   builder.DrawImage(image, {100, 100}, {});
@@ -290,7 +297,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
 
 TEST_P(AiksTest,
        TranslucentSaveLayerWithColorFilterAndImageFilterDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
   builder.DrawImage(image, {100, 100}, {});
@@ -315,7 +322,7 @@ TEST_P(AiksTest,
 }
 
 TEST_P(AiksTest, TranslucentSaveLayerWithAdvancedBlendModeDrawsCorrectly) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kRed());
@@ -338,7 +345,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithAdvancedBlendModeDrawsCorrectly) {
 /// The entire screen is green if successful. If failing, no frames will render,
 /// or the entire screen will be transparent black.
 TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kRed());
@@ -363,7 +370,7 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
 }
 
 TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   DlPaint paint;
   paint.setColor(DlColor::kRed());
@@ -405,7 +412,7 @@ TEST_P(AiksTest, CanDrawPoints) {
   DlPaint background;
   background.setColor(DlColor::kBlack());
 
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.DrawPaint(background);
   builder.Translate(200, 200);
 
@@ -444,7 +451,7 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   paint_square.setStrokeCap(DlStrokeCap::kSquare);
   paint_square.setColorSource(image_src);
 
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.Translate(200, 200);
 
   builder.DrawPoints(DlCanvas::PointMode::kPoints, 10, points.data(),
