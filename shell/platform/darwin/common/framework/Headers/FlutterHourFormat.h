@@ -9,6 +9,7 @@
 
 @interface FlutterHourFormat : NSObject
 + (BOOL)isAlwaysUse24HourFormat;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERHOURFORMAT_H_

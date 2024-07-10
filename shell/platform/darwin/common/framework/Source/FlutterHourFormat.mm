@@ -22,4 +22,5 @@
                                                           locale:[NSLocale currentLocale]];
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
+
 @end
