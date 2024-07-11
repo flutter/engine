@@ -454,7 +454,7 @@ typedef struct {
   /// @attention required. (non-null)
   FlutterOpenGLSurfaceCallback clear_current_callback;
 
-  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// Callback invoked (on an engine-managed thread) that asks the embedder to
   /// collect the surface.
   ///
   /// @attention required. (non-null)
