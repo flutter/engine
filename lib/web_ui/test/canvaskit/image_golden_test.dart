@@ -596,7 +596,6 @@ void _testForImageCodecs(TestCodec codec) {
       );
       final ui.Image image = (await codec.getNextFrame()).image;
 
-      // expect the re-size did not happen, kAnimatedGif is [1x1]
       expect(image.width, 2);
       expect(image.height, 3);
       image.dispose();
