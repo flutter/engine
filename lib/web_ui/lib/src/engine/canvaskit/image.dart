@@ -27,8 +27,16 @@ Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     );
   } else {
     // TODO(harryterkelsen): If the image is animated, then use Skia to decode.
-    final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
-    codec = await decodeBlobToCkImage(blob);
+    // This is currently too conservative, assuming all GIF and WEBP images are
+    // animated. We should detect if they are actually animated by reading the
+    // image headers.
+    if (contentType == 'image/gif' || contentType == 'image/webp') {
+      codec = CkAnimatedImage.decodeFromBytes(list, 'decoded bytes',
+          targetWidth: targetWidth, targetHeight: targetHeight);
+    } else {
+      final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
+      codec = await decodeBlobToCkImage(blob);
+    }
   }
   return CkResizingCodec(
     codec,
