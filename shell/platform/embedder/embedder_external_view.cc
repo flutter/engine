@@ -172,7 +172,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     return false;
   }
 
-  // clear the current render target (most likely EGLSurface) at the
+  // Clear the current render target (most likely EGLSurface) at the
   // end of this scope.
   fml::ScopedCleanupClosure clear_current_surface([&]() {
     auto [ok, invalidate_api_state] = render_target.MaybeClearCurrent();
