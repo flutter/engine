@@ -148,7 +148,7 @@ Future<void> _run(
 
     // Create a temporary directory, if needed.
     var storePath = dumpXcresultOnFailure;
-    if (storePath == null) { 
+    if (storePath == null) {
       final dumpDir = io.Directory.systemTemp.createTempSync();
       storePath = dumpDir.path;
       cleanup.add(() => dumpDir.delete(recursive: true));
