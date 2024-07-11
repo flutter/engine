@@ -64,16 +64,18 @@ def fetch_package(pub, package):
     return 1
   return 0
 
+
 def package_uses_workspace_resolution(package):
   pubspec = os.path.join(package, 'pubspec.yaml')
-  
+
   with open(pubspec) as pubspec_file:
     for line in pubspec_file:
       line = line.strip()
       if 'resolution: workspace' in line:
         return True
-  
+
   return False
+
 
 def check_package_config(package):
   package_config = os.path.join(package, '.dart_tool', 'package_config.json')
