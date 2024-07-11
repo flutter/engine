@@ -419,7 +419,7 @@ typedef struct {
   size_t struct_size;
 
   /// User data to be passed to the make_current, clear_current and
-  /// destruction callback.
+  /// destruction callbacks.
   void* user_data;
 
   /// Callback invoked (on an engine managed thread) that asks the embedder to
