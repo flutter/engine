@@ -422,7 +422,8 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
     int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    fml::RefPtr<fml::TaskRunner> platform_runner) {
   // The unordered_map render_target_cache creates a new entry if the view ID is
   // unrecognized.
   EmbedderRenderTargetCache& render_target_cache =

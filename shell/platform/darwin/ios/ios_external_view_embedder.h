@@ -57,7 +57,8 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
       int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
-      std::unique_ptr<SurfaceFrame> frame) override;
+      std::unique_ptr<SurfaceFrame> frame,
+      fml::RefPtr<fml::TaskRunner> platform_task_runner) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,

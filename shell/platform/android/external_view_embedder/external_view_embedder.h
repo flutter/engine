@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "fml/memory/ref_ptr.h"
 
 namespace flutter {
 
@@ -47,7 +48,8 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
-      std::unique_ptr<SurfaceFrame> frame) override;
+      std::unique_ptr<SurfaceFrame> frame,
+      fml::RefPtr<fml::TaskRunner> platform_task_runner) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(

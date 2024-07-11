@@ -787,12 +787,11 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
     frame->set_submit_info(submit_info);
 
-    if (external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
+    if (external_view_embedder_) {
       FML_DCHECK(!frame->IsSubmitted());
       external_view_embedder_->SubmitFlutterView(
           view_id, surface_->GetContext(), surface_->GetAiksContext(),
-          std::move(frame));
+          std::move(frame), delegate_.GetTaskRunners().GetPlatformTaskRunner());
     } else {
       frame->Submit();
     }

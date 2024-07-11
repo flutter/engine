@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#include "fml/logging.h"
 
 #include <Metal/Metal.h>
 
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
@@ -344,39 +346,12 @@ const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Rename `has_platform_view` to `view_mutated` when the above issue is resolved.
-  if (!HasPlatformViewThisOrNextFrame()) {
-    return PostPrerollResult::kSuccess;
-  }
-  if (!raster_thread_merger->IsMerged()) {
-    // The raster thread merger may be disabled if the rasterizer is being
-    // created or teared down.
-    //
-    // In such cases, the current frame is dropped, and a new frame is attempted
-    // with the same layer tree.
-    //
-    // Eventually, the frame is submitted once this method returns `kSuccess`.
-    // At that point, the raster tasks are handled on the platform thread.
-    CancelFrame();
-    return PostPrerollResult::kSkipAndRetryFrame;
-  }
-  // If the post preroll action is successful, we will display platform views in the current frame.
-  // In order to sync the rendering of the platform views (quartz) with skia's rendering,
-  // We need to begin an explicit CATransaction. This transaction needs to be submitted
-  // after the current frame is submitted.
-  BeginCATransaction();
-  raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
 }
 
 void FlutterPlatformViewsController::EndFrame(
     bool should_resubmit_frame,
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-  if (should_resubmit_frame) {
-    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
-  }
-}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
     const std::shared_ptr<const DlImageFilter>& filter,
@@ -449,6 +424,7 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 }
 
 void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
+  FML_CHECK([[NSThread currentThread] isMainThread]);
   if (clipView.maskView) {
     return;
   }
@@ -464,6 +440,7 @@ void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
+  FML_CHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
     return;
   }
@@ -591,6 +568,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 // included in the `views_to_recomposite_`.
 void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
+  FML_CHECK([[NSThread currentThread] isMainThread]);
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -633,6 +611,7 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
+  FML_CHECK([[NSThread currentThread] isMainThread]);
   for (int64_t view_id : active_composition_order_) {
     UIView* sub_view = root_views_[view_id].get();
     [sub_view removeFromSuperview];
@@ -651,6 +630,7 @@ void FlutterPlatformViewsController::Reset() {
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
+  FML_CHECK([[NSThread currentThread] isMainThread]);
   UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
@@ -662,13 +642,13 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
   );
 }
 
-bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
-                                                 const std::shared_ptr<IOSContext>& ios_context,
-                                                 std::unique_ptr<SurfaceFrame> frame) {
+bool FlutterPlatformViewsController::SubmitFrame(
+    GrDirectContext* gr_context,
+    const std::shared_ptr<IOSContext>& ios_context,
+    std::unique_ptr<SurfaceFrame> frame,
+    fml::RefPtr<fml::TaskRunner> platform_task_runner) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
-  // Any UIKit related code has to run on main thread.
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
     return frame->Submit();
   }
@@ -795,48 +775,52 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Manually trigger the SkAutoCanvasRestore before we submit the frame
   save.Restore();
 
-  // Dispose unused Flutter Views.
-  DisposeViews();
-
-  // Composite Platform Views.
-  for (auto view_id : views_to_recomposite_) {
-    CompositeWithParams(view_id, current_composition_params_[view_id]);
-  }
-
-  // Configure Flutter overlay views.
-  for (const auto& [key, layers] : platform_view_layers) {
-    for (const auto& layer : layers) {
-      layer->UpdateViewState(flutter_view_);
-    }
-  }
-
-  // Create Missing Layers
-  for (auto i = 0u; i < missing_layer_count; i++) {
-    auto layer = GetOrCreateLayer(gr_context,              //
-                                  ios_context,             //
-                                  MTLPixelFormatBGRA10_XR  //
-    );
-    layer->did_submit_last_frame = true;
-  }
-  if (missing_layer_count > 0) {
-    FML_LOG(ERROR) << "Created " << missing_layer_count;
-  }
-
-  // If a layer was allocated in the previous frame, but it's not used in the current frame,
-  // then it can be removed from the scene.
-  RemoveUnusedLayers();
-  // Organize the layers by their z indexes.
-  BringLayersIntoView(platform_view_layers);
-  // Mark all layers as available, so they can be used in the next frame.
-  layer_pool_->RecycleLayers();
-
+  // TODO
   did_submit &= frame->Submit();
 
-  // If the frame is submitted with embedded platform views,
-  // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
-  // If that case, we need to commit the transaction.
-  CommitCATransactionIfNeeded();
-  return did_submit;
+  platform_task_runner->PostTask(
+      fml::MakeCopyable([&, platform_view_layers = std::move(platform_view_layers),
+                         missing_layer_count, frame = std::move(frame),
+                         current_composition_params = current_composition_params_,
+                         views_to_recomposite = views_to_recomposite_]() mutable {
+        // Dispose unused Flutter Views.
+        DisposeViews();
+
+        // Composite Platform Views.
+        for (auto view_id : views_to_recomposite) {
+          CompositeWithParams(view_id, current_composition_params[view_id]);
+        }
+
+        // Configure Flutter overlay views.
+        for (const auto& [key, layers] : platform_view_layers) {
+          for (const auto& layer : layers) {
+            layer->UpdateViewState(flutter_view_);
+          }
+        }
+
+        // Create Missing Layers
+        for (auto i = 0u; i < missing_layer_count; i++) {
+          auto layer = GetOrCreateLayer(gr_context,              //
+                                        ios_context,             //
+                                        MTLPixelFormatBGRA10_XR  //
+          );
+          layer->did_submit_last_frame = true;
+        }
+
+        // If a layer was allocated in the previous frame, but it's not used in the current frame,
+        // then it can be removed from the scene.
+        RemoveUnusedLayers();
+        // Organize the layers by their z indexes.
+        BringLayersIntoView(platform_view_layers);
+        // Mark all layers as available, so they can be used in the next frame.
+        layer_pool_->RecycleLayers();
+
+        // If the frame is submitted with embedded platform views,
+        // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+        // If that case, we need to commit the transaction.
+        CommitCATransactionIfNeeded();
+      }));
+  return true;
 }
 
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
@@ -941,7 +925,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     return;
   }
 
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  FML_CHECK([[NSThread currentThread] isMainThread]);
 
   std::unordered_set<int64_t> views_to_composite(composition_order_.begin(),
                                                  composition_order_.end());
@@ -969,6 +953,7 @@ void FlutterPlatformViewsController::BeginCATransaction() {}
 void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {}
 
 void FlutterPlatformViewsController::ResetFrameState() {
+  // TODO: move this state when posting task to platform loop
   slices_.clear();
   composition_order_.clear();
   visited_platform_views_.clear();

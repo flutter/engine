@@ -278,7 +278,8 @@ class FlutterPlatformViewsController {
 
   bool SubmitFrame(GrDirectContext* gr_context,
                    const std::shared_ptr<IOSContext>& ios_context,
-                   std::unique_ptr<SurfaceFrame> frame);
+                   std::unique_ptr<SurfaceFrame> frame,
+                   fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult result)
       __attribute__((cf_audited_transfer));
