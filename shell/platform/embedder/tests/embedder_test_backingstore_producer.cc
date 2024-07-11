@@ -150,14 +150,14 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
     return false;
   }
 
-  auto userdata = new UserData(surface);
+  auto user_data = new UserData(surface);
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
-  backing_store_out->user_data = userdata;
+  backing_store_out->user_data = user_data;
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
   backing_store_out->open_gl.framebuffer.target = framebuffer_info.fFormat;
   backing_store_out->open_gl.framebuffer.name = framebuffer_info.fFBOID;
-  backing_store_out->open_gl.framebuffer.user_data = userdata;
+  backing_store_out->open_gl.framebuffer.user_data = user_data;
   backing_store_out->open_gl.framebuffer.destruction_callback =
       [](void* user_data) { delete reinterpret_cast<UserData*>(user_data); };
 
@@ -203,15 +203,15 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
     return false;
   }
 
-  auto userdata = new UserData(surface);
+  auto user_data = new UserData(surface);
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
-  backing_store_out->user_data = userdata;
+  backing_store_out->user_data = user_data;
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeTexture;
   backing_store_out->open_gl.texture.target = texture_info.fTarget;
   backing_store_out->open_gl.texture.name = texture_info.fID;
   backing_store_out->open_gl.texture.format = texture_info.fFormat;
-  backing_store_out->open_gl.texture.user_data = userdata;
+  backing_store_out->open_gl.texture.user_data = user_data;
   backing_store_out->open_gl.texture.destruction_callback =
       [](void* user_data) { delete reinterpret_cast<UserData*>(user_data); };
 
@@ -230,30 +230,30 @@ bool EmbedderTestBackingStoreProducer::CreateSurface(
       test_egl_context_,
       SkSize::Make(config->size.width, config->size.height).toRound());
 
-  auto make_current = [](void* userdata, bool* invalidate_state) -> bool {
+  auto make_current = [](void* user_data, bool* invalidate_state) -> bool {
     *invalidate_state = false;
-    return reinterpret_cast<UserData*>(userdata)->gl_surface->MakeCurrent();
+    return reinterpret_cast<UserData*>(user_data)->gl_surface->MakeCurrent();
   };
 
-  auto clear_current = [](void* userdata, bool* invalidate_state) -> bool {
+  auto clear_current = [](void* user_data, bool* invalidate_state) -> bool {
     *invalidate_state = false;
     // return
-    // reinterpret_cast<GLUserData*>(userdata)->gl_surface->ClearCurrent();
+    // reinterpret_cast<GLUserData*>(user_data)->gl_surface->ClearCurrent();
     return true;
   };
 
-  auto destruction_callback = [](void* userdata) {
-    delete reinterpret_cast<UserData*>(userdata);
+  auto destruction_callback = [](void* user_data) {
+    delete reinterpret_cast<UserData*>(user_data);
   };
 
   auto sk_surface = surface->GetOnscreenSurface();
 
-  auto userdata = new UserData(sk_surface, nullptr, std::move(surface));
+  auto user_data = new UserData(sk_surface, nullptr, std::move(surface));
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
-  backing_store_out->user_data = userdata;
+  backing_store_out->user_data = user_data;
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeSurface;
-  backing_store_out->open_gl.surface.user_data = userdata;
+  backing_store_out->open_gl.surface.user_data = user_data;
   backing_store_out->open_gl.surface.make_current_callback = make_current;
   backing_store_out->open_gl.surface.clear_current_callback = clear_current;
   backing_store_out->open_gl.surface.destruction_callback =
@@ -283,14 +283,14 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
     return false;
   }
 
-  auto userdata = new UserData(surface);
+  auto user_data = new UserData(surface);
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware;
-  backing_store_out->user_data = userdata;
+  backing_store_out->user_data = user_data;
   backing_store_out->software.allocation = pixmap.addr();
   backing_store_out->software.row_bytes = pixmap.rowBytes();
   backing_store_out->software.height = pixmap.height();
-  backing_store_out->software.user_data = userdata;
+  backing_store_out->software.user_data = user_data;
   backing_store_out->software.destruction_callback = [](void* user_data) {
     delete reinterpret_cast<UserData*>(user_data);
   };
@@ -320,16 +320,16 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
     return false;
   }
 
-  auto userdata = new UserData(surface);
+  auto user_data = new UserData(surface);
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware2;
-  backing_store_out->user_data = userdata;
+  backing_store_out->user_data = user_data;
   backing_store_out->software2.struct_size =
       sizeof(FlutterSoftwareBackingStore2);
   backing_store_out->software2.allocation = pixmap.writable_addr();
   backing_store_out->software2.row_bytes = pixmap.rowBytes();
   backing_store_out->software2.height = pixmap.height();
-  backing_store_out->software2.user_data = userdata;
+  backing_store_out->software2.user_data = user_data;
   backing_store_out->software2.destruction_callback = [](void* user_data) {
     delete reinterpret_cast<UserData*>(user_data);
   };
