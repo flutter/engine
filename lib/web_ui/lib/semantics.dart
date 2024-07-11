@@ -280,14 +280,14 @@ class SemanticsUpdateBuilder {
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    required String? tooltip,
-    required TextDirection? textDirection,
+    String? tooltip,
+    TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
-    required int headingLevel,
-    required String? linkUrl,
+    int headingLevel = 0,
+    String? linkUrl,
   }) {
     if (transform.length != 16) {
       throw ArgumentError('transform argument must have 16 entries.');
