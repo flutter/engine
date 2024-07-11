@@ -49,7 +49,9 @@ void main(List<String> args) async {
   if (results.option('dump-xcresult-on-failure') case final String path) {
     dumpXcresultOnFailurePath = path;
   } else {
-    dumpXcresultOnFailurePath = io.Directory.systemTemp.createTempSync().path;
+    final dumpDir = io.Directory.systemTemp.createTempSync();
+    dumpXcresultOnFailurePath = dumpDir.path;
+    cleanup.add(() => dumpDir.delete(recursive: true));
   }
 
   // Run the actual script.
@@ -369,6 +371,5 @@ String _zipAndStoreFailedTestResults({
   if (result.exitCode != 0) {
     throw Exception('Failed to zip the test results: ${result.stderr}');
   }
-  resultBundle.deleteSync(recursive: true);
   return outputPath;
 }
