@@ -193,19 +193,6 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
   return destination.toDart.buffer;
 }
 
-ByteBuffer readImageElementPixelsUnmodified(DomHTMLImageElement imageElement) {
-  final int width = imageElement.naturalWidth.toInt();
-  final int height = imageElement.naturalHeight.toInt();
-
-  final DomCanvasElement htmlCanvas =
-      createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx =
-      htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
-  ctx.drawImage(imageElement, 0, 0);
-  final DomImageData imageData = ctx.getImageData(0, 0, width, height);
-  return imageData.data.buffer;
-}
-
 ByteBuffer readDomImageSourcePixelsUnmodified(
     DomCanvasImageSource imageSource, int width, int height) {
   final DomCanvasElement htmlCanvas =
