@@ -87,6 +87,9 @@ void runSemanticsTests() {
   group('header', () {
     _testHeader();
   });
+  group('heading', () {
+    _testHeading();
+  });
   group('live region', () {
     _testLiveRegion();
   });
@@ -790,7 +793,9 @@ void _testHeader() {
 
     semantics().semanticsEnabled = false;
   });
+}
 
+void _testHeading() {
   test('renders aria-level tag for headings with heading level', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -800,14 +805,13 @@ void _testHeader() {
     updateNode(
       builder,
       headingLevel: 2,
+      label: 'This is a heading',
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem aria-level="2" role="heading" style="filter: opacity(0%); color: rgba(0, 0, 0, 0)"></sem>
-''');
+    expectSemanticsTree(owner(), '<h2>This is a heading</h2>');
 
     semantics().semanticsEnabled = false;
   });
@@ -3603,6 +3607,28 @@ void _testLink() {
     expect(object.element.tagName.toLowerCase(), 'a');
     expect(object.element.hasAttribute('href'), isFalse);
   });
+
+  test('link nodes with linkUrl set the href attribute', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        isLink: true,
+        linkUrl: 'https://flutter.dev',
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.element.tagName.toLowerCase(), 'a');
+    expect(object.element.getAttribute('href'), 'https://flutter.dev');
+  });
 }
 
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
@@ -3645,6 +3671,7 @@ void updateNode(
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
   int headingLevel = 0,
+  String? linkUrl,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);
@@ -3685,6 +3712,7 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
     headingLevel: headingLevel,
+    linkUrl: linkUrl,
   );
 }
 

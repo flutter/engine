@@ -440,7 +440,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
 
 TEST_P(RendererTest, CanRenderInstanced) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Instancing is not supported on OpenGL.");
+    GTEST_SKIP() << "Instancing is not supported on OpenGL.";
   }
   using VS = InstancedDrawVertexShader;
   using FS = InstancedDrawFragmentShader;
@@ -1392,13 +1392,6 @@ std::shared_ptr<Pipeline<PipelineDescriptor>> CreateDefaultPipeline(
 }
 
 TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
-  // The GLES framebuffer fetch implementation currently does not support this.
-  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
-  // are clarified.
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Not supported on GLES.");
-  }
-
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;
@@ -1410,8 +1403,8 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
   ASSERT_TRUE(context);
 
   if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP_(
-        "This test uses framebuffer fetch and the backend doesn't support it.");
+    GTEST_SKIP() << "This test uses framebuffer fetch and the backend doesn't "
+                    "support it.";
     return;
   }
 
@@ -1487,13 +1480,6 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
 }
 
 TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
-  // The GLES framebuffer fetch implementation currently does not support this.
-  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
-  // are clarified.
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Not supported on GLES.");
-  }
-
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;
@@ -1508,8 +1494,8 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
   ASSERT_TRUE(context);
 
   if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP_(
-        "This test uses framebuffer fetch and the backend doesn't support it.");
+    GTEST_SKIP() << "This test uses framebuffer fetch and the backend doesn't "
+                    "support it.";
     return;
   }
 
