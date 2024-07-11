@@ -106,11 +106,14 @@ void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     advanced_blend_reads_from_pass_texture_ = true;
   }
-  elements_.emplace_back(std::move(entity));
+  Element& element = elements_.emplace_back(std::move(entity));
+  draw_order_resolver_.AddElement(&element,
+                                  entity.GetBlendMode() == BlendMode::kSource);
 }
 
 void EntityPass::PushClip(Entity entity) {
-  elements_.emplace_back(std::move(entity));
+  Element& element = elements_.emplace_back(std::move(entity));
+  draw_order_resolver_.PushClip(&element);
   active_clips_.emplace_back(elements_.size() - 1);
 }
 
@@ -129,6 +132,7 @@ void EntityPass::PopClips(size_t num_clips, uint64_t depth) {
     FML_DCHECK(element);
     element->SetClipDepth(depth);
     active_clips_.pop_back();
+    draw_order_resolver_.PopClip();
   }
 }
 
@@ -279,7 +283,8 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   }
 
   auto subpass_pointer = pass.get();
-  elements_.emplace_back(std::move(pass));
+  Element& element = elements_.emplace_back(std::move(pass));
+  draw_order_resolver_.AddElement(&element, false);
   return subpass_pointer;
 }
 
@@ -891,20 +896,30 @@ bool EntityPass::OnRender(
                   renderer, clip_coverage_stack, global_pass_position);
   }
 
-  bool is_collapsing_clear_colors = !collapsed_parent_pass &&
-                                    // Backdrop filters act as a entity before
-                                    // everything and disrupt the optimization.
-                                    !backdrop_filter_proc_;
-  for (const auto& element : elements_) {
-    // Skip elements that are incorporated into the clear color.
-    if (is_collapsing_clear_colors) {
+  bool should_collapse_clear_colors =
+      !collapsed_parent_pass &&
+      // Backdrop filters act as a entity before
+      // everything and disrupt the optimization.
+      !backdrop_filter_proc_;
+
+  // Count the number of elements eaten by the clear color optimization.
+  size_t clear_color_entity_count = 0;
+  if (should_collapse_clear_colors) {
+    for (const auto& element : elements_) {
       auto [entity_color, _] =
           ElementAsBackgroundColor(element, clear_color_size);
       if (entity_color.has_value()) {
+        clear_color_entity_count++;
         continue;
       }
-      is_collapsing_clear_colors = false;
+      break;
     }
+  }
+
+  ElementRefs sorted_elements =
+      draw_order_resolver_.GetSortedDraws(clear_color_entity_count);
+  for (const auto& element_ref : sorted_elements) {
+    Element& element = *element_ref;
 
     EntityResult result =
         GetEntityForElement(element,               // element

@@ -52,6 +52,7 @@ class EntityPass {
   /// `EntityPass`. Elements are converted to Entities in
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
+  using ElementRefs = std::vector<EntityPass::Element*>;
 
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
@@ -316,10 +317,116 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
+  class DrawOrderResolver {
+   public:
+    DrawOrderResolver() : draw_order_layers_({{}}) {}
+
+    void AddElement(EntityPass::Element* element, bool is_opaque) {
+      DrawOrderLayer& layer = draw_order_layers_.back();
+      if (is_opaque) {
+        layer.opaque_elements.push_back(element);
+      } else {
+        layer.dependent_elements.push_back(element);
+      }
+    }
+
+    void PushClip(EntityPass::Element* element) {
+      draw_order_layers_.back().dependent_elements.push_back(element);
+      draw_order_layers_.push_back({});
+    };
+
+    void PopClip() {
+      if (draw_order_layers_.size() == 1u) {
+        // This is likely recoverable, so don't assert.
+        VALIDATION_LOG
+            << "Attemped to pop the root draw order layer. This is a bug in "
+               "`EntityPass`.";
+        return;
+      }
+
+      DrawOrderLayer& layer = draw_order_layers_.back();
+      DrawOrderLayer& parent_layer =
+          draw_order_layers_[draw_order_layers_.size() - 2];
+
+      layer.WriteCombinedDraws(parent_layer.dependent_elements, 0);
+
+      draw_order_layers_.pop_back();
+    }
+
+    //-------------------------------------------------------------------------
+    /// @brief  Returns the sorted draws for the current draw order layer.
+    ///         This should only be called after all recording has finished.
+    ///
+    /// @param[in]  opaque_skip_count  The number of opaque elements to skip
+    ///                                when appending the combined elements.
+    ///                                This is used for the "clear color"
+    ///                                optimization.
+    ///
+    ElementRefs GetSortedDraws(size_t opaque_skip_count) const {
+      FML_DCHECK(draw_order_layers_.size() == 1u);
+
+      ElementRefs sorted_elements;
+      draw_order_layers_.back().WriteCombinedDraws(sorted_elements,
+                                                   opaque_skip_count);
+
+      return sorted_elements;
+    }
+
+   private:
+    /// A data structure for collecting sorted draws for a given "draw order
+    /// layer". Currently these layers just correspond to the local clip stack
+    /// corresponds to the clip stack.
+    struct DrawOrderLayer {
+      /// The list of backdrop-independent elements (always just opaque). These
+      /// are order independent, and so we draw them optimally render these
+      /// elements in reverse painter's order so that they cull one another
+      ElementRefs opaque_elements;
+
+      /// The list of backdrop-dependent elements with respect to this draw
+      /// order layer. These elements are drawn after all of the independent
+      /// elements.
+      /// The elements of all child draw layers will be resolved to this list.
+      ElementRefs dependent_elements;
+
+      //-----------------------------------------------------------------------
+      /// @brief      Appends the combined opaque and transparent elements into
+      ///             a final destination buffer.
+      ///
+      /// @param[in]  destination        The buffer to append the combined
+      ///                                elements to.
+      /// @param[in]  opaque_skip_count  The number of opaque elements to skip
+      ///                                when appending the combined elements.
+      ///                                This is used for the "clear color"
+      ///                                optimization.
+      ///
+      void WriteCombinedDraws(ElementRefs& destination,
+                              size_t opaque_skip_count) const {
+        FML_DCHECK(opaque_skip_count <= opaque_elements.size());
+
+        destination.reserve(destination.size() +                          //
+                            opaque_elements.size() - opaque_skip_count +  //
+                            dependent_elements.size());
+
+        // Draw backdrop-independent elements first.
+        destination.insert(destination.end(), opaque_elements.rbegin(),
+                           opaque_elements.rend() - opaque_skip_count);
+        // Then, draw backdrop-dependent elements in their original order.
+        destination.insert(destination.end(), dependent_elements.begin(),
+                           dependent_elements.end());
+      }
+    };
+    std::vector<DrawOrderLayer> draw_order_layers_;
+
+    DrawOrderResolver(const DrawOrderResolver&) = delete;
+
+    DrawOrderResolver& operator=(const DrawOrderResolver&) = delete;
+  };
+  DrawOrderResolver draw_order_resolver_;
+
   /// The stack of currently active clips (during Aiks recording time). Each
-  /// entry is an index into the `elements_` list. The depth value of a clip is
-  /// the max of all the entities it affects, so assignment of the depth value
-  /// is deferred until clip restore or end of the EntityPass.
+  /// entry is an index into the `elements_` list. The depth value of a clip
+  /// is the max of all the entities it affects, so assignment of the depth
+  /// value is deferred until clip restore or end of the EntityPass.
   std::vector<size_t> active_clips_;
 
   EntityPass* superpass_ = nullptr;
@@ -338,8 +445,8 @@ class EntityPass {
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
   /// These are tracked as separate values because we may ignore
-  /// `blend_reads_from_pass_texture_` if the device supports framebuffer based
-  /// advanced blends.
+  /// `blend_reads_from_pass_texture_` if the device supports framebuffer
+  /// based advanced blends.
   bool advanced_blend_reads_from_pass_texture_ = false;
   bool backdrop_filter_reads_from_pass_texture_ = false;
 
