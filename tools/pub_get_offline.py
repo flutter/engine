@@ -16,7 +16,7 @@ import sys
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path += [os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib3')]
-import yaml # type: ignore
+import yaml  # type: ignore
 
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
