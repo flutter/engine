@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 #include <Metal/Metal.h>
 
@@ -161,6 +162,12 @@ struct FlutterPlatformViewLayer {
   // We track this to know when the GrContext for the Flutter app has changed
   // so we can update the overlay with the new context.
   GrDirectContext* gr_context;
+
+  SkIRect rect;
+  int64_t view_id;
+  int64_t overlay_id;
+
+  void UpdateViewState(UIView* flutter_view);
 };
 
 // This class isn't thread safe.
@@ -170,11 +177,15 @@ class FlutterPlatformViewLayerPool {
 
   ~FlutterPlatformViewLayerPool() = default;
 
-  // Gets a layer from the pool if available, or allocates a new one.
-  // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
+  /// Gets a layer from the pool if available, or allocates a new one.
+  /// Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
+  ///
+  /// If `create_if_missing` is false, nullptr will be returned if there is no existing
+  /// pooled layer.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
-                                                     MTLPixelFormat pixel_format);
+                                                     MTLPixelFormat pixel_format,
+                                                     bool create_if_missing);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -329,15 +340,16 @@ class FlutterPlatformViewsController {
                                    const std::shared_ptr<IOSContext>& ios_context,
                                    MTLPixelFormat pixel_format);
 
-  // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
-  // the picture on the layer's canvas.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     const std::shared_ptr<IOSContext>& ios_context,
-                                                     EmbedderViewSlice* slice,
-                                                     SkIRect rect,
-                                                     int64_t view_id,
-                                                     int64_t overlay_id,
-                                                     MTLPixelFormat pixel_format);
+  std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer(
+      GrDirectContext* gr_context,
+      const std::shared_ptr<IOSContext>& ios_context,
+      MTLPixelFormat pixel_format);
+
+  std::shared_ptr<FlutterPlatformViewLayer> GetOrCreateLayer(
+      GrDirectContext* gr_context,
+      const std::shared_ptr<IOSContext>& ios_context,
+      MTLPixelFormat pixel_format);
+
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
   void RemoveUnusedLayers();
