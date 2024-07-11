@@ -325,6 +325,10 @@ class FlutterPlatformViewsController {
 
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
+  bool HasPlatformViewLayerAlready(GrDirectContext* gr_context,
+                                   const std::shared_ptr<IOSContext>& ios_context,
+                                   MTLPixelFormat pixel_format);
+
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,

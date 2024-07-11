@@ -79,11 +79,16 @@ namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
+bool FlutterPlatformViewLayerPool::HasLayer() const {
+  available_layer_index_
+}
+
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
     const std::shared_ptr<IOSContext>& ios_context,
     MTLPixelFormat pixel_format) {
   if (available_layer_index_ >= layers_.size()) {
+    //FML_DCHECK([[NSThread] isMainThread]);
     std::shared_ptr<FlutterPlatformViewLayer> layer;
     fml::scoped_nsobject<UIView> overlay_view;
     fml::scoped_nsobject<UIView> overlay_view_wrapper;
@@ -135,6 +140,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     layers_.push_back(layer);
   }
   std::shared_ptr<FlutterPlatformViewLayer> layer = layers_[available_layer_index_];
+  // This condition can only happen with the Skia backend, which is due to be removed from
+  // iOS in short order.
   if (gr_context != layer->gr_context) {
     layer->gr_context = gr_context;
     // The overlay already exists, but the GrContext was changed so we need to recreate
@@ -616,14 +623,6 @@ void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
 }
 
 DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
-  // Any UIKit related code has to run on main thread.
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-  // Do nothing if the view doesn't need to be composited.
-  if (views_to_recomposite_.count(view_id) == 0) {
-    return slices_[view_id]->canvas();
-  }
-  CompositeWithParams(view_id, current_composition_params_[view_id]);
-  views_to_recomposite_.erase(view_id);
   return slices_[view_id]->canvas();
 }
 
@@ -668,8 +667,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     return frame->Submit();
   }
 
-  DisposeViews();
-
   DlCanvas* background_canvas = frame->Canvas();
 
   // Resolve all pending GPU operations before allocating a new surface.
@@ -696,7 +693,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     // current platform view or any of the previous platform views.
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_platform_view_id = composition_order_[j - 1];
-      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
+      SkRect platform_view_rect =  current_composition_params_[current_platform_view_id].finalBoundingRect();
       std::vector<SkIRect> intersection_rects = slice->region(platform_view_rect).getRects();
       const SkIRect rounded_in_platform_view_rect = platform_view_rect.roundIn();
       // Ignore intersections of single width/height on the edge of the platform view.
@@ -768,6 +765,14 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Manually trigger the SkAutoCanvasRestore before we submit the frame
   save.Restore();
 
+  // Dispose unused Flutter Views.
+  DisposeViews();
+
+  // Composite Platform Views.
+  for (auto view_id : views_to_recomposite_) {
+    CompositeWithParams(view_id, current_composition_params_[view_id]);
+  }
+
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
@@ -818,6 +823,16 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
       [flutter_view addSubview:subview];
     }
   }
+}
+
+
+
+bool HasPlatformViewLayerAlready(GrDirectContext* gr_context,
+                                 const std::shared_ptr<IOSContext>& ios_context,
+                                 MTLPixelFormat pixel_format) {
+  std::shared_ptr<FlutterPlatformViewLayer> layer =
+      layer_pool_->GetLayer(gr_context, ios_context, pixel_format);
+
 }
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
@@ -919,20 +934,9 @@ void FlutterPlatformViewsController::DisposeViews() {
   views_to_dispose_ = std::move(views_to_delay_dispose);
 }
 
-void FlutterPlatformViewsController::BeginCATransaction() {
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-  FML_DCHECK(!catransaction_added_);
-  [CATransaction begin];
-  catransaction_added_ = true;
-}
+void FlutterPlatformViewsController::BeginCATransaction() { }
 
-void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
-  if (catransaction_added_) {
-    FML_DCHECK([[NSThread currentThread] isMainThread]);
-    [CATransaction commit];
-    catransaction_added_ = false;
-  }
-}
+void FlutterPlatformViewsController::CommitCATransactionIfNeeded() { }
 
 void FlutterPlatformViewsController::ResetFrameState() {
   slices_.clear();
