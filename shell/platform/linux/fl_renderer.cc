@@ -162,7 +162,7 @@ static void render_with_blit(FlRenderer* self) {
     GdkRectangle geometry = fl_backing_store_provider_get_geometry(texture);
     glBlitFramebuffer(0, 0, geometry.width, geometry.height, geometry.x,
                       geometry.y, geometry.x + geometry.width,
-                      geometry.x + geometry.height, GL_COLOR_BUFFER_BIT,
+                      geometry.y + geometry.height, GL_COLOR_BUFFER_BIT,
                       GL_NEAREST);
   }
   glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
