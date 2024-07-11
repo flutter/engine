@@ -13,8 +13,6 @@
 
 namespace flutter {
 
-#define ENABLE_EXPERIMENTAL_CANVAS false
-
 GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     std::shared_ptr<impeller::Context> context) {
   if (!context || !context->IsValid()) {
@@ -89,7 +87,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
             std::move(surface),
             fml::MakeCopyable([&](impeller::RenderTarget& render_target)
                                   -> bool {
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
               impeller::TextFrameDispatcher collector(
                   aiks_context->GetContentContext(), impeller::Matrix());
               display_list->Dispatch(
@@ -117,9 +115,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                   impeller_dispatcher,
                   SkIRect::MakeWH(cull_rect.width, cull_rect.height));
               auto picture = impeller_dispatcher.EndRecordingAsPicture();
-
+              const bool reset_host_buffer =
+                  surface_frame.submit_info().frame_boundary;
               return aiks_context->Render(picture, render_target,
-                                          /*reset_host_buffer=*/true);
+                                          reset_host_buffer);
 #endif
             }));
       });
