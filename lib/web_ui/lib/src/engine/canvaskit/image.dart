@@ -403,7 +403,8 @@ Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength,
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
-  CkImage(SkImage skImage, {this.videoFrame, this.imageElement}) {
+  CkImage(SkImage skImage,
+      {this.videoFrame, this.imageElement, this.imageBitmap}) {
     box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
   }
@@ -444,6 +445,14 @@ class CkImage implements ui.Image, StackTraceDebugger {
   /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
   /// the image element until the image is [dispose]d of.
   DomHTMLImageElement? imageElement;
+
+  /// For images which are decoded via an HTML ImageBitmap, this field holds
+  /// the image element from which this image was created.
+  ///
+  /// Skia owns the image bitmap and will close it when it's no longer used.
+  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
+  /// the image element until the image is [dispose]d of.
+  DomImageBitmap? imageBitmap;
 
   /// The underlying Skia image object.
   ///
@@ -530,7 +539,19 @@ class CkImage implements ui.Image, StackTraceDebugger {
         videoFrame!.format != 'I422') {
       return readPixelsFromVideoFrame(videoFrame!, format);
     } else if (imageElement != null) {
-      return readPixelsFromImageElement(imageElement!, format);
+      return readPixelsFromDomImageSource(
+        imageElement!,
+        format,
+        imageElement!.naturalWidth.toInt(),
+        imageElement!.naturalHeight.toInt(),
+      );
+    } else if (imageBitmap != null) {
+      return readPixelsFromDomImageSource(
+        imageBitmap!,
+        format,
+        imageBitmap!.width.toDartInt,
+        imageBitmap!.height.toDartInt,
+      );
     } else {
       ByteData? data = _readPixelsFromSkImage(format);
       data ??= _readPixelsFromImageViaSurface(format);

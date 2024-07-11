@@ -65,7 +65,11 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
 Future<ByteData> readPixelsFromVideoFrame(
     VideoFrame videoFrame, ui.ImageByteFormat format) async {
   if (format == ui.ImageByteFormat.png) {
-    final Uint8List png = await encodeVideoFrameAsPng(videoFrame);
+    final Uint8List png = await encodeDomImageSourceAsPng(
+      videoFrame,
+      videoFrame.displayWidth.toInt(),
+      videoFrame.displayHeight.toInt(),
+    );
     return png.buffer.asByteData();
   }
 
@@ -95,14 +99,23 @@ Future<ByteData> readPixelsFromVideoFrame(
   return pixels.asByteData();
 }
 
-Future<ByteData> readPixelsFromImageElement(
-    DomHTMLImageElement imageElement, ui.ImageByteFormat format) async {
+Future<ByteData> readPixelsFromDomImageSource(
+  DomCanvasImageSource imageSource,
+  ui.ImageByteFormat format,
+  int width,
+  int height,
+) async {
   if (format == ui.ImageByteFormat.png) {
-    final Uint8List png = await encodeImageElementAsPng(imageElement);
+    final Uint8List png = await encodeDomImageSourceAsPng(
+      imageSource,
+      width,
+      height,
+    );
     return png.buffer.asByteData();
   }
 
-  final ByteBuffer pixels = readImageElementPixelsUnmodified(imageElement);
+  final ByteBuffer pixels =
+      readDomImageSourcePixelsUnmodified(imageSource, width, height);
   return pixels.asByteData();
 }
 
@@ -193,26 +206,23 @@ ByteBuffer readImageElementPixelsUnmodified(DomHTMLImageElement imageElement) {
   return imageData.data.buffer;
 }
 
-Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
-  final int width = videoFrame.displayWidth.toInt();
-  final int height = videoFrame.displayHeight.toInt();
-  final DomCanvasElement canvas =
+ByteBuffer readDomImageSourcePixelsUnmodified(
+    DomCanvasImageSource imageSource, int width, int height) {
+  final DomCanvasElement htmlCanvas =
       createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
-  ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 =
-      canvas.toDataURL().substring('data:image/png;base64,'.length);
-  return base64.decode(pngBase64);
+  final DomCanvasRenderingContext2D ctx =
+      htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
+  ctx.drawImage(imageSource, 0, 0);
+  final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+  return imageData.data.buffer;
 }
 
-Future<Uint8List> encodeImageElementAsPng(
-    DomHTMLImageElement imageElement) async {
-  final int width = imageElement.naturalWidth.toInt();
-  final int height = imageElement.naturalHeight.toInt();
+Future<Uint8List> encodeDomImageSourceAsPng(
+    DomCanvasImageSource imageSource, int width, int height) async {
   final DomCanvasElement canvas =
       createDomCanvasElement(width: width, height: height);
   final DomCanvasRenderingContext2D ctx = canvas.context2D;
-  ctx.drawImage(imageElement, 0, 0);
+  ctx.drawImage(imageSource, 0, 0);
   final String pngBase64 =
       canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);

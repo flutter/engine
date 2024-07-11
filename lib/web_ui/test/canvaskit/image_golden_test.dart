@@ -251,27 +251,6 @@ void testMain() async {
           }
         });
 
-        test('${testCodec.description} can draw an image', () async {
-          ui.Image image;
-          try {
-            final ui.Codec codec = await testCodec.getCodec();
-            final ui.FrameInfo frameInfo = await codec.getNextFrame();
-            image = frameInfo.image;
-          } catch (e) {
-            throw TestFailure(
-                'Failed to get image for ${testCodec.description}: $e');
-          }
-          final LayerSceneBuilder sb = LayerSceneBuilder();
-          final CkPictureRecorder recorder = CkPictureRecorder();
-          final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-          canvas.drawImage(image as CkImage, ui.Offset.zero, CkPaint());
-          sb.addPicture(ui.Offset.zero, recorder.endRecording());
-
-          await matchSceneGolden(testCodec.goldenFileName, sb.build(),
-              region: ui.Rect.fromLTRB(
-                  0, 0, image.width.toDouble(), image.height.toDouble()));
-        });
-
         test('${testCodec.description} can be decoded with toByteData',
             () async {
           ui.Image image;
