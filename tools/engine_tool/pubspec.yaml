@@ -14,19 +14,11 @@ resolution: workspace
 
 dependencies:
   args: any
-  engine_build_configs:
-    path: ../pkg/engine_build_configs
-  engine_repo_tools:
-    path: ../pkg/engine_repo_tools
+  engine_build_configs: any
+  engine_repo_tools: any
   file: any
   logging: any
   meta: any
   path: any
   platform: any
   process_runner: any
-
-dev_dependencies:
-  litetest:
-    path: ../../testing/litetest
-  process_fakes:
-    path: ../pkg/process_fakes
