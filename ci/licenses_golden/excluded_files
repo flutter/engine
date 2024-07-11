@@ -2080,6 +2080,7 @@
 ../../../flutter/third_party/inja/test
 ../../../flutter/third_party/inja/third_party/amalgamate
 ../../../flutter/third_party/inja/third_party/include/doctest
+../../../flutter/third_party/java
 ../../../flutter/third_party/json/.clang-format
 ../../../flutter/third_party/json/.clang-tidy
 ../../../flutter/third_party/json/.git
@@ -3576,5 +3577,4 @@
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
 ../../../out
-../../../third_party
 ../../../tools
