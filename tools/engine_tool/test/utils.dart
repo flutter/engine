@@ -56,9 +56,11 @@ class TestEnvironment {
     Engine engine, {
     Logger? logger,
     ffi.Abi abi = ffi.Abi.macosArm64,
+    bool verbose = false,
     this.cannedProcesses = const <CannedProcess>[],
   }) {
-    logger ??= Logger.test();
+    testLogs = <LogRecord>[];
+    logger ??= Logger.test(testLogs.add);
     environment = Environment(
       abi: abi,
       engine: engine,
@@ -78,6 +80,7 @@ class TestEnvironment {
         throw UnimplementedError('onRun');
       })),
       logger: logger,
+      verbose: verbose,
     );
   }
 
@@ -85,6 +88,7 @@ class TestEnvironment {
     bool withRbe = false,
     ffi.Abi abi = ffi.Abi.linuxX64,
     List<CannedProcess> cannedProcesses = const <CannedProcess>[],
+    bool verbose = false,
   }) {
     final io.Directory rootDir = io.Directory.systemTemp.createTempSync('et');
     final TestEngine engine = TestEngine.createTemp(rootDir: rootDir);
@@ -107,8 +111,12 @@ class TestEnvironment {
       }
       return false;
     });
-    final TestEnvironment testEnvironment = TestEnvironment(engine,
-        abi: abi, cannedProcesses: cannedProcesses + <CannedProcess>[cannedGn]);
+    final TestEnvironment testEnvironment = TestEnvironment(
+      engine,
+      abi: abi,
+      cannedProcesses: cannedProcesses + <CannedProcess>[cannedGn],
+      verbose: verbose,
+    );
     return testEnvironment;
   }
 
@@ -130,6 +138,9 @@ class TestEnvironment {
 
   /// A history of all executed processes.
   final List<ExecutedProcess> processHistory = <ExecutedProcess>[];
+
+  /// Test log output.
+  late final List<LogRecord> testLogs;
 }
 
 String _operatingSystemForAbi(ffi.Abi abi) {
@@ -206,7 +217,8 @@ Matcher containsCommand(CommandMatcher commandMatcher) => (dynamic processes) {
 ///                command[5] == 'flutter/fml:fml_arc_unittests';
 ///        })
 ///    );
-Matcher doesNotContainCommand(CommandMatcher commandMatcher) => (dynamic processes) {
+Matcher doesNotContainCommand(CommandMatcher commandMatcher) =>
+    (dynamic processes) {
       Expect.type<List<ExecutedProcess>>(processes);
       final List<List<String>> commands = (processes as List<ExecutedProcess>)
           .map((ExecutedProcess process) => process.command)

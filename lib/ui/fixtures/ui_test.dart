@@ -231,7 +231,10 @@ void sendSemanticsUpdate() {
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
-    additionalActions: additionalActions);
+    additionalActions: additionalActions,
+    headingLevel: 0,
+    linkUrl: '',
+  );
   _semanticsUpdate(builder.build());
 }
 

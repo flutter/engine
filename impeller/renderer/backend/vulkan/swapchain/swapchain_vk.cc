@@ -44,27 +44,6 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     return nullptr;
   }
 
-  // TODO(147533): AHB swapchains on emulators are not functional.
-  const auto emulator = ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
-
-  // Try AHB swapchains first.
-  if (!emulator && AHBSwapchainVK::IsAvailableOnPlatform()) {
-    auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
-        context,             //
-        window.GetHandle(),  //
-        window.GetSize(),    //
-        enable_msaa          //
-        ));
-
-    if (ahb_swapchain->IsValid()) {
-      return ahb_swapchain;
-    } else {
-      VALIDATION_LOG
-          << "Could not create AHB swapchain. Falling back to KHR variant.";
-    }
-  }
-
-  // Fallback to KHR swapchains if AHB swapchains aren't available.
   vk::AndroidSurfaceCreateInfoKHR surface_info;
   surface_info.setWindow(window.GetHandle());
   auto [result, surface] =
@@ -75,6 +54,34 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
                    << vk::to_string(result);
     return nullptr;
   }
+
+  // TODO(148139): https://github.com/flutter/flutter/issues/148139 sync issues
+  // on present.
+  if constexpr (false) {
+    // TODO(147533): AHB swapchains on emulators are not functional.
+    const auto emulator =
+        ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
+
+    // Try AHB swapchains first.
+    if (!emulator && AHBSwapchainVK::IsAvailableOnPlatform()) {
+      auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
+          context,             //
+          window.GetHandle(),  //
+          surface,             //
+          window.GetSize(),    //
+          enable_msaa          //
+          ));
+
+      if (ahb_swapchain->IsValid()) {
+        return ahb_swapchain;
+      } else {
+        VALIDATION_LOG
+            << "Could not create AHB swapchain. Falling back to KHR variant.";
+      }
+    }
+  }
+
+  // Fallback to KHR swapchains if AHB swapchains aren't available.
   return Create(context, std::move(surface), window.GetSize(), enable_msaa);
 }
 #endif  // FML_OS_ANDROID

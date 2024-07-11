@@ -361,6 +361,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
 
+  settings.merged_platform_ui_thread = command_line.HasOption(
+      FlagForSwitch(Switch::EnableMergedPlatformUIThread));
+
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
@@ -517,28 +520,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
         &resource_cache_max_bytes_threshold);
     settings.resource_cache_max_bytes_threshold =
         std::stoi(resource_cache_max_bytes_threshold);
-  }
-
-  if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {
-    std::string msaa_samples;
-    command_line.GetOptionValue(FlagForSwitch(Switch::MsaaSamples),
-                                &msaa_samples);
-    if (msaa_samples == "0") {
-      settings.msaa_samples = 0;
-    } else if (msaa_samples == "1") {
-      settings.msaa_samples = 1;
-    } else if (msaa_samples == "2") {
-      settings.msaa_samples = 2;
-    } else if (msaa_samples == "4") {
-      settings.msaa_samples = 4;
-    } else if (msaa_samples == "8") {
-      settings.msaa_samples = 8;
-    } else if (msaa_samples == "16") {
-      settings.msaa_samples = 16;
-    } else {
-      FML_DLOG(ERROR) << "Invalid value for --msaa-samples: '" << msaa_samples
-                      << "' (expected 0, 1, 2, 4, 8, or 16).";
-    }
   }
 
   settings.enable_platform_isolates =

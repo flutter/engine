@@ -183,6 +183,10 @@ static const char* GetExtensionName(RequiredAndroidDeviceExtensionVK ext) {
       return VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kKHRExternalFence:
       return VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphoreFd:
+      return VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphore:
+      return VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -529,11 +533,6 @@ bool CapabilitiesVK::SupportsImplicitResolvingMSAA() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsSSBO() const {
-  return true;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
   return true;
 }
 

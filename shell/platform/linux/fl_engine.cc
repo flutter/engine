@@ -399,6 +399,9 @@ static void fl_engine_dispose(GObject* object) {
     self->aot_data = nullptr;
   }
 
+  fl_binary_messenger_shutdown(self->binary_messenger);
+  fl_texture_registrar_shutdown(self->texture_registrar);
+
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->texture_registrar);
@@ -571,6 +574,26 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
     g_warning("Failed to enable accessibility features on Flutter engine");
+  }
+
+  gdouble refresh_rate = fl_renderer_get_refresh_rate(self->renderer);
+  // FlutterEngineDisplay::refresh_rate expects 0 if the refresh rate is
+  // unknown.
+  if (refresh_rate <= 0.0) {
+    refresh_rate = 0.0;
+  }
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate = refresh_rate;
+
+  std::vector displays = {display};
+  result = self->embedder_api.NotifyDisplayUpdate(
+      self->engine, kFlutterEngineDisplaysUpdateTypeStartup, displays.data(),
+      displays.size());
+  if (result != kSuccess) {
+    g_warning("Failed to notify display update to Flutter engine: %d", result);
   }
 
   return TRUE;
@@ -772,6 +795,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         size_t timestamp,
                                         double x,
                                         double y,
+                                        FlutterPointerDeviceKind device_kind,
                                         double scroll_delta_x,
                                         double scroll_delta_y,
                                         int64_t buttons) {
@@ -792,7 +816,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   }
   fl_event.scroll_delta_x = scroll_delta_x;
   fl_event.scroll_delta_y = scroll_delta_y;
-  fl_event.device_kind = kFlutterPointerDeviceKindMouse;
+  fl_event.device_kind = device_kind;
   fl_event.buttons = buttons;
   fl_event.device = kMousePointerDeviceId;
   // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder

@@ -432,8 +432,10 @@ class PointerSupportDetector {
   String toString() => 'pointers:$hasPointerEvents';
 }
 
-class _Listener {
-  _Listener._({
+/// Encapsulates a DomEvent registration so it can be easily unregistered later.
+@visibleForTesting
+class Listener {
+  Listener._({
     required this.event,
     required this.target,
     required this.handler,
@@ -448,7 +450,7 @@ class _Listener {
   /// associated with this event. If `passive` is false, the browser will wait
   /// for the handler to finish execution before performing the respective
   /// action.
-  factory _Listener.register({
+  factory Listener.register({
     required String event,
     required DomEventTarget target,
     required DartDomEventListener handler,
@@ -465,12 +467,12 @@ class _Listener {
       target.addEventListenerWithOptions(event, jsHandler, eventOptions);
     }
 
-    final _Listener listener = _Listener._(
+    final Listener listener = Listener._(
       event: event,
       target: target,
       handler: jsHandler,
     );
-    target.addEventListener(event, jsHandler);
+
     return listener;
   }
 
@@ -496,11 +498,12 @@ abstract class _BaseAdapter {
   PointerDataConverter get _pointerDataConverter => _owner._pointerDataConverter;
   KeyboardConverter? get _keyboardConverter => _owner._keyboardConverter;
 
-  final List<_Listener> _listeners = <_Listener>[];
+  final List<Listener> _listeners = <Listener>[];
   DomWheelEvent? _lastWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
+  bool _lastWheelEventAllowedDefault = false;
 
-  DomEventTarget get _viewTarget => _view.dom.rootElement;
+  DomElement get _viewTarget => _view.dom.rootElement;
   DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
 
   /// Each subclass is expected to override this method to attach its own event
@@ -509,7 +512,7 @@ abstract class _BaseAdapter {
 
   /// Cleans up all event listeners attached by this adapter.
   void dispose() {
-    for (final _Listener listener in _listeners) {
+    for (final Listener listener in _listeners) {
       listener.unregister();
     }
     _listeners.clear();
@@ -545,7 +548,7 @@ abstract class _BaseAdapter {
         handler(event);
       }
     }
-    _listeners.add(_Listener.register(
+    _listeners.add(Listener.register(
       event: eventName,
       target: target,
       handler: loggedHandler,
@@ -706,6 +709,10 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
+        onRespond: ({bool allowPlatformDefault = false}) {
+          // Once `allowPlatformDefault` is `true`, never go back to `false`!
+          _lastWheelEventAllowedDefault |= allowPlatformDefault;
+        },
       );
     }
     _lastWheelEvent = event;
@@ -714,7 +721,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(DartDomEventListener handler) {
-    _listeners.add(_Listener.register(
+    _listeners.add(Listener.register(
       event: 'wheel',
       target: _viewTarget,
       handler: handler,
@@ -722,17 +729,21 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     ));
   }
 
-  void _handleWheelEvent(DomEvent e) {
-    assert(domInstanceOfString(e, 'WheelEvent'));
-    final DomWheelEvent event = e as DomWheelEvent;
+  void _handleWheelEvent(DomEvent event) {
+    assert(domInstanceOfString(event, 'WheelEvent'));
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(e, _convertWheelEventToPointerData(event));
-    // Prevent default so mouse wheel event doesn't get converted to
-    // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
+    _lastWheelEventAllowedDefault = false;
+    // [ui.PointerData] can set the `_lastWheelEventAllowedDefault` variable
+    // to true, when the framework says so. See the implementation of `respond`
+    // when creating the PointerData object above.
+    _callback(event, _convertWheelEventToPointerData(event as DomWheelEvent));
+    // This works because the `_callback` is handled synchronously in the
+    // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
+    if (!_lastWheelEventAllowedDefault) {
+      event.preventDefault();
+    }
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox
@@ -957,6 +968,20 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
+    // Prevents the browser auto-canceling pointer events.
+    // Register into `_listener` directly so the event isn't forwarded to semantics.
+    _listeners.add(Listener.register(
+      event: 'touchstart',
+      target: _viewTarget,
+      handler: (DomEvent event) {
+        // This is one of the ways I've seen this done. PixiJS does a similar thing.
+        // ThreeJS seems to subscribe move/leave in the pointerdown handler instead?
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+      },
+    ));
+
     _addPointerEventListener(_viewTarget, 'pointerdown', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -973,6 +998,22 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
+
+      if (event.target == _viewTarget) {
+        // Ensure smooth focus transitions between text fields within the Flutter view.
+        // Without preventing the default and this delay, the engine may not have fully
+        // rendered the next input element, leading to the focus incorrectly returning to
+        // the main Flutter view instead.
+        // A zero-length timer is sufficient in all tested browsers to achieve this.
+        event.preventDefault();
+        Timer(Duration.zero, () {
+          EnginePlatformDispatcher.instance.requestViewFocusChange(
+            viewId: _view.viewId,
+            state: ui.ViewFocusState.focused,
+            direction: ui.ViewFocusDirection.undefined,
+          );
+        });
+      }
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp

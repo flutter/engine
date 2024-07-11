@@ -259,12 +259,13 @@ extension CanvasKitExtension on CanvasKit {
   );
 }
 
-@JS('window.CanvasKitInit')
-external JSAny _CanvasKitInit(CanvasKitInitOptions options);
+@JS()
+@staticInterop
+class CanvasKitModule {}
 
-Future<CanvasKit> CanvasKitInit(CanvasKitInitOptions options) {
-  return js_util.promiseToFuture<CanvasKit>(
-          _CanvasKitInit(options).toObjectShallow);
+extension CanvasKitModuleExtension on CanvasKitModule {
+  @JS('default')
+  external JSPromise<JSAny> defaultExport(CanvasKitInitOptions options);
 }
 
 typedef LocateFileCallback = String Function(String file, String unusedBase);
@@ -1352,7 +1353,7 @@ extension SkPaintExtension on SkPaint {
 
   @JS('setColorInt')
   external JSVoid _setColorInt(JSNumber color);
-  void setColorInt(double color) => _setColorInt(color.toJS);
+  void setColorInt(int color) => _setColorInt(color.toJS);
 
   external JSVoid setShader(SkShader? shader);
   external JSVoid setMaskFilter(SkMaskFilter? maskFilter);
@@ -1492,6 +1493,18 @@ extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
   external SkImageFilter MakeCompose(
     SkImageFilter outer,
     SkImageFilter inner,
+  );
+
+  external SkImageFilter MakeDilate(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
+  );
+
+  external SkImageFilter MakeErode(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
   );
 }
 
@@ -3605,13 +3618,13 @@ SkRuntimeEffect? MakeRuntimeEffect(String program) =>
 extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
   @JS('makeShader')
   external SkShader? _makeShader(JSAny uniforms);
-  SkShader? makeShader(List<Object> uniforms) =>
+  SkShader? makeShader(SkFloat32List uniforms) =>
       _makeShader(uniforms.toJSAnyShallow);
 
   @JS('makeShaderWithChildren')
   external SkShader? _makeShaderWithChildren(JSAny uniforms, JSAny children);
   SkShader? makeShaderWithChildren(
-      List<Object> uniforms, List<Object?> children) =>
+          SkFloat32List uniforms, List<Object?> children) =>
           _makeShaderWithChildren(uniforms.toJSAnyShallow,
               children.toJSAnyShallow);
 }
@@ -3649,11 +3662,11 @@ String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
 /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
 /// and intialize the CanvasKit wasm.
 Future<CanvasKit> downloadCanvasKit() async {
-  await _downloadOneOf(_canvasKitJsUrls);
+  final CanvasKitModule canvasKitModule = await _downloadOneOf(_canvasKitJsUrls);
 
-  final CanvasKit canvasKit = await CanvasKitInit(CanvasKitInitOptions(
+  final CanvasKit canvasKit = (await canvasKitModule.defaultExport(CanvasKitInitOptions(
     locateFile: createLocateFileCallback(canvasKitWasmModuleUrl),
-  ));
+  )).toDart) as CanvasKit;
 
   if (canvasKit.ParagraphBuilder.RequiresClientICU() && !browserSupportsCanvaskitChromium) {
     throw Exception(
@@ -3669,10 +3682,12 @@ Future<CanvasKit> downloadCanvasKit() async {
 /// downloads it.
 ///
 /// If none of the URLs can be downloaded, throws an [Exception].
-Future<void> _downloadOneOf(Iterable<String> urls) async {
+Future<CanvasKitModule> _downloadOneOf(Iterable<String> urls) async {
   for (final String url in urls) {
-    if (await _downloadCanvasKitJs(url)) {
-      return;
+    try {
+      return await _downloadCanvasKitJs(url);
+    } catch (_) {
+      continue;
     }
   }
 
@@ -3682,36 +3697,15 @@ Future<void> _downloadOneOf(Iterable<String> urls) async {
   );
 }
 
+String _resolveUrl(String url) {
+  return createDomURL(url, domWindow.document.baseUri).toJSString().toDart;
+}
+
 /// Downloads the CanvasKit JavaScript file at [url].
 ///
 /// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
 /// file was successfully downloaded, or `false` if it failed.
-Future<bool> _downloadCanvasKitJs(String url) {
-  final DomHTMLScriptElement canvasKitScript =
-      createDomHTMLScriptElement(configuration.nonce);
-  canvasKitScript.src = createTrustedScriptUrl(url);
-
-  final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
-
-  late final DomEventListener loadCallback;
-  late final DomEventListener errorCallback;
-
-  void loadEventHandler(DomEvent _) {
-    canvasKitScript.remove();
-    canvasKitLoadCompleter.complete(true);
-  }
-  void errorEventHandler(DomEvent errorEvent) {
-    canvasKitScript.remove();
-    canvasKitLoadCompleter.complete(false);
-  }
-
-  loadCallback = createDomEventListener(loadEventHandler);
-  errorCallback = createDomEventListener(errorEventHandler);
-
-  canvasKitScript.addEventListener('load', loadCallback);
-  canvasKitScript.addEventListener('error', errorCallback);
-
-  domDocument.head!.appendChild(canvasKitScript);
-
-  return canvasKitLoadCompleter.future;
+Future<CanvasKitModule> _downloadCanvasKitJs(String url) async {
+  final JSAny scriptUrl = createTrustedScriptUrl(_resolveUrl(url));
+  return (await importModule(scriptUrl).toDart) as CanvasKitModule;
 }

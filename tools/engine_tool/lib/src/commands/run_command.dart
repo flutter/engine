@@ -8,6 +8,7 @@ import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:process_runner/process_runner.dart';
 
 import '../build_utils.dart';
+import '../label.dart';
 import '../run_utils.dart';
 import 'command.dart';
 import 'flags.dart';
@@ -18,13 +19,12 @@ final class RunCommand extends CommandBase {
   RunCommand({
     required super.environment,
     required Map<String, BuilderConfig> configs,
-    super.verbose = false,
     super.help = false,
     super.usageLineLength,
   }) {
     // When printing the help/usage for this command, only list all builds
     // when the --verbose flag is supplied.
-    final bool includeCiBuilds = verbose || !help;
+    final bool includeCiBuilds = environment.verbose || !help;
     builds = runnableBuilds(environment, configs, includeCiBuilds);
     debugCheckBuilds(builds);
     // We default to nothing in order to automatically detect attached devices
@@ -37,9 +37,8 @@ final class RunCommand extends CommandBase {
     );
     argParser.addFlag(
       rbeFlag,
-      defaultsTo: true,
-      help: 'RBE is enabled by default when available. Use --no-rbe to '
-          'disable it.',
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
     );
   }
 
@@ -114,14 +113,15 @@ See `flutter run --help` for a listing
     return mode;
   }
 
+  late final Future<RunTarget?> _runTarget =
+      detectAndSelectRunTarget(environment, _getDeviceId());
+
   Future<String?> _selectTargetConfig() async {
     final String configName = argResults![configFlag] as String;
     if (configName.isNotEmpty) {
       return demangleConfigName(environment, configName);
     }
-    final String deviceId = _getDeviceId();
-    final RunTarget? target =
-        await detectAndSelectRunTarget(environment, deviceId);
+    final RunTarget? target = await _runTarget;
     if (target == null) {
       return demangleConfigName(environment, 'host_debug');
     }
@@ -153,19 +153,34 @@ See `flutter run --help` for a listing
     }
 
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final List<String> extraGnArgs = <String>[
       if (!useRbe) '--no-rbe',
     ];
+    final RunTarget? target = await _runTarget;
+    final List<Label> buildTargetsForShell =
+        target?.buildTargetsForShell() ?? <Label>[];
 
     // First build the host.
-    int r = await runBuild(environment, hostBuild, extraGnArgs: extraGnArgs);
+    int r = await runBuild(
+      environment,
+      hostBuild,
+      extraGnArgs: extraGnArgs,
+      enableRbe: useRbe,
+    );
     if (r != 0) {
       return r;
     }
 
     // Now build the target if it isn't the same.
     if (hostBuild.name != build.name) {
-      r = await runBuild(environment, build, extraGnArgs: extraGnArgs);
+      r = await runBuild(environment, build,
+          extraGnArgs: extraGnArgs,
+          enableRbe: useRbe,
+          targets: buildTargetsForShell);
       if (r != 0) {
         return r;
       }

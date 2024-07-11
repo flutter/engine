@@ -175,9 +175,6 @@ flowchart TD
 
     spirv -- Reflector --> cxx_sources[C++ Sources]
     cxx_sources -- Ninja Build --> cxx_library[C++ Library]
-
-    vulkan_shader_archive -- Multi Arch Archiver --> multi_arch_archive[Multi Architecture Archive]
-    gles_shader_archive -- Multi Arch Archiver --> multi_arch_archive
 ```
 
 ## Try Impeller in Flutter
@@ -200,7 +197,7 @@ Flutter enables Impeller by **default** on iOS.
 To **disable** Impeller on iOS, update your `Info.plist` file to add the following
 under the top-level `<dict>` tag:
 
-```
+```xml
   <key>FLTEnableImpeller</key>
   <false/>
 ```
@@ -210,10 +207,26 @@ under the top-level `<dict>` tag:
 Impeller is in preview on Android.
 
 To your `AndroidManifest.xml` file, add under the `<application>` tag:
-```
+
+```xml
   <meta-data
     android:name="io.flutter.embedding.android.EnableImpeller"
     android:value="true" />
+```
+
+Impeller will use Vulkan on Android by default when opted into. Where Vulkan
+is unavailable, Impeller will fallback to Skia. However, Impellers OpenGL backend
+is well under construction. To try that with your application, add the following
+under the `<application>` tag:
+
+> [!Warning]
+> Selecting the Impeller backend this way will only work in `debug` and `profile`
+> runtime modes.
+
+```xml
+  <meta-data
+    android:name="io.flutter.embedding.android.ImpellerBackend"
+    android:value="opengles" />
 ```
 
 ### macOS Desktop
@@ -221,7 +234,8 @@ To your `AndroidManifest.xml` file, add under the `<application>` tag:
 Impeller is in preview on macOS Desktop.
 
 To your `Info.plist` file, add under the top-level `<dict>` tag:
-```
+
+```xml
   <key>FLTEnableImpeller</key>
   <true/>
 ```
@@ -229,6 +243,7 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
 ## Documentation, References, and Additional Reading
 
 * [Frequently Asked Questions](docs/faq.md)
+* [Baby's First Triangle](docs/babys_first_triangle.md)
 * [Impellers Coordinate System](docs/coordinate_system.md)
 * [How to Setup Xcode for GPU Frame Captures with Metal.](docs/xcode_frame_capture.md)
 * [How to Setup RenderDoc Frame Captures with Vulkan.](docs/renderdoc_frame_capture.md)
@@ -240,4 +255,9 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
 * [Enabling Vulkan Validation Layers on Android](docs/android_validation_layers.md)
 * [Important Benchmarks](docs/benchmarks.md)
 * [Threading in the Vulkan Backend](docs/vulkan_threading.md)
+* [iOS CPU Profiling](docs/ios_cpu_profile.md)
+* [OpenGL ES Development Setup on macOS](docs/opengles_development_setup.md)
+* [Android CPU Profiling](docs/android_cpu_profile.md)
 * [Android Rendering Backend Selection](docs/android.md)
+* [Using Impeller as a Standalone Rendering Library (with OpenGL ES)](docs/standalone_gles.md)
+* [Glossary](docs/glossary.md)

@@ -8,8 +8,6 @@
 #include <cstdint>
 #include <ostream>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -224,6 +222,7 @@ constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
   switch (filter) {
+    case MipFilter::kBase:
     case MipFilter::kNearest:
       return vk::SamplerMipmapMode::eNearest;
     case MipFilter::kLinear:

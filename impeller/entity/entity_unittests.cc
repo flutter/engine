@@ -12,6 +12,7 @@
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -922,6 +923,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
+      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -946,10 +948,12 @@ TEST_P(EntityTest, BlendingModeOptions) {
 
       VS::FrameInfo frame_info;
       frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
-      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(
           pass, context.GetTransientsBuffer().EmplaceUniform(frame_info));
-
+      FS::FragInfo frag_info;
+      frag_info.color = color.Premultiply();
+      FS::BindFragInfo(
+          pass, context.GetTransientsBuffer().EmplaceUniform(frame_info));
       return pass.Draw().ok();
     };
 
@@ -1414,202 +1418,6 @@ TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
   }
 }
 
-TEST_P(EntityTest, DrawAtlasNoColor) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kModulate);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasWithColorSimple) {
-  // Draws the image as four squares stiched together. Because blend modes
-  // aren't implented this ends up as four solid color blocks.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kSourceATop);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  auto transform = Matrix::MakeScale(GetContentScale());
-  Entity e;
-  e.SetTransform(transform);
-  e.SetContents(contents);
-
-  ASSERT_EQ(contents->GetCoverage(e).value(),
-            Rect::MakeSize(size).TransformBounds(transform));
-
-  contents->SetCullRect(Rect::MakeLTRB(0, 0, 10, 10));
-
-  ASSERT_EQ(contents->GetCoverage(e).value(),
-            Rect::MakeLTRB(0, 0, 10, 10).TransformBounds(transform));
-}
-
-TEST_P(EntityTest, DrawAtlasWithOpacity) {
-  // Draws the image as four squares stiched together slightly
-  // opaque
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-  contents->SetAlpha(0.5);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, size.width, size.height)};
-  std::vector<Matrix> transforms = {Matrix::MakeTranslation({0, 0, 0})};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
 TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
   // No transform
   {
@@ -2070,6 +1878,9 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
       uv_data.push_back(j % 2 == 0 ? u : v);
     }
   }
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+
   impeller::TextureDescriptor y_texture_descriptor;
   y_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   y_texture_descriptor.format = PixelFormat::kR8UNormInt;
@@ -2077,9 +1888,10 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto y_texture =
       context->GetResourceAllocator()->CreateTexture(y_texture_descriptor);
   auto y_mapping = std::make_shared<fml::DataMapping>(y_data);
-  if (!y_texture->SetContents(y_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into Y texture.";
-  }
+  auto y_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*y_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(y_mapping_buffer), y_texture);
 
   impeller::TextureDescriptor uv_texture_descriptor;
   uv_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
@@ -2088,8 +1900,14 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto uv_texture =
       context->GetResourceAllocator()->CreateTexture(uv_texture_descriptor);
   auto uv_mapping = std::make_shared<fml::DataMapping>(uv_data);
-  if (!uv_texture->SetContents(uv_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into UV texture.";
+  auto uv_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*uv_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(uv_mapping_buffer), uv_texture);
+
+  if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+      !context->GetCommandQueue()->Submit({cmd_buffer}).ok()) {
+    FML_DLOG(ERROR) << "Could not copy contents into Y/UV texture.";
   }
 
   return {y_texture, uv_texture};
@@ -2098,7 +1916,8 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
 TEST_P(EntityTest, YUVToRGBFilter) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
     // TODO(114588) : Support YUV to RGB filter on OpenGLES backend.
-    GTEST_SKIP_("YUV to RGB filter is not supported on OpenGLES backend yet.");
+    GTEST_SKIP()
+        << "YUV to RGB filter is not supported on OpenGLES backend yet.";
   }
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
@@ -2344,26 +2163,6 @@ TEST_P(EntityTest, InheritOpacityTest) {
   ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
   ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
-
-  // Text contents can accept opacity if the text frames do not
-  // overlap
-  SkFont font = flutter::testing::CreateTestFontOfSize(30);
-  auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
-  auto lazy_glyph_atlas =
-      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
-  lazy_glyph_atlas->AddTextFrame(*frame, 1.0f);
-
-  auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(frame);
-  text_contents->SetColor(Color::Blue().WithAlpha(0.5));
-
-  ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
-
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
 
   // Clips and restores trivially accept opacity.
   ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));

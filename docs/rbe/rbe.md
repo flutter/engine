@@ -55,8 +55,7 @@ The `gcloud` tool in this SDK must be on your path. The tool lives under
 `//flutter/buildtools/mac-arm64/gcloud/bin`, which is the path to add to your
 `PATH` environment variable. Alternatively, you can get the gcloud SDK on your
 path by installing it on your system by following the instructions at
-[https://cloud.google.com/sdk/docs/install]
-(https://cloud.google.com/sdk/docs/install).
+[https://cloud.google.com/sdk/docs/install](https://cloud.google.com/sdk/docs/install).
 
 On macOS, before running the `gcloud` command ensure that `python3` is on your
 path, and does not come from e.g. homebrew. The command `which python3` should
@@ -152,16 +151,33 @@ RBE builds can be slow for a few different reasons. The most common reason is
 likely to be that the remote caches are cold. When the caches are warm, a
 compile step consists only of downloading the compiled TU from the cache. When
 the caches are cold, the remote workers must run the compilation commands,
-which takes more time.
+which takes more time. If the worker pool is overloaded, compile commands may
+run locally instead, which will also be slower.
 
 RBE builds can also be slow if your network connection is bandwidth constrained.
 Anecdotally, even with a warm cache, I have noticed slow builds from home due
 to RBE saturating my low-tier Comcast Business connection.
 
+For developers on a macOS host device, ensure that you're using the same version
+of Xcode as is in use on the bots. The value of "Build version" returned by
+`xcodebuild -version` should match the `sdk_version` value set in
+`ci/builders/local_engine.json` for the build you're running.
+
+For Googlers on a corp macOS device, both RBE and non-RBE builds can be slow due
+to various background and monitoring processes running. See
+[here](https://buganizer.corp.google.com/issues/324404733#comment16) for how to
+disable some of them. You should also disable Spotlight scanning of the engine
+source directory as described
+[here](go/building-chrome-mac#add-the-source-directory-to-the-spotlight-privacy-list).
+
 When RBE builds are slow, non-RBE builds may be faster, especially incremental
-builds.
+builds. You can disable remote builds without invalidating your existing build
+by setting the environment variable `RBE_exec_strategy=local`.
 
 ### Proxy status and debug logs
+> [!WARNING]
+> Since `et` will start and stop the local RBE proxy while performing a build,
+> the following command will only work when a build is running.
 
 The status of the local RBE proxy can be queried with the following command
 
@@ -171,6 +187,16 @@ buildtools/mac-arm64/reclient/reproxystatus
 
 It will give output describing the number of actions completed and in progress,
 and the number of remote executions, local executions, and remote cache hits.
+
+For example:
+
+```sh
+$ reproxystatus
+Reproxy(unix:///tmp/reproxy.sock) is OK
+Actions completed: 4405 (750 cache hits, 3075 racing locals, 580 racing remotes)
+Actions in progress: 11
+QPS: 12
+```
 
 The logs for RBE live under the system `/tmp` folder in the files `/tmp/reproxy.
 {INFO,WARNING,ERROR}` and `/tmp/bootstrap.{INFO,WARNING,ERROR}`.
@@ -190,25 +216,23 @@ This can be debugged by doing a local build with RBE turned off.
 
 ## References
 
-* Code for RBE (i.e. reproxy, rewrapper, bootstrap, etc.) lives in [this GitHub
-  repository](https://github.com/bazelbuild/reclient). The tools are not
+* Code for RBE (i.e. reproxy, rewrapper, bootstrap, etc.) lives in
+  [this GitHub repository](https://github.com/bazelbuild/reclient). The tools are not
   well-documented, so the source code is the source of truth for the command
   line flags that they accept, for example.
 * Internal-facing RBE migration guide is [here](go/reclient-migration-guide).
   (Mostly focused on Chrome and Android, so not all parts are relevant to
   Flutter.)
-* The version of RBE for local development is set in the DEPS file [here]
-  (https://github.com/flutter/engine/blob/8578edf9c9393471ca9eab18e9154f0e6066dcb6/DEPS#L53).
+* The version of RBE for local development is set in the DEPS file
+  [here](https://github.com/flutter/engine/blob/8578edf9c9393471ca9eab18e9154f0e6066dcb6/DEPS#L53).
   It needs to be manually rolled occasionally.
-* The version of RBE used by CI is set in a LUCI recipe [here]
-  (https://flutter.googlesource.com/recipes/+/be12675150183af68223f5fbc6e0f888a1139e79/recipe_modules/rbe/api.py#16).
+* The version of RBE used by CI is set in a LUCI recipe
+  [here](https://flutter.googlesource.com/recipes/+/be12675150183af68223f5fbc6e0f888a1139e79/recipe_modules/rbe/api.py#16).
   It also needs to be manually rolled occasionally.
-* Googler-only RBE configuration files live in the CIPD bucket [here]
-  (https://chrome-infra-packages.appspot.com/p/flutter_internal/rbe/reclient_cfgs).
+* Googler-only RBE configuration files live in the CIPD bucket
+  [here](https://chrome-infra-packages.appspot.com/p/flutter_internal/rbe/reclient_cfgs).
   They need to be updated when we roll clang to a new version as described
-  [here]
-  (https://github.com/flutter/engine/pull/52062#issuecomment-2050902282).
-* Flutter’s RBE worker pool is defined [here]
-  (https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/flutter_rbe/modules/infra/prod/main.tf).
-* Using RBE for Engine clang-tidy is blocked on [b/326591374]
-  (http://b/326591374).
+  [here](https://github.com/flutter/engine/pull/52062#issuecomment-2050902282).
+* Flutter’s RBE worker pool is defined
+  [here](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/flutter_rbe/modules/infra/prod/main.tf).
+* Using RBE for Engine clang-tidy is blocked on [b/326591374](http://b/326591374).

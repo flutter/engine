@@ -7,6 +7,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/geometry/scalar.h"
+#include "include/core/SkRRect.h"
 
 namespace impeller {
 namespace testing {
@@ -172,6 +173,42 @@ TEST(SkiaConversionsTest, GradientConversionNonMonotonic) {
   ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
   ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 0.5f));
   ASSERT_TRUE(ScalarNearlyEqual(converted_stops[3], 1.0f));
+}
+
+TEST(SkiaConversionsTest, IsNearlySimpleRRect) {
+  EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(
+      SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 10, 10), 10, 10)));
+  EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(
+      SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 10, 10), 10, 9.999)));
+  EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(
+      SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 10, 10), 10, 9)));
+  EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(
+      SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 10, 10), 10, 5)));
+  SkRect rect = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkRRect rrect;
+  union {
+    SkPoint radii[4] = {
+        {10.0f, 9.0f},
+        {10.0f, 9.0f},
+        {10.0f, 9.0f},
+        {10.0f, 9.0f},
+    };
+    SkScalar values[8];
+  } test;
+  rrect.setRectRadii(rect, test.radii);
+  EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(rrect));
+  for (int i = 0; i < 8; i++) {
+    auto save = test.values[i];
+    test.values[i] -= kEhCloseEnough * 0.5f;
+    rrect.setRectRadii(rect, test.radii);
+    EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(rrect))
+        << "values[" << i << "] == " << test.values[i];
+    test.values[i] -= kEhCloseEnough * 2.0f;
+    rrect.setRectRadii(rect, test.radii);
+    EXPECT_FALSE(skia_conversions::IsNearlySimpleRRect(rrect))
+        << "values[" << i << "] == " << test.values[i];
+    test.values[i] = save;
+  }
 }
 
 }  // namespace testing

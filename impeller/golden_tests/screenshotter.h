@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_SCREENSHOTTER_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_SCREENSHOTTER_H_
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/screenshot.h"
 #include "flutter/impeller/playground/playground_impl.h"
@@ -24,6 +23,10 @@ class Screenshotter {
       const Picture& picture,
       const ISize& size = {300, 300},
       bool scale_content = true) = 0;
+
+  virtual std::unique_ptr<Screenshot> MakeScreenshot(
+      AiksContext& aiks_context,
+      const std::shared_ptr<Texture> texture) = 0;
 
   virtual PlaygroundImpl& GetPlayground() = 0;
 };

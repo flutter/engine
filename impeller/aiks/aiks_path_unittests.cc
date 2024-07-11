@@ -17,31 +17,6 @@
 namespace impeller {
 namespace testing {
 
-TEST_P(AiksTest, RotateColorFilteredPath) {
-  Canvas canvas;
-  canvas.Concat(Matrix::MakeTranslation({300, 300}));
-  canvas.Concat(Matrix::MakeRotationZ(Radians(kPiOver2)));
-  auto arrow_stem =
-      PathBuilder{}.MoveTo({120, 190}).LineTo({120, 50}).TakePath();
-  auto arrow_head = PathBuilder{}
-                        .MoveTo({50, 120})
-                        .LineTo({120, 190})
-                        .LineTo({190, 120})
-                        .TakePath();
-  auto paint = Paint{
-      .stroke_width = 15.0,
-      .stroke_cap = Cap::kRound,
-      .stroke_join = Join::kRound,
-      .style = Paint::Style::kStroke,
-      .color_filter =
-          ColorFilter::MakeBlend(BlendMode::kSourceIn, Color::AliceBlue()),
-  };
-
-  canvas.DrawPath(arrow_stem, paint);
-  canvas.DrawPath(arrow_head, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanRenderStrokes) {
   Canvas canvas;
   Paint paint;
@@ -73,6 +48,18 @@ TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderThinCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  // Impeller doesn't support hairlines yet, but size this guarantees
+  // the smallest possible stroke width.
+  paint.stroke_width = 0.01;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
   Canvas canvas;
 
@@ -99,6 +86,25 @@ TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
 
   PathBuilder builder;
   builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderQuadraticStrokeWithInstantTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_cap = Cap::kRound;
+  paint.stroke_width = 50;
+
+  // Should draw a diagonal pill shape. If flat on either end, the stroke is
+  // rendering wrong.
+  PathBuilder builder;
+  builder.MoveTo({250, 250});
+  builder.QuadraticCurveTo({100, 100}, {250, 250});
 
   canvas.DrawPath(builder.TakePath(), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

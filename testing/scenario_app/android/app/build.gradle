@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
+    namespace = "dev.flutter.scenarios"
     lintOptions {
         abortOnError true
         checkAllWarnings true
@@ -81,7 +82,7 @@ configureDependencies(new File(rootDir, '../../..')) { dependency ->
 
 tasks.register('generateLockfiles') {
     rootProject.subprojects.each { subproject ->
-        def gradle = "${rootProject.projectDir}/../../../../third_party/gradle/bin/gradle"
+        def gradle = "${rootProject.projectDir}/../../../third_party/gradle/bin/gradle"
         rootProject.exec {
             workingDir rootProject.projectDir
             executable gradle

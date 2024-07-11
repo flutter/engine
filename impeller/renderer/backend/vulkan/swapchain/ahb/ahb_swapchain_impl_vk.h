@@ -51,7 +51,8 @@ class AHBSwapchainImplVK final
       const std::weak_ptr<Context>& context,
       std::weak_ptr<android::SurfaceControl> surface_control,
       const ISize& size,
-      bool enable_msaa);
+      bool enable_msaa,
+      size_t swapchain_image_count);
 
   ~AHBSwapchainImplVK();
 
@@ -107,17 +108,26 @@ class AHBSwapchainImplVK final
       const std::weak_ptr<Context>& context,
       std::weak_ptr<android::SurfaceControl> surface_control,
       const ISize& size,
-      bool enable_msaa);
+      bool enable_msaa,
+      size_t swapchain_image_count);
 
   bool Present(const AutoSemaSignaler& signaler,
                const std::shared_ptr<AHBTextureSourceVK>& texture);
 
-  std::shared_ptr<ExternalFenceVK> SubmitCompletionSignal(
+  vk::UniqueSemaphore CreateRenderReadySemaphore(
+      const std::shared_ptr<fml::UniqueFD>& fd) const;
+
+  bool SubmitWaitForRenderReady(
+      const std::shared_ptr<fml::UniqueFD>& render_ready_fence,
       const std::shared_ptr<AHBTextureSourceVK>& texture) const;
 
-  void OnTextureSetOnSurfaceControl(
+  std::shared_ptr<ExternalFenceVK> SubmitSignalForPresentReady(
+      const std::shared_ptr<AHBTextureSourceVK>& texture) const;
+
+  void OnTextureUpdatedOnSurfaceControl(
       const AutoSemaSignaler& signaler,
-      std::shared_ptr<AHBTextureSourceVK> texture);
+      std::shared_ptr<AHBTextureSourceVK> texture,
+      ASurfaceTransactionStats* stats);
 };
 
 }  // namespace impeller

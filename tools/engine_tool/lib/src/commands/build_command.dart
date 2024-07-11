@@ -5,7 +5,8 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-import '../gn_utils.dart';
+import '../gn.dart';
+import '../label.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -15,13 +16,12 @@ final class BuildCommand extends CommandBase {
   BuildCommand({
     required super.environment,
     required Map<String, BuilderConfig> configs,
-    super.verbose = false,
     super.help = false,
     super.usageLineLength,
   }) {
     // When printing the help/usage for this command, only list all builds
     // when the --verbose flag is supplied.
-    final bool includeCiBuilds = verbose || !help;
+    final bool includeCiBuilds = environment.verbose || !help;
     builds = runnableBuilds(environment, configs, includeCiBuilds);
     debugCheckBuilds(builds);
     addConfigOption(
@@ -31,9 +31,8 @@ final class BuildCommand extends CommandBase {
     );
     argParser.addFlag(
       rbeFlag,
-      defaultsTo: true,
-      help: 'RBE is enabled by default when available. Use --no-rbe to '
-          'disable it.',
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
     );
     argParser.addFlag(
       ltoFlag,
@@ -50,14 +49,19 @@ final class BuildCommand extends CommandBase {
   @override
   String get description => '''
 Builds the engine
-et build //flutter/fml/...             # Build all targets in `//flutter/fml/`
-et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml/`
+et build //flutter/fml/...             # Build all targets in `//flutter/fml` and its subdirectories.
+et build //flutter/fml:all             # Build all targets in `//flutter/fml`.
+et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml`.
 ''';
 
   @override
   Future<int> run() async {
     final String configName = argResults![configFlag] as String;
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final bool useLto = argResults![ltoFlag] as bool;
     final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
@@ -69,31 +73,33 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
 
     final List<String> extraGnArgs = <String>[
       if (!useRbe) '--no-rbe',
-      if (useLto) '--lto',
-      if (!useLto) '--no-lto',
+      if (useLto) '--lto' else '--no-lto',
     ];
 
-    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
-      environment,
-      build,
-      argResults!.rest,
-    );
-    if (selectedTargets == null) {
-      // The user typed something wrong and targetsFromCommandLine has already
-      // logged the error message.
+    final List<String> commandLineTargets = argResults!.rest;
+    if (commandLineTargets.isNotEmpty && !await ensureBuildDir(environment, build, enableRbe: useRbe)) {
       return 1;
     }
 
-    // Chop off the '//' prefix.
-    final List<String> ninjaTargets = selectedTargets.map<String>(
-      (BuildTarget target) => target.label.substring('//'.length),
-    ).toList();
+    // Builds only accept labels as arguments, so convert patterns to labels.
+    // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
+    final Gn gn = Gn.fromEnvironment(environment);
+    final Set<Label> allTargets = <Label>{};
+    for (final String pattern in commandLineTargets) {
+      final TargetPattern target = TargetPattern.parse(pattern);
+      final List<BuildTarget> targets = await gn.desc(
+        'out/${build.ninja.config}',
+        target,
+      );
+      allTargets.addAll(targets.map((BuildTarget target) => target.label));
+    }
 
     return runBuild(
       environment,
       build,
       extraGnArgs: extraGnArgs,
-      targets: ninjaTargets,
+      targets: allTargets.toList(),
+      enableRbe: useRbe,
     );
   }
 }
