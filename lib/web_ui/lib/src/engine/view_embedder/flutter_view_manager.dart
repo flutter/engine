@@ -99,7 +99,7 @@ class FlutterViewManager {
     return _jsViewOptions[viewId];
   }
 
-  /// Returns the dom element in which the Flutter view associated to [viewId] is embedded.
+  /// Returns the DOM element in which the Flutter view associated to [viewId] is embedded.
   DomElement? getHostElement(int viewId) {
     return _viewData[viewId]?.embeddingStrategy.hostElement;
   }
