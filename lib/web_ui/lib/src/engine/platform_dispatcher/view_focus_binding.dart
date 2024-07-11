@@ -69,8 +69,9 @@ final class ViewFocusBinding {
   });
 
   late final DomEventListener _handleKeyDown = createDomEventListener((DomEvent event) {
-    event as DomKeyboardEvent;
-    if (event.shiftKey ?? false) {
+    // The right event type needs to be checked because Chrome seems to be firing `Event` types
+    // when autofilling is used.
+    if (event is DomKeyboardEvent && (event.shiftKey ?? false)) {
       _viewFocusDirection = ui.ViewFocusDirection.backward;
     }
   });
