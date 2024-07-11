@@ -432,7 +432,7 @@ typedef struct {
   /// any OpenGL API state has changed and flutter should not assume any native
   /// API state is the same as before this callback was called.
   ///
-  /// In that case, flutter will invalidate the internal OpenGL API state cache,
+  /// In that case, Flutter will invalidate the internal OpenGL API state cache,
   /// which is a somewhat expensive operation.
   ///
   /// @attention required. (non-null)
