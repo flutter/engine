@@ -45,13 +45,11 @@ void main(List<String> args) async {
   } else {
     iosEngineVariant = 'ios_debug_sim_unopt';
   }
-  final String dumpXcresultOnFailurePath;
+
+  // Null if the tests should create and dispose their own temporary directory.
+  String? dumpXcresultOnFailurePath;
   if (results.option('dump-xcresult-on-failure') case final String path) {
     dumpXcresultOnFailurePath = path;
-  } else {
-    final dumpDir = io.Directory.systemTemp.createTempSync();
-    dumpXcresultOnFailurePath = dumpDir.path;
-    cleanup.add(() => dumpDir.delete(recursive: true));
   }
 
   // Run the actual script.
@@ -107,7 +105,7 @@ Future<void> _run(
   required String osVersion,
   required bool withImpeller,
   required bool withSkia,
-  required String dumpXcresultOnFailure,
+  required String? dumpXcresultOnFailure,
 }) async {
   // Terminate early on SIGINT.
   late final StreamSubscription<void> sigint;
@@ -148,11 +146,19 @@ Future<void> _run(
     );
     cleanup.add(process.kill);
 
+    // Create a temporary directory, if needed.
+    var storePath = dumpXcresultOnFailure;
+    if (storePath == null) { 
+      final dumpDir = io.Directory.systemTemp.createTempSync();
+      storePath = dumpDir.path;
+      cleanup.add(() => dumpDir.delete(recursive: true));
+    }
+
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
         resultBundle: resultBundle,
-        storePath: dumpXcresultOnFailure,
+        storePath: storePath,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
       throw _ToolFailure('test failed.');
@@ -171,11 +177,19 @@ Future<void> _run(
     );
     cleanup.add(process.kill);
 
+    // Create a temporary directory, if needed.
+    var storePath = dumpXcresultOnFailure;
+    if (storePath == null) {
+      final dumpDir = io.Directory.systemTemp.createTempSync();
+      storePath = dumpDir.path;
+      cleanup.add(() => dumpDir.delete(recursive: true));
+    }
+
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
         resultBundle: resultBundle,
-        storePath: dumpXcresultOnFailure,
+        storePath: storePath,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
       throw _ToolFailure('test failed.');
