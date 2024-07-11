@@ -1314,7 +1314,7 @@ CreateEmbedderRenderTarget(
           };
 
           if (enable_impeller) {
-            /// TODO: Implement
+            // TODO: Implement.
             FML_LOG(ERROR) << "Unimplemented";
             break;
           } else {
