@@ -437,7 +437,7 @@ typedef struct {
   /// @attention required. (non-null)
   FlutterOpenGLSurfaceCallback make_current_callback;
 
-  /// Callback invoked (on an engine managed thread) when the current surface
+  /// Callback invoked (on an engine-managed thread) when the current surface
   /// can be cleared.
   ///
   /// Should return true if the operation succeeded, false if an error ocurred.
