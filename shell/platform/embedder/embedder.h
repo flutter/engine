@@ -448,7 +448,7 @@ typedef struct {
   ///
   /// The embedder might clear the surface here after it was previously made
   /// current. That's not required however, it's also possible to clear it in
-  /// the destruction callback. There's no way to signal opengl state
+  /// the destruction callback. There's no way to signal OpenGL state
   /// changes in the destruction callback though.
   ///
   /// @attention required. (non-null)
