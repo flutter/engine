@@ -101,7 +101,7 @@ static void InvalidateApiState(SkSurface& skia_surface) {
     // Can happen when using software rendering.
     // Print an error but otherwise continue in that case.
     FML_LOG(ERROR) << "Embedder asked to invalidate cached graphics API state "
-                      "but flutter is not using a graphics API.";
+                      "but Flutter is not using a graphics API.";
   } else {
     direct_context->resetContext(kAll_GrBackendState);
   }
