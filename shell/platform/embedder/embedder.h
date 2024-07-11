@@ -422,7 +422,7 @@ typedef struct {
   /// destruction callbacks.
   void* user_data;
 
-  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// Callback invoked (on an engine-managed thread) that asks the embedder to
   /// make the surface current.
   ///
   /// Should return true if the operation succeeded, false if the surface could
