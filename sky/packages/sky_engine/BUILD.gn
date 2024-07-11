@@ -238,6 +238,7 @@ generated_file("_embedder_yaml") {
     "embedded_libs:",
     "  \"dart:async\": \"async/async.dart\"",
     "  \"dart:collection\": \"collection/collection.dart\"",
+    "  \"dart:concurrent\": \"concurrent/concurrent.dart\"",
     "  \"dart:convert\": \"convert/convert.dart\"",
     "  \"dart:core\": \"core/core.dart\"",
     "  \"dart:developer\": \"developer/developer.dart\"",
