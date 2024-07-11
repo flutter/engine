@@ -1,13 +1,3 @@
-#!/usr/bin/env vpython3
-
-# [VPYTHON:BEGIN]
-# python_version: "3.8"
-# wheel <
-#   name: "infra/python/wheels/pyyaml/${platform}_${py_python}_${py_abi}"
-#   version: "version:5.4.1.chromium.1"
-# >
-# [VPYTHON:END]
-
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -24,8 +14,9 @@ import os
 import subprocess
 import sys
 
-# The import is coming from vpython wheel and pylint cannot find it.
-import yaml  # pylint: disable=import-error
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path += [os.path.join(THIS_DIR, '..', '..', '..', 'third_party', 'pyyaml', 'lib3')]
+import yaml # type: ignore
 
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
