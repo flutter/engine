@@ -330,10 +330,6 @@ class FlutterPlatformViewsController {
 
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
-  bool HasPlatformViewLayerAlready(GrDirectContext* gr_context,
-                                   const std::shared_ptr<IOSContext>& ios_context,
-                                   MTLPixelFormat pixel_format);
-
   std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer();
 
   void CreateLayer(GrDirectContext* gr_context,

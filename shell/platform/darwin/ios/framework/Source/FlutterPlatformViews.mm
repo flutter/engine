@@ -615,7 +615,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::unique_ptr<SurfaceFrame> background_frame) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
-  if (flutter_view_ == nullptr) {
+  if (flutter_view_ == nullptr || composition_order_.empty()) {
     return background_frame->Submit();
   }
 
@@ -852,13 +852,6 @@ std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(
     }
   }
   return active_composition_order;
-}
-
-bool FlutterPlatformViewsController::HasPlatformViewLayerAlready(
-    GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context,
-    MTLPixelFormat pixel_format) {
-  return true;
 }
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetExistingLayer() {
