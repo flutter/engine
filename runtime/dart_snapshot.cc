@@ -88,9 +88,13 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
                                 &isolate_data, &isolate_instrs,
                                 /* load as read-only, not rx */ false);
       if (leaked_elf != nullptr) {
-        FML_LOG(INFO) << "Loaded ELF";
+        FML_LOG(INFO) << "Loaded patch from " << patch_path
+                      << "vm_data: " << ignored_vm_data
+                      << "vm_instrs: " << ignored_vm_instrs
+                      << "isolate_data: " << isolate_data
+                      << "isolate_instrs: " << isolate_instrs;
       } else {
-        FML_LOG(FATAL) << "Failed to load ELF at " << patch_path
+        FML_LOG(FATAL) << "Failed load patch at " << patch_path
                        << " error: " << error;
         abort();
       }
