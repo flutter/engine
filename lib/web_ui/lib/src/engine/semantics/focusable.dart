@@ -48,6 +48,7 @@ class Focusable extends RoleManager {
   /// this role manager did not take the focus. The return value can be used to
   /// decide whether to stop searching for a node that should take focus.
   bool focusAsRouteDefault() {
+    _focusManager._lastEvent = AccessibilityFocusManagerEvent.requestedFocus;
     owner.element.focus();
     return true;
   }
@@ -81,7 +82,25 @@ typedef _FocusTarget = ({
 
   /// The listener for the "focus" DOM event.
   DomEventListener domFocusListener,
+
+  /// The listener for the "blur" DOM event.
+  DomEventListener domBlurListener,
 });
+
+enum AccessibilityFocusManagerEvent {
+  /// No event has happend for the target element.
+  nothing,
+
+  /// The engine requested focus on the DOM element, possibly because the
+  /// framework requested it.
+  requestedFocus,
+
+  /// Received the DOM "focus" event.
+  receivedDomFocus,
+
+  /// Received the DOM "blur" event.
+  receivedDomBlur,
+}
 
 /// Implements accessibility focus management for arbitrary elements.
 ///
@@ -98,6 +117,8 @@ class AccessibilityFocusManager {
   final EngineSemanticsOwner _owner;
 
   _FocusTarget? _target;
+
+  AccessibilityFocusManagerEvent _lastEvent = AccessibilityFocusManagerEvent.nothing;
 
   // The last focus value set by this focus manager, used to prevent requesting
   // focus on the same element repeatedly. Requesting focus on DOM elements is
@@ -132,6 +153,7 @@ class AccessibilityFocusManager {
         semanticsNodeId: semanticsNodeId,
         element: previousTarget.element,
         domFocusListener: previousTarget.domFocusListener,
+        domBlurListener: previousTarget.domBlurListener,
       );
       return;
     }
@@ -145,11 +167,14 @@ class AccessibilityFocusManager {
       semanticsNodeId: semanticsNodeId,
       element: element,
       domFocusListener: createDomEventListener((_) => _didReceiveDomFocus()),
+      domBlurListener: createDomEventListener((_) => _didReceiveDomBlur()),
     );
     _target = newTarget;
+    _lastEvent = AccessibilityFocusManagerEvent.nothing;
 
     element.tabIndex = 0;
     element.addEventListener('focus', newTarget.domFocusListener);
+    element.addEventListener('blur', newTarget.domBlurListener);
   }
 
   /// Stops managing the focus of the current element, if any.
@@ -164,6 +189,7 @@ class AccessibilityFocusManager {
     }
 
     target.element.removeEventListener('focus', target.domFocusListener);
+    target.element.removeEventListener('blur', target.domBlurListener);
   }
 
   void _didReceiveDomFocus() {
@@ -175,11 +201,23 @@ class AccessibilityFocusManager {
       return;
     }
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-      target.semanticsNodeId,
-      ui.SemanticsAction.focus,
-      null,
-    );
+    // Do not notify the framework if DOM focus was acquired as a result of
+    // requesting it programmatically. Only notify the framework if the DOM
+    // focus was initiated by the browser, e.g. as a result of the screen reader
+    // shifting focus.
+    if (_lastEvent != AccessibilityFocusManagerEvent.requestedFocus) {
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        target.semanticsNodeId,
+        ui.SemanticsAction.focus,
+        null,
+      );
+    }
+
+    _lastEvent = AccessibilityFocusManagerEvent.receivedDomFocus;
+  }
+
+  void _didReceiveDomBlur() {
+    _lastEvent = AccessibilityFocusManagerEvent.receivedDomBlur;
   }
 
   /// Requests focus or blur on the DOM element.
@@ -240,6 +278,7 @@ class AccessibilityFocusManager {
         return;
       }
 
+      _lastEvent = AccessibilityFocusManagerEvent.requestedFocus;
       target.element.focus();
     });
   }
