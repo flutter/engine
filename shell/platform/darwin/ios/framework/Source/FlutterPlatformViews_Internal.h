@@ -213,7 +213,7 @@ class FlutterPlatformViewLayerPool {
 
 class FlutterPlatformViewsController {
  public:
-  FlutterPlatformViewsController(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
+  explicit FlutterPlatformViewsController(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
 
   ~FlutterPlatformViewsController();
 

@@ -13,7 +13,6 @@
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
-#include "fml/memory/ref_ptr.h"
 
 namespace flutter {
 

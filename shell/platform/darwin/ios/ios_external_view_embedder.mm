@@ -13,7 +13,7 @@ namespace flutter {
 
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    std::shared_ptr<IOSContext> context)
+    const std::shared_ptr<IOSContext>& context)
     : platform_views_controller_(platform_views_controller), ios_context_(std::move(context)) {
   FML_CHECK(ios_context_);
 }
