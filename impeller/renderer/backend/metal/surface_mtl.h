@@ -8,6 +8,7 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <memory>
 
+#include "fml/synchronization/count_down_latch.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
@@ -58,6 +59,14 @@ class SurfaceMTL final : public Surface {
   // Returns a Rect defining the area of the surface in device pixels
   IRect coverage() const;
 
+  using DeferredSubmit = std::function<bool()>;
+  using SubmitReciever = std::function<void(DeferredSubmit)>;
+
+  void SetSubmitInfo(
+      const SubmitReciever& submit_reciever) {
+    submit_reciever_ = submit_reciever;
+  }
+
   // |Surface|
   bool Present() const override;
 
@@ -69,6 +78,8 @@ class SurfaceMTL final : public Surface {
   std::shared_ptr<Texture> destination_texture_;
   bool requires_blit_ = false;
   std::optional<IRect> clip_rect_;
+
+  SubmitReciever submit_reciever_;
 
   static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 

@@ -64,7 +64,7 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   // presented. If there is a non-Flutter UIView active, such as in add2app or a
   // presentViewController page transition, then this will cause CoreAnimation assertion errors and
   // exit the app.
-  layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
+  layer.presentsWithTransaction = YES;// [[NSThread currentThread] isMainThread];
 
   return (__bridge GPUCAMetalLayerHandle)layer;
 }

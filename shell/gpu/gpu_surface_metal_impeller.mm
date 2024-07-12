@@ -155,6 +155,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         if (!surface) {
           return false;
         }
+        surface->SetSubmitInfo(surface_frame.submit_info().submit_receiver);
 
         if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
@@ -276,6 +277,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 
         auto surface =
             impeller::SurfaceMTL::MakeFromTexture(renderer->GetContext(), mtl_texture, clip_rect);
+
+        surface->SetSubmitInfo(surface_frame.submit_info().submit_receiver);
 
         if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();

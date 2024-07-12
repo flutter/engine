@@ -294,6 +294,14 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilScheduled];
 #endif  // defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
       [drawable_ present];
+    } else if (submit_reciever_) {
+      auto drawable = drawable_;
+      [command_buffer commit];
+      [command_buffer waitUntilScheduled];
+      submit_reciever_([drawable]() -> bool {
+        [drawable present];
+        return true;
+      });
     } else {
       // The drawable may come from a FlutterMetalLayer, so it can't be
       // presented through the command buffer.

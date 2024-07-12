@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flow/surface_frame.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #include "fml/logging.h"
 
@@ -81,34 +82,32 @@ namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
-std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
-    GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context,
-    MTLPixelFormat pixel_format,
-    bool create_if_missing) {
+std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetNextLayer() {
   if (available_layer_index_ < layers_.size()) {
-    // TODO: Skia
+    // // TODO: Skia
     std::shared_ptr<FlutterPlatformViewLayer> layer = layers_[available_layer_index_];
 
-    // This condition can only happen with the Skia backend, which is due to be removed from
-    // iOS in short order.
-    if (gr_context != layer->gr_context) {
-      layer->gr_context = gr_context;
-      // The overlay already exists, but the GrContext was changed so we need to recreate
-      // the rendering surface with the new GrContext.
-      IOSSurface* ios_surface = layer->ios_surface.get();
-      std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
-      layer->surface = std::move(surface);
-    }
+    // // This condition can only happen with the Skia backend, which is due to be removed from
+    // // iOS in short order.
+    // if (gr_context != layer->gr_context) {
+    //   layer->gr_context = gr_context;
+    //   // The overlay already exists, but the GrContext was changed so we need to recreate
+    //   // the rendering surface with the new GrContext.
+    //   IOSSurface* ios_surface = layer->ios_surface.get();
+    //   std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
+    //   layer->surface = std::move(surface);
+    // }
 
     available_layer_index_++;
     return layer;
   }
 
-  if (!create_if_missing) {
-    return nullptr;
-  }
+  return nullptr;
+}
 
+void FlutterPlatformViewLayerPool::CreateLayer(GrDirectContext* gr_context,
+                                               const std::shared_ptr<IOSContext>& ios_context,
+                                               MTLPixelFormat pixel_format) {
   std::shared_ptr<FlutterPlatformViewLayer> layer;
   fml::scoped_nsobject<UIView> overlay_view;
   fml::scoped_nsobject<UIView> overlay_view_wrapper;
@@ -158,8 +157,6 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
   layer->overlay_view_wrapper.get().clipsToBounds = YES;
   [layer->overlay_view_wrapper.get() addSubview:layer->overlay_view];
   layers_.push_back(layer);
-
-  return layer;
 }
 
 void FlutterPlatformViewLayerPool::RecycleLayers() {
@@ -169,9 +166,12 @@ void FlutterPlatformViewLayerPool::RecycleLayers() {
 std::vector<std::shared_ptr<FlutterPlatformViewLayer>>
 FlutterPlatformViewLayerPool::GetUnusedLayers() {
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> results;
-  for (size_t i = available_layer_index_; i < layers_.size(); i++) {
-    results.push_back(layers_[i]);
-  }
+  // for (size_t i = available_layer_index_; i < layers_.size(); i++) {
+  //   results.push_back(layers_[i]);
+  // }
+  // if (!results.empty()) {
+  //   FML_LOG(ERROR) << "Removing Layers";
+  // }
   return results;
 }
 
@@ -339,7 +339,7 @@ void FlutterPlatformViewsController::CancelFrame() {
 // Make this method check if there are pending view operations instead.
 // Also rename it to `HasPendingViewOperations`.
 bool FlutterPlatformViewsController::HasPlatformViewThisOrNextFrame() {
-  return !composition_order_.empty() || !active_composition_order_.empty();
+  return true;
 }
 
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
@@ -424,7 +424,7 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 }
 
 void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
-  FML_CHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (clipView.maskView) {
     return;
   }
@@ -440,7 +440,7 @@ void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
-  FML_CHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
     return;
   }
@@ -568,7 +568,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 // included in the `views_to_recomposite_`.
 void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
-  FML_CHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -611,16 +611,15 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  FML_CHECK([[NSThread currentThread] isMainThread]);
-  for (int64_t view_id : active_composition_order_) {
-    UIView* sub_view = root_views_[view_id].get();
-    [sub_view removeFromSuperview];
-  }
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  // for (int64_t view_id : active_composition_order_) {
+  //   UIView* sub_view = root_views_[view_id].get();
+  //   [sub_view removeFromSuperview];
+  // }
   root_views_.clear();
   touch_interceptors_.clear();
   views_.clear();
   composition_order_.clear();
-  active_composition_order_.clear();
   slices_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
@@ -630,7 +629,7 @@ void FlutterPlatformViewsController::Reset() {
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
-  FML_CHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
   UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
@@ -669,6 +668,9 @@ bool FlutterPlatformViewsController::SubmitFrame(
   auto num_platform_views = composition_order_.size();
 
   size_t missing_layer_count = 0;
+
+  // Pending Submit Callbacks
+  std::vector<SurfaceFrame::DeferredSubmit> callbacks;
 
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
@@ -729,11 +731,7 @@ bool FlutterPlatformViewsController::SubmitFrame(
         // on the overlay layer.
         background_canvas->ClipRect(SkRect::Make(joined_rect), DlCanvas::ClipOp::kDifference);
         // Get a new host layer.
-        std::shared_ptr<FlutterPlatformViewLayer> layer =
-            GetExistingLayer(gr_context,              //
-                             ios_context,             //
-                             MTLPixelFormatBGRA10_XR  //
-            );
+        std::shared_ptr<FlutterPlatformViewLayer> layer = GetExistingLayer();
         if (!layer) {
           missing_layer_count++;
           continue;
@@ -759,7 +757,10 @@ bool FlutterPlatformViewsController::SubmitFrame(
 
           // This flutter view is never the last in a frame, since we always submit the
           // underlay view last.
-          frame->set_submit_info({.frame_boundary = false});
+          frame->set_submit_info({.frame_boundary = false,
+                                  .submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
+                                    callbacks.push_back(cb);
+                                  }});
 
           layer->did_submit_last_frame = frame->Submit();
         }
@@ -775,14 +776,29 @@ bool FlutterPlatformViewsController::SubmitFrame(
   // Manually trigger the SkAutoCanvasRestore before we submit the frame
   save.Restore();
 
-  // TODO
+  frame->set_submit_info({.submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
+    callbacks.push_back(cb);
+  }});
   did_submit &= frame->Submit();
 
-  platform_task_runner->PostTask(
-      fml::MakeCopyable([&, platform_view_layers = std::move(platform_view_layers),
-                         missing_layer_count, frame = std::move(frame),
-                         current_composition_params = current_composition_params_,
-                         views_to_recomposite = views_to_recomposite_]() mutable {
+  // Mark all layers as available, so they can be used in the next frame.
+  layer_pool_->RecycleLayers();
+
+  auto task = fml::MakeCopyable(
+      [&, platform_view_layers = std::move(platform_view_layers), missing_layer_count,
+       frame = std::move(frame), current_composition_params = current_composition_params_,
+       views_to_recomposite = views_to_recomposite_, callbacks = callbacks,
+       composition_order = composition_order_]() mutable {
+        TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
+
+        [CATransaction begin];
+        // Configure Flutter overlay views.
+        for (const auto& [key, layers] : platform_view_layers) {
+          for (const auto& layer : layers) {
+            layer->UpdateViewState(flutter_view_);
+          }
+        }
+
         // Dispose unused Flutter Views.
         DisposeViews();
 
@@ -791,53 +807,54 @@ bool FlutterPlatformViewsController::SubmitFrame(
           CompositeWithParams(view_id, current_composition_params[view_id]);
         }
 
-        // Configure Flutter overlay views.
-        for (const auto& [key, layers] : platform_view_layers) {
-          for (const auto& layer : layers) {
-            layer->UpdateViewState(flutter_view_);
-          }
+        for (const auto& cb : callbacks) {
+          cb();
         }
 
         // Create Missing Layers
         for (auto i = 0u; i < missing_layer_count; i++) {
-          auto layer = GetOrCreateLayer(gr_context,              //
-                                        ios_context,             //
-                                        MTLPixelFormatBGRA10_XR  //
+          CreateLayer(gr_context,              //
+                      ios_context,             //
+                      MTLPixelFormatBGRA10_XR  //
           );
-          layer->did_submit_last_frame = true;
         }
+
+        // Organize the layers by their z indexes.
+        auto active_composition_order =
+            BringLayersIntoView(platform_view_layers, composition_order);
 
         // If a layer was allocated in the previous frame, but it's not used in the current frame,
         // then it can be removed from the scene.
-        RemoveUnusedLayers();
-        // Organize the layers by their z indexes.
-        BringLayersIntoView(platform_view_layers);
-        // Mark all layers as available, so they can be used in the next frame.
-        layer_pool_->RecycleLayers();
+        RemoveUnusedLayers(composition_order, active_composition_order);
 
         // If the frame is submitted with embedded platform views,
         // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
         // If that case, we need to commit the transaction.
         CommitCATransactionIfNeeded();
-      }));
+        [CATransaction commit];
+      });
+  platform_task_runner->PostTask(task);
   return true;
 }
 
-void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
+std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(
+    LayersMap layer_map,
+    const std::vector<int64_t>& composition_order) {
   FML_DCHECK(flutter_view_);
   UIView* flutter_view = flutter_view_.get();
-  // Clear the `active_composition_order_`, which will be populated down below.
-  active_composition_order_.clear();
+
+  std::vector<int64_t> active_composition_order;
+
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    int64_t platform_view_id = composition_order_[i];
+  for (size_t i = 0; i < composition_order.size(); i++) {
+    int64_t platform_view_id = composition_order[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
     [desired_platform_subviews addObject:platform_view_root];
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
       [desired_platform_subviews addObject:layer->overlay_view_wrapper];
     }
-    active_composition_order_.push_back(platform_view_id);
+    active_composition_order.push_back(platform_view_id);
   }
 
   NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
@@ -856,29 +873,24 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
       [flutter_view addSubview:subview];
     }
   }
+  return active_composition_order;
 }
 
 bool FlutterPlatformViewsController::HasPlatformViewLayerAlready(
     GrDirectContext* gr_context,
     const std::shared_ptr<IOSContext>& ios_context,
     MTLPixelFormat pixel_format) {
-  std::shared_ptr<FlutterPlatformViewLayer> layer =
-      layer_pool_->GetLayer(gr_context, ios_context, pixel_format, /*create_if_missing=*/false);
-  return !!layer;
+  return true;
 }
 
-std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetExistingLayer(
-    GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context,
-    MTLPixelFormat pixel_format) {
-  return layer_pool_->GetLayer(gr_context, ios_context, pixel_format, /*create_if_missing=*/false);
+std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetExistingLayer() {
+  return layer_pool_->GetNextLayer();
 }
 
-std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetOrCreateLayer(
-    GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context,
-    MTLPixelFormat pixel_format) {
-  return layer_pool_->GetLayer(gr_context, ios_context, pixel_format, /*create_if_missing=*/true);
+void FlutterPlatformViewsController::CreateLayer(GrDirectContext* gr_context,
+                                                 const std::shared_ptr<IOSContext>& ios_context,
+                                                 MTLPixelFormat pixel_format) {
+  layer_pool_->CreateLayer(gr_context, ios_context, pixel_format);
 }
 
 void FlutterPlatformViewLayer::UpdateViewState(UIView* flutter_view) {
@@ -901,18 +913,21 @@ void FlutterPlatformViewLayer::UpdateViewState(UIView* flutter_view) {
       [NSString stringWithFormat:@"platform_view[%lld].overlay_view[%lld]", view_id, overlay_id];
 }
 
-void FlutterPlatformViewsController::RemoveUnusedLayers() {
+void FlutterPlatformViewsController::RemoveUnusedLayers(
+    const std::vector<int64_t>& composition_order,
+    const std::vector<int64_t>& active_composition_order) {
+  // TODO
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_pool_->GetUnusedLayers();
   for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
 
   std::unordered_set<int64_t> composition_order_set;
-  for (int64_t view_id : composition_order_) {
+  for (int64_t view_id : composition_order) {
     composition_order_set.insert(view_id);
   }
   // Remove unused platform views.
-  for (int64_t view_id : active_composition_order_) {
+  for (int64_t view_id : active_composition_order) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
       UIView* platform_view_root = root_views_[view_id].get();
       [platform_view_root removeFromSuperview];
@@ -925,7 +940,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     return;
   }
 
-  FML_CHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   std::unordered_set<int64_t> views_to_composite(composition_order_.begin(),
                                                  composition_order_.end());

@@ -179,13 +179,11 @@ class FlutterPlatformViewLayerPool {
 
   /// Gets a layer from the pool if available, or allocates a new one.
   /// Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
-  ///
-  /// If `create_if_missing` is false, nullptr will be returned if there is no existing
-  /// pooled layer.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     const std::shared_ptr<IOSContext>& ios_context,
-                                                     MTLPixelFormat pixel_format,
-                                                     bool create_if_missing);
+  std::shared_ptr<FlutterPlatformViewLayer> GetNextLayer();
+
+  void CreateLayer(GrDirectContext* gr_context,
+                   const std::shared_ptr<IOSContext>& ios_context,
+                   MTLPixelFormat pixel_format);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -341,22 +339,21 @@ class FlutterPlatformViewsController {
                                    const std::shared_ptr<IOSContext>& ios_context,
                                    MTLPixelFormat pixel_format);
 
-  std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer(
-      GrDirectContext* gr_context,
-      const std::shared_ptr<IOSContext>& ios_context,
-      MTLPixelFormat pixel_format);
+  std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer();
 
-  std::shared_ptr<FlutterPlatformViewLayer> GetOrCreateLayer(
-      GrDirectContext* gr_context,
-      const std::shared_ptr<IOSContext>& ios_context,
-      MTLPixelFormat pixel_format);
+  void CreateLayer(GrDirectContext* gr_context,
+                   const std::shared_ptr<IOSContext>& ios_context,
+                   MTLPixelFormat pixel_format);
 
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
-  void RemoveUnusedLayers();
+  void RemoveUnusedLayers(const std::vector<int64_t>& composition_order,
+                          const std::vector<int64_t>& active_composition_order);
+
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
-  void BringLayersIntoView(LayersMap layer_map);
+  std::vector<int64_t> BringLayersIntoView(LayersMap layer_map,
+                                           const std::vector<int64_t>& composition_order);
 
   // Begin a CATransaction.
   // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.
@@ -414,9 +411,6 @@ class FlutterPlatformViewsController {
 
   // A vector of visited platform view IDs.
   std::vector<int64_t> visited_platform_views_;
-
-  // The latest composition order that was presented in Present().
-  std::vector<int64_t> active_composition_order_;
 
   // Only compoiste platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;

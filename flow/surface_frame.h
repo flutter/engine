@@ -14,6 +14,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
 
+#include "fml/synchronization/count_down_latch.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -25,6 +26,9 @@ class SurfaceFrame {
  public:
   using SubmitCallback =
       std::function<bool(SurfaceFrame& surface_frame, DlCanvas* canvas)>;
+
+  using DeferredSubmit = std::function<bool()>;
+  using SubmitReciever = std::function<void(DeferredSubmit)>;
 
   // Information about the underlying framebuffer
   struct FramebufferInfo {
@@ -87,6 +91,8 @@ class SurfaceFrame {
     //
     // Defaults to true, which is generally a safe value.
     bool frame_boundary = true;
+
+    SubmitReciever submit_receiver;
   };
 
   bool Submit();
