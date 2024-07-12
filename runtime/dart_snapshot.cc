@@ -88,6 +88,8 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
                                 &isolate_data, &isolate_instrs,
                                 /* load as read-only, not rx */ false);
       if (leaked_elf != nullptr) {
+        // TODO(eseidel): Print the library load address
+        // rather than these symbol addresses.
         FML_LOG(INFO) << "Loaded patch from " << patch_path
                       << "vm_data: " << ignored_vm_data
                       << "vm_instrs: " << ignored_vm_instrs
