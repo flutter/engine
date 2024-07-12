@@ -90,6 +90,9 @@ const EmbeddedViewParams* EmbedderExternalView::GetEmbeddedViewParams() const {
   return embedded_view_params_.get();
 }
 
+// TODO(https://github.com/flutter/flutter/issues/151670): Implement this for
+//  Impeller as well.
+#if !SLIMPELLER
 static void InvalidateApiState(SkSurface& skia_surface) {
   auto recording_context = skia_surface.recordingContext();
 
@@ -106,6 +109,7 @@ static void InvalidateApiState(SkSurface& skia_surface) {
     direct_context->resetContext(kAll_GrBackendState);
   }
 }
+#endif
 
 bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
                                   bool clear_surface) {
