@@ -1314,7 +1314,8 @@ CreateEmbedderRenderTarget(
           };
 
           if (enable_impeller) {
-            // TODO: Implement.
+            // TODO(https://github.com/flutter/flutter/issues/151670): Implement
+            //  GL Surface backing stores for Impeller.
             FML_LOG(ERROR) << "Unimplemented";
             break;
           } else {
