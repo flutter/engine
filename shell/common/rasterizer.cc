@@ -792,7 +792,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       FML_DCHECK(!frame->IsSubmitted());
       external_view_embedder_->SubmitFlutterView(
           view_id, surface_->GetContext(), surface_->GetAiksContext(),
-          std::move(frame), delegate_.GetTaskRunners().GetPlatformTaskRunner());
+          std::move(frame));
     } else {
       frame->Submit();
     }

@@ -610,11 +610,9 @@ void FlutterPlatformViewsController::Reset() {
   visited_platform_views_.clear();
 }
 
-bool FlutterPlatformViewsController::SubmitFrame(
-    GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context,
-    std::unique_ptr<SurfaceFrame> background_frame,
-    fml::RefPtr<fml::TaskRunner> platform_task_runner) {
+bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
+                                                 const std::shared_ptr<IOSContext>& ios_context,
+                                                 std::unique_ptr<SurfaceFrame> background_frame) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
   if (flutter_view_ == nullptr) {
@@ -813,7 +811,7 @@ bool FlutterPlatformViewsController::SubmitFrame(
     [CATransaction commit];
   });
 
-  platform_task_runner->PostTask(task);
+  platform_task_runner_->PostTask(task);
   return did_submit;
 }
 

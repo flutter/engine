@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "fml/task_runner.h"
 #include "impeller/base/thread_safety.h"
 #include "third_party/skia/include/core/SkRect.h"
 
@@ -212,7 +213,7 @@ class FlutterPlatformViewLayerPool {
 
 class FlutterPlatformViewsController {
  public:
-  FlutterPlatformViewsController();
+  FlutterPlatformViewsController(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
 
   ~FlutterPlatformViewsController();
 
@@ -271,8 +272,7 @@ class FlutterPlatformViewsController {
 
   bool SubmitFrame(GrDirectContext* gr_context,
                    const std::shared_ptr<IOSContext>& ios_context,
-                   std::unique_ptr<SurfaceFrame> frame,
-                   fml::RefPtr<fml::TaskRunner> platform_task_runner);
+                   std::unique_ptr<SurfaceFrame> frame);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult result)
       __attribute__((cf_audited_transfer));
@@ -402,15 +402,17 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies_;
 
-  // WeakPtrFactory must be the last member.
-  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
-
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // A set to keep track of embedded views that does not have (0, 0) origin.
   // An insertion triggers a warning message about non-zero origin logged on the debug console.
   // See https://github.com/flutter/flutter/issues/109700 for details.
   std::unordered_set<int64_t> non_zero_origin_views_;
 #endif
+
+  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+
+  // WeakPtrFactory must be the last member.
+  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

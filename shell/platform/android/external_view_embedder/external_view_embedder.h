@@ -48,8 +48,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
-      std::unique_ptr<SurfaceFrame> frame,
-      fml::RefPtr<fml::TaskRunner> platform_task_runner) override;
+      std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -85,6 +84,13 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   SkRect GetViewRect(int64_t view_id) const;
 
  private:
+  // The number of frames the rasterizer task runner will continue
+  // to run on the platform thread after no platform view is rendered.
+  //
+  // Note: this is an arbitrary number that attempts to account for cases
+  // where the platform view might be momentarily off the screen.
+  static const int kDefaultMergedLeaseDuration = 10;
+
   // Provides metadata to the Android surfaces.
   const AndroidContext& android_context_;
 

@@ -7,6 +7,8 @@
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/raster_thread_merger.h"
+#include "fml/memory/ref_ptr.h"
+#include "fml/task_runner.h"
 
 namespace flutter {
 

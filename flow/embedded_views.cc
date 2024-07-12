@@ -48,8 +48,7 @@ void ExternalViewEmbedder::SubmitFlutterView(
     int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
-    std::unique_ptr<SurfaceFrame> frame,
-    fml::RefPtr<fml::TaskRunner> platform_task_runner) {
+    std::unique_ptr<SurfaceFrame> frame) {
   frame->Submit();
 }
 

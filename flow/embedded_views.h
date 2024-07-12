@@ -460,8 +460,7 @@ class ExternalViewEmbedder {
       int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
-      std::unique_ptr<SurfaceFrame> frame,
-      fml::RefPtr<fml::TaskRunner> platform_task_runner);
+      std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after
   // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`

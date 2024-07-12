@@ -61,8 +61,7 @@ class SurfaceMTL final : public Surface {
   using DeferredSubmit = std::function<bool()>;
   using SubmitReciever = std::function<void(DeferredSubmit)>;
 
-  void SetSubmitInfo(
-      const SubmitReciever& submit_reciever) {
+  void SetSubmitInfo(const SubmitReciever& submit_reciever) {
     submit_reciever_ = submit_reciever;
   }
 
