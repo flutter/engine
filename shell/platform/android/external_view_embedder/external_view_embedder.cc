@@ -136,8 +136,8 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
       overlay_layers.insert({view_id, full_joined_rect});
       // Clip the background canvas, so it doesn't contain any of the pixels
       // drawn on the overlay layer.
-      // background_canvas->ClipRect(full_joined_rect,
-      //                             DlCanvas::ClipOp::kDifference);
+      background_canvas->ClipRect(full_joined_rect,
+                                  DlCanvas::ClipOp::kDifference);
     }
     slice->render_into(background_canvas);
   }

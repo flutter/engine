@@ -8,7 +8,6 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <memory>
 
-#include "fml/synchronization/count_down_latch.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"

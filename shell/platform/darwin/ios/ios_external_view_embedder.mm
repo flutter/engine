@@ -95,7 +95,7 @@ void IOSExternalViewEmbedder::EndFrame(
 
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return true;
+  return false;
 }
 
 // |ExternalViewEmbedder|
