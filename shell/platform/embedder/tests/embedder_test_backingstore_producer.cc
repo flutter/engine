@@ -29,11 +29,11 @@
 #ifdef SHELL_ENABLE_METAL
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
-#endif // SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/testing/test_gl_surface.h"
-#endif // SHELL_ENABLE_GL
+#endif  // SHELL_ENABLE_GL
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
