@@ -43,7 +43,7 @@ GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delega
   NSNumber* disablePartialRepaint =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
   if (disablePartialRepaint != nil) {
-    disable_partial_repaint_ = disablePartialRepaint.boolValue;
+    disable_partial_repaint_ = true;
   }
 }
 

@@ -6,9 +6,11 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "impeller/base/thread_safety.h"
 #include "third_party/skia/include/core/SkRect.h"
 
 #include <Metal/Metal.h>
+#include <mutex>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -163,11 +165,7 @@ struct FlutterPlatformViewLayer {
   // so we can update the overlay with the new context.
   GrDirectContext* gr_context;
 
-  SkIRect rect;
-  int64_t view_id;
-  int64_t overlay_id;
-
-  void UpdateViewState(UIView* flutter_view);
+  void UpdateViewState(UIView* flutter_view, SkIRect rect, int64_t view_id, int64_t overlay_id);
 };
 
 // This class isn't thread safe.
@@ -206,6 +204,7 @@ class FlutterPlatformViewLayerPool {
   /// This indicates that entries starting from 1 can be reused meanwhile the entry at position 0
   /// cannot be reused.
   size_t available_layer_index_ = 0;
+  mutable std::mutex layers_mutex_;
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewLayerPool);
@@ -267,10 +266,6 @@ class FlutterPlatformViewsController {
 
   DlCanvas* CompositeEmbeddedView(int64_t view_id);
 
-  // The rect of the platform view at index view_id. This rect has been translated into the
-  // host view coordinate system. Units are device screen pixels.
-  SkRect GetPlatformViewRect(int64_t view_id);
-
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
@@ -296,7 +291,14 @@ class FlutterPlatformViewsController {
  private:
   static const size_t kMaxLayerAllocations = 2;
 
-  using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
+  struct LayerData {
+    SkIRect rect;
+    int64_t view_id;
+    int64_t overlay_id;
+    std::shared_ptr<FlutterPlatformViewLayer> layer;
+  };
+
+  using LayersMap = std::map<int64_t, std::vector<LayerData>>;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult result) __attribute__((cf_audited_transfer));
   void OnDispose(FlutterMethodCall* call, FlutterResult result)
@@ -307,13 +309,6 @@ class FlutterPlatformViewsController {
       __attribute__((cf_audited_transfer));
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
-
-  // Returns true if there are embedded views in the scene at current frame
-  // Or there will be embedded views in the next frame.
-  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Make this method check if there are pending view operations instead.
-  // Also rename it to `HasPendingViewOperations`.
-  bool HasPlatformViewThisOrNextFrame();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
@@ -347,20 +342,15 @@ class FlutterPlatformViewsController {
 
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
-  void RemoveUnusedLayers(const std::vector<int64_t>& composition_order,
-                          const std::vector<int64_t>& active_composition_order);
+  void RemoveUnusedLayers(
+      const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
+      const std::vector<int64_t>& composition_order,
+      const std::vector<int64_t>& active_composition_order);
 
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
   std::vector<int64_t> BringLayersIntoView(LayersMap layer_map,
                                            const std::vector<int64_t>& composition_order);
-
-  // Begin a CATransaction.
-  // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.
-  void BeginCATransaction();
-
-  // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
-  void CommitCATransactionIfNeeded();
 
   // Resets the state of the frame.
   void ResetFrameState();
@@ -394,13 +384,6 @@ class FlutterPlatformViewsController {
   std::map<int64_t, int64_t> clip_count_;
   SkISize frame_size_;
 
-  // The number of frames the rasterizer task runner will continue
-  // to run on the platform thread after no platform view is rendered.
-  //
-  // Note: this is an arbitrary number that attempts to account for cases
-  // where the platform view might be momentarily off the screen.
-  static const int kDefaultMergedLeaseDuration = 10;
-
   // Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
   // the next frame.
   std::unordered_set<int64_t> views_to_dispose_;
@@ -418,8 +401,6 @@ class FlutterPlatformViewsController {
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies_;
-
-  bool catransaction_added_ = false;
 
   // WeakPtrFactory must be the last member.
   std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;

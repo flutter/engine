@@ -7,4 +7,4 @@
 # - https://github.com/clangd/clangd/issues/662
 CompileFlags:
   Add: -Wno-unknown-warning-option
-  Remove: [-m*, -f*]
+  Remove: [-m*]
