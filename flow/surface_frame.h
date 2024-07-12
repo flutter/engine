@@ -92,6 +92,8 @@ class SurfaceFrame {
     // Defaults to true, which is generally a safe value.
     bool frame_boundary = true;
 
+    bool present_with_transaction = false;
+
     SubmitReciever submit_receiver;
   };
 

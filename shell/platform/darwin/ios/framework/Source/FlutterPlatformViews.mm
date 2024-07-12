@@ -351,7 +351,6 @@ void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-
   SkRect view_bounds = SkRect::Make(frame_size_);
   std::unique_ptr<EmbedderViewSlice> view;
   view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
@@ -726,6 +725,7 @@ bool FlutterPlatformViewsController::SubmitFrame(
           // This flutter view is never the last in a frame, since we always submit the
           // underlay view last.
           frame->set_submit_info({.frame_boundary = false,
+                                  .present_with_transaction = true,
                                   .submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
                                     callbacks.push_back(cb);
                                   }});
@@ -748,9 +748,11 @@ bool FlutterPlatformViewsController::SubmitFrame(
   // Manually trigger the SkAutoCanvasRestore before we submit the frame
   save.Restore();
 
-  background_frame->set_submit_info({.submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
-    callbacks.push_back(cb);
-  }});
+  background_frame->set_submit_info(
+      {.present_with_transaction = true,
+       .submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
+         callbacks.push_back(cb);
+       }});
   did_submit &= background_frame->Submit();
 
   // Mark all layers as available, so they can be used in the next frame.
