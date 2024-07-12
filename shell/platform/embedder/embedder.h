@@ -429,8 +429,7 @@ typedef struct {
   /// not be made current and rendering should be cancelled.
   ///
   /// The second parameter 'opengl state changed' should be set to true if
-  /// any OpenGL API state has changed and flutter should not assume any native
-  /// API state is the same as before this callback was called.
+  /// any OpenGL API state is different than before this callback was called.
   /// In that case, Flutter will invalidate the internal OpenGL API state cache,
   /// which is a somewhat expensive operation.
   ///
