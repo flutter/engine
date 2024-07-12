@@ -722,11 +722,12 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
           // This flutter view is never the last in a frame, since we always submit the
           // underlay view last.
-          frame->set_submit_info({.frame_boundary = false,
-                                  .present_with_transaction = true,
-                                  .submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
-                                    callbacks.push_back(cb);
-                                  }});
+          frame->set_submit_info(
+              {.frame_boundary = false,
+               .present_with_transaction = true,
+               .submit_receiver = [&callbacks](const SurfaceFrame::DeferredSubmit& cb) {
+                 callbacks.push_back(cb);
+               }});
 
           layer->did_submit_last_frame = frame->Submit();
         }
@@ -748,7 +749,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   background_frame->set_submit_info(
       {.present_with_transaction = true,
-       .submit_receiver = [&callbacks](SurfaceFrame::DeferredSubmit cb) {
+       .submit_receiver = [&callbacks](const SurfaceFrame::DeferredSubmit& cb) {
          callbacks.push_back(cb);
        }});
   did_submit &= background_frame->Submit();
