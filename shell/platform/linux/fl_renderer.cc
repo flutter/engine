@@ -62,7 +62,7 @@ G_DEFINE_TYPE_WITH_PRIVATE(FlRenderer, fl_renderer, G_TYPE_OBJECT)
 
 // Returns the log for the given OpenGL shader. Must be freed by the caller.
 static gchar* get_shader_log(GLuint shader) {
-  int log_length;
+  GLint log_length;
   gchar* log;
 
   glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
@@ -75,7 +75,7 @@ static gchar* get_shader_log(GLuint shader) {
 
 // Returns the log for the given OpenGL program. Must be freed by the caller.
 static gchar* get_program_log(GLuint program) {
-  int log_length;
+  GLint log_length;
   gchar* log;
 
   glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
@@ -110,7 +110,7 @@ static void setup_shader(FlRenderer* self) {
   GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertex_shader, 1, &vertex_shader_src, nullptr);
   glCompileShader(vertex_shader);
-  int vertex_compile_status;
+  GLint vertex_compile_status;
   glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &vertex_compile_status);
   if (vertex_compile_status == GL_FALSE) {
     g_autofree gchar* shader_log = get_shader_log(vertex_shader);
@@ -120,7 +120,7 @@ static void setup_shader(FlRenderer* self) {
   GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragment_shader, 1, &fragment_shader_src, nullptr);
   glCompileShader(fragment_shader);
-  int fragment_compile_status;
+  GLint fragment_compile_status;
   glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &fragment_compile_status);
   if (fragment_compile_status == GL_FALSE) {
     g_autofree gchar* shader_log = get_shader_log(fragment_shader);
@@ -132,7 +132,7 @@ static void setup_shader(FlRenderer* self) {
   glAttachShader(priv->program, fragment_shader);
   glLinkProgram(priv->program);
 
-  int link_status;
+  GLint link_status;
   glGetProgramiv(priv->program, GL_LINK_STATUS, &link_status);
   if (link_status == GL_FALSE) {
     g_autofree gchar* program_log = get_program_log(priv->program);
