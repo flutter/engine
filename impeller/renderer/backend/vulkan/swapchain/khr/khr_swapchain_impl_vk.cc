@@ -471,7 +471,7 @@ bool KHRSwapchainImplVK::Present(
       break;
     default:
       VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-      break;
+      return false;
   }
 
   return true;

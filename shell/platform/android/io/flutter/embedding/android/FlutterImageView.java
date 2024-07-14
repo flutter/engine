@@ -197,7 +197,7 @@ public class FlutterImageView extends View implements RenderSurface {
     // or some special Android devices so the calls to `invalidate()` queued up
     // until the device produces a new frame.
     // 3. While the engine will also stop producing frames, there is a race condition.
-    final Image newImage = imageReader.acquireLatestImage();
+    final Image newImage = imageReader.acquireNextImage();
     if (newImage != null) {
       // Only close current image after acquiring valid new image
       closeCurrentImage();
@@ -237,6 +237,7 @@ public class FlutterImageView extends View implements RenderSurface {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
+
     if (currentImage != null) {
       updateCurrentBitmap();
     }

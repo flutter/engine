@@ -987,16 +987,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       TextureRegistry textureRegistry) {
     if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.SurfaceProducer textureEntry = textureRegistry.createSurfaceProducer();
-      Log.i(TAG, "PlatformView is using SurfaceProducer backend");
+      Log.v(TAG, "PlatformView is using SurfaceProducer backend");
       return new SurfaceProducerPlatformViewRenderTarget(textureEntry);
     }
     if (enableImageRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
-      Log.i(TAG, "PlatformView is using ImageReader backend");
+      Log.v(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
     }
     final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
-    Log.i(TAG, "PlatformView is using SurfaceTexture backend");
+    Log.v(TAG, "PlatformView is using SurfaceTexture backend");
     return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
@@ -1282,6 +1282,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         flutterView.attachOverlaySurfaceToRender(overlayView);
         final boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
+        overlayView.invalidate();
         isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
       } else {
         // If the background surface isn't rendered by the image view, then the
