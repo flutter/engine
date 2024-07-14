@@ -1221,7 +1221,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public void onBeginFrame() {
-   ensureRunningOnMainThread();
+    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to begin the frame");
