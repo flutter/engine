@@ -599,7 +599,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       @NonNull PlatformView platformView,
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
     // This mode attaches the view to the Android view hierarchy and record its drawing
-    // operations, so they can be forwarded to a GL texture that is composed by the
+    // operations, so they can be forwarded to a GL texture that is composited by the
     // Flutter engine.
 
     // API level 23 is required to use Surface#lockHardwareCanvas().

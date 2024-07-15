@@ -195,6 +195,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
       [&, composition_order = composition_order_, view_params = view_params_,
        overlay_layers = std::move(overlay_layers)]() {
+        TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::RenderNativeViews");
         jni_facade_->FlutterViewBeginFrame();
 
         size_t i = 0;

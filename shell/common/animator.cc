@@ -28,21 +28,9 @@ Animator::Animator(Delegate& delegate,
     : delegate_(delegate),
       task_runners_(task_runners),
       waiter_(std::move(waiter)),
-#if SHELL_ENABLE_METAL
       layer_tree_pipeline_(std::make_shared<FramePipeline>(2)),
-#else   // SHELL_ENABLE_METAL
-      // TODO(dnfield): We should remove this logic and set the pipeline depth
-      // back to 2 in this case. See
-      // https://github.com/flutter/engine/pull/9132 for discussion.
-      layer_tree_pipeline_(std::make_shared<FramePipeline>(
-          task_runners.GetPlatformTaskRunner() ==
-                  task_runners.GetRasterTaskRunner()
-              ? 1
-              : 2)),
-#endif  // SHELL_ENABLE_METAL
       pending_frame_semaphore_(1),
-      weak_factory_(this) {
-}
+      weak_factory_(this) {}
 
 Animator::~Animator() = default;
 
