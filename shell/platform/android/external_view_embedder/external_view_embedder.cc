@@ -227,11 +227,12 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
           if (i < overlay_layers.size()) {
             auto& data = overlay_layers[i];
             if (data.layer) {
-              jni_facade_->FlutterViewDisplayOverlaySurface(data.layer->id,     //
-                                                            data.rect.x(),      //
-                                                            data.rect.y(),      //
-                                                            data.rect.width(),  //
-                                                            data.rect.height()  //
+              jni_facade_->FlutterViewDisplayOverlaySurface(
+                  data.layer->id,     //
+                  data.rect.x(),      //
+                  data.rect.y(),      //
+                  data.rect.width(),  //
+                  data.rect.height()  //
               );
             }
             i++;
