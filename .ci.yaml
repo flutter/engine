@@ -59,7 +59,9 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
-    timeout: 90
+    # Work around https://github.com/flutter/flutter/issues/151249 and
+    # https://github.com/flutter/flutter/issues/151695
+    timeout: 240
     runIf:
       - .ci.yaml
       - ci/builders/linux_android_emulator.json
@@ -79,7 +81,7 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
-    timeout: 90
+    timeout: 240
     runIf:
       - .ci.yaml
       - ci/builders/linux_android_emulator.json
@@ -102,7 +104,7 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
-    timeout: 60
+    timeout: 240
     runIf:
       - .ci.yaml
       - ci/builders/linux_android_emulator_api_33.json
@@ -129,7 +131,7 @@ targets:
           "download_emsdk": "true",
           "download_android_deps": "true"
         }
-    timeout: 60
+    timeout: 240
 
   - name: Windows builder_cache
     enabled_branches:
@@ -147,7 +149,7 @@ targets:
         {
           "download_android_deps": "true"
         }
-    timeout: 60
+    timeout: 240
 
   - name: Mac builder_cache
     enabled_branches:
@@ -170,7 +172,7 @@ targets:
         {
           "download_android_deps": "true"
         }
-    timeout: 60
+    timeout: 240
 
   - name: Linux linux_benchmarks
     enabled_branches:
@@ -179,11 +181,11 @@ targets:
     presubmit: false
     properties:
       config_name: linux_benchmarks
-    timeout: 60
+    timeout: 240
 
   - name: Linux linux_fuchsia
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 240
     properties:
       release_build: "true"
       config_name: linux_fuchsia
@@ -205,7 +207,7 @@ targets:
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       config_name: linux_clang_tidy
     runIf:
@@ -223,7 +225,7 @@ targets:
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -233,7 +235,7 @@ targets:
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -247,7 +249,7 @@ targets:
 
   - name: Linux linux_host_desktop_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -257,7 +259,7 @@ targets:
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -267,7 +269,7 @@ targets:
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -277,7 +279,7 @@ targets:
 
   - name: Linux linux_license
     recipe: engine_v2/builder
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       config_name: linux_license
@@ -285,7 +287,7 @@ targets:
 
   - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       release_build: "true"
       config_name: linux_web_engine
@@ -302,7 +304,7 @@ targets:
 
   - name: Linux linux_unopt
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       config_name: linux_unopt
 
@@ -326,7 +328,7 @@ targets:
       shard: web_tests
       subshards: >-
               ["0", "1", "2", "3", "4", "5", "6", "7_last"]
-    timeout: 60
+    timeout: 240
     runIf:
       - DEPS
       - .ci.yaml
@@ -348,7 +350,7 @@ targets:
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       config_name: mac_clang_tidy
     runIf:
@@ -390,7 +392,7 @@ targets:
     properties:
       config_name: mac_unopt
       add_recipes_cq: "true"
-    timeout: 120
+    timeout: 240
 
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
@@ -410,14 +412,14 @@ targets:
   - name: Mac impeller-cmake-example
     bringup: true
     recipe: engine_v2/engine_v2
-    timeout: 60
+    timeout: 240
     properties:
       cpu: arm64
       config_name: mac_impeller_cmake_example
 
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -427,7 +429,7 @@ targets:
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -437,7 +439,7 @@ targets:
 
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     enabled_branches:
       # Don't run this on release branches
       - main
@@ -449,7 +451,7 @@ targets:
 
   - name: Windows windows_unopt
     recipe: engine_v2/builder
-    timeout: 120
+    timeout: 240
     properties:
       config_name: windows_unopt
 
