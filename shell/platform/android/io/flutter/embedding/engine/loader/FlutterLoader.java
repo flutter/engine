@@ -209,7 +209,8 @@ public class FlutterLoader {
                             + nativeLibsDir.getAbsolutePath()
                             + ") "
                             + (nativeLibsDir.exists()
-                                ? "contains the following files: " + Arrays.toString(nativeLibsContents)
+                                ? "contains the following files: "
+                                    + Arrays.toString(nativeLibsContents)
                                 : "does not exist."),
                         unsatisfiedLinkError);
                   }
