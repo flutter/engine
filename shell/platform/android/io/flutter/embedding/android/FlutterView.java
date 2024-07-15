@@ -1346,9 +1346,7 @@ public class FlutterView extends FrameLayout
 
   public boolean acquireLatestImageViewFrame() {
     if (flutterImageView != null) {
-      boolean result = flutterImageView.acquireLatestImage();
-      flutterImageView.invalidate();
-      return result;
+      return flutterImageView.acquireLatestImage();
     }
     return false;
   }

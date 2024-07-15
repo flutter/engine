@@ -174,6 +174,8 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
       frame->Submit();
       overlay_layers.push_back(
           {.layer = overlay_layer, .rect = full_joined_rect});
+    } else {
+      overlay_layers.push_back({});
     }
     slice->render_into(background_canvas);
   }
@@ -195,7 +197,8 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
       [&, composition_order = composition_order_, view_params = view_params_,
        overlay_layers = std::move(overlay_layers)]() {
-        TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::RenderNativeViews");
+        TRACE_EVENT0("flutter",
+                     "AndroidExternalViewEmbedder::RenderNativeViews");
         jni_facade_->FlutterViewBeginFrame();
 
         size_t i = 0;
@@ -223,12 +226,14 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
 
           if (i < overlay_layers.size()) {
             auto& data = overlay_layers[i];
-            jni_facade_->FlutterViewDisplayOverlaySurface(data.layer->id,     //
-                                                          data.rect.x(),      //
-                                                          data.rect.y(),      //
-                                                          data.rect.width(),  //
-                                                          data.rect.height()  //
-            );
+            if (data.layer) {
+              jni_facade_->FlutterViewDisplayOverlaySurface(data.layer->id,     //
+                                                            data.rect.x(),      //
+                                                            data.rect.y(),      //
+                                                            data.rect.width(),  //
+                                                            data.rect.height()  //
+              );
+            }
             i++;
           }
         }

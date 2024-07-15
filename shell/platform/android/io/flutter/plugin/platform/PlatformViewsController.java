@@ -1282,7 +1282,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         flutterView.attachOverlaySurfaceToRender(overlayView);
         final boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
-        overlayView.invalidate();
         isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
       } else {
         // If the background surface isn't rendered by the image view, then the

@@ -237,7 +237,6 @@ public class FlutterImageView extends View implements RenderSurface {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-
     if (currentImage != null) {
       updateCurrentBitmap();
     }
