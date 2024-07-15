@@ -27,7 +27,7 @@ related knobs and dials to turn. See `man MetalValidation`.
 Applications can optionally display a HUD that displays real-time information
 about Metal related performance.
 
-![Profiling HUD](assets/metal_validation/performance_hud.png)
+![Profiling HUD](https://github.com/flutter/assets-for-api-docs/blob/main/assets/engine/impeller/metal_validation/performance_hud.avif)
 
 More documentation about the specific elements of the HUD is present on the
 [Apple developer site](https://developer.apple.com/documentation/xcode/monitoring-your-metal-apps-graphics-performance).
