@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 ```
 
-![Impeller](https://github.com/flutter/assets-for-api-docs/blob/main/assets/engine/impeller/showcase.avif)
+![Impeller](https://github.com/flutter/assets-for-api-docs/blob/5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/showcase.avif)
 
 Impeller is a rendering runtime for Flutter with the following objectives:
 
