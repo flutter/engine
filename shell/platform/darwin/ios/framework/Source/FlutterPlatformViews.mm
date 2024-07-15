@@ -769,8 +769,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                    views_to_recomposite = views_to_recomposite_,              //
                                    callbacks = callbacks,                                     //
                                    composition_order = composition_order_,                    //
-                                   unused_layers = unused_layers,
-                                   views_to_dispose]() mutable {
+                                   unused_layers = unused_layers, views_to_dispose]() mutable {
     TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
     [CATransaction begin];
