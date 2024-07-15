@@ -308,7 +308,7 @@ class FlutterPlatformViewsController {
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult result)
       __attribute__((cf_audited_transfer));
   // Dispose the views in `views_to_dispose_`.
-  void DisposeViews();
+  std::vector<UIView*> DisposeViews();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);

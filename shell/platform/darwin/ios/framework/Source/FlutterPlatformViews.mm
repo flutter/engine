@@ -760,13 +760,17 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   FML_DCHECK(unused_layers.empty() || missing_layer_count == 0);
   layer_pool_->RecycleLayers();
 
-  auto task = fml::MakeCopyable([&, platform_view_layers = std::move(platform_view_layers),
-                                 missing_layer_count,                                       //
-                                 current_composition_params = current_composition_params_,  //
-                                 views_to_recomposite = views_to_recomposite_,              //
-                                 callbacks = callbacks,                                     //
-                                 composition_order = composition_order_,                    //
-                                 unused_layers = unused_layers]() mutable {
+  // Dispose unused Flutter Views.
+  auto views_to_dispose = DisposeViews();
+
+  platform_task_runner_->PostTask([&, platform_view_layers = std::move(platform_view_layers),
+                                   missing_layer_count,                                       //
+                                   current_composition_params = current_composition_params_,  //
+                                   views_to_recomposite = views_to_recomposite_,              //
+                                   callbacks = callbacks,                                     //
+                                   composition_order = composition_order_,                    //
+                                   unused_layers = unused_layers,
+                                   views_to_dispose]() mutable {
     TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
     [CATransaction begin];
@@ -780,7 +784,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     }
 
     // Dispose unused Flutter Views.
-    DisposeViews();
+    for (auto& view : views_to_dispose) {
+      [view removeFromSuperview];
+    }
 
     // Composite Platform Views.
     for (auto view_id : views_to_recomposite) {
@@ -811,8 +817,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     // If that case, we need to commit the transaction.
     [CATransaction commit];
   });
-
-  platform_task_runner_->PostTask(task);
   return did_submit;
 }
 
@@ -909,12 +913,11 @@ void FlutterPlatformViewsController::RemoveUnusedLayers(
   }
 }
 
-void FlutterPlatformViewsController::DisposeViews() {
+std::vector<UIView*> FlutterPlatformViewsController::DisposeViews() {
+  std::vector<UIView*> views;
   if (views_to_dispose_.empty()) {
-    return;
+    return views;
   }
-
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   std::unordered_set<int64_t> views_to_composite(composition_order_.begin(),
                                                  composition_order_.end());
@@ -925,7 +928,7 @@ void FlutterPlatformViewsController::DisposeViews() {
       continue;
     }
     UIView* root_view = root_views_[viewId].get();
-    [root_view removeFromSuperview];
+    views.push_back(root_view);
     views_.erase(viewId);
     touch_interceptors_.erase(viewId);
     root_views_.erase(viewId);
@@ -935,6 +938,7 @@ void FlutterPlatformViewsController::DisposeViews() {
   }
 
   views_to_dispose_ = std::move(views_to_delay_dispose);
+  return views;
 }
 
 void FlutterPlatformViewsController::ResetFrameState() {
