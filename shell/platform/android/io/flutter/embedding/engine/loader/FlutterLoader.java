@@ -207,8 +207,10 @@ public class FlutterLoader {
                             + cpuArch
                             + ", and the native libraries directory (with path "
                             + nativeLibsDir.getAbsolutePath()
-                            + ") contains the following files: "
-                            + Arrays.toString(nativeLibsContents),
+                            + ") "
+                            + (nativeLibsDir.exists()
+                                ? "contains the following files: " + Arrays.toString(nativeLibsContents)
+                                : "does not exist."),
                         unsatisfiedLinkError);
                   }
 
