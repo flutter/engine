@@ -33,7 +33,7 @@ mint install lennet/FlameGraph
 
 Use the Time Profiler Xcode template.
 
-![Time Profiler Template](https://github.com/flutter/assets-for-api-docs/blob/5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/ios_time_profiler_example.avif)
+![Time Profiler Template](https://raw.githubusercontent.com/flutter/assets-for-api-docs//5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/ios_time_profiler_example.avif)
 
 Click the red dot to begin and record as much profile data as you want. Press stop to conclude the trace.
 
@@ -42,11 +42,11 @@ Select the thread to investigate, in this case you want `io.flutter.raster`.
 > [!IMPORTANT]
 > Make sure to select the trace root.
 
-![Select Thread to Investigate](https://github.com/flutter/assets-for-api-docs/blob/5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/ios_profiler_select_thread.avif)
+![Select Thread to Investigate](https://raw.githubusercontent.com/flutter/assets-for-api-docs//5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/ios_profiler_select_thread.avif)
 
 Copy the trace with the keyboard shortcut (⇧⌘C) or the menu ("Edit" -> "Deep Copy").
 
-![Deep Copy](https://github.com/flutter/assets-for-api-docs/blob/5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/deep_copy.avif)
+![Deep Copy](https://raw.githubusercontent.com/flutter/assets-for-api-docs//5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/deep_copy.avif)
 
 ## Convert Profile to FlameGraph
 
@@ -58,4 +58,4 @@ FlameGraph --html output.html
 
 A new browser tab will open with the Flame Graph. It may require some zooming to be useful.
 
-![Flame Graph](https://github.com/flutter/assets-for-api-docs/blob/5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/flamegraph.avif)
+![Flame Graph](https://raw.githubusercontent.com/flutter/assets-for-api-docs//5da33067f5cfc7f177d9c460d618397aad9082ca/assets/engine/impeller/ios_profiling/flamegraph.avif)
