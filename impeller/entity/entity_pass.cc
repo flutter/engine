@@ -106,14 +106,14 @@ void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     advanced_blend_reads_from_pass_texture_ = true;
   }
-  Element& element = elements_.emplace_back(std::move(entity));
-  draw_order_resolver_.AddElement(&element,
+  elements_.emplace_back(std::move(entity));
+  draw_order_resolver_.AddElement(elements_.size() - 1,
                                   entity.GetBlendMode() == BlendMode::kSource);
 }
 
 void EntityPass::PushClip(Entity entity) {
-  Element& element = elements_.emplace_back(std::move(entity));
-  draw_order_resolver_.PushClip(&element);
+  elements_.emplace_back(std::move(entity));
+  draw_order_resolver_.PushClip(elements_.size() - 1);
   active_clips_.emplace_back(elements_.size() - 1);
 }
 
@@ -283,8 +283,8 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   }
 
   auto subpass_pointer = pass.get();
-  Element& element = elements_.emplace_back(std::move(pass));
-  draw_order_resolver_.AddElement(&element, false);
+  elements_.emplace_back(std::move(pass));
+  draw_order_resolver_.AddElement(elements_.size() - 1, false);
   return subpass_pointer;
 }
 
@@ -903,23 +903,30 @@ bool EntityPass::OnRender(
       !backdrop_filter_proc_;
 
   // Count the number of elements eaten by the clear color optimization.
-  size_t clear_color_entity_count = 0;
+  size_t opaque_clear_entity_count = 0;
+  size_t translucent_clear_entity_count = 0;
   if (should_collapse_clear_colors) {
     for (const auto& element : elements_) {
-      auto [entity_color, _] =
-          ElementAsBackgroundColor(element, clear_color_size);
-      if (entity_color.has_value()) {
-        clear_color_entity_count++;
-        continue;
+      if (const Entity* entity = std::get_if<Entity>(&element)) {
+        std::optional<Color> entity_color =
+            entity->AsBackgroundColor(clear_color_size);
+        if (entity_color.has_value()) {
+          if (entity->GetBlendMode() == BlendMode::kSource) {
+            opaque_clear_entity_count++;
+          } else {
+            translucent_clear_entity_count++;
+          }
+          continue;
+        }
+        break;
       }
-      break;
     }
   }
 
-  ElementRefs sorted_elements =
-      draw_order_resolver_.GetSortedDraws(clear_color_entity_count);
+  ElementRefs sorted_elements = draw_order_resolver_.GetSortedDraws(
+      opaque_clear_entity_count, translucent_clear_entity_count);
   for (const auto& element_ref : sorted_elements) {
-    Element& element = *element_ref;
+    const Element& element = elements_[element_ref];
 
     EntityResult result =
         GetEntityForElement(element,               // element
@@ -955,19 +962,21 @@ bool EntityPass::OnRender(
         result.entity.SetContents(std::move(contents));
         result.entity.SetBlendMode(BlendMode::kSource);
       } else {
-        // End the active pass and flush the buffer before rendering "advanced"
-        // blends. Advanced blends work by binding the current render target
-        // texture as an input ("destination"), blending with a second texture
-        // input ("source"), writing the result to an intermediate texture, and
-        // finally copying the data from the intermediate texture back to the
-        // render target texture. And so all of the commands that have written
-        // to the render target texture so far need to execute before it's bound
-        // for blending (otherwise the blend pass will end up executing before
-        // all the previous commands in the active pass).
+        // End the active pass and flush the buffer before rendering
+        // "advanced" blends. Advanced blends work by binding the current
+        // render target texture as an input ("destination"), blending with a
+        // second texture input ("source"), writing the result to an
+        // intermediate texture, and finally copying the data from the
+        // intermediate texture back to the render target texture. And so all
+        // of the commands that have written to the render target texture so
+        // far need to execute before it's bound for blending (otherwise the
+        // blend pass will end up executing before all the previous commands
+        // in the active pass).
 
         if (!pass_context.EndPass()) {
           VALIDATION_LOG
-              << "Failed to end the current render pass in order to read from "
+              << "Failed to end the current render pass in order to read "
+                 "from "
                  "the backdrop texture and apply an advanced blend.";
           return false;
         }

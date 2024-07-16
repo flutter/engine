@@ -52,7 +52,7 @@ class EntityPass {
   /// `EntityPass`. Elements are converted to Entities in
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
-  using ElementRefs = std::vector<EntityPass::Element*>;
+  using ElementRefs = std::vector<size_t>;
 
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
@@ -321,17 +321,17 @@ class EntityPass {
    public:
     DrawOrderResolver() : draw_order_layers_({{}}) {}
 
-    void AddElement(EntityPass::Element* element, bool is_opaque) {
+    void AddElement(size_t element_index, bool is_opaque) {
       DrawOrderLayer& layer = draw_order_layers_.back();
       if (is_opaque) {
-        layer.opaque_elements.push_back(element);
+        layer.opaque_elements.push_back(element_index);
       } else {
-        layer.dependent_elements.push_back(element);
+        layer.dependent_elements.push_back(element_index);
       }
     }
 
-    void PushClip(EntityPass::Element* element) {
-      draw_order_layers_.back().dependent_elements.push_back(element);
+    void PushClip(size_t element_index) {
+      draw_order_layers_.back().dependent_elements.push_back(element_index);
       draw_order_layers_.push_back({});
     };
 
@@ -348,7 +348,7 @@ class EntityPass {
       DrawOrderLayer& parent_layer =
           draw_order_layers_[draw_order_layers_.size() - 2];
 
-      layer.WriteCombinedDraws(parent_layer.dependent_elements, 0);
+      layer.WriteCombinedDraws(parent_layer.dependent_elements, 0, 0);
 
       draw_order_layers_.pop_back();
     }
@@ -362,12 +362,13 @@ class EntityPass {
     ///                                This is used for the "clear color"
     ///                                optimization.
     ///
-    ElementRefs GetSortedDraws(size_t opaque_skip_count) const {
+    ElementRefs GetSortedDraws(size_t opaque_skip_count,
+                               size_t translucent_skip_count) const {
       FML_DCHECK(draw_order_layers_.size() == 1u);
 
       ElementRefs sorted_elements;
-      draw_order_layers_.back().WriteCombinedDraws(sorted_elements,
-                                                   opaque_skip_count);
+      draw_order_layers_.back().WriteCombinedDraws(
+          sorted_elements, opaque_skip_count, translucent_skip_count);
 
       return sorted_elements;
     }
@@ -400,8 +401,10 @@ class EntityPass {
       ///                                optimization.
       ///
       void WriteCombinedDraws(ElementRefs& destination,
-                              size_t opaque_skip_count) const {
+                              size_t opaque_skip_count,
+                              size_t translucent_skip_count) const {
         FML_DCHECK(opaque_skip_count <= opaque_elements.size());
+        FML_DCHECK(translucent_skip_count <= dependent_elements.size());
 
         destination.reserve(destination.size() +                          //
                             opaque_elements.size() - opaque_skip_count +  //
@@ -411,7 +414,8 @@ class EntityPass {
         destination.insert(destination.end(), opaque_elements.rbegin(),
                            opaque_elements.rend() - opaque_skip_count);
         // Then, draw backdrop-dependent elements in their original order.
-        destination.insert(destination.end(), dependent_elements.begin(),
+        destination.insert(destination.end(),
+                           dependent_elements.begin() + translucent_skip_count,
                            dependent_elements.end());
       }
     };
