@@ -63,7 +63,7 @@ public class FlutterLoaderTest {
   }
 
   @Test
-  public void unsatisfiedLinkErrorContainsPath() {
+  public void unsatisfiedLinkErrorPathDoesNotExist() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     ctx.getApplicationInfo().nativeLibraryDir = "/path/that/doesnt/exist";
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
