@@ -735,7 +735,7 @@ deps = {
       {
         # See tools/gradle/README.md for update instructions.
         # Version here means the CIPD tag.
-        'version': 'version:8.3',
+        'version': 'version:8.9',
         'package': 'flutter/gradle'
       }
     ],
