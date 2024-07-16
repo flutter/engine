@@ -3572,4 +3572,5 @@
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
 ../../../out
+../../../third_party
 ../../../tools
