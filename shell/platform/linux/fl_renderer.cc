@@ -377,10 +377,6 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
 
   fl_renderer_unblock_main_thread(self);
 
-  if (!priv->view) {
-    return FALSE;
-  }
-
   g_ptr_array_set_size(priv->textures, 0);
   for (size_t i = 0; i < layers_count; ++i) {
     const FlutterLayer* layer = layers[i];
@@ -399,7 +395,9 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
     }
   }
 
-  fl_view_redraw(priv->view);
+  if (priv->view != nullptr) {
+    fl_view_redraw(priv->view);
+  }
 
   return TRUE;
 }
