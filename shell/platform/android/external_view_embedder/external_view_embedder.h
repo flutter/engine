@@ -115,6 +115,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // The order of composition. Each entry contains a unique id for the platform
   // view.
   std::vector<int64_t> composition_order_;
+  bool had_platform_views_ = false;
 
   // The |EmbedderViewSlice| implementation keyed off the platform view id,
   // which contains any subsequent operations until the next platform view or

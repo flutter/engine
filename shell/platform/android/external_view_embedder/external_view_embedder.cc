@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+
 #include <cstdint>
+
 #include "flow/surface_frame.h"
 #include "flutter/common/constants.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -76,10 +78,11 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
 
-  if (!FrameHasPlatformLayers()) {
+  if (!FrameHasPlatformLayers() && !had_platform_views_) {
     frame->Submit();
     return;
   }
+  had_platform_views_ = FrameHasPlatformLayers();
 
   DlCanvas* background_canvas = frame->Canvas();
   auto current_frame_view_count = composition_order_.size();
@@ -256,6 +259,9 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
+  if (previous_frame_view_count_ == 0) {
+    return PostPrerollResult::kResubmitFrame;
+  }
   return PostPrerollResult::kSuccess;
 }
 

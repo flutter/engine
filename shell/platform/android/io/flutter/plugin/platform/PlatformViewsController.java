@@ -1269,9 +1269,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // If one of the surfaces doesn't have an image, the frame may be incomplete and must be
     // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
-    final boolean isFrameRenderedUsingImageReaders =
-        flutterViewConvertedToImageView && flutterView.acquireLatestImageViewFrame();
-    finishFrame(isFrameRenderedUsingImageReaders);
+    flutterView.acquireNextImageViewFrame();
+
+    finishFrame(flutterViewConvertedToImageView);
   }
 
   private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
@@ -1281,8 +1281,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         flutterView.attachOverlaySurfaceToRender(overlayView);
-        final boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
-        isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
+        isFrameRenderedUsingImageReaders |= overlayView.acquireNextImage();
       } else {
         // If the background surface isn't rendered by the image view, then the
         // overlay surfaces can be detached from the rendered.
