@@ -77,6 +77,7 @@ void IOSExternalViewEmbedder::SubmitFlutterView(
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFlutterView");
+
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);

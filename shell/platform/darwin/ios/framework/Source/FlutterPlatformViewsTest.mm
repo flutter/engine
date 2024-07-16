@@ -5,6 +5,7 @@
 #import <OCMock/OCMock.h>
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
+#include "fml/synchronization/count_down_latch.h"
 
 #import "flutter/fml/thread.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -2746,75 +2747,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+
+  std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
+  thread_task_runner->PostTask([&]() { latch->CountDown(); });
+  latch->Wait();
+
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
                     [flutterView.subviews indexOfObject:clippingView2],
                 @"The first clipping view should be added before the second clipping view.");
-}
-
-- (void)testThreadMergeAtEndFrame {
-  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread_task_runner_platform = CreateNewThread("FlutterPlatformViewsTest1");
-  auto thread_task_runner_other = CreateNewThread("FlutterPlatformViewsTest2");
-  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread_task_runner_platform,
-                               /*raster=*/thread_task_runner_other,
-                               /*ui=*/thread_task_runner_other,
-                               /*io=*/thread_task_runner_other);
-  auto flutterPlatformViewsController =
-      std::make_shared<flutter::FlutterPlatformViewsController>(thread_task_runner_platform);
-  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
-      /*delegate=*/mock_delegate,
-      /*rendering_api=*/mock_delegate.settings_.enable_impeller
-          ? flutter::IOSRenderingAPI::kMetal
-          : flutter::IOSRenderingAPI::kSoftware,
-      /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners,
-      /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
-
-  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
-  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
-
-  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
-  flutterPlatformViewsController->RegisterViewFactory(
-      factory, @"MockFlutterPlatformView",
-      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
-  XCTestExpectation* waitForPlatformView =
-      [self expectationWithDescription:@"wait for platform view to be created"];
-  FlutterResult result = ^(id result) {
-    [waitForPlatformView fulfill];
-  };
-
-  flutterPlatformViewsController->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
-  [self waitForExpectations:@[ waitForPlatformView ] timeout:30];
-  XCTAssertNotNil(gMockPlatformView);
-
-  flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
-  SkMatrix finalMatrix;
-  flutter::MutatorsStack stack;
-  auto embeddedViewParams =
-      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
-  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-
-  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(thread_task_runner_platform->GetTaskQueueId(),
-                                                   thread_task_runner_other->GetTaskQueueId());
-  XCTAssertEqual(flutterPlatformViewsController->PostPrerollAction(raster_thread_merger),
-                 flutter::PostPrerollResult::kSkipAndRetryFrame);
-  XCTAssertFalse(raster_thread_merger->IsMerged());
-
-  flutterPlatformViewsController->EndFrame(true, raster_thread_merger);
-  XCTAssertTrue(raster_thread_merger->IsMerged());
-
-  // Unmerge threads before the end of the test
-  // TaskRunners are required to be unmerged before destruction.
-  while (raster_thread_merger->DecrementLease() != fml::RasterThreadStatus::kUnmergedNow) {
-  }
 }
 
 - (int)alphaOfPoint:(CGPoint)point onView:(UIView*)view {

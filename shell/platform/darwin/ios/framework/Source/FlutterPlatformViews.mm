@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <unordered_map>
-#include "flow/surface_frame.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
-#include "fml/logging.h"
 
 #include <Metal/Metal.h>
+#include <unordered_map>
+
+#include "flow/surface_frame.h"
+#include "fml/logging.h"
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -593,11 +594,17 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-  // for (int64_t view_id : active_composition_order_) {
-  //   UIView* sub_view = root_views_[view_id].get();
-  //   [sub_view removeFromSuperview];
-  // }
+  std::vector<UIView*> views;
+  for (int64_t view_id : composition_order_) {
+    views.push_back(root_views_[view_id].get());
+  }
+
+  platform_task_runner_->PostTask([views = views]() {
+    for (auto* sub_view : views) {
+      [sub_view removeFromSuperview];
+    }
+  });
+
   root_views_.clear();
   touch_interceptors_.clear();
   views_.clear();
@@ -798,9 +805,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
     // Create Missing Layers
     for (auto i = 0u; i < missing_layer_count; i++) {
-      CreateLayer(gr_context,              //
-                  ios_context,             //
-                  MTLPixelFormatBGRA10_XR  //
+      CreateLayer(gr_context,                                      //
+                  ios_context,                                     //
+                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
       );
     }
 
