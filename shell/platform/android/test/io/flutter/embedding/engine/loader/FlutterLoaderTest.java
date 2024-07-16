@@ -67,12 +67,17 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     ctx.getApplicationInfo().nativeLibraryDir = "/path/that/doesnt/exist";
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
-    
-    Mockito.doThrow(new UnsatisfiedLinkError("couldn't find \"libflutter.so\"")).when(mockFlutterJNI).loadLibrary();
+
+    Mockito.doThrow(new UnsatisfiedLinkError("couldn't find \"libflutter.so\""))
+        .when(mockFlutterJNI)
+        .loadLibrary();
     try {
       flutterLoader.startInitialization(ctx);
     } catch (UnsupportedOperationException e) {
-      assertTrue(e.getMessage().contains("and the native libraries directory (with path /path/that/doesnt/exist) does not exist."));
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "and the native libraries directory (with path /path/that/doesnt/exist) does not exist."));
     }
   }
 
