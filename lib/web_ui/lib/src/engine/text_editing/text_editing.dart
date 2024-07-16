@@ -1131,7 +1131,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // only after placing it to the correct position. Hence autofill menu
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
-      focusedFormElement!.focus(preventScroll: true);
+      focusedFormElement!.focus();
       moveFocusToActiveDomElement();
     }
   }
@@ -1571,7 +1571,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Moves the focus to the [activeDomElement].
   void moveFocusToActiveDomElement() {
-    activeDomElement.focus(preventScroll: true);
+    activeDomElement.focus();
   }
 
   /// Move the focus to the given [EngineFlutterView] in the next timer event.
@@ -1589,7 +1589,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // move the focus, as it is likely that another widget already took the
       // focus.
       if (element == domDocument.activeElement) {
-        view?.dom.rootElement.focus(preventScroll: true);
+        view?.dom.rootElement.focus();
       }
       if (removeElement) {
         element.remove();

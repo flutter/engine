@@ -662,14 +662,31 @@ extension DomElementExtension on DomElement {
   double? get tabIndex => _tabIndex?.toDartDouble;
 
   @JS('focus')
-  external JSVoid _focus(JSAny options);
+  external JSVoid _focusWithOptions(JSAny options);
 
-  void focus({bool? preventScroll, bool? focusVisible}) {
-    final Map<String, bool> options = <String, bool>{
-      if (preventScroll != null) 'preventScroll': preventScroll,
-      if (focusVisible != null) 'focusVisible': focusVisible,
-    };
-    _focus(options.toJSAnyDeep);
+  @JS('focus')
+  external JSVoid _focus();
+
+  /// Calls DOM `Element.focus`.
+  ///
+  /// If [preventScroll] is true, prevents the browser from scrolling to the
+  /// focused element.
+  ///
+  /// IMPORTANT: [preventScroll] defaults to `true`, which is the exact opposite
+  /// of the browser default. This is because by default, the Flutter framework
+  /// is responsible for scrolling, including scrolling focused widgets into
+  /// view. Any automated browser scrolling usually gets in the way. For example,
+  /// see this issue:
+  ///
+  /// https://github.com/flutter/flutter/issues/130950
+  void focus({bool preventScroll = true}) {
+    if (preventScroll) {
+      _focusWithOptions(
+        <String, bool>{ 'preventScroll': preventScroll }.toJSAnyDeep,
+      );
+    } else {
+      _focus();
+    }
   }
 
   @JS('scrollTop')

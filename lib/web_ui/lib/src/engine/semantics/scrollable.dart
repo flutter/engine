@@ -28,7 +28,9 @@ class Scrollable extends PrimaryRoleManager {
           PrimaryRole.scrollable,
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
-        );
+        ) {
+    setAriaRole('group');
+  }
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;

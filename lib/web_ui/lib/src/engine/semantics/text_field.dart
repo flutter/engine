@@ -162,7 +162,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     }
-    activeDomElement.focus(preventScroll: true);
+    activeDomElement.focus();
   }
 
   @override
@@ -219,7 +219,7 @@ class TextField extends PrimaryRoleManager {
 
   @override
   bool focusAsRouteDefault() {
-    editableElement.focus(preventScroll: true);
+    editableElement.focus();
     return true;
   }
 
@@ -264,7 +264,7 @@ class TextField extends PrimaryRoleManager {
           semanticsObject.id, ui.SemanticsAction.focus, null);
     }));
     editableElement.addEventListener('click', createDomEventListener((DomEvent event) {
-      editableElement.focus(preventScroll: true);
+      editableElement.focus();
     }));
     editableElement.addEventListener('blur', createDomEventListener((DomEvent event) {
       SemanticsTextEditingStrategy._instance?.deactivate(this);
@@ -283,7 +283,7 @@ class TextField extends PrimaryRoleManager {
     if (semanticsObject.hasFocus) {
       if (domDocument.activeElement != editableElement && semanticsObject.isEnabled) {
         semanticsObject.owner.addOneTimePostUpdateCallback(() {
-          editableElement.focus(preventScroll: true);
+          editableElement.focus();
         });
       }
       SemanticsTextEditingStrategy._instance?.activate(this);

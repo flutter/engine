@@ -1401,7 +1401,7 @@ void _testVerticalScrolling() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem style="touch-action: none; overflow-y: scroll">
+<sem role="group" style="touch-action: none; overflow-y: scroll">
 <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
 </sem>''');
 
@@ -1554,7 +1554,7 @@ void _testHorizontalScrolling() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem style="touch-action: none; overflow-x: scroll">
+<sem role="group" style="touch-action: none; overflow-x: scroll">
 <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
 </sem>''');
 
