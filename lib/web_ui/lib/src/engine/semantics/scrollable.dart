@@ -29,6 +29,9 @@ class Scrollable extends PrimaryRoleManager {
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {
+    // Mark as group to prevent the browser from merging this element along with
+    // all the children into one giant node. This is what happened with the
+    // repro provided in https://github.com/flutter/flutter/issues/130950.
     setAriaRole('group');
   }
 
