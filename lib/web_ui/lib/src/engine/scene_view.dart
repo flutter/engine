@@ -309,33 +309,25 @@ final class PlatformViewContainer extends SliceContainer {
     if (_dirty) {
       final DomCSSStyleDeclaration style = container.style;
       style.position = 'absolute';
+      style.width = '${_bounds!.width}px';
+      style.height = '${_bounds!.height}px';
+
       final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
       final PlatformViewPosition position = _styling!.position;
 
-      final ui.Offset offset = position.offset ?? ui.Offset.zero;
-      final Matrix4? transform = position.transform;
-      if (transform == null) {
-        final ui.Offset newOffset = offset + _bounds!.topLeft;
-        final double logicalWidth = _bounds!.width / devicePixelRatio;
-        final double logicalHeight = _bounds!.height / devicePixelRatio;
-        final double logicalLeft = newOffset.dx / devicePixelRatio;
-        final double logicalTop = newOffset.dy / devicePixelRatio;
-        style.width = '${logicalWidth}px';
-        style.height = '${logicalHeight}px';
-        style.left = '${logicalLeft}px';
-        style.top = '${logicalTop}px';
-        style.transform = '';
+      final Matrix4 transform;
+      if (position.transform != null) {
+        transform = position.transform!.clone()..translate(_bounds!.left, _bounds!.top);
       } else {
-        style.width = '${_bounds!.width}px';
-        style.height = '${_bounds!.height}px';
-        style.left = '0px';
-        style.top = '0px';
-
-        final Matrix4 newTransform = transform.clone();
-        newTransform.translate(_bounds!.left, _bounds!.top);
-        newTransform.scale(1 / devicePixelRatio);
-        style.transform = float64ListToCssTransform3d(newTransform.storage);
+        final ui.Offset offset = position.offset ?? ui.Offset.zero;
+        transform = Matrix4.translationValues(_bounds!.left + offset.dx, _bounds!.top + offset.dy, 0);
       }
+      final double inverseScale = 1.0 / devicePixelRatio;
+      final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+      scaleMatrix.multiply(transform);
+      style.transform = float64ListToCssTransform(scaleMatrix.storage);
+      style.transformOrigin = '0 0 0';
       style.opacity = _styling!.opacity != 1.0 ? '${_styling!.opacity}' : '';
       // TODO(jacksongardner): Implement clip styling for platform views
 
