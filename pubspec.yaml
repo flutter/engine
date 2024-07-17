@@ -20,7 +20,7 @@
 # ------------------------------------------------------------------------------
 # (1) ADDING A NEW DEPENDENCY
 # ------------------------------------------------------------------------------
-# Dependencies need to be added either via the DEPS file, or by checking they
+# Dependencies need to be added either via the DEPS file, or by checking if they
 # are available in the vendored Dart SDK (see notes below on library locations).
 # If they are available, do the following.
 #
