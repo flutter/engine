@@ -2796,7 +2796,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-  std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
+  latch = std::make_shared<fml::CountDownLatch>(1u);
   thread_task_runner->PostTask([&]() { latch->CountDown(); });
   latch->Wait();
 
