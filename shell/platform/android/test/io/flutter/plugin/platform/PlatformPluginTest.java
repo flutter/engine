@@ -190,6 +190,7 @@ public class PlatformPluginTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void platformPlugin_getClipboardDataIsNullWhenItemHasNoTextNorUri() throws IOException {
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
@@ -263,6 +264,9 @@ public class PlatformPluginTest {
   }
 
   @Config(sdk = API_LEVELS.API_29)
+  @SuppressWarnings("deprecation")
+  // setStatusBarColor, setNavigationBarColor, setNavigationBarDividerColor,
+  // setStatusBarContrastEnforced, setNavigationBarContrastEnforced
   @Test
   public void setNavigationBarDividerColor() {
     View fakeDecorView = mock(View.class);
