@@ -120,10 +120,14 @@ Future<void> testMain() async {
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
+    // Nest offsets both before and after the transform to make sure that they
+    // are applied properly.
+    sb.pushOffset(50, 50);
     sb.pushTransform(Matrix4.rotationZ(0.1).toFloat64());
+    sb.pushOffset(25, 25);
     sb.addPlatformView(
       1,
-      offset: const ui.Offset(125, 125),
+      offset: const ui.Offset(50, 50),
       width: 50,
       height: 50,
     );
