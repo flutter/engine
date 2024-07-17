@@ -166,6 +166,7 @@ Future<void> _run(
       io.stderr.writeln('test succcess.');
     }
   }
+  resultBundle.deleteSync(recursive: true);
 
   if (withImpeller) {
     final process = await _runTests(
