@@ -2717,9 +2717,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
+  FML_LOG(ERROR) << "Latch 1";
   std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
   thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
+  FML_LOG(ERROR) << "Latch 1 End";
 
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
@@ -2736,15 +2738,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
-  flutterPlatformViewsController->CompositeWithParams(
-      1, flutterPlatformViewsController->GetCompositionParams(1));
 
   embeddedViewParams1 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
-  flutterPlatformViewsController->CompositeWithParams(
-      0, flutterPlatformViewsController->GetCompositionParams(0));
 
   mock_sk_surface = SkSurfaces::Raster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
@@ -2754,9 +2752,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
+  FML_LOG(ERROR) << "Latch 2";
   latch = std::make_shared<fml::CountDownLatch>(1u);
   thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
+  FML_LOG(ERROR) << "Latch 2 End";
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
                     [flutterView.subviews indexOfObject:clippingView2],
