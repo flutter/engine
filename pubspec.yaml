@@ -22,9 +22,7 @@
 # ------------------------------------------------------------------------------
 # Dependencies need to be added either via the DEPS file, or by checking if they
 # are available in the vendored Dart SDK (see notes below on library locations).
-# If they are available, do the following.
-#
-# See (4) for how to add dependencies to a package in the workspace.
+# If dependencies are available, see (4) for how to add dependencies to a package in the workspace.
 #
 # ------------------------------------------------------------------------------
 # (2) CREATING A NEW PACKAGE
