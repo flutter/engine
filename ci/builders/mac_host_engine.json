@@ -368,6 +368,7 @@
                 "config": "ci/mac_profile_arm64",
                 "targets": [
                     "flutter/build/archives:artifacts",
+                    "flutter/lib/snapshot:create_macos_gen_snapshots",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
