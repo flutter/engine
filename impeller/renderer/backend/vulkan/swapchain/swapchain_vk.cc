@@ -55,8 +55,6 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     return nullptr;
   }
 
-  // TODO(148139): Fix synchronization issues on present.
-  // if constexpr (false) {
   // TODO(147533): AHB swapchains on emulators are not functional.
   const auto emulator = ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
 
@@ -77,7 +75,6 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
           << "Could not create AHB swapchain. Falling back to KHR variant.";
     }
   }
-  // }
 
   // Fallback to KHR swapchains if AHB swapchains aren't available.
   return Create(context, std::move(surface), window.GetSize(), enable_msaa);
