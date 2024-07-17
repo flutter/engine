@@ -1955,6 +1955,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -2418,6 +2421,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_1));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
@@ -2430,6 +2436,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_2));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   auto mock_surface_submit_true = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
@@ -2483,6 +2492,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
     flutterPlatformViewsController->CompositeEmbeddedView(2);
+    flutterPlatformViewsController->CompositeWithParams(
+        2, flutterPlatformViewsController->GetCompositionParams(2));
+
     // Not calling |flutterPlatformViewsController::SubmitFrame| so that the platform views are not
     // added to flutter_view_.
 
@@ -2537,6 +2549,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
+
   XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
 
   // Second frame, |EmbeddedViewCount| should be empty at the start
@@ -2547,6 +2562,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
+
   XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
 }
 
@@ -2603,10 +2621,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
+
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
@@ -2634,10 +2657,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
+
   embeddedViewParams1 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
 
   mock_sk_surface = SkSurfaces::Raster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
@@ -2704,10 +2732,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
+
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
@@ -2735,10 +2768,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
+  flutterPlatformViewsController->CompositeWithParams(
+      0, flutterPlatformViewsController->GetCompositionParams(0));
+
   embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
 
   mock_sk_surface = SkSurfaces::Raster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
@@ -2894,6 +2932,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
+
   UIView* childClippingView1 = gMockPlatformView.superview.superview;
   UIView* maskView1 = childClippingView1.maskView;
   XCTAssertNotNil(maskView1);
@@ -2907,6 +2948,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       screenScaleMatrix, SkSize::Make(10, 10), stack2);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams3));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
+
   childClippingView1 = gMockPlatformView.superview.superview;
 
   // This overrides gMockPlatformView to point to the newly created platform view.
@@ -2920,6 +2964,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       screenScaleMatrix, SkSize::Make(10, 10), stack1);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams4));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   UIView* childClippingView2 = gMockPlatformView.superview.superview;
 
   UIView* maskView2 = childClippingView2.maskView;
@@ -2994,10 +3041,16 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
+
   UIView* childClippingView1 = view1.superview.superview;
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   UIView* childClippingView2 = view2.superview.superview;
   UIView* maskView1 = childClippingView1.maskView;
   UIView* maskView2 = childClippingView2.maskView;
@@ -3061,6 +3114,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(1);
+  flutterPlatformViewsController->CompositeWithParams(
+      1, flutterPlatformViewsController->GetCompositionParams(1));
+
   UIView* childClippingView = gMockPlatformView.superview.superview;
 
   UIView* maskView = childClippingView.maskView;
@@ -3147,11 +3203,16 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams0));
     flutterPlatformViewsController->CompositeEmbeddedView(0);
+    flutterPlatformViewsController->CompositeWithParams(
+        0, flutterPlatformViewsController->GetCompositionParams(0));
 
     auto embeddedViewParams1 =
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
     flutterPlatformViewsController->CompositeEmbeddedView(1);
+    flutterPlatformViewsController->CompositeWithParams(
+        1, flutterPlatformViewsController->GetCompositionParams(1));
+
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
 
     XCTestExpectation* expectation = [self expectationWithDescription:@"dispose call ended."];
@@ -3189,6 +3250,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
     flutterPlatformViewsController->CompositeEmbeddedView(1);
+    flutterPlatformViewsController->CompositeWithParams(
+        1, flutterPlatformViewsController->GetCompositionParams(1));
 
     const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
     sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);
@@ -3257,6 +3320,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);

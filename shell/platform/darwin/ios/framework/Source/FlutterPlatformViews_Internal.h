@@ -288,6 +288,13 @@ class FlutterPlatformViewsController {
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
+  // Visible for testing.
+  void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
+
+  const EmbeddedViewParams& GetCompositionParams(int64_t view_id) const {
+    return current_composition_params_.find(view_id)->second;
+  }
+
  private:
   static const size_t kMaxLayerAllocations = 2;
 
@@ -327,8 +334,6 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
                      const SkRect& bounding_rect) __attribute__((cf_audited_transfer));
-
-  void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
   std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer();
 
