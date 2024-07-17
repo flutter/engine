@@ -15,7 +15,6 @@
 #include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
 #include "impeller/toolkit/android/surface_transaction.h"
 #include "impeller/toolkit/android/surface_transaction_stats.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
