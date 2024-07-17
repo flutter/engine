@@ -595,6 +595,7 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 
 void FlutterPlatformViewsController::Reset() {
   std::vector<UIView*> views;
+  views.reserve(composition_order_.size());
   for (int64_t view_id : composition_order_) {
     views.push_back(root_views_[view_id].get());
   }
