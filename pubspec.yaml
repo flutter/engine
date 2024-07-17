@@ -30,7 +30,7 @@
 # (2) CREATING A NEW PACKAGE
 # ------------------------------------------------------------------------------
 # If creating a package, say in ./tools or ./tools/pkg, ensure the following
-# header in it's respective `pubspec.yaml`:
+# header in its respective `pubspec.yaml`:
 # ```
 # # We don't publish packages to pub.dev from the engine repository.
 # publish_to: none
