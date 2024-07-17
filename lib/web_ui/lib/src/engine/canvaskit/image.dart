@@ -29,9 +29,9 @@ Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     // TODO(harryterkelsen): If the image is animated, then use Skia to decode.
     // This is currently too conservative, assuming all GIF and WEBP images are
     // animated. We should detect if they are actually animated by reading the
-    // image headers.
+    // image headers, https://github.com/flutter/flutter/issues/151911.
     if (contentType == 'image/gif' || contentType == 'image/webp') {
-      codec = CkAnimatedImage.decodeFromBytes(list, 'decoded bytes',
+      codec = CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes',
           targetWidth: targetWidth, targetHeight: targetHeight);
     } else {
       final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
@@ -64,7 +64,7 @@ class CkResizingCodec extends ResizingCodec {
     bool allowUpscaling = true,
   }) {
     final CkImage ckImage = image as CkImage;
-    if (ckImage.imageElement == null) {
+    if (ckImage.imageSource == null) {
       return scaleImageIfNeeded(
         image,
         targetWidth: targetWidth,
@@ -87,10 +87,10 @@ class CkResizingCodec extends ResizingCodec {
     int? targetHeight,
     bool allowUpscaling = true,
   }) {
-    assert(image.imageElement != null);
+    assert(image.imageSource != null);
     final int width = image.width;
     final int height = image.height;
-    final ui.Size? scaledSize =
+    final BitmapSize? scaledSize =
         scaledImageSize(width, height, targetWidth, targetHeight);
     if (scaledSize == null) {
       return image;
@@ -100,17 +100,17 @@ class CkResizingCodec extends ResizingCodec {
       return image;
     }
 
-    final int scaledWidth = scaledSize.width.toInt();
-    final int scaledHeight = scaledSize.height.toInt();
+    final int scaledWidth = scaledSize.width;
+    final int scaledHeight = scaledSize.height;
 
-    final DomCanvasElement htmlCanvas = createDomCanvasElement(
-      width: scaledWidth,
-      height: scaledHeight,
+    final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
+      scaledWidth,
+      scaledHeight,
     );
     final DomCanvasRenderingContext2D ctx =
-        htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
+        offscreenCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
     ctx.drawImage(
-      image.imageElement!,
+      image.imageSource!.canvasImageSource,
       0,
       0,
       width,
@@ -120,28 +120,21 @@ class CkResizingCodec extends ResizingCodec {
       scaledWidth,
       scaledHeight,
     );
-    final DomImageData imageData =
-        ctx.getImageData(0, 0, scaledWidth, scaledHeight);
-    final Uint8List pixels = imageData.data.buffer.asUint8List();
+    final DomImageBitmap bitmap = offscreenCanvas.transferToImageBitmap();
+    final SkImage? skImage =
+        canvasKit.MakeLazyImageFromImageBitmap(bitmap, true);
 
-    final SkImage? skImage = canvasKit.MakeImage(
-      SkImageInfo(
-        width: scaledWidth.toDouble(),
-        height: scaledHeight.toDouble(),
-        colorType: canvasKit.ColorType.RGBA_8888,
-        alphaType: canvasKit.AlphaType.Premul,
-        colorSpace: SkColorSpaceSRGB,
-      ),
-      pixels,
-      (4 * scaledWidth).toDouble(),
-    );
+    // Resize the canvas to 0x0 to cause the browser to eagerly reclaim its
+    // memory.
+    offscreenCanvas.width = 0;
+    offscreenCanvas.height = 0;
 
     if (skImage == null) {
       domWindow.console.warn('Failed to scale image.');
       return image;
     }
 
-    return CkImage(skImage);
+    return CkImage(skImage, imageSource: ImageBitmapImageSource(bitmap));
   }
 }
 
@@ -166,7 +159,7 @@ ui.Image createCkImageFromImageElement(
     );
   }
 
-  return CkImage(skImage, imageElement: image);
+  return CkImage(skImage, imageSource: ImageElementImageSource(image));
 }
 
 class CkImageElementCodec extends HtmlImageElementCodec {
@@ -411,13 +404,12 @@ Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength,
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
-  CkImage(SkImage skImage,
-      {this.videoFrame, this.imageElement, this.imageBitmap}) {
+  CkImage(SkImage skImage, {this.imageSource}) {
     box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
   }
 
-  CkImage.cloneOf(this.box, {this.videoFrame, this.imageElement}) {
+  CkImage.cloneOf(this.box, {this.imageSource}) {
     _init();
     box.ref(this);
   }
@@ -438,29 +430,11 @@ class CkImage implements ui.Image, StackTraceDebugger {
   // being garbage-collected, or by an explicit call to [delete].
   late final CountedRef<CkImage, SkImage> box;
 
-  /// For browsers that support `ImageDecoder` this field holds the video frame
-  /// from which this image was created.
-  ///
-  /// Skia owns the video frame and will close it when it's no longer used.
-  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
-  /// the video frame until the image is [dispose]d of.
-  VideoFrame? videoFrame;
-
-  /// For images which are decoded via an HTML Image element, this field holds
-  /// the image element from which this image was created.
-  ///
-  /// Skia owns the image element and will close it when it's no longer used.
-  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
-  /// the image element until the image is [dispose]d of.
-  DomHTMLImageElement? imageElement;
-
-  /// For images which are decoded via an HTML ImageBitmap, this field holds
-  /// the image element from which this image was created.
-  ///
-  /// Skia owns the image bitmap and will close it when it's no longer used.
-  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
-  /// the image element until the image is [dispose]d of.
-  DomImageBitmap? imageBitmap;
+  /// If this [CkImage] is backed by an image source (either VideoFrame, <img>
+  /// element, or ImageBitmap), this is the backing image source. We read pixels
+  /// and byte data from the backing image source rather than from the [SkImage]
+  /// because of this bug: https://issues.skia.org/issues/40043810.
+  ImageSource? imageSource;
 
   /// The underlying Skia image object.
   ///
@@ -484,6 +458,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
+    imageSource?.close();
   }
 
   @override
@@ -507,8 +482,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     return CkImage.cloneOf(
       box,
-      videoFrame: videoFrame?.clone(),
-      imageElement: imageElement,
+      imageSource: imageSource,
     );
   }
 
@@ -539,35 +513,41 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    // readPixelsFromVideoFrame currently does not convert I420, I444, I422
-    // videoFrame formats to RGBA
-    if (videoFrame != null &&
-        videoFrame!.format != 'I420' &&
-        videoFrame!.format != 'I444' &&
-        videoFrame!.format != 'I422') {
-      return readPixelsFromVideoFrame(videoFrame!, format);
-    } else if (imageElement != null) {
-      return readPixelsFromDomImageSource(
-        imageElement!,
-        format,
-        imageElement!.naturalWidth.toInt(),
-        imageElement!.naturalHeight.toInt(),
-      );
-    } else if (imageBitmap != null) {
-      return readPixelsFromDomImageSource(
-        imageBitmap!,
-        format,
-        imageBitmap!.width.toDartInt,
-        imageBitmap!.height.toDartInt,
-      );
+    switch (imageSource) {
+      case ImageElementImageSource():
+        final DomHTMLImageElement imageElement =
+            (imageSource! as ImageElementImageSource).imageElement;
+        return readPixelsFromDomImageSource(
+          imageElement,
+          format,
+          imageElement.naturalWidth.toInt(),
+          imageElement.naturalHeight.toInt(),
+        );
+      case ImageBitmapImageSource():
+        final DomImageBitmap imageBitmap =
+            (imageSource! as ImageBitmapImageSource).imageBitmap;
+        return readPixelsFromDomImageSource(
+          imageBitmap,
+          format,
+          imageBitmap.width.toDartInt,
+          imageBitmap.height.toDartInt,
+        );
+      case VideoFrameImageSource():
+        final VideoFrame videoFrame =
+            (imageSource! as VideoFrameImageSource).videoFrame;
+        if (videoFrame.format != 'I420' &&
+            videoFrame.format != 'I444' &&
+            videoFrame.format != 'I422') {
+          return readPixelsFromVideoFrame(videoFrame, format);
+        }
+      case null:
+    }
+    ByteData? data = _readPixelsFromSkImage(format);
+    data ??= _readPixelsFromImageViaSurface(format);
+    if (data == null) {
+      return Future<ByteData>.error('Failed to encode the image into bytes.');
     } else {
-      ByteData? data = _readPixelsFromSkImage(format);
-      data ??= _readPixelsFromImageViaSurface(format);
-      if (data == null) {
-        return Future<ByteData>.error('Failed to encode the image into bytes.');
-      } else {
-        return Future<ByteData>.value(data);
-      }
+      return Future<ByteData>.value(data);
     }
   }
 
@@ -663,4 +643,72 @@ String tryDetectContentType(Uint8List data, String debugSource) {
         'Image source: $debugSource');
   }
   return contentType;
+}
+
+sealed class ImageSource {
+  DomCanvasImageSource get canvasImageSource;
+  int get width;
+  int get height;
+  void close();
+}
+
+class VideoFrameImageSource extends ImageSource {
+  VideoFrameImageSource(this.videoFrame);
+
+  final VideoFrame videoFrame;
+
+  @override
+  void close() {
+    // Do nothing. Skia will close the VideoFrame when the SkImage is disposed.
+  }
+
+  @override
+  int get height => videoFrame.displayHeight.toInt();
+
+  @override
+  int get width => videoFrame.displayWidth.toInt();
+
+  @override
+  DomCanvasImageSource get canvasImageSource => videoFrame;
+}
+
+class ImageElementImageSource extends ImageSource {
+  ImageElementImageSource(this.imageElement);
+
+  final DomHTMLImageElement imageElement;
+
+  @override
+  void close() {
+    // There's no way to immediately close the <img> element. Just let the
+    // browser garbage collect it.
+  }
+
+  @override
+  int get height => imageElement.naturalHeight.toInt();
+
+  @override
+  int get width => imageElement.naturalWidth.toInt();
+
+  @override
+  DomCanvasImageSource get canvasImageSource => imageElement;
+}
+
+class ImageBitmapImageSource extends ImageSource {
+  ImageBitmapImageSource(this.imageBitmap);
+
+  final DomImageBitmap imageBitmap;
+
+  @override
+  void close() {
+    imageBitmap.close();
+  }
+
+  @override
+  int get height => imageBitmap.height.toDartInt;
+
+  @override
+  int get width => imageBitmap.width.toDartInt;
+
+  @override
+  DomCanvasImageSource get canvasImageSource => imageBitmap;
 }

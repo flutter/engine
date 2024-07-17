@@ -237,7 +237,7 @@ class CanvasKitRenderer implements Renderer {
     if (skImage == null) {
       throw Exception('Failed to convert image bitmap to an SkImage.');
     }
-    return CkImage(skImage, imageBitmap: imageBitmap);
+    return CkImage(skImage, imageSource: ImageBitmapImageSource(imageBitmap));
   }
 
   @override

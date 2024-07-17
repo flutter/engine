@@ -58,7 +58,7 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
       );
     }
 
-    return CkImage(skImage, videoFrame: frame);
+    return CkImage(skImage, imageSource: VideoFrameImageSource(frame));
   }
 }
 
@@ -201,6 +201,10 @@ ByteBuffer readDomImageSourcePixelsUnmodified(
       htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
   ctx.drawImage(imageSource, 0, 0);
   final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+  // Resize the canvas to 0x0 to cause the browser to reclaim its memory
+  // eagerly.
+  htmlCanvas.width = 0;
+  htmlCanvas.height = 0;
   return imageData.data.buffer;
 }
 
@@ -212,5 +216,9 @@ Future<Uint8List> encodeDomImageSourceAsPng(
   ctx.drawImage(imageSource, 0, 0);
   final String pngBase64 =
       canvas.toDataURL().substring('data:image/png;base64,'.length);
+  // Resize the canvas to 0x0 to cause the browser to reclaim its memory
+  // eagerly.
+  canvas.width = 0;
+  canvas.height = 0;
   return base64.decode(pngBase64);
 }

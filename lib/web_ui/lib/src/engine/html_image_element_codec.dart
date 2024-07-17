@@ -8,15 +8,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
-      getJsProperty<Object>(
-        getJsProperty<Object>(domWindow, 'Image'),
-        'prototype',
-      ),
-      'decode',
-    );
-final bool _supportsDecode = _jsImageDecodeFunction != null;
-
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395
 typedef WebOnlyImageCodecChunkCallback = ui_web.ImageCodecChunkCallback;
@@ -51,26 +42,19 @@ abstract class HtmlImageElementCodec implements ui.Codec {
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
     chunkCallback?.call(0, 100);
-    if (_supportsDecode) {
-      imgElement = createDomHTMLImageElement();
-      imgElement!.src = src;
-      setJsProperty<String>(imgElement!, 'decoding', 'async');
+    imgElement = createDomHTMLImageElement();
+    imgElement!.src = src;
+    setJsProperty<String>(imgElement!, 'decoding', 'async');
 
-      // Ignoring the returned future on purpose because we're communicating
-      // through the `completer`.
-      // ignore: unawaited_futures
-      imgElement!.decode().then((dynamic _) {
-        chunkCallback?.call(100, 100);
-        completer.complete();
-      }).catchError((dynamic e) {
-        // This code path is hit on Chrome 80.0.3987.16 when too many
-        // images are on the page (~1000).
-        // Fallback here is to load using onLoad instead.
-        _decodeUsingOnLoad(completer);
-      });
-    } else {
-      _decodeUsingOnLoad(completer);
-    }
+    // Ignoring the returned future on purpose because we're communicating
+    // through the `completer`.
+    // ignore: unawaited_futures
+    imgElement!.decode().then((dynamic _) {
+      chunkCallback?.call(100, 100);
+      completer.complete();
+    }).catchError((dynamic e) {
+      completer.completeError(e.toString());
+    });
     return completer.future;
   }
 
@@ -93,39 +77,6 @@ abstract class HtmlImageElementCodec implements ui.Codec {
       naturalHeight,
     );
     return SingleFrameInfo(image);
-  }
-
-  // TODO(harryterkelsen): All browsers support Image.decode now. Should we
-  // remove this code path?
-  void _decodeUsingOnLoad(Completer<void> completer) {
-    imgElement = createDomHTMLImageElement();
-    // If the browser doesn't support asynchronous decoding of an image,
-    // then use the `onload` event to decide when it's ready to paint to the
-    // DOM. Unfortunately, this will cause the image to be decoded synchronously
-    // on the main thread, and may cause dropped framed.
-    late DomEventListener errorListener;
-    DomEventListener? loadListener;
-    errorListener = createDomEventListener((DomEvent event) {
-      if (loadListener != null) {
-        imgElement!.removeEventListener('load', loadListener);
-      }
-      imgElement!.removeEventListener('error', errorListener);
-      completer.completeError(ImageCodecException(
-        'Failed to decode image data.\n'
-        'Image source: $debugSource',
-      ));
-    });
-    imgElement!.addEventListener('error', errorListener);
-    loadListener = createDomEventListener((DomEvent event) {
-      if (chunkCallback != null) {
-        chunkCallback!(100, 100);
-      }
-      imgElement!.removeEventListener('load', loadListener);
-      imgElement!.removeEventListener('error', errorListener);
-      completer.complete();
-    });
-    imgElement!.addEventListener('load', loadListener);
-    imgElement!.src = src;
   }
 
   /// Creates a [ui.Image] from an [HTMLImageElement] that has been loaded.
