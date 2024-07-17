@@ -363,9 +363,7 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   };
   rrect.setRectRadii(SkRect::MakeXYWH(100, 100, 500, 500), radii);
 
-  auto path = SkPath::RRect(rrect);
-
-  builder.DrawPath(path, paint);
+  builder.DrawRRect(rrect, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
