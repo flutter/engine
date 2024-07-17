@@ -1779,6 +1779,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -1853,6 +1856,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutterPlatformViewsController->CompositeWithParams(
+      2, flutterPlatformViewsController->GetCompositionParams(2));
+
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -2753,6 +2759,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+  std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
+  thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
+  latch->Wait();
+
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
   UIView* clippingView2 = view2.superview.superview;
