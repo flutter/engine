@@ -12,7 +12,7 @@ on your path. If you have a flutter/engine checkout, then you should already hav
 request access.
 
 ## Steps to download and verify new Gradle version
-These steps use gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
+These steps use Gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
 Gradle version you wish to use.
 
 1. Download the new version of Gradle you'd like from [the Gradle website](https://gradle.org/releases/).
@@ -24,7 +24,7 @@ command and the one from the Gradle website match.
 3. Unzip the Gradle download into a folder by running `unzip gradle-7.5.1-all.zip`.
 
 ## Steps to upload new Gradle version to CIPD
-These steps use gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
+These steps use Gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
 Gradle version you downloaded and verified.
 
 1. Authenticate with CIPD by running `cipd auth-login`.
