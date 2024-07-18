@@ -25,13 +25,13 @@ jobs:
         with:
           persist-credentials: false
       - name: "setup python"
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract deps, find commit hash, pass to osv-scanner"
         run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}.json
       - name: "upload osv-scanner deps"
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
         with:
           # use github.ref in name to avoid duplicated artifacts
           name: osv-lockfile-${{github.sha}}
@@ -41,7 +41,7 @@ jobs:
     name: Vulnerability scanning
     needs:
       extract-deps
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.7.4"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.8.2"
     with:
       # Download the artifact uploaded in extract-deps step
       download-artifact: osv-lockfile-${{github.sha}}

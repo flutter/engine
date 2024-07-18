@@ -31,6 +31,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
   r'flutter/third_party/android_tools', // excluded on advice
   r'flutter/third_party/angle/android',
   r'flutter/third_party/angle/doc',
@@ -92,6 +93,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
   r'flutter/third_party/icu/filters',
   r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/patches', // patches added by Chromium that are already applied to the code base
   r'flutter/third_party/icu/scripts',
   r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
   r'flutter/third_party/icu/source/config',
@@ -103,6 +105,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/inja/doc', // documentation
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
   r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
+  r'flutter/third_party/java', // only used for Android builds
   r'flutter/third_party/json/docs',
   r'flutter/third_party/libcxx/benchmarks',
   r'flutter/third_party/libcxx/docs',
@@ -219,9 +222,7 @@ final Set<String> skippedPaths = <String>{
   r'fuchsia/sdk/mac/NOTICE.fuchsia',
   r'fuchsia/sdk/mac/tools',
   r'out', // output of build
-  r'third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
   r'third_party/android_tools', // excluded on advice
-  r'third_party/java', // only used for Android builds
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'tools', // not distributed in binary
 };
