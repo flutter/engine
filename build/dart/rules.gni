@@ -142,7 +142,7 @@ template("flutter_snapshot") {
     # As we move towards a single pub workspace for the engine, this will be
     # the correct package config to use, as we will no longer have a per-package
     # .dart_tool/package_config.json.
-    package_config = rebase_path("//.dart_tool/package_config.json")
+    package_config = rebase_path("//flutter/.dart_tool/package_config.json")
   }
 
   kernel_target = "_${target_name}_kernel"
