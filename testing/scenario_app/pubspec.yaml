@@ -19,7 +19,6 @@ dependencies:
   meta: any
   path: any
   process: any
-  sky_engine: any
   vector_math: any
   skia_gold_client: any
 
