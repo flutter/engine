@@ -21,26 +21,35 @@ G_DECLARE_FINAL_TYPE(FlRendererGdk,
  * #FlRendererGdk is an implementation of #FlRenderer that renders by OpenGL ES.
  */
 
+/**
+ * fl_renderer_gdk_new:
+ *
+ * Creates an object that allows Flutter to render by OpenGL ES.
+ *
+ * Returns: a new #FlRendererGdk.
+ */
+FlRendererGdk* fl_renderer_gdk_new();
+
 #if GTK_CHECK_VERSION(4, 0, 0)
 /**
- * fl_renderer_gdk_new:
+ * fl_renderer_gdk_set_surface:
+ * @renderer: an #FlRendererGdk.
  * @surface: the surface that is being rendered on.
  *
- * Creates an object that allows Flutter to render by OpenGL ES.
- *
- * Returns: a new #FlRendererGdk.
+ * Set the surface that is being rendered on. This is only called once when the
+ * surface is available.
  */
-FlRendererGdk* fl_renderer_gdk_new(GdkSurface* surface);
+void fl_renderer_gdk_set_surface(FlRendererGdk* renderer, GdkSurface* surface);
 #else
 /**
- * fl_renderer_gdk_new:
+ * fl_renderer_gdk_set_window:
+ * @renderer: an #FlRendererGdk.
  * @window: the window that is being rendered on.
  *
- * Creates an object that allows Flutter to render by OpenGL ES.
- *
- * Returns: a new #FlRendererGdk.
+ * Set the window that is being rendered on. This is only called once when the
+ * window is available.
  */
-FlRendererGdk* fl_renderer_gdk_new(GdkWindow* window);
+void fl_renderer_gdk_set_window(FlRendererGdk* renderer, GdkWindow* window);
 #endif
 
 /**

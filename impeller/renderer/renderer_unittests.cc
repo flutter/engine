@@ -24,6 +24,8 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
+#include "impeller/fixtures/planet.frag.h"
+#include "impeller/fixtures/planet.vert.h"
 #include "impeller/fixtures/sepia.frag.h"
 #include "impeller/fixtures/sepia.vert.h"
 #include "impeller/fixtures/swizzle.frag.h"
@@ -438,7 +440,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
 
 TEST_P(RendererTest, CanRenderInstanced) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Instancing is not supported on OpenGL.");
+    GTEST_SKIP() << "Instancing is not supported on OpenGL.";
   }
   using VS = InstancedDrawVertexShader;
   using FS = InstancedDrawFragmentShader;
@@ -926,6 +928,72 @@ TEST_P(RendererTest, TheImpeller) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, Planet) {
+  using VS = PlanetVertexShader;
+  using FS = PlanetFragmentShader;
+
+  auto context = GetContext();
+  auto pipeline_descriptor =
+      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_descriptor.has_value());
+  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
+  ASSERT_TRUE(pipeline && pipeline->IsValid());
+
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    static Scalar speed = 0.1;
+    static Scalar planet_size = 550.0;
+    static bool show_normals = false;
+    static bool show_noise = false;
+    static Scalar seed_value = 42.0;
+
+    auto size = pass.GetRenderTargetSize();
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Speed", &speed, 0.0, 10.0);
+    ImGui::SliderFloat("Planet Size", &planet_size, 0.1, 1000);
+    ImGui::Checkbox("Show Normals", &show_normals);
+    ImGui::Checkbox("Show Noise", &show_noise);
+    ImGui::InputFloat("Seed Value", &seed_value);
+    ImGui::End();
+
+    pass.SetPipeline(pipeline);
+    pass.SetCommandLabel("Planet scene");
+    VertexBufferBuilder<VS::PerVertexData> builder;
+    builder.AddVertices({{Point()},
+                         {Point(0, size.height)},
+                         {Point(size.width, 0)},
+                         {Point(size.width, 0)},
+                         {Point(0, size.height)},
+                         {Point(size.width, size.height)}});
+    pass.SetVertexBuffer(builder.CreateVertexBuffer(*host_buffer));
+
+    VS::FrameInfo frame_info;
+    EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
+    frame_info.mvp = pass.GetOrthographicTransform();
+    VS::BindFrameInfo(pass, host_buffer->EmplaceUniform(frame_info));
+
+    FS::FragInfo fs_uniform;
+    fs_uniform.resolution = Point(size);
+    fs_uniform.time = GetSecondsElapsed();
+    fs_uniform.speed = speed;
+    fs_uniform.planet_size = planet_size;
+    fs_uniform.show_normals = show_normals ? 1.0 : 0.0;
+    fs_uniform.show_noise = show_noise ? 1.0 : 0.0;
+    fs_uniform.seed_value = seed_value;
+    FS::BindFragInfo(pass, host_buffer->EmplaceUniform(fs_uniform));
+
+    pass.Draw().ok();
+    host_buffer->Reset();
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
 TEST_P(RendererTest, ArrayUniforms) {
   using VS = ArrayVertexShader;
   using FS = ArrayFragmentShader;
@@ -1324,13 +1392,6 @@ std::shared_ptr<Pipeline<PipelineDescriptor>> CreateDefaultPipeline(
 }
 
 TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
-  // The GLES framebuffer fetch implementation currently does not support this.
-  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
-  // are clarified.
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Not supported on GLES.");
-  }
-
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;
@@ -1342,8 +1403,8 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
   ASSERT_TRUE(context);
 
   if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP_(
-        "This test uses framebuffer fetch and the backend doesn't support it.");
+    GTEST_SKIP() << "This test uses framebuffer fetch and the backend doesn't "
+                    "support it.";
     return;
   }
 
@@ -1419,13 +1480,6 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
 }
 
 TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
-  // The GLES framebuffer fetch implementation currently does not support this.
-  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
-  // are clarified.
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Not supported on GLES.");
-  }
-
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;
@@ -1440,8 +1494,8 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
   ASSERT_TRUE(context);
 
   if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP_(
-        "This test uses framebuffer fetch and the backend doesn't support it.");
+    GTEST_SKIP() << "This test uses framebuffer fetch and the backend doesn't "
+                    "support it.";
     return;
   }
 

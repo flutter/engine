@@ -5,8 +5,9 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
-#include "display_list/utils/dl_receiver_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/experimental_canvas.h"
@@ -15,6 +16,9 @@
 #include "impeller/geometry/color.h"
 
 namespace impeller {
+
+using DlScalar = flutter::DlScalar;
+using DlPoint = flutter::DlPoint;
 
 class DlDispatcherBase : public flutter::DlOpReceiver {
  public:
@@ -55,9 +59,6 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void setBlendMode(flutter::DlBlendMode mode) override;
-
-  // |flutter::DlOpReceiver|
-  void setPathEffect(const flutter::DlPathEffect* effect) override;
 
   // |flutter::DlOpReceiver|
   void setMaskFilter(const flutter::DlMaskFilter* filter) override;
@@ -123,6 +124,9 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
+
+  // |flutter::DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
@@ -141,6 +145,12 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+
+  // |flutter::DlOpReceiver|
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
 
   // |flutter::DlOpReceiver|
   void drawRect(const SkRect& rect) override;
@@ -175,7 +185,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                   const SkPoint points[]) override;
 
   // |flutter::DlOpReceiver|
-  void drawVertices(const flutter::DlVertices* vertices,
+  void drawVertices(const std::shared_ptr<flutter::DlVertices>& vertices,
                     flutter::DlBlendMode dl_mode) override;
 
   // |flutter::DlOpReceiver|

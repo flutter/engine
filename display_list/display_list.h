@@ -69,9 +69,6 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(SetPodPathEffect)               \
-  V(ClearPathEffect)                \
-                                    \
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
                                     \
@@ -101,9 +98,11 @@ namespace flutter {
   V(TransformReset)                 \
                                     \
   V(ClipIntersectRect)              \
+  V(ClipIntersectOval)              \
   V(ClipIntersectRRect)             \
   V(ClipIntersectPath)              \
   V(ClipDifferenceRect)             \
+  V(ClipDifferenceOval)             \
   V(ClipDifferenceRRect)            \
   V(ClipDifferencePath)             \
                                     \
@@ -111,6 +110,7 @@ namespace flutter {
   V(DrawColor)                      \
                                     \
   V(DrawLine)                       \
+  V(DrawDashedLine)                 \
   V(DrawRect)                       \
   V(DrawOval)                       \
   V(DrawCircle)                     \

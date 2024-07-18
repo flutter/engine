@@ -28,6 +28,8 @@ class GoldenPlaygroundTest
   using AiksPlaygroundCallback =
       std::function<std::optional<Picture>(AiksContext& renderer)>;
 
+  using AiksDlPlaygroundCallback = std::function<sk_sp<flutter::DisplayList>()>;
+
   GoldenPlaygroundTest();
 
   ~GoldenPlaygroundTest() override;
@@ -44,6 +46,8 @@ class GoldenPlaygroundTest
   bool OpenPlaygroundHere(Picture picture);
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+
+  bool OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 
@@ -74,7 +78,6 @@ class GoldenPlaygroundTest
   [[nodiscard]] fml::Status SetCapabilities(
       const std::shared_ptr<Capabilities>& capabilities);
 
-  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
   /// Returns true if `OpenPlaygroundHere` will actually render anything.
   bool WillRenderSomething() const { return true; }
 

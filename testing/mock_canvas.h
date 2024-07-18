@@ -114,6 +114,12 @@ class MockCanvas final : public DlCanvas {
     ClipEdgeStyle style;
   };
 
+  struct ClipOvalData {
+    SkRect bounds;
+    ClipOp clip_op;
+    ClipEdgeStyle style;
+  };
+
   struct ClipRRectData {
     SkRRect rrect;
     ClipOp clip_op;
@@ -145,6 +151,7 @@ class MockCanvas final : public DlCanvas {
                                     DrawDisplayListData,
                                     DrawShadowData,
                                     ClipRectData,
+                                    ClipOvalData,
                                     ClipRRectData,
                                     ClipPathData,
                                     DrawPaintData>;
@@ -206,6 +213,7 @@ class MockCanvas final : public DlCanvas {
   SkMatrix GetTransform() const override;
 
   void ClipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void ClipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void ClipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
@@ -218,6 +226,11 @@ class MockCanvas final : public DlCanvas {
   void DrawLine(const SkPoint& p0,
                 const SkPoint& p1,
                 const DlPaint& paint) override;
+  void DrawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length,
+                      const DlPaint& paint) override;
   void DrawRect(const SkRect& rect, const DlPaint& paint) override;
   void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
   void DrawCircle(const SkPoint& center,
@@ -237,7 +250,7 @@ class MockCanvas final : public DlCanvas {
                   uint32_t count,
                   const SkPoint pts[],
                   const DlPaint& paint) override;
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
 

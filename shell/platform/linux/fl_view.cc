@@ -589,19 +589,13 @@ static gboolean window_state_event_cb(FlView* self, GdkEvent* event) {
 
 static GdkGLContext* create_context_cb(FlView* self) {
 #if GTK_CHECK_VERSION(4, 0, 0)
-  self->renderer = fl_renderer_gdk_new(
+  fl_renderer_gdk_set_surface(
+      self->renderer,
       gtk_native_get_surface(gtk_widget_get_native(GTK_WIDGET(self))));
 #else
-  self->renderer =
-      fl_renderer_gdk_new(gtk_widget_get_parent_window(GTK_WIDGET(self)));
+  fl_renderer_gdk_set_window(self->renderer,
+                             gtk_widget_get_parent_window(GTK_WIDGET(self)));
 #endif
-  self->engine = fl_engine_new(self->project, FL_RENDERER(self->renderer));
-#if !GTK_CHECK_VERSION(4, 0, 0)
-  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
-                                         self, nullptr);
-#endif
-  fl_engine_set_on_pre_engine_restart_handler(
-      self->engine, on_pre_engine_restart_cb, self, nullptr);
 
 #if !GTK_CHECK_VERSION(4, 0, 0)
   // Must initialize the keymap before the keyboard.
@@ -716,6 +710,19 @@ static void size_allocate_cb(FlView* self) {
 #endif
 }
 
+static void fl_view_constructed(GObject* object) {
+  FlView* self = FL_VIEW(object);
+
+  self->renderer = fl_renderer_gdk_new();
+  self->engine = fl_engine_new(self->project, FL_RENDERER(self->renderer));
+#if !GTK_CHECK_VERSION(4, 0, 0)
+  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
+                                         self, nullptr);
+#endif
+  fl_engine_set_on_pre_engine_restart_handler(
+      self->engine, on_pre_engine_restart_cb, self, nullptr);
+}
+
 static void fl_view_set_property(GObject* object,
                                  guint prop_id,
                                  const GValue* value,
@@ -824,6 +831,7 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
 
 static void fl_view_class_init(FlViewClass* klass) {
   GObjectClass* object_class = G_OBJECT_CLASS(klass);
+  object_class->constructed = fl_view_constructed;
   object_class->set_property = fl_view_set_property;
   object_class->get_property = fl_view_get_property;
 #if !GTK_CHECK_VERSION(4, 0, 0)

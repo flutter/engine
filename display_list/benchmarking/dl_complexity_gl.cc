@@ -100,6 +100,16 @@ void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
   AccumulateComplexity(complexity);
 }
 
+void DisplayListGLComplexityCalculator::GLHelper::drawDashedLine(
+    const DlPoint& p0,
+    const DlPoint& p1,
+    DlScalar on_length,
+    DlScalar off_length) {
+  // Dashing is slightly more complex than a regular drawLine, but this
+  // op is so rare it is not worth measuring the difference.
+  drawLine(ToSkPoint(p0), ToSkPoint(p1));
+}
+
 void DisplayListGLComplexityCalculator::GLHelper::drawRect(const SkRect& rect) {
   if (IsComplex()) {
     return;
@@ -484,7 +494,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawVertices(
-    const DlVertices* vertices,
+    const std::shared_ptr<DlVertices>& vertices,
     DlBlendMode mode) {
   // There is currently no way for us to get the VertexMode from the SkVertices
   // object, but for future reference:

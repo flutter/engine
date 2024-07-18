@@ -234,6 +234,7 @@ class SemanticsNodeUpdate {
     required this.childrenInHitTestOrder,
     required this.additionalActions,
     required this.headingLevel,
+    this.linkUrl,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -337,6 +338,9 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final int headingLevel;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final String? linkUrl;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -611,6 +615,18 @@ abstract class PrimaryRoleManager {
     }
     for (final RoleManager secondaryRole in secondaryRoles) {
       secondaryRole.update();
+    }
+
+    if (semanticsObject.isIdentifierDirty) {
+      _updateIdentifier();
+    }
+  }
+
+  void _updateIdentifier() {
+    if (semanticsObject.hasIdentifier) {
+      setAttribute('flt-semantics-identifier', semanticsObject.identifier!);
+    } else {
+      removeAttribute('flt-semantics-identifier');
     }
   }
 
@@ -1119,6 +1135,37 @@ class SemanticsObject {
     _dirtyFields |= _headingLevelIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get identifier => _identifier;
+  String? _identifier;
+
+  bool get hasIdentifier => _identifier != null && _identifier!.isNotEmpty;
+
+  static const int _identifierIndex = 1 << 25;
+
+  /// Whether the [identifier] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isIdentifierDirty => _isDirty(_identifierIndex);
+  void _markIdentifierDirty() {
+    _dirtyFields |= _identifierIndex;
+  }
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get linkUrl => _linkUrl;
+  String? _linkUrl;
+
+  /// Whether this object contains a non-empty link URL.
+  bool get hasLinkUrl => _linkUrl != null && _linkUrl!.isNotEmpty;
+
+  static const int _linkUrlIndex = 1 << 26;
+
+  /// Whether the [linkUrl] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isLinkUrlDirty => _isDirty(_linkUrlIndex);
+  void _markLinkUrlDirty() {
+    _dirtyFields |= _linkUrlIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -1278,6 +1325,11 @@ class SemanticsObject {
       _markFlagsDirty();
     }
 
+    if (_identifier != update.identifier) {
+      _identifier = update.identifier;
+      _markIdentifierDirty();
+    }
+
     if (_value != update.value) {
       _value = update.value;
       _markValueDirty();
@@ -1411,6 +1463,11 @@ class SemanticsObject {
     if (_platformViewId != update.platformViewId) {
       _platformViewId = update.platformViewId;
       _markPlatformViewIdDirty();
+    }
+
+    if (_linkUrl != update.linkUrl) {
+      _linkUrl = update.linkUrl;
+      _markLinkUrlDirty();
     }
 
     // Apply updates to the DOM.
@@ -2186,8 +2243,6 @@ class EngineSemantics {
       'mousemove',
       'mouseleave',
       'mouseup',
-      'keyup',
-      'keydown',
     ];
 
     if (pointerEventTypes.contains(event.type)) {
