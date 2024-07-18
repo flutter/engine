@@ -381,7 +381,7 @@ class ResizingCodec implements ui.Codec {
     final ui.FrameInfo frameInfo = await delegate.getNextFrame();
     return AnimatedImageFrameInfo(
       frameInfo.duration,
-      await scaleImage(
+      scaleImage(
         frameInfo.image,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
