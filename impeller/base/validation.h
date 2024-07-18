@@ -5,19 +5,22 @@
 #ifndef FLUTTER_IMPELLER_BASE_VALIDATION_H_
 #define FLUTTER_IMPELLER_BASE_VALIDATION_H_
 
+#include <functional>
 #include <sstream>
 
 namespace impeller {
 
 class ValidationLog {
  public:
-  ValidationLog();
+  ValidationLog(const char* file, int line);
 
   ~ValidationLog();
 
   std::ostream& GetStream();
 
  private:
+  const char* file_ = nullptr;
+  int line_ = 0;
   std::ostringstream stream_;
 
   ValidationLog(const ValidationLog&) = delete;
@@ -29,11 +32,26 @@ class ValidationLog {
   ValidationLog& operator=(ValidationLog&&) = delete;
 };
 
-void ImpellerValidationBreak(const char* message);
+void ImpellerValidationBreak(const char* message, const char* file, int line);
 
 void ImpellerValidationErrorsSetFatal(bool fatal);
 
 bool ImpellerValidationErrorsAreFatal();
+
+using ValidationFailureCallback =
+    std::function<bool(const char* message, const char* file, int line)>;
+
+//------------------------------------------------------------------------------
+/// @brief      Sets a callback that callers (usually tests) can set to
+///             intercept validation failures.
+///
+///             Returning true from the callback indicates that Impeller can
+///             continue and avoid any default behavior on tripping validation
+///             (which could include process termination).
+///
+/// @param[in]  callback  The callback
+///
+void ImpellerValidationErrorsSetCallback(ValidationFailureCallback callback);
 
 struct ScopedValidationDisable {
   ScopedValidationDisable();
@@ -70,6 +88,6 @@ struct ScopedValidationFatal {
 ///   are fatal. The runtime-mode restriction still applies. This usually
 ///   happens in test environments.
 ///
-#define VALIDATION_LOG ::impeller::ValidationLog{}.GetStream()
+#define VALIDATION_LOG ::impeller::ValidationLog{__FILE__, __LINE__}.GetStream()
 
 #endif  // FLUTTER_IMPELLER_BASE_VALIDATION_H_

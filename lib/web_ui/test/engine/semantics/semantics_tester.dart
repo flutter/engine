@@ -75,6 +75,7 @@ class SemanticsTester {
     bool? hasPaste,
     bool? hasDidGainAccessibilityFocus,
     bool? hasDidLoseAccessibilityFocus,
+    bool? hasFocus,
     bool? hasCustomAction,
     bool? hasDismiss,
     bool? hasMoveCursorForwardByWord,
@@ -243,6 +244,9 @@ class SemanticsTester {
     if (hasDidLoseAccessibilityFocus ?? false) {
       actions |= ui.SemanticsAction.didLoseAccessibilityFocus.index;
     }
+    if (hasFocus ?? false) {
+      actions |= ui.SemanticsAction.focus.index;
+    }
     if (hasCustomAction ?? false) {
       actions |= ui.SemanticsAction.customAction.index;
     }
@@ -347,7 +351,7 @@ class SemanticsTester {
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(EngineSemanticsOwner owner, String semanticsHtml) {
   expect(
-    owner.semanticsHost.querySelector('flt-semantics'),
+    owner.semanticsHost.children.single,
     hasHtml(semanticsHtml),
   );
 }
