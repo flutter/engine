@@ -19,6 +19,8 @@ analyzer:
     # Fixture depends on dart:ui and raises false positives.
     - flutter_frontend_server/test/fixtures/lib/main.dart
     - prebuilts
+    # TODO(matanlurey) Follow-up with bdero@ on why needed; https://github.com/flutter/flutter/issues/152002.
+    - lib/gpu
     - third_party
     - shell/platform/fuchsia
 
