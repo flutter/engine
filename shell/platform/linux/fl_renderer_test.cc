@@ -105,7 +105,8 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
   // OpenGL 2.0 with GL_EXT_framebuffer_blit extension
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
-  EXPECT_CALL(epoxy, epoxy_has_gl_extension("GL_EXT_framebuffer_blit"))
+  EXPECT_CALL(epoxy, epoxy_has_gl_extension(
+                         ::testing::StrEq("GL_EXT_framebuffer_blit")))
       .WillRepeatedly(::testing::Return(true));
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
