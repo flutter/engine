@@ -190,7 +190,6 @@ public class PlatformPluginTest {
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   public void platformPlugin_getClipboardDataIsNullWhenItemHasNoTextNorUri() throws IOException {
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
