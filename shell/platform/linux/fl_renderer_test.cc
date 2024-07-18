@@ -74,15 +74,14 @@ TEST(FlRendererTest, RefreshRate) {
 TEST(FlRendererTest, BlitFramebuffer) {
   ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
 
-  g_autoptr(FlMockRenderer) renderer =
-      fl_mock_renderer_new(&renderer_get_refresh_rate);
-
   // OpenGL 3.0
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
-  ON_CALL(epoxy, epoxy_gl_version).WillByDefault(::testing::Return(30));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
@@ -103,17 +102,16 @@ TEST(FlRendererTest, BlitFramebuffer) {
 TEST(FlRendererTest, BlitFramebufferExtension) {
   ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
 
-  g_autoptr(FlMockRenderer) renderer =
-      fl_mock_renderer_new(&renderer_get_refresh_rate);
-
   // OpenGL 2.0 with GL_EXT_framebuffer_blit extension
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
-  ON_CALL(epoxy, epoxy_gl_version).WillByDefault(::testing::Return(20));
-  ON_CALL(epoxy, epoxy_has_gl_extension("GL_EXT_framebuffer_blit"))
-      .WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
+  EXPECT_CALL(epoxy, epoxy_has_gl_extension("GL_EXT_framebuffer_blit"))
+      .WillRepeatedly(::testing::Return(true));
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
@@ -134,15 +132,12 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
 TEST(FlRendererTest, NoBlitFramebuffer) {
   ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
 
-  g_autoptr(FlMockRenderer) renderer =
-      fl_mock_renderer_new(&renderer_get_refresh_rate);
-
   // OpenGL 2.0
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
-  ON_CALL(epoxy, epoxy_gl_version).WillByDefault(::testing::Return(20));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
 
-  // EXPECT_CALL(epoxy, glBlitFramebuffer);
-
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
