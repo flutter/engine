@@ -37,6 +37,7 @@ Future<void> testMain() async {
         return element;
       }
     );
+    EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(null);
   });
 
   tearDown(() {
@@ -200,6 +201,24 @@ Future<void> testMain() async {
     await renderScene(sb.build());
 
     await matchGoldenFile('platformview_opacity.png', region: region);
+  });
+
+  test('platformview with devicePixelRatio', () async {
+    EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
+
+    await _createPlatformView(1, platformViewType);
+
+    final ui.SceneBuilder sb = ui.SceneBuilder();
+    sb.pushOffset(20, 20);
+    sb.addPlatformView(
+      1,
+      offset: const ui.Offset(125, 125),
+      width: 50,
+      height: 50,
+    );
+    await renderScene(sb.build());
+
+    await matchGoldenFile('platformview_devicePixelRatio.png', region: region);
   });
 }
 

@@ -326,7 +326,12 @@ final class PlatformViewContainer extends SliceContainer {
       style.left = '${logicalLeft}px';
       style.top = '${logicalTop}px';
 
-      final Matrix4? transform = position.transform;
+      Matrix4? transform;
+      if (position.transform != null) {
+        transform = Matrix4.identity()
+          ..scale(1.0 / devicePixelRatio)
+          ..multiply(position.transform!);
+      }
       style.transform = transform != null ? float64ListToCssTransform3d(transform.storage) : '';
       style.opacity = _styling!.opacity != 1.0 ? '${_styling!.opacity}' : '';
       // TODO(jacksongardner): Implement clip styling for platform views
