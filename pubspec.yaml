@@ -132,8 +132,6 @@ dev_dependencies:
     path: ./tools/pkg/process_fakes
   skia_gold_client:
     path: ./testing/skia_gold_client
-  sky_engine:
-    path: ./sky/packages/sky_engine
 
 # Instructs pub on how to resolve the dependencies that are part of "DEPS".
 #
@@ -258,8 +256,6 @@ dependency_overrides:
     path: ./third_party/dart/third_party/pkg/shelf/pkgs/shelf_static
   shelf_web_socket:
     path: ./third_party/dart/third_party/pkg/shelf/pkgs/shelf_web_socket
-  sky_engine:
-    path: ./sky/packages/sky_engine
   smith:
     path: ./third_party/dart/pkg/smith
   source_map_stack_trace:
