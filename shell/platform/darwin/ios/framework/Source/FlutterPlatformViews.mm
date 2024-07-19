@@ -621,6 +621,7 @@ void FlutterPlatformViewsController::Reset() {
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  const std::shared_ptr<IOSContext>& ios_context,
                                                  std::unique_ptr<SurfaceFrame> background_frame) {
+  FML_LOG(ERROR) << "FlutterPlatformViewsController::SubmitFrame";
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
   if (flutter_view_ == nullptr || composition_order_.empty()) {
@@ -778,6 +779,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                    callbacks = callbacks,                                     //
                                    composition_order = composition_order_,                    //
                                    unused_layers = unused_layers, views_to_dispose]() mutable {
+    FML_LOG(ERROR) << "Post Task For PVS";
     TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
     [CATransaction begin];
