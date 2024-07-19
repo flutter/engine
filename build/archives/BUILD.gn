@@ -42,7 +42,7 @@ generated_file("artifacts_entitlement_config") {
 # TODO: https://github.com/flutter/flutter/issues/38935
 # Target-specific binaries such as gen_snapshot should be separated into a
 # separate archive target from host binaries such as flutter_tester.
-if (build_engine_artifacts && !is_android && !is_ios) {
+if (build_engine_artifacts) {
   zip_bundle("artifacts") {
     deps = [
       "$dart_src/runtime/bin:gen_snapshot",
