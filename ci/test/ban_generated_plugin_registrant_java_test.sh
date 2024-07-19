@@ -44,6 +44,7 @@ touch "$FLUTTER_DIR/GeneratedPluginRegistrant.java"
 
 # Create a trap that, on exit, removes the temp files.
 function cleanup() {
+  rm -f "$SRC_DIR/third_party/GeneratedPluginRegistrant.java"
   rm -f "$FLUTTER_DIR/GeneratedPluginRegistrant.java"
   rm -f "$FLUTTER_DIR/third_party/GeneratedPluginRegistrant.java"
 }
@@ -56,6 +57,11 @@ trap cleanup EXIT
   exit 1
 }
 echo "PASS: ban_generated_plugin_registrant_java failed as expected"
+
+# Create a file in SRC_DIR/third_party, that should be OK.
+echo "Creating file ./src/third_party/GeneratedPluginRegistrant.java"
+echo "$SRC_DIR"
+touch "$SRC_DIR/third_party/GeneratedPluginRegistrant.java"
 
 # Run the ban script, expecting it to succeed.
 "$FLUTTER_DIR/ci/ban_generated_plugin_registrant_java.sh" > /dev/null 2>&1 || {
