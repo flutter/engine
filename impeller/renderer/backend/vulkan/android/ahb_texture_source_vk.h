@@ -9,6 +9,7 @@
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/backend/vulkan/yuv_conversion_vk.h"
 #include "impeller/toolkit/android/hardware_buffer.h"
+#include "impeller/toolkit/android/surface_transaction.h"
 
 #include <android/hardware_buffer.h>
 #include <android/hardware_buffer_jni.h>

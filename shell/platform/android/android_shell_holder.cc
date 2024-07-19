@@ -360,4 +360,8 @@ void AndroidShellHolder::UpdateDisplayMetrics() {
   shell_->OnDisplayUpdates(std::move(displays));
 }
 
+void AndroidShellHolder::ApplyRendering() {
+  shell_->ApplyRendering();
+}
+
 }  // namespace flutter

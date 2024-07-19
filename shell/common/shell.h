@@ -388,6 +388,10 @@ class Shell final : public PlatformView::Delegate,
   ///
   double GetMainDisplayRefreshRate();
 
+  void ApplyRendering() {
+    rasterizer_->EnableThreadMergerIfNeeded();
+  }
+
   //----------------------------------------------------------------------------
   /// @brief      Install a new factory that can match against and decode image
   ///             data.

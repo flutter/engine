@@ -12,6 +12,7 @@
 #include <sstream>
 #include <utility>
 
+#include "impeller/toolkit/android/proc_table.h"
 #include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
 
@@ -135,6 +136,8 @@ static jmethodID g_on_display_platform_view_method = nullptr;
 // static jmethodID g_on_composite_platform_view_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
+
+static jmethodID g_has_current_sync_group_method = nullptr;
 
 static jmethodID g_overlay_surface_id_method = nullptr;
 
@@ -361,6 +364,10 @@ static void SetViewportMetrics(JNIEnv* env,
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(
       kFlutterImplicitViewId, metrics);
+}
+
+static void ApplyRendering(JNIEnv* env, jobject jcaller, jlong shell_holder) {
+  ANDROID_SHELL_HOLDER->GetPlatformView();
 }
 
 static void UpdateDisplayMetrics(JNIEnv* env,
@@ -854,7 +861,11 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&UpdateDisplayMetrics),
       },
-  };
+      {
+          .name = "nativeApplyRendering",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&ApplyRendering),
+      }};
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,
                            fml::size(flutter_jni_methods)) != 0) {
@@ -1117,11 +1128,20 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_on_display_overlay_surface_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onDisplayOverlaySurface", "(IIIII)V");
+  g_on_display_overlay_surface_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onDisplayOverlaySurface",
+                       "(IIIII)Landroid/view/SurfaceControl$Transaction;");
 
   if (g_on_display_overlay_surface_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onDisplayOverlaySurface method";
+    return false;
+  }
+
+  g_has_current_sync_group_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "hasCurrentSyncGroup", "()Z");
+
+  if (g_has_current_sync_group_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate method";
     return false;
   }
 
@@ -1724,23 +1744,41 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
-    int surface_id,
-    int x,
-    int y,
-    int width,
-    int height) {
+ASurfaceTransaction*
+PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(int surface_id,
+                                                             int x,
+                                                             int y,
+                                                             int width,
+                                                             int height) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
-  if (java_object.is_null()) {
-    return;
+
+  fml::jni::ScopedJavaLocalRef<jobject> transaction(
+      env, env->CallObjectMethod(java_object.obj(),
+                                 g_on_display_overlay_surface_method,
+                                 surface_id, x, y, width, height));
+
+  if (transaction.is_null()) {
+    return nullptr;
   }
 
-  env->CallVoidMethod(java_object.obj(), g_on_display_overlay_surface_method,
-                      surface_id, x, y, width, height);
+  FML_CHECK(fml::jni::CheckException(env));
+  return impeller::android::GetProcTable().ASurfaceTransaction_fromJava(
+      env, transaction.obj());
+}
+
+bool PlatformViewAndroidJNIImpl::FlutterViewHasCurrentSyncGroup() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+
+  jboolean has_sync_group = env->CallBooleanMethod(
+      java_object.obj(), g_has_current_sync_group_method);
 
   FML_CHECK(fml::jni::CheckException(env));
+
+  return has_sync_group;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {

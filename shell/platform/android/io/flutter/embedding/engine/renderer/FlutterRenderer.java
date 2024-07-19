@@ -83,6 +83,10 @@ public class FlutterRenderer implements TextureRegistry {
 
   @NonNull private final List<ImageReaderSurfaceProducer> imageReaderProducers = new ArrayList<>();
 
+  public Surface getActiveSurface() {
+    return surface;
+  }
+
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
       new FlutterUiDisplayListener() {
@@ -1069,6 +1073,10 @@ public class FlutterRenderer implements TextureRegistry {
       // In the non-swap case we are creating a new surface to render to.
       flutterJNI.onSurfaceCreated(surface);
     }
+  }
+
+  public void applyRendering() {
+    flutterJNI.applyRendering();
   }
 
   /**

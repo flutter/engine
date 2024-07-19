@@ -740,6 +740,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   ViewRecord& EnsureViewRecord(int64_t view_id);
 
+  void ApplyRendering();
+
   void FireNextFrameCallbackIfPresent();
 
   static bool ShouldResubmitFrame(const DoDrawResult& result);

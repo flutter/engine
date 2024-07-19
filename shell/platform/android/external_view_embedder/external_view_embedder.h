@@ -78,6 +78,8 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   void Teardown() override;
 
+  void ApplyRendering() override;
+
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
   SkRect GetViewRect(int64_t view_id) const;

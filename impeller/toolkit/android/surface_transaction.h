@@ -48,6 +48,8 @@ class SurfaceTransaction {
 
   SurfaceTransaction& operator=(const SurfaceTransaction&) = delete;
 
+  explicit SurfaceTransaction(ASurfaceTransaction* transaction);
+
   bool IsValid() const;
 
   //----------------------------------------------------------------------------
@@ -126,10 +128,13 @@ class SurfaceTransaction {
     }
 
     static void Free(ASurfaceTransaction* value) {
-      GetProcTable().ASurfaceTransaction_delete(value);
+      // TODO
+      // FML_LOG(ERROR) << "DELETE ASurfaceTransaction";
+      // GetProcTable().ASurfaceTransaction_delete(value);
     }
   };
 
+  bool owned_;
   fml::UniqueObject<ASurfaceTransaction*, UniqueASurfaceTransactionTraits>
       transaction_;
 };

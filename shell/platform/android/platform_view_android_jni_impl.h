@@ -72,11 +72,14 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
                                         int viewHeight,
                                         MutatorsStack mutators_stack) override;
 
-  void FlutterViewDisplayOverlaySurface(int surface_id,
-                                        int x,
-                                        int y,
-                                        int width,
-                                        int height) override;
+  ASurfaceTransaction* FlutterViewDisplayOverlaySurface(
+      int surface_id,
+      int x,
+      int y,
+      int width,
+      int height) override;
+
+  bool FlutterViewHasCurrentSyncGroup() override;
 
   void FlutterViewBeginFrame() override;
 

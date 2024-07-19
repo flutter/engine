@@ -145,15 +145,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   // Manually trigger the DlAutoCanvasRestore before we submit the frame
   save.Restore();
 
-  // Submit the background canvas frame before switching the GL context to
-  // the overlay surfaces.
-  //
-  // Skip a frame if the embedding is switching surfaces, and indicate in
-  // `PostPrerollAction` that this frame must be resubmitted.
-  auto should_submit_current_frame = previous_frame_view_count_ > 0;
-  if (should_submit_current_frame) {
-    frame->Submit();
-  }
+  frame->Submit();
 
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
@@ -181,11 +173,12 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
                               slices_.at(view_id).get(),  //
                               overlay->second             //
         );
-    if (should_submit_current_frame) {
-      frame->Submit();
-    }
+
+    frame->Submit();
   }
 }
+
+void AndroidExternalViewEmbedder::ApplyRendering() {}
 
 // |ExternalViewEmbedder|
 std::unique_ptr<SurfaceFrame>
@@ -198,19 +191,11 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
 
   std::unique_ptr<SurfaceFrame> frame =
       layer->surface->AcquireFrame(frame_size_);
-  // Display the overlay surface. If it's already displayed, then it's
-  // just positioned and sized.
-  jni_facade_->FlutterViewDisplayOverlaySurface(layer->id,     //
-                                                rect.x(),      //
-                                                rect.y(),      //
-                                                rect.width(),  //
-                                                rect.height()  //
-  );
+
   DlCanvas* overlay_canvas = frame->Canvas();
   overlay_canvas->Clear(DlColor::kTransparent());
   // Offset the picture since its absolute position on the scene is determined
   // by the position of the overlay view.
-  overlay_canvas->Translate(-rect.x(), -rect.y());
   slice->render_into(overlay_canvas);
   return frame;
 }
@@ -296,7 +281,7 @@ void AndroidExternalViewEmbedder::CancelFrame() {
 void AndroidExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-  surface_pool_->RecycleLayers();
+  surface_pool_->TrimLayers();
   // JNI method must be called on the platform thread.
   if (raster_thread_merger->IsOnPlatformThread()) {
     jni_facade_->FlutterViewEndFrame();

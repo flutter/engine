@@ -11,9 +11,16 @@
 namespace impeller::android {
 
 SurfaceTransaction::SurfaceTransaction()
-    : transaction_(GetProcTable().ASurfaceTransaction_create()) {}
+    : owned_(true), transaction_(GetProcTable().ASurfaceTransaction_create()) {}
 
-SurfaceTransaction::~SurfaceTransaction() = default;
+SurfaceTransaction::~SurfaceTransaction() {
+  if (!owned_) {
+    transaction_.release();
+  }
+}
+
+SurfaceTransaction::SurfaceTransaction(ASurfaceTransaction* transaction)
+    : owned_(false), transaction_(transaction) {}
 
 bool SurfaceTransaction::IsValid() const {
   return transaction_.is_valid();
@@ -44,6 +51,9 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
         data->callback(stats);
         delete data;
       });
+  if (!owned_) {
+    return true;
+  }
   proc_table.ASurfaceTransaction_apply(transaction_.get());
 
   // Transactions may not be applied over and over.

@@ -155,6 +155,10 @@ std::optional<DrawSurfaceStatus> Rasterizer::GetLastDrawStatus(
   }
 }
 
+void Rasterizer::ApplyRendering() {
+  external_view_embedder_->ApplyRendering();
+}
+
 void Rasterizer::EnableThreadMergerIfNeeded() {
   if (raster_thread_merger_) {
     raster_thread_merger_->Enable();

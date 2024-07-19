@@ -76,6 +76,8 @@ class SurfacePool {
   // Returns true if the current pool has layers in use.
   bool HasLayers();
 
+  void TrimLayers();
+
  private:
   // The index of the entry in the layers_ vector that determines the beginning
   // of the unused layers. For example, consider the following vector:

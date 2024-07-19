@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
+import android.view.WindowManager;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
@@ -96,9 +97,8 @@ public class FlutterMutatorView extends FrameLayout {
     this.mutatorsStack = mutatorsStack;
     this.left = left;
     this.top = top;
-    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
-    layoutParams.leftMargin = left;
-    layoutParams.topMargin = top;
+    WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(width, height);
+
     setLayoutParams(layoutParams);
     setWillNotDraw(false);
   }
@@ -107,6 +107,7 @@ public class FlutterMutatorView extends FrameLayout {
   public void draw(Canvas canvas) {
     // Apply all clippings on the parent canvas.
     canvas.save();
+    canvas.translate(this.left, this.top);
     for (Path path : mutatorsStack.getFinalClippingPaths()) {
       // Reverse the current offset.
       //

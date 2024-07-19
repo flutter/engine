@@ -19,6 +19,8 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #endif
 
+struct ASurfaceTransaction;
+
 namespace flutter {
 
 #if FML_OS_ANDROID
@@ -158,11 +160,13 @@ class PlatformViewAndroidJNI {
   ///
   /// @note       Must be called from the platform thread.
   ///
-  virtual void FlutterViewDisplayOverlaySurface(int surface_id,
-                                                int x,
-                                                int y,
-                                                int width,
-                                                int height) = 0;
+  virtual ASurfaceTransaction* FlutterViewDisplayOverlaySurface(int surface_id,
+                                           int x,
+                                           int y,
+                                           int width,
+                                           int height) = 0;
+
+  virtual bool FlutterViewHasCurrentSyncGroup() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Initiates a frame if using hybrid composition.

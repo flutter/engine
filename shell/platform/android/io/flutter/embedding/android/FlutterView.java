@@ -75,6 +75,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import android.os.IBinder;
+import android.view.SurfaceControlViewHost;
+import android.view.SurfaceControl;
+import android.window.SurfaceSyncGroup;
 
 /**
  * Displays a Flutter UI on an Android device.
@@ -1263,6 +1267,14 @@ public class FlutterView extends FrameLayout
   @VisibleForTesting
   public FlutterImageView getCurrentImageSurface() {
     return flutterImageView;
+  }
+
+  public IBinder GetBinder() {
+    return flutterSurfaceView.getHostToken();
+  }
+
+  public void addPlatformView(SurfaceControlViewHost.SurfacePackage surfacePackage) {
+    flutterSurfaceView.setChildSurfacePackage(surfacePackage);
   }
 
   /**

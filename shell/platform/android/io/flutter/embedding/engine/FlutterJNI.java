@@ -48,32 +48,55 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import android.view.SurfaceControl;
 
 /**
- * Interface between Flutter embedding's Java code and Flutter engine's C/C++ code.
+ * Interface between Flutter embedding's Java code and Flutter engine's C/C++
+ * code.
  *
- * <p>Flutter's engine is built with C/C++. The Android Flutter embedding is responsible for
- * coordinating Android OS events and app user interactions with the C/C++ engine. Such coordination
- * requires messaging from an Android app in Java code to the C/C++ engine code. This communication
+ * <p>
+ * Flutter's engine is built with C/C++. The Android Flutter embedding is
+ * responsible for
+ * coordinating Android OS events and app user interactions with the C/C++
+ * engine. Such coordination
+ * requires messaging from an Android app in Java code to the C/C++ engine code.
+ * This communication
  * requires a JNI (Java Native Interface) API to cross the Java/native boundary.
  *
- * <p>The entirety of Flutter's JNI API is codified in {@code FlutterJNI}. There are multiple
- * reasons that all such calls are centralized in one class. First, JNI calls are inherently static
- * and contain no Java implementation, therefore there is little reason to associate calls with
- * different classes. Second, every JNI call must be registered in C/C++ code and this registration
- * becomes more complicated with every additional Java class that contains JNI calls. Third, most
- * Android developers are not familiar with native development or JNI intricacies, therefore it is
- * in the interest of future maintenance to reduce the API surface that includes JNI declarations.
+ * <p>
+ * The entirety of Flutter's JNI API is codified in {@code FlutterJNI}. There
+ * are multiple
+ * reasons that all such calls are centralized in one class. First, JNI calls
+ * are inherently static
+ * and contain no Java implementation, therefore there is little reason to
+ * associate calls with
+ * different classes. Second, every JNI call must be registered in C/C++ code
+ * and this registration
+ * becomes more complicated with every additional Java class that contains JNI
+ * calls. Third, most
+ * Android developers are not familiar with native development or JNI
+ * intricacies, therefore it is
+ * in the interest of future maintenance to reduce the API surface that includes
+ * JNI declarations.
  * Thus, all Flutter JNI calls are centralized in {@code FlutterJNI}.
  *
- * <p>Despite the fact that individual JNI calls are inherently static, there is state that exists
- * within {@code FlutterJNI}. Most calls within {@code FlutterJNI} correspond to a specific
- * "platform view", of which there may be many. Therefore, each {@code FlutterJNI} instance holds
- * onto a "native platform view ID" after {@link #attachToNative()}, which is shared with the native
- * C/C++ engine code. That ID is passed to every platform-view-specific native method. ID management
- * is handled within {@code FlutterJNI} so that developers don't have to hold onto that ID.
+ * <p>
+ * Despite the fact that individual JNI calls are inherently static, there is
+ * state that exists
+ * within {@code FlutterJNI}. Most calls within {@code FlutterJNI} correspond to
+ * a specific
+ * "platform view", of which there may be many. Therefore, each
+ * {@code FlutterJNI} instance holds
+ * onto a "native platform view ID" after {@link #attachToNative()}, which is
+ * shared with the native
+ * C/C++ engine code. That ID is passed to every platform-view-specific native
+ * method. ID management
+ * is handled within {@code FlutterJNI} so that developers don't have to hold
+ * onto that ID.
  *
- * <p>To connect part of an Android app to Flutter's C/C++ engine, instantiate a {@code FlutterJNI}
+ * <p>
+ * To connect part of an Android app to Flutter's C/C++ engine, instantiate a
+ * {@code FlutterJNI}
  * and then attach it to the native side:
  *
  * <pre>{@code
@@ -87,40 +110,49 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * flutterJNI.detachFromNativeAndReleaseResources();
  * }</pre>
  *
- * <p>To receive callbacks for certain events that occur on the native side, register listeners:
+ * <p>
+ * To receive callbacks for certain events that occur on the native side,
+ * register listeners:
  *
  * <ol>
- *   <li>{@link #addEngineLifecycleListener(FlutterEngine.EngineLifecycleListener)}
- *   <li>{@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}
+ * <li>{@link #addEngineLifecycleListener(FlutterEngine.EngineLifecycleListener)}
+ * <li>{@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}
  * </ol>
  *
- * To facilitate platform messages between Java and Dart running in Flutter, register a handler:
+ * To facilitate platform messages between Java and Dart running in Flutter,
+ * register a handler:
  *
- * <p>{@link #setPlatformMessageHandler(PlatformMessageHandler)}
+ * <p>
+ * {@link #setPlatformMessageHandler(PlatformMessageHandler)}
  *
- * <p>To invoke a native method that is not associated with a platform view, invoke it statically:
+ * <p>
+ * To invoke a native method that is not associated with a platform view, invoke
+ * it statically:
  *
- * <p>{@code bool enabled = FlutterJNI.getIsSoftwareRenderingEnabled(); }
+ * <p>
+ * {@code bool enabled = FlutterJNI.getIsSoftwareRenderingEnabled(); }
  */
 @Keep
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
   // This serializes the invocation of platform message responses and the
-  // attachment and detachment of the shell holder.  This ensures that we don't
+  // attachment and detachment of the shell holder. This ensures that we don't
   // detach FlutterJNI on the platform thread while a background thread invokes
-  // a message response.  Typically accessing the shell holder happens on the
+  // a message response. Typically accessing the shell holder happens on the
   // platform thread and doesn't require locking.
   private ReentrantReadWriteLock shellHolderLock = new ReentrantReadWriteLock();
 
   // Prefer using the FlutterJNI.Factory so it's easier to test.
   public FlutterJNI() {
-    // We cache the main looper so that we can ensure calls are made on the main thread
+    // We cache the main looper so that we can ensure calls are made on the main
+    // thread
     // without consistently paying the synchronization cost of getMainLooper().
     mainLooper = Looper.getMainLooper();
   }
 
   /**
-   * A factory for creating {@code FlutterJNI} instances. Useful for FlutterJNI injections during
+   * A factory for creating {@code FlutterJNI} instances. Useful for FlutterJNI
+   * injections during
    * tests.
    */
   public static class Factory {
@@ -134,10 +166,13 @@ public class FlutterJNI {
   /**
    * Loads the libflutter.so C++ library.
    *
-   * <p>This must be called before any other native methods, and can be overridden by tests to avoid
+   * <p>
+   * This must be called before any other native methods, and can be overridden by
+   * tests to avoid
    * loading native libraries.
    *
-   * <p>This method should only be called once across all FlutterJNI instances.
+   * <p>
+   * This method should only be called once across all FlutterJNI instances.
    */
   public void loadLibrary() {
     if (FlutterJNI.loadLibraryCalled) {
@@ -153,12 +188,16 @@ public class FlutterJNI {
   private static native void nativePrefetchDefaultFontManager();
 
   /**
-   * Prefetch the default font manager provided by txt::GetDefaultFontManager() which is a
-   * process-wide singleton owned by Skia. Note that, the first call to txt::GetDefaultFontManager()
-   * will take noticeable time, but later calls will return a reference to the preexisting font
+   * Prefetch the default font manager provided by txt::GetDefaultFontManager()
+   * which is a
+   * process-wide singleton owned by Skia. Note that, the first call to
+   * txt::GetDefaultFontManager()
+   * will take noticeable time, but later calls will return a reference to the
+   * preexisting font
    * manager.
    *
-   * <p>This method should only be called once across all FlutterJNI instances.
+   * <p>
+   * This method should only be called once across all FlutterJNI instances.
    */
   public void prefetchDefaultFontManager() {
     if (FlutterJNI.prefetchDefaultFontManagerCalled) {
@@ -182,14 +221,17 @@ public class FlutterJNI {
   /**
    * Perform one time initialization of the Dart VM and Flutter engine.
    *
-   * <p>This method must be called only once. Calling more than once will cause an exception.
+   * <p>
+   * This method must be called only once. Calling more than once will cause an
+   * exception.
    *
-   * @param context The application context.
-   * @param args Arguments to the Dart VM/Flutter engine.
-   * @param bundlePath For JIT runtimes, the path to the Dart kernel file for the application.
-   * @param appStoragePath The path to the application data directory.
+   * @param context          The application context.
+   * @param args             Arguments to the Dart VM/Flutter engine.
+   * @param bundlePath       For JIT runtimes, the path to the Dart kernel file
+   *                         for the application.
+   * @param appStoragePath   The path to the application data directory.
    * @param engineCachesPath The path to the application cache directory.
-   * @param initTimeMillis The time, in milliseconds, taken for initialization.
+   * @param initTimeMillis   The time, in milliseconds, taken for initialization.
    */
   public void init(
       @NonNull Context context,
@@ -210,14 +252,17 @@ public class FlutterJNI {
   private static boolean initCalled = false;
   // END methods related to FlutterLoader
 
-  @Nullable private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
+  @Nullable
+  private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
 
   /**
    * This value is updated by the VsyncWaiter when it is initialized.
    *
-   * <p>On API 17+, it is updated whenever the default display refresh rate changes.
+   * <p>
+   * On API 17+, it is updated whenever the default display refresh rate changes.
    *
-   * <p>It is defaulted to 60.
+   * <p>
+   * It is defaulted to 60.
    */
   private static float refreshRateFPS = 60.0f;
 
@@ -226,14 +271,16 @@ public class FlutterJNI {
   private static float displayDensity = -1.0f;
 
   // This is set from native code via JNI.
-  @Nullable private static String vmServiceUri;
+  @Nullable
+  private static String vmServiceUri;
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
   /**
    * Checks launch settings for whether software rendering is requested.
    *
-   * <p>The value is the same per program.
+   * <p>
+   * The value is the same per program.
    */
   @UiThread
   public boolean getIsSoftwareRenderingEnabled() {
@@ -243,7 +290,9 @@ public class FlutterJNI {
   /**
    * VM Service URI for the VM instance.
    *
-   * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
+   * <p>
+   * Its value is set by the native engine once
+   * {@link #init(Context, String[], String, String,
    * String, long)} is run.
    */
   @Nullable
@@ -254,7 +303,9 @@ public class FlutterJNI {
   /**
    * VM Service URI for the VM instance.
    *
-   * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
+   * <p>
+   * Its value is set by the native engine once
+   * {@link #init(Context, String[], String, String,
    * String, long)} is run.
    *
    * @deprecated replaced by {@link #getVMServiceUri()}.
@@ -266,12 +317,17 @@ public class FlutterJNI {
   }
 
   /**
-   * Notifies the engine about the refresh rate of the display when the API level is below 30.
+   * Notifies the engine about the refresh rate of the display when the API level
+   * is below 30.
    *
-   * <p>For API 30 and above, this value is ignored.
+   * <p>
+   * For API 30 and above, this value is ignored.
    *
-   * <p>Calling this method multiple times will update the refresh rate for the next vsync period.
-   * However, callers should avoid calling {@link android.view.Display#getRefreshRate} frequently,
+   * <p>
+   * Calling this method multiple times will update the refresh rate for the next
+   * vsync period.
+   * However, callers should avoid calling
+   * {@link android.view.Display#getRefreshRate} frequently,
    * since it is expensive on some vendor implementations.
    *
    * @param refreshRateFPS The refresh rate in nanoseconds.
@@ -307,12 +363,17 @@ public class FlutterJNI {
   private native void nativeUpdateRefreshRate(float refreshRateFPS);
 
   /**
-   * The Android vsync waiter implementation in C++ needs to know when a vsync signal arrives, which
-   * is obtained via Java API. The delegate set here is called on the C++ side when the engine is
-   * ready to wait for the next vsync signal. The delegate is expected to add a postFrameCallback to
-   * the {@link android.view.Choreographer}, and call {@link onVsync} to notify the engine.
+   * The Android vsync waiter implementation in C++ needs to know when a vsync
+   * signal arrives, which
+   * is obtained via Java API. The delegate set here is called on the C++ side
+   * when the engine is
+   * ready to wait for the next vsync signal. The delegate is expected to add a
+   * postFrameCallback to
+   * the {@link android.view.Choreographer}, and call {@link onVsync} to notify
+   * the engine.
    *
-   * @param delegate The delegate that will call the engine back on the next vsync signal.
+   * @param delegate The delegate that will call the engine back on the next vsync
+   *                 signal.
    */
   public void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {
     asyncWaitForVsyncDelegate = delegate;
@@ -334,10 +395,12 @@ public class FlutterJNI {
   /**
    * Notifies the engine that the Choreographer has signaled a vsync.
    *
-   * @param frameDelayNanos The time in nanoseconds when the frame started being rendered,
-   *     subtracted from the {@link System#nanoTime} timebase.
+   * @param frameDelayNanos    The time in nanoseconds when the frame started
+   *                           being rendered,
+   *                           subtracted from the {@link System#nanoTime}
+   *                           timebase.
    * @param refreshPeriodNanos The display refresh period in nanoseconds.
-   * @param cookie An opaque handle to the C++ VSyncWaiter object.
+   * @param cookie             An opaque handle to the C++ VSyncWaiter object.
    */
   public void onVsync(long frameDelayNanos, long refreshPeriodNanos, long cookie) {
     nativeOnVsync(frameDelayNanos, refreshPeriodNanos, cookie);
@@ -380,29 +443,37 @@ public class FlutterJNI {
 
   // ----- End Engine FlutterTextUtils Methods ----
 
-  // Below represents the stateful part of the FlutterJNI instances that aren't static per program.
+  // Below represents the stateful part of the FlutterJNI instances that aren't
+  // static per program.
   // Conceptually, it represents a native shell instance.
 
-  @Nullable private Long nativeShellHolderId;
-  @Nullable private AccessibilityDelegate accessibilityDelegate;
-  @Nullable private PlatformMessageHandler platformMessageHandler;
-  @Nullable private LocalizationPlugin localizationPlugin;
-  @Nullable private PlatformViewsController platformViewsController;
+  @Nullable
+  private Long nativeShellHolderId;
+  @Nullable
+  private AccessibilityDelegate accessibilityDelegate;
+  @Nullable
+  private PlatformMessageHandler platformMessageHandler;
+  @Nullable
+  private LocalizationPlugin localizationPlugin;
+  @Nullable
+  private PlatformViewsController platformViewsController;
 
-  @Nullable private DeferredComponentManager deferredComponentManager;
+  @Nullable
+  private DeferredComponentManager deferredComponentManager;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
 
   @NonNull
-  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners =
-      new CopyOnWriteArraySet<>();
+  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new CopyOnWriteArraySet<>();
 
-  @NonNull private final Looper mainLooper; // cached to avoid synchronization on repeat access.
+  @NonNull
+  private final Looper mainLooper; // cached to avoid synchronization on repeat access.
 
   // ------ Start Native Attach/Detach Support ----
   /**
-   * Returns true if this instance of {@code FlutterJNI} is connected to Flutter's native engine via
+   * Returns true if this instance of {@code FlutterJNI} is connected to Flutter's
+   * native engine via
    * a Java Native Interface (JNI).
    */
   public boolean isAttached() {
@@ -410,10 +481,13 @@ public class FlutterJNI {
   }
 
   /**
-   * Attaches this {@code FlutterJNI} instance to Flutter's native engine, which allows for
+   * Attaches this {@code FlutterJNI} instance to Flutter's native engine, which
+   * allows for
    * communication between Android code and Flutter's platform agnostic engine.
    *
-   * <p>This method must not be invoked if {@code FlutterJNI} is already attached to native.
+   * <p>
+   * This method must not be invoked if {@code FlutterJNI} is already attached to
+   * native.
    */
   @UiThread
   public void attachToNative() {
@@ -437,15 +511,23 @@ public class FlutterJNI {
   /**
    * Spawns a new FlutterJNI instance from the current instance.
    *
-   * <p>This creates another native shell from the current shell. This causes the 2 shells to re-use
-   * some of the shared resources, reducing the total memory consumption versus creating a new
+   * <p>
+   * This creates another native shell from the current shell. This causes the 2
+   * shells to re-use
+   * some of the shared resources, reducing the total memory consumption versus
+   * creating a new
    * FlutterJNI by calling its standard constructor.
    *
-   * <p>This can only be called once the current FlutterJNI instance is attached by calling {@link
+   * <p>
+   * This can only be called once the current FlutterJNI instance is attached by
+   * calling {@link
    * #attachToNative()}.
    *
-   * <p>Static methods that should be only called once such as {@link #init(Context, String[],
-   * String, String, String, long)} shouldn't be called again on the spawned FlutterJNI instance.
+   * <p>
+   * Static methods that should be only called once such as
+   * {@link #init(Context, String[],
+   * String, String, String, long)} shouldn't be called again on the spawned
+   * FlutterJNI instance.
    */
   @UiThread
   @NonNull
@@ -456,13 +538,12 @@ public class FlutterJNI {
       @Nullable List<String> entrypointArgs) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    FlutterJNI spawnedJNI =
-        nativeSpawn(
-            nativeShellHolderId,
-            entrypointFunctionName,
-            pathToEntrypointFunction,
-            initialRoute,
-            entrypointArgs);
+    FlutterJNI spawnedJNI = nativeSpawn(
+        nativeShellHolderId,
+        entrypointFunctionName,
+        pathToEntrypointFunction,
+        initialRoute,
+        entrypointArgs);
     Preconditions.checkState(
         spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId != 0,
         "Failed to spawn new JNI connected shell from existing shell.");
@@ -478,16 +559,25 @@ public class FlutterJNI {
       @Nullable List<String> entrypointArgs);
 
   /**
-   * Detaches this {@code FlutterJNI} instance from Flutter's native engine, which precludes any
-   * further communication between Android code and Flutter's platform agnostic engine.
+   * Detaches this {@code FlutterJNI} instance from Flutter's native engine, which
+   * precludes any
+   * further communication between Android code and Flutter's platform agnostic
+   * engine.
    *
-   * <p>This method must not be invoked if {@code FlutterJNI} is not already attached to native.
+   * <p>
+   * This method must not be invoked if {@code FlutterJNI} is not already attached
+   * to native.
    *
-   * <p>Invoking this method will result in the release of all native-side resources that were set
-   * up during {@link #attachToNative()} or {@link #spawn(String, String, String, List)}, or
+   * <p>
+   * Invoking this method will result in the release of all native-side resources
+   * that were set
+   * up during {@link #attachToNative()} or
+   * {@link #spawn(String, String, String, List)}, or
    * accumulated thereafter.
    *
-   * <p>It is permissible to re-attach this instance to native after detaching it from native.
+   * <p>
+   * It is permissible to re-attach this instance to native after detaching it
+   * from native.
    */
   @UiThread
   public void detachFromNativeAndReleaseResources() {
@@ -521,8 +611,10 @@ public class FlutterJNI {
 
   // ----- Start Render Surface Support -----
   /**
-   * Adds a {@link FlutterUiDisplayListener}, which receives a callback when Flutter's engine
-   * notifies {@code FlutterJNI} that Flutter is painting pixels to the {@link Surface} that was
+   * Adds a {@link FlutterUiDisplayListener}, which receives a callback when
+   * Flutter's engine
+   * notifies {@code FlutterJNI} that Flutter is painting pixels to the
+   * {@link Surface} that was
    * provided to Flutter.
    */
   @UiThread
@@ -545,10 +637,14 @@ public class FlutterJNI {
       long imageGeneratorPointer, int width, int height);
 
   /**
-   * Called by native as a fallback method of image decoding. There are other ways to decode images
-   * on lower API levels, they involve copying the native data _and_ do not support any additional
-   * formats, whereas ImageDecoder supports HEIF images. Unlike most other methods called from
-   * native, this method is expected to be called on a worker thread, since it only uses thread safe
+   * Called by native as a fallback method of image decoding. There are other ways
+   * to decode images
+   * on lower API levels, they involve copying the native data _and_ do not
+   * support any additional
+   * formats, whereas ImageDecoder supports HEIF images. Unlike most other methods
+   * called from
+   * native, this method is expected to be called on a worker thread, since it
+   * only uses thread safe
    * methods and may take multiple frames to complete.
    */
   @SuppressWarnings("unused")
@@ -604,10 +700,13 @@ public class FlutterJNI {
   }
 
   /**
-   * Call this method when a {@link Surface} has been created onto which you would like Flutter to
+   * Call this method when a {@link Surface} has been created onto which you would
+   * like Flutter to
    * paint.
    *
-   * <p>See {@link android.view.SurfaceHolder.Callback#surfaceCreated(SurfaceHolder)} for an example
+   * <p>
+   * See {@link android.view.SurfaceHolder.Callback#surfaceCreated(SurfaceHolder)}
+   * for an example
    * of where this call might originate.
    */
   @UiThread
@@ -622,8 +721,10 @@ public class FlutterJNI {
   /**
    * In hybrid composition, call this method when the {@link Surface} has changed.
    *
-   * <p>In hybrid composition, the root surfaces changes from {@link
-   * android.view.SurfaceHolder#getSurface()} to {@link android.media.ImageReader#getSurface()} when
+   * <p>
+   * In hybrid composition, the root surfaces changes from {@link
+   * android.view.SurfaceHolder#getSurface()} to
+   * {@link android.media.ImageReader#getSurface()} when
    * a platform view is in the current frame.
    */
   @UiThread
@@ -637,10 +738,13 @@ public class FlutterJNI {
       long nativeShellHolderId, @NonNull Surface surface);
 
   /**
-   * Call this method when the {@link Surface} changes that was previously registered with {@link
+   * Call this method when the {@link Surface} changes that was previously
+   * registered with {@link
    * #onSurfaceCreated(Surface)}.
    *
-   * <p>See {@link android.view.SurfaceHolder.Callback#surfaceChanged(SurfaceHolder, int, int, int)}
+   * <p>
+   * See
+   * {@link android.view.SurfaceHolder.Callback#surfaceChanged(SurfaceHolder, int, int, int)}
    * for an example of where this call might originate.
    */
   @UiThread
@@ -653,10 +757,14 @@ public class FlutterJNI {
   private native void nativeSurfaceChanged(long nativeShellHolderId, int width, int height);
 
   /**
-   * Call this method when the {@link Surface} is destroyed that was previously registered with
+   * Call this method when the {@link Surface} is destroyed that was previously
+   * registered with
    * {@link #onSurfaceCreated(Surface)}.
    *
-   * <p>See {@link android.view.SurfaceHolder.Callback#surfaceDestroyed(SurfaceHolder)} for an
+   * <p>
+   * See
+   * {@link android.view.SurfaceHolder.Callback#surfaceDestroyed(SurfaceHolder)}
+   * for an
    * example of where this call might originate.
    */
   @UiThread
@@ -670,11 +778,15 @@ public class FlutterJNI {
   private native void nativeSurfaceDestroyed(long nativeShellHolderId);
 
   /**
-   * Call this method to notify Flutter of the current device viewport metrics that are applies to
+   * Call this method to notify Flutter of the current device viewport metrics
+   * that are applies to
    * the Flutter UI that is being rendered.
    *
-   * <p>This method should be invoked with initial values upon attaching to native. Then, it should
-   * be invoked any time those metrics change while {@code FlutterJNI} is attached to native.
+   * <p>
+   * This method should be invoked with initial values upon attaching to native.
+   * Then, it should
+   * be invoked any time those metrics change while {@code FlutterJNI} is attached
+   * to native.
    */
   @UiThread
   public void setViewportMetrics(
@@ -769,11 +881,16 @@ public class FlutterJNI {
   /**
    * Sets the {@link AccessibilityDelegate} for the attached Flutter context.
    *
-   * <p>The {@link AccessibilityDelegate} is responsible for maintaining an Android-side cache of
-   * Flutter's semantics tree and custom accessibility actions. This cache should be hooked up to
+   * <p>
+   * The {@link AccessibilityDelegate} is responsible for maintaining an
+   * Android-side cache of
+   * Flutter's semantics tree and custom accessibility actions. This cache should
+   * be hooked up to
    * Android's accessibility system.
    *
-   * <p>See {@link AccessibilityBridge} for an example of an {@link AccessibilityDelegate} and the
+   * <p>
+   * See {@link AccessibilityBridge} for an example of an
+   * {@link AccessibilityDelegate} and the
    * surrounding responsibilities.
    */
   @UiThread
@@ -785,7 +902,9 @@ public class FlutterJNI {
   /**
    * Invoked by native to send semantics tree updates from Flutter to Android.
    *
-   * <p>The {@code buffer} and {@code strings} form a communication protocol that is implemented
+   * <p>
+   * The {@code buffer} and {@code strings} form a communication protocol that is
+   * implemented
    * here:
    * https://github.com/flutter/engine/blob/main/shell/platform/android/platform_view_android.cc#L207
    */
@@ -804,13 +923,17 @@ public class FlutterJNI {
   }
 
   /**
-   * Invoked by native to send new custom accessibility events from Flutter to Android.
+   * Invoked by native to send new custom accessibility events from Flutter to
+   * Android.
    *
-   * <p>The {@code buffer} and {@code strings} form a communication protocol that is implemented
+   * <p>
+   * The {@code buffer} and {@code strings} form a communication protocol that is
+   * implemented
    * here:
    * https://github.com/flutter/engine/blob/main/shell/platform/android/platform_view_android.cc#L207
    *
-   * <p>// TODO(cbracken): expand these docs to include more actionable information.
+   * <p>
+   * // TODO(cbracken): expand these docs to include more actionable information.
    */
   @SuppressWarnings("unused")
   @UiThread
@@ -824,7 +947,10 @@ public class FlutterJNI {
     // (https://github.com/flutter/flutter/issues/25391)
   }
 
-  /** Sends a semantics action to Flutter's engine, without any additional arguments. */
+  /**
+   * Sends a semantics action to Flutter's engine, without any additional
+   * arguments.
+   */
   public void dispatchSemanticsAction(int nodeId, @NonNull AccessibilityBridge.Action action) {
     dispatchSemanticsAction(nodeId, action, null);
   }
@@ -867,7 +993,8 @@ public class FlutterJNI {
       int argsPosition);
 
   /**
-   * Instructs Flutter to enable/disable its semantics tree, which is used by Flutter to support
+   * Instructs Flutter to enable/disable its semantics tree, which is used by
+   * Flutter to support
    * accessibility and related behaviors.
    */
   @UiThread
@@ -879,7 +1006,8 @@ public class FlutterJNI {
 
   private native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
 
-  // TODO(mattcarroll): figure out what flags are supported and add javadoc about when/why/where to
+  // TODO(mattcarroll): figure out what flags are supported and add javadoc about
+  // when/why/where to
   // use this.
   @UiThread
   public void setAccessibilityFeatures(int flags) {
@@ -893,7 +1021,8 @@ public class FlutterJNI {
 
   // ------ Start Texture Registration Support -----
   /**
-   * Gives control of a {@link SurfaceTexture} to Flutter so that Flutter can display that texture
+   * Gives control of a {@link SurfaceTexture} to Flutter so that Flutter can
+   * display that texture
    * within Flutter's UI.
    */
   @UiThread
@@ -912,7 +1041,8 @@ public class FlutterJNI {
   /**
    * Registers a ImageTexture with the given id.
    *
-   * <p>REQUIRED: Callers should eventually unregisterTexture with the same id.
+   * <p>
+   * REQUIRED: Callers should eventually unregisterTexture with the same id.
    */
   @UiThread
   public void registerImageTexture(
@@ -931,10 +1061,13 @@ public class FlutterJNI {
       @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
-   * Call this method to inform Flutter that a texture previously registered with {@link
+   * Call this method to inform Flutter that a texture previously registered with
+   * {@link
    * #registerTexture(long, SurfaceTextureWrapper)} has a new frame available.
    *
-   * <p>Invoking this method instructs Flutter to update its presentation of the given texture so
+   * <p>
+   * Invoking this method instructs Flutter to update its presentation of the
+   * given texture so
    * that the new frame is displayed.
    */
   @UiThread
@@ -946,7 +1079,9 @@ public class FlutterJNI {
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
 
-  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  /**
+   * Schedule the engine to draw a frame but does not invalidate the layout tree.
+   */
   @UiThread
   public void scheduleFrame() {
     ensureRunningOnMainThread();
@@ -974,7 +1109,9 @@ public class FlutterJNI {
   /**
    * Executes a Dart entrypoint.
    *
-   * <p>This can only be done once per JNI attachment because a Dart isolate can only be entered
+   * <p>
+   * This can only be done once per JNI attachment because a Dart isolate can only
+   * be entered
    * once.
    */
   @UiThread
@@ -1006,27 +1143,41 @@ public class FlutterJNI {
 
   // --------- Start Platform Message Support ------
   /**
-   * Sets the handler for all platform messages that come from the attached platform view to Java.
+   * Sets the handler for all platform messages that come from the attached
+   * platform view to Java.
    *
-   * <p>Communication between a specific Flutter context (Dart) and the host platform (Java) is
-   * accomplished by passing messages. Messages can be sent from Java to Dart with the corresponding
+   * <p>
+   * Communication between a specific Flutter context (Dart) and the host platform
+   * (Java) is
+   * accomplished by passing messages. Messages can be sent from Java to Dart with
+   * the corresponding
    * {@code FlutterJNI} methods:
    *
    * <ul>
-   *   <li>{@link #dispatchPlatformMessage(String, ByteBuffer, int, int)}
-   *   <li>{@link #dispatchEmptyPlatformMessage(String, int)}
+   * <li>{@link #dispatchPlatformMessage(String, ByteBuffer, int, int)}
+   * <li>{@link #dispatchEmptyPlatformMessage(String, int)}
    * </ul>
    *
-   * <p>{@code FlutterJNI} is also the recipient of all platform messages sent from its attached
-   * Flutter context. {@code FlutterJNI} does not know what to do with these messages, so a handler
-   * is exposed to allow these messages to be processed in whatever manner is desired:
+   * <p>
+   * {@code FlutterJNI} is also the recipient of all platform messages sent from
+   * its attached
+   * Flutter context. {@code FlutterJNI} does not know what to do with these
+   * messages, so a handler
+   * is exposed to allow these messages to be processed in whatever manner is
+   * desired:
    *
-   * <p>{@code setPlatformMessageHandler(PlatformMessageHandler)}
+   * <p>
+   * {@code setPlatformMessageHandler(PlatformMessageHandler)}
    *
-   * <p>If a message is received but no {@link PlatformMessageHandler} is registered, that message
-   * will be dropped (ignored). Therefore, when using {@code FlutterJNI} to integrate a Flutter
-   * context in an app, a {@link PlatformMessageHandler} must be registered for 2-way Java/Dart
-   * communication to operate correctly. Moreover, the handler must be implemented such that
+   * <p>
+   * If a message is received but no {@link PlatformMessageHandler} is registered,
+   * that message
+   * will be dropped (ignored). Therefore, when using {@code FlutterJNI} to
+   * integrate a Flutter
+   * context in an app, a {@link PlatformMessageHandler} must be registered for
+   * 2-way Java/Dart
+   * communication to operate correctly. Moreover, the handler must be implemented
+   * such that
    * fundamental platform messages are handled as expected. See {@link
    * io.flutter.view.FlutterNativeView} for an example implementation.
    */
@@ -1041,7 +1192,8 @@ public class FlutterJNI {
   /**
    * Destroys the resources provided sent to `handlePlatformMessage`.
    *
-   * <p>This can be called on any thread.
+   * <p>
+   * This can be called on any thread.
    *
    * @param messageData the argument sent to handlePlatformMessage.
    */
@@ -1080,7 +1232,8 @@ public class FlutterJNI {
   }
 
   /**
-   * Sends an empty reply (identified by {@code responseId}) from Android to Flutter over the given
+   * Sends an empty reply (identified by {@code responseId}) from Android to
+   * Flutter over the given
    * {@code channel}.
    */
   @UiThread
@@ -1102,7 +1255,10 @@ public class FlutterJNI {
   private native void nativeDispatchEmptyPlatformMessage(
       long nativeShellHolderId, @NonNull String channel, int responseId);
 
-  /** Sends a reply {@code message} from Android to Flutter over the given {@code channel}. */
+  /**
+   * Sends a reply {@code message} from Android to Flutter over the given
+   * {@code channel}.
+   */
   @UiThread
   public void dispatchPlatformMessage(
       @NonNull String channel, @Nullable ByteBuffer message, int position, int responseId) {
@@ -1127,7 +1283,8 @@ public class FlutterJNI {
       int position,
       int responseId);
 
-  // TODO(mattcarroll): differentiate between channel responses and platform responses.
+  // TODO(mattcarroll): differentiate between channel responses and platform
+  // responses.
   public void invokePlatformMessageEmptyResponseCallback(int responseId) {
     // Called on any thread.
     shellHolderLock.readLock().lock();
@@ -1149,7 +1306,8 @@ public class FlutterJNI {
   private native void nativeInvokePlatformMessageEmptyResponseCallback(
       long nativeShellHolderId, int responseId);
 
-  // TODO(mattcarroll): differentiate between channel responses and platform responses.
+  // TODO(mattcarroll): differentiate between channel responses and platform
+  // responses.
   public void invokePlatformMessageResponseCallback(
       int responseId, @NonNull ByteBuffer message, int position) {
     // Called on any thread.
@@ -1172,6 +1330,12 @@ public class FlutterJNI {
     }
   }
 
+  private native void nativeApplyRendering(long nativeShellHolderId);
+
+  public void applyRendering() {
+    nativeApplyRendering(nativeShellHolderId);
+  }
+
   // Send a data-carrying response to a platform message received from Dart.
   private native void nativeInvokePlatformMessageResponseCallback(
       long nativeShellHolderId, int responseId, @Nullable ByteBuffer message, int position);
@@ -1179,7 +1343,8 @@ public class FlutterJNI {
 
   // ----- Start Engine Lifecycle Support ----
   /**
-   * Adds the given {@code engineLifecycleListener} to be notified of Flutter engine lifecycle
+   * Adds the given {@code engineLifecycleListener} to be notified of Flutter
+   * engine lifecycle
    * events, e.g., {@link EngineLifecycleListener#onPreEngineRestart()}.
    */
   @UiThread
@@ -1189,7 +1354,8 @@ public class FlutterJNI {
   }
 
   /**
-   * Removes the given {@code engineLifecycleListener}, which was previously added using {@link
+   * Removes the given {@code engineLifecycleListener}, which was previously added
+   * using {@link
    * #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}.
    */
   @UiThread
@@ -1209,13 +1375,22 @@ public class FlutterJNI {
 
   @SuppressWarnings("unused")
   @UiThread
-  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+  SurfaceControl.Transaction onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
     }
-    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+    return platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+  }
+
+  @SuppressWarnings("unused")
+  boolean hasCurrentSyncGroup() {
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    return platformViewsController.hasCurrentSyncGroup();
   }
 
   @SuppressWarnings("unused")
@@ -1265,14 +1440,19 @@ public class FlutterJNI {
 
   // ----- Start Localization Support ----
 
-  /** Sets the localization plugin that is used in various localization methods. */
+  /**
+   * Sets the localization plugin that is used in various localization methods.
+   */
   @UiThread
   public void setLocalizationPlugin(@Nullable LocalizationPlugin localizationPlugin) {
     ensureRunningOnMainThread();
     this.localizationPlugin = localizationPlugin;
   }
 
-  /** Invoked by native to obtain the results of Android's locale resolution algorithm. */
+  /**
+   * Invoked by native to obtain the results of Android's locale resolution
+   * algorithm.
+   */
   @SuppressWarnings("unused")
   @VisibleForTesting
   public String[] computePlatformResolvedLocale(@NonNull String[] strings) {
@@ -1285,7 +1465,8 @@ public class FlutterJNI {
       String languageCode = strings[i + 0];
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
-      // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
+      // Convert to Locales via LocaleBuilder if available (API 21+) to include
+      // scriptCode.
       Locale.Builder localeBuilder = new Locale.Builder();
       if (!languageCode.isEmpty()) {
         localeBuilder.setLanguage(languageCode);
@@ -1329,7 +1510,10 @@ public class FlutterJNI {
 
   // ----- Start Deferred Components Support ----
 
-  /** Sets the deferred component manager that is used to download and install split features. */
+  /**
+   * Sets the deferred component manager that is used to download and install
+   * split features.
+   */
   @UiThread
   public void setDeferredComponentManager(
       @Nullable DeferredComponentManager deferredComponentManager) {
@@ -1341,14 +1525,19 @@ public class FlutterJNI {
   }
 
   /**
-   * Called by dart to request that a Dart deferred library corresponding to loadingUnitId be
+   * Called by dart to request that a Dart deferred library corresponding to
+   * loadingUnitId be
    * downloaded (if necessary) and loaded into the dart vm.
    *
-   * <p>This method delegates the task to DeferredComponentManager, which handles the download and
+   * <p>
+   * This method delegates the task to DeferredComponentManager, which handles the
+   * download and
    * loading of the dart library and any assets.
    *
-   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
-   *     automatically retrieved when loadLibrary() is called on a dart deferred library.
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by
+   *                      gen_snapshot and is
+   *                      automatically retrieved when loadLibrary() is called on
+   *                      a dart deferred library.
    */
   @SuppressWarnings("unused")
   @UiThread
@@ -1364,20 +1553,30 @@ public class FlutterJNI {
   }
 
   /**
-   * Searches each of the provided paths for a valid Dart shared library .so file and resolves
+   * Searches each of the provided paths for a valid Dart shared library .so file
+   * and resolves
    * symbols to load into the dart VM.
    *
-   * <p>Successful loading of the dart library completes the future returned by loadLibrary() that
+   * <p>
+   * Successful loading of the dart library completes the future returned by
+   * loadLibrary() that
    * triggered the install/load process.
    *
-   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
-   *     automatically retrieved when loadLibrary() is called on a dart deferred library. This is
-   *     used to identify which Dart deferred library the resolved correspond to.
-   * @param searchPaths An array of paths in which to look for valid dart shared libraries. This
-   *     supports paths within zipped apks as long as the apks are not compressed using the
-   *     `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be tried first to last and ends
-   *     when a library is successfully found. When the found library is invalid, no additional
-   *     paths will be attempted.
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by
+   *                      gen_snapshot and is
+   *                      automatically retrieved when loadLibrary() is called on
+   *                      a dart deferred library. This is
+   *                      used to identify which Dart deferred library the
+   *                      resolved correspond to.
+   * @param searchPaths   An array of paths in which to look for valid dart shared
+   *                      libraries. This
+   *                      supports paths within zipped apks as long as the apks
+   *                      are not compressed using the
+   *                      `path/to/apk.apk!path/inside/apk/lib.so` format. Paths
+   *                      will be tried first to last and ends
+   *                      when a library is successfully found. When the found
+   *                      library is invalid, no additional
+   *                      paths will be attempted.
    */
   @UiThread
   public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
@@ -1390,14 +1589,20 @@ public class FlutterJNI {
       long nativeShellHolderId, int loadingUnitId, @NonNull String[] searchPaths);
 
   /**
-   * Adds the specified AssetManager as an APKAssetResolver in the Flutter Engine's AssetManager.
+   * Adds the specified AssetManager as an APKAssetResolver in the Flutter
+   * Engine's AssetManager.
    *
-   * <p>This may be used to update the engine AssetManager when a new deferred component is
-   * installed and a new Android AssetManager is created with access to new assets.
+   * <p>
+   * This may be used to update the engine AssetManager when a new deferred
+   * component is
+   * installed and a new Android AssetManager is created with access to new
+   * assets.
    *
-   * @param assetManager An android AssetManager that is able to access the newly downloaded assets.
-   * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical
-   *     value is `flutter_assets`.
+   * @param assetManager    An android AssetManager that is able to access the
+   *                        newly downloaded assets.
+   * @param assetBundlePath The subdirectory that the flutter assets are stored
+   *                        in. The typical
+   *                        value is `flutter_assets`.
    */
   @UiThread
   public void updateJavaAssetManager(
@@ -1413,18 +1618,25 @@ public class FlutterJNI {
       @NonNull String assetBundlePath);
 
   /**
-   * Indicates that a failure was encountered during the Android portion of downloading a dynamic
-   * feature module and loading a dart deferred library, which is typically done by
+   * Indicates that a failure was encountered during the Android portion of
+   * downloading a dynamic
+   * feature module and loading a dart deferred library, which is typically done
+   * by
    * DeferredComponentManager.
    *
-   * <p>This will inform dart that the future returned by loadLibrary() should complete with an
+   * <p>
+   * This will inform dart that the future returned by loadLibrary() should
+   * complete with an
    * error.
    *
-   * @param loadingUnitId The loadingUnitId that corresponds to the dart deferred library that
-   *     failed to install.
-   * @param error The error message to display.
-   * @param isTransient When isTransient is false, new attempts to install will automatically result
-   *     in same error in Dart before the request is passed to Android.
+   * @param loadingUnitId The loadingUnitId that corresponds to the dart deferred
+   *                      library that
+   *                      failed to install.
+   * @param error         The error message to display.
+   * @param isTransient   When isTransient is false, new attempts to install will
+   *                      automatically result
+   *                      in same error in Dart before the request is passed to
+   *                      Android.
    */
   @SuppressWarnings("unused")
   @UiThread
@@ -1471,10 +1683,13 @@ public class FlutterJNI {
   private native Bitmap nativeGetBitmap(long nativeShellHolderId);
 
   /**
-   * Notifies the Dart VM of a low memory event, or that the application is in a state such that now
+   * Notifies the Dart VM of a low memory event, or that the application is in a
+   * state such that now
    * is an appropriate time to free resources, such as going to the background.
    *
-   * <p>This is distinct from sending a SystemChannel message about low memory, which only notifies
+   * <p>
+   * This is distinct from sending a SystemChannel message about low memory, which
+   * only notifies
    * the running Flutter application.
    */
   @UiThread
@@ -1495,16 +1710,21 @@ public class FlutterJNI {
   }
 
   /**
-   * Delegate responsible for creating and updating Android-side caches of Flutter's semantics tree
+   * Delegate responsible for creating and updating Android-side caches of
+   * Flutter's semantics tree
    * and custom accessibility actions.
    *
-   * <p>{@link AccessibilityBridge} is an example of an {@code AccessibilityDelegate}.
+   * <p>
+   * {@link AccessibilityBridge} is an example of an
+   * {@code AccessibilityDelegate}.
    */
   public interface AccessibilityDelegate {
     /**
      * Sends new custom accessibility actions from Flutter to Android.
      *
-     * <p>Implementers are expected to maintain an Android-side cache of custom accessibility
+     * <p>
+     * Implementers are expected to maintain an Android-side cache of custom
+     * accessibility
      * actions. This method provides new actions to add to that cache.
      */
     void updateCustomAccessibilityActions(@NonNull ByteBuffer buffer, @NonNull String[] strings);
@@ -1512,8 +1732,11 @@ public class FlutterJNI {
     /**
      * Sends new {@code SemanticsNode} information from Flutter to Android.
      *
-     * <p>Implementers are expected to maintain an Android-side cache of Flutter's semantics tree.
-     * This method provides updates from Flutter for the Android-side semantics tree cache.
+     * <p>
+     * Implementers are expected to maintain an Android-side cache of Flutter's
+     * semantics tree.
+     * This method provides updates from Flutter for the Android-side semantics tree
+     * cache.
      */
     void updateSemantics(
         @NonNull ByteBuffer buffer,
