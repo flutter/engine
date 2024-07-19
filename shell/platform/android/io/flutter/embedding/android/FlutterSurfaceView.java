@@ -125,11 +125,11 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
   }
 
   private void init() {
+    setZOrderOnTop(true);
     // If transparency is desired then we'll enable a transparent pixel format and place
     // our Window above everything else to get transparent background rendering.
     if (renderTransparently) {
       getHolder().setFormat(PixelFormat.TRANSPARENT);
-      setZOrderOnTop(true);
     }
 
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we

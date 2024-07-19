@@ -95,11 +95,9 @@ bool AndroidSurfaceVKImpeller::SetNativeWindow(
   }
 
   impeller::CreateTransactionCB cb = [jni_facade]() {
-    FML_LOG(ERROR) << " jni_facade: " << !!jni_facade;
     if (!jni_facade->FlutterViewHasCurrentSyncGroup()) {
       return impeller::android::SurfaceTransaction();
     }
-    FML_LOG(ERROR) << "Java TX";
     ASurfaceTransaction* tx =
         jni_facade->FlutterViewDisplayOverlaySurface(0, 0, 0, 0, 0);
     return impeller::android::SurfaceTransaction(tx);

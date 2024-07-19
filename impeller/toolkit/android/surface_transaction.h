@@ -18,6 +18,19 @@ namespace impeller::android {
 class SurfaceControl;
 class HardwareBuffer;
 
+struct WrappedSurfaceTransaction {
+  ASurfaceTransaction* tx;
+  bool owned;
+
+  constexpr bool operator==(const WrappedSurfaceTransaction& other) const {
+    return other.tx == tx;
+  }
+
+  constexpr bool operator!=(const WrappedSurfaceTransaction& other) const {
+    return !(*this == other);
+  }
+};
+
 //------------------------------------------------------------------------------
 /// @brief      A wrapper for ASurfaceTransaction.
 ///             https://developer.android.com/ndk/reference/group/native-activity#asurfacetransaction
@@ -121,21 +134,20 @@ class SurfaceTransaction {
 
  private:
   struct UniqueASurfaceTransactionTraits {
-    static ASurfaceTransaction* InvalidValue() { return nullptr; }
+    static WrappedSurfaceTransaction InvalidValue() { return {}; }
 
-    static bool IsValid(ASurfaceTransaction* value) {
-      return value != InvalidValue();
+    static bool IsValid(const WrappedSurfaceTransaction& value) {
+      return value.tx != nullptr;
     }
 
-    static void Free(ASurfaceTransaction* value) {
-      // TODO
-      // FML_LOG(ERROR) << "DELETE ASurfaceTransaction";
-      // GetProcTable().ASurfaceTransaction_delete(value);
+    static void Free(const WrappedSurfaceTransaction& value) {
+      if (value.owned && value.tx) {
+        GetProcTable().ASurfaceTransaction_delete(value.tx);
+      }
     }
   };
 
-  bool owned_;
-  fml::UniqueObject<ASurfaceTransaction*, UniqueASurfaceTransactionTraits>
+  fml::UniqueObject<WrappedSurfaceTransaction, UniqueASurfaceTransactionTraits>
       transaction_;
 };
 
