@@ -33,7 +33,7 @@ group("generate_snapshot_bins") {
   #
   # For macOS target builds: needed for both target CPUs (arm64, x64).
   # For iOS, Android target builds: all AOT target CPUs are arm/arm64.
-  if (host_os == "mac" && target_os == "mac") {
+  if (host_os == "mac" && (target_os == "mac" || target_os == "ios")) {
     deps += [ ":create_macos_gen_snapshots" ]
   } else if (host_os == "mac" &&
              (target_cpu == "arm" || target_cpu == "arm64")) {
@@ -185,7 +185,7 @@ if (host_os == "mac" && target_os != "mac" &&
 # platform.
 #
 # This target is used for builds targeting macOS.
-if (host_os == "mac" && target_os == "mac") {
+if (host_os == "mac" && (target_os == "mac" || target_os == "ios")) {
   template("build_mac_gen_snapshot") {
     assert(defined(invoker.host_arch))
     host_cpu = invoker.host_arch
