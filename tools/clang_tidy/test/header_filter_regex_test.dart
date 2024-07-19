@@ -36,7 +36,6 @@ void main() {
   test('contains every root directory in the regex', () {
     // These are a list of directories that should _not_ be included.
     const Set<String> intentionallyOmitted = <String>{
-      '.dart_tool',
       '.git',
       '.github',
       'build_overrides',

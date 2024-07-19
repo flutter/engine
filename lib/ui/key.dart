@@ -16,8 +16,6 @@ enum KeyEventType {
   /// The key is held, causing a repeated key input.
   repeat;
 
-    // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
-  // ignore: public_member_api_docs
   String get label {
     return switch (this) {
       down => 'Key Down',
@@ -48,8 +46,6 @@ enum KeyEventDeviceType {
   /// The device is a device connected to an HDMI bus.
   hdmi;
 
-  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
-  // ignore: public_member_api_docs
   String get label {
     return switch (this) {
       keyboard => 'Keyboard',
