@@ -694,7 +694,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         GetLayer(gr_context,                                      //
                  ios_context,                                     //
                  slices_[view_id].get(),                          //
-                 rect,                                            //
+                 overlay->second,                                 //
                  view_id,                                         //
                  overlay_id,                                      //
                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
