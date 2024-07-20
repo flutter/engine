@@ -37,7 +37,7 @@ std::unordered_map<int64_t, SkRect> SliceViews(
     // This is done by querying the r-tree that holds the records for the
     // picture recorder corresponding to the flow layers added after a platform
     // view layer.
-    for (ssize_t j = i; j >= 0; j--) {
+    for (int j = i; j >= 0; j--) {
       int64_t current_view_id = composition_order[j];
       auto maybe_rect = view_rects.find(current_view_id);
       FML_DCHECK(maybe_rect != view_rects.end());
