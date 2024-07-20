@@ -674,8 +674,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   DlCanvas* background_canvas = frame->Canvas();
 
   std::unordered_map<int64_t, SkRect> view_rects;
-  for (auto platform_id : composition_order_) {
-    view_rects[platform_id] = GetPlatformViewRect(platform_id);
+  for (auto view_id : composition_order_) {
+    view_rects[view_id] = GetPlatformViewRect(view_id);
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
@@ -693,14 +693,14 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     std::shared_ptr<FlutterPlatformViewLayer> layer =
         GetLayer(gr_context,                                      //
                  ios_context,                                     //
-                 slices_[platform_id].get(),                      //
+                 slices_[view_id].get(),                          //
                  rect,                                            //
-                 platform_id,                                     //
+                 view_id,                                         //
                  overlay_id,                                      //
                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
         );
     did_submit &= layer->did_submit_last_frame;
-    platform_view_layers[platform_id].push_back(layer);
+    platform_view_layers[view_id].push_back(layer);
     overlay_id++;
   }
 
