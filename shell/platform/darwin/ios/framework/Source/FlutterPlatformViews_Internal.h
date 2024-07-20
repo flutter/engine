@@ -330,7 +330,7 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkIRect rect,
+                                                     SkRect rect,
                                                      int64_t view_id,
                                                      int64_t overlay_id,
                                                      MTLPixelFormat pixel_format);
@@ -358,7 +358,7 @@ class FlutterPlatformViewsController {
   // operation until the next platform view or the end of the last leaf node in the layer tree.
   //
   // The Slices are deleted by the FlutterPlatformViewsController.reset().
-  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
