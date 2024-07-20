@@ -284,8 +284,6 @@ class FlutterPlatformViewsController {
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
  private:
-  static const size_t kMaxLayerAllocations = 2;
-
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult result) __attribute__((cf_audited_transfer));

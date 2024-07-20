@@ -103,5 +103,36 @@ TEST(ViewSlicerTest, ComputesOverlapWith2PV) {
   EXPECT_EQ(overlay->second, SkRect::MakeLTRB(50, 50, 100, 100));
 }
 
+TEST(ViewSlicerTest, OverlappingTwoPVs) {
+  DisplayListBuilder builder(SkRect::MakeLTRB(0, 0, 100, 100));
+
+  std::vector<int64_t> composition_order = {1, 2};
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices;
+  // This embeded view overlaps both platform views:
+  //
+  //   [  A  [   ]]
+  //   [_____[ C ]]
+  //   [  B  [   ]]
+  //   [          ]
+  AddSliceOfSize(slices, 1, SkRect::MakeLTRB(0, 0, 0, 0));
+  AddSliceOfSize(slices, 2, SkRect::MakeLTRB(0, 0, 100, 100));
+
+  std::unordered_map<int64_t, SkRect> view_rects = {
+      {1, SkRect::MakeLTRB(0, 0, 50, 50)},      //
+      {2, SkRect::MakeLTRB(50, 50, 100, 100)},  //
+  };
+
+  auto computed_overlays =
+      SliceViews(&builder, composition_order, slices, view_rects);
+
+  EXPECT_EQ(computed_overlays.size(), 1u);
+
+  auto overlay = computed_overlays.find(2);
+  ASSERT_NE(overlay, computed_overlays.end());
+
+  // We create a single overlay for both overlapping sections.
+  EXPECT_EQ(overlay->second, SkRect::MakeLTRB(0, 0, 100, 100));
+}
+
 }  // namespace testing
 }  // namespace flutter
