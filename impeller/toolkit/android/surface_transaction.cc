@@ -85,6 +85,7 @@ bool SurfaceTransaction::SetBackgroundColor(const SurfaceControl& control,
   if (!IsValid() || !control.IsValid()) {
     return false;
   }
+
   GetProcTable().ASurfaceTransaction_setColor(transaction_.get().tx,     //
                                               control.GetHandle(),    //
                                               color.red,              //
