@@ -10,6 +10,7 @@
 #include "flutter/lib/ui/window/pointer_data.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterHourFormat.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.h"
@@ -170,6 +171,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @interface FlutterViewControllerTest : XCTestCase
 @property(nonatomic, strong) id mockEngine;
 @property(nonatomic, strong) id mockTextInputPlugin;
+@property(nonatomic, strong) id mockHourCycle;
 @property(nonatomic, strong) id messageSent;
 - (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 @end
@@ -191,6 +193,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)setUp {
   self.mockEngine = OCMClassMock([FlutterEngine class]);
   self.mockTextInputPlugin = OCMClassMock([FlutterTextInputPlugin class]);
+  self.mockHourCycle = OCMClassMock([FlutterHourFormat class]);
   OCMStub([self.mockEngine textInputPlugin]).andReturn(self.mockTextInputPlugin);
   self.messageSent = nil;
 }
@@ -201,6 +204,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [self.mockEngine stopMocking];
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
+  self.mockHourCycle = nil;
   self.messageSent = nil;
 }
 
@@ -1333,6 +1337,27 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [partialMockVC stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
+}
+
+- (void)testItReportsAlwaysUsed24HourClock {
+  // Setup test.
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  OCMStub([self.mockHourCycle isAlwaysUse24HourFormat]).andReturn(@true);
+  // Exercise behavior under test.
+  [vc traitCollectionDidChange:nil];
+
+  // Verify behavior.
+  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"alwaysUse24HourFormat"] isEqualTo:@true];
+                             }]]);
+
+  // Clean up mocks
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsAccessibilityOnOffSwitchLabelsFlagNotSet {
