@@ -193,7 +193,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)setUp {
   self.mockEngine = OCMClassMock([FlutterEngine class]);
   self.mockTextInputPlugin = OCMClassMock([FlutterTextInputPlugin class]);
-  self.mockHourCycle = OCMClassMock([FlutterHourFormat class]);
   OCMStub([self.mockEngine textInputPlugin]).andReturn(self.mockTextInputPlugin);
   self.messageSent = nil;
 }
@@ -204,7 +203,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [self.mockEngine stopMocking];
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
-  self.mockHourCycle = nil;
   self.messageSent = nil;
 }
 
@@ -1344,20 +1342,23 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
+  id mockHourFormat = OCMClassMock([FlutterHourFormat class]);
+  OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(YES);
+
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
-  OCMStub([self.mockHourCycle isAlwaysUse24HourFormat]).andReturn(@true);
   // Exercise behavior under test.
   [vc traitCollectionDidChange:nil];
 
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-                               return [message[@"alwaysUse24HourFormat"] isEqualTo:@true];
+                               return message[@"alwaysUse24HourFormat"];
                              }]]);
 
   // Clean up mocks
   [settingsChannel stopMocking];
+  [mockHourFormat stopMocking];
 }
 
 - (void)testItReportsAccessibilityOnOffSwitchLabelsFlagNotSet {
