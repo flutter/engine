@@ -40,6 +40,7 @@ class SurfaceTransaction {
   ///
   static bool IsAvailableOnPlatform();
 
+  /// @brief Create a new SurfaceTransaction.
   SurfaceTransaction();
 
   ~SurfaceTransaction();
@@ -47,6 +48,9 @@ class SurfaceTransaction {
   SurfaceTransaction(const SurfaceTransaction&) = delete;
 
   SurfaceTransaction& operator=(const SurfaceTransaction&) = delete;
+
+  /// @brief Create a SurfaceTransaction from a Java-owned transaction.
+  explicit SurfaceTransaction(ASurfaceTransaction* transaction);
 
   bool IsValid() const;
 
@@ -118,19 +122,36 @@ class SurfaceTransaction {
                                const SurfaceControl* new_parent = nullptr);
 
  private:
-  struct UniqueASurfaceTransactionTraits {
-    static ASurfaceTransaction* InvalidValue() { return nullptr; }
+  struct WrappedSurfaceTransaction {
+    ASurfaceTransaction* tx;
+    // If true, this surface transaction was created in java and should only be
+    // completed or destroyed by the platform view controller.
+    bool is_owned_by_platform_view;
 
-    static bool IsValid(ASurfaceTransaction* value) {
-      return value != InvalidValue();
+    constexpr bool operator==(const WrappedSurfaceTransaction& other) const {
+      return other.tx == tx;
     }
 
-    static void Free(ASurfaceTransaction* value) {
-      GetProcTable().ASurfaceTransaction_delete(value);
+    constexpr bool operator!=(const WrappedSurfaceTransaction& other) const {
+      return !(*this == other);
     }
   };
 
-  fml::UniqueObject<ASurfaceTransaction*, UniqueASurfaceTransactionTraits>
+  struct UniqueASurfaceTransactionTraits {
+    static WrappedSurfaceTransaction InvalidValue() { return {}; }
+
+    static bool IsValid(const WrappedSurfaceTransaction& value) {
+      return value.tx != nullptr;
+    }
+
+    static void Free(const WrappedSurfaceTransaction& value) {
+      if (!value.is_owned_by_platform_view && value.tx) {
+        GetProcTable().ASurfaceTransaction_delete(value.tx);
+      }
+    }
+  };
+
+  fml::UniqueObject<WrappedSurfaceTransaction, UniqueASurfaceTransactionTraits>
       transaction_;
 };
 

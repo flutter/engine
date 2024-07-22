@@ -33,6 +33,7 @@
 #include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "impeller/toolkit/android/proc_table.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -132,13 +133,15 @@ static jmethodID g_request_dart_deferred_library_method = nullptr;
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
-// static jmethodID g_on_composite_platform_view_method = nullptr;
-
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
 static jmethodID g_overlay_surface_id_method = nullptr;
 
 static jmethodID g_overlay_surface_surface_method = nullptr;
+
+static jmethodID g_get_is_synchronized_with_views = nullptr;
+
+static jmethodID g_create_surface_control_transaction = nullptr;
 
 static jmethodID g_bitmap_create_bitmap_method = nullptr;
 
@@ -1125,6 +1128,22 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_get_is_synchronized_with_views = env->GetMethodID(
+      g_flutter_jni_class->obj(), "getIsSynchronizedWithViewHierarchy", "()Z");
+  if (g_get_is_synchronized_with_views == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate getIsSynchronizedWithViewHierarchy method";
+    return false;
+  }
+
+  g_create_surface_control_transaction = env->GetMethodID(
+      g_flutter_jni_class->obj(), "createSurfaceControlTransaction",
+      "()Landroid/view/SurfaceControl$Transaction;");
+  if (g_create_surface_control_transaction == nullptr) {
+    FML_LOG(ERROR) << "Could not locate createSurfaceControlTransaction method";
+    return false;
+  }
+
   g_java_weak_reference_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("java/lang/ref/WeakReference"));
   if (g_java_weak_reference_class->is_null()) {
@@ -1741,6 +1760,34 @@ void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
                       surface_id, x, y, width, height);
 
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+ASurfaceTransaction*
+PlatformViewAndroidJNIImpl::createSurfaceControlTransaction() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  fml::jni::ScopedJavaLocalRef<jobject> transaction(
+      env, env->CallObjectMethod(java_object.obj(),
+                                 g_create_surface_control_transaction));
+
+  if (transaction.is_null()) {
+    return nullptr;
+  }
+  FML_CHECK(fml::jni::CheckException(env));
+  return impeller::android::GetProcTable().ASurfaceTransaction_fromJava(
+      env, transaction.obj());
+}
+
+bool PlatformViewAndroidJNIImpl::getIsSynchronizedWithViewHierarchy() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  auto java_object = java_object_.get(env);
+  jboolean result = env->CallBooleanMethod(java_object.obj(),
+                                           g_get_is_synchronized_with_views);
+
+  FML_CHECK(fml::jni::CheckException(env));
+
+  return result;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {

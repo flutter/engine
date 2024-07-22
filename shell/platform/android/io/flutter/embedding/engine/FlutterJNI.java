@@ -18,6 +18,7 @@ import android.util.DisplayMetrics;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Surface;
+import android.view.SurfaceControl;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -1249,6 +1250,22 @@ public class FlutterJNI {
           "platformViewsController must be set before attempting to position an overlay surface");
     }
     return platformViewsController.createOverlaySurface();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  @Nullable
+  public SurfaceControl.Transaction createSurfaceControlTransaction() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException("platformViewsController must be set.");
+    }
+    return platformViewsController.createSurfaceTransaction();
+  }
+
+  @SuppressWarnings("unused")
+  public boolean getIsSynchronizedWithViewHierarchy() {
+    return (Looper.myLooper() == mainLooper);
   }
 
   @SuppressWarnings("unused")

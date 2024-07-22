@@ -137,13 +137,14 @@ void PlatformViewAndroid::NotifyCreated(
     InstallFirstFrameCallback();
 
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
-        task_runners_.GetRasterTaskRunner(),
-        [&latch, surface = android_surface_.get(),
-         native_window = std::move(native_window)]() {
-          surface->SetNativeWindow(native_window);
-          latch.Signal();
-        });
+    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                      [&latch, surface = android_surface_.get(),
+                                       native_window = std::move(native_window),
+                                       jni_fascade = jni_facade_]() {
+                                        surface->SetNativeWindow(native_window,
+                                                                 jni_fascade);
+                                        latch.Signal();
+                                      });
     latch.Wait();
   }
 
@@ -154,14 +155,15 @@ void PlatformViewAndroid::NotifySurfaceWindowChanged(
     fml::RefPtr<AndroidNativeWindow> native_window) {
   if (android_surface_) {
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
-        task_runners_.GetRasterTaskRunner(),
-        [&latch, surface = android_surface_.get(),
-         native_window = std::move(native_window)]() {
-          surface->TeardownOnScreenContext();
-          surface->SetNativeWindow(native_window);
-          latch.Signal();
-        });
+    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                      [&latch, surface = android_surface_.get(),
+                                       native_window = std::move(native_window),
+                                       jni_fascade = jni_facade_]() {
+                                        surface->TeardownOnScreenContext();
+                                        surface->SetNativeWindow(native_window,
+                                                                 jni_fascade);
+                                        latch.Signal();
+                                      });
     latch.Wait();
   }
 

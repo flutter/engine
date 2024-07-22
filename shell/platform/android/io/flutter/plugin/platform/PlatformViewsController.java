@@ -15,6 +15,7 @@ import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
+import android.view.SurfaceControl;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -135,7 +136,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // When adding platform views using Hybrid Composition, the engine converts the render surface
   // to a FlutterImageView to help improve animation synchronization on Android. This flag allows
   // disabling this conversion through the PlatformView platform channel.
-  private boolean synchronizeToNativeViewHierarchy = true;
+  // TODO
+  private boolean synchronizeToNativeViewHierarchy = false;
+
+  // Surface control transactions that are being used by the Impeller swapchain to
+  // synchronize with native rendering.
+  private final ArrayList<SurfaceControl.Transaction> surfaceTransactions;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
   private final HashSet<Integer> currentFrameUsedOverlayLayerIds;
@@ -744,6 +750,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     viewWrappers = new SparseArray<>();
     platformViews = new SparseArray<>();
     platformViewParent = new SparseArray<>();
+    surfaceTransactions = new ArrayList<>();
 
     motionEventTracker = MotionEventTracker.getInstance();
   }
@@ -1275,6 +1282,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
+    if (surfaceTransactions.size() > 0) {
+      // applyTransactionOnDraw will not force a frame to be scheduled. If there were
+      // no platform view mutations this frame, call invalidate to ensure that there
+      // is a frame.
+      flutterView.invalidate();
+      for (int i = 0; i < surfaceTransactions.size(); i++) {
+        flutterView.getRootSurfaceControl().applyTransactionOnDraw(surfaceTransactions.get(i));
+      }
+      surfaceTransactions.clear();
+    }
+
     for (int i = 0; i < overlayLayerViews.size(); i++) {
       final int overlayId = overlayLayerViews.keyAt(i);
       final PlatformOverlayView overlayView = overlayLayerViews.valueAt(i);
@@ -1331,6 +1349,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     final int id = nextOverlayLayerId++;
     overlayLayerViews.put(id, imageView);
     return new FlutterOverlaySurface(id, imageView.getSurface());
+  }
+
+  /**
+   * Create a new surface control transaction and store it for use in synchronizing the current
+   * frame.
+   */
+  public SurfaceControl.Transaction createSurfaceTransaction() {
+    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
+    surfaceTransactions.add(tx);
+    return tx;
   }
 
   /**

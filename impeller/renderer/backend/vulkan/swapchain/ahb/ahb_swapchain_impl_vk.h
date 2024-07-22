@@ -17,8 +17,11 @@
 #include "impeller/renderer/surface.h"
 #include "impeller/toolkit/android/hardware_buffer.h"
 #include "impeller/toolkit/android/surface_control.h"
+#include "impeller/toolkit/android/surface_transaction.h"
 
 namespace impeller {
+
+using CreateTransactionCB = std::function<android::SurfaceTransaction()>;
 
 //------------------------------------------------------------------------------
 /// @brief      The implementation of a swapchain at a specific size. Resizes to
@@ -50,6 +53,7 @@ class AHBSwapchainImplVK final
   static std::shared_ptr<AHBSwapchainImplVK> Create(
       const std::weak_ptr<Context>& context,
       std::weak_ptr<android::SurfaceControl> surface_control,
+      const CreateTransactionCB& create_tx_cb,
       const ISize& size,
       bool enable_msaa,
       size_t swapchain_image_count);
@@ -102,11 +106,13 @@ class AHBSwapchainImplVK final
   std::shared_ptr<AHBTextureSourceVK> currently_displayed_texture_
       IPLR_GUARDED_BY(currently_displayed_texture_mutex_);
   std::shared_ptr<fml::Semaphore> pending_presents_;
+  CreateTransactionCB create_tx_cb_;
   bool is_valid_ = false;
 
   explicit AHBSwapchainImplVK(
       const std::weak_ptr<Context>& context,
       std::weak_ptr<android::SurfaceControl> surface_control,
+      const CreateTransactionCB& create_tx_cb,
       const ISize& size,
       bool enable_msaa,
       size_t swapchain_image_count);

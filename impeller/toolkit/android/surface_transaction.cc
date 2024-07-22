@@ -11,7 +11,14 @@
 namespace impeller::android {
 
 SurfaceTransaction::SurfaceTransaction()
-    : transaction_(GetProcTable().ASurfaceTransaction_create()) {}
+    : transaction_(
+          WrappedSurfaceTransaction{GetProcTable().ASurfaceTransaction_create(),
+                                    /*is_owned_by_platform_view=*/false}) {}
+
+SurfaceTransaction::SurfaceTransaction(ASurfaceTransaction* transaction)
+    : transaction_(
+          WrappedSurfaceTransaction{transaction,
+                                    /*is_owned_by_platform_view=*/true}) {}
 
 SurfaceTransaction::~SurfaceTransaction() = default;
 
@@ -37,14 +44,20 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
   auto data = std::make_unique<TransactionInFlightData>();
   data->callback = callback;
   proc_table.ASurfaceTransaction_setOnComplete(
-      transaction_.get(),  //
-      data.release(),      //
+      transaction_.get().tx,  //
+      data.release(),         //
       [](void* context, ASurfaceTransactionStats* stats) -> void {
         auto data = reinterpret_cast<TransactionInFlightData*>(context);
         data->callback(stats);
         delete data;
       });
-  proc_table.ASurfaceTransaction_apply(transaction_.get());
+  // If this transaction is owned by java, then the platform view controller
+  // will apply it in a group with view mutations.
+  if (transaction_.get().is_owned_by_platform_view) {
+    return true;
+  }
+
+  proc_table.ASurfaceTransaction_apply(transaction_.get().tx);
 
   // Transactions may not be applied over and over.
   transaction_.reset();
@@ -62,7 +75,7 @@ bool SurfaceTransaction::SetContents(const SurfaceControl* control,
   const auto& proc_table = GetProcTable();
 
   proc_table.ASurfaceTransaction_setBuffer(
-      transaction_.get(),                                      //
+      transaction_.get().tx,                                   //
       control->GetHandle(),                                    //
       buffer->GetHandle(),                                     //
       acquire_fence.is_valid() ? acquire_fence.release() : -1  //
@@ -75,7 +88,7 @@ bool SurfaceTransaction::SetBackgroundColor(const SurfaceControl& control,
   if (!IsValid() || !control.IsValid()) {
     return false;
   }
-  GetProcTable().ASurfaceTransaction_setColor(transaction_.get(),     //
+  GetProcTable().ASurfaceTransaction_setColor(transaction_.get().tx,  //
                                               control.GetHandle(),    //
                                               color.red,              //
                                               color.green,            //
@@ -95,7 +108,7 @@ bool SurfaceTransaction::SetParent(const SurfaceControl& control,
     return false;
   }
   GetProcTable().ASurfaceTransaction_reparent(
-      transaction_.get(),                                        //
+      transaction_.get().tx,                                     //
       control.GetHandle(),                                       //
       new_parent == nullptr ? nullptr : new_parent->GetHandle()  //
   );
