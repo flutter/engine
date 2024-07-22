@@ -81,7 +81,8 @@ bool AndroidSurfaceVKImpeller::ResourceContextClearCurrent() {
 }
 
 bool AndroidSurfaceVKImpeller::SetNativeWindow(
-    fml::RefPtr<AndroidNativeWindow> window) {
+    fml::RefPtr<AndroidNativeWindow> window,
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
   if (window && (native_window_ == window)) {
     return OnScreenSurfaceResize(window->GetSize());
   }
@@ -92,10 +93,18 @@ bool AndroidSurfaceVKImpeller::SetNativeWindow(
     return false;
   }
 
+  impeller::CreateTransactionCB create_tx_callback = [jni_facade]() {
+    if (jni_facade->getIsSynchronizedWithViewHierarchy()) {
+      return impeller::android::SurfaceTransaction(
+          jni_facade->createSurfaceControlTransaction());
+    }
+    return impeller::android::SurfaceTransaction();
+  };
+
   auto swapchain = impeller::SwapchainVK::Create(
       std::reinterpret_pointer_cast<impeller::Context>(
           surface_context_vk_->GetParent()),
-      window->handle());
+      window->handle(), create_tx_callback);
 
   if (surface_context_vk_->SetSwapchain(std::move(swapchain))) {
     native_window_ = std::move(window);

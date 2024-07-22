@@ -84,6 +84,11 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
               FlutterViewDisplayOverlaySurface,
               (int surface_id, int x, int y, int width, int height),
               (override));
+  MOCK_METHOD(bool, getIsSynchronizedWithViewHierarchy, (), (override));
+  MOCK_METHOD(ASurfaceTransaction*,
+              createSurfaceControlTransaction,
+              (),
+              (override));
   MOCK_METHOD(void, FlutterViewBeginFrame, (), (override));
   MOCK_METHOD(void, FlutterViewEndFrame, (), (override));
   MOCK_METHOD(std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>,

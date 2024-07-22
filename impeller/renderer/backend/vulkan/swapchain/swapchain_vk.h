@@ -15,9 +15,14 @@
 
 #if FML_OS_ANDROID
 #include "impeller/toolkit/android/native_window.h"
+#include "impeller/toolkit/android/surface_transaction.h"
 #endif  // FML_OS_ANDROID
 
 namespace impeller {
+
+#if FML_OS_ANDROID
+using CreateTransactionCB = std::function<android::SurfaceTransaction()>;
+#endif  // FML_OS_ANDROID
 
 //------------------------------------------------------------------------------
 /// @brief      A swapchain that adapts to the underlying surface going out of
@@ -37,6 +42,7 @@ class SwapchainVK {
   static std::shared_ptr<SwapchainVK> Create(
       const std::shared_ptr<Context>& context,
       ANativeWindow* window,
+      const CreateTransactionCB& create_tx_cb,
       bool enable_msaa = true);
 #endif  // FML_OS_ANDROID
 

@@ -19,6 +19,8 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #endif
 
+struct ASurfaceTransaction;
+
 namespace flutter {
 
 #if FML_OS_ANDROID
@@ -163,6 +165,17 @@ class PlatformViewAndroidJNI {
                                                 int y,
                                                 int width,
                                                 int height) = 0;
+
+  /// @brief Create a SurfaceControl.Transaction that is managed by the Java
+  ///        platform view controller.
+  virtual ASurfaceTransaction* createSurfaceControlTransaction() = 0;
+
+  /// @brief Whether the Flutter UI is synchronized with the native view
+  ///        hierarchy.
+  ///
+  /// When this is true, an AHB swapchain should be used and present with a
+  /// transaction that is created from Java.
+  virtual bool getIsSynchronizedWithViewHierarchy() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Initiates a frame if using hybrid composition.

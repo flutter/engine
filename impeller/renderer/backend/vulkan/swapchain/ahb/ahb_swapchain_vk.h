@@ -53,10 +53,12 @@ class AHBSwapchainVK final : public SwapchainVK {
   std::shared_ptr<android::SurfaceControl> surface_control_;
   const bool enable_msaa_;
   size_t swapchain_image_count_ = 3u;
+  CreateTransactionCB create_tx_cb_;
   std::shared_ptr<AHBSwapchainImplVK> impl_;
 
   explicit AHBSwapchainVK(const std::shared_ptr<Context>& context,
                           ANativeWindow* window,
+                          const CreateTransactionCB& create_tx_cb,
                           const vk::UniqueSurfaceKHR& surface,
                           const ISize& size,
                           bool enable_msaa);
