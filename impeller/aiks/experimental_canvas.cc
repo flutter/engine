@@ -73,7 +73,6 @@ static std::shared_ptr<Texture> FlipBackdrop(
   // could instead check the clear color and initialize a 1x2 CPU texture
   // instead of ending the pass.
   rendering_config.inline_pass_context->GetRenderPass(0);
-
   if (!rendering_config.inline_pass_context->EndPass()) {
     VALIDATION_LOG
         << "Failed to end the current render pass in order to read from "
@@ -85,8 +84,6 @@ static std::shared_ptr<Texture> FlipBackdrop(
       rendering_config.entity_pass_target->Flip(
           *renderer.GetContext()->GetResourceAllocator());
 
-  // Amend an advanced blend filter to the contents, attaching the pass
-  // texture.
   if (!input_texture) {
     VALIDATION_LOG << "Failed to fetch the color texture in order to "
                       "apply an advanced blend.";
@@ -107,8 +104,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   msaa_backdrop_contents->SetStencilEnabled(false);
   msaa_backdrop_contents->SetLabel("MSAA backdrop");
   msaa_backdrop_contents->SetSourceRect(size_rect);
-  msaa_backdrop_contents->SetTexture(
-      rendering_config.inline_pass_context->GetTexture());
+  msaa_backdrop_contents->SetTexture(input_texture);
 
   Entity msaa_backdrop_entity;
   msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
