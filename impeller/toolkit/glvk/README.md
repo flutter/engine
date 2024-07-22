@@ -1,3 +1,3 @@
 # GLVK Toolkit
 
-A toolkit for interop between OpenGL and Vulkan.
+A toolkit for inter-operating between OpenGL and Vulkan.
