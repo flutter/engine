@@ -112,6 +112,12 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (),
               (override));
 
+  MOCK_METHOD(ASurfaceTransaction*,
+              createSurfaceControlTransaction,
+              (),
+              (override));
+  MOCK_METHOD(bool, getIsSynchronizedWithViewHierarchy, (), (override));
+
   MOCK_METHOD(void, FlutterViewDestroyOverlaySurfaces, (), (override));
 
   MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
