@@ -2598,6 +2598,8 @@ base class _NativeEngineLayer extends NativeFieldWrapperClass1 implements Engine
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
 abstract class Path {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   factory Path() = _NativePath;
 
   /// Creates a copy of another [Path].
@@ -4847,17 +4849,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
@@ -4934,17 +4939,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] * 2 >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] * 2 >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
