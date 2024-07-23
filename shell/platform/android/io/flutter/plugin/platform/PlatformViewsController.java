@@ -1283,14 +1283,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
     if (surfaceTransactions.size() > 0) {
+      SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
+      for (int i = 0; i < surfaceTransactions.size(); i++) {
+        tx.merge(surfaceTransactions.get(i));
+      }
+      flutterView.getRootSurfaceControl().applyTransactionOnDraw(tx);
+      surfaceTransactions.clear();
+
       // applyTransactionOnDraw will not force a frame to be scheduled. If there were
       // no platform view mutations this frame, call invalidate to ensure that there
       // is a frame.
       flutterView.invalidate();
-      for (int i = 0; i < surfaceTransactions.size(); i++) {
-        flutterView.getRootSurfaceControl().applyTransactionOnDraw(surfaceTransactions.get(i));
-      }
-      surfaceTransactions.clear();
     }
 
     for (int i = 0; i < overlayLayerViews.size(); i++) {
