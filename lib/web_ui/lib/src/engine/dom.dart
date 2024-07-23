@@ -661,15 +661,26 @@ extension DomElementExtension on DomElement {
   external JSNumber? get _tabIndex;
   double? get tabIndex => _tabIndex?.toDartDouble;
 
+  /// Consider not exposing this method publicly. It defaults `preventScroll` to
+  /// false, which is almost always wrong in Flutter. If you need to expose a
+  /// method that focuses and scrolls to the element, give it a more specific
+  /// and lengthy name, e.g. `focusAndScrollToElement`. See more details in
+  /// [focusWithoutScroll].
   @JS('focus')
   external JSVoid _focus(JSAny options);
 
-  void focus({bool? preventScroll, bool? focusVisible}) {
-    final Map<String, bool> options = <String, bool>{
-      if (preventScroll != null) 'preventScroll': preventScroll,
-      if (focusVisible != null) 'focusVisible': focusVisible,
-    };
-    _focus(options.toJSAnyDeep);
+  static final JSAny _preventScrollOptions = <String, bool>{ 'preventScroll': true }.toJSAnyDeep;
+
+  /// Calls DOM `Element.focus` with `preventScroll` set to true.
+  ///
+  /// This method exists because DOM `Element.focus` defaults to `preventScroll`
+  /// set to false. This default browser behavior is almost always wrong in the
+  /// Flutter context because the Flutter framework is in charge of scrolling
+  /// all of the widget content. See, for example, this issue:
+  ///
+  /// https://github.com/flutter/flutter/issues/130950
+  void focusWithoutScroll() {
+    _focus(_preventScrollOptions);
   }
 
   @JS('scrollTop')
@@ -1540,7 +1551,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap {}
+class DomImageBitmap implements DomCanvasImageSource {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -2760,6 +2771,30 @@ DomCompositionEvent createDomCompositionEvent(String type,
   } else {
     return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
   }
+}
+
+/// This is a pseudo-type for DOM elements that have the boolean `disabled`
+/// property.
+///
+/// This type cannot be part of the actual type hierarchy because each DOM type
+/// defines its `disabled` property ad hoc, without inheriting it from a common
+/// type, e.g. [DomHTMLInputElement] and [DomHTMLTextAreaElement].
+///
+/// To use, simply cast any element known to have the `disabled` property to
+/// this type using `as DomElementWithDisabledProperty`, then read and write
+/// this property as normal.
+@JS()
+@staticInterop
+class DomElementWithDisabledProperty extends DomHTMLElement {}
+
+extension DomElementWithDisabledPropertyExtension on DomElementWithDisabledProperty {
+  @JS('disabled')
+  external JSBoolean? get _disabled;
+  bool? get disabled => _disabled?.toDart;
+
+  @JS('disabled')
+  external set _disabled(JSBoolean? value);
+  set disabled(bool? value) => _disabled = value?.toJS;
 }
 
 @JS()
