@@ -10,11 +10,12 @@
 
 #include "gtest/gtest.h"
 
-class LifecycleStringMatcher {
+// Matches if a FlValue is a the supplied string.
+class FlValueStringMatcher {
  public:
   using is_gtest_matcher = void;
 
-  explicit LifecycleStringMatcher(::testing::Matcher<std::string> value)
+  explicit FlValueStringMatcher(::testing::Matcher<std::string> value)
       : value_(std::move(value)) {}
 
   bool MatchAndExplain(GBytes* data,
@@ -49,7 +50,7 @@ class LifecycleStringMatcher {
 };
 
 ::testing::Matcher<GBytes*> LifecycleString(const std::string& value) {
-  return LifecycleStringMatcher(::testing::StrEq(value));
+  return FlValueStringMatcher(::testing::StrEq(value));
 }
 
 TEST(FlWindowStateMonitorTest, GainFocus) {
