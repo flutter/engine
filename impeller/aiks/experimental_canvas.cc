@@ -63,7 +63,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
 
   // If the very first thing we render in this EntityPass is a subpass that
   // happens to have a backdrop filter or advanced blend, than that backdrop
-  // filter/blend will end may wind up sampling from the uninitialized texture
+  // filter/blend will sample from an uninitialized texture.
   //
   // By calling `pass_context.GetRenderPass` here, we force the texture to pass
   // through at least one RenderPass with the correct clear configuration before
@@ -76,7 +76,13 @@ static std::shared_ptr<Texture> FlipBackdrop(
   if (!rendering_config.inline_pass_context->EndPass()) {
     VALIDATION_LOG
         << "Failed to end the current render pass in order to read from "
-           "the backdrop texture and apply an advanced blend.";
+           "the backdrop texture and apply an advanced blend or backdrop "
+           "filter.";
+    // Note: adding this render pass ensures there are no later crashes from
+    // unbalanced save layers. Ideally, this method would return false and the
+    // renderer could handle that by terminating dispatch.
+    render_passes.push_back(LazyRenderingConfig(
+        renderer, std::move(rendering_config.entity_pass_target)));
     return nullptr;
   }
 
@@ -86,7 +92,11 @@ static std::shared_ptr<Texture> FlipBackdrop(
 
   if (!input_texture) {
     VALIDATION_LOG << "Failed to fetch the color texture in order to "
-                      "apply an advanced blend.";
+                      "apply an advanced blend or backdrop filter.";
+
+    // Note: see above.
+    render_passes.push_back(LazyRenderingConfig(
+        renderer, std::move(rendering_config.entity_pass_target)));
     return nullptr;
   }
 
@@ -113,7 +123,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   if (!msaa_backdrop_entity.Render(
           renderer,
           *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
-    VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
+    VALIDATION_LOG << "Failed to render MSAA backdrop entity.";
     return nullptr;
   }
 
