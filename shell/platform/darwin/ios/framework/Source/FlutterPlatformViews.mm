@@ -621,7 +621,6 @@ void FlutterPlatformViewsController::Reset() {
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  const std::shared_ptr<IOSContext>& ios_context,
                                                  std::unique_ptr<SurfaceFrame> background_frame) {
-  FML_LOG(ERROR) << "FlutterPlatformViewsController::SubmitFrame";
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
   if (flutter_view_ == nullptr || composition_order_.empty()) {
@@ -630,10 +629,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   DlCanvas* background_canvas = background_frame->Canvas();
 
-  // Resolve all pending GPU operations before allocating a new surface.
-  // This does nothing on Impeller.
-  background_canvas->Flush();
-
   // Clipping the background canvas before drawing the picture recorders requires
   // saving and restoring the clip context.
   DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
@@ -641,8 +636,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
-  auto did_submit = true;
-  auto num_platform_views = composition_order_.size();
+  bool did_submit = true;
+  size_t num_platform_views = composition_order_.size();
 
   size_t missing_layer_count = 0;
 
@@ -683,7 +678,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         }
       }
 
-      auto allocation_size = intersection_rects.size();
+      size_t allocation_size = intersection_rects.size();
 
       // For testing purposes, the overlay id is used to find the overlay view.
       // This is the index of the layer for the current platform view.
@@ -772,14 +767,13 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Dispose unused Flutter Views.
   auto views_to_dispose = DisposeViews();
 
-  platform_task_runner_->PostTask([&, platform_view_layers = std::move(platform_view_layers),
+  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, [&, platform_view_layers = std::move(platform_view_layers),
                                    missing_layer_count,                                       //
                                    current_composition_params = current_composition_params_,  //
                                    views_to_recomposite = views_to_recomposite_,              //
                                    callbacks = callbacks,                                     //
                                    composition_order = composition_order_,                    //
                                    unused_layers = unused_layers, views_to_dispose]() mutable {
-    FML_LOG(ERROR) << "Post Task For PVS";
     TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
     [CATransaction begin];

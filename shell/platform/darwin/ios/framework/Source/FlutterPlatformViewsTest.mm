@@ -2717,12 +2717,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-  FML_LOG(ERROR) << "Latch 1";
-  std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
-  FML_LOG(ERROR) << "Latch 1 End";
-
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
   UIView* clippingView2 = view2.superview.superview;
@@ -2752,11 +2746,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-  FML_LOG(ERROR) << "Latch 2";
-  latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
-  FML_LOG(ERROR) << "Latch 2 End";
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
                     [flutterView.subviews indexOfObject:clippingView2],
@@ -2837,9 +2826,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-  std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread_task_runner->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
 
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
@@ -2873,10 +2859,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-
-  latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread_task_runner->PostTask([&]() { latch->CountDown(); });
-  latch->Wait();
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
                     [flutterView.subviews indexOfObject:clippingView2],
