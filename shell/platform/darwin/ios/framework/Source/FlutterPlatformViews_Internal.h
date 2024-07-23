@@ -182,6 +182,9 @@ class FlutterPlatformViewLayerPool {
   // Marks the layers in the pool as available for reuse.
   void RecycleLayers();
 
+  // Returns the count of layers currently in the pool.
+  size_t size() const;
+
  private:
   // The index of the entry in the layers_ vector that determines the beginning of the unused
   // layers. For example, consider the following vector:
@@ -234,6 +237,8 @@ class FlutterPlatformViewsController {
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
   size_t EmbeddedViewCount();
+
+  size_t LayerPoolSize() const;
 
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //

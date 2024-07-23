@@ -161,6 +161,10 @@ FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
   return results;
 }
 
+size_t FlutterPlatformViewLayerPool::size() const {
+  return layers_.size();
+}
+
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_.reset(flutter_view);
 }
@@ -401,6 +405,10 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
 
 size_t FlutterPlatformViewsController::EmbeddedViewCount() {
   return composition_order_.size();
+}
+
+size_t FlutterPlatformViewsController::LayerPoolSize() const {
+  return layer_pool_->size();
 }
 
 UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
