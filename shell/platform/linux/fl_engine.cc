@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "flutter/common/constants.h"
-#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
@@ -21,11 +20,10 @@
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
-#include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_settings_handler.h"
 #include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
@@ -34,8 +32,6 @@ static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 // differentiate the actual device (mouse v.s. trackpad)
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
-
-static constexpr const char* kFlutterLifecycleChannel = "flutter/lifecycle";
 
 struct _FlEngine {
   GObject parent_instance;
@@ -46,7 +42,7 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
-  FlSettingsPlugin* settings_plugin;
+  FlSettingsHandler* settings_handler;
   FlTextureRegistrar* texture_registrar;
   FlTaskRunner* task_runner;
   FlutterEngineAOTData aot_data;
@@ -151,25 +147,6 @@ static void view_removed_cb(const FlutterRemoveViewResult* result) {
     g_task_return_new_error(task, fl_engine_error_quark(),
                             FL_ENGINE_ERROR_FAILED, "Failed to remove view");
   }
-}
-
-static void set_app_lifecycle_state(FlEngine* self,
-                                    const flutter::AppLifecycleState state) {
-  FlBinaryMessenger* binary_messenger = fl_engine_get_binary_messenger(self);
-
-  g_autoptr(FlValue) value =
-      fl_value_new_string(flutter::AppLifecycleStateToString(state));
-  g_autoptr(FlStringCodec) codec = fl_string_codec_new();
-  g_autoptr(GBytes) message =
-      fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, nullptr);
-
-  if (message == nullptr) {
-    return;
-  }
-
-  fl_binary_messenger_send_on_channel(binary_messenger,
-                                      kFlutterLifecycleChannel, message,
-                                      nullptr, nullptr, nullptr);
 }
 
 // Passes locale information to the Flutter engine.
@@ -431,7 +408,7 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->texture_registrar);
   g_clear_object(&self->binary_messenger);
-  g_clear_object(&self->settings_plugin);
+  g_clear_object(&self->settings_handler);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -596,8 +573,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   setup_locales(self);
 
   g_autoptr(FlSettings) settings = fl_settings_new();
-  self->settings_plugin = fl_settings_plugin_new(self);
-  fl_settings_plugin_start(self->settings_plugin, settings);
+  self->settings_handler = fl_settings_handler_new(self);
+  fl_settings_handler_start(self->settings_handler, settings);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
@@ -858,18 +835,6 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
   g_return_val_if_fail(g_task_is_valid(result, self), FALSE);
 
   return static_cast<GBytes*>(g_task_propagate_pointer(G_TASK(result), error));
-}
-
-void fl_engine_send_window_state_event(FlEngine* self,
-                                       gboolean visible,
-                                       gboolean focused) {
-  if (visible && focused) {
-    set_app_lifecycle_state(self, flutter::AppLifecycleState::kResumed);
-  } else if (visible) {
-    set_app_lifecycle_state(self, flutter::AppLifecycleState::kInactive);
-  } else {
-    set_app_lifecycle_state(self, flutter::AppLifecycleState::kHidden);
-  }
 }
 
 void fl_engine_send_window_metrics_event(FlEngine* self,
