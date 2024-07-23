@@ -152,11 +152,12 @@ void FlutterPlatformViewLayerPool::RecycleLayers() {
 }
 
 std::vector<std::shared_ptr<FlutterPlatformViewLayer>>
-FlutterPlatformViewLayerPool::GetUnusedLayers() {
+FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> results;
   for (size_t i = available_layer_index_; i < layers_.size(); i++) {
     results.push_back(layers_[i]);
   }
+  layers_.erase(layers_.begin() + available_layer_index_, layers_.end());
   return results;
 }
 
@@ -873,8 +874,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 }
 
 void FlutterPlatformViewsController::RemoveUnusedLayers() {
-  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_pool_->GetUnusedLayers();
-  for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
+  for (const auto& layer : layer_pool_->RemoveUnusedLayers()) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
 
@@ -915,7 +915,6 @@ void FlutterPlatformViewsController::DisposeViews() {
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
   }
-
   views_to_dispose_ = std::move(views_to_delay_dispose);
 }
 

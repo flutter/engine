@@ -176,9 +176,8 @@ class FlutterPlatformViewLayerPool {
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      MTLPixelFormat pixel_format);
 
-  // Gets the layers in the pool that aren't currently used.
-  // This method doesn't mark the layers as unused.
-  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> GetUnusedLayers();
+  // Removes unused layers from the pool. Returns the unused layers.
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> RemoveUnusedLayers();
 
   // Marks the layers in the pool as available for reuse.
   void RecycleLayers();
