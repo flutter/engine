@@ -115,7 +115,6 @@ FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
  * @user_data: (closure): user data to pass to @callback.
  *
  * Asynchronously add a new view.
- *
  */
 void fl_engine_add_view(FlEngine* engine,
                         size_t width,
