@@ -767,59 +767,61 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Dispose unused Flutter Views.
   auto views_to_dispose = DisposeViews();
 
-  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, [&, platform_view_layers = std::move(platform_view_layers),
-                                   missing_layer_count,                                       //
-                                   current_composition_params = current_composition_params_,  //
-                                   views_to_recomposite = views_to_recomposite_,              //
-                                   callbacks = callbacks,                                     //
-                                   composition_order = composition_order_,                    //
-                                   unused_layers = unused_layers, views_to_dispose]() mutable {
-    TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
+  fml::TaskRunner::RunNowOrPostTask(
+      platform_task_runner_, [&, platform_view_layers = std::move(platform_view_layers),
+                              missing_layer_count,                                       //
+                              current_composition_params = current_composition_params_,  //
+                              views_to_recomposite = views_to_recomposite_,              //
+                              callbacks = callbacks,                                     //
+                              composition_order = composition_order_,                    //
+                              unused_layers = unused_layers, views_to_dispose]() mutable {
+        TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
-    [CATransaction begin];
+        [CATransaction begin];
 
-    // Configure Flutter overlay views.
-    for (const auto& [key, layers] : platform_view_layers) {
-      for (const auto& layer_data : layers) {
-        layer_data.layer->UpdateViewState(flutter_view_, layer_data.rect, layer_data.view_id,
-                                          layer_data.overlay_id);
-      }
-    }
+        // Configure Flutter overlay views.
+        for (const auto& [key, layers] : platform_view_layers) {
+          for (const auto& layer_data : layers) {
+            layer_data.layer->UpdateViewState(flutter_view_, layer_data.rect, layer_data.view_id,
+                                              layer_data.overlay_id);
+          }
+        }
 
-    // Dispose unused Flutter Views.
-    for (auto& view : views_to_dispose) {
-      [view removeFromSuperview];
-    }
+        // Dispose unused Flutter Views.
+        for (auto& view : views_to_dispose) {
+          [view removeFromSuperview];
+        }
 
-    // Composite Platform Views.
-    for (auto view_id : views_to_recomposite) {
-      CompositeWithParams(view_id, current_composition_params[view_id]);
-    }
+        // Composite Platform Views.
+        for (auto view_id : views_to_recomposite) {
+          CompositeWithParams(view_id, current_composition_params[view_id]);
+        }
 
-    for (const auto& cb : callbacks) {
-      cb();
-    }
+        for (const auto& cb : callbacks) {
+          cb();
+        }
 
-    // Create Missing Layers
-    for (auto i = 0u; i < missing_layer_count; i++) {
-      CreateLayer(gr_context,                                      //
-                  ios_context,                                     //
-                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
-      );
-    }
+        // Create Missing Layers
+        for (auto i = 0u; i < missing_layer_count; i++) {
+          CreateLayer(gr_context,                                      //
+                      ios_context,                                     //
+                      ((FlutterView*)flutter_view_.get()).pixelFormat  //
+          );
+        }
 
-    // Organize the layers by their z indexes.
-    auto active_composition_order = BringLayersIntoView(platform_view_layers, composition_order);
+        // Organize the layers by their z indexes.
+        auto active_composition_order =
+            BringLayersIntoView(platform_view_layers, composition_order);
 
-    // If a layer was allocated in the previous frame, but it's not used in the current frame,
-    // then it can be removed from the scene.
-    RemoveUnusedLayers(unused_layers, composition_order, active_composition_order);
+        // If a layer was allocated in the previous frame, but it's not used in the current frame,
+        // then it can be removed from the scene.
+        RemoveUnusedLayers(unused_layers, composition_order, active_composition_order);
 
-    // If the frame is submitted with embedded platform views,
-    // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
-    // If that case, we need to commit the transaction.
-    [CATransaction commit];
-  });
+        // If the frame is submitted with embedded platform views,
+        // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+        // If that case, we need to commit the transaction.
+        [CATransaction commit];
+      });
   return did_submit;
 }
 
