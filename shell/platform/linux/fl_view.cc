@@ -29,6 +29,7 @@
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
 #if !GTK_CHECK_VERSION(4, 0, 0)
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
+#endif
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
@@ -613,13 +614,13 @@ static void realize_cb(FlView* self) {
 
   fl_renderer_setup(FL_RENDERER(self->renderer));
 
+#if !GTK_CHECK_VERSION(4, 0, 0)   
   GtkWidget* toplevel_window = gtk_widget_get_toplevel(GTK_WIDGET(self));
 
   self->window_state_monitor =
       fl_window_state_monitor_new(fl_engine_get_binary_messenger(self->engine),
                                   GTK_WINDOW(toplevel_window));
 
-#if !GTK_CHECK_VERSION(4, 0, 0)
   // Handle requests by the user to close the application.
   g_signal_connect_swapped(toplevel_window, "delete-event",
                            G_CALLBACK(window_delete_event_cb), self);
@@ -761,13 +762,15 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
   g_clear_object(&self->window_state_monitor);
-  g_clear_object(&self->scrolling_manager);
 #if !GTK_CHECK_VERSION(4, 0, 0)
-  g_clear_object(&self->keyboard_handler);
+  g_clear_object(&self->scrolling_manager);
 #endif
+  g_clear_object(&self->keyboard_handler);
   g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->platform_handler);
+#if !GTK_CHECK_VERSION(4, 0, 0)
   g_clear_object(&self->view_accessible);
+#endif
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
