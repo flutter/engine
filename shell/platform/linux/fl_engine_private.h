@@ -226,6 +226,7 @@ void fl_engine_set_on_pre_engine_restart_handler(
 /**
  * fl_engine_send_window_metrics_event:
  * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
  * @width: width of the window in pixels.
  * @height: height of the window in pixels.
  * @pixel_ratio: scale factor for window.
