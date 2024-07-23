@@ -4,6 +4,7 @@
 
 #include "impeller/aiks/experimental_canvas.h"
 #include "fml/logging.h"
+#include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/base/validation.h"
@@ -203,6 +204,8 @@ void ExperimentalCanvas::SaveLayer(
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
     bool can_distribute_opacity) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
