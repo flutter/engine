@@ -59,7 +59,7 @@ struct _FlView {
   // Monitor to track window state.
   FlWindowStateMonitor* window_state_monitor;
 
-#if !GTK_CHECK_VERSION(4, 0, 0)   
+#if !GTK_CHECK_VERSION(4, 0, 0)
   FlScrollingManager* scrolling_manager;
 #endif
 
@@ -614,7 +614,7 @@ static void realize_cb(FlView* self) {
 
   fl_renderer_setup(FL_RENDERER(self->renderer));
 
-#if !GTK_CHECK_VERSION(4, 0, 0)   
+#if !GTK_CHECK_VERSION(4, 0, 0)
   GtkWidget* toplevel_window = gtk_widget_get_toplevel(GTK_WIDGET(self));
 
   self->window_state_monitor =
