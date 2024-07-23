@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_settings_handler.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
@@ -37,14 +37,14 @@ MATCHER_P2(HasSetting, key, value, "") {
           ::testing::A<GCancellable*>(), ::testing::A<GAsyncReadyCallback>(), \
           ::testing::A<gpointer>()))
 
-TEST(FlSettingsPluginTest, AlwaysUse24HourFormat) {
+TEST(FlSettingsHandlerTest, AlwaysUse24HourFormat) {
   ::testing::NiceMock<flutter::testing::MockSettings> settings;
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
 
   g_autoptr(FlEngine) engine =
       FL_ENGINE(g_object_new(fl_engine_get_type(), "binary-messenger",
                              FL_BINARY_MESSENGER(messenger), nullptr));
-  g_autoptr(FlSettingsPlugin) plugin = fl_settings_plugin_new(engine);
+  g_autoptr(FlSettingsHandler) handler = fl_settings_handler_new(engine);
 
   g_autoptr(FlValue) use_12h = fl_value_new_bool(false);
   g_autoptr(FlValue) use_24h = fl_value_new_bool(true);
@@ -56,21 +56,21 @@ TEST(FlSettingsPluginTest, AlwaysUse24HourFormat) {
 
   EXPECT_SETTING(messenger, "alwaysUse24HourFormat", use_12h);
 
-  fl_settings_plugin_start(plugin, settings);
+  fl_settings_handler_start(handler, settings);
 
   EXPECT_SETTING(messenger, "alwaysUse24HourFormat", use_24h);
 
   fl_settings_emit_changed(settings);
 }
 
-TEST(FlSettingsPluginTest, PlatformBrightness) {
+TEST(FlSettingsHandlerTest, PlatformBrightness) {
   ::testing::NiceMock<flutter::testing::MockSettings> settings;
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
 
   g_autoptr(FlEngine) engine =
       FL_ENGINE(g_object_new(fl_engine_get_type(), "binary-messenger",
                              FL_BINARY_MESSENGER(messenger), nullptr));
-  g_autoptr(FlSettingsPlugin) plugin = fl_settings_plugin_new(engine);
+  g_autoptr(FlSettingsHandler) handler = fl_settings_handler_new(engine);
 
   g_autoptr(FlValue) light = fl_value_new_string("light");
   g_autoptr(FlValue) dark = fl_value_new_string("dark");
@@ -82,21 +82,21 @@ TEST(FlSettingsPluginTest, PlatformBrightness) {
 
   EXPECT_SETTING(messenger, "platformBrightness", light);
 
-  fl_settings_plugin_start(plugin, settings);
+  fl_settings_handler_start(handler, settings);
 
   EXPECT_SETTING(messenger, "platformBrightness", dark);
 
   fl_settings_emit_changed(settings);
 }
 
-TEST(FlSettingsPluginTest, TextScaleFactor) {
+TEST(FlSettingsHandlerTest, TextScaleFactor) {
   ::testing::NiceMock<flutter::testing::MockSettings> settings;
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
 
   g_autoptr(FlEngine) engine =
       FL_ENGINE(g_object_new(fl_engine_get_type(), "binary-messenger",
                              FL_BINARY_MESSENGER(messenger), nullptr));
-  g_autoptr(FlSettingsPlugin) plugin = fl_settings_plugin_new(engine);
+  g_autoptr(FlSettingsHandler) handler = fl_settings_handler_new(engine);
 
   g_autoptr(FlValue) one = fl_value_new_float(1.0);
   g_autoptr(FlValue) two = fl_value_new_float(2.0);
@@ -108,7 +108,7 @@ TEST(FlSettingsPluginTest, TextScaleFactor) {
 
   EXPECT_SETTING(messenger, "textScaleFactor", one);
 
-  fl_settings_plugin_start(plugin, settings);
+  fl_settings_handler_start(handler, settings);
 
   EXPECT_SETTING(messenger, "textScaleFactor", two);
 
@@ -117,7 +117,7 @@ TEST(FlSettingsPluginTest, TextScaleFactor) {
 
 // MOCK_ENGINE_PROC is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
-TEST(FlSettingsPluginTest, AccessibilityFeatures) {
+TEST(FlSettingsHandlerTest, AccessibilityFeatures) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
@@ -129,7 +129,7 @@ TEST(FlSettingsPluginTest, AccessibilityFeatures) {
         return kSuccess;
       }));
 
-  g_autoptr(FlSettingsPlugin) plugin = fl_settings_plugin_new(engine);
+  g_autoptr(FlSettingsHandler) handler = fl_settings_handler_new(engine);
 
   ::testing::NiceMock<flutter::testing::MockSettings> settings;
 
@@ -147,7 +147,7 @@ TEST(FlSettingsPluginTest, AccessibilityFeatures) {
       .WillOnce(::testing::Return(false))
       .WillOnce(::testing::Return(true));
 
-  fl_settings_plugin_start(plugin, settings);
+  fl_settings_handler_start(handler, settings);
   EXPECT_THAT(calls, ::testing::SizeIs(1));
   EXPECT_EQ(calls.back(), static_cast<FlutterAccessibilityFeature>(
                               kFlutterAccessibilityFeatureDisableAnimations |

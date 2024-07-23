@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
+#include "flutter/shell/platform/linux/fl_text_input_handler.h"
 
 #include <gtk/gtk.h>
 
@@ -59,7 +59,7 @@ typedef enum {
   kFlTextInputTypeNone,
 } FlTextInputType;
 
-struct FlTextInputPluginPrivate {
+struct FlTextInputHandlerPrivate {
   GObject parent_instance;
 
   FlMethodChannel* channel;
@@ -97,8 +97,8 @@ struct FlTextInputPluginPrivate {
   GdkRectangle composing_rect;
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE(FlTextInputPlugin,
-                           fl_text_input_plugin,
+G_DEFINE_TYPE_WITH_PRIVATE(FlTextInputHandler,
+                           fl_text_input_handler,
                            G_TYPE_OBJECT)
 
 // Completes method call and returns TRUE if the call was successful.
@@ -125,9 +125,9 @@ static void update_editing_state_response_cb(GObject* object,
 }
 
 // Informs Flutter of text input changes.
-static void update_editing_state(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void update_editing_state(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   g_autoptr(FlValue) args = fl_value_new_list();
   fl_value_append_take(args, fl_value_new_int(priv->client_id));
@@ -167,10 +167,10 @@ static void update_editing_state(FlTextInputPlugin* self) {
 }
 
 // Informs Flutter of text input changes by passing just the delta.
-static void update_editing_state_with_delta(FlTextInputPlugin* self,
+static void update_editing_state_with_delta(FlTextInputHandler* self,
                                             flutter::TextEditingDelta* delta) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   g_autoptr(FlValue) args = fl_value_new_list();
   fl_value_append_take(args, fl_value_new_int(priv->client_id));
@@ -235,11 +235,11 @@ static void perform_action_response_cb(GObject* object,
 }
 
 // Inform Flutter that the input has been activated.
-static void perform_action(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void perform_action(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
-  g_return_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self));
+  g_return_if_fail(FL_IS_TEXT_INPUT_HANDLER(self));
   g_return_if_fail(priv->client_id != 0);
   g_return_if_fail(priv->input_action != nullptr);
 
@@ -252,16 +252,16 @@ static void perform_action(FlTextInputPlugin* self) {
 }
 
 // Signal handler for GtkIMContext::preedit-start
-static void im_preedit_start_cb(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void im_preedit_start_cb(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->text_model->BeginComposing();
 }
 
 // Signal handler for GtkIMContext::preedit-changed
-static void im_preedit_changed_cb(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void im_preedit_changed_cb(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   std::string text_before_change = priv->text_model->GetText();
   flutter::TextRange composing_before_change =
       priv->text_model->composing_range();
@@ -288,9 +288,9 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
 }
 
 // Signal handler for GtkIMContext::commit
-static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void im_commit_cb(FlTextInputHandler* self, const gchar* text) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   std::string text_before_change = priv->text_model->GetText();
   flutter::TextRange composing_before_change =
       priv->text_model->composing_range();
@@ -315,9 +315,9 @@ static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
 }
 
 // Signal handler for GtkIMContext::preedit-end
-static void im_preedit_end_cb(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void im_preedit_end_cb(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->text_model->EndComposing();
   if (priv->enable_delta_model) {
     flutter::TextEditingDelta delta =
@@ -329,9 +329,9 @@ static void im_preedit_end_cb(FlTextInputPlugin* self) {
 }
 
 // Signal handler for GtkIMContext::retrieve-surrounding
-static gboolean im_retrieve_surrounding_cb(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static gboolean im_retrieve_surrounding_cb(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   auto text = priv->text_model->GetText();
   size_t cursor_offset = priv->text_model->GetCursorOffset();
   gtk_im_context_set_surrounding(priv->im_context, text.c_str(), -1,
@@ -340,11 +340,11 @@ static gboolean im_retrieve_surrounding_cb(FlTextInputPlugin* self) {
 }
 
 // Signal handler for GtkIMContext::delete-surrounding
-static gboolean im_delete_surrounding_cb(FlTextInputPlugin* self,
+static gboolean im_delete_surrounding_cb(FlTextInputHandler* self,
                                          gint offset,
                                          gint n_chars) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   std::string text_before_change = priv->text_model->GetText();
   if (priv->text_model->DeleteSurrounding(offset, n_chars)) {
@@ -361,14 +361,14 @@ static gboolean im_delete_surrounding_cb(FlTextInputPlugin* self,
 }
 
 // Called when the input method client is set up.
-static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
+static FlMethodResponse* set_client(FlTextInputHandler* self, FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
       fl_value_get_length(args) < 2) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Expected 2-element list", nullptr));
   }
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   priv->client_id = fl_value_get_int(fl_value_get_list_value(args, 0));
   FlValue* config_value = fl_value_get_list_value(args, 1);
@@ -405,18 +405,18 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
 }
 
 // Hides the input method.
-static FlMethodResponse* hide(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static FlMethodResponse* hide(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   gtk_im_context_focus_out(priv->im_context);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
 // Shows the input method.
-static FlMethodResponse* show(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static FlMethodResponse* show(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   if (priv->input_type == kFlTextInputTypeNone) {
     return hide(self);
   }
@@ -427,10 +427,10 @@ static FlMethodResponse* show(FlTextInputPlugin* self) {
 }
 
 // Updates the editing state from Flutter.
-static FlMethodResponse* set_editing_state(FlTextInputPlugin* self,
+static FlMethodResponse* set_editing_state(FlTextInputHandler* self,
                                            FlValue* args) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   const gchar* text =
       fl_value_get_string(fl_value_lookup_string(args, kTextKey));
   priv->text_model->SetText(text);
@@ -465,9 +465,9 @@ static FlMethodResponse* set_editing_state(FlTextInputPlugin* self,
 }
 
 // Called when the input method client is complete.
-static FlMethodResponse* clear_client(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static FlMethodResponse* clear_client(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->client_id = kClientIdUnset;
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -481,9 +481,9 @@ static FlMethodResponse* clear_client(FlTextInputPlugin* self) {
 // coordinates to Flutter root coordinates. This function is called after each
 // of these updates. It transforms the composing rect to GDK window coordinates
 // and notifies GTK of the updated cursor position.
-static void update_im_cursor_position(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void update_im_cursor_position(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   // Skip update if not composing to avoid setting to position 0.
   if (!priv->text_model->composing()) {
@@ -516,7 +516,7 @@ static void update_im_cursor_position(FlTextInputPlugin* self) {
 // transform from the local coordinate system of the EditableText to root
 // Flutter coordinate system.
 static FlMethodResponse* set_editable_size_and_transform(
-    FlTextInputPlugin* self,
+    FlTextInputHandler* self,
     FlValue* args) {
   FlValue* transform = fl_value_lookup_string(args, kTransform);
   size_t transform_len = fl_value_get_length(transform);
@@ -524,8 +524,8 @@ static FlMethodResponse* set_editable_size_and_transform(
 
   for (size_t i = 0; i < transform_len; ++i) {
     double val = fl_value_get_float(fl_value_get_list_value(transform, i));
-    FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-        fl_text_input_plugin_get_instance_private(self));
+    FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+        fl_text_input_handler_get_instance_private(self));
     priv->editabletext_transform[i / 4][i % 4] = val;
   }
   update_im_cursor_position(self);
@@ -539,10 +539,10 @@ static FlMethodResponse* set_editable_size_and_transform(
 // may be triggered. It provides an updated rect for the composing region in
 // local coordinates of the EditableText. In the case where there is no
 // composing region, the cursor rect is sent.
-static FlMethodResponse* set_marked_text_rect(FlTextInputPlugin* self,
+static FlMethodResponse* set_marked_text_rect(FlTextInputHandler* self,
                                               FlValue* args) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->composing_rect.x =
       fl_value_get_float(fl_value_lookup_string(args, "x"));
   priv->composing_rect.y =
@@ -560,7 +560,7 @@ static FlMethodResponse* set_marked_text_rect(FlTextInputPlugin* self,
 static void method_call_cb(FlMethodChannel* channel,
                            FlMethodCall* method_call,
                            gpointer user_data) {
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(user_data);
+  FlTextInputHandler* self = FL_TEXT_INPUT_HANDLER(user_data);
 
   const gchar* method = fl_method_call_get_name(method_call);
   FlValue* args = fl_method_call_get_args(method_call);
@@ -590,11 +590,11 @@ static void method_call_cb(FlMethodChannel* channel,
   }
 }
 
-// Disposes of an FlTextInputPlugin.
-static void fl_text_input_plugin_dispose(GObject* object) {
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(object);
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+// Disposes of an FlTextInputHandler.
+static void fl_text_input_handler_dispose(GObject* object) {
+  FlTextInputHandler* self = FL_TEXT_INPUT_HANDLER(object);
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   g_clear_object(&priv->channel);
   g_clear_pointer(&priv->input_action, g_free);
@@ -610,17 +610,17 @@ static void fl_text_input_plugin_dispose(GObject* object) {
     priv->view_delegate = nullptr;
   }
 
-  G_OBJECT_CLASS(fl_text_input_plugin_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_text_input_handler_parent_class)->dispose(object);
 }
 
-// Implements FlTextInputPlugin::filter_keypress.
-static gboolean fl_text_input_plugin_filter_keypress_default(
-    FlTextInputPlugin* self,
+// Implements FlTextInputHandler::filter_keypress.
+static gboolean fl_text_input_handler_filter_keypress_default(
+    FlTextInputHandler* self,
     FlKeyEvent* event) {
-  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), false);
+  g_return_val_if_fail(FL_IS_TEXT_INPUT_HANDLER(self), false);
 
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   if (priv->client_id == kClientIdUnset) {
     return FALSE;
@@ -696,26 +696,27 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
   return changed;
 }
 
-// Initializes the FlTextInputPlugin class.
-static void fl_text_input_plugin_class_init(FlTextInputPluginClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_text_input_plugin_dispose;
-  FL_TEXT_INPUT_PLUGIN_CLASS(klass)->filter_keypress =
-      fl_text_input_plugin_filter_keypress_default;
+// Initializes the FlTextInputHandler class.
+static void fl_text_input_handler_class_init(FlTextInputHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_text_input_handler_dispose;
+  FL_TEXT_INPUT_HANDLER_CLASS(klass)->filter_keypress =
+      fl_text_input_handler_filter_keypress_default;
 }
 
-// Initializes an instance of the FlTextInputPlugin class.
-static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+// Initializes an instance of the FlTextInputHandler class.
+static void fl_text_input_handler_init(FlTextInputHandler* self) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
 
   priv->client_id = kClientIdUnset;
   priv->input_type = kFlTextInputTypeText;
   priv->text_model = new flutter::TextInputModel();
 }
 
-static void init_im_context(FlTextInputPlugin* self, GtkIMContext* im_context) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+static void init_im_context(FlTextInputHandler* self,
+                            GtkIMContext* im_context) {
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->im_context = GTK_IM_CONTEXT(g_object_ref(im_context));
 
   // On Wayland, this call sets up the input method so it can be enabled
@@ -742,7 +743,7 @@ static void init_im_context(FlTextInputPlugin* self, GtkIMContext* im_context) {
                           G_CONNECT_SWAPPED);
 }
 
-FlTextInputPlugin* fl_text_input_plugin_new(
+FlTextInputHandler* fl_text_input_handler_new(
     FlBinaryMessenger* messenger,
     GtkIMContext* im_context,
     FlTextInputViewDelegate* view_delegate) {
@@ -750,12 +751,12 @@ FlTextInputPlugin* fl_text_input_plugin_new(
   g_return_val_if_fail(GTK_IS_IM_CONTEXT(im_context), nullptr);
   g_return_val_if_fail(FL_IS_TEXT_INPUT_VIEW_DELEGATE(view_delegate), nullptr);
 
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(
-      g_object_new(fl_text_input_plugin_get_type(), nullptr));
+  FlTextInputHandler* self = FL_TEXT_INPUT_HANDLER(
+      g_object_new(fl_text_input_handler_get_type(), nullptr));
 
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
+  FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
+      fl_text_input_handler_get_instance_private(self));
   priv->channel =
       fl_method_channel_new(messenger, kChannelName, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(priv->channel, method_call_cb, self,
@@ -771,13 +772,13 @@ FlTextInputPlugin* fl_text_input_plugin_new(
   return self;
 }
 
-// Filters the a keypress given to the plugin through the plugin's
+// Filters the a keypress given to the handler through the handler's
 // filter_keypress callback.
-gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
-                                              FlKeyEvent* event) {
-  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), FALSE);
-  if (FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress) {
-    return FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress(self, event);
+gboolean fl_text_input_handler_filter_keypress(FlTextInputHandler* self,
+                                               FlKeyEvent* event) {
+  g_return_val_if_fail(FL_IS_TEXT_INPUT_HANDLER(self), FALSE);
+  if (FL_TEXT_INPUT_HANDLER_GET_CLASS(self)->filter_keypress) {
+    return FL_TEXT_INPUT_HANDLER_GET_CLASS(self)->filter_keypress(self, event);
   }
   return FALSE;
 }

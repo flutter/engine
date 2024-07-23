@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
+#include "flutter/shell/platform/linux/fl_keyboard_handler.h"
 
 #include <array>
 #include <cinttypes>
@@ -30,12 +30,12 @@ G_DECLARE_FINAL_TYPE(FlKeyboardPendingEvent,
                      KEYBOARD_PENDING_EVENT,
                      GObject);
 
-#define FL_TYPE_KEYBOARD_MANAGER_USER_DATA \
-  fl_keyboard_manager_user_data_get_type()
-G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
-                     fl_keyboard_manager_user_data,
+#define FL_TYPE_KEYBOARD_HANDLER_USER_DATA \
+  fl_keyboard_handler_user_data_get_type()
+G_DECLARE_FINAL_TYPE(FlKeyboardHandlerUserData,
+                     fl_keyboard_handler_user_data,
                      FL,
-                     KEYBOARD_MANAGER_USER_DATA,
+                     KEYBOARD_HANDLER_USER_DATA,
                      GObject);
 
 /* End declarations */
@@ -60,7 +60,7 @@ typedef std::map<guint8, DerivedGroupLayout> DerivedLayout;
 typedef struct {
   FlKeyEvent* event;
   uint64_t specified_logical_key;
-  FlKeyboardManagerUserData* user_data;
+  FlKeyboardHandlerUserData* user_data;
 } DispatchToResponderLoopContext;
 
 bool is_eascii(uint16_t character) {
@@ -113,7 +113,7 @@ static uint64_t get_logical_key_from_layout(const FlKeyEvent* event,
 
 /**
  * FlKeyboardPendingEvent:
- * A record for events that have been received by the manager, but
+ * A record for events that have been received by the handler, but
  * dispatched to other objects, whose results have yet to return.
  *
  * This object is used by both the "pending_responds" list and the
@@ -165,7 +165,7 @@ static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
 // Calculates a unique ID for a given FlKeyEvent object to use for
 // identification of responses from the framework.
-static uint64_t fl_keyboard_manager_get_event_hash(FlKeyEvent* event) {
+static uint64_t fl_keyboard_handler_get_event_hash(FlKeyEvent* event) {
   // Combine the event timestamp, the type of event, and the hardware keycode
   // (scan code) of the event to come up with a unique id for this event that
   // can be derived solely from the event data itself, so that we can identify
@@ -192,79 +192,79 @@ static FlKeyboardPendingEvent* fl_keyboard_pending_event_new(
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
-  self->hash = fl_keyboard_manager_get_event_hash(self->event.get());
+  self->hash = fl_keyboard_handler_get_event_hash(self->event.get());
   return self;
 }
 
-/* Define FlKeyboardManagerUserData */
+/* Define FlKeyboardHandlerUserData */
 
 /**
- * FlKeyboardManagerUserData:
- * The user_data used when #FlKeyboardManager sends event to
+ * FlKeyboardHandlerUserData:
+ * The user_data used when #FlKeyboardHandler sends event to
  * responders.
  */
 
-struct _FlKeyboardManagerUserData {
+struct _FlKeyboardHandlerUserData {
   GObject parent_instance;
 
-  // A weak reference to the owner manager.
-  FlKeyboardManager* manager;
+  // A weak reference to the owner handler.
+  FlKeyboardHandler* handler;
   uint64_t sequence_id;
 };
 
-G_DEFINE_TYPE(FlKeyboardManagerUserData,
-              fl_keyboard_manager_user_data,
+G_DEFINE_TYPE(FlKeyboardHandlerUserData,
+              fl_keyboard_handler_user_data,
               G_TYPE_OBJECT)
 
-static void fl_keyboard_manager_user_data_dispose(GObject* object) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(object));
-  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(object);
-  if (self->manager != nullptr) {
-    g_object_remove_weak_pointer(G_OBJECT(self->manager),
-                                 reinterpret_cast<gpointer*>(&(self->manager)));
-    self->manager = nullptr;
+static void fl_keyboard_handler_user_data_dispose(GObject* object) {
+  g_return_if_fail(FL_IS_KEYBOARD_HANDLER_USER_DATA(object));
+  FlKeyboardHandlerUserData* self = FL_KEYBOARD_HANDLER_USER_DATA(object);
+  if (self->handler != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self->handler),
+                                 reinterpret_cast<gpointer*>(&(self->handler)));
+    self->handler = nullptr;
   }
 }
 
-static void fl_keyboard_manager_user_data_class_init(
-    FlKeyboardManagerUserDataClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_user_data_dispose;
+static void fl_keyboard_handler_user_data_class_init(
+    FlKeyboardHandlerUserDataClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_handler_user_data_dispose;
 }
 
-static void fl_keyboard_manager_user_data_init(
-    FlKeyboardManagerUserData* self) {}
+static void fl_keyboard_handler_user_data_init(
+    FlKeyboardHandlerUserData* self) {}
 
-// Creates a new FlKeyboardManagerUserData private class with all information.
-static FlKeyboardManagerUserData* fl_keyboard_manager_user_data_new(
-    FlKeyboardManager* manager,
+// Creates a new FlKeyboardHandlerUserData private class with all information.
+static FlKeyboardHandlerUserData* fl_keyboard_handler_user_data_new(
+    FlKeyboardHandler* handler,
     uint64_t sequence_id) {
-  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(
-      g_object_new(fl_keyboard_manager_user_data_get_type(), nullptr));
+  FlKeyboardHandlerUserData* self = FL_KEYBOARD_HANDLER_USER_DATA(
+      g_object_new(fl_keyboard_handler_user_data_get_type(), nullptr));
 
-  self->manager = manager;
+  self->handler = handler;
   // Add a weak pointer so we can know if the key event responder disappeared
   // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(manager),
-                            reinterpret_cast<gpointer*>(&(self->manager)));
+  g_object_add_weak_pointer(G_OBJECT(handler),
+                            reinterpret_cast<gpointer*>(&(self->handler)));
   self->sequence_id = sequence_id;
   return self;
 }
 
-/* Define FlKeyboardManager */
+/* Define FlKeyboardHandler */
 
-struct _FlKeyboardManager {
+struct _FlKeyboardHandler {
   GObject parent_instance;
 
   FlKeyboardViewDelegate* view_delegate;
 
   // An array of #FlKeyResponder. Elements are added with
-  // #fl_keyboard_manager_add_responder immediately after initialization and are
+  // #fl_keyboard_handler_add_responder immediately after initialization and are
   // automatically released on dispose.
   GPtrArray* responder_list;
 
   // An array of #FlKeyboardPendingEvent.
   //
-  // Its elements are *not* unreferenced when removed. When FlKeyboardManager is
+  // Its elements are *not* unreferenced when removed. When FlKeyboardHandler is
   // disposed, this array will be set with a free_func so that the elements are
   // unreferenced when removed.
   GPtrArray* pending_responds;
@@ -285,11 +285,11 @@ struct _FlKeyboardManager {
   std::unique_ptr<DerivedLayout> derived_layout;
   // A static map from keycodes to all layout goals.
   //
-  // It is set up when the manager is initialized and is not changed ever after.
+  // It is set up when the handler is initialized and is not changed ever after.
   std::unique_ptr<std::map<uint16_t, const LayoutGoal*>> keycode_to_goals;
   // A static map from logical keys to all mandatory layout goals.
   //
-  // It is set up when the manager is initialized and is not changed ever after.
+  // It is set up when the handler is initialized and is not changed ever after.
   std::unique_ptr<std::map<uint64_t, const LayoutGoal*>>
       logical_to_mandatory_goals;
 
@@ -297,15 +297,15 @@ struct _FlKeyboardManager {
   FlMethodChannel* channel;
 };
 
-G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
+G_DEFINE_TYPE(FlKeyboardHandler, fl_keyboard_handler, G_TYPE_OBJECT);
 
-static void fl_keyboard_manager_dispose(GObject* object);
+static void fl_keyboard_handler_dispose(GObject* object);
 
-static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_dispose;
+static void fl_keyboard_handler_class_init(FlKeyboardHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_handler_dispose;
 }
 
-static void fl_keyboard_manager_init(FlKeyboardManager* self) {
+static void fl_keyboard_handler_init(FlKeyboardHandler* self) {
   self->derived_layout = std::make_unique<DerivedLayout>();
 
   self->keycode_to_goals =
@@ -327,8 +327,8 @@ static void fl_keyboard_manager_init(FlKeyboardManager* self) {
   self->last_sequence_id = 1;
 }
 
-static void fl_keyboard_manager_dispose(GObject* object) {
-  FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
+static void fl_keyboard_handler_dispose(GObject* object) {
+  FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(object);
 
   if (self->view_delegate != nullptr) {
     fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
@@ -348,10 +348,10 @@ static void fl_keyboard_manager_dispose(GObject* object) {
   g_ptr_array_free(self->pending_responds, TRUE);
   g_ptr_array_free(self->pending_redispatches, TRUE);
 
-  G_OBJECT_CLASS(fl_keyboard_manager_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_keyboard_handler_parent_class)->dispose(object);
 }
 
-/* Implement FlKeyboardManager */
+/* Implement FlKeyboardHandler */
 
 // This is an exact copy of g_ptr_array_find_with_equal_func.  Somehow CI
 // reports that can not find symbol g_ptr_array_find_with_equal_func, despite
@@ -399,7 +399,7 @@ static gboolean compare_pending_by_hash(gconstpointer pending,
 // hash.
 //
 // Returns true if the event is found and removed.
-static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
+static bool fl_keyboard_handler_remove_redispatched(FlKeyboardHandler* self,
                                                     uint64_t hash) {
   guint result_index;
   gboolean found = g_ptr_array_find_with_equal_func1(
@@ -417,10 +417,10 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
 // The callback used by a responder after the event was dispatched.
 static void responder_handle_event_callback(bool handled,
                                             gpointer user_data_ptr) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(user_data_ptr));
-  FlKeyboardManagerUserData* user_data =
-      FL_KEYBOARD_MANAGER_USER_DATA(user_data_ptr);
-  FlKeyboardManager* self = user_data->manager;
+  g_return_if_fail(FL_IS_KEYBOARD_HANDLER_USER_DATA(user_data_ptr));
+  FlKeyboardHandlerUserData* user_data =
+      FL_KEYBOARD_HANDLER_USER_DATA(user_data_ptr);
+  FlKeyboardHandler* self = user_data->handler;
   g_return_if_fail(self->view_delegate != nullptr);
 
   guint result_index = -1;
@@ -465,7 +465,7 @@ static uint16_t convert_key_to_char(FlKeyboardViewDelegate* view_delegate,
 
 // Make sure that Flutter has derived the layout for the group of the event,
 // if the event contains a goal keycode.
-static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
+static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
   guint8 group = event->group;
   if (self->derived_layout->find(group) != self->derived_layout->end()) {
     return;
@@ -541,7 +541,7 @@ static void guarantee_layout(FlKeyboardManager* self, FlKeyEvent* event) {
 }
 
 // Returns the keyboard pressed state.
-FlMethodResponse* get_keyboard_state(FlKeyboardManager* self) {
+FlMethodResponse* get_keyboard_state(FlKeyboardHandler* self) {
   g_autoptr(FlValue) result = fl_value_new_map();
 
   GHashTable* pressing_records =
@@ -565,7 +565,7 @@ FlMethodResponse* get_keyboard_state(FlKeyboardManager* self) {
 static void method_call_handler(FlMethodChannel* channel,
                                 FlMethodCall* method_call,
                                 gpointer user_data) {
-  FlKeyboardManager* self = FL_KEYBOARD_MANAGER(user_data);
+  FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(user_data);
 
   const gchar* method = fl_method_call_get_name(method_call);
 
@@ -582,13 +582,13 @@ static void method_call_handler(FlMethodChannel* channel,
   }
 }
 
-FlKeyboardManager* fl_keyboard_manager_new(
+FlKeyboardHandler* fl_keyboard_handler_new(
     FlBinaryMessenger* messenger,
     FlKeyboardViewDelegate* view_delegate) {
   g_return_val_if_fail(FL_IS_KEYBOARD_VIEW_DELEGATE(view_delegate), nullptr);
 
-  FlKeyboardManager* self = FL_KEYBOARD_MANAGER(
-      g_object_new(fl_keyboard_manager_get_type(), nullptr));
+  FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(
+      g_object_new(fl_keyboard_handler_get_type(), nullptr));
 
   self->view_delegate = view_delegate;
   g_object_add_weak_pointer(
@@ -601,8 +601,8 @@ FlKeyboardManager* fl_keyboard_manager_new(
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(
           [](const FlutterKeyEvent* event, FlutterKeyEventCallback callback,
              void* callback_user_data, void* send_key_event_user_data) {
-            FlKeyboardManager* self =
-                FL_KEYBOARD_MANAGER(send_key_event_user_data);
+            FlKeyboardHandler* self =
+                FL_KEYBOARD_HANDLER(send_key_event_user_data);
             g_return_if_fail(self->view_delegate != nullptr);
             fl_keyboard_view_delegate_send_key_event(
                 self->view_delegate, event, callback, callback_user_data);
@@ -635,16 +635,16 @@ static void dispatch_to_responder(gpointer responder_data,
       context->user_data, context->specified_logical_key);
 }
 
-gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
+gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
                                           FlKeyEvent* event) {
-  g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
+  g_return_val_if_fail(FL_IS_KEYBOARD_HANDLER(self), FALSE);
   g_return_val_if_fail(event != nullptr, FALSE);
   g_return_val_if_fail(self->view_delegate != nullptr, FALSE);
 
   guarantee_layout(self, event);
 
-  uint64_t incoming_hash = fl_keyboard_manager_get_event_hash(event);
-  if (fl_keyboard_manager_remove_redispatched(self, incoming_hash)) {
+  uint64_t incoming_hash = fl_keyboard_handler_get_event_hash(event);
+  if (fl_keyboard_handler_remove_redispatched(self, incoming_hash)) {
     return FALSE;
   }
 
@@ -653,8 +653,8 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
       self->responder_list->len);
 
   g_ptr_array_add(self->pending_responds, pending);
-  FlKeyboardManagerUserData* user_data =
-      fl_keyboard_manager_user_data_new(self, pending->sequence_id);
+  FlKeyboardHandlerUserData* user_data =
+      fl_keyboard_handler_user_data_new(self, pending->sequence_id);
   DispatchToResponderLoopContext data{
       .event = event,
       .specified_logical_key =
@@ -666,30 +666,30 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   return TRUE;
 }
 
-gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* self) {
-  g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
+gboolean fl_keyboard_handler_is_state_clear(FlKeyboardHandler* self) {
+  g_return_val_if_fail(FL_IS_KEYBOARD_HANDLER(self), FALSE);
   return self->pending_responds->len == 0 &&
          self->pending_redispatches->len == 0;
 }
 
-void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* self,
+void fl_keyboard_handler_sync_modifier_if_needed(FlKeyboardHandler* self,
                                                  guint state,
                                                  double event_time) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER(self));
+  g_return_if_fail(FL_IS_KEYBOARD_HANDLER(self));
 
   // The embedder responder is the first element in
-  // FlKeyboardManager.responder_list.
+  // FlKeyboardHandler.responder_list.
   FlKeyEmbedderResponder* responder =
       FL_KEY_EMBEDDER_RESPONDER(g_ptr_array_index(self->responder_list, 0));
   fl_key_embedder_responder_sync_modifiers_if_needed(responder, state,
                                                      event_time);
 }
 
-GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* self) {
-  g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), nullptr);
+GHashTable* fl_keyboard_handler_get_pressed_state(FlKeyboardHandler* self) {
+  g_return_val_if_fail(FL_IS_KEYBOARD_HANDLER(self), nullptr);
 
   // The embedder responder is the first element in
-  // FlKeyboardManager.responder_list.
+  // FlKeyboardHandler.responder_list.
   FlKeyEmbedderResponder* responder =
       FL_KEY_EMBEDDER_RESPONDER(g_ptr_array_index(self->responder_list, 0));
   return fl_key_embedder_responder_get_pressed_state(responder);
