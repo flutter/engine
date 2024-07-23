@@ -1,4 +1,4 @@
-Signature: e71d9141577b4b0a5116d536e83fcf67
+Signature: 5c3b9364b4b926066be90b1ed2dcc261
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8075,8 +8075,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DrawAtlas.cpp + ../..
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DrawAtlas.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DrawCommands.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DrawParams.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/FactoryFunctions.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/FactoryFunctions.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/GlobalCache.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/GlobalCache.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/GpuWorkSubmission.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -8292,8 +8290,6 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DrawAtlas.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DrawAtlas.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DrawCommands.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DrawParams.h
-FILE: ../../../flutter/third_party/skia/src/gpu/graphite/FactoryFunctions.cpp
-FILE: ../../../flutter/third_party/skia/src/gpu/graphite/FactoryFunctions.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/GlobalCache.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/GlobalCache.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/GpuWorkSubmission.cpp
@@ -9591,6 +9587,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLModuleData.h + ../../../f
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLModuleDataDefault.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLModuleDataFile.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLSpecialization.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLSpecialization.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLCodeGenTypes.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVValidator.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVValidator.h + ../../../flutter/third_party/skia/LICENSE
@@ -9693,6 +9691,8 @@ FILE: ../../../flutter/third_party/skia/src/sksl/SkSLModuleData.h
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLModuleDataDefault.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLModuleDataFile.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLSpecialization.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLSpecialization.h
 FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLCodeGenTypes.h
 FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVValidator.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVValidator.h
