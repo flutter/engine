@@ -79,7 +79,7 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
       context->GetContentContext(), target,
       display_list->root_has_backdrop_filter(),
       display_list->max_root_blend_mode(),
-      impeller::IRect::MakeSize(impeller_size));
+      impeller::IRect::MakeSize(render_target_size));
   display_list->Dispatch(impeller_dispatcher, SkIRect::MakeSize(size));
   impeller_dispatcher.FinishRecording();
 
