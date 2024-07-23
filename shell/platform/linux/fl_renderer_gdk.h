@@ -30,6 +30,17 @@ G_DECLARE_FINAL_TYPE(FlRendererGdk,
  */
 FlRendererGdk* fl_renderer_gdk_new();
 
+#if GTK_CHECK_VERSION(4, 0, 0)
+/**
+ * fl_renderer_gdk_set_surface:
+ * @renderer: an #FlRendererGdk.
+ * @surface: the surface that is being rendered on.
+ *
+ * Set the surface that is being rendered on. This is only called once when the
+ * surface is available.
+ */
+void fl_renderer_gdk_set_surface(FlRendererGdk* renderer, GdkSurface* surface);
+#else
 /**
  * fl_renderer_gdk_set_window:
  * @renderer: an #FlRendererGdk.
@@ -39,6 +50,7 @@ FlRendererGdk* fl_renderer_gdk_new();
  * window is available.
  */
 void fl_renderer_gdk_set_window(FlRendererGdk* renderer, GdkWindow* window);
+#endif
 
 /**
  * fl_renderer_gdk_create_contexts:
