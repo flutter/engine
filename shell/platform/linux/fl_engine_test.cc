@@ -430,8 +430,9 @@ static void add_view_cb(GObject* object,
                         GAsyncResult* result,
                         gpointer user_data) {
   g_autoptr(GError) error = nullptr;
-  gboolean r = fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
-  EXPECT_TRUE(r);
+  FlutterViewId view_id =
+      fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
+  EXPECT_GT(view_id, 0);
   EXPECT_EQ(error, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -444,18 +445,12 @@ TEST(FlEngineTest, AddView) {
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
   bool called = false;
-  FlutterViewId assigned_id = 0;
   embedder_api->AddView = MOCK_ENGINE_PROC(
-      AddView,
-      ([&called, &assigned_id](auto engine, const FlutterAddViewInfo* info) {
+      AddView, ([&called](auto engine, const FlutterAddViewInfo* info) {
         called = true;
         EXPECT_EQ(info->view_metrics->width, 123u);
         EXPECT_EQ(info->view_metrics->height, 456u);
         EXPECT_EQ(info->view_metrics->pixel_ratio, 2.0);
-
-        // Must not use ID 0, which is the implicit view.
-        EXPECT_GT(info->view_id, 0);
-        assigned_id = info->view_id;
 
         FlutterAddViewResult result;
         result.struct_size = sizeof(FlutterAddViewResult);
@@ -466,10 +461,7 @@ TEST(FlEngineTest, AddView) {
         return kSuccess;
       }));
 
-  FlutterViewId view_id =
-      fl_engine_add_view(engine, 123, 456, 2.0, nullptr, add_view_cb, loop);
-  EXPECT_EQ(view_id, assigned_id);
-
+  fl_engine_add_view(engine, 123, 456, 2.0, nullptr, add_view_cb, loop);
   EXPECT_TRUE(called);
 
   // Blocks here until add_view_cb is called.
@@ -480,8 +472,9 @@ static void add_view_error_cb(GObject* object,
                               GAsyncResult* result,
                               gpointer user_data) {
   g_autoptr(GError) error = nullptr;
-  gboolean r = fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
-  EXPECT_FALSE(r);
+  FlutterViewId view_id =
+      fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
+  EXPECT_EQ(view_id, 0);
   EXPECT_NE(error, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -514,8 +507,9 @@ static void add_view_engine_error_cb(GObject* object,
                                      GAsyncResult* result,
                                      gpointer user_data) {
   g_autoptr(GError) error = nullptr;
-  gboolean r = fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
-  EXPECT_FALSE(r);
+  FlutterViewId view_id =
+      fl_engine_add_view_finish(FL_ENGINE(object), result, &error);
+  EXPECT_EQ(view_id, 0);
   EXPECT_NE(error, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));

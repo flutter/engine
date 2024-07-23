@@ -114,18 +114,16 @@ FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
  * added.
  * @user_data: (closure): user data to pass to @callback.
  *
- * Adds a new view.
- *
- * Returns: the ID for the new view.
+ * Asynchronously add a new view.
  *
  */
-FlutterViewId fl_engine_add_view(FlEngine* engine,
-                                 size_t width,
-                                 size_t height,
-                                 double pixel_ratio,
-                                 GCancellable* cancellable,
-                                 GAsyncReadyCallback callback,
-                                 gpointer user_data);
+void fl_engine_add_view(FlEngine* engine,
+                        size_t width,
+                        size_t height,
+                        double pixel_ratio,
+                        GCancellable* cancellable,
+                        GAsyncReadyCallback callback,
+                        gpointer user_data);
 
 /**
  * fl_engine_add_view_finish:
@@ -136,11 +134,11 @@ FlutterViewId fl_engine_add_view(FlEngine* engine,
  *
  * Completes request started with fl_engine_add_view().
  *
- * Returns: TRUE on succcess.
+ * Returns: the newly added view ID or 0 on error.
  */
-gboolean fl_engine_add_view_finish(FlEngine* engine,
-                                   GAsyncResult* result,
-                                   GError** error);
+FlutterViewId fl_engine_add_view_finish(FlEngine* engine,
+                                        GAsyncResult* result,
+                                        GError** error);
 
 /**
  * fl_engine_remove_view:
