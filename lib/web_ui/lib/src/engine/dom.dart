@@ -9,7 +9,6 @@ import 'dart:typed_data';
 
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 import 'browser_detection.dart';
 
@@ -38,13 +37,6 @@ import 'browser_detection.dart';
 /// used carefully and only on types that are known to not contains `JSNull` and
 /// `JSUndefined`.
 extension ObjectToJSAnyExtension on Object {
-  // Once `Object.toJSBox` is faster (see
-  // https://github.com/dart-lang/sdk/issues/55183) we can remove this
-  // backend-specific workaround.
-  @pragma('wasm:prefer-inline')
-  @pragma('dart2js:tryInline')
-  JSAny get toJSWrapper => dartToJsWrapper(this);
-
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
   JSAny get toJSAnyShallow {
@@ -61,10 +53,6 @@ extension ObjectToJSAnyExtension on Object {
 }
 
 extension JSAnyToObjectExtension on JSAny {
-  @pragma('wasm:prefer-inline')
-  @pragma('dart2js:tryInline')
-  Object get fromJSWrapper => jsWrapperToDart(this);
-
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
   Object get toObjectShallow {
@@ -443,6 +431,9 @@ extension DomEventExtension on DomEvent {
   external JSString get _type;
   String get type => _type.toDart;
 
+  external JSBoolean? get _cancelable;
+  bool get cancelable => _cancelable?.toDart ?? true;
+
   external JSVoid preventDefault();
   external JSVoid stopPropagation();
 
@@ -670,7 +661,27 @@ extension DomElementExtension on DomElement {
   external JSNumber? get _tabIndex;
   double? get tabIndex => _tabIndex?.toDartDouble;
 
-  external JSVoid focus();
+  /// Consider not exposing this method publicly. It defaults `preventScroll` to
+  /// false, which is almost always wrong in Flutter. If you need to expose a
+  /// method that focuses and scrolls to the element, give it a more specific
+  /// and lengthy name, e.g. `focusAndScrollToElement`. See more details in
+  /// [focusWithoutScroll].
+  @JS('focus')
+  external JSVoid _focus(JSAny options);
+
+  static final JSAny _preventScrollOptions = <String, bool>{ 'preventScroll': true }.toJSAnyDeep;
+
+  /// Calls DOM `Element.focus` with `preventScroll` set to true.
+  ///
+  /// This method exists because DOM `Element.focus` defaults to `preventScroll`
+  /// set to false. This default browser behavior is almost always wrong in the
+  /// Flutter context because the Flutter framework is in charge of scrolling
+  /// all of the widget content. See, for example, this issue:
+  ///
+  /// https://github.com/flutter/flutter/issues/130950
+  void focusWithoutScroll() {
+    _focus(_preventScrollOptions);
+  }
 
   @JS('scrollTop')
   external JSNumber get _scrollTop;
@@ -732,6 +743,8 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  external void setPointerCapture(num? pointerId);
 }
 
 @JS()
@@ -1538,7 +1551,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap {}
+class DomImageBitmap implements DomCanvasImageSource {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -2261,9 +2274,11 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external JSBoolean? get _repeat;
   bool? get repeat => _repeat?.toDart;
 
+  // Safari injects synthetic keyboard events after auto-complete that don't
+  // have a `shiftKey` attribute, so this property must be nullable.
   @JS('shiftKey')
-  external JSBoolean get _shiftKey;
-  bool get shiftKey => _shiftKey.toDart;
+  external JSBoolean? get _shiftKey;
+  bool? get shiftKey => _shiftKey?.toDart;
 
   @JS('isComposing')
   external JSBoolean get _isComposing;
@@ -2364,9 +2379,15 @@ extension DomPopStateEventExtension on DomPopStateEvent {
   dynamic get state => _state?.toObjectDeep;
 }
 
-@JS()
+@JS('URL')
 @staticInterop
-class DomURL {}
+class DomURL {
+  external factory DomURL.arg1(JSString url);
+  external factory DomURL.arg2(JSString url, JSString? base);
+}
+
+DomURL createDomURL(String url, [String? base]) =>
+    base == null ? DomURL.arg1(url.toJS) : DomURL.arg2(url.toJS, base.toJS);
 
 extension DomURLExtension on DomURL {
   @JS('createObjectURL')
@@ -2377,6 +2398,9 @@ extension DomURLExtension on DomURL {
   @JS('revokeObjectURL')
   external JSVoid _revokeObjectURL(JSString url);
   void revokeObjectURL(String url) => _revokeObjectURL(url.toJS);
+
+  @JS('toString')
+  external JSString toJSString();
 }
 
 @JS('Blob')
@@ -2747,6 +2771,30 @@ DomCompositionEvent createDomCompositionEvent(String type,
   } else {
     return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
   }
+}
+
+/// This is a pseudo-type for DOM elements that have the boolean `disabled`
+/// property.
+///
+/// This type cannot be part of the actual type hierarchy because each DOM type
+/// defines its `disabled` property ad hoc, without inheriting it from a common
+/// type, e.g. [DomHTMLInputElement] and [DomHTMLTextAreaElement].
+///
+/// To use, simply cast any element known to have the `disabled` property to
+/// this type using `as DomElementWithDisabledProperty`, then read and write
+/// this property as normal.
+@JS()
+@staticInterop
+class DomElementWithDisabledProperty extends DomHTMLElement {}
+
+extension DomElementWithDisabledPropertyExtension on DomElementWithDisabledProperty {
+  @JS('disabled')
+  external JSBoolean? get _disabled;
+  bool? get disabled => _disabled?.toDart;
+
+  @JS('disabled')
+  external set _disabled(JSBoolean? value);
+  set disabled(bool? value) => _disabled = value?.toJS;
 }
 
 @JS()
@@ -3379,16 +3427,16 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 
 /// Converts a String `url` into a [DomTrustedScriptURL] object when the
 /// Trusted Types API is available, else returns the unmodified `url`.
-Object createTrustedScriptUrl(String url) {
+JSAny createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
     final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
     assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedUrl;
+    return trustedUrl as JSAny;
   }
-  return url;
+  return url.toJS;
 }
 
 DomMessageChannel createDomMessageChannel() => DomMessageChannel();
@@ -3682,13 +3730,14 @@ class DomFinalizationRegistry {
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
-  external JSVoid register(JSAny target, JSAny value);
+  external JSVoid register(
+      ExternalDartReference target, ExternalDartReference value);
 
   @JS('register')
-  external JSVoid registerWithToken(JSAny target, JSAny value, JSAny token);
+  external JSVoid registerWithToken(ExternalDartReference target, ExternalDartReference value, ExternalDartReference token);
 
   @JS('unregister')
-  external JSVoid unregister(JSAny token);
+  external JSVoid unregister(ExternalDartReference token);
 }
 
 @JS('window.FinalizationRegistry')

@@ -385,14 +385,14 @@ class ShaderMaskOperation implements LayerOperation {
 }
 
 class PlatformView {
-  PlatformView(this.viewId, this.size, this.styling);
+  PlatformView(this.viewId, this.bounds, this.styling);
 
-  int viewId;
+  final int viewId;
 
   // The bounds of this platform view, in the layer's local coordinate space.
-  ui.Size size;
+  final ui.Rect bounds;
 
-  PlatformViewStyling styling;
+  final PlatformViewStyling styling;
 }
 
 sealed class LayerSlice {
@@ -499,18 +499,19 @@ class PlatformViewPosition {
     }
 
     // Otherwise, at least one of the positions involves a matrix transform.
-    final Matrix4 newTransform;
-    if (outerOffset != null) {
-      newTransform = Matrix4.translationValues(outerOffset.dx, outerOffset.dy, 0);
-    } else {
-      newTransform = outer.transform!.clone();
-    }
+    final Matrix4 innerTransform;
+    final Matrix4 outerTransform;
     if (innerOffset != null) {
-      newTransform.translate(innerOffset.dx, innerOffset.dy);
+      innerTransform = Matrix4.translationValues(innerOffset.dx, innerOffset.dy, 0);
     } else {
-      newTransform.multiply(inner.transform!);
+      innerTransform = inner.transform!;
     }
-    return PlatformViewPosition.transform(newTransform);
+    if (outerOffset != null) {
+      outerTransform = Matrix4.translationValues(outerOffset.dx, outerOffset.dy, 0);
+    } else {
+      outerTransform = outer.transform!;
+    }
+    return PlatformViewPosition.transform(outerTransform.multiplied(innerTransform));
   }
 
   @override
@@ -606,20 +607,8 @@ class LayerBuilder {
 
   PlatformViewStyling? _memoizedPlatformViewStyling;
 
-  PlatformViewStyling _createPlatformViewStyling() {
-    final PlatformViewStyling? innerStyling = operation?.createPlatformViewStyling();
-    final PlatformViewStyling? outerStyling = parent?.platformViewStyling;
-    if (innerStyling == null) {
-      return outerStyling ?? const PlatformViewStyling();
-    }
-    if (outerStyling == null) {
-      return innerStyling;
-    }
-    return PlatformViewStyling.combine(outerStyling, innerStyling);
-  }
-
   PlatformViewStyling get platformViewStyling {
-    return _memoizedPlatformViewStyling ??= _createPlatformViewStyling();
+    return _memoizedPlatformViewStyling ??= operation?.createPlatformViewStyling() ?? const PlatformViewStyling();
   }
 
   (ui.PictureRecorder, SceneCanvas) _createRecorder(ui.Rect rect) {
@@ -713,16 +702,7 @@ class LayerBuilder {
   }) {
     final ui.Rect bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
     platformViewRect = platformViewRect?.expandToInclude(bounds) ?? bounds;
-    final PlatformViewStyling layerStyling = platformViewStyling;
-    final PlatformViewStyling viewStyling = offset == ui.Offset.zero
-      ? layerStyling
-      : PlatformViewStyling.combine(
-        layerStyling,
-        PlatformViewStyling(
-          position: PlatformViewPosition.offset(offset),
-        ),
-      );
-    pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
+    pendingPlatformViews.add(PlatformView(viewId, bounds, platformViewStyling));
   }
 
   void mergeLayer(PictureEngineLayer layer) {
@@ -738,7 +718,15 @@ class LayerBuilder {
           if (occlusionRect != null) {
             platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
           }
-          pendingPlatformViews.addAll(slice.views);
+          for (final PlatformView view in slice.views) {
+            // Merge the platform view styling of this layer with the nested
+            // platform views.
+            final PlatformViewStyling styling = PlatformViewStyling.combine(
+              platformViewStyling,
+              view.styling,
+            );
+            pendingPlatformViews.add(PlatformView(view.viewId, view.bounds, styling));
+          }
       }
     }
   }

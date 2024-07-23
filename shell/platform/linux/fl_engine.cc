@@ -21,7 +21,7 @@
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
-#include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_settings_handler.h"
 #include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
@@ -46,7 +46,7 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
-  FlSettingsPlugin* settings_plugin;
+  FlSettingsHandler* settings_handler;
   FlTextureRegistrar* texture_registrar;
   FlTaskRunner* task_runner;
   FlutterEngineAOTData aot_data;
@@ -399,11 +399,14 @@ static void fl_engine_dispose(GObject* object) {
     self->aot_data = nullptr;
   }
 
+  fl_binary_messenger_shutdown(self->binary_messenger);
+  fl_texture_registrar_shutdown(self->texture_registrar);
+
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->texture_registrar);
   g_clear_object(&self->binary_messenger);
-  g_clear_object(&self->settings_plugin);
+  g_clear_object(&self->settings_handler);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -565,8 +568,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   setup_locales(self);
 
   g_autoptr(FlSettings) settings = fl_settings_new();
-  self->settings_plugin = fl_settings_plugin_new(self);
-  fl_settings_plugin_start(self->settings_plugin, settings);
+  self->settings_handler = fl_settings_handler_new(self);
+  fl_settings_handler_start(self->settings_handler, settings);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
@@ -792,6 +795,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         size_t timestamp,
                                         double x,
                                         double y,
+                                        FlutterPointerDeviceKind device_kind,
                                         double scroll_delta_x,
                                         double scroll_delta_y,
                                         int64_t buttons) {
@@ -812,7 +816,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   }
   fl_event.scroll_delta_x = scroll_delta_x;
   fl_event.scroll_delta_y = scroll_delta_y;
-  fl_event.device_kind = kFlutterPointerDeviceKindMouse;
+  fl_event.device_kind = device_kind;
   fl_event.buttons = buttons;
   fl_event.device = kMousePointerDeviceId;
   // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder

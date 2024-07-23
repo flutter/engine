@@ -13,8 +13,6 @@
 
 namespace flutter {
 
-#define ENABLE_EXPERIMENTAL_CANVAS false
-
 GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     std::shared_ptr<impeller::Context> context) {
   if (!context || !context->IsValid()) {
@@ -84,14 +82,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        [[maybe_unused]] auto supports_readback =
-            surface_frame.framebuffer_info().supports_readback;
 
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable([&](impeller::RenderTarget& render_target)
                                   -> bool {
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
               impeller::TextFrameDispatcher collector(
                   aiks_context->GetContentContext(), impeller::Matrix());
               display_list->Dispatch(
@@ -99,7 +95,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                   SkIRect::MakeWH(cull_rect.width, cull_rect.height));
               impeller::ExperimentalDlDispatcher impeller_dispatcher(
                   aiks_context->GetContentContext(), render_target,
-                  supports_readback,
+                  display_list->root_has_backdrop_filter(),
+                  display_list->max_root_blend_mode(),
                   impeller::IRect::RoundOut(
                       impeller::Rect::MakeSize(cull_rect)));
               display_list->Dispatch(
@@ -118,9 +115,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                   impeller_dispatcher,
                   SkIRect::MakeWH(cull_rect.width, cull_rect.height));
               auto picture = impeller_dispatcher.EndRecordingAsPicture();
-
+              const bool reset_host_buffer =
+                  surface_frame.submit_info().frame_boundary;
               return aiks_context->Render(picture, render_target,
-                                          /*reset_host_buffer=*/true);
+                                          reset_host_buffer);
 #endif
             }));
       });

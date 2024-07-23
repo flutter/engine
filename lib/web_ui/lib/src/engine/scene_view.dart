@@ -179,7 +179,7 @@ class EngineSceneView {
               }
             }
             container ??= PlatformViewContainer(view.viewId);
-            container.size = view.size;
+            container.bounds = view.bounds;
             container.styling = view.styling;
             container.updateContents();
             newContainers.add(container);
@@ -281,7 +281,7 @@ final class PlatformViewContainer extends SliceContainer {
 
   final int viewId;
   PlatformViewStyling? _styling;
-  ui.Size? _size;
+  ui.Rect? _bounds;
   bool _dirty = false;
 
   @override
@@ -294,9 +294,9 @@ final class PlatformViewContainer extends SliceContainer {
     }
   }
 
-  set size(ui.Size size) {
-    if (_size != size) {
-      _size = size;
+  set bounds(ui.Rect bounds) {
+    if (_bounds != bounds) {
+      _bounds = bounds;
       _dirty = true;
     }
   }
@@ -305,24 +305,29 @@ final class PlatformViewContainer extends SliceContainer {
   @override
   void updateContents() {
     assert(_styling != null);
-    assert(_size != null);
+    assert(_bounds != null);
     if (_dirty) {
       final DomCSSStyleDeclaration style = container.style;
-      final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
-      final double logicalWidth = _size!.width / devicePixelRatio;
-      final double logicalHeight = _size!.height / devicePixelRatio;
-      style.width = '${logicalWidth}px';
-      style.height = '${logicalHeight}px';
       style.position = 'absolute';
+      style.width = '${_bounds!.width}px';
+      style.height = '${_bounds!.height}px';
 
-      final ui.Offset? offset = _styling!.position.offset;
-      final double logicalLeft = (offset?.dx ?? 0) / devicePixelRatio;
-      final double logicalTop = (offset?.dy ?? 0) / devicePixelRatio;
-      style.left = '${logicalLeft}px';
-      style.top = '${logicalTop}px';
+      final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+      final PlatformViewPosition position = _styling!.position;
 
-      final Matrix4? transform = _styling!.position.transform;
-      style.transform = transform != null ? float64ListToCssTransform3d(transform.storage) : '';
+      final Matrix4 transform;
+      if (position.transform != null) {
+        transform = position.transform!.clone()..translate(_bounds!.left, _bounds!.top);
+      } else {
+        final ui.Offset offset = position.offset ?? ui.Offset.zero;
+        transform = Matrix4.translationValues(_bounds!.left + offset.dx, _bounds!.top + offset.dy, 0);
+      }
+      final double inverseScale = 1.0 / devicePixelRatio;
+      final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+      scaleMatrix.multiply(transform);
+      style.transform = float64ListToCssTransform(scaleMatrix.storage);
+      style.transformOrigin = '0 0 0';
       style.opacity = _styling!.opacity != 1.0 ? '${_styling!.opacity}' : '';
       // TODO(jacksongardner): Implement clip styling for platform views
 

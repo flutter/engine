@@ -502,14 +502,14 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
 
 TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_(
-        "This backend doesn't yet support setting device capabilities.");
+    GTEST_SKIP()
+        << "This backend doesn't yet support setting device capabilities.";
   }
   if (!WillRenderSomething()) {
     // Sometimes these tests are run without playgrounds enabled which is
     // pointless for this test since we are asserting that
     // `SupportsDecalSamplerAddressMode` is called.
-    GTEST_SKIP_("This test requires playgrounds.");
+    GTEST_SKIP() << "This test requires playgrounds.";
   }
 
   std::shared_ptr<const Capabilities> old_capabilities =
@@ -659,6 +659,45 @@ TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
 
     canvas.DrawImageRect(std::make_shared<Image>(boston), /*source=*/bounds,
                          /*dest=*/bounds.Shift(-image_center), paint);
+    return canvas.EndRecordingAsPicture();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const Entity::TileMode tile_modes[] = {
+        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+
+    static float rotation = 45;
+    static float scale = 0.6;
+    static int selected_tile_mode = 3;
+
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Rotation (degrees)", &rotation, -180, 180);
+      ImGui::SliderFloat("Scale", &scale, 0, 2.0);
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      ImGui::End();
+    }
+
+    Canvas canvas;
+    Paint paint = {.color = Color::Green(),
+                   .image_filter =
+                       ImageFilter::MakeBlur(Sigma(50.0), Sigma(0.0),
+                                             FilterContents::BlurStyle::kNormal,
+                                             tile_modes[selected_tile_mode])};
+    Vector2 center = Vector2(1024, 768) / 2;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({center.x, center.y, 0});
+    canvas.Scale({scale, scale, 1});
+    canvas.Rotate(Degrees(rotation));
+
+    canvas.DrawRRect(Rect::MakeXYWH(-100, -100, 200, 200), Size(10, 10), paint);
     return canvas.EndRecordingAsPicture();
   };
 
@@ -1000,160 +1039,6 @@ TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
-}
-
-TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {100, 100});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetRenderTargetDataBegin();
-       it != cache->GetRenderTargetDataEnd(); ++it) {
-    max_mip_count = std::max(it->config.mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
-  fml::testing::LogCapture log_capture;
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::Wheat()});
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(30), Sigma(30),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {100, 100});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetRenderTargetDataBegin();
-       it != cache->GetRenderTargetDataEnd(); ++it) {
-    max_mip_count = std::max(it->config.mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
-  Canvas canvas;
-  canvas.SaveLayer(
-      {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
-                                             FilterContents::BlurStyle::kNormal,
-                                             Entity::TileMode::kClamp)});
-  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {1024, 768});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetRenderTargetDataBegin();
-       it != cache->GetRenderTargetDataEnd(); ++it) {
-    max_mip_count = std::max(it->config.mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
-  Canvas canvas;
-  canvas.DrawPath(PathBuilder{}
-                      .MoveTo({100, 100})
-                      .LineTo({200, 100})
-                      .LineTo({150, 200})
-                      .LineTo({50, 200})
-                      .Close()
-                      .TakePath(),
-                  {.color = Color::Chartreuse(),
-                   .image_filter = ImageFilter::MakeBlur(
-                       Sigma(30), Sigma(30), FilterContents::BlurStyle::kNormal,
-                       Entity::TileMode::kClamp)});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {1024, 768});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetRenderTargetDataBegin();
-       it != cache->GetRenderTargetDataEnd(); ++it) {
-    max_mip_count = std::max(it->config.mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
 }
 
 TEST_P(AiksTest, MaskBlurDoesntStretchContents) {

@@ -17,8 +17,6 @@
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
-#define ENABLE_EXPERIMENTAL_CANVAS false
-
 namespace flutter {
 
 static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
@@ -164,10 +162,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
-        [[maybe_unused]] auto supports_readback =
-            surface_frame.framebuffer_info().supports_readback;
 
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
@@ -176,7 +172,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
                                &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
               impeller::ExperimentalDlDispatcher impeller_dispatcher(
-                  aiks_context->GetContentContext(), render_target, supports_readback, cull_rect);
+                  aiks_context->GetContentContext(), render_target,
+                  display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
+                  cull_rect);
               display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
               impeller_dispatcher.FinishRecording();
               aiks_context->GetContentContext().GetTransientsBuffer().Reset();
@@ -187,12 +185,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
+        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 
         return renderer->Render(
             std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                  impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
+            fml::MakeCopyable([aiks_context, picture = std::move(picture),
+                               reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target, reset_host_buffer);
             }));
 #endif
       });
@@ -284,7 +283,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
@@ -293,7 +292,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
             fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
                                &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
               impeller::ExperimentalDlDispatcher impeller_dispatcher(
-                  aiks_context->GetContentContext(), render_target, cull_rect);
+                  aiks_context->GetContentContext(), render_target,
+                  display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
+                  cull_rect);
               display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
               impeller_dispatcher.FinishRecording();
               aiks_context->GetContentContext().GetTransientsBuffer().Reset();
@@ -305,11 +306,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
+        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
         bool render_result = renderer->Render(
             std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                  impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
+            fml::MakeCopyable([aiks_context, picture = std::move(picture),
+                               reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target, reset_host_buffer);
             }));
 #endif
         if (!render_result) {

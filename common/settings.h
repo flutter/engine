@@ -223,11 +223,15 @@ struct Settings {
 
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
-#if FML_OS_IOS || FML_OS_IOS_SIMULATOR || FML_OS_ANDROID
+#if FML_OS_IOS || FML_OS_IOS_SIMULATOR
   bool enable_impeller = true;
 #else
   bool enable_impeller = false;
 #endif
+
+  // If true, the UI thread is the platform thread on supported
+  // platforms.
+  bool merged_platform_ui_thread = false;
 
   // Log a warning during shell initialization if Impeller is not enabled.
   bool warn_on_impeller_opt_out = false;

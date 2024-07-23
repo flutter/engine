@@ -70,8 +70,9 @@ TEST(FlEngineTest, MousePointer) {
   g_autoptr(GError) error = nullptr;
   EXPECT_TRUE(fl_engine_start(engine, &error));
   EXPECT_EQ(error, nullptr);
-  fl_engine_send_mouse_pointer_event(engine, kDown, 1234567890, 800, 600, 1.2,
-                                     -3.4, kFlutterPointerButtonMouseSecondary);
+  fl_engine_send_mouse_pointer_event(engine, kDown, 1234567890, 800, 600,
+                                     kFlutterPointerDeviceKindMouse, 1.2, -3.4,
+                                     kFlutterPointerButtonMouseSecondary);
 
   EXPECT_TRUE(called);
 }
@@ -219,8 +220,8 @@ TEST(FlEngineTest, PlatformMessageResponse) {
   EXPECT_TRUE(called);
 }
 
-// Checks settings plugin sends settings on startup.
-TEST(FlEngineTest, SettingsPlugin) {
+// Checks settings handler sends settings on startup.
+TEST(FlEngineTest, SettingsHandler) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
