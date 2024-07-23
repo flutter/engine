@@ -61,7 +61,9 @@ echo ""
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/ci"
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/flutter_frontend_server"
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/impeller/tessellator/dart"
-"$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/gpu"
+# TODO(bdero): Re-enable this once the analysis issues are fixed.
+# See https://github.com/flutter/flutter/issues/152002
+# "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/gpu"
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/ui"
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/testing"
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR/tools"

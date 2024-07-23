@@ -219,7 +219,6 @@
 ../../../flutter/impeller/tools/metal_library.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
-../../../flutter/lib/gpu/analysis_options.yaml
 ../../../flutter/lib/gpu/pubspec.yaml
 ../../../flutter/lib/snapshot/libraries.json
 ../../../flutter/lib/snapshot/libraries.yaml
@@ -420,7 +419,6 @@
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
-../../../flutter/shell/vmservice/pubspec.lock
 ../../../flutter/shell/vmservice/pubspec.yaml
 ../../../flutter/sky/packages/sky_engine/.gitignore
 ../../../flutter/sky/packages/sky_engine/LICENSE
