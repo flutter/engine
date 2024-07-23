@@ -38,6 +38,7 @@ void main() {
     const Set<String> intentionallyOmitted = <String>{
       '.git',
       '.github',
+      '.vscode',
       'build_overrides',
       'buildtools',
       'prebuilts',
