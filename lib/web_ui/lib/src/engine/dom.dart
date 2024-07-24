@@ -118,9 +118,7 @@ extension DomWindowExtension on DomWindow {
   }
 
   @JS('fetch')
-  external JSPromise<JSAny?> _fetch1(JSString url);
-  @JS('fetch')
-  external JSPromise<JSAny?> _fetch2(JSString url, JSAny headers);
+  external JSPromise<JSAny?> _fetch(JSString url, [JSAny headers]);
 
   // ignore: non_constant_identifier_names
   external DomURL get URL;
@@ -134,15 +132,13 @@ extension DomWindowExtension on DomWindow {
   DomMediaQueryList matchMedia(String? query) => _matchMedia(query?.toJS);
 
   @JS('getComputedStyle')
-  external DomCSSStyleDeclaration _getComputedStyle1(DomElement elt);
-  @JS('getComputedStyle')
-  external DomCSSStyleDeclaration _getComputedStyle2(
-      DomElement elt, JSString pseudoElt);
+  external DomCSSStyleDeclaration _getComputedStyle(
+      DomElement elt, [JSString pseudoElt]);
   DomCSSStyleDeclaration getComputedStyle(DomElement elt, [String? pseudoElt]) {
     if (pseudoElt == null) {
-      return _getComputedStyle1(elt);
+      return _getComputedStyle(elt);
     } else {
-      return _getComputedStyle2(elt, pseudoElt.toJS);
+      return _getComputedStyle(elt, pseudoElt.toJS);
     }
   }
 
@@ -154,16 +150,14 @@ extension DomWindowExtension on DomWindow {
       _requestAnimationFrame(callback.toJS).toDartDouble;
 
   @JS('postMessage')
-  external void _postMessage1(JSAny message, JSString targetOrigin);
-  @JS('postMessage')
-  external void _postMessage2(
-      JSAny message, JSString targetOrigin, JSArray<JSAny?> messagePorts);
+  external void _postMessage(
+      JSAny message, JSString targetOrigin, [JSArray<JSAny?> messagePorts]);
   void postMessage(Object message, String targetOrigin,
       [List<DomMessagePort>? messagePorts]) {
     if (messagePorts == null) {
-      _postMessage1(message.toJSAnyShallow, targetOrigin.toJS);
+      _postMessage(message.toJSAnyShallow, targetOrigin.toJS);
     } else {
-      _postMessage2(
+      _postMessage(
           message.toJSAnyShallow,
           targetOrigin.toJS,
           // Cast is necessary so we can call `.toJS` on the right extension.
@@ -207,25 +201,21 @@ external DomIntl get domIntl;
 external DomSymbol get domSymbol;
 
 @JS('createImageBitmap')
-external JSPromise<JSAny?> _createImageBitmap1(
-  JSAny source,
-);
-@JS('createImageBitmap')
-external JSPromise<JSAny?> _createImageBitmap2(
-  JSAny source,
+external JSPromise<JSAny?> _createImageBitmap(
+  JSAny source, [
   JSNumber x,
   JSNumber y,
   JSNumber width,
   JSNumber height,
-);
+]);
 Future<DomImageBitmap> createImageBitmap(JSAny source,
     [({int x, int y, int width, int height})? bounds]) {
   JSPromise<JSAny?> jsPromise;
   if (bounds != null) {
-    jsPromise = _createImageBitmap2(source, bounds.x.toJS, bounds.y.toJS,
+    jsPromise = _createImageBitmap(source, bounds.x.toJS, bounds.y.toJS,
         bounds.width.toJS, bounds.height.toJS);
   } else {
-    jsPromise = _createImageBitmap1(source);
+    jsPromise = _createImageBitmap(source);
   }
   return js_util.promiseToFuture<DomImageBitmap>(jsPromise);
 }
@@ -281,14 +271,12 @@ extension DomDocumentExtension on DomDocument {
       createDomListWrapper<DomElement>(_querySelectorAll(selectors.toJS));
 
   @JS('createElement')
-  external DomElement _createElement1(JSString name);
-  @JS('createElement')
-  external DomElement _createElement2(JSString name, JSAny? options);
+  external DomElement _createElement(JSString name, [JSAny? options]);
   DomElement createElement(String name, [Object? options]) {
     if (options == null) {
-      return _createElement1(name.toJS);
+      return _createElement(name.toJS);
     } else {
-      return _createElement2(name.toJS, options.toJSAnyDeep);
+      return _createElement(name.toJS, options.toJSAnyDeep);
     }
   }
 
@@ -362,41 +350,36 @@ class DomEventTarget {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
-  external void _addEventListener1(JSString type, DomEventListener listener);
-  @JS('addEventListener')
-  external void _addEventListener2(
-      JSString type, DomEventListener listener, JSBoolean useCapture);
+  external void _addEventListener(
+      JSString type, DomEventListener listener, [JSBoolean useCapture]);
   void addEventListener(String type, DomEventListener? listener,
       [bool? useCapture]) {
     if (listener != null) {
       if (useCapture == null) {
-        _addEventListener1(type.toJS, listener);
+        _addEventListener(type.toJS, listener);
       } else {
-        _addEventListener2(type.toJS, listener, useCapture.toJS);
+        _addEventListener(type.toJS, listener, useCapture.toJS);
       }
     }
   }
 
   @JS('addEventListener')
-  external void _addEventListener3(
+  external void _addEventListenerWithOptions(
       JSString type, DomEventListener listener, JSAny options);
   void addEventListenerWithOptions(String type, DomEventListener listener,
           Map<String, Object> options) =>
-      _addEventListener3(type.toJS, listener, options.toJSAnyDeep);
+      _addEventListenerWithOptions(type.toJS, listener, options.toJSAnyDeep);
 
   @JS('removeEventListener')
-  external void _removeEventListener1(
-      JSString type, DomEventListener listener);
-  @JS('removeEventListener')
-  external void _removeEventListener2(
-      JSString type, DomEventListener listener, JSBoolean useCapture);
+  external void _removeEventListener(
+      JSString type, DomEventListener listener, [JSBoolean useCapture]);
   void removeEventListener(String type, DomEventListener? listener,
       [bool? useCapture]) {
     if (listener != null) {
       if (useCapture == null) {
-        _removeEventListener1(type.toJS, listener);
+        _removeEventListener(type.toJS, listener);
       } else {
-        _removeEventListener2(type.toJS, listener, useCapture.toJS);
+        _removeEventListener(type.toJS, listener, useCapture.toJS);
       }
     }
   }
@@ -438,19 +421,15 @@ extension DomEventExtension on DomEvent {
   external void stopPropagation();
 
   @JS('initEvent')
-  external void _initEvent1(JSString type);
-  @JS('initEvent')
-  external void _initEvent2(JSString type, JSBoolean bubbles);
-  @JS('initEvent')
-  external void _initEvent3(
-      JSString type, JSBoolean bubbles, JSBoolean cancelable);
+  external void _initEvent(
+      JSString type, [JSBoolean bubbles, JSBoolean cancelable]);
   void initEvent(String type, [bool? bubbles, bool? cancelable]) {
     if (bubbles == null) {
-      _initEvent1(type.toJS);
+      _initEvent(type.toJS);
     } else if (cancelable == null) {
-      _initEvent2(type.toJS, bubbles.toJS);
+      _initEvent(type.toJS, bubbles.toJS);
     } else {
-      _initEvent3(type.toJS, bubbles.toJS, cancelable.toJS);
+      _initEvent(type.toJS, bubbles.toJS, cancelable.toJS);
     }
   }
 
@@ -1167,14 +1146,12 @@ extension DomCanvasElementExtension on DomCanvasElement {
   String toDataURL([String type = 'image/png']) => _toDataURL(type.toJS).toDart;
 
   @JS('getContext')
-  external JSAny? _getContext1(JSString contextType);
-  @JS('getContext')
-  external JSAny? _getContext2(JSString contextType, JSAny attributes);
+  external JSAny? _getContext(JSString contextType, [JSAny attributes]);
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     if (attributes == null) {
-      return _getContext1(contextType.toJS);
+      return _getContext(contextType.toJS);
     } else {
-      return _getContext2(contextType.toJS, attributes.toJSAnyDeep);
+      return _getContext(contextType.toJS, attributes.toJSAnyDeep);
     }
   }
 
@@ -1281,20 +1258,17 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
           x0.toJS, y0.toJS, r0.toJS, x1.toJS, y1.toJS, r1.toJS);
 
   @JS('drawImage')
-  external void _drawImage1(
-      DomCanvasImageSource source, JSNumber dx, JSNumber dy);
-  @JS('drawImage')
-  external void _drawImage2(
+  external void _drawImage(
     DomCanvasImageSource source,
-    JSNumber sx,
-    JSNumber sy,
+    JSNumber sxOrDx,
+    JSNumber syOrDy, [
     JSNumber sWidth,
     JSNumber sHeight,
     JSNumber dx,
     JSNumber dy,
     JSNumber dWidth,
     JSNumber dHeight,
-  );
+  ]);
   void drawImage(
     DomCanvasImageSource source,
     num srcxOrDstX,
@@ -1308,14 +1282,14 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   ]) {
     if (srcWidth == null) {
       // In this case the numbers provided are the destination x and y offset.
-      return _drawImage1(source, srcxOrDstX.toJS, srcyOrDstY.toJS);
+      return _drawImage(source, srcxOrDstX.toJS, srcyOrDstY.toJS);
     } else {
       assert(srcHeight != null &&
           dstX != null &&
           dstY != null &&
           dstWidth != null &&
           dstHeight != null);
-      return _drawImage2(
+      return _drawImage(
         source,
         srcxOrDstX.toJS,
         srcyOrDstY.toJS,
@@ -1330,14 +1304,12 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
   }
 
   @JS('fill')
-  external void _fill1();
-  @JS('fill')
-  external void _fill2(JSAny pathOrWinding);
+  external void _fill([JSAny pathOrWinding]);
   void fill([Object? pathOrWinding]) {
     if (pathOrWinding == null) {
-      _fill1();
+      _fill();
     } else {
-      _fill2(pathOrWinding.toJSAnyShallow);
+      _fill(pathOrWinding.toJSAnyShallow);
     }
   }
 
@@ -1348,15 +1320,13 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
       _fillRect(x.toJS, y.toJS, width.toJS, height.toJS);
 
   @JS('fillText')
-  external void _fillText1(JSString text, JSNumber x, JSNumber y);
-  @JS('fillText')
-  external void _fillText2(
-      JSString text, JSNumber x, JSNumber y, JSNumber maxWidth);
+  external void _fillText(
+      JSString text, JSNumber x, JSNumber y, [JSNumber maxWidth]);
   void fillText(String text, num x, num y, [num? maxWidth]) {
     if (maxWidth == null) {
-      _fillText1(text.toJS, x.toJS, y.toJS);
+      _fillText(text.toJS, x.toJS, y.toJS);
     } else {
-      _fillText2(text.toJS, x.toJS, y.toJS, maxWidth.toJS);
+      _fillText(text.toJS, x.toJS, y.toJS, maxWidth.toJS);
     }
   }
 
@@ -1403,14 +1373,12 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
       _transform(a.toJS, b.toJS, c.toJS, d.toJS, e.toJS, f.toJS);
 
   @JS('clip')
-  external void _clip1();
-  @JS('clip')
-  external void _clip2(JSAny pathOrWinding);
+  external void _clip([JSAny pathOrWinding]);
   void clip([Object? pathOrWinding]) {
     if (pathOrWinding == null) {
-      _clip1();
+      _clip();
     } else {
-      _clip2(pathOrWinding.toJSAnyShallow);
+      _clip(pathOrWinding.toJSAnyShallow);
     }
   }
 
@@ -1579,7 +1547,7 @@ extension DomCanvasGradientExtension on DomCanvasGradient {
 class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 
 Future<DomResponse> rawHttpGet(String url) =>
-    js_util.promiseToFuture<DomResponse>(domWindow._fetch1(url.toJS));
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch(url.toJS));
 
 typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse?> Function(
     String url);
@@ -1616,7 +1584,7 @@ Future<HttpFetchResponse> httpFetch(String url) async {
 }
 
 Future<DomResponse> _rawHttpPost(String url, String data) =>
-    js_util.promiseToFuture<DomResponse>(domWindow._fetch2(
+    js_util.promiseToFuture<DomResponse>(domWindow._fetch(
         url.toJS,
         <String, Object?>{
           'method': 'POST',
@@ -2194,15 +2162,13 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   String? get value => _value?.toDart;
 
   @JS('setSelectionRange')
-  external void _setSelectionRange1(JSNumber start, JSNumber end);
-  @JS('setSelectionRange')
-  external void _setSelectionRange2(
-      JSNumber start, JSNumber end, JSString direction);
+  external void _setSelectionRange(
+      JSNumber start, JSNumber end, [JSString direction]);
   void setSelectionRange(int start, int end, [String? direction]) {
     if (direction == null) {
-      _setSelectionRange1(start.toJS, end.toJS);
+      _setSelectionRange(start.toJS, end.toJS);
     } else {
-      _setSelectionRange2(start.toJS, end.toJS, direction.toJS);
+      _setSelectionRange(start.toJS, end.toJS, direction.toJS);
     }
   }
 
@@ -2237,8 +2203,7 @@ class DomUIEvent extends DomEvent {}
 @JS('KeyboardEvent')
 @staticInterop
 class DomKeyboardEvent extends DomUIEvent {
-  external factory DomKeyboardEvent.arg1(JSString type);
-  external factory DomKeyboardEvent.arg2(JSString type, JSAny initDict);
+  external factory DomKeyboardEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomKeyboardEventExtension on DomKeyboardEvent {
@@ -2292,9 +2257,9 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
 DomKeyboardEvent createDomKeyboardEvent(String type,
     [Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomKeyboardEvent.arg1(type.toJS);
+    return DomKeyboardEvent(type.toJS);
   } else {
-    return DomKeyboardEvent.arg2(type.toJS, init.toJSAnyDeep);
+    return DomKeyboardEvent(type.toJS, init.toJSAnyDeep);
   }
 }
 
@@ -2308,14 +2273,12 @@ extension DomHistoryExtension on DomHistory {
   dynamic get state => _state?.toObjectDeep;
 
   @JS('go')
-  external void _go1();
-  @JS('go')
-  external void _go2(JSNumber delta);
+  external void _go([JSNumber delta]);
   void go([int? delta]) {
     if (delta == null) {
-      _go1();
+      _go();
     } else {
-      _go2(delta.toJS);
+      _go(delta.toJS);
     }
   }
 
@@ -2360,16 +2323,15 @@ extension DomLocationExtension on DomLocation {
 @JS('PopStateEvent')
 @staticInterop
 class DomPopStateEvent extends DomEvent {
-  external factory DomPopStateEvent.arg1(JSString type);
-  external factory DomPopStateEvent.arg2(JSString type, JSAny initDict);
+  external factory DomPopStateEvent(JSString type, [JSAny initDict]);
 }
 
 DomPopStateEvent createDomPopStateEvent(
     String type, Map<Object?, Object?>? eventInitDict) {
   if (eventInitDict == null) {
-    return DomPopStateEvent.arg1(type.toJS);
+    return DomPopStateEvent(type.toJS);
   } else {
-    return DomPopStateEvent.arg2(type.toJS, eventInitDict.toJSAnyDeep);
+    return DomPopStateEvent(type.toJS, eventInitDict.toJSAnyDeep);
   }
 }
 
@@ -2382,12 +2344,11 @@ extension DomPopStateEventExtension on DomPopStateEvent {
 @JS('URL')
 @staticInterop
 class DomURL {
-  external factory DomURL.arg1(JSString url);
-  external factory DomURL.arg2(JSString url, JSString? base);
+  external factory DomURL(JSString url, [JSString? base]);
 }
 
 DomURL createDomURL(String url, [String? base]) =>
-    base == null ? DomURL.arg1(url.toJS) : DomURL.arg2(url.toJS, base.toJS);
+    base == null ? DomURL(url.toJS) : DomURL(url.toJS, base.toJS);
 
 extension DomURLExtension on DomURL {
   @JS('createObjectURL')
@@ -2515,23 +2476,21 @@ extension DomMediaQueryListEventExtension on DomMediaQueryListEvent {
 @JS('Path2D')
 @staticInterop
 class DomPath2D {
-  external factory DomPath2D.arg1();
-  external factory DomPath2D.arg2(JSAny path);
+  external factory DomPath2D([JSAny path]);
 }
 
 DomPath2D createDomPath2D([Object? path]) {
   if (path == null) {
-    return DomPath2D.arg1();
+    return DomPath2D();
   } else {
-    return DomPath2D.arg2(path.toJSAnyShallow);
+    return DomPath2D(path.toJSAnyShallow);
   }
 }
 
 @JS('InputEvent')
 @staticInterop
 class DomInputEvent extends DomUIEvent {
-  external factory DomInputEvent.arg1(JSString type);
-  external factory DomInputEvent.arg2(JSString type, JSAny initDict);
+  external factory DomInputEvent(JSString type, [JSAny initDict]);
 }
 
 @JS('FocusEvent')
@@ -2545,8 +2504,7 @@ extension DomFocusEventExtension on DomFocusEvent {
 @JS('MouseEvent')
 @staticInterop
 class DomMouseEvent extends DomUIEvent {
-  external factory DomMouseEvent.arg1(JSString type);
-  external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
+  external factory DomMouseEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomMouseEventExtension on DomMouseEvent {
@@ -2596,25 +2554,24 @@ extension DomMouseEventExtension on DomMouseEvent {
 
 DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomMouseEvent.arg1(type.toJS);
+    return DomMouseEvent(type.toJS);
   } else {
-    return DomMouseEvent.arg2(type.toJS, init.toJSAnyDeep);
+    return DomMouseEvent(type.toJS, init.toJSAnyDeep);
   }
 }
 
 DomInputEvent createDomInputEvent(String type, [Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomInputEvent.arg1(type.toJS);
+    return DomInputEvent(type.toJS);
   } else {
-    return DomInputEvent.arg2(type.toJS, init.toJSAnyDeep);
+    return DomInputEvent(type.toJS, init.toJSAnyDeep);
   }
 }
 
 @JS('PointerEvent')
 @staticInterop
 class DomPointerEvent extends DomMouseEvent {
-  external factory DomPointerEvent.arg1(JSString type);
-  external factory DomPointerEvent.arg2(JSString type, JSAny initDict);
+  external factory DomPointerEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomPointerEventExtension on DomPointerEvent {
@@ -2647,17 +2604,16 @@ extension DomPointerEventExtension on DomPointerEvent {
 DomPointerEvent createDomPointerEvent(String type,
     [Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomPointerEvent.arg1(type.toJS);
+    return DomPointerEvent(type.toJS);
   } else {
-    return DomPointerEvent.arg2(type.toJS, init.toJSAnyDeep);
+    return DomPointerEvent(type.toJS, init.toJSAnyDeep);
   }
 }
 
 @JS('WheelEvent')
 @staticInterop
 class DomWheelEvent extends DomMouseEvent {
-  external factory DomWheelEvent.arg1(JSString type);
-  external factory DomWheelEvent.arg2(JSString type, JSAny initDict);
+  external factory DomWheelEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomWheelEventExtension on DomWheelEvent {
@@ -2684,17 +2640,16 @@ extension DomWheelEventExtension on DomWheelEvent {
 
 DomWheelEvent createDomWheelEvent(String type, [Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomWheelEvent.arg1(type.toJS);
+    return DomWheelEvent(type.toJS);
   } else {
-    return DomWheelEvent.arg2(type.toJS, init.toJSAnyDeep);
+    return DomWheelEvent(type.toJS, init.toJSAnyDeep);
   }
 }
 
 @JS('TouchEvent')
 @staticInterop
 class DomTouchEvent extends DomUIEvent {
-  external factory DomTouchEvent.arg1(JSString type);
-  external factory DomTouchEvent.arg2(JSString type, JSAny initDict);
+  external factory DomTouchEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomTouchEventExtension on DomTouchEvent {
@@ -2723,8 +2678,7 @@ extension DomTouchEventExtension on DomTouchEvent {
 @JS('Touch')
 @staticInterop
 class DomTouch {
-  external factory DomTouch.arg1();
-  external factory DomTouch.arg2(JSAny initDict);
+  external factory DomTouch([JSAny initDict]);
 }
 
 extension DomTouchExtension on DomTouch {
@@ -2745,17 +2699,16 @@ extension DomTouchExtension on DomTouch {
 
 DomTouch createDomTouch([Map<dynamic, dynamic>? init]) {
   if (init == null) {
-    return DomTouch.arg1();
+    return DomTouch();
   } else {
-    return DomTouch.arg2(init.toJSAnyDeep);
+    return DomTouch(init.toJSAnyDeep);
   }
 }
 
 @JS('CompositionEvent')
 @staticInterop
 class DomCompositionEvent extends DomUIEvent {
-  external factory DomCompositionEvent.arg1(JSString type);
-  external factory DomCompositionEvent.arg2(JSString type, JSAny initDict);
+  external factory DomCompositionEvent(JSString type, [JSAny initDict]);
 }
 
 extension DomCompositionEventExtension on DomCompositionEvent {
@@ -2767,9 +2720,9 @@ extension DomCompositionEventExtension on DomCompositionEvent {
 DomCompositionEvent createDomCompositionEvent(String type,
     [Map<dynamic, dynamic>? options]) {
   if (options == null) {
-    return DomCompositionEvent.arg1(type.toJS);
+    return DomCompositionEvent(type.toJS);
   } else {
-    return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
+    return DomCompositionEvent(type.toJS, options.toJSAnyDeep);
   }
 }
 
@@ -2863,15 +2816,13 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   set selectionEnd(double? value) => _selectionEnd = value?.toJS;
 
   @JS('setSelectionRange')
-  external void _setSelectionRange1(JSNumber start, JSNumber end);
-  @JS('setSelectionRange')
-  external void _setSelectionRange2(
-      JSNumber start, JSNumber end, JSString direction);
+  external void _setSelectionRange(
+      JSNumber start, JSNumber end, [JSString direction]);
   void setSelectionRange(int start, int end, [String? direction]) {
     if (direction == null) {
-      _setSelectionRange1(start.toJS, end.toJS);
+      _setSelectionRange(start.toJS, end.toJS);
     } else {
-      _setSelectionRange2(start.toJS, end.toJS, direction.toJS);
+      _setSelectionRange(start.toJS, end.toJS, direction.toJS);
     }
   }
 
@@ -2965,14 +2916,12 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
   set width(double? value) => _width = value?.toJS;
 
   @JS('getContext')
-  external JSAny? _getContext1(JSString contextType);
-  @JS('getContext')
-  external JSAny? _getContext2(JSString contextType, JSAny attributes);
+  external JSAny? _getContext(JSString contextType, [JSAny attributes]);
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     if (attributes == null) {
-      return _getContext1(contextType.toJS);
+      return _getContext(contextType.toJS);
     } else {
-      return _getContext2(contextType.toJS, attributes.toJSAnyDeep);
+      return _getContext(contextType.toJS, attributes.toJSAnyDeep);
     }
   }
 
@@ -2984,15 +2933,13 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
   }
 
   @JS('convertToBlob')
-  external JSPromise<JSAny?> _convertToBlob1();
-  @JS('convertToBlob')
-  external JSPromise<JSAny?> _convertToBlob2(JSAny options);
+  external JSPromise<JSAny?> _convertToBlob([JSAny options]);
   Future<DomBlob> convertToBlob([Map<Object?, Object?>? options]) {
     final JSPromise<JSAny?> blob;
     if (options == null) {
-      blob = _convertToBlob1();
+      blob = _convertToBlob();
     } else {
-      blob = _convertToBlob2(options.toJSAnyDeep);
+      blob = _convertToBlob(options.toJSAnyDeep);
     }
     return js_util.promiseToFuture(blob);
   }
@@ -3075,14 +3022,12 @@ extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
       createDomListWrapper<DomCSSRule>(_cssRules);
 
   @JS('insertRule')
-  external JSNumber _insertRule1(JSString rule);
-  @JS('insertRule')
-  external JSNumber _insertRule2(JSString rule, JSNumber index);
+  external JSNumber _insertRule(JSString rule, [JSNumber index]);
   double insertRule(String rule, [int? index]) {
     if (index == null) {
-      return _insertRule1(rule.toJS).toDartDouble;
+      return _insertRule(rule.toJS).toDartDouble;
     } else {
-      return _insertRule2(rule.toJS, index.toJS).toDartDouble;
+      return _insertRule(rule.toJS, index.toJS).toDartDouble;
     }
   }
 }
@@ -3131,14 +3076,14 @@ class DomSubscription {
       this.target, String typeString, DartDomEventListener dartListener)
       : type = typeString.toJS,
         listener = createDomEventListener(dartListener) {
-    target._addEventListener1(type, listener);
+    target._addEventListener(type, listener);
   }
 
   final JSString type;
   final DomEventTarget target;
   final DomEventListener listener;
 
-  void cancel() => target._removeEventListener1(type, listener);
+  void cancel() => target._removeEventListener(type, listener);
 }
 
 class DomPoint {
