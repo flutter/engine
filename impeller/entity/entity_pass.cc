@@ -20,6 +20,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/draw_order_resolver.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/inline_pass_context.h"
@@ -923,8 +924,9 @@ bool EntityPass::OnRender(
     }
   }
 
-  ElementRefs sorted_elements = draw_order_resolver_.GetSortedDraws(
-      opaque_clear_entity_count, translucent_clear_entity_count);
+  DrawOrderResolver::ElementRefs sorted_elements =
+      draw_order_resolver_.GetSortedDraws(opaque_clear_entity_count,
+                                          translucent_clear_entity_count);
   for (const auto& element_ref : sorted_elements) {
     const Element& element = elements_[element_ref];
 

@@ -13,6 +13,7 @@
 
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/draw_order_resolver.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/entity_pass_delegate.h"
@@ -52,7 +53,6 @@ class EntityPass {
   /// `EntityPass`. Elements are converted to Entities in
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
-  using ElementRefs = std::vector<size_t>;
 
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
@@ -317,114 +317,6 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
-  class DrawOrderResolver {
-   public:
-    DrawOrderResolver() : draw_order_layers_({{}}) {}
-
-    void AddElement(size_t element_index, bool is_opaque) {
-      DrawOrderLayer& layer = draw_order_layers_.back();
-      if (is_opaque) {
-        layer.opaque_elements.push_back(element_index);
-      } else {
-        layer.dependent_elements.push_back(element_index);
-      }
-    }
-
-    void PushClip(size_t element_index) {
-      draw_order_layers_.back().dependent_elements.push_back(element_index);
-      draw_order_layers_.push_back({});
-    };
-
-    void PopClip() {
-      if (draw_order_layers_.size() == 1u) {
-        // This is likely recoverable, so don't assert.
-        VALIDATION_LOG
-            << "Attemped to pop the root draw order layer. This is a bug in "
-               "`EntityPass`.";
-        return;
-      }
-
-      DrawOrderLayer& layer = draw_order_layers_.back();
-      DrawOrderLayer& parent_layer =
-          draw_order_layers_[draw_order_layers_.size() - 2];
-
-      layer.WriteCombinedDraws(parent_layer.dependent_elements, 0, 0);
-
-      draw_order_layers_.pop_back();
-    }
-
-    //-------------------------------------------------------------------------
-    /// @brief  Returns the sorted draws for the current draw order layer.
-    ///         This should only be called after all recording has finished.
-    ///
-    /// @param[in]  opaque_skip_count  The number of opaque elements to skip
-    ///                                when appending the combined elements.
-    ///                                This is used for the "clear color"
-    ///                                optimization.
-    ///
-    ElementRefs GetSortedDraws(size_t opaque_skip_count,
-                               size_t translucent_skip_count) const {
-      FML_DCHECK(draw_order_layers_.size() == 1u);
-
-      ElementRefs sorted_elements;
-      draw_order_layers_.back().WriteCombinedDraws(
-          sorted_elements, opaque_skip_count, translucent_skip_count);
-
-      return sorted_elements;
-    }
-
-   private:
-    /// A data structure for collecting sorted draws for a given "draw order
-    /// layer". Currently these layers just correspond to the local clip stack
-    /// corresponds to the clip stack.
-    struct DrawOrderLayer {
-      /// The list of backdrop-independent elements (always just opaque). These
-      /// are order independent, and so we draw them optimally render these
-      /// elements in reverse painter's order so that they cull one another
-      ElementRefs opaque_elements;
-
-      /// The list of backdrop-dependent elements with respect to this draw
-      /// order layer. These elements are drawn after all of the independent
-      /// elements.
-      /// The elements of all child draw layers will be resolved to this list.
-      ElementRefs dependent_elements;
-
-      //-----------------------------------------------------------------------
-      /// @brief      Appends the combined opaque and transparent elements into
-      ///             a final destination buffer.
-      ///
-      /// @param[in]  destination        The buffer to append the combined
-      ///                                elements to.
-      /// @param[in]  opaque_skip_count  The number of opaque elements to skip
-      ///                                when appending the combined elements.
-      ///                                This is used for the "clear color"
-      ///                                optimization.
-      ///
-      void WriteCombinedDraws(ElementRefs& destination,
-                              size_t opaque_skip_count,
-                              size_t translucent_skip_count) const {
-        FML_DCHECK(opaque_skip_count <= opaque_elements.size());
-        FML_DCHECK(translucent_skip_count <= dependent_elements.size());
-
-        destination.reserve(destination.size() +                          //
-                            opaque_elements.size() - opaque_skip_count +  //
-                            dependent_elements.size());
-
-        // Draw backdrop-independent elements first.
-        destination.insert(destination.end(), opaque_elements.rbegin(),
-                           opaque_elements.rend() - opaque_skip_count);
-        // Then, draw backdrop-dependent elements in their original order.
-        destination.insert(destination.end(),
-                           dependent_elements.begin() + translucent_skip_count,
-                           dependent_elements.end());
-      }
-    };
-    std::vector<DrawOrderLayer> draw_order_layers_;
-
-    DrawOrderResolver(const DrawOrderResolver&) = delete;
-
-    DrawOrderResolver& operator=(const DrawOrderResolver&) = delete;
-  };
   DrawOrderResolver draw_order_resolver_;
 
   /// The stack of currently active clips (during Aiks recording time). Each
