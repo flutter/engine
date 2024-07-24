@@ -406,10 +406,12 @@ std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
   return command_queue_ip_;
 }
 
+#ifdef IMPELLER_DEBUG
 const std::shared_ptr<ImpellerMetalCaptureManager>
 ContextMTL::GetCaptureManager() const {
   return capture_manager_;
 }
+#endif  // IMPELLER_DEBUG
 
 ImpellerMetalCaptureManager::ImpellerMetalCaptureManager(id<MTLDevice> device) {
   current_capture_scope_ = [[MTLCaptureManager sharedCaptureManager]

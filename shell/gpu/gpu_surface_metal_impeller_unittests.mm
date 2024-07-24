@@ -124,6 +124,7 @@ TEST(GPUSurfaceMetalImpeller, ResetHostBufferBasedOnFrameBoundary) {
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
 }
 
+#ifdef IMPELLER_DEBUG
 TEST(GPUSurfaceMetalImpeller, CreatesImpellerCaptureScope) {
   auto delegate = std::make_shared<TestGPUSurfaceMetalDelegate>();
   delegate->SetDevice();
@@ -151,6 +152,7 @@ TEST(GPUSurfaceMetalImpeller, CreatesImpellerCaptureScope) {
   ASSERT_TRUE(frame_2->Submit());
   EXPECT_FALSE(context->GetCaptureManager()->CaptureScopeActive());
 }
+#endif  // IMPELLER_DEBUG
 
 }  // namespace testing
 }  // namespace flutter
