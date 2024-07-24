@@ -1976,7 +1976,7 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     size_t /* Number of locales*/);
 
 typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterDisplay).
+  /// The size of this struct. Must be sizeof(FlutterEngineDisplay).
   size_t struct_size;
 
   FlutterEngineDisplayId display_id;
