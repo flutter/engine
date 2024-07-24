@@ -160,14 +160,19 @@ void FlutterPlatformViewLayerPool::RecycleLayers() {
 }
 
 std::vector<std::shared_ptr<FlutterPlatformViewLayer>>
-FlutterPlatformViewLayerPool::GetUnusedLayers() {
+FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
   layers_mutex_.lock();
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> results;
   for (size_t i = available_layer_index_; i < layers_.size(); i++) {
     results.push_back(layers_[i]);
   }
+  layers_.erase(layers_.begin() + available_layer_index_, layers_.end());
   layers_mutex_.unlock();
   return results;
+}
+
+size_t FlutterPlatformViewLayerPool::size() const {
+  return layers_.size();
 }
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
@@ -368,8 +373,12 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   views_to_recomposite_.insert(view_id);
 }
 
-size_t FlutterPlatformViewsController::EmbeddedViewCount() {
+size_t FlutterPlatformViewsController::EmbeddedViewCount() const {
   return composition_order_.size();
+}
+
+size_t FlutterPlatformViewsController::LayerPoolSize() const {
+  return layer_pool_->size();
 }
 
 UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
@@ -950,7 +959,6 @@ std::vector<UIView*> FlutterPlatformViewsController::DisposeViews() {
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
   }
-
   views_to_dispose_ = std::move(views_to_delay_dispose);
   return views;
 }

@@ -2,46 +2,49 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "fl_backing_store_provider.h"
+#include "fl_framebuffer.h"
 
 #include <epoxy/gl.h>
 
-struct _FlBackingStoreProvider {
+struct _FlFramebuffer {
   GObject parent_instance;
 
-  uint32_t framebuffer_id;
-  uint32_t texture_id;
-  GdkRectangle geometry;
+  // Width of framebuffer in pixels.
+  size_t width;
+
+  // Height of framebuffer in pixels.
+  size_t height;
+
+  // Framebuffer ID.
+  GLuint framebuffer_id;
+
+  // Texture backing framebuffer.
+  GLuint texture_id;
 };
 
-G_DEFINE_TYPE(FlBackingStoreProvider, fl_backing_store_provider, G_TYPE_OBJECT)
+G_DEFINE_TYPE(FlFramebuffer, fl_framebuffer, G_TYPE_OBJECT)
 
-static void fl_backing_store_provider_dispose(GObject* object) {
-  FlBackingStoreProvider* self = FL_BACKING_STORE_PROVIDER(object);
+static void fl_framebuffer_dispose(GObject* object) {
+  FlFramebuffer* self = FL_FRAMEBUFFER(object);
 
   glDeleteFramebuffers(1, &self->framebuffer_id);
   glDeleteTextures(1, &self->texture_id);
 
-  G_OBJECT_CLASS(fl_backing_store_provider_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_framebuffer_parent_class)->dispose(object);
 }
 
-static void fl_backing_store_provider_class_init(
-    FlBackingStoreProviderClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_backing_store_provider_dispose;
+static void fl_framebuffer_class_init(FlFramebufferClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_framebuffer_dispose;
 }
 
-static void fl_backing_store_provider_init(FlBackingStoreProvider* self) {}
+static void fl_framebuffer_init(FlFramebuffer* self) {}
 
-FlBackingStoreProvider* fl_backing_store_provider_new(int width, int height) {
-  FlBackingStoreProvider* provider = FL_BACKING_STORE_PROVIDER(
-      g_object_new(fl_backing_store_provider_get_type(), nullptr));
+FlFramebuffer* fl_framebuffer_new(size_t width, size_t height) {
+  FlFramebuffer* provider =
+      FL_FRAMEBUFFER(g_object_new(fl_framebuffer_get_type(), nullptr));
 
-  provider->geometry = {
-      .x = 0,
-      .y = 0,
-      .width = width,
-      .height = height,
-  };
+  provider->width = width;
+  provider->height = height;
 
   glGenTextures(1, &provider->texture_id);
   glGenFramebuffers(1, &provider->framebuffer_id);
@@ -63,21 +66,19 @@ FlBackingStoreProvider* fl_backing_store_provider_new(int width, int height) {
   return provider;
 }
 
-uint32_t fl_backing_store_provider_get_gl_framebuffer_id(
-    FlBackingStoreProvider* self) {
+GLuint fl_framebuffer_get_id(FlFramebuffer* self) {
   return self->framebuffer_id;
 }
 
-uint32_t fl_backing_store_provider_get_gl_texture_id(
-    FlBackingStoreProvider* self) {
+GLuint fl_framebuffer_get_texture_id(FlFramebuffer* self) {
   return self->texture_id;
 }
 
-uint32_t fl_backing_store_provider_get_gl_target(FlBackingStoreProvider* self) {
+GLenum fl_framebuffer_get_target(FlFramebuffer* self) {
   return GL_TEXTURE_2D;
 }
 
-uint32_t fl_backing_store_provider_get_gl_format(FlBackingStoreProvider* self) {
+GLenum fl_framebuffer_get_format(FlFramebuffer* self) {
   // Flutter defines SK_R32_SHIFT=16, so SK_PMCOLOR_BYTE_ORDER should be BGRA.
   // In Linux kN32_SkColorType is assumed to be kBGRA_8888_SkColorType.
   // So we must choose a valid gl format to be compatible with surface format
@@ -102,7 +103,10 @@ uint32_t fl_backing_store_provider_get_gl_format(FlBackingStoreProvider* self) {
   return GL_RGBA8;
 }
 
-GdkRectangle fl_backing_store_provider_get_geometry(
-    FlBackingStoreProvider* self) {
-  return self->geometry;
+size_t fl_framebuffer_get_width(FlFramebuffer* self) {
+  return self->width;
+}
+
+size_t fl_framebuffer_get_height(FlFramebuffer* self) {
+  return self->height;
 }

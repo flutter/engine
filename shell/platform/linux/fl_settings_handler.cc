@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_settings_handler.h"
 
 #include <gmodule.h>
 
@@ -19,7 +19,7 @@ static constexpr char kPlatformBrightnessKey[] = "platformBrightness";
 static constexpr char kPlatformBrightnessLight[] = "light";
 static constexpr char kPlatformBrightnessDark[] = "dark";
 
-struct _FlSettingsPlugin {
+struct _FlSettingsHandler {
   GObject parent_instance;
 
   FlBasicMessageChannel* channel;
@@ -27,7 +27,7 @@ struct _FlSettingsPlugin {
   FlSettings* settings;
 };
 
-G_DEFINE_TYPE(FlSettingsPlugin, fl_settings_plugin, G_TYPE_OBJECT)
+G_DEFINE_TYPE(FlSettingsHandler, fl_settings_handler, G_TYPE_OBJECT)
 
 static const gchar* to_platform_brightness(FlColorScheme color_scheme) {
   switch (color_scheme) {
@@ -41,7 +41,7 @@ static const gchar* to_platform_brightness(FlColorScheme color_scheme) {
 }
 
 // Sends the current settings to the Flutter engine.
-static void update_settings(FlSettingsPlugin* self) {
+static void update_settings(FlSettingsHandler* self) {
   FlClockFormat clock_format = fl_settings_get_clock_format(self->settings);
   FlColorScheme color_scheme = fl_settings_get_color_scheme(self->settings);
   gdouble scaling_factor = fl_settings_get_text_scaling_factor(self->settings);
@@ -70,8 +70,8 @@ static void update_settings(FlSettingsPlugin* self) {
   }
 }
 
-static void fl_settings_plugin_dispose(GObject* object) {
-  FlSettingsPlugin* self = FL_SETTINGS_PLUGIN(object);
+static void fl_settings_handler_dispose(GObject* object) {
+  FlSettingsHandler* self = FL_SETTINGS_HANDLER(object);
 
   g_clear_object(&self->channel);
   g_clear_object(&self->settings);
@@ -82,20 +82,20 @@ static void fl_settings_plugin_dispose(GObject* object) {
     self->engine = nullptr;
   }
 
-  G_OBJECT_CLASS(fl_settings_plugin_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_settings_handler_parent_class)->dispose(object);
 }
 
-static void fl_settings_plugin_class_init(FlSettingsPluginClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_settings_plugin_dispose;
+static void fl_settings_handler_class_init(FlSettingsHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_settings_handler_dispose;
 }
 
-static void fl_settings_plugin_init(FlSettingsPlugin* self) {}
+static void fl_settings_handler_init(FlSettingsHandler* self) {}
 
-FlSettingsPlugin* fl_settings_plugin_new(FlEngine* engine) {
+FlSettingsHandler* fl_settings_handler_new(FlEngine* engine) {
   g_return_val_if_fail(FL_IS_ENGINE(engine), nullptr);
 
-  FlSettingsPlugin* self =
-      FL_SETTINGS_PLUGIN(g_object_new(fl_settings_plugin_get_type(), nullptr));
+  FlSettingsHandler* self = FL_SETTINGS_HANDLER(
+      g_object_new(fl_settings_handler_get_type(), nullptr));
 
   self->engine = engine;
   g_object_add_weak_pointer(G_OBJECT(self),
@@ -109,8 +109,8 @@ FlSettingsPlugin* fl_settings_plugin_new(FlEngine* engine) {
   return self;
 }
 
-void fl_settings_plugin_start(FlSettingsPlugin* self, FlSettings* settings) {
-  g_return_if_fail(FL_IS_SETTINGS_PLUGIN(self));
+void fl_settings_handler_start(FlSettingsHandler* self, FlSettings* settings) {
+  g_return_if_fail(FL_IS_SETTINGS_HANDLER(self));
   g_return_if_fail(FL_IS_SETTINGS(settings));
 
   self->settings = FL_SETTINGS(g_object_ref(settings));

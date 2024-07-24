@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_PLUGIN_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_PLUGIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_HANDLER_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_HANDLER_H_
 
 #include <gtk/gtk.h>
 
@@ -13,56 +13,56 @@
 
 G_BEGIN_DECLS
 
-G_DECLARE_DERIVABLE_TYPE(FlTextInputPlugin,
-                         fl_text_input_plugin,
+G_DECLARE_DERIVABLE_TYPE(FlTextInputHandler,
+                         fl_text_input_handler,
                          FL,
-                         TEXT_INPUT_PLUGIN,
+                         TEXT_INPUT_HANDLER,
                          GObject);
 
 /**
- * FlTextInputPlugin:
+ * FlTextInputHandler:
  *
- * #FlTextInputPlugin is a plugin that implements the shell side
+ * #FlTextInputHandler is a handler that implements the shell side
  * of SystemChannels.textInput from the Flutter services library.
  */
 
-struct _FlTextInputPluginClass {
+struct _FlTextInputHandlerClass {
   GObjectClass parent_class;
 
   /**
    * Virtual method called to filter a keypress.
    */
-  gboolean (*filter_keypress)(FlTextInputPlugin* self, FlKeyEvent* event);
+  gboolean (*filter_keypress)(FlTextInputHandler* self, FlKeyEvent* event);
 };
 
 /**
- * fl_text_input_plugin_new:
+ * fl_text_input_handler_new:
  * @messenger: an #FlBinaryMessenger.
  * @im_context: (allow-none): a #GtkIMContext.
  * @view_delegate: an #FlTextInputViewDelegate.
  *
- * Creates a new plugin that implements SystemChannels.textInput from the
+ * Creates a new handler that implements SystemChannels.textInput from the
  * Flutter services library.
  *
- * Returns: a new #FlTextInputPlugin.
+ * Returns: a new #FlTextInputHandler.
  */
-FlTextInputPlugin* fl_text_input_plugin_new(
+FlTextInputHandler* fl_text_input_handler_new(
     FlBinaryMessenger* messenger,
     GtkIMContext* im_context,
     FlTextInputViewDelegate* view_delegate);
 
 /**
- * fl_text_input_plugin_filter_keypress
- * @plugin: an #FlTextInputPlugin.
+ * fl_text_input_handler_filter_keypress
+ * @handler: an #FlTextInputHandler.
  * @event: a #FlKeyEvent
  *
  * Process a Gdk key event.
  *
  * Returns: %TRUE if the event was used.
  */
-gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* plugin,
-                                              FlKeyEvent* event);
+gboolean fl_text_input_handler_filter_keypress(FlTextInputHandler* handler,
+                                               FlKeyEvent* event);
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_PLUGIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXT_INPUT_HANDLER_H_

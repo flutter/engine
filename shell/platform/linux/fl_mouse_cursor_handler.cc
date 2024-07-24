@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 
 #include <gtk/gtk.h>
 #include <cstring>
@@ -17,7 +17,7 @@ static constexpr char kKindKey[] = "kind";
 
 static constexpr char kFallbackCursor[] = "default";
 
-struct _FlMouseCursorPlugin {
+struct _FlMouseCursorHandler {
   GObject parent_instance;
 
   FlMethodChannel* channel;
@@ -27,7 +27,7 @@ struct _FlMouseCursorPlugin {
   GHashTable* system_cursor_table;
 };
 
-G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
+G_DEFINE_TYPE(FlMouseCursorHandler, fl_mouse_cursor_handler, G_TYPE_OBJECT)
 
 // Insert a new entry into a hashtable from strings to strings.
 //
@@ -85,7 +85,7 @@ static void populate_system_cursor_table(GHashTable* table) {
 }
 
 // Sets the mouse cursor.
-FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
+FlMethodResponse* activate_system_cursor(FlMouseCursorHandler* self,
                                          FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
@@ -122,7 +122,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 static void method_call_cb(FlMethodChannel* channel,
                            FlMethodCall* method_call,
                            gpointer user_data) {
-  FlMouseCursorPlugin* self = FL_MOUSE_CURSOR_PLUGIN(user_data);
+  FlMouseCursorHandler* self = FL_MOUSE_CURSOR_HANDLER(user_data);
 
   const gchar* method = fl_method_call_get_name(method_call);
   FlValue* args = fl_method_call_get_args(method_call);
@@ -140,8 +140,8 @@ static void method_call_cb(FlMethodChannel* channel,
   }
 }
 
-static void fl_mouse_cursor_plugin_dispose(GObject* object) {
-  FlMouseCursorPlugin* self = FL_MOUSE_CURSOR_PLUGIN(object);
+static void fl_mouse_cursor_handler_dispose(GObject* object) {
+  FlMouseCursorHandler* self = FL_MOUSE_CURSOR_HANDLER(object);
 
   g_clear_object(&self->channel);
   if (self->view != nullptr) {
@@ -151,21 +151,22 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
   }
   g_clear_pointer(&self->system_cursor_table, g_hash_table_unref);
 
-  G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_mouse_cursor_handler_parent_class)->dispose(object);
 }
 
-static void fl_mouse_cursor_plugin_class_init(FlMouseCursorPluginClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_mouse_cursor_plugin_dispose;
+static void fl_mouse_cursor_handler_class_init(
+    FlMouseCursorHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_mouse_cursor_handler_dispose;
 }
 
-static void fl_mouse_cursor_plugin_init(FlMouseCursorPlugin* self) {}
+static void fl_mouse_cursor_handler_init(FlMouseCursorHandler* self) {}
 
-FlMouseCursorPlugin* fl_mouse_cursor_plugin_new(FlBinaryMessenger* messenger,
-                                                FlView* view) {
+FlMouseCursorHandler* fl_mouse_cursor_handler_new(FlBinaryMessenger* messenger,
+                                                  FlView* view) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
-  FlMouseCursorPlugin* self = FL_MOUSE_CURSOR_PLUGIN(
-      g_object_new(fl_mouse_cursor_plugin_get_type(), nullptr));
+  FlMouseCursorHandler* self = FL_MOUSE_CURSOR_HANDLER(
+      g_object_new(fl_mouse_cursor_handler_get_type(), nullptr));
 
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   self->channel =

@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
+#include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
@@ -178,37 +178,37 @@ static FlValue* build_editing_delta(EditingDelta delta) {
   });
 }
 
-static void send_key_event(FlTextInputPlugin* plugin,
+static void send_key_event(FlTextInputHandler* handler,
                            gint keyval,
                            gint state = 0) {
   GdkEvent* gdk_event = gdk_event_new(GDK_KEY_PRESS);
   gdk_event->key.keyval = keyval;
   gdk_event->key.state = state;
   FlKeyEvent* key_event = fl_key_event_new_from_gdk_event(gdk_event);
-  fl_text_input_plugin_filter_keypress(plugin, key_event);
+  fl_text_input_handler_filter_keypress(handler, key_event);
   fl_key_event_dispose(key_event);
 }
 
-TEST(FlTextInputPluginTest, MessageHandler) {
+TEST(FlTextInputHandlerTest, MessageHandler) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   EXPECT_TRUE(messenger.HasMessageHandler("flutter/textinput"));
 }
 
-TEST(FlTextInputPluginTest, SetClient) {
+TEST(FlTextInputHandlerTest, SetClient) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   g_autoptr(FlValue) args = build_input_config({.client_id = 1});
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
@@ -224,14 +224,14 @@ TEST(FlTextInputPluginTest, SetClient) {
   messenger.ReceiveMessage("flutter/textinput", message);
 }
 
-TEST(FlTextInputPluginTest, Show) {
+TEST(FlTextInputHandlerTest, Show) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   EXPECT_CALL(context,
               gtk_im_context_focus_in(::testing::Eq<GtkIMContext*>(context)));
@@ -249,14 +249,14 @@ TEST(FlTextInputPluginTest, Show) {
   messenger.ReceiveMessage("flutter/textinput", message);
 }
 
-TEST(FlTextInputPluginTest, Hide) {
+TEST(FlTextInputHandlerTest, Hide) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   EXPECT_CALL(context,
               gtk_im_context_focus_out(::testing::Eq<GtkIMContext*>(context)));
@@ -274,14 +274,14 @@ TEST(FlTextInputPluginTest, Hide) {
   messenger.ReceiveMessage("flutter/textinput", message);
 }
 
-TEST(FlTextInputPluginTest, ClearClient) {
+TEST(FlTextInputHandlerTest, ClearClient) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   g_autoptr(FlValue) null = fl_value_new_null();
   EXPECT_CALL(messenger, fl_binary_messenger_send_response(
@@ -296,14 +296,14 @@ TEST(FlTextInputPluginTest, ClearClient) {
   messenger.ReceiveMessage("flutter/textinput", message);
 }
 
-TEST(FlTextInputPluginTest, PerformAction) {
+TEST(FlTextInputHandlerTest, PerformAction) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set input config
   g_autoptr(FlValue) config = build_input_config({
@@ -369,18 +369,18 @@ TEST(FlTextInputPluginTest, PerformAction) {
                                         FlValueEq(action)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_Return);
+  send_key_event(handler, GDK_KEY_Return);
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/125879.
-TEST(FlTextInputPluginTest, MultilineWithSendAction) {
+TEST(FlTextInputHandlerTest, MultilineWithSendAction) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // Set input config.
   g_autoptr(FlValue) config = build_input_config({
@@ -434,17 +434,17 @@ TEST(FlTextInputPluginTest, MultilineWithSendAction) {
                                         FlValueEq(action)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_Return);
+  send_key_event(handler, GDK_KEY_Return);
 }
 
-TEST(FlTextInputPluginTest, MoveCursor) {
+TEST(FlTextInputHandlerTest, MoveCursor) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set input config
   g_autoptr(FlValue) config = build_input_config({.client_id = 1});
@@ -493,7 +493,7 @@ TEST(FlTextInputPluginTest, MoveCursor) {
                                         FlValueEq(beginning)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_Home);
+  send_key_event(handler, GDK_KEY_Home);
 
   // move cursor to end
   g_autoptr(FlValue) end = build_list({
@@ -512,17 +512,17 @@ TEST(FlTextInputPluginTest, MoveCursor) {
                                         FlValueEq(end)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_End);
+  send_key_event(handler, GDK_KEY_End);
 }
 
-TEST(FlTextInputPluginTest, Select) {
+TEST(FlTextInputHandlerTest, Select) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set input config
   g_autoptr(FlValue) config = build_input_config({.client_id = 1});
@@ -571,7 +571,7 @@ TEST(FlTextInputPluginTest, Select) {
                                         FlValueEq(select_to_end)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_End, GDK_SHIFT_MASK);
+  send_key_event(handler, GDK_KEY_End, GDK_SHIFT_MASK);
 
   // select to beginning
   g_autoptr(FlValue) select_to_beginning = build_list({
@@ -590,17 +590,17 @@ TEST(FlTextInputPluginTest, Select) {
                                         FlValueEq(select_to_beginning)),
                              ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_Home, GDK_SHIFT_MASK);
+  send_key_event(handler, GDK_KEY_Home, GDK_SHIFT_MASK);
 }
 
-TEST(FlTextInputPluginTest, Composing) {
+TEST(FlTextInputHandlerTest, Composing) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   g_signal_emit_by_name(context, "preedit-start", nullptr);
 
@@ -663,14 +663,14 @@ TEST(FlTextInputPluginTest, Composing) {
   g_signal_emit_by_name(context, "preedit-end", nullptr);
 }
 
-TEST(FlTextInputPluginTest, SurroundingText) {
+TEST(FlTextInputHandlerTest, SurroundingText) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set input config
   g_autoptr(FlValue) config = build_input_config({.client_id = 1});
@@ -733,14 +733,14 @@ TEST(FlTextInputPluginTest, SurroundingText) {
   EXPECT_TRUE(deleted);
 }
 
-TEST(FlTextInputPluginTest, SetMarkedTextRect) {
+TEST(FlTextInputHandlerTest, SetMarkedTextRect) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   g_signal_emit_by_name(context, "preedit-start", nullptr);
 
@@ -816,14 +816,14 @@ TEST(FlTextInputPluginTest, SetMarkedTextRect) {
   messenger.ReceiveMessage("flutter/textinput", set_marked_text_rect);
 }
 
-TEST(FlTextInputPluginTest, TextInputTypeNone) {
+TEST(FlTextInputHandlerTest, TextInputTypeNone) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   g_autoptr(FlValue) args = build_input_config({
       .client_id = 1,
@@ -859,14 +859,14 @@ TEST(FlTextInputPluginTest, TextInputTypeNone) {
   messenger.ReceiveMessage("flutter/textinput", show);
 }
 
-TEST(FlTextInputPluginTest, TextEditingDelta) {
+TEST(FlTextInputHandlerTest, TextEditingDelta) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set config
   g_autoptr(FlValue) args = build_input_config({
@@ -928,17 +928,17 @@ TEST(FlTextInputPluginTest, TextEditingDelta) {
                              FlValueEq(deltas)),
                   ::testing::_, ::testing::_, ::testing::_));
 
-  send_key_event(plugin, GDK_KEY_Home);
+  send_key_event(handler, GDK_KEY_Home);
 }
 
-TEST(FlTextInputPluginTest, ComposingDelta) {
+TEST(FlTextInputHandlerTest, ComposingDelta) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set config
   g_autoptr(FlValue) args = build_input_config({
@@ -1054,14 +1054,14 @@ TEST(FlTextInputPluginTest, ComposingDelta) {
   g_signal_emit_by_name(context, "preedit-end", nullptr);
 }
 
-TEST(FlTextInputPluginTest, NonComposingDelta) {
+TEST(FlTextInputHandlerTest, NonComposingDelta) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
   ::testing::NiceMock<flutter::testing::MockIMContext> context;
   ::testing::NiceMock<flutter::testing::MockTextInputViewDelegate> delegate;
 
-  g_autoptr(FlTextInputPlugin) plugin =
-      fl_text_input_plugin_new(messenger, context, delegate);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlTextInputHandler) handler =
+      fl_text_input_handler_new(messenger, context, delegate);
+  EXPECT_NE(handler, nullptr);
 
   // set config
   g_autoptr(FlValue) args = build_input_config({
