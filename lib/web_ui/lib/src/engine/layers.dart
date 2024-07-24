@@ -176,11 +176,11 @@ class ImageFilterLayer
 class ImageFilterOperation implements LayerOperation {
   ImageFilterOperation(this.filter, this.offset);
 
-  final ui.ImageFilter filter;
+  final SceneImageFilter filter;
   final ui.Offset offset;
 
   @override
-  ui.Rect mapRect(ui.Rect contentRect) => (filter as SceneImageFilter).filterBounds(contentRect);
+  ui.Rect mapRect(ui.Rect contentRect) => filter.filterBounds(contentRect);
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
@@ -188,8 +188,7 @@ class ImageFilterOperation implements LayerOperation {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
     }
-    final ui.Rect adjustedContentRect =
-      (filter as SceneImageFilter).filterBounds(contentRect);
+    final ui.Rect adjustedContentRect = filter.filterBounds(contentRect);
     canvas.saveLayer(adjustedContentRect, ui.Paint()..imageFilter = filter);
   }
 
@@ -290,10 +289,11 @@ class TransformOperation implements LayerOperation {
 
   final Float64List transform;
 
-  Matrix4 getMatrix() => Matrix4.fromFloat32List(toMatrix32(transform));
+  Matrix4? _memoizedMatrix;
+  Matrix4 get matrix => _memoizedMatrix ?? (_memoizedMatrix = Matrix4.fromFloat32List(toMatrix32(transform)));
 
   @override
-  ui.Rect mapRect(ui.Rect contentRect) => getMatrix().transformRect(contentRect);
+  ui.Rect mapRect(ui.Rect contentRect) => matrix.transformRect(contentRect);
 
   @override
   void pre(SceneCanvas canvas, ui.Rect cullRect) {
@@ -308,7 +308,7 @@ class TransformOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: PlatformViewPosition.transform(getMatrix()),
+    position: PlatformViewPosition.transform(matrix),
   );
 }
 
