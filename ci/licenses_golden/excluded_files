@@ -214,6 +214,7 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
+../../../flutter/impeller/toolkit/glvk/README.md
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/metal_library.py
@@ -3308,6 +3309,8 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pin/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.bus/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
