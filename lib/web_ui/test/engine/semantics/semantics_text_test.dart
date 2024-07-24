@@ -52,8 +52,8 @@ Future<void> testMain() async {
       expect(node.primaryRole?.role, PrimaryRole.generic);
       expect(
         reason: 'A node with a label should get a LabelAndValue role',
-        node.primaryRole!.debugSecondaryRoles,
-        contains(Role.labelAndValue),
+        node.primaryRole!.debugSemanticBehaviorTypes,
+        contains(LabelAndValue),
       );
     }
 

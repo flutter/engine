@@ -31,15 +31,18 @@ class Button extends PrimaryRoleManager {
   }
 }
 
-/// Listens to HTML "click" gestures detected by the browser.
+/// Implements clicking and tapping behavior for a semantics node.
 ///
-/// This gestures is different from the click and tap gestures detected by the
+/// Listens to HTML DOM "click" events detected by the browser.
+///
+/// A DOM "click" is different from the click and tap gestures detected by the
 /// framework from raw pointer events. When an assistive technology is enabled
 /// the browser may not send us pointer events. In that mode we forward HTML
 /// click as [ui.SemanticsAction.tap].
+///
+/// See also [ClickDebouncer].
 class Tappable extends SemanticBehavior {
-  Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : super(Role.tappable, semanticsObject, owner) {
+  Tappable(super.semanticsObject, super.owner) {
     _clickListener = createDomEventListener((DomEvent click) {
       PointerBinding.clickDebouncer.onClick(
         click,

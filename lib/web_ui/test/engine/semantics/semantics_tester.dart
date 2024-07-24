@@ -401,3 +401,8 @@ class SemanticsActionLogger {
   Stream<ui.SemanticsAction> get actionLog => _actionLog;
   late Stream<ui.SemanticsAction> _actionLog;
 }
+
+extension SemanticRoleExtension on PrimaryRoleManager {
+  /// Types of semantics behaviors used by this primary role manager.
+  List<Type> get debugSemanticBehaviorTypes => behaviors?.map((behavior) => behavior.runtimeType).toList() ?? const <Type>[];
+}

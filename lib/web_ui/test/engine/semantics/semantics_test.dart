@@ -196,8 +196,8 @@ void _testRoleManagerLifecycle() {
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
       expect(node.primaryRole?.role, PrimaryRole.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.primaryRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, -1);
     }
@@ -219,8 +219,8 @@ void _testRoleManagerLifecycle() {
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
       expect(node.primaryRole?.role, PrimaryRole.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.primaryRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, 0);
     }
@@ -1713,8 +1713,8 @@ void _testIncrementables() {
     expect(node.primaryRole?.role, PrimaryRole.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.primaryRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1917,8 +1917,8 @@ void _testTextField() {
     expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
       reason: 'Text fields use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.primaryRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1955,8 +1955,8 @@ void _testCheckables() {
     expect(node.primaryRole?.role, PrimaryRole.checkable);
     expect(
       reason: 'Checkables use generic semantic behaviors',
-      node.primaryRole!.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      node.primaryRole!.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
 
     semantics().semanticsEnabled = false;
@@ -2255,8 +2255,8 @@ void _testTappable() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.button);
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      node.primaryRole?.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
@@ -3101,8 +3101,8 @@ void _testDialog() {
       PrimaryRole.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.primaryRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
     pumpSemantics(label: 'Updated dialog label');
@@ -3136,7 +3136,7 @@ void _testDialog() {
     );
     expect(
       owner().debugSemanticsTree![0]!.primaryRole?.behaviors,
-      isNot(contains(Role.routeName)),
+      isNot(contains(RouteName)),
     );
 
     semantics().semanticsEnabled = false;
@@ -3183,8 +3183,8 @@ void _testDialog() {
       PrimaryRole.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.primaryRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
     semantics().semanticsEnabled = false;
@@ -3554,8 +3554,8 @@ void _testFocusable() {
       PrimaryRole.generic,
     );
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      contains(Role.focusable),
+      node.primaryRole?.debugSemanticBehaviorTypes,
+      contains(Focusable),
     );
 
     final DomElement element = node.element;

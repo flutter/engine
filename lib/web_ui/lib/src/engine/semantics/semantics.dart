@@ -406,40 +406,6 @@ enum PrimaryRole {
   link,
 }
 
-// TODO(yjbanov): kill this?
-/// Identifies one of the [SemanticBehavior]s of a [PrimaryRoleManager].
-enum Role {
-  /// Supplies generic accessibility focus features to semantics nodes that have
-  /// [ui.SemanticsFlag.isFocusable] set.
-  focusable,
-
-  /// Supplies generic tapping/clicking functionality.
-  tappable,
-
-  /// Provides an `aria-label` from `label`, `value`, and/or `tooltip` values.
-  ///
-  /// The two are combined into the same role because they interact with each
-  /// other.
-  labelAndValue,
-
-  /// Contains a region whose changes will be announced to the screen reader
-  /// without having to be in focus.
-  ///
-  /// These regions can be a snackbar or a text field error. Once identified
-  /// with this role, they will be able to get the assistive technology's
-  /// attention right away.
-  liveRegion,
-
-  /// Provides a description for an ancestor dialog.
-  ///
-  /// This role is assigned to nodes that have `namesRoute` set but not
-  /// `scopesRoute`. When both flags are set the node only gets the dialog
-  /// role (see [dialog]).
-  ///
-  /// If the ancestor dialog is missing, this role does nothing useful.
-  routeName,
-}
-
 /// Responsible for setting the `role` ARIA attribute and for attaching zero or
 /// more [SemanticBehavior]s to a [SemanticsObject].
 abstract class PrimaryRoleManager {
@@ -476,12 +442,6 @@ abstract class PrimaryRoleManager {
   /// Semantic behaviors provided by this role, if any.
   List<SemanticBehavior>? get behaviors => _behaviors;
   List<SemanticBehavior>? _behaviors;
-
-  /// Identifiers of semantics behaviors used by this primary role manager.
-  ///
-  /// This is only meant to be used in tests.
-  @visibleForTesting
-  List<Role> get debugSecondaryRoles => _behaviors?.map((behavior) => behavior.role).toList() ?? const <Role>[];
 
   @protected
   DomElement createElement() => domDocument.createElement('flt-semantics');
@@ -592,8 +552,8 @@ abstract class PrimaryRoleManager {
   @protected
   void addSemanticBehavior(SemanticBehavior behavior) {
     assert(
-      _behaviors?.any((existing) => existing.role == behavior.role) != true,
-      'Cannot add semantic behavior ${behavior.role}. This object already has it.',
+      _behaviors?.any((existing) => existing.runtimeType == behavior.runtimeType) != true,
+      'Cannot add semantic behavior ${behavior.runtimeType}. This object already has it.',
     );
     _behaviors ??= <SemanticBehavior>[];
     _behaviors!.add(behavior);
@@ -762,10 +722,7 @@ abstract class SemanticBehavior {
   /// Initializes a behavior for the [semanticsObject].
   ///
   /// A single [SemanticBehavior] object manages exactly one [SemanticsObject].
-  SemanticBehavior(this.role, this.semanticsObject, this.owner);
-
-  /// Role identifier.
-  final Role role;
+  SemanticBehavior(this.semanticsObject, this.owner);
 
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
@@ -1290,13 +1247,9 @@ class SemanticsObject {
       !isButton;
 
   /// Whether this node defines a scope for a route.
-  ///
-  /// See also [Role.dialog].
   bool get scopesRoute => hasFlag(ui.SemanticsFlag.scopesRoute);
 
   /// Whether this node describes a route.
-  ///
-  /// See also [Role.dialog].
   bool get namesRoute => hasFlag(ui.SemanticsFlag.namesRoute);
 
   /// Whether this object carry enabled/disabled state (and if so whether it is

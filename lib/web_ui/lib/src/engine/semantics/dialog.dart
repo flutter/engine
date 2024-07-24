@@ -6,9 +6,7 @@ import '../dom.dart';
 import '../semantics.dart';
 import '../util.dart';
 
-/// Provides accessibility for dialogs.
-///
-/// See also [Role.dialog].
+/// Provides accessibility for routes, including dialogs and pop-up menus.
 class Dialog extends PrimaryRoleManager {
   Dialog(SemanticsObject semanticsObject) : super.blank(PrimaryRole.dialog, semanticsObject) {
     // The following behaviors can coexist with dialog. Generic `RouteName`
@@ -100,11 +98,15 @@ class Dialog extends PrimaryRoleManager {
 }
 
 /// Supplies a description for the nearest ancestor [Dialog].
+///
+/// This role is assigned to nodes that have `namesRoute` set but not
+/// `scopesRoute`. When both flags are set the node only gets the [Dialog] role.
+///
+/// If the ancestor dialog is missing, this role has no effect. It is up to the
+/// framework, widget, and app authors to make sure a route name is scoped under
+/// a route.
 class RouteName extends SemanticBehavior {
-  RouteName(
-    SemanticsObject semanticsObject,
-    PrimaryRoleManager owner,
-  ) : super(Role.routeName, semanticsObject, owner);
+  RouteName(super.semanticsObject, super.owner);
 
   Dialog? _dialog;
 

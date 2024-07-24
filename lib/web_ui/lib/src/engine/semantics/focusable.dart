@@ -28,9 +28,8 @@ import 'semantics.dart';
 ///
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
 class Focusable extends SemanticBehavior {
-  Focusable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
-        super(Role.focusable, semanticsObject, owner);
+  Focusable(super.semanticsObject, super.owner)
+      : _focusManager = AccessibilityFocusManager(semanticsObject.owner);
 
   final AccessibilityFocusManager _focusManager;
 

@@ -433,14 +433,13 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
   DomElement get focusTarget => _domText;
 }
 
-/// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
+/// Renders the label for a [SemanticsObject] that can be scanned by screen
+/// readers, web crawlers, and other automated agents.
 ///
-/// The value is not always rendered. Some semantics nodes correspond to
-/// interactive controls. In such case the value is reported via that element's
-/// `value` attribute rather than rendering it separately.
+/// See [computeDomSemanticsLabel] for the exact logic that constructs the label
+/// of a semantic node.
 class LabelAndValue extends SemanticBehavior {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.preferredRepresentation })
-      : super(Role.labelAndValue, semanticsObject, owner);
+  LabelAndValue(super.semanticsObject, super.owner, { required this.preferredRepresentation });
 
   /// The preferred representation of the label in the DOM.
   ///
