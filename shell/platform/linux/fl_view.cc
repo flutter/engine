@@ -37,14 +37,14 @@ static constexpr int kMicrosecondsPerMillisecond = 1000;
 struct _FlView {
   GtkBox parent_instance;
 
+  // Engine this view is showing.
+  FlEngine* engine;
+
   // ID for this view.
   FlutterViewId view_id;
 
   // Rendering output.
   FlRendererGdk* renderer;
-
-  // Engine this view is showing.
-  FlEngine* engine;
 
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
@@ -652,8 +652,8 @@ static void fl_view_dispose(GObject* object) {
                                                 nullptr);
   }
 
-  g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
+  g_clear_object(&self->renderer);
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->keyboard_handler);
@@ -760,10 +760,18 @@ static void fl_view_init(FlView* self) {
 }
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
+  g_autoptr(FlEngine) engine = fl_engine_new(project);
+  return fl_view_new_for_engine(engine);
+}
+
+G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
   FlView* self = FL_VIEW(g_object_new(fl_view_get_type(), nullptr));
 
-  self->renderer = fl_renderer_gdk_new();
-  self->engine = fl_engine_new(project, FL_RENDERER(self->renderer));
+  self->engine = FL_ENGINE(g_object_ref(engine));
+  FlRenderer* renderer = fl_engine_get_renderer(engine);
+  g_assert(FL_IS_RENDERER_GDK(renderer));
+  self->renderer = FL_RENDERER_GDK(g_object_ref(renderer));
+
   fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
                                          self, nullptr);
   fl_engine_set_on_pre_engine_restart_handler(
