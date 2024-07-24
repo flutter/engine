@@ -186,6 +186,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
         const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
+        surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
 
         return renderer->Render(
             std::move(surface),

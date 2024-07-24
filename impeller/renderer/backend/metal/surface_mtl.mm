@@ -197,7 +197,14 @@ SurfaceMTL::SurfaceMTL(const std::weak_ptr<Context>& context,
       source_texture_(std::move(source_texture)),
       destination_texture_(std::move(destination_texture)),
       requires_blit_(requires_blit),
-      clip_rect_(clip_rect) {}
+      clip_rect_(clip_rect) {
+#ifdef IMPELLER_DEBUG
+  auto mtl_context = context_.lock();
+  if (mtl_context) {
+    ContextMTL::Cast(mtl_context.get())->GetCaptureManager()->StartCapture();
+  }
+#endif  // IMPELLER_DEBUG
+}
 
 // |Surface|
 SurfaceMTL::~SurfaceMTL() = default;
@@ -231,6 +238,9 @@ bool SurfaceMTL::Present() const {
 
 #ifdef IMPELLER_DEBUG
   context->GetResourceAllocator()->DebugTraceMemoryStatistics();
+  if (frame_boundary_) {
+    ContextMTL::Cast(context.get())->GetCaptureManager()->FinishCapture();
+  }
 #endif  // IMPELLER_DEBUG
 
   if (requires_blit_) {
