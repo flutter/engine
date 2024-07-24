@@ -142,7 +142,6 @@ void ResetAnchor(CALayer* layer);
 CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
 BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2);
 
-class IOSContextGL;
 class IOSSurface;
 
 struct FlutterPlatformViewLayer {
@@ -166,7 +165,7 @@ struct FlutterPlatformViewLayer {
   // so we can update the overlay with the new context.
   GrDirectContext* gr_context;
 
-  void UpdateViewState(UIView* flutter_view, SkIRect rect, int64_t view_id, int64_t overlay_id);
+  void UpdateViewState(UIView* flutter_view, SkRect rect, int64_t view_id, int64_t overlay_id);
 };
 
 // This class isn't thread safe.
@@ -302,10 +301,8 @@ class FlutterPlatformViewsController {
   }
 
  private:
-  static const size_t kMaxLayerAllocations = 2;
-
   struct LayerData {
-    SkIRect rect;
+    SkRect rect;
     int64_t view_id;
     int64_t overlay_id;
     std::shared_ptr<FlutterPlatformViewLayer> layer;
@@ -369,7 +366,7 @@ class FlutterPlatformViewsController {
   // operation until the next platform view or the end of the last leaf node in the layer tree.
   //
   // The Slices are deleted by the FlutterPlatformViewsController.reset().
-  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;

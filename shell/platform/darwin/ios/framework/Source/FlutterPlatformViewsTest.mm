@@ -3418,9 +3418,9 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   auto pool = flutter::FlutterPlatformViewLayerPool{};
 
   // Add layers to the pool.
-  auto layer1 = pool.GetLayer(gr_context.get(), ios_context, MTLPixelFormatBGRA8Unorm);
+  pool.CreateLayer(gr_context.get(), ios_context, MTLPixelFormatBGRA8Unorm);
   XCTAssertEqual(pool.size(), 1u);
-  auto layer2 = pool.GetLayer(gr_context.get(), ios_context, MTLPixelFormatBGRA8Unorm);
+  pool.CreateLayer(gr_context.get(), ios_context, MTLPixelFormatBGRA8Unorm);
   XCTAssertEqual(pool.size(), 2u);
 
   // Mark all layers as unused.
