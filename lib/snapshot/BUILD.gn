@@ -184,7 +184,7 @@ if (host_os == "mac" && target_os != "mac" &&
 # to `gen_snapshot_arm64` or `gen_snapshot_x64` depending on the target
 # platform.
 #
-# This target is used for builds targeting macOS.
+# This target is used for builds targeting iOS and macOS.
 if (host_os == "mac" && (target_os == "mac" || target_os == "ios")) {
   template("build_mac_gen_snapshot") {
     assert(defined(invoker.host_arch))
