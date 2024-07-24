@@ -107,9 +107,9 @@ void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     advanced_blend_reads_from_pass_texture_ = true;
   }
-  elements_.emplace_back(std::move(entity));
-  draw_order_resolver_.AddElement(elements_.size() - 1,
+  draw_order_resolver_.AddElement(elements_.size(),
                                   entity.GetBlendMode() == BlendMode::kSource);
+  elements_.emplace_back(std::move(entity));
 }
 
 void EntityPass::PushClip(Entity entity) {
