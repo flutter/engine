@@ -26,8 +26,8 @@ TEST(DrawOrderResolverTest, GetSortedDrawsReturnsCorrectOrderWithNoClips) {
   EXPECT_EQ(sorted_elements[0], 1u);
   EXPECT_EQ(sorted_elements[1], 0u);
   // Then the translucent items are drawn.
-  EXPECT_EQ(sorted_elements[2], 3u);
-  EXPECT_EQ(sorted_elements[3], 2u);
+  EXPECT_EQ(sorted_elements[2], 2u);
+  EXPECT_EQ(sorted_elements[3], 3u);
 }
 
 TEST(DrawOrderResolverTest, GetSortedDrawsReturnsCorrectOrderWithClips) {
@@ -65,20 +65,23 @@ TEST(DrawOrderResolverTest, GetSortedDrawsReturnsCorrectOrderWithClips) {
   EXPECT_EQ(sorted_elements[1], 9u);
   EXPECT_EQ(sorted_elements[2], 3u);
   EXPECT_EQ(sorted_elements[3], 1u);
-  // Then, the clip is drawn.
-  EXPECT_EQ(sorted_elements[4], 4u);
+  // Then, non-clipped translucent items that came before the clip are drawn in
+  // their original order.
+  EXPECT_EQ(sorted_elements[4], 0u);
+  EXPECT_EQ(sorted_elements[5], 2u);
+
+  // Then, the clip and its sorted child items are drawn.
+  EXPECT_EQ(sorted_elements[6], 4u);
   {
     // Opaque clipped items are drawn in reverse order.
-    EXPECT_EQ(sorted_elements[5], 8u);
-    EXPECT_EQ(sorted_elements[6], 7u);
+    EXPECT_EQ(sorted_elements[7], 8u);
+    EXPECT_EQ(sorted_elements[8], 7u);
     // Translucent clipped items are drawn.
-    EXPECT_EQ(sorted_elements[7], 5u);
-    EXPECT_EQ(sorted_elements[8], 6u);
+    EXPECT_EQ(sorted_elements[9], 5u);
+    EXPECT_EQ(sorted_elements[10], 6u);
   }
-  // Finally, the non-clipped translucent items are drawn in their original
-  // order.
-  EXPECT_EQ(sorted_elements[9], 0u);
-  EXPECT_EQ(sorted_elements[10], 2u);
+  // Finally, the non-clipped translucent items which came after the clip are
+  // drawn in their original order.
   EXPECT_EQ(sorted_elements[11], 10u);
   EXPECT_EQ(sorted_elements[12], 12u);
 }
@@ -100,7 +103,7 @@ TEST(DrawOrderResolverTest, GetSortedDrawsRespectsSkipCounts) {
   // optimization.
   auto sorted_elements = resolver.GetSortedDraws(1, 2);
 
-  EXPECT_EQ(sorted_elements.size(), 4u);
+  EXPECT_EQ(sorted_elements.size(), 3u);
   // First, opaque items are drawn in reverse order.
   EXPECT_EQ(sorted_elements[0], 5u);
   EXPECT_EQ(sorted_elements[1], 4u);
