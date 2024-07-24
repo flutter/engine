@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "txt/platform.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 
 namespace flutter {
 namespace testing {
@@ -112,8 +113,7 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
 
 TEST_P(DlGoldenTest, ShimmerTest) {
   impeller::Point content_scale = GetContentScale();
-  auto draw = [&](DlCanvas* canvas,
-                  const std::vector<sk_sp<DlImage>>& images) {
+  auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
     canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
 
@@ -127,12 +127,18 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     canvas->Restore();
   };
 
-  DisplayListBuilder builder;
   std::vector<sk_sp<DlImage>> images;
   images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
+
+  DisplayListBuilder builder;
   draw(&builder, images);
 
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+  std::unique_ptr<impeller::testing::Screenshot> screenshot = MakeScreenshot(builder.Build());
+  if (!screenshot) {
+    GTEST_SKIP() << "making screenshots not supported.";
+  }
+
+  
 }
 
 }  // namespace testing

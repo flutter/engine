@@ -15,6 +15,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/typographer/typographer_context.h"
 #include "third_party/imgui/imgui.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 
 #if FML_OS_MACOSX
 #include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
@@ -50,6 +51,9 @@ class GoldenPlaygroundTest
   bool OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
+
+  std::unique_ptr<testing::Screenshot> MakeScreenshot(
+      const sk_sp<flutter::DisplayList>& list);
 
   static bool ImGuiBegin(const char* name,
                          bool* p_open,

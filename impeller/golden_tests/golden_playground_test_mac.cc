@@ -396,4 +396,19 @@ fml::Status GoldenPlaygroundTest::SetCapabilities(
   return pimpl_->screenshotter->GetPlayground().SetCapabilities(capabilities);
 }
 
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+
+  std::unique_ptr<testing::Screenshot> screenshot =
+      pimpl_->screenshotter->MakeScreenshot(renderer, picture,
+                                            pimpl_->window_size);
+  
+  return screenshot;
+}
+
 }  // namespace impeller
