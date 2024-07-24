@@ -3036,8 +3036,6 @@ extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
 @staticInterop
 class DomCSSRule {}
 
-@JS()
-@staticInterop
 extension DomCSSRuleExtension on DomCSSRule {
   @JS('cssText')
   external JSString get _cssText;
