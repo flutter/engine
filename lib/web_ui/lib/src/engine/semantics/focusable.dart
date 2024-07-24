@@ -12,9 +12,9 @@ import 'semantics.dart';
 /// Supplies generic accessibility focus features to semantics nodes that have
 /// [ui.SemanticsFlag.isFocusable] set.
 ///
-/// Assumes that the element being focused on is [SemanticsObject.element]. Role
-/// managers with special needs can implement custom focus management and
-/// exclude this role manager.
+/// Assumes that the element being focused on is [SemanticsObject.element].
+/// Semantic roles with special needs can implement custom focus management and
+/// exclude this behavior.
 ///
 /// `"tab-index=0"` is used because `<flt-semantics>` is not intrinsically
 /// focusable. Examples of intrinsically focusable elements include:
@@ -43,9 +43,9 @@ class Focusable extends SemanticBehavior {
   /// programmatically, simulating the screen reader choosing a default element
   /// to focus on.
   ///
-  /// Returns `true` if the role manager took the focus. Returns `false` if
-  /// this role manager did not take the focus. The return value can be used to
-  /// decide whether to stop searching for a node that should take focus.
+  /// Returns `true` if the node took the focus. Returns `false` if the node did
+  /// not take the focus. The return value can be used to decide whether to stop
+  /// searching for a node that should take focus.
   bool focusAsRouteDefault() {
     _focusManager._lastEvent = AccessibilityFocusManagerEvent.requestedFocus;
     owner.element.focusWithoutScroll();

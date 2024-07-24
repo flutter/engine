@@ -7,8 +7,8 @@ import '../semantics.dart';
 import '../util.dart';
 
 /// Provides accessibility for routes, including dialogs and pop-up menus.
-class Dialog extends PrimaryRoleManager {
-  Dialog(SemanticsObject semanticsObject) : super.blank(PrimaryRole.dialog, semanticsObject) {
+class Dialog extends SemanticRole {
+  Dialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleId.dialog, semanticsObject) {
     // The following behaviors can coexist with dialog. Generic `RouteName`
     // and `LabelAndValue` are not used by this role because when the dialog
     // names its own route an `aria-label` is used instead of `aria-describedby`.
@@ -37,7 +37,7 @@ class Dialog extends PrimaryRoleManager {
 
   void _setDefaultFocus() {
     semanticsObject.visitDepthFirstInTraversalOrder((SemanticsObject node) {
-      final PrimaryRoleManager? roleManager = node.primaryRole;
+      final SemanticRole? roleManager = node.semanticRole;
       if (roleManager == null) {
         return true;
       }
@@ -145,11 +145,11 @@ class RouteName extends SemanticBehavior {
 
   void _lookUpNearestAncestorDialog() {
     SemanticsObject? parent = semanticsObject.parent;
-    while (parent != null && parent.primaryRole?.role != PrimaryRole.dialog) {
+    while (parent != null && parent.semanticRole?.role != SemanticRoleId.dialog) {
       parent = parent.parent;
     }
-    if (parent != null && parent.primaryRole?.role == PrimaryRole.dialog) {
-      _dialog = parent.primaryRole! as Dialog;
+    if (parent != null && parent.semanticRole?.role == SemanticRoleId.dialog) {
+      _dialog = parent.semanticRole! as Dialog;
     }
   }
 }

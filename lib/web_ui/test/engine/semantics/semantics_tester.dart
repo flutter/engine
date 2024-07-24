@@ -338,9 +338,9 @@ class SemanticsTester {
     return owner.debugSemanticsTree![id]!;
   }
 
-  /// Locates the [TextField] role manager of the semantics object with the give [id].
+  /// Locates the [TextField] role of the semantics object with the give [id].
   TextField getTextField(int id) {
-    return getSemanticsObject(id).primaryRole! as TextField;
+    return getSemanticsObject(id).semanticRole! as TextField;
   }
 
   void expectSemantics(String semanticsHtml) {
@@ -402,7 +402,7 @@ class SemanticsActionLogger {
   late Stream<ui.SemanticsAction> _actionLog;
 }
 
-extension SemanticRoleExtension on PrimaryRoleManager {
-  /// Types of semantics behaviors used by this primary role manager.
+extension SemanticRoleExtension on SemanticRole {
+  /// Types of semantics behaviors used by this role.
   List<Type> get debugSemanticBehaviorTypes => behaviors?.map((behavior) => behavior.runtimeType).toList() ?? const <Type>[];
 }

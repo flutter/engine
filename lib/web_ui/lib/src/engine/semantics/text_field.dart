@@ -208,8 +208,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// browser gestures when in pointer mode. In Safari on iOS pointer events are
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when VoiceOver is enabled.
-class TextField extends PrimaryRoleManager {
-  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
+class TextField extends SemanticRole {
+  TextField(SemanticsObject semanticsObject) : super.blank(SemanticRoleId.textField, semanticsObject) {
     _initializeEditableElement();
   }
 
