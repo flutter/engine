@@ -110,5 +110,30 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DlGoldenTest, ShimmerTest) {
+  impeller::Point content_scale = GetContentScale();
+  auto draw = [&](DlCanvas* canvas,
+                  const std::vector<sk_sp<DlImage>>& images) {
+    canvas->DrawColor(DlColor(0xff111111));
+    canvas->Scale(content_scale.x, content_scale.y);
+
+    DlPaint paint;
+    canvas->DrawImage(images[0], SkPoint::Make(100.0, 100.0),
+                      DlImageSampling::kLinear, &paint);
+
+    SkRect save_layer_bounds = SkRect::MakeLTRB(0, 0, 1024, 768);
+    DlBlurImageFilter blur(/*sigma_x=*/40, /*sigma_y=*/40, DlTileMode::kDecal);
+    canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &blur);
+    canvas->Restore();
+  };
+
+  DisplayListBuilder builder;
+  std::vector<sk_sp<DlImage>> images;
+  images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
+  draw(&builder, images);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace flutter
