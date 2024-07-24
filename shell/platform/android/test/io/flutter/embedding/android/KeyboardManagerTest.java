@@ -1925,58 +1925,85 @@ public class KeyboardManagerTest {
 
   @Test
   public void deviceTypeFromInputDevice() {
-      final KeyboardTester tester = new KeyboardTester();
-      final ArrayList<CallRecord> calls = new ArrayList<>();
+    final KeyboardTester tester = new KeyboardTester();
+    final ArrayList<CallRecord> calls = new ArrayList<>();
 
-      tester.recordEmbedderCallsTo(calls);
-      tester.respondToTextInputWith(true);
+    tester.recordEmbedderCallsTo(calls);
+    tester.respondToTextInputWith(true);
 
-      // Keyboard
-      final KeyEvent keyboardEvent = new FakeKeyEvent(
-              ACTION_DOWN, SCAN_KEY_A, KEYCODE_A, 0, 'a', 0, InputDevice.SOURCE_KEYBOARD);
-      assertEquals(true, tester.keyboardManager.handleEvent(keyboardEvent));
-      verifyEmbedderEvents(calls,
-              new KeyData[] {
-                      buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false,
-                              DeviceType.kKeyboard),
-              });
-      calls.clear();
+    // Keyboard
+    final KeyEvent keyboardEvent =
+        new FakeKeyEvent(
+            ACTION_DOWN, SCAN_KEY_A, KEYCODE_A, 0, 'a', 0, InputDevice.SOURCE_KEYBOARD);
+    assertEquals(true, tester.keyboardManager.handleEvent(keyboardEvent));
+    verifyEmbedderEvents(
+        calls,
+        new KeyData[] {
+          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false, DeviceType.kKeyboard),
+        });
+    calls.clear();
 
-      // Directional pad
-      final KeyEvent directionalPadEvent = new FakeKeyEvent(
-              ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0, InputDevice.SOURCE_DPAD);
-      assertEquals(true, tester.keyboardManager.handleEvent(directionalPadEvent));
-      verifyEmbedderEvents(calls,
-              new KeyData[] {
-                      buildKeyData(Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false,
-                              DeviceType.kDirectionalPad),
-              });
-      calls.clear();
+    // Directional pad
+    final KeyEvent directionalPadEvent =
+        new FakeKeyEvent(
+            ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0, InputDevice.SOURCE_DPAD);
+    assertEquals(true, tester.keyboardManager.handleEvent(directionalPadEvent));
+    verifyEmbedderEvents(
+        calls,
+        new KeyData[] {
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_ARROW_LEFT,
+              LOGICAL_ARROW_LEFT,
+              null,
+              false,
+              DeviceType.kDirectionalPad),
+        });
+    calls.clear();
 
-      // Gamepad
-      final KeyEvent gamepadEvent = new FakeKeyEvent(ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_BUTTON_A,
-              0, '\0', 0, InputDevice.SOURCE_GAMEPAD);
-      assertEquals(true, tester.keyboardManager.handleEvent(gamepadEvent));
-      verifyEmbedderEvents(calls,
-              new KeyData[] {
-                      buildKeyData(Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, true,
-                              DeviceType.kKeyboard),
-                      buildKeyData(Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_GAME_BUTTON_A, null,
-                              false, DeviceType.kGamepad),
-              });
-      calls.clear();
+    // Gamepad
+    final KeyEvent gamepadEvent =
+        new FakeKeyEvent(
+            ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_BUTTON_A, 0, '\0', 0, InputDevice.SOURCE_GAMEPAD);
+    assertEquals(true, tester.keyboardManager.handleEvent(gamepadEvent));
+    verifyEmbedderEvents(
+        calls,
+        new KeyData[] {
+          buildKeyData(
+              Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, true, DeviceType.kKeyboard),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_ARROW_LEFT,
+              LOGICAL_GAME_BUTTON_A,
+              null,
+              false,
+              DeviceType.kGamepad),
+        });
+    calls.clear();
 
-      // HDMI
-      final KeyEvent hdmiEvent = new FakeKeyEvent(
-              ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_BUTTON_A, 0, '\0', 0, InputDevice.SOURCE_HDMI);
-      assertEquals(true, tester.keyboardManager.handleEvent(hdmiEvent));
-      verifyEmbedderEvents(calls,
-              new KeyData[] {
-                      buildKeyData(Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_GAME_BUTTON_A, null, true,
-                              DeviceType.kKeyboard),
-                      buildKeyData(Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_GAME_BUTTON_A, null,
-                              false, DeviceType.kHdmi),
-              });
-      calls.clear();
+    // HDMI
+    final KeyEvent hdmiEvent =
+        new FakeKeyEvent(
+            ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_BUTTON_A, 0, '\0', 0, InputDevice.SOURCE_HDMI);
+    assertEquals(true, tester.keyboardManager.handleEvent(hdmiEvent));
+    verifyEmbedderEvents(
+        calls,
+        new KeyData[] {
+          buildKeyData(
+              Type.kUp,
+              PHYSICAL_ARROW_LEFT,
+              LOGICAL_GAME_BUTTON_A,
+              null,
+              true,
+              DeviceType.kKeyboard),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_ARROW_LEFT,
+              LOGICAL_GAME_BUTTON_A,
+              null,
+              false,
+              DeviceType.kHdmi),
+        });
+    calls.clear();
   }
 }
