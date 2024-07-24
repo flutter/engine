@@ -113,7 +113,8 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
 
 TEST_P(DlGoldenTest, ShimmerTest) {
   impeller::Point content_scale = GetContentScale();
-  auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
+  auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images,
+                  float sigma) {
     canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
 
@@ -122,7 +123,7 @@ TEST_P(DlGoldenTest, ShimmerTest) {
                       DlImageSampling::kLinear, &paint);
 
     SkRect save_layer_bounds = SkRect::MakeLTRB(0, 0, 1024, 768);
-    DlBlurImageFilter blur(/*sigma_x=*/40, /*sigma_y=*/40, DlTileMode::kDecal);
+    DlBlurImageFilter blur(sigma, sigma, DlTileMode::kDecal);
     canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &blur);
     canvas->Restore();
   };
@@ -130,13 +131,25 @@ TEST_P(DlGoldenTest, ShimmerTest) {
   std::vector<sk_sp<DlImage>> images;
   images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
 
-  DisplayListBuilder builder;
-  draw(&builder, images);
+  auto make_screenshot = [&](float sigma) {
+    DisplayListBuilder builder;
+    draw(&builder, images, sigma);
 
-  std::unique_ptr<impeller::testing::Screenshot> screenshot =
-      MakeScreenshot(builder.Build());
-  if (!screenshot) {
+    std::unique_ptr<impeller::testing::Screenshot> screenshot =
+        MakeScreenshot(builder.Build());
+    return screenshot;
+  };
+
+  std::unique_ptr<impeller::testing::Screenshot> left = make_screenshot(0);
+  if (!left) {
     GTEST_SKIP() << "making screenshots not supported.";
+  }
+
+  for (int i = 1; i < 5000; ++i) {
+    float sigma = i / 10.0f;
+    std::unique_ptr<impeller::testing::Screenshot> right =
+        make_screenshot(sigma);
+    left = std::move(right);
   }
 }
 
