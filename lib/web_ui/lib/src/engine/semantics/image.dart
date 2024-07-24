@@ -13,7 +13,7 @@ import 'semantics.dart';
 class ImageRoleManager extends PrimaryRoleManager {
   ImageRoleManager(SemanticsObject semanticsObject)
       : super.blank(PrimaryRole.image, semanticsObject) {
-    // The following secondary roles can coexist with images. `LabelAndValue` is
+    // The following behaviors can coexist with images. `LabelAndValue` is
     // not used because this role manager uses special auxiliary elements to
     // supply ARIA labels.
     // TODO(yjbanov): reevaluate usage of aux elements, https://github.com/flutter/flutter/issues/129317

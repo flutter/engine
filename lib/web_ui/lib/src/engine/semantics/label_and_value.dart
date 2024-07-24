@@ -438,7 +438,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 /// The value is not always rendered. Some semantics nodes correspond to
 /// interactive controls. In such case the value is reported via that element's
 /// `value` attribute rather than rendering it separately.
-class LabelAndValue extends RoleManager {
+class LabelAndValue extends SemanticBehavior {
   LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.preferredRepresentation })
       : super(Role.labelAndValue, semanticsObject, owner);
 

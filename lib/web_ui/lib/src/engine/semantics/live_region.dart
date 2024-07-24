@@ -16,7 +16,7 @@ import 'semantics.dart';
 /// When there is an update to [LiveRegion], assistive technologies read the
 /// label of the element. See [LabelAndValue]. If there is no label provided
 /// no content will be read.
-class LiveRegion extends RoleManager {
+class LiveRegion extends SemanticBehavior {
   LiveRegion(SemanticsObject semanticsObject, PrimaryRoleManager owner)
       : super(Role.liveRegion, semanticsObject, owner);
 

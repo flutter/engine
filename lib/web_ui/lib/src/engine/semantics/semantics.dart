@@ -406,7 +406,8 @@ enum PrimaryRole {
   link,
 }
 
-/// Identifies one of the secondary [RoleManager]s of a [PrimaryRoleManager].
+// TODO(yjbanov): kill this?
+/// Identifies one of the [SemanticBehavior]s of a [PrimaryRoleManager].
 enum Role {
   /// Supplies generic accessibility focus features to semantics nodes that have
   /// [ui.SemanticsFlag.isFocusable] set.
@@ -440,7 +441,7 @@ enum Role {
 }
 
 /// Responsible for setting the `role` ARIA attribute and for attaching zero or
-/// more secondary [RoleManager]s to a [SemanticsObject].
+/// more [SemanticBehavior]s to a [SemanticsObject].
 abstract class PrimaryRoleManager {
   /// Initializes a role for a [semanticsObject] that includes basic
   /// functionality for focus, labels, live regions, and route names.
@@ -458,7 +459,7 @@ abstract class PrimaryRoleManager {
   /// Initializes a blank role for a [semanticsObject].
   ///
   /// Use this constructor for highly specialized cases where
-  /// [RoleManager.withBasics] does not work, for example when the default focus
+  /// [PrimaryRoleManager.withBasics] does not work, for example when the default focus
   /// management intereferes with the widget's functionality.
   PrimaryRoleManager.blank(this.role, this.semanticsObject) {
     element = _initElement(createElement(), semanticsObject);
@@ -472,15 +473,15 @@ abstract class PrimaryRoleManager {
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
 
-  /// Secondary role managers, if any.
-  List<RoleManager>? get secondaryRoleManagers => _secondaryRoleManagers;
-  List<RoleManager>? _secondaryRoleManagers;
+  /// Semantic behaviors provided by this role, if any.
+  List<SemanticBehavior>? get behaviors => _behaviors;
+  List<SemanticBehavior>? _behaviors;
 
-  /// Identifiers of secondary roles used by this primary role manager.
+  /// Identifiers of semantics behaviors used by this primary role manager.
   ///
   /// This is only meant to be used in tests.
   @visibleForTesting
-  List<Role> get debugSecondaryRoles => _secondaryRoleManagers?.map((RoleManager manager) => manager.role).toList() ?? const <Role>[];
+  List<Role> get debugSecondaryRoles => _behaviors?.map((behavior) => behavior.role).toList() ?? const <Role>[];
 
   @protected
   DomElement createElement() => domDocument.createElement('flt-semantics');
@@ -526,7 +527,7 @@ abstract class PrimaryRoleManager {
   /// compared to [update], because [update] can be called many times during the
   /// lifecycle of the semantic node.
   ///
-  /// It is safe to access [element], [semanticsObject], [secondaryRoleManagers]
+  /// It is safe to access [element], [semanticsObject], [behaviors]
   /// and all helper methods that access these fields, such as [append],
   /// [focusable], etc.
   void initState() {}
@@ -557,17 +558,17 @@ abstract class PrimaryRoleManager {
 
   /// Adds generic focus management features.
   void addFocusManagement() {
-    addSecondaryRole(_focusable = Focusable(semanticsObject, this));
+    addSemanticBehavior(_focusable = Focusable(semanticsObject, this));
   }
 
   /// Adds generic live region features.
   void addLiveRegion() {
-    addSecondaryRole(LiveRegion(semanticsObject, this));
+    addSemanticBehavior(LiveRegion(semanticsObject, this));
   }
 
   /// Adds generic route name features.
   void addRouteName() {
-    addSecondaryRole(RouteName(semanticsObject, this));
+    addSemanticBehavior(RouteName(semanticsObject, this));
   }
 
   /// Convenience getter for the [LabelAndValue] role manager, if any.
@@ -576,26 +577,26 @@ abstract class PrimaryRoleManager {
 
   /// Adds generic label features.
   void addLabelAndValue({ required LabelRepresentation preferredRepresentation }) {
-    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, preferredRepresentation: preferredRepresentation));
+    addSemanticBehavior(_labelAndValue = LabelAndValue(semanticsObject, this, preferredRepresentation: preferredRepresentation));
   }
 
   /// Adds generic functionality for handling taps and clicks.
   void addTappable() {
-    addSecondaryRole(Tappable(semanticsObject, this));
+    addSemanticBehavior(Tappable(semanticsObject, this));
   }
 
-  /// Adds a secondary role to this primary role manager.
+  /// Adds a semantic behavior to this role manager.
   ///
   /// This method should be called by concrete implementations of
   /// [PrimaryRoleManager] during initialization.
   @protected
-  void addSecondaryRole(RoleManager secondaryRoleManager) {
+  void addSemanticBehavior(SemanticBehavior behavior) {
     assert(
-      _secondaryRoleManagers?.any((RoleManager manager) => manager.role == secondaryRoleManager.role) != true,
-      'Cannot add secondary role ${secondaryRoleManager.role}. This object already has this secondary role.',
+      _behaviors?.any((existing) => existing.role == behavior.role) != true,
+      'Cannot add semantic behavior ${behavior.role}. This object already has it.',
     );
-    _secondaryRoleManagers ??= <RoleManager>[];
-    _secondaryRoleManagers!.add(secondaryRoleManager);
+    _behaviors ??= <SemanticBehavior>[];
+    _behaviors!.add(behavior);
   }
 
   /// Called immediately after the fields of the [semanticsObject] are updated
@@ -605,16 +606,16 @@ abstract class PrimaryRoleManager {
   /// "is*Dirty" getters to find out exactly what's changed and apply the
   /// minimum DOM updates.
   ///
-  /// The base implementation requests every secondary role manager to update
+  /// The base implementation requests every semantics behavior to update
   /// the object.
   @mustCallSuper
   void update() {
-    final List<RoleManager>? secondaryRoles = _secondaryRoleManagers;
-    if (secondaryRoles == null) {
+    final List<SemanticBehavior>? behaviors = _behaviors;
+    if (behaviors == null) {
       return;
     }
-    for (final RoleManager secondaryRole in secondaryRoles) {
-      secondaryRole.update();
+    for (final SemanticBehavior behavior in behaviors) {
+      behavior.update();
     }
 
     if (semanticsObject.isIdentifierDirty) {
@@ -749,18 +750,19 @@ final class GenericRole extends PrimaryRoleManager {
 
 /// Provides a piece of functionality to a [SemanticsObject].
 ///
-/// A secondary role must not set the `role` ARIA attribute. That responsibility
+/// A behavior must not set the `role` ARIA attribute. That responsibility
 /// falls on the [PrimaryRoleManager]. One [SemanticsObject] may have more than
-/// one [RoleManager] but an element may only have one ARIA role, so setting the
-/// `role` attribute from a [RoleManager] would cause conflicts.
+/// one [SemanticBehavior] but an element may only have one ARIA role, so
+/// setting the `role` attribute from a [SemanticBehavior] would cause
+/// conflicts.
 ///
-/// The [PrimaryRoleManager] decides the list of [RoleManager]s a given semantics
-/// node should use.
-abstract class RoleManager {
-  /// Initializes a secondary role for [semanticsObject].
+/// The [PrimaryRoleManager] decides the list of [SemanticBehavior]s a given
+/// semantics node should use.
+abstract class SemanticBehavior {
+  /// Initializes a behavior for the [semanticsObject].
   ///
-  /// A single role object manages exactly one [SemanticsObject].
-  RoleManager(this.role, this.semanticsObject, this.owner);
+  /// A single [SemanticBehavior] object manages exactly one [SemanticsObject].
+  SemanticBehavior(this.role, this.semanticsObject, this.owner);
 
   /// Role identifier.
   final Role role;
@@ -2013,7 +2015,7 @@ enum SemanticsUpdatePhase {
   idle,
 
   /// Updating individual [SemanticsObject] nodes by calling
-  /// [RoleManager.update] and fixing parent-child relationships.
+  /// [SemanticBehavior.update] and fixing parent-child relationships.
   ///
   /// After this phase is done, the owner enters the [postUpdate] phase.
   updating,
@@ -2022,7 +2024,7 @@ enum SemanticsUpdatePhase {
   ///
   /// At this point all nodes have been updated, the parent child hierarchy has
   /// been established, the DOM tree is in sync with the semantics tree, and
-  /// [RoleManager.dispose] has been called on removed nodes.
+  /// [SemanticBehavior.dispose] has been called on removed nodes.
   ///
   /// After this phase is done, the owner switches back to [idle].
   postUpdate,

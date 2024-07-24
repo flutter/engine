@@ -37,7 +37,7 @@ class Button extends PrimaryRoleManager {
 /// framework from raw pointer events. When an assistive technology is enabled
 /// the browser may not send us pointer events. In that mode we forward HTML
 /// click as [ui.SemanticsAction.tap].
-class Tappable extends RoleManager {
+class Tappable extends SemanticBehavior {
   Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
       : super(Role.tappable, semanticsObject, owner) {
     _clickListener = createDomEventListener((DomEvent click) {

@@ -176,7 +176,7 @@ void _testPrimaryRoleManager() {
 }
 
 void _testRoleManagerLifecycle() {
-  test('Secondary role managers are added upon node initialization', () {
+  test('Semantic behaviors are added upon node initialization', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -884,7 +884,7 @@ void _testText() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.primaryRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -917,7 +917,7 @@ void _testText() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.primaryRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -1954,7 +1954,7 @@ void _testCheckables() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.checkable);
     expect(
-      reason: 'Checkables use generic secondary roles',
+      reason: 'Checkables use generic semantic behaviors',
       node.primaryRole!.debugSecondaryRoles,
       containsAll(<Role>[Role.focusable, Role.tappable]),
     );
@@ -3135,7 +3135,7 @@ void _testDialog() {
       PrimaryRole.dialog,
     );
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.secondaryRoleManagers,
+      owner().debugSemanticsTree![0]!.primaryRole?.behaviors,
       isNot(contains(Role.routeName)),
     );
 

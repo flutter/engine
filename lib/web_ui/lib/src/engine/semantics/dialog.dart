@@ -11,7 +11,7 @@ import '../util.dart';
 /// See also [Role.dialog].
 class Dialog extends PrimaryRoleManager {
   Dialog(SemanticsObject semanticsObject) : super.blank(PrimaryRole.dialog, semanticsObject) {
-    // The following secondary roles can coexist with dialog. Generic `RouteName`
+    // The following behaviors can coexist with dialog. Generic `RouteName`
     // and `LabelAndValue` are not used by this role because when the dialog
     // names its own route an `aria-label` is used instead of `aria-describedby`.
     addFocusManagement();
@@ -100,7 +100,7 @@ class Dialog extends PrimaryRoleManager {
 }
 
 /// Supplies a description for the nearest ancestor [Dialog].
-class RouteName extends RoleManager {
+class RouteName extends SemanticBehavior {
   RouteName(
     SemanticsObject semanticsObject,
     PrimaryRoleManager owner,
