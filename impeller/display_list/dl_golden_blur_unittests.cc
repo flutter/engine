@@ -6,11 +6,11 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "txt/platform.h"
-#include "flutter/impeller/golden_tests/screenshot.h"
 
 namespace flutter {
 namespace testing {
@@ -133,12 +133,11 @@ TEST_P(DlGoldenTest, ShimmerTest) {
   DisplayListBuilder builder;
   draw(&builder, images);
 
-  std::unique_ptr<impeller::testing::Screenshot> screenshot = MakeScreenshot(builder.Build());
+  std::unique_ptr<impeller::testing::Screenshot> screenshot =
+      MakeScreenshot(builder.Build());
   if (!screenshot) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
-
-  
 }
 
 }  // namespace testing
