@@ -27,16 +27,19 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
-FlutterPlatformViewsController::FlutterPlatformViewsController(
-    const fml::RefPtr<fml::TaskRunner>& platform_task_runner)
+FlutterPlatformViewsController::FlutterPlatformViewsController()
     : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
-      platform_task_runner_(platform_task_runner),
       weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)) {
   mask_view_pool_.reset(
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
 };
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
+
+void FlutterPlatformViewsController::SetTaskRunner(
+    const fml::RefPtr<fml::TaskRunner>& platform_task_runner) {
+  platform_task_runner_ = platform_task_runner;
+}
 
 fml::WeakPtr<flutter::FlutterPlatformViewsController> FlutterPlatformViewsController::GetWeakPtr() {
   return weak_factory_->GetWeakPtr();

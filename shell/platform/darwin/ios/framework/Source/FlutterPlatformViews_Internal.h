@@ -213,11 +213,13 @@ class FlutterPlatformViewLayerPool {
 
 class FlutterPlatformViewsController {
  public:
-  explicit FlutterPlatformViewsController(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
+  FlutterPlatformViewsController();
 
   ~FlutterPlatformViewsController();
 
   fml::WeakPtr<flutter::FlutterPlatformViewsController> GetWeakPtr();
+
+  void SetTaskRunner(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
 
   void SetFlutterView(UIView* flutter_view) __attribute__((cf_audited_transfer));
 
