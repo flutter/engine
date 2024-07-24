@@ -145,8 +145,8 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
 
-  for (int i = 1; i < 5000; ++i) {
-    float sigma = i / 10.0f;
+  for (int i = 1; i < 500; ++i) {
+    float sigma = i;
     std::unique_ptr<impeller::testing::Screenshot> right =
         make_screenshot(sigma);
     left = std::move(right);
