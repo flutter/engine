@@ -406,7 +406,8 @@ std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
   return command_queue_ip_;
 }
 
-const std::shared_ptr<ImpellerMetalCaptureManager> ContextMTL::GetCaptureManager() const {
+const std::shared_ptr<ImpellerMetalCaptureManager>
+ContextMTL::GetCaptureManager() const {
   return capture_manager_;
 }
 
