@@ -13,9 +13,9 @@ import 'semantics.dart';
 /// A live region is a region whose changes will be announced by the screen
 /// reader without the user moving focus onto the node.
 ///
-/// Live regions can be a snackbar or a text field error. Once identified
-/// with this role, they will be able to get the assistive technology's
-/// attention right away.
+/// Examples of live regions include snackbars and text field errors. Once
+/// identified with this role, they will be able to get the assistive
+/// technology's attention right away.
 ///
 /// Different assistive technologies treat "aria-live" attribute differently. To
 /// keep the behavior consistent, [AccessibilityAnnouncements.announce] is used.
