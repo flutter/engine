@@ -705,8 +705,29 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
     if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
       ApplyFramebufferBlend(entity);
     } else {
-      VALIDATION_LOG << "Emulated advanced blends are currently unsupported.";
-      return;
+      // End the active pass and flush the buffer before rendering "advanced"
+      // blends. Advanced blends work by binding the current render target
+      // texture as an input ("destination"), blending with a second texture
+      // input ("source"), writing the result to an intermediate texture, and
+      // finally copying the data from the intermediate texture back to the
+      // render target texture. And so all of the commands that have written
+      // to the render target texture so far need to execute before it's bound
+      // for blending (otherwise the blend pass will end up executing before
+      // all the previous commands in the active pass).
+      auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
+                                        clip_coverage_stack_, renderer_);
+      if (!input_texture) {
+        return;
+      }
+
+      FilterInput::Vector inputs = {
+          FilterInput::Make(input_texture, entity.GetTransform().Invert()),
+          FilterInput::Make(entity.GetContents())};
+      auto contents =
+          ColorFilterContents::MakeBlend(entity.GetBlendMode(), inputs);
+      contents->SetCoverageHint(entity.GetCoverage());
+      entity.SetContents(std::move(contents));
+      entity.SetBlendMode(BlendMode::kSource);
     }
   }
 
