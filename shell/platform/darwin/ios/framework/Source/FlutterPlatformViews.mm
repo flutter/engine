@@ -666,31 +666,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
   if (required_overlay_layers > layer_pool_->size()) {
-    auto missing_layer_count = required_overlay_layers - layer_pool_->size();
-    TRACE_EVENT0("flutter", "FlutterPlatformViewsController::CreateMissingLayers");
-    // Workaround for FLutterPlatformViewsTest
-    if ([[NSThread currentThread] isMainThread]) {
-      // Create Missing Layers
-      for (auto i = 0u; i < missing_layer_count; i++) {
-        CreateLayer(gr_context,                                      //
-                    ios_context,                                     //
-                    ((FlutterView*)flutter_view_.get()).pixelFormat  //
-        );
-      }
-    } else {
-      auto latch = std::make_shared<fml::CountDownLatch>(1u);
-      platform_task_runner_->PostTask([&]() {
-        // Create Missing Layers
-        for (auto i = 0u; i < missing_layer_count; i++) {
-          CreateLayer(gr_context,                                      //
-                      ios_context,                                     //
-                      ((FlutterView*)flutter_view_.get()).pixelFormat  //
-          );
-        }
-        latch->CountDown();
-      });
-      latch->Wait();
-    }
+    CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
   }
 
   int64_t overlay_id = 0;
@@ -745,56 +721,22 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       layer_pool_->RemoveUnusedLayers();
   layer_pool_->RecycleLayers();
 
-  // Dispose unused Flutter Views.
-  auto views_to_dispose = DisposeViews();
-
   auto task = [&, platform_view_layers = std::move(platform_view_layers),  //
                current_composition_params = current_composition_params_,   //
                views_to_recomposite = views_to_recomposite_,               //
-               callbacks = callbacks,                                      //
+               callbacks = std::move(callbacks),                           //
                composition_order = composition_order_,                     //
-               unused_layers = unused_layers, views_to_dispose]() mutable {
-    TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
-
-    [CATransaction begin];
-
-    // Configure Flutter overlay views.
-    for (const auto& [key, layers] : platform_view_layers) {
-      for (const auto& layer_data : layers) {
-        layer_data.layer->UpdateViewState(flutter_view_,         //
-                                          layer_data.rect,       //
-                                          layer_data.view_id,    //
-                                          layer_data.overlay_id  //
-        );
-      }
-    }
-
-    // Dispose unused Flutter Views.
-    for (auto& view : views_to_dispose) {
-      [view removeFromSuperview];
-    }
-
-    // Composite Platform Views.
-    for (int64_t view_id : views_to_recomposite) {
-      CompositeWithParams(view_id, current_composition_params[view_id]);
-    }
-
-    // Present callbacks.
-    for (const auto& cb : callbacks) {
-      cb();
-    }
-
-    // Organize the layers by their z indexes.
-    auto active_composition_order = BringLayersIntoView(platform_view_layers, composition_order);
-
-    // If a layer was allocated in the previous frame, but it's not used in the current frame,
-    // then it can be removed from the scene.
-    RemoveUnusedLayers(unused_layers, composition_order, active_composition_order);
-
-    // If the frame is submitted with embedded platform views,
-    // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
-    // If that case, we need to commit the transaction.
-    [CATransaction commit];
+               unused_layers = std::move(unused_layers),
+               views_to_dispose = DisposeViews()  //
+  ]() mutable {
+    PerformSubmit(std::move(platform_view_layers),        //
+                  std::move(callbacks),                   //
+                  std::move(current_composition_params),  //
+                  std::move(views_to_recomposite),        //
+                  std::move(composition_order),           //
+                  std::move(unused_layers),               //
+                  std::move(views_to_dispose)             //
+    );
   };
 
   // Workaround for FlutterPlatformViewsTest.mm
@@ -805,6 +747,91 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   }
 
   return did_submit;
+}
+
+void FlutterPlatformViewsController::CreateMissingOverlays(
+    GrDirectContext* gr_context,
+    const std::shared_ptr<IOSContext>& ios_context,
+    size_t required_overlay_layers) {
+  TRACE_EVENT0("flutter", "FlutterPlatformViewsController::CreateMissingLayers");
+
+  auto missing_layer_count = required_overlay_layers - layer_pool_->size();
+  // Workaround for FLutterPlatformViewsTest
+  if ([[NSThread currentThread] isMainThread]) {
+    // Create Missing Layers
+    for (auto i = 0u; i < missing_layer_count; i++) {
+      CreateLayer(gr_context,                                      //
+                  ios_context,                                     //
+                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
+      );
+    }
+    return;
+  }
+
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
+  platform_task_runner_->PostTask([&]() {
+    // Create Missing Layers
+    for (auto i = 0u; i < missing_layer_count; i++) {
+      CreateLayer(gr_context,                                      //
+                  ios_context,                                     //
+                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
+      );
+    }
+    latch->CountDown();
+  });
+  latch->Wait();
+}
+
+/// Update the buffers and mutate the platform views in CATransaction on the platform thread.
+void FlutterPlatformViewsController::PerformSubmit(
+    LayersMap platform_view_layers,
+    std::vector<SurfaceFrame::DeferredSubmit> callbacks,
+    std::map<int64_t, EmbeddedViewParams> current_composition_params,
+    std::unordered_set<int64_t> views_to_recomposite,
+    std::vector<int64_t> composition_order,
+    std::vector<std::shared_ptr<FlutterPlatformViewLayer>> unused_layers,
+    std::vector<UIView*> views_to_dispose) {
+  TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
+
+  [CATransaction begin];
+
+  // Configure Flutter overlay views.
+  for (const auto& [key, layers] : platform_view_layers) {
+    for (const auto& layer_data : layers) {
+      layer_data.layer->UpdateViewState(flutter_view_,         //
+                                        layer_data.rect,       //
+                                        layer_data.view_id,    //
+                                        layer_data.overlay_id  //
+      );
+    }
+  }
+
+  // Dispose unused Flutter Views.
+  for (auto& view : views_to_dispose) {
+    [view removeFromSuperview];
+  }
+
+  // Composite Platform Views.
+  for (int64_t view_id : views_to_recomposite) {
+    CompositeWithParams(view_id, current_composition_params[view_id]);
+  }
+
+  // Present callbacks.
+  for (const auto& cb : callbacks) {
+    cb();
+  }
+
+  // Organize the layers by their z indexes.
+  auto active_composition_order = BringLayersIntoView(platform_view_layers, composition_order);
+
+  // If a layer was allocated in the previous frame, but it's not used in the current frame,
+  // then it can be removed from the scene.
+  RemoveUnusedLayers(unused_layers, composition_order, active_composition_order);
+
+  // If the frame is submitted with embedded platform views,
+  // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+  // If that case, we need to commit the transaction.
+  [CATransaction commit];
 }
 
 std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(

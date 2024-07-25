@@ -310,6 +310,22 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::map<int64_t, std::vector<LayerData>>;
 
+  /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
+  void PerformSubmit(LayersMap platform_view_layers,
+                     std::vector<SurfaceFrame::DeferredSubmit> callbacks,
+                     std::map<int64_t, EmbeddedViewParams> current_composition_params,
+                     std::unordered_set<int64_t> views_to_recomposite,
+                     std::vector<int64_t> composition_order,
+                     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> unused_layers,
+                     std::vector<UIView*> views_to_dispose);
+
+  /// @brief Populate any missing overlay layers.
+  ///
+  /// This requires posting a task to the platform thread and blocking on its completion.
+  void CreateMissingOverlays(GrDirectContext* gr_context,
+                             const std::shared_ptr<IOSContext>& ios_context,
+                             size_t required_overlay_layers);
+
   void OnCreate(FlutterMethodCall* call, FlutterResult result) __attribute__((cf_audited_transfer));
   void OnDispose(FlutterMethodCall* call, FlutterResult result)
       __attribute__((cf_audited_transfer));
@@ -399,7 +415,7 @@ class FlutterPlatformViewsController {
   // A vector of visited platform view IDs.
   std::vector<int64_t> visited_platform_views_;
 
-  // Only compoiste platform views in this set.
+  // Only composite platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
