@@ -432,7 +432,6 @@ extern CFTimeInterval display_link_target;
         [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
     if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
       enabled = YES;
-      FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
     }
   }
   return enabled;

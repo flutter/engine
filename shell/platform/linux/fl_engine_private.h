@@ -71,7 +71,7 @@ typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
                                                   gpointer user_data);
 
 /**
- * fl_engine_new:
+ * fl_engine_new_with_renderer:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
  *
@@ -79,7 +79,18 @@ typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
  *
  * Returns: a new #FlEngine.
  */
-FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
+FlEngine* fl_engine_new_with_renderer(FlDartProject* project,
+                                      FlRenderer* renderer);
+
+/**
+ * fl_engine_get_renderer:
+ * @engine: an #FlEngine.
+ *
+ * Gets the renderer used by this engine.
+ *
+ * Returns: an #FlRenderer.
+ */
+FlRenderer* fl_engine_get_renderer(FlEngine* engine);
 
 /**
  * fl_engine_start:
@@ -226,6 +237,7 @@ void fl_engine_set_on_pre_engine_restart_handler(
 /**
  * fl_engine_send_window_metrics_event:
  * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
  * @width: width of the window in pixels.
  * @height: height of the window in pixels.
  * @pixel_ratio: scale factor for window.
@@ -233,6 +245,7 @@ void fl_engine_set_on_pre_engine_restart_handler(
  * Sends a window metrics event to the engine.
  */
 void fl_engine_send_window_metrics_event(FlEngine* engine,
+                                         FlutterViewId view_id,
                                          size_t width,
                                          size_t height,
                                          double pixel_ratio);
@@ -240,6 +253,7 @@ void fl_engine_send_window_metrics_event(FlEngine* engine,
 /**
  * fl_engine_send_mouse_pointer_event:
  * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
  * @phase: mouse phase.
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
@@ -252,6 +266,7 @@ void fl_engine_send_window_metrics_event(FlEngine* engine,
  * Sends a mouse pointer event to the engine.
  */
 void fl_engine_send_mouse_pointer_event(FlEngine* engine,
+                                        FlutterViewId view_id,
                                         FlutterPointerPhase phase,
                                         size_t timestamp,
                                         double x,
@@ -261,7 +276,23 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
-void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+/**
+ * fl_engine_send_pointer_pan_zoom_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @phase: mouse phase.
+ * @pan_x: x offset of the pan/zoom in pixels.
+ * @pan_y: y offset of the pan/zoom in pixels.
+ * @scale: scale of the pan/zoom.
+ * @rotation: rotation of the pan/zoom in radians.
+ *
+ * Sends a pan/zoom pointer event to the engine.
+ */
+void fl_engine_send_pointer_pan_zoom_event(FlEngine* engine,
+                                           FlutterViewId view_id,
                                            size_t timestamp,
                                            double x,
                                            double y,

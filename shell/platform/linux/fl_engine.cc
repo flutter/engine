@@ -19,6 +19,7 @@
 #include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_renderer_gdk.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
 #include "flutter/shell/platform/linux/fl_settings_handler.h"
 #include "flutter/shell/platform/linux/fl_texture_gl_private.h"
@@ -196,18 +197,19 @@ static bool compositor_create_backing_store_callback(
 
 // Called when the backing store is to be released.
 static bool compositor_collect_backing_store_callback(
-    const FlutterBackingStore* renderer,
+    const FlutterBackingStore* backing_store,
     void* user_data) {
   g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
-  return fl_renderer_collect_backing_store(FL_RENDERER(user_data), renderer);
+  return fl_renderer_collect_backing_store(FL_RENDERER(user_data),
+                                           backing_store);
 }
 
 // Called when embedder should composite contents of each layer onto the screen.
 static bool compositor_present_view_callback(
     const FlutterPresentViewInfo* info) {
   g_return_val_if_fail(FL_IS_RENDERER(info->user_data), false);
-  return fl_renderer_present_layers(FL_RENDERER(info->user_data), info->layers,
-                                    info->layers_count);
+  return fl_renderer_present_layers(FL_RENDERER(info->user_data), info->view_id,
+                                    info->layers, info->layers_count);
 }
 
 // Flutter engine rendering callbacks.
@@ -460,7 +462,8 @@ static void fl_engine_init(FlEngine* self) {
   self->texture_registrar = fl_texture_registrar_new(self);
 }
 
-FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
+FlEngine* fl_engine_new_with_renderer(FlDartProject* project,
+                                      FlRenderer* renderer) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(project), nullptr);
   g_return_val_if_fail(FL_IS_RENDERER(renderer), nullptr);
 
@@ -468,12 +471,25 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
   self->project = FL_DART_PROJECT(g_object_ref(project));
   self->renderer = FL_RENDERER(g_object_ref(renderer));
   self->binary_messenger = fl_binary_messenger_new(self);
+
+  fl_renderer_set_engine(self->renderer, self);
+
   return self;
+}
+
+G_MODULE_EXPORT FlEngine* fl_engine_new(FlDartProject* project) {
+  g_autoptr(FlRendererGdk) renderer = fl_renderer_gdk_new();
+  return fl_engine_new_with_renderer(project, FL_RENDERER(renderer));
 }
 
 G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
   g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
-  return fl_engine_new(project, FL_RENDERER(renderer));
+  return fl_engine_new_with_renderer(project, FL_RENDERER(renderer));
+}
+
+FlRenderer* fl_engine_get_renderer(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->renderer;
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -838,6 +854,7 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
 }
 
 void fl_engine_send_window_metrics_event(FlEngine* self,
+                                         FlutterViewId view_id,
                                          size_t width,
                                          size_t height,
                                          double pixel_ratio) {
@@ -852,14 +869,12 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
-  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
-  // supports multiple views.
-  // https://github.com/flutter/flutter/issues/138178
-  event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = view_id;
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,
+                                        FlutterViewId view_id,
                                         FlutterPointerPhase phase,
                                         size_t timestamp,
                                         double x,
@@ -888,14 +903,12 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.device_kind = device_kind;
   fl_event.buttons = buttons;
   fl_event.device = kMousePointerDeviceId;
-  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
-  // supports multiple views.
-  // https://github.com/flutter/flutter/issues/138178
-  fl_event.view_id = flutter::kFlutterImplicitViewId;
+  fl_event.view_id = view_id;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
 void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+                                           FlutterViewId view_id,
                                            size_t timestamp,
                                            double x,
                                            double y,
@@ -922,10 +935,7 @@ void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
   fl_event.rotation = rotation;
   fl_event.device = kPointerPanZoomDeviceId;
   fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
-  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
-  // supports multiple views.
-  // https://github.com/flutter/flutter/issues/138178
-  fl_event.view_id = flutter::kFlutterImplicitViewId;
+  fl_event.view_id = view_id;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
