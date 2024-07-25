@@ -13,8 +13,12 @@ environment:
 resolution: workspace
 
 dependencies:
+  args: any
   crypto: any
-  meta: any
+  engine_repo_tools: any
   git_repo_tools: any
   litetest: any
+  meta: any
+  path: any
+  process: any
   process_fakes: any
