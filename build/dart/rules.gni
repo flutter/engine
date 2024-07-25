@@ -178,7 +178,7 @@ template("flutter_snapshot") {
 
   flutter_frontend_server(kernel_target) {
     main_dart = invoker.main_dart
-    package_config = package_config
+    package_config = invoker.package_config
     kernel_output = kernel_output
     extra_args = extra_frontend_server_args
   }
