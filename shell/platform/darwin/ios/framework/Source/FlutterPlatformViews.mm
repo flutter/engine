@@ -669,7 +669,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     auto missing_layer_count = required_overlay_layers - layer_pool_->size();
     TRACE_EVENT0("flutter", "FlutterPlatformViewsController::CreateMissingLayers");
     // Workaround for FLutterPlatformViewsTest
-    if ([NSThread currentThread] isMainThread]) {
+    if ([[NSThread currentThread] isMainThread]) {
       // Create Missing Layers
       for (auto i = 0u; i < missing_layer_count; i++) {
         CreateLayer(gr_context,                                      //
