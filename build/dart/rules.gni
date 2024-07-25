@@ -133,8 +133,17 @@ template("flutter_frontend_server") {
 template("flutter_snapshot") {
   assert(!is_fuchsia)
   assert(defined(invoker.main_dart), "main_dart is a required parameter.")
-  assert(defined(invoker.package_config),
-         "package_config is a required parameter.")
+
+  package_config = ""
+  if (defined(invoker.package_config)) {
+    package_config = invoker.package_config
+  } else {
+    # Use the root engine package config by default.
+    # As we move towards a single pub workspace for the engine, this will be
+    # the correct package config to use, as we will no longer have a per-package
+    # .dart_tool/package_config.json.
+    package_config = rebase_path("//flutter/.dart_tool/package_config.json")
+  }
 
   kernel_target = "_${target_name}_kernel"
   snapshot_target = "_${target_name}_snapshot"
@@ -172,7 +181,7 @@ template("flutter_snapshot") {
 
   flutter_frontend_server(kernel_target) {
     main_dart = invoker.main_dart
-    package_config = invoker.package_config
+    package_config = package_config
     kernel_output = kernel_output
     extra_args = extra_frontend_server_args
   }
