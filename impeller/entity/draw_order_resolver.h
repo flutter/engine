@@ -44,14 +44,13 @@ class DrawOrderResolver {
   /// layer". Currently these layers just correspond to the local clip stack.
   struct DrawOrderLayer {
     /// The list of backdrop-independent elements (always just opaque). These
-    /// are order independent, and so we draw them optimally render these
-    /// elements in reverse painter's order so that they cull one another
+    /// are order independent, and so we render these elements in reverse
+    /// painter's order so that they cull one another.
     ElementRefs opaque_elements;
 
     /// The list of backdrop-dependent elements with respect to this draw
     /// order layer. These elements are drawn after all of the independent
     /// elements.
-    /// The elements of all child draw layers will be resolved to this list.
     ElementRefs dependent_elements;
 
     //-----------------------------------------------------------------------
