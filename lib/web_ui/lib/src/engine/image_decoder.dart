@@ -229,15 +229,16 @@ class ResizingCodec implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() async {
     final ui.FrameInfo frameInfo = await delegate.getNextFrame();
-    return AnimatedImageFrameInfo(
-      frameInfo.duration,
-      scaleImage(
+    final ui.Image scaledImage = scaleImage(
         frameInfo.image,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
         allowUpscaling: allowUpscaling,
-      ),
     );
+    if (!identical(frameInfo.image, scaledImage)) {
+      frameInfo.image.dispose();
+    }
+    return AnimatedImageFrameInfo(frameInfo.duration, scaledImage);
   }
 
   ui.Image scaleImage(
