@@ -678,7 +678,7 @@ int main(int argc, char* argv[]) {
 #if defined(FML_OS_WIN)
   CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif  // defined(FML_OS_WIN)
-  FML_LOG(ERROR) << "foobartest";
+  FML_LOG(WARNING) << "foobartest";
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(
