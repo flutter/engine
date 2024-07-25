@@ -8,7 +8,7 @@ import '../util.dart';
 
 /// Provides accessibility for routes, including dialogs and pop-up menus.
 class Dialog extends SemanticRole {
-  Dialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleId.dialog, semanticsObject) {
+  Dialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.dialog, semanticsObject) {
     // The following behaviors can coexist with dialog. Generic `RouteName`
     // and `LabelAndValue` are not used by this role because when the dialog
     // names its own route an `aria-label` is used instead of `aria-describedby`.
@@ -37,14 +37,14 @@ class Dialog extends SemanticRole {
 
   void _setDefaultFocus() {
     semanticsObject.visitDepthFirstInTraversalOrder((SemanticsObject node) {
-      final SemanticRole? roleManager = node.semanticRole;
-      if (roleManager == null) {
+      final SemanticRole? role = node.semanticRole;
+      if (role == null) {
         return true;
       }
 
       // If the node does not take focus (e.g. focusing on it does not make
       // sense at all). Despair not. Keep looking.
-      final bool didTakeFocus = roleManager.focusAsRouteDefault();
+      final bool didTakeFocus = role.focusAsRouteDefault();
       return !didTakeFocus;
     });
   }
@@ -145,10 +145,10 @@ class RouteName extends SemanticBehavior {
 
   void _lookUpNearestAncestorDialog() {
     SemanticsObject? parent = semanticsObject.parent;
-    while (parent != null && parent.semanticRole?.role != SemanticRoleId.dialog) {
+    while (parent != null && parent.semanticRole?.kind != SemanticRoleKind.dialog) {
       parent = parent.parent;
     }
-    if (parent != null && parent.semanticRole?.role == SemanticRoleId.dialog) {
+    if (parent != null && parent.semanticRole?.kind == SemanticRoleKind.dialog) {
       _dialog = parent.semanticRole! as Dialog;
     }
   }

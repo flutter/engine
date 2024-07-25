@@ -25,7 +25,7 @@ import 'package:ui/ui.dart' as ui;
 class Scrollable extends SemanticRole {
   Scrollable(SemanticsObject semanticsObject)
       : super.withBasics(
-          SemanticRoleId.scrollable,
+          SemanticRoleKind.scrollable,
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {

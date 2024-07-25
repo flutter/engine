@@ -53,7 +53,7 @@ class Checkable extends SemanticRole {
   Checkable(SemanticsObject semanticsObject)
       : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
         super.withBasics(
-          SemanticRoleId.checkable,
+          SemanticRoleKind.checkable,
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {

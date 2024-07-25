@@ -8,7 +8,7 @@ import 'package:ui/ui.dart' as ui;
 /// Sets the "button" ARIA role.
 class Button extends SemanticRole {
   Button(SemanticsObject semanticsObject) : super.withBasics(
-    SemanticRoleId.button,
+    SemanticRoleKind.button,
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.domText,
   ) {

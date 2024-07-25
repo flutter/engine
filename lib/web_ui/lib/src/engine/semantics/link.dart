@@ -8,7 +8,7 @@ import '../semantics.dart';
 /// Provides accessibility for links.
 class Link extends SemanticRole {
   Link(SemanticsObject semanticsObject) : super.withBasics(
-    SemanticRoleId.link,
+    SemanticRoleKind.link,
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.domText,
   ) {

@@ -49,7 +49,7 @@ Future<void> testMain() async {
       );
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.semanticRole?.role, SemanticRoleId.generic);
+      expect(node.semanticRole?.kind, SemanticRoleKind.generic);
       expect(
         reason: 'A node with a label should get a LabelAndValue role',
         node.semanticRole!.debugSemanticBehaviorTypes,

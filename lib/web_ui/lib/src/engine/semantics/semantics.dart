@@ -347,7 +347,7 @@ class SemanticsNodeUpdate {
 ///
 /// Each value corresponds to the most specific role a semantics node plays in
 /// the semantics tree.
-enum SemanticRoleId {
+enum SemanticRoleKind {
   /// Supports incrementing and/or decrementing its value.
   incrementable,
 
@@ -414,7 +414,7 @@ abstract class SemanticRole {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  SemanticRole.withBasics(this.role, this.semanticsObject, { required LabelRepresentation preferredLabelRepresentation }) {
+  SemanticRole.withBasics(this.kind, this.semanticsObject, { required LabelRepresentation preferredLabelRepresentation }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
@@ -427,14 +427,14 @@ abstract class SemanticRole {
   /// Use this constructor for highly specialized cases where
   /// [SemanticRole.withBasics] does not work, for example when the default focus
   /// management intereferes with the widget's functionality.
-  SemanticRole.blank(this.role, this.semanticsObject) {
+  SemanticRole.blank(this.kind, this.semanticsObject) {
     element = _initElement(createElement(), semanticsObject);
   }
 
   late final DomElement element;
 
-  /// The role identifier.
-  final SemanticRoleId role;
+  /// The kind of the role that this .
+  final SemanticRoleKind kind;
 
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
@@ -628,7 +628,7 @@ abstract class SemanticRole {
 /// A role used when a more specific role couldn't be assigned to the node.
 final class GenericRole extends SemanticRole {
   GenericRole(SemanticsObject semanticsObject) : super.withBasics(
-    SemanticRoleId.generic,
+    SemanticRoleKind.generic,
     semanticsObject,
     // Prefer sized span because if this is a leaf it is frequently a Text widget.
     // But if it turns out to be a container, then LabelAndValue will automatically
@@ -1634,46 +1634,46 @@ class SemanticsObject {
   /// semantics flags and actions.
   SemanticRole? semanticRole;
 
-  SemanticRoleId _getSemanticRoleId() {
+  SemanticRoleKind _getSemanticRoleKind() {
     // The most specific role should take precedence.
     if (isPlatformView) {
-      return SemanticRoleId.platformView;
+      return SemanticRoleKind.platformView;
     } else if (isHeading) {
-      return SemanticRoleId.heading;
+      return SemanticRoleKind.heading;
     } else if (isTextField) {
-      return SemanticRoleId.textField;
+      return SemanticRoleKind.textField;
     } else if (isIncrementable) {
-      return SemanticRoleId.incrementable;
+      return SemanticRoleKind.incrementable;
     } else if (isVisualOnly) {
-      return SemanticRoleId.image;
+      return SemanticRoleKind.image;
     } else if (isCheckable) {
-      return SemanticRoleId.checkable;
+      return SemanticRoleKind.checkable;
     } else if (isButton) {
-      return SemanticRoleId.button;
+      return SemanticRoleKind.button;
     } else if (isScrollContainer) {
-      return SemanticRoleId.scrollable;
+      return SemanticRoleKind.scrollable;
     } else if (scopesRoute) {
-      return SemanticRoleId.dialog;
+      return SemanticRoleKind.dialog;
     } else if (isLink) {
-      return SemanticRoleId.link;
+      return SemanticRoleKind.link;
     } else {
-      return SemanticRoleId.generic;
+      return SemanticRoleKind.generic;
     }
   }
 
-  SemanticRole _createSemanticRole(SemanticRoleId role) {
+  SemanticRole _createSemanticRole(SemanticRoleKind role) {
     return switch (role) {
-      SemanticRoleId.textField => TextField(this),
-      SemanticRoleId.scrollable => Scrollable(this),
-      SemanticRoleId.incrementable => Incrementable(this),
-      SemanticRoleId.button => Button(this),
-      SemanticRoleId.checkable => Checkable(this),
-      SemanticRoleId.dialog => Dialog(this),
-      SemanticRoleId.image => ImageSemanticRole(this),
-      SemanticRoleId.platformView => PlatformViewSemanticRole(this),
-      SemanticRoleId.link => Link(this),
-      SemanticRoleId.heading => Heading(this),
-      SemanticRoleId.generic => GenericRole(this),
+      SemanticRoleKind.textField => TextField(this),
+      SemanticRoleKind.scrollable => Scrollable(this),
+      SemanticRoleKind.incrementable => Incrementable(this),
+      SemanticRoleKind.button => Button(this),
+      SemanticRoleKind.checkable => Checkable(this),
+      SemanticRoleKind.dialog => Dialog(this),
+      SemanticRoleKind.image => ImageSemanticRole(this),
+      SemanticRoleKind.platformView => PlatformViewSemanticRole(this),
+      SemanticRoleKind.link => Link(this),
+      SemanticRoleKind.heading => Heading(this),
+      SemanticRoleKind.generic => GenericRole(this),
     };
   }
 
@@ -1681,11 +1681,11 @@ class SemanticsObject {
   /// update the DOM.
   void _updateRole() {
     SemanticRole? currentSemanticRole = semanticRole;
-    final SemanticRoleId roleId = _getSemanticRoleId();
+    final SemanticRoleKind kind = _getSemanticRoleKind();
     final DomElement? previousElement = semanticRole?.element;
 
     if (currentSemanticRole != null) {
-      if (currentSemanticRole.role == roleId) {
+      if (currentSemanticRole.kind == kind) {
         // Already has a role assigned and the role is the same as before,
         // so simply perform an update.
         currentSemanticRole.update();
@@ -1705,7 +1705,7 @@ class SemanticsObject {
     //  * (Uncommon) the node changed its role, its previous role was disposed
     //    of, and now it needs a new one.
     if (currentSemanticRole == null) {
-      currentSemanticRole = _createSemanticRole(roleId);
+      currentSemanticRole = _createSemanticRole(kind);
       semanticRole = currentSemanticRole;
       currentSemanticRole.initState();
       currentSemanticRole.update();

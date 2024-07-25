@@ -209,7 +209,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when VoiceOver is enabled.
 class TextField extends SemanticRole {
-  TextField(SemanticsObject semanticsObject) : super.blank(SemanticRoleId.textField, semanticsObject) {
+  TextField(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.textField, semanticsObject) {
     _initializeEditableElement();
   }
 

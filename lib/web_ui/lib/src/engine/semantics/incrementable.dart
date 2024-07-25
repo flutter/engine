@@ -22,7 +22,7 @@ import 'semantics.dart';
 class Incrementable extends SemanticRole {
   Incrementable(SemanticsObject semanticsObject)
       : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
-        super.blank(SemanticRoleId.incrementable, semanticsObject) {
+        super.blank(SemanticRoleKind.incrementable, semanticsObject) {
     // The following generic roles can coexist with incrementables. Generic focus
     // management is not used by this role because the root DOM element is not
     // the one being focused on, but the internal `<input>` element.

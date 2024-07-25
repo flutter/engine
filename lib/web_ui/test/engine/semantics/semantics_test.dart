@@ -194,7 +194,7 @@ void _testRoleLifecycle() {
       tester.expectSemantics('<sem role="button"></sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.semanticRole?.role, SemanticRoleId.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
         node.semanticRole?.debugSemanticBehaviorTypes,
         containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
@@ -217,7 +217,7 @@ void _testRoleLifecycle() {
       tester.expectSemantics('<sem role="button">a label</sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.semanticRole?.role, SemanticRoleId.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
         node.semanticRole?.debugSemanticBehaviorTypes,
         containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
@@ -662,7 +662,7 @@ void _testEngineSemanticsOwner() {
     );
 
     // Rudely replace the role with a mock, and trigger an update.
-    final MockRole mockRole = MockRole(SemanticRoleId.generic, semanticsObject);
+    final MockRole mockRole = MockRole(SemanticRoleKind.generic, semanticsObject);
     semanticsObject.semanticRole = mockRole;
 
     pumpSemantics(label: 'World');
@@ -882,7 +882,7 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.role, SemanticRoleId.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
       node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
@@ -915,7 +915,7 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.role, SemanticRoleId.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
       node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
@@ -1710,7 +1710,7 @@ void _testIncrementables() {
 </sem>''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.role, SemanticRoleId.incrementable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
       node.semanticRole!.debugSemanticBehaviorTypes,
@@ -1914,7 +1914,7 @@ void _testTextField() {
     //                https://github.com/flutter/flutter/issues/147200
     expect(inputElement.value, '');
 
-    expect(node.semanticRole?.role, SemanticRoleId.textField);
+    expect(node.semanticRole?.kind, SemanticRoleKind.textField);
     expect(
       reason: 'Text fields use custom focus management',
       node.semanticRole!.debugSemanticBehaviorTypes,
@@ -1952,7 +1952,7 @@ void _testCheckables() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.role, SemanticRoleId.checkable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.checkable);
     expect(
       reason: 'Checkables use generic semantic behaviors',
       node.semanticRole!.debugSemanticBehaviorTypes,
@@ -2253,7 +2253,7 @@ void _testTappable() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.role, SemanticRoleId.button);
+    expect(node.semanticRole?.kind, SemanticRoleKind.button);
     expect(
       node.semanticRole?.debugSemanticBehaviorTypes,
       containsAll(<Type>[Focusable, Tappable]),
@@ -2999,8 +2999,8 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.semanticRole?.role,
-      SemanticRoleId.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -3044,8 +3044,8 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.semanticRole?.role,
-      SemanticRoleId.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.dialog,
     );
 
     semantics().semanticsEnabled = false;
@@ -3093,12 +3093,12 @@ void _testDialog() {
     pumpSemantics(label: 'Dialog label');
 
     expect(
-      owner().debugSemanticsTree![0]!.semanticRole?.role,
-      SemanticRoleId.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.dialog,
     );
     expect(
-      owner().debugSemanticsTree![2]!.semanticRole?.role,
-      SemanticRoleId.generic,
+      owner().debugSemanticsTree![2]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
       owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
@@ -3131,8 +3131,8 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.semanticRole?.role,
-      SemanticRoleId.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.dialog,
     );
     expect(
       owner().debugSemanticsTree![0]!.semanticRole?.behaviors,
@@ -3179,8 +3179,8 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.semanticRole?.role,
-      SemanticRoleId.generic,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
       owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
@@ -3550,8 +3550,8 @@ void _testFocusable() {
     final SemanticsObject node = owner().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
     expect(
-      node.semanticRole?.role,
-      SemanticRoleId.generic,
+      node.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
       node.semanticRole?.debugSemanticBehaviorTypes,
