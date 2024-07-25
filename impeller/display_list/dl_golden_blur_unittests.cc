@@ -125,7 +125,7 @@ double CalculateDistance(const uint8_t* left, const uint8_t* right) {
               (diff[3] * diff[3]));
 }
 
-double RMSE(impeller::testing::Screenshot* left,
+[[maybe_unused]] double RMSE(impeller::testing::Screenshot* left,
             impeller::testing::Screenshot* right) {
   FML_CHECK(left);
   FML_CHECK(right);
@@ -153,12 +153,16 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
 
+    canvas->Save();
+    canvas->Scale(2, 2);
     DlPaint paint;
-    canvas->DrawImage(images[0], SkPoint::Make(100.0, 100.0),
+    canvas->DrawImage(images[0], SkPoint::Make(10.0, 10.0),
                       DlImageSampling::kLinear, &paint);
+    canvas->Restore();
 
     SkRect save_layer_bounds = SkRect::MakeLTRB(0, 0, 1024, 768);
     DlBlurImageFilter blur(sigma, sigma, DlTileMode::kDecal);
+    canvas->ClipRect(SkRect::MakeLTRB(11.25, 10, 911.25, 755.3333));
     canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &blur);
     canvas->Restore();
   };
@@ -175,15 +179,15 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     return screenshot;
   };
 
-  float start_sigma = 20.0f;
+  float start_sigma = 10.0f;
   std::unique_ptr<impeller::testing::Screenshot> left =
       make_screenshot(start_sigma);
   if (!left) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
 
-  for (int i = 1; i <= 500; ++i) {
-    float sigma = start_sigma + (i / 10.f);
+  for (int i = 1; i <= 200; ++i) {
+    float sigma = start_sigma + (i / 2.f);
     std::unique_ptr<impeller::testing::Screenshot> right =
         make_screenshot(sigma);
     double rmse = RMSE(left.get(), right.get());
