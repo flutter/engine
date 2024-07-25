@@ -44,7 +44,7 @@ std::unique_ptr<Screenshot> MetalScreenshotter::MakeScreenshot(
     CGColorSpaceRef color_space = CGColorSpaceCreateDeviceRGB();
     CIImage* ciImage = [[CIImage alloc]
         initWithMTLTexture:metal_texture
-                    options:@{kCIImageColorSpace : (__bridge id)color_space}];
+                   options:@{kCIImageColorSpace : (__bridge id)color_space}];
     CGColorSpaceRelease(color_space);
     FML_CHECK(ciImage);
 
@@ -59,7 +59,7 @@ std::unique_ptr<Screenshot> MetalScreenshotter::MakeScreenshot(
         imageByApplyingOrientation:kCGImagePropertyOrientationDownMirrored];
 
     CGImageRef cgImage = [cicontext createCGImage:flipped
-                                        fromRect:[ciImage extent]];
+                                         fromRect:[ciImage extent]];
 
     return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));
   }

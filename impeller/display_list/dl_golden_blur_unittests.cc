@@ -202,8 +202,7 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     left = std::move(right);
   }
 
-  EXPECT_TRUE(jump_count < 30)
-      << "jump_count: " << jump_count;
+  EXPECT_TRUE(jump_count < 30) << "jump_count: " << jump_count;
 }
 
 }  // namespace testing

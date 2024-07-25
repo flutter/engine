@@ -45,14 +45,10 @@ impeller_component("digest") {
   deps = [ "//flutter/fml" ]
 }
 
-
 impeller_component("screenshot") {
   testonly = true
-  sources = [
-    "screenshot.h",
-  ]
+  sources = [ "screenshot.h" ]
 }
-
 
 if (is_mac) {
   impeller_component("metal_screenshot") {
