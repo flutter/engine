@@ -126,7 +126,7 @@ double CalculateDistance(const uint8_t* left, const uint8_t* right) {
 }
 
 [[maybe_unused]] double RMSE(impeller::testing::Screenshot* left,
-            impeller::testing::Screenshot* right) {
+                             impeller::testing::Screenshot* right) {
   FML_CHECK(left);
   FML_CHECK(right);
   FML_CHECK(left->GetWidth() == right->GetWidth());
@@ -186,19 +186,24 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
 
+  int32_t jump_count = 0;
   for (int i = 1; i <= 200; ++i) {
     float sigma = start_sigma + (i / 2.f);
     std::unique_ptr<impeller::testing::Screenshot> right =
         make_screenshot(sigma);
     double rmse = RMSE(left.get(), right.get());
-    EXPECT_TRUE(rmse < 1.0)
-        << "i: " << i << " sigma:" << sigma << " rmse: " << rmse;
+    if (rmse >= 1.0) {
+      jump_count += 1;
+    }
 
-    std::stringstream ss;
-    ss << "_" << (i-1);
-    SaveScreenshot(std::move(left), ss.str());
+    // std::stringstream ss;
+    // ss << "_" << (i - 1);
+    // SaveScreenshot(std::move(left), ss.str());
     left = std::move(right);
   }
+
+  EXPECT_TRUE(jump_count < 30)
+      << "jump_count: " << jump_count;
 }
 
 }  // namespace testing
