@@ -8,13 +8,10 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 
 FLUTTER_ASSERT_ARC
-
-@protocol FlutterMetalDrawable <MTLDrawable>
-- (void)flutterPrepareForPresent:(nonnull id<MTLCommandBuffer>)commandBuffer;
-@end
 
 namespace flutter {
 
@@ -36,7 +33,11 @@ IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer
 }
 
 // |IOSSurface|
-IOSSurfaceMetalSkia::~IOSSurfaceMetalSkia() = default;
+IOSSurfaceMetalSkia::~IOSSurfaceMetalSkia() {
+  if ([layer_ isKindOfClass:[FlutterMetalLayer class]]) {
+    [(FlutterMetalLayer*)layer_.get() invalidate];
+  }
+}
 
 // |IOSSurface|
 bool IOSSurfaceMetalSkia::IsValid() const {

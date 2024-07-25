@@ -190,6 +190,12 @@ extern CFTimeInterval display_link_target;
   return self;
 }
 
+- (void)invalidate {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_displayLink invalidate];
+  _displayLink = nil;  // Break retain cycle.
+}
+
 - (void)setMaxRefreshRate:(double)refreshRate forceMax:(BOOL)forceMax {
   // This is copied from vsync_waiter_ios.mm. The vsync waiter has display link scheduled on UI
   // thread which does not trigger actual core animation frame. As a workaround FlutterMetalLayer

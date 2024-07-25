@@ -20,6 +20,8 @@
 @property(nullable) CGColorSpaceRef colorspace;
 @property BOOL wantsExtendedDynamicRangeContent;
 
+- (void)invalidate;
+
 - (nullable id<CAMetalDrawable>)nextDrawable;
 
 /// Returns whether the Metal layer is enabled.

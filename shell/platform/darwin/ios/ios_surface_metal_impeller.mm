@@ -7,6 +7,7 @@
 #include "flutter/impeller/renderer/backend/metal/formats_mtl.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -25,7 +26,11 @@ IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMe
 }
 
 // |IOSSurface|
-IOSSurfaceMetalImpeller::~IOSSurfaceMetalImpeller() = default;
+IOSSurfaceMetalImpeller::~IOSSurfaceMetalImpeller() {
+  if ([layer_ isKindOfClass:[FlutterMetalLayer class]]) {
+    [(FlutterMetalLayer*)layer_.get() invalidate];
+  }
+}
 
 // |IOSSurface|
 bool IOSSurfaceMetalImpeller::IsValid() const {
