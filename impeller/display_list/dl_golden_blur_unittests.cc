@@ -186,15 +186,14 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
 
-  int32_t jump_count = 0;
-  for (int i = 1; i <= 200; ++i) {
+  double average_rmse = 0.0;
+  const int32_t sample_count = 200;
+  for (int i = 1; i <= sample_count; ++i) {
     float sigma = start_sigma + (i / 2.f);
     std::unique_ptr<impeller::testing::Screenshot> right =
         make_screenshot(sigma);
     double rmse = RMSE(left.get(), right.get());
-    if (rmse >= 1.0) {
-      jump_count += 1;
-    }
+    average_rmse += rmse;
 
     // std::stringstream ss;
     // ss << "_" << (i - 1);
@@ -202,7 +201,9 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     left = std::move(right);
   }
 
-  EXPECT_TRUE(jump_count < 30) << "jump_count: " << jump_count;
+  average_rmse = average_rmse / sample_count;
+
+  EXPECT_TRUE(average_rmse < 0.86) << "average_rmse: " << average_rmse;
 }
 
 }  // namespace testing
