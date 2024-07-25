@@ -729,13 +729,13 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                unused_layers = std::move(unused_layers),
                views_to_dispose = DisposeViews()  //
   ]() mutable {
-    PerformSubmit(std::move(platform_view_layers),        //
-                  std::move(callbacks),                   //
-                  std::move(current_composition_params),  //
-                  std::move(views_to_recomposite),        //
-                  std::move(composition_order),           //
-                  std::move(unused_layers),               //
-                  std::move(views_to_dispose)             //
+    PerformSubmit(platform_view_layers,        //
+                  callbacks,                   //
+                  current_composition_params,  //
+                  views_to_recomposite,        //
+                  composition_order,           //
+                  unused_layers,               //
+                  views_to_dispose             //
     );
   };
 
@@ -784,13 +784,13 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
 
 /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
 void FlutterPlatformViewsController::PerformSubmit(
-    LayersMap platform_view_layers,
-    std::vector<SurfaceFrame::DeferredSubmit> callbacks,
-    std::map<int64_t, EmbeddedViewParams> current_composition_params,
-    std::unordered_set<int64_t> views_to_recomposite,
-    std::vector<int64_t> composition_order,
-    std::vector<std::shared_ptr<FlutterPlatformViewLayer>> unused_layers,
-    std::vector<UIView*> views_to_dispose) {
+    const LayersMap& platform_view_layers,
+    const std::vector<SurfaceFrame::DeferredSubmit>& callbacks,
+    std::map<int64_t, EmbeddedViewParams>& current_composition_params,
+    const std::unordered_set<int64_t>& views_to_recomposite,
+    const std::vector<int64_t>& composition_order,
+    const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
+    const std::vector<UIView*>& views_to_dispose) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame::CATransaction");
 
   [CATransaction begin];
