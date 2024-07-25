@@ -10,9 +10,9 @@ import 'dart:typed_data';
 /// The returned value can be passed to `ImageDecoder` when decoding an image.
 ///
 /// Returns null if [data] cannot be mapped to a known content type.
-String? detectContentType(Uint8List data) {
-  if (debugContentTypeDetector != null) {
-    return debugContentTypeDetector!.call(data);
+ImageType? detectImageType(Uint8List data) {
+  if (debugImageTypeDetector != null) {
+    return debugImageTypeDetector!.call(data);
   }
 
   formatLoop:
@@ -34,19 +34,75 @@ String? detectContentType(Uint8List data) {
       }
     }
 
-    return format.contentType;
+    final ImageFileType fileType = format.fileType;
+    // TODO(harryterkelsen): If the image is animated, we use Skia to decode.
+    // This is currently too conservative, assuming all GIF and WEBP images are
+    // animated. We should detect if they are actually animated by reading the
+    // image headers, https://github.com/flutter/flutter/issues/151911.
+    return ImageType(fileType,
+        isAnimated:
+            fileType == ImageFileType.gif || fileType == ImageFileType.webp);
   }
 
   if (isAvif(data)) {
-    return 'image/avif';
+    return const ImageType(ImageFileType.avif);
   }
 
   return null;
 }
 
+/// The file format of the image, and whether or not it is animated.
+class ImageType {
+  const ImageType(this.fileType, {this.isAnimated = false});
+
+  final ImageFileType fileType;
+  final bool isAnimated;
+
+  /// The MIME type for this image (e.g 'image/jpeg').
+  String get mimeType {
+    String fileString;
+    switch (fileType) {
+      case ImageFileType.png:
+        fileString = 'png';
+      case ImageFileType.gif:
+        fileString = 'gif';
+      case ImageFileType.jpeg:
+        fileString = 'jpeg';
+      case ImageFileType.webp:
+        fileString = 'webp';
+      case ImageFileType.bmp:
+        fileString = 'bmp';
+      case ImageFileType.avif:
+        fileString = 'avif';
+    }
+    return 'image/$fileString';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! ImageType) {
+      return false;
+    }
+    return other.fileType == fileType && other.isAnimated == isAnimated;
+  }
+
+  @override
+  int get hashCode => Object.hash(fileType, isAnimated);
+}
+
+/// The supported image file formats in Flutter Web.
+enum ImageFileType {
+  png,
+  gif,
+  jpeg,
+  webp,
+  bmp,
+  avif,
+}
+
 /// Represents an image file format, such as PNG or JPEG.
 class ImageFileFormat {
-  const ImageFileFormat(this.header, this.contentType);
+  const ImageFileFormat(this.header, this.fileType);
 
   /// First few bytes in the file that uniquely identify the image file format.
   ///
@@ -62,7 +118,7 @@ class ImageFileFormat {
   /// The server typically also uses this value as the "Content-Type" header,
   /// but servers are not required to correctly detect the type. This value
   /// is also known as MIME type.
-  final String contentType;
+  final ImageFileType fileType;
 
   /// All image file formats known to the Flutter Web engine.
   ///
@@ -78,46 +134,63 @@ class ImageFileFormat {
 
     // PNG
     ImageFileFormat(
-        <int?>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], 'image/png'),
+      <int?>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
+      ImageFileType.png,
+    ),
 
     // GIF87a
-    ImageFileFormat(<int?>[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], 'image/gif'),
+    ImageFileFormat(
+      <int?>[0x47, 0x49, 0x46, 0x38, 0x37, 0x61],
+      ImageFileType.gif,
+    ),
 
     // GIF89a
-    ImageFileFormat(<int?>[0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'image/gif'),
+    ImageFileFormat(
+      <int?>[0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+      ImageFileType.gif,
+    ),
 
     // JPEG
-    ImageFileFormat(<int?>[0xFF, 0xD8, 0xFF], 'image/jpeg'),
+    ImageFileFormat(
+      <int?>[0xFF, 0xD8, 0xFF],
+      ImageFileType.jpeg,
+    ),
 
     // WebP
-    ImageFileFormat(<int?>[
-      0x52,
-      0x49,
-      0x46,
-      0x46,
-      null,
-      null,
-      null,
-      null,
-      0x57,
-      0x45,
-      0x42,
-      0x50
-    ], 'image/webp'),
+    ImageFileFormat(
+      <int?>[
+        0x52,
+        0x49,
+        0x46,
+        0x46,
+        null,
+        null,
+        null,
+        null,
+        0x57,
+        0x45,
+        0x42,
+        0x50
+      ],
+      ImageFileType.webp,
+    ),
 
     // BMP
-    ImageFileFormat(<int?>[0x42, 0x4D], 'image/bmp'),
+    ImageFileFormat(
+      <int?>[0x42, 0x4D],
+      ImageFileType.bmp,
+    ),
   ];
 }
 
-/// Function signature of [debugContentTypeDetector], which is the same as the
-/// signature of [detectContentType].
-typedef DebugContentTypeDetector = String? Function(Uint8List);
+/// Function signature of [debugImageTypeDetector], which is the same as the
+/// signature of [detectImageType].
+typedef DebugImageTypeDetector = ImageType? Function(Uint8List);
 
-/// If not null, replaces the functionality of [detectContentType] with its own.
+/// If not null, replaces the functionality of [detectImageType] with its own.
 ///
 /// This is useful in tests, for example, to test unsupported content types.
-DebugContentTypeDetector? debugContentTypeDetector;
+DebugImageTypeDetector? debugImageTypeDetector;
 
 /// A string of bytes that every AVIF image contains somewhere in its first 16
 /// bytes.
