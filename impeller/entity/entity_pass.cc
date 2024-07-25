@@ -951,8 +951,18 @@ bool EntityPass::OnRender(
           return true;
         };
   } else {
-    element_iterator = [this](const ElementCallback& callback) {
+    // If framebuffer fetch isn't supported, just disable the draw order
+    // optimization. We could technically make it work by flushing each time
+    // we encounter an advanced blend at recording time down the road.
+    element_iterator = [this, &opaque_clear_entity_count,
+                        &translucent_clear_entity_count](
+                           const ElementCallback& callback) {
+      size_t skips = opaque_clear_entity_count + translucent_clear_entity_count;
       for (const auto& element : elements_) {
+        if (skips > 0) {
+          skips--;
+          continue;
+        }
         if (!callback(element)) {
           return false;
         }
