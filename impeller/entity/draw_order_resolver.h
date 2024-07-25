@@ -9,8 +9,8 @@
 
 namespace impeller {
 
-/// @brief  Produces an optimized draw order for a draw list given in painter's
-///         order.
+/// Helper that records draw indices in painter's order and sorts the draws into
+/// an optimized order based on translucency and clips.
 class DrawOrderResolver {
  public:
   using ElementRefs = std::vector<size_t>;
@@ -24,21 +24,24 @@ class DrawOrderResolver {
   void PopClip();
 
   //-------------------------------------------------------------------------
-  /// @brief  Returns the sorted draws for the current draw order layer.
-  ///         This should only be called after all recording has finished.
+  /// @brief      Returns the sorted draws for the current draw order layer.
+  ///             This should only be called after all recording has finished.
   ///
-  /// @param[in]  opaque_skip_count  The number of opaque elements to skip
-  ///                                when appending the combined elements.
-  ///                                This is used for the "clear color"
-  ///                                optimization.
+  /// @param[in]  opaque_skip_count       The number of opaque elements to skip
+  ///                                     when appending the combined elements.
+  ///                                     This is used for the "clear color"
+  ///                                     optimization.
+  /// @param[in]  translucent_skip_count  The number of translucent elements to
+  ///                                     skip when appending the combined
+  ///                                     elements. This is used for the
+  ///                                     "clear color" optimization.
   ///
   ElementRefs GetSortedDraws(size_t opaque_skip_count,
                              size_t translucent_skip_count) const;
 
  private:
   /// A data structure for collecting sorted draws for a given "draw order
-  /// layer". Currently these layers just correspond to the local clip stack
-  /// corresponds to the clip stack.
+  /// layer". Currently these layers just correspond to the local clip stack.
   struct DrawOrderLayer {
     /// The list of backdrop-independent elements (always just opaque). These
     /// are order independent, and so we draw them optimally render these
@@ -55,12 +58,16 @@ class DrawOrderResolver {
     /// @brief      Appends the combined opaque and transparent elements into
     ///             a final destination buffer.
     ///
-    /// @param[in]  destination        The buffer to append the combined
-    ///                                elements to.
-    /// @param[in]  opaque_skip_count  The number of opaque elements to skip
-    ///                                when appending the combined elements.
-    ///                                This is used for the "clear color"
-    ///                                optimization.
+    /// @param[in]  destination             The buffer to append the combined
+    ///                                     elements to.
+    /// @param[in]  opaque_skip_count       The number of opaque elements to
+    ///                                     skip when appending the combined
+    ///                                     elements. This is used for the
+    ///                                     "clear color" optimization.
+    /// @param[in]  translucent_skip_count  The number of translucent elements
+    ///                                     to skip when appending the combined
+    ///                                     elements. This is used for the
+    ///                                     "clear color" optimization.
     ///
     void WriteCombinedDraws(ElementRefs& destination,
                             size_t opaque_skip_count,
