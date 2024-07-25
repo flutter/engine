@@ -303,17 +303,27 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
     Rect source_rect_padded = source_rect.Expand(padding);
     Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
     ISize subpass_size =
-        ISize(round(downsampled_size.x), round(downsampled_size.y));
-    Vector2 effective_scalar =
-        Vector2(subpass_size) / source_rect_padded.GetSize();
+        ISize(ceil(downsampled_size.x), ceil(downsampled_size.y));
+    Vector2 divisible_size(CeilToDivisible(source_rect_padded.GetSize().width,
+                                           1.0 / downsample_scalar.x),
+                           CeilToDivisible(source_rect_padded.GetSize().height,
+                                           1.0 / downsample_scalar.y));
+    Vector2 divisible_padding(
+        padding.x +
+            (divisible_size.x - source_rect_padded.GetSize().width) / 2.0,
+        padding.y +
+            (divisible_size.y - source_rect_padded.GetSize().height) / 2.0);
+    source_rect_padded = source_rect.Expand(divisible_padding);
+
+    Vector2 effective_scalar = downsample_scalar;
     Quad uvs = GaussianBlurFilterContents::CalculateUVs(
         input, snapshot_entity, source_rect_padded, input_snapshot_size);
     return {
         .subpass_size = subpass_size,
         .uvs = uvs,
         .effective_scalar = effective_scalar,
-        .transform =
-            input_snapshot.transform * Matrix::MakeTranslation(-padding),
+        .transform = input_snapshot.transform *
+                     Matrix::MakeTranslation(-divisible_padding),
     };
   }
 }
