@@ -424,7 +424,7 @@ BitmapSize? scaledImageSize(
     }
     targetWidth = (width * targetHeight / height).round();
   } else if (targetHeight == null) {
-    if (targetWidth == targetWidth) {
+    if (targetWidth == width) {
       // Not scaled.
       return null;
     }
