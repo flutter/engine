@@ -35,7 +35,11 @@ static const char* fragment_shader_src =
 G_DEFINE_QUARK(fl_renderer_error_quark, fl_renderer_error)
 
 typedef struct {
-  FlView* view;
+  // Engine we are rendering.
+  GWeakRef engine;
+
+  // Views being rendered.
+  GHashTable* views;
 
   // target dimension for resizing
   int target_width;
@@ -103,9 +107,10 @@ static void fl_renderer_unblock_main_thread(FlRenderer* self) {
   if (priv->blocking_main_thread) {
     priv->blocking_main_thread = false;
 
-    FlTaskRunner* runner =
-        fl_engine_get_task_runner(fl_view_get_engine(priv->view));
-    fl_task_runner_release_main_thread(runner);
+    g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&priv->engine));
+    if (engine != nullptr) {
+      fl_task_runner_release_main_thread(fl_engine_get_task_runner(engine));
+    }
   }
 }
 
@@ -239,6 +244,8 @@ static void fl_renderer_dispose(GObject* object) {
 
   fl_renderer_unblock_main_thread(self);
 
+  g_weak_ref_clear(&priv->engine);
+  g_clear_pointer(&priv->views, g_hash_table_unref);
   g_clear_pointer(&priv->framebuffers, g_ptr_array_unref);
 
   G_OBJECT_CLASS(fl_renderer_parent_class)->dispose(object);
@@ -251,17 +258,29 @@ static void fl_renderer_class_init(FlRendererClass* klass) {
 static void fl_renderer_init(FlRenderer* self) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+  priv->views =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
   priv->framebuffers = g_ptr_array_new_with_free_func(g_object_unref);
 }
 
-gboolean fl_renderer_start(FlRenderer* self, FlView* view) {
+void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 
-  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+  g_return_if_fail(FL_IS_RENDERER(self));
 
-  priv->view = view;
-  return TRUE;
+  g_weak_ref_init(&priv->engine, engine);
+}
+
+void fl_renderer_add_view(FlRenderer* self,
+                          FlutterViewId view_id,
+                          FlView* view) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  g_return_if_fail(FL_IS_RENDERER(self));
+
+  g_hash_table_insert(priv->views, GINT_TO_POINTER(view_id), view);
 }
 
 void* fl_renderer_get_proc_address(FlRenderer* self, const char* name) {
@@ -348,13 +367,15 @@ void fl_renderer_wait_for_frame(FlRenderer* self,
 
   if (priv->had_first_frame && !priv->blocking_main_thread) {
     priv->blocking_main_thread = true;
-    FlTaskRunner* runner =
-        fl_engine_get_task_runner(fl_view_get_engine(priv->view));
-    fl_task_runner_block_main_thread(runner);
+    g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&priv->engine));
+    if (engine != nullptr) {
+      fl_task_runner_block_main_thread(fl_engine_get_task_runner(engine));
+    }
   }
 }
 
 gboolean fl_renderer_present_layers(FlRenderer* self,
+                                    FlutterViewId view_id,
                                     const FlutterLayer** layers,
                                     size_t layers_count) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
@@ -392,8 +413,10 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
     }
   }
 
-  if (priv->view != nullptr) {
-    fl_view_redraw(priv->view);
+  FlView* view =
+      FL_VIEW(g_hash_table_lookup(priv->views, GINT_TO_POINTER(view_id)));
+  if (view != nullptr) {
+    fl_view_redraw(view);
   }
 
   return TRUE;
