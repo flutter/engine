@@ -72,9 +72,19 @@ void DrawOrderResolver::Flush() {
 DrawOrderResolver::ElementRefs DrawOrderResolver::GetSortedDraws(
     size_t opaque_skip_count,
     size_t translucent_skip_count) const {
-  FML_DCHECK(draw_order_layers_.size() == 1u);
+  FML_DCHECK(draw_order_layers_.size() == 1u)
+      << "Attempted to get sorted draws before all clips were popped.";
 
   ElementRefs sorted_elements;
+  sorted_elements.reserve(
+      (first_root_flush_.has_value()
+           ? first_root_flush_->opaque_elements.size() +
+                 first_root_flush_->dependent_elements.size()
+           : 0u) +
+      sorted_elements_.size() +
+      draw_order_layers_.back().opaque_elements.size() +
+      draw_order_layers_.back().dependent_elements.size());
+
   // Write all flushed items.
   if (first_root_flush_.has_value()) {
     first_root_flush_->WriteCombinedDraws(sorted_elements, opaque_skip_count,
@@ -82,10 +92,11 @@ DrawOrderResolver::ElementRefs DrawOrderResolver::GetSortedDraws(
   }
   sorted_elements.insert(sorted_elements.end(), sorted_elements_.begin(),
                          sorted_elements_.end());
+
   // Write any remaining non-flushed items.
   draw_order_layers_.back().WriteCombinedDraws(
-      sorted_elements, sorted_elements.empty() ? opaque_skip_count : 0,
-      sorted_elements.empty() ? translucent_skip_count : 0);
+      sorted_elements, first_root_flush_.has_value() ? 0 : opaque_skip_count,
+      first_root_flush_.has_value() ? 0 : translucent_skip_count);
 
   return sorted_elements;
 }
