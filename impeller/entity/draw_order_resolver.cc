@@ -28,7 +28,7 @@ void DrawOrderResolver::PopClip() {
   if (draw_order_layers_.size() == 1u) {
     // This is likely recoverable, so don't assert.
     VALIDATION_LOG
-        << "Attemped to pop the root draw order layer. This is a bug in "
+        << "Attemped to pop the first draw order clip layer. This is a bug in "
            "`EntityPass`.";
     return;
   }
@@ -42,14 +42,50 @@ void DrawOrderResolver::PopClip() {
   draw_order_layers_.pop_back();
 }
 
+void DrawOrderResolver::Flush() {
+  FML_DCHECK(draw_order_layers_.size() >= 1u);
+
+  size_t layer_count = draw_order_layers_.size();
+
+  // Pop all clip layers.
+  while (draw_order_layers_.size() > 1u) {
+    PopClip();
+  }
+
+  // Move the root layer items into the sorted list.
+  DrawOrderLayer& layer = draw_order_layers_.back();
+  if (!first_root_flush_.has_value()) {
+    // Record the first flush.
+    first_root_flush_ = std::move(layer);
+    layer = {};
+  } else {
+    // Write subsequent flushes into the sorted root list.
+    layer.WriteCombinedDraws(sorted_elements_, 0, 0);
+    layer.opaque_elements.clear();
+    layer.dependent_elements.clear();
+  }
+
+  // Refill with empty layers.
+  draw_order_layers_.resize(layer_count);
+}
+
 DrawOrderResolver::ElementRefs DrawOrderResolver::GetSortedDraws(
     size_t opaque_skip_count,
     size_t translucent_skip_count) const {
   FML_DCHECK(draw_order_layers_.size() == 1u);
 
   ElementRefs sorted_elements;
+  // Write all flushed items.
+  if (first_root_flush_.has_value()) {
+    first_root_flush_->WriteCombinedDraws(sorted_elements, opaque_skip_count,
+                                          translucent_skip_count);
+  }
+  sorted_elements.insert(sorted_elements.end(), sorted_elements_.begin(),
+                         sorted_elements_.end());
+  // Write any remaining non-flushed items.
   draw_order_layers_.back().WriteCombinedDraws(
-      sorted_elements, opaque_skip_count, translucent_skip_count);
+      sorted_elements, sorted_elements.empty() ? opaque_skip_count : 0,
+      sorted_elements.empty() ? translucent_skip_count : 0);
 
   return sorted_elements;
 }
@@ -63,9 +99,9 @@ void DrawOrderResolver::DrawOrderLayer::WriteCombinedDraws(
 
   destination.reserve(destination.size() +                          //
                       opaque_elements.size() - opaque_skip_count +  //
-                      dependent_elements.size());
+                      dependent_elements.size() - translucent_skip_count);
 
-  // Draw backdrop-independent elements first.
+  // Draw backdrop-independent elements in reverse order first.
   destination.insert(destination.end(), opaque_elements.rbegin(),
                      opaque_elements.rend() - opaque_skip_count);
   // Then, draw backdrop-dependent elements in their original order.

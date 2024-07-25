@@ -285,6 +285,12 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
 
   auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
+  if (pass->backdrop_filter_proc_) {
+    // Since backdrop filters trigger the RenderPass to end and lose all depth
+    // information for opaque draws, this is a hard barrier for the draw order
+    // optimization. Flush all sorted draws accumulated up to this point.
+    draw_order_resolver_.Flush();
+  }
   draw_order_resolver_.AddElement(elements_.size() - 1, false);
   return subpass_pointer;
 }
@@ -924,12 +930,38 @@ bool EntityPass::OnRender(
     }
   }
 
-  DrawOrderResolver::ElementRefs sorted_elements =
-      draw_order_resolver_.GetSortedDraws(opaque_clear_entity_count,
-                                          translucent_clear_entity_count);
-  for (const auto& element_ref : sorted_elements) {
-    const Element& element = elements_[element_ref];
+  using ElementCallback = std::function<bool(const Element&)>;
+  using ElementIterator = std::function<bool(const ElementCallback&)>;
 
+  ElementIterator element_iterator;
+
+  if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    element_iterator =
+        [this, &opaque_clear_entity_count,
+         &translucent_clear_entity_count](const ElementCallback& callback) {
+          const auto& sorted_elements = draw_order_resolver_.GetSortedDraws(
+              opaque_clear_entity_count, translucent_clear_entity_count);
+
+          for (const auto& element_ref : sorted_elements) {
+            const Element& element = elements_[element_ref];
+            if (!callback(element)) {
+              return false;
+            }
+          }
+          return true;
+        };
+  } else {
+    element_iterator = [this](const ElementCallback& callback) {
+      for (const auto& element : elements_) {
+        if (!callback(element)) {
+          return false;
+        }
+      }
+      return true;
+    };
+  }
+
+  return element_iterator([&](const Element& element) {
     EntityResult result =
         GetEntityForElement(element,               // element
                             renderer,              // renderer
@@ -948,7 +980,7 @@ bool EntityPass::OnRender(
         // in `GetEntityForElement()`.
         return false;
       case EntityResult::kSkip:
-        continue;
+        return true;
     };
 
     //--------------------------------------------------------------------------
@@ -1012,9 +1044,8 @@ bool EntityPass::OnRender(
       // Specific validation logs are handled in `render_element()`.
       return false;
     }
-  }
-
-  return true;
+    return true;
+  });
 }
 
 void EntityPass::IterateAllElements(

@@ -111,5 +111,46 @@ TEST(DrawOrderResolverTest, GetSortedDrawsRespectsSkipCounts) {
   EXPECT_EQ(sorted_elements[2], 3u);
 }
 
+TEST(DrawOrderResolverTest, GetSortedDrawsReturnsCorrectOrderWithFlush) {
+  DrawOrderResolver resolver;
+
+  resolver.AddElement(0, false);
+  resolver.AddElement(1, true);
+  resolver.AddElement(2, false);
+  resolver.AddElement(3, true);
+
+  resolver.Flush();
+
+  resolver.AddElement(4, false);
+  resolver.AddElement(5, true);
+  resolver.AddElement(6, false);
+  resolver.AddElement(7, true);
+
+  resolver.Flush();
+
+  resolver.AddElement(8, false);
+  resolver.AddElement(9, true);
+  resolver.AddElement(10, false);
+  resolver.AddElement(11, true);
+
+  auto sorted_elements = resolver.GetSortedDraws(1, 1);
+
+  EXPECT_EQ(sorted_elements.size(), 10u);
+
+  // Skipped draws apply to the first flush.
+  EXPECT_EQ(sorted_elements[0], 3u);
+  EXPECT_EQ(sorted_elements[1], 2u);
+
+  EXPECT_EQ(sorted_elements[2], 7u);
+  EXPECT_EQ(sorted_elements[3], 5u);
+  EXPECT_EQ(sorted_elements[4], 4u);
+  EXPECT_EQ(sorted_elements[5], 6u);
+
+  EXPECT_EQ(sorted_elements[6], 11u);
+  EXPECT_EQ(sorted_elements[7], 9u);
+  EXPECT_EQ(sorted_elements[8], 8u);
+  EXPECT_EQ(sorted_elements[9], 10u);
+}
+
 }  // namespace testing
 }  // namespace impeller

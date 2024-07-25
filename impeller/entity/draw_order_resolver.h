@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_DRAW_ORDER_RESOLVER_H_
 #define FLUTTER_IMPELLER_ENTITY_DRAW_ORDER_RESOLVER_H_
 
+#include <optional>
 #include <vector>
 
 namespace impeller {
@@ -22,6 +23,8 @@ class DrawOrderResolver {
   void PushClip(size_t element_index);
 
   void PopClip();
+
+  void Flush();
 
   //-------------------------------------------------------------------------
   /// @brief      Returns the sorted draws for the current draw order layer.
@@ -73,6 +76,13 @@ class DrawOrderResolver {
                             size_t translucent_skip_count) const;
   };
   std::vector<DrawOrderLayer> draw_order_layers_;
+
+  // The first time the root layer is flushed, the layer contents are stored
+  // here. This is done to enable element skipping for the clear color
+  // optimization.
+  std::optional<DrawOrderLayer> first_root_flush_;
+  // All subsequent root flushes are stored here.
+  ElementRefs sorted_elements_;
 
   DrawOrderResolver(const DrawOrderResolver&) = delete;
 
