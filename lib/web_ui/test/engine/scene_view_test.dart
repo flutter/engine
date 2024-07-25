@@ -152,10 +152,8 @@ void testMain() {
 
     final PlatformView platformView = PlatformView(
         1,
-        const ui.Size(100, 120),
-        const PlatformViewStyling(
-          position: PlatformViewPosition.offset(ui.Offset(50, 80)),
-        ));
+        const ui.Rect.fromLTWH(50, 80, 100, 120),
+        const PlatformViewStyling());
     final EngineRootLayer rootLayer = EngineRootLayer();
     rootLayer.slices.add(PlatformViewSlice(<PlatformView>[platformView], null));
     final EngineScene scene = EngineScene(rootLayer);
@@ -169,10 +167,13 @@ void testMain() {
         containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
 
     final DomCSSStyleDeclaration style = containerElement.style;
-    expect(style.left, '25px');
-    expect(style.top, '40px');
-    expect(style.width, '50px');
-    expect(style.height, '60px');
+    expect(style.left, '');
+    expect(style.top, '');
+    expect(style.width, '100px');
+    expect(style.height, '120px');
+
+    // The heavy lifting of offsetting and sizing is done by the transform
+    expect(style.transform, 'matrix(0.5, 0, 0, 0.5, 25, 40)');
 
     debugOverrideDevicePixelRatio(null);
   });

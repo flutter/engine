@@ -1131,7 +1131,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // only after placing it to the correct position. Hence autofill menu
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
-      focusedFormElement!.focus(preventScroll: true);
+      focusedFormElement!.focusWithoutScroll();
       moveFocusToActiveDomElement();
     }
   }
@@ -1158,7 +1158,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   ///
   /// This method is similar to the [GloballyPositionedTextEditingStrategy].
   /// The only part different: this method does not call `super.placeElement()`,
-  /// which in current state calls `domElement.focus(preventScroll: true)`.
+  /// which in current state calls `domElement.focusWithoutScroll()`.
   ///
   /// Making an extra `focus` request causes flickering in Safari.
   @override
@@ -1228,7 +1228,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   /// The [FlutterView] in which [activeDomElement] is contained.
-  EngineFlutterView? get _activeDomElementView => _viewForElement(activeDomElement);
+  EngineFlutterView? get activeDomElementView => _viewForElement(activeDomElement);
 
   EngineFlutterView? _viewForElement(DomElement element) =>
     EnginePlatformDispatcher.instance.viewManager.findViewForElement(element);
@@ -1411,9 +1411,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
-      _moveFocusToFlutterView(activeDomElement, _activeDomElementView);
+      scheduleFocusFlutterView(activeDomElement, activeDomElementView);
     } else {
-      _moveFocusToFlutterView(activeDomElement, _activeDomElementView, removeElement: true);
+      scheduleFocusFlutterView(activeDomElement, activeDomElementView, removeElement: true);
 		}
     domElement = null;
   }
@@ -1498,7 +1498,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     event as DomFocusEvent;
 
     final DomElement? willGainFocusElement = event.relatedTarget as DomElement?;
-    if (willGainFocusElement == null || _viewForElement(willGainFocusElement) == _activeDomElementView) {
+    if (willGainFocusElement == null || _viewForElement(willGainFocusElement) == activeDomElementView) {
       moveFocusToActiveDomElement();
     }
   }
@@ -1571,22 +1571,25 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Moves the focus to the [activeDomElement].
   void moveFocusToActiveDomElement() {
-    activeDomElement.focus(preventScroll: true);
+    activeDomElement.focusWithoutScroll();
   }
 
-  /// Moves the focus to the [EngineFlutterView].
+  /// Move the focus to the given [EngineFlutterView] in the next timer event.
   ///
-  /// The delay gives the engine the opportunity to focus another <input /> element.
-  /// The delay should help prevent the keyboard from jumping when the focus goes from
-  /// one text field to another.
-  static void _moveFocusToFlutterView(
+  /// The timer gives the engine the opportunity to focus on another element.
+  /// Shifting focus immediately can cause the keyboard to jump.
+  static void scheduleFocusFlutterView(
     DomElement element,
     EngineFlutterView? view, {
     bool removeElement = false,
   }) {
     Timer(Duration.zero, () {
+      // If by the time the timer fired the focused element is no longer the
+      // editing element whose editing session was disabled, there's no need to
+      // move the focus, as it is likely that another widget already took the
+      // focus.
       if (element == domDocument.activeElement) {
-        view?.dom.rootElement.focus(preventScroll: true);
+        view?.dom.rootElement.focusWithoutScroll();
       }
       if (removeElement) {
         element.remove();
@@ -2204,6 +2207,9 @@ class TextEditingChannel {
         command = const TextInputSetCaretRect();
 
       default:
+        if (_debugPrintTextInputCommands) {
+          print('Received unknown command on flutter/textinput channel: ${call.method}');
+        }
         EnginePlatformDispatcher.instance.replyToPlatformMessage(callback, null);
         return;
     }

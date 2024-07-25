@@ -49,11 +49,11 @@ Future<void> testMain() async {
       );
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.primaryRole?.role, PrimaryRole.generic);
+      expect(node.semanticRole?.kind, SemanticRoleKind.generic);
       expect(
         reason: 'A node with a label should get a LabelAndValue role',
-        node.primaryRole!.debugSecondaryRoles,
-        contains(Role.labelAndValue),
+        node.semanticRole!.debugSemanticBehaviorTypes,
+        contains(LabelAndValue),
       );
     }
 
@@ -213,7 +213,7 @@ Future<void> testMain() async {
     final DomElement span = node.element.querySelector('span')!;
 
     expect(span.getAttribute('tabindex'), isNull);
-    node.primaryRole!.focusAsRouteDefault();
+    node.semanticRole!.focusAsRouteDefault();
     expect(span.getAttribute('tabindex'), '-1');
     expect(domDocument.activeElement, span);
 
@@ -237,7 +237,7 @@ Future<void> testMain() async {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
 
     // Set DOM text as preferred representation
-    final LabelAndValue lav = node.primaryRole!.labelAndValue!;
+    final LabelAndValue lav = node.semanticRole!.labelAndValue!;
     lav.preferredRepresentation = LabelRepresentation.domText;
     lav.update();
 
@@ -246,7 +246,7 @@ Future<void> testMain() async {
     );
 
     expect(node.element.getAttribute('tabindex'), isNull);
-    node.primaryRole!.focusAsRouteDefault();
+    node.semanticRole!.focusAsRouteDefault();
     expect(node.element.getAttribute('tabindex'), '-1');
     expect(domDocument.activeElement, node.element);
 
@@ -270,7 +270,7 @@ Future<void> testMain() async {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
 
     // Set DOM text as preferred representation
-    final LabelAndValue lav = node.primaryRole!.labelAndValue!;
+    final LabelAndValue lav = node.semanticRole!.labelAndValue!;
     lav.preferredRepresentation = LabelRepresentation.ariaLabel;
     lav.update();
 
@@ -279,9 +279,32 @@ Future<void> testMain() async {
     );
 
     expect(node.element.getAttribute('tabindex'), isNull);
-    node.primaryRole!.focusAsRouteDefault();
+    node.semanticRole!.focusAsRouteDefault();
     expect(node.element.getAttribute('tabindex'), '-1');
     expect(domDocument.activeElement, node.element);
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('The <span> ignores pointer events', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      label: 'Ignore pointer events',
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+      <sem>
+        <span style="pointer-events: none">Ignore pointer events</span>
+      </sem>'''
+    );
 
     semantics().semanticsEnabled = false;
   });

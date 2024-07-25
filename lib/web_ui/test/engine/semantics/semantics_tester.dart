@@ -75,6 +75,7 @@ class SemanticsTester {
     bool? hasPaste,
     bool? hasDidGainAccessibilityFocus,
     bool? hasDidLoseAccessibilityFocus,
+    bool? hasFocus,
     bool? hasCustomAction,
     bool? hasDismiss,
     bool? hasMoveCursorForwardByWord,
@@ -112,6 +113,7 @@ class SemanticsTester {
     Int32List? additionalActions,
     List<SemanticsNodeUpdate>? children,
     int? headingLevel,
+    String? linkUrl,
   }) {
     // Flags
     if (hasCheckedState ?? false) {
@@ -242,6 +244,9 @@ class SemanticsTester {
     if (hasDidLoseAccessibilityFocus ?? false) {
       actions |= ui.SemanticsAction.didLoseAccessibilityFocus.index;
     }
+    if (hasFocus ?? false) {
+      actions |= ui.SemanticsAction.focus.index;
+    }
     if (hasCustomAction ?? false) {
       actions |= ui.SemanticsAction.customAction.index;
     }
@@ -313,6 +318,7 @@ class SemanticsTester {
       childrenInHitTestOrder: childIds,
       additionalActions: additionalActions ?? Int32List(0),
       headingLevel: headingLevel ?? 0,
+      linkUrl: linkUrl,
     );
     _nodeUpdates.add(update);
     return update;
@@ -332,9 +338,9 @@ class SemanticsTester {
     return owner.debugSemanticsTree![id]!;
   }
 
-  /// Locates the [TextField] role manager of the semantics object with the give [id].
-  TextField getTextField(int id) {
-    return getSemanticsObject(id).primaryRole! as TextField;
+  /// Locates the [SemanticTextField] role of the semantics object with the give [id].
+  SemanticTextField getTextField(int id) {
+    return getSemanticsObject(id).semanticRole! as SemanticTextField;
   }
 
   void expectSemantics(String semanticsHtml) {
@@ -345,7 +351,7 @@ class SemanticsTester {
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(EngineSemanticsOwner owner, String semanticsHtml) {
   expect(
-    owner.semanticsHost.querySelector('flt-semantics'),
+    owner.semanticsHost.children.single,
     hasHtml(semanticsHtml),
   );
 }
@@ -394,4 +400,9 @@ class SemanticsActionLogger {
   /// The actions that were dispatched to [ui.PlatformDispatcher].
   Stream<ui.SemanticsAction> get actionLog => _actionLog;
   late Stream<ui.SemanticsAction> _actionLog;
+}
+
+extension SemanticRoleExtension on SemanticRole {
+  /// Types of semantics behaviors used by this role.
+  List<Type> get debugSemanticBehaviorTypes => behaviors?.map((behavior) => behavior.runtimeType).toList() ?? const <Type>[];
 }

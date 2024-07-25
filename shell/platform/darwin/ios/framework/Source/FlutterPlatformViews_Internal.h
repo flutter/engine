@@ -176,12 +176,14 @@ class FlutterPlatformViewLayerPool {
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      MTLPixelFormat pixel_format);
 
-  // Gets the layers in the pool that aren't currently used.
-  // This method doesn't mark the layers as unused.
-  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> GetUnusedLayers();
+  // Removes unused layers from the pool. Returns the unused layers.
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> RemoveUnusedLayers();
 
   // Marks the layers in the pool as available for reuse.
   void RecycleLayers();
+
+  // Returns the count of layers currently in the pool.
+  size_t size() const;
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning of the unused
@@ -234,7 +236,9 @@ class FlutterPlatformViewsController {
   void PrerollCompositeEmbeddedView(int64_t view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
-  size_t EmbeddedViewCount();
+  size_t EmbeddedViewCount() const;
+
+  size_t LayerPoolSize() const;
 
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
@@ -284,8 +288,6 @@ class FlutterPlatformViewsController {
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
  private:
-  static const size_t kMaxLayerAllocations = 2;
-
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult result) __attribute__((cf_audited_transfer));
@@ -330,7 +332,7 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkIRect rect,
+                                                     SkRect rect,
                                                      int64_t view_id,
                                                      int64_t overlay_id,
                                                      MTLPixelFormat pixel_format);
@@ -358,7 +360,7 @@ class FlutterPlatformViewsController {
   // operation until the next platform view or the end of the last leaf node in the layer tree.
   //
   // The Slices are deleted by the FlutterPlatformViewsController.reset().
-  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;

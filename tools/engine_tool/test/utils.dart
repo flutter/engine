@@ -35,6 +35,10 @@ class CannedProcess {
   FakeProcess get fakeProcess {
     return FakeProcess(exitCode: _exitCode, stdout: _stdout, stderr: _stderr);
   }
+
+  io.ProcessResult get processResult {
+    return io.ProcessResult(0, _exitCode, _stdout, _stderr);
+  }
 }
 
 /// ExecutedProcess includes the command and the result.
@@ -67,7 +71,9 @@ class TestEnvironment {
       platform: FakePlatform(
           operatingSystem: _operatingSystemForAbi(abi),
           resolvedExecutable: io.Platform.resolvedExecutable,
-          pathSeparator: _pathSeparatorForAbi(abi)),
+          pathSeparator: _pathSeparatorForAbi(abi),
+          numberOfProcessors: 32,
+      ),
       processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {
         final FakeProcess processResult =
@@ -77,7 +83,19 @@ class TestEnvironment {
         });
         return processResult;
       }, onRun: (List<String> command) {
-        throw UnimplementedError('onRun');
+        final io.ProcessResult result = _getCannedProcessResult(
+          command, cannedProcesses,
+        );
+        processHistory.add(ExecutedProcess(
+          command,
+          FakeProcess(
+            exitCode: result.exitCode,
+            stdout: result.stdout as String,
+            stderr: result.stderr as String,
+          ),
+          result.exitCode,
+        ));
+        return result;
       })),
       logger: logger,
       verbose: verbose,
@@ -180,6 +198,17 @@ FakeProcess _getCannedResult(
     }
   }
   return FakeProcess();
+}
+
+io.ProcessResult _getCannedProcessResult(
+    List<String> command, List<CannedProcess> cannedProcesses) {
+  for (final CannedProcess cp in cannedProcesses) {
+    final bool matched = cp.commandMatcher(command);
+    if (matched) {
+      return cp.processResult;
+    }
+  }
+  return io.ProcessResult(0, 0, '', '');
 }
 
 typedef CommandMatcher = bool Function(List<String> command);

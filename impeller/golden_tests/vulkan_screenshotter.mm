@@ -76,8 +76,7 @@ std::unique_ptr<Screenshot> ReadTexture(
   CGImagePtr image(CGBitmapContextCreateImage(context.get()), &CGImageRelease);
   FML_CHECK(image);
 
-  // TODO(https://github.com/flutter/flutter/issues/142641): Perform the flip at
-  // the blit stage to avoid this slow copy.
+  // TODO(142641): Perform the flip at the blit stage to avoid this slow copy.
   if (texture->GetYCoordScale() == -1) {
     CGContextPtr flipped_context(
         CGBitmapContextCreate(
@@ -117,6 +116,12 @@ std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
       aiks_context,
       ISize(size.width * content_scale.x, size.height * content_scale.y));
   std::shared_ptr<Texture> texture = image->GetTexture();
+  return ReadTexture(aiks_context.GetContext(), texture);
+}
+
+std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
+    AiksContext& aiks_context,
+    const std::shared_ptr<Texture> texture) {
   return ReadTexture(aiks_context.GetContext(), texture);
 }
 
