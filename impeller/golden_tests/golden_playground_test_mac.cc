@@ -140,17 +140,20 @@ std::string GetTestName() {
   return result;
 }
 
-std::string GetGoldenFilename() {
-  return GetTestName() + ".png";
+std::string GetGoldenFilename(const std::string& postfix) {
+  return GetTestName() + postfix + ".png";
 }
+}  // namespace
 
-bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
+bool GoldenPlaygroundTest::SaveScreenshot(
+    std::unique_ptr<testing::Screenshot> screenshot,
+    const std::string& postfix) {
   if (!screenshot || !screenshot->GetBytes()) {
     FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
     return false;
   }
   std::string test_name = GetTestName();
-  std::string filename = GetGoldenFilename();
+  std::string filename = GetGoldenFilename(postfix);
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   if (!screenshot->WriteToPNG(
@@ -160,8 +163,6 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   }
   return true;
 }
-
-}  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
@@ -407,7 +408,7 @@ std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
   std::unique_ptr<testing::Screenshot> screenshot =
       pimpl_->screenshotter->MakeScreenshot(renderer, picture,
                                             pimpl_->window_size);
-  
+
   return screenshot;
 }
 

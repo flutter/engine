@@ -175,17 +175,24 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     return screenshot;
   };
 
-  std::unique_ptr<impeller::testing::Screenshot> left = make_screenshot(0);
+  float start_sigma = 20.0f;
+  std::unique_ptr<impeller::testing::Screenshot> left =
+      make_screenshot(start_sigma);
   if (!left) {
     GTEST_SKIP() << "making screenshots not supported.";
   }
 
   for (int i = 1; i <= 500; ++i) {
-    float sigma = i;
+    float sigma = start_sigma + (i / 10.f);
     std::unique_ptr<impeller::testing::Screenshot> right =
         make_screenshot(sigma);
     double rmse = RMSE(left.get(), right.get());
-    EXPECT_TRUE(rmse < 1.0) << "sigma:" << sigma << " rmse: " << rmse;
+    EXPECT_TRUE(rmse < 1.0)
+        << "i: " << i << " sigma:" << sigma << " rmse: " << rmse;
+
+    std::stringstream ss;
+    ss << "_" << (i-1);
+    SaveScreenshot(std::move(left), ss.str());
     left = std::move(right);
   }
 }

@@ -10,12 +10,12 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 #include "flutter/impeller/playground/playground.h"
 #include "flutter/impeller/renderer/render_target.h"
 #include "flutter/testing/testing.h"
 #include "impeller/typographer/typographer_context.h"
 #include "third_party/imgui/imgui.h"
-#include "flutter/impeller/golden_tests/screenshot.h"
 
 #if FML_OS_MACOSX
 #include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
@@ -54,6 +54,9 @@ class GoldenPlaygroundTest
 
   std::unique_ptr<testing::Screenshot> MakeScreenshot(
       const sk_sp<flutter::DisplayList>& list);
+
+  static bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot,
+                             const std::string& postfix = "");
 
   static bool ImGuiBegin(const char* name,
                          bool* p_open,
