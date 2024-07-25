@@ -125,8 +125,8 @@ double CalculateDistance(const uint8_t* left, const uint8_t* right) {
               (diff[3] * diff[3]));
 }
 
-[[maybe_unused]] double RMSE(impeller::testing::Screenshot* left,
-                             impeller::testing::Screenshot* right) {
+double RMSE(const impeller::testing::Screenshot* left,
+            const impeller::testing::Screenshot* right) {
   FML_CHECK(left);
   FML_CHECK(right);
   FML_CHECK(left->GetWidth() == right->GetWidth());
