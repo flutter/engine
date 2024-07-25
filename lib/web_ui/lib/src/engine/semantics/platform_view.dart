@@ -20,8 +20,8 @@ import 'semantics.dart';
 /// See also:
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-owns
 ///   * https://bugs.webkit.org/show_bug.cgi?id=223798
-class PlatformViewSemanticRole extends SemanticRole {
-  PlatformViewSemanticRole(SemanticsObject semanticsObject)
+class SemanticPlatformView extends SemanticRole {
+  SemanticPlatformView(SemanticsObject semanticsObject)
       : super.withBasics(
           SemanticRoleKind.platformView,
           semanticsObject,

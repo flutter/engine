@@ -19,8 +19,8 @@ import 'semantics.dart';
 /// The input element is disabled whenever the gesture mode switches to pointer
 /// events. This is to prevent the browser from taking over drag gestures. Drag
 /// gestures must be interpreted by the Flutter framework.
-class Incrementable extends SemanticRole {
-  Incrementable(SemanticsObject semanticsObject)
+class SemanticIncrementable extends SemanticRole {
+  SemanticIncrementable(SemanticsObject semanticsObject)
       : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
         super.blank(SemanticRoleKind.incrementable, semanticsObject) {
     // The following generic roles can coexist with incrementables. Generic focus

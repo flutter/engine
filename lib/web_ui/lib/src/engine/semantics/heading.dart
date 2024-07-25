@@ -8,8 +8,8 @@ import 'semantics.dart';
 
 /// Renders semantics objects as headings with the corresponding
 /// level (h1 ... h6).
-class Heading extends SemanticRole {
-  Heading(SemanticsObject semanticsObject)
+class SemanticHeading extends SemanticRole {
+  SemanticHeading(SemanticsObject semanticsObject)
       : super.blank(SemanticRoleKind.heading, semanticsObject) {
     addFocusManagement();
     addLiveRegion();

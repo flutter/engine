@@ -7,8 +7,8 @@ import '../semantics.dart';
 import '../util.dart';
 
 /// Provides accessibility for routes, including dialogs and pop-up menus.
-class Dialog extends SemanticRole {
-  Dialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.dialog, semanticsObject) {
+class SemanticDialog extends SemanticRole {
+  SemanticDialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.dialog, semanticsObject) {
     // The following behaviors can coexist with dialog. Generic `RouteName`
     // and `LabelAndValue` are not used by this role because when the dialog
     // names its own route an `aria-label` is used instead of `aria-describedby`.
@@ -97,10 +97,10 @@ class Dialog extends SemanticRole {
   }
 }
 
-/// Supplies a description for the nearest ancestor [Dialog].
+/// Supplies a description for the nearest ancestor [SemanticDialog].
 ///
 /// This role is assigned to nodes that have `namesRoute` set but not
-/// `scopesRoute`. When both flags are set the node only gets the [Dialog] role.
+/// `scopesRoute`. When both flags are set the node only gets the [SemanticDialog] role.
 ///
 /// If the ancestor dialog is missing, this role has no effect. It is up to the
 /// framework, widget, and app authors to make sure a route name is scoped under
@@ -108,7 +108,7 @@ class Dialog extends SemanticRole {
 class RouteName extends SemanticBehavior {
   RouteName(super.semanticsObject, super.owner);
 
-  Dialog? _dialog;
+  SemanticDialog? _dialog;
 
   @override
   void update() {
@@ -126,7 +126,7 @@ class RouteName extends SemanticBehavior {
     }
 
     if (semanticsObject.isLabelDirty) {
-      final Dialog? dialog = _dialog;
+      final SemanticDialog? dialog = _dialog;
       if (dialog != null) {
         // Already attached to a dialog, just update the description.
         dialog.describeBy(this);
@@ -149,7 +149,7 @@ class RouteName extends SemanticBehavior {
       parent = parent.parent;
     }
     if (parent != null && parent.semanticRole?.kind == SemanticRoleKind.dialog) {
-      _dialog = parent.semanticRole! as Dialog;
+      _dialog = parent.semanticRole! as SemanticDialog;
     }
   }
 }

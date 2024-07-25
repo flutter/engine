@@ -1905,7 +1905,7 @@ void _testTextField() {
 
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    final TextField textFieldRole = node.semanticRole! as TextField;
+    final SemanticTextField textFieldRole = node.semanticRole! as SemanticTextField;
     final DomHTMLInputElement inputElement = textFieldRole.editableElement as DomHTMLInputElement;
 
     // TODO(yjbanov): this used to attempt to test that value="hello" but the

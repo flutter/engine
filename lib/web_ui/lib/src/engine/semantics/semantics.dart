@@ -711,7 +711,7 @@ final class GenericRole extends SemanticRole {
 /// Provides a piece of functionality to a [SemanticsObject].
 ///
 /// Semantic behaviors can be shared by multiple types of [SemanticRole]s. For
-/// example, [Button] and [Checkable] both use the [Tappable] behavior. If a
+/// example, [SemanticButton] and [SemanticCheckable] both use the [Tappable] behavior. If a
 /// semantic role needs bespoke functionality, it is simpler to implement it
 /// directly in the [SemanticRole] implementation.
 ///
@@ -1663,16 +1663,16 @@ class SemanticsObject {
 
   SemanticRole _createSemanticRole(SemanticRoleKind role) {
     return switch (role) {
-      SemanticRoleKind.textField => TextField(this),
-      SemanticRoleKind.scrollable => Scrollable(this),
-      SemanticRoleKind.incrementable => Incrementable(this),
-      SemanticRoleKind.button => Button(this),
-      SemanticRoleKind.checkable => Checkable(this),
-      SemanticRoleKind.dialog => Dialog(this),
-      SemanticRoleKind.image => ImageSemanticRole(this),
-      SemanticRoleKind.platformView => PlatformViewSemanticRole(this),
-      SemanticRoleKind.link => Link(this),
-      SemanticRoleKind.heading => Heading(this),
+      SemanticRoleKind.textField => SemanticTextField(this),
+      SemanticRoleKind.scrollable => SemanticScrollable(this),
+      SemanticRoleKind.incrementable => SemanticIncrementable(this),
+      SemanticRoleKind.button => SemanticButton(this),
+      SemanticRoleKind.checkable => SemanticCheckable(this),
+      SemanticRoleKind.dialog => SemanticDialog(this),
+      SemanticRoleKind.image => SemanticImage(this),
+      SemanticRoleKind.platformView => SemanticPlatformView(this),
+      SemanticRoleKind.link => SemanticLink(this),
+      SemanticRoleKind.heading => SemanticHeading(this),
       SemanticRoleKind.generic => GenericRole(this),
     };
   }
@@ -1746,7 +1746,7 @@ class SemanticsObject {
 
   /// Role-specific adjustment of the vertical position of the child container.
   ///
-  /// This is used, for example, by the [Scrollable] to compensate for the
+  /// This is used, for example, by the [SemanticScrollable] to compensate for the
   /// `scrollTop` offset in the DOM.
   ///
   /// This field must not be null.
@@ -1755,7 +1755,7 @@ class SemanticsObject {
   /// Role-specific adjustment of the horizontal position of the child
   /// container.
   ///
-  /// This is used, for example, by the [Scrollable] to compensate for the
+  /// This is used, for example, by the [SemanticScrollable] to compensate for the
   /// `scrollLeft` offset in the DOM.
   ///
   /// This field must not be null.
@@ -2586,7 +2586,7 @@ AFTER: $description
 
   /// Declares that a semantics node will explicitly request focus.
   ///
-  /// This prevents others, [Dialog] in particular, from requesting autofocus,
+  /// This prevents others, [SemanticDialog] in particular, from requesting autofocus,
   /// as focus can only be taken by one element. Explicit focus has higher
   /// precedence than autofocus.
   void willRequestFocus() {
