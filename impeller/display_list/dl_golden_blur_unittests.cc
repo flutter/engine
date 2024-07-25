@@ -114,10 +114,10 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
 namespace {
 double CalculateDistance(const uint8_t* left, const uint8_t* right) {
   double diff[4] = {
-      static_cast<double>(left[0] - right[0]),  //
-      static_cast<double>(left[1] - right[1]),  //
-      static_cast<double>(left[2] - right[2]),  //
-      static_cast<double>(left[3] - right[3])   //
+      static_cast<double>(left[0]) - right[0],  //
+      static_cast<double>(left[1]) - right[1],  //
+      static_cast<double>(left[2]) - right[2],  //
+      static_cast<double>(left[3]) - right[3]   //
   };
   return sqrt((diff[0] * diff[0]) +  //
               (diff[1] * diff[1]) +  //
