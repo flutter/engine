@@ -619,7 +619,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }
 }
 
-/// Detect the content type or throw an error if content type can't be detected.
+/// Detect the image type or throw an error if image type can't be detected.
 ImageType tryDetectImageType(Uint8List data, String debugSource) {
   // ImageDecoder does not detect image type automatically. It requires us to
   // tell it what the image type is.
