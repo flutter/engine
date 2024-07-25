@@ -278,6 +278,11 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
 
   if (pass->backdrop_filter_proc_) {
     backdrop_filter_reads_from_pass_texture_ = true;
+
+    // Since backdrop filters trigger the RenderPass to end and lose all depth
+    // information for opaque draws, this is a hard barrier for the draw order
+    // optimization. Flush all sorted draws accumulated up to this point.
+    draw_order_resolver_.Flush();
   }
   if (pass->blend_mode_ > Entity::kLastPipelineBlendMode) {
     advanced_blend_reads_from_pass_texture_ = true;
@@ -285,12 +290,7 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
 
   auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
-  if (pass->backdrop_filter_proc_) {
-    // Since backdrop filters trigger the RenderPass to end and lose all depth
-    // information for opaque draws, this is a hard barrier for the draw order
-    // optimization. Flush all sorted draws accumulated up to this point.
-    draw_order_resolver_.Flush();
-  }
+
   draw_order_resolver_.AddElement(elements_.size() - 1, false);
   return subpass_pointer;
 }
