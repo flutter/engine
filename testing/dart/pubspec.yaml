@@ -17,6 +17,7 @@ dependencies:
   litetest: any
   path: any
   skia_gold_client: any
+  sky_engine: any
   vector_math: any
   vm_service: any
   vm_service_protos: any
