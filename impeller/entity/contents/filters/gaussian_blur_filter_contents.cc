@@ -308,14 +308,21 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
                                            1.0 / downsample_scalar.x),
                            CeilToDivisible(source_rect_padded.GetSize().height,
                                            1.0 / downsample_scalar.y));
+    // Only make the padding divisible if we already have padding.  If we don't
+    // have padding adding more can add artifacts to hard blur edges.
     Vector2 divisible_padding(
-        padding.x +
-            (divisible_size.x - source_rect_padded.GetSize().width) / 2.0,
-        padding.y +
-            (divisible_size.y - source_rect_padded.GetSize().height) / 2.0);
+        padding.x > 0
+            ? padding.x +
+                  (divisible_size.x - source_rect_padded.GetSize().width) / 2.0
+            : 0.f,
+        padding.y > 0
+            ? padding.y +
+                  (divisible_size.y - source_rect_padded.GetSize().height) / 2.0
+            : 0.f);
     source_rect_padded = source_rect.Expand(divisible_padding);
 
-    Vector2 effective_scalar = downsample_scalar;
+    Vector2 effective_scalar =
+        Vector2(subpass_size) / source_rect_padded.GetSize();
     Quad uvs = GaussianBlurFilterContents::CalculateUVs(
         input, snapshot_entity, source_rect_padded, input_snapshot_size);
     return {
