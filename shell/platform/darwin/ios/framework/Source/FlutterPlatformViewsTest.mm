@@ -129,16 +129,22 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 @implementation FlutterPlatformViewsTest
 
+fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  return fml::MessageLoop::GetCurrent().GetTaskRunner();
+}
+
+
 - (void)testFlutterViewOnlyCreateOnceInOneFrame {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -188,14 +194,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testCanCreatePlatformViewWithoutFlutterView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -281,14 +287,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testApplyBackdropFilter {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -359,14 +365,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testApplyBackdropFilterWithCorrectFrame {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -437,14 +443,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testApplyMultipleBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -516,14 +522,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testAddBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -639,14 +645,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testRemoveBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -788,14 +794,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testEditBackdropFilters {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1083,14 +1089,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testApplyBackdropFilterNotDlBlurImageFilter {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1407,14 +1413,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testCompositePlatformView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1469,14 +1475,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testBackdropFilterCorrectlyPushedAndReset {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1572,14 +1578,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testChildClippingViewShouldBeTheBoundingRectOfPlatformView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1649,14 +1655,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipsDoNotInterceptWithPlatformViewShouldNotAddMaskView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1722,14 +1728,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipRRectOnlyHasCornersInterceptWithPlatformViewShouldAddMaskView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1794,14 +1800,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipRect {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1871,14 +1877,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipRRect {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1975,14 +1981,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipPath {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2080,14 +2086,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testSetFlutterViewControllerAfterCreateCanStillDispatchTouchEvents {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2147,14 +2153,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testSetFlutterViewControllerInTheMiddleOfTouchEventShouldStillAllowGesturesToBeHandled {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2271,14 +2277,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 - (void)
     testSetFlutterViewControllerInTheMiddleOfTouchEventAllowsTheNewControllerToHandleSecondTouchSequence {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2385,14 +2391,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testFlutterPlatformViewTouchesCancelledEventAreForcedToBeCancelled {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2450,14 +2456,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testFlutterPlatformViewControllerSubmitFrameWithoutFlutterViewNotCrashing {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2521,14 +2527,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 - (void)
     testFlutterPlatformViewControllerResetDeallocsPlatformViewWhenRootViewsNotBindedToFlutterView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2575,14 +2581,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testFlutterPlatformViewControllerBeginFrameShouldResetCompisitionOrder {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2640,14 +2646,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 - (void)
     testFlutterPlatformViewControllerSubmitFrameShouldOrderSubviewsCorrectlyWithDifferentViewHierarchy {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2704,7 +2710,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
       /*frame_size=*/SkISize::Make(800, 600));
 
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
 
   XCTAssertTrue(
@@ -2737,7 +2743,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
   latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
@@ -2748,14 +2754,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 - (void)
     testFlutterPlatformViewControllerSubmitFrameShouldOrderSubviewsCorrectlyWithSameViewHierarchy {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2814,7 +2820,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
 
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
@@ -2844,7 +2850,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
   latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
@@ -2940,14 +2946,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testClipMaskViewIsReused {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3034,14 +3040,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testDifferentClipMaskViewIsUsedForEachView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3116,14 +3122,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testMaskViewUsesCAShapeLayerAsTheBackingLayer {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3210,14 +3216,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 - (void)testDisposingViewInCompositionOrderDoNotCrash {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3286,7 +3292,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
     auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+    GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
     latch->Wait();
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
@@ -3316,7 +3322,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
     auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+    GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
     latch->Wait();
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
@@ -3327,14 +3333,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 }
 - (void)testOnlyPlatformViewsAreRemovedWhenReset {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-  auto thread = std::make_unique<fml::Thread>("FlutterPlatformViewsTest");
+
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/thread->GetTaskRunner(),
-                               /*raster=*/thread->GetTaskRunner(),
-                               /*ui=*/thread->GetTaskRunner(),
-                               /*io=*/thread->GetTaskRunner());
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread->GetTaskRunner());
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3389,7 +3395,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
 
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  thread->GetTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
+  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
   latch->Wait();
 
   UIView* someView = [[UIView alloc] init];

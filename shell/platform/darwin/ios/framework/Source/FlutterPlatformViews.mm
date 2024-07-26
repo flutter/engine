@@ -660,9 +660,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::unique_ptr<SurfaceFrame> background_frame) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
-  if (flutter_view_ == nullptr || composition_order_.empty()) {
+  if (flutter_view_ == nullptr || (composition_order_.empty() && !had_platform_views_)) {
+    had_platform_views_ = false;
     return background_frame->Submit();
   }
+  had_platform_views_ = true;
 
   LayersMap platform_view_layers;
   std::vector<SurfaceFrame::DeferredSubmit> callbacks;
@@ -841,12 +843,12 @@ void FlutterPlatformViewsController::PerformSubmit(
     cb();
   }
 
-  // Organize the layers by their z indexes.
-  auto active_composition_order = BringLayersIntoView(platform_view_layers, composition_order);
-
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
-  RemoveUnusedLayers(unused_layers, composition_order, active_composition_order);
+  RemoveUnusedLayers(unused_layers, composition_order);
+
+  // Organize the layers by their z indexes.
+  BringLayersIntoView(platform_view_layers, composition_order);
 
   // If the frame is submitted with embedded platform views,
   // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
@@ -854,14 +856,13 @@ void FlutterPlatformViewsController::PerformSubmit(
   [CATransaction commit];
 }
 
-std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(
+void FlutterPlatformViewsController::BringLayersIntoView(
     LayersMap layer_map,
     const std::vector<int64_t>& composition_order) {
   FML_DCHECK(flutter_view_);
   UIView* flutter_view = flutter_view_.get();
 
-  std::vector<int64_t> active_composition_order;
-
+  previous_composition_order_.clear();
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
   for (size_t i = 0; i < composition_order.size(); i++) {
     int64_t platform_view_id = composition_order[i];
@@ -871,7 +872,7 @@ std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(
     for (const auto& layer_data : layers) {
       [desired_platform_subviews addObject:layer_data.layer->overlay_view_wrapper];
     }
-    active_composition_order.push_back(platform_view_id);
+    previous_composition_order_.push_back(platform_view_id);
   }
 
   NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
@@ -891,7 +892,6 @@ std::vector<int64_t> FlutterPlatformViewsController::BringLayersIntoView(
       [flutter_view addSubview:subview];
     }
   }
-  return active_composition_order;
 }
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetExistingLayer() {
@@ -929,8 +929,7 @@ void FlutterPlatformViewLayer::UpdateViewState(UIView* flutter_view,
 
 void FlutterPlatformViewsController::RemoveUnusedLayers(
     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
-    const std::vector<int64_t>& composition_order,
-    const std::vector<int64_t>& active_composition_order) {
+    const std::vector<int64_t>& composition_order) {
   for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : unused_layers) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
@@ -940,7 +939,7 @@ void FlutterPlatformViewsController::RemoveUnusedLayers(
     composition_order_set.insert(view_id);
   }
   // Remove unused platform views.
-  for (int64_t view_id : active_composition_order) {
+  for (int64_t view_id : previous_composition_order_) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
       UIView* platform_view_root = root_views_[view_id].get();
       [platform_view_root removeFromSuperview];
@@ -948,7 +947,7 @@ void FlutterPlatformViewsController::RemoveUnusedLayers(
   }
 }
 
-std::vector<UIView*> FlutterPlatformViewsController::DisposeViews() {
+std::vector<UIView*> FlutterPlatformViewsController::GetViewsToDispose() {
   std::vector<UIView*> views;
   if (views_to_dispose_.empty()) {
     return views;

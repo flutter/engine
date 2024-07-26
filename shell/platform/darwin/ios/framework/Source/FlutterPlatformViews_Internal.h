@@ -373,13 +373,11 @@ class FlutterPlatformViewsController {
   // Must run on the platform thread.
   void RemoveUnusedLayers(
       const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
-      const std::vector<int64_t>& composition_order,
-      const std::vector<int64_t>& active_composition_order);
+      const std::vector<int64_t>& composition_order);
 
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
-  std::vector<int64_t> BringLayersIntoView(LayersMap layer_map,
-                                           const std::vector<int64_t>& composition_order);
+  void BringLayersIntoView(LayersMap layer_map, const std::vector<int64_t>& composition_order);
 
   // Resets the state of the frame.
   void ResetFrameState();
@@ -439,6 +437,16 @@ class FlutterPlatformViewsController {
 #endif
 
   fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+
+  /// @brief The composition order from the previous thread.
+  ///
+  /// Only accessed from the platform thread.
+  std::vector<int64_t> previous_composition_order_;
+
+  /// Whether the previous frame had an active composition order.
+  ///
+  /// Only accessed from the raster thread.
+  bool had_platform_views_ = false;
 
   // WeakPtrFactory must be the last member.
   std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
