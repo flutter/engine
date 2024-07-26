@@ -153,22 +153,19 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
 
-    canvas->Save();
-    canvas->Scale(2, 2);
     DlPaint paint;
-    canvas->DrawImage(images[0], SkPoint::Make(10.0, 10.0),
+    canvas->DrawImage(images[0], SkPoint::Make(10.135, 10.36334),
                       DlImageSampling::kLinear, &paint);
-    canvas->Restore();
 
     SkRect save_layer_bounds = SkRect::MakeLTRB(0, 0, 1024, 768);
     DlBlurImageFilter blur(sigma, sigma, DlTileMode::kDecal);
-    canvas->ClipRect(SkRect::MakeLTRB(11.25, 10, 911.25, 755.3333));
+    canvas->ClipRect(SkRect::MakeLTRB(11.125, 10.3737, 911.25, 755.3333));
     canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &blur);
     canvas->Restore();
   };
 
   std::vector<sk_sp<DlImage>> images;
-  images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
+  images.emplace_back(CreateDlImageForFixture("boston.jpg"));
 
   auto make_screenshot = [&](float sigma) {
     DisplayListBuilder builder;
@@ -196,14 +193,15 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     average_rmse += rmse;
 
     // std::stringstream ss;
-    // ss << "_" << (i - 1);
+    // ss << "_" << std::setw(3) << std::setfill('0') << (i - 1);
     // SaveScreenshot(std::move(left), ss.str());
-    left = std::move(right);
+    // left = std::move(right);
   }
 
   average_rmse = average_rmse / sample_count;
 
-  EXPECT_TRUE(average_rmse < 0.86) << "average_rmse: " << average_rmse;
+  EXPECT_TRUE(average_rmse < 0.59) << "average_rmse: " << average_rmse;
+  EXPECT_TRUE(average_rmse > 0.58) << "average_rmse: " << average_rmse;
 }
 
 }  // namespace testing
