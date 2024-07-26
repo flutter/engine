@@ -146,6 +146,12 @@ double RMSE(const impeller::testing::Screenshot* left,
 }
 }  // namespace
 
+// This is a test to make sure that we don't regress "shimmering" in the
+// gaussian blur. Shimmering is abrupt changes in signal when making tiny
+// changes to the blur parameters.
+//
+// See also:
+//   - https://github.com/flutter/flutter/issues/152195
 TEST_P(DlGoldenTest, ShimmerTest) {
   impeller::Point content_scale = GetContentScale();
   auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images,
@@ -210,7 +216,13 @@ TEST_P(DlGoldenTest, ShimmerTest) {
 
   average_rmse = average_rmse / sample_count;
 
+  // This is a somewhat arbitrary threshold. It could be increased if we wanted.
+  // In the problematic cases previously we should values like 28. Before
+  // increasing this you should manually inspect the behavior in
+  // `AiksTest.GaussianBlurAnimatedBackdrop`. Average RMSE is a able to catch
+  // shimmer but it isn't perfect.
   EXPECT_TRUE(average_rmse < 1.0) << "average_rmse: " << average_rmse;
+  // An average rmse of 0 would mean that the blur isn't blurring.
   EXPECT_TRUE(average_rmse >= 0.0) << "average_rmse: " << average_rmse;
 }
 
