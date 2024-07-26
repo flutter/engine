@@ -199,13 +199,13 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     // std::stringstream ss;
     // ss << "_" << std::setw(3) << std::setfill('0') << (i - 1);
     // SaveScreenshot(std::move(left), ss.str());
-    // left = std::move(right);
     //
     // ## ffmpeg command
     // ```
     // ffmpeg -framerate 30 -pattern_type glob -i '*.png' \
     //   -c:v libx264 -pix_fmt yuv420p out.mp4
     // ```
+    left = std::move(right);
   }
 
   average_rmse = average_rmse / sample_count;
