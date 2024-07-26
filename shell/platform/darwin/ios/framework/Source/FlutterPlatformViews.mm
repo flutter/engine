@@ -20,6 +20,12 @@
 
 FLUTTER_ASSERT_ARC
 
+#ifdef FML_OS_IOS_SIMULATOR
+// Note: this is an arbitrary number that attempts to account for cases
+// where the platform view might be momentarily off the screen.
+static const int kDefaultMergedLeaseDuration = 10;
+#endif  // FML_OS_IOS_SIMULATOR
+
 @implementation UIView (FirstResponder)
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
@@ -339,12 +345,43 @@ void FlutterPlatformViewsController::CancelFrame() {
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
+  // TODO(jonahwilliams): remove this once Software backend is removed for iOS Sim.
+#ifdef FML_OS_IOS_SIMULATOR
+  if (composition_order_.empty()) {
+    return PostPrerollResult::kSuccess;
+  }
+  if (!raster_thread_merger->IsMerged()) {
+    // The raster thread merger may be disabled if the rasterizer is being
+    // created or teared down.
+    //
+    // In such cases, the current frame is dropped, and a new frame is attempted
+    // with the same layer tree.
+    //
+    // Eventually, the frame is submitted once this method returns `kSuccess`.
+    // At that point, the raster tasks are handled on the platform thread.
+    CancelFrame();
+    return PostPrerollResult::kSkipAndRetryFrame;
+  }
+  // If the post preroll action is successful, we will display platform views in the current frame.
+  // In order to sync the rendering of the platform views (quartz) with skia's rendering,
+  // We need to begin an explicit CATransaction. This transaction needs to be submitted
+  // after the current frame is submitted.
+  raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
+#else
+  return PostPrerollResult::kSuccess;
+#endif  // FML_OS_IOS_SIMULATOR
 }
 
 void FlutterPlatformViewsController::EndFrame(
     bool should_resubmit_frame,
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
+#if FML_OS_IOS_SIMULATOR
+  if (should_resubmit_frame) {
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+  }
+#endif  // FML_OS_IOS_SIMULATOR
+}
 
 void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
     const std::shared_ptr<const DlImageFilter>& filter,
