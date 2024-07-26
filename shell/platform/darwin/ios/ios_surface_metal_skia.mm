@@ -91,7 +91,6 @@ bool IOSSurfaceMetalSkia::PreparePresent(GrMTLHandle drawable) const {
   return true;
 }
 
-
 // |GPUSurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
   if (drawable == nullptr) {

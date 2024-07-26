@@ -77,9 +77,7 @@ class GPUSurfaceMetalDelegate {
   ///
   virtual bool PresentDrawable(GrMTLHandle drawable) const = 0;
 
-  virtual bool PreparePresent(GrMTLHandle drawable) const {
-    return true;
-  }
+  virtual bool PreparePresent(GrMTLHandle drawable) const { return true; }
 
   //------------------------------------------------------------------------------
   /// @brief Returns the handle to the MTLTexture to render to. This is only

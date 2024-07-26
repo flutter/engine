@@ -153,7 +153,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
   }
 
   auto submit_callback = [this, drawable, mtl_layer](const SurfaceFrame& surface_frame,
-                                          DlCanvas* canvas) -> bool {
+                                                     DlCanvas* canvas) -> bool {
     mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
 
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
@@ -183,9 +183,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
 
     if (surface_frame.submit_info().submit_receiver) {
       delegate_->PreparePresent(drawable);
-      surface_frame.submit_info().submit_receiver([&, drawable = drawable]() {
-        return delegate_->PresentDrawable(drawable);
-      });
+      surface_frame.submit_info().submit_receiver(
+          [&, drawable = drawable]() { return delegate_->PresentDrawable(drawable); });
       return true;
     } else {
       delegate_->PreparePresent(drawable);
