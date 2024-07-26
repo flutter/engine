@@ -192,10 +192,20 @@ TEST_P(DlGoldenTest, ShimmerTest) {
     double rmse = RMSE(left.get(), right.get());
     average_rmse += rmse;
 
+    // To debug this output the frames can be written out to disk then
+    // transformed to a video with ffmpeg.
+    //
+    // ## save images command
     // std::stringstream ss;
     // ss << "_" << std::setw(3) << std::setfill('0') << (i - 1);
     // SaveScreenshot(std::move(left), ss.str());
     // left = std::move(right);
+    //
+    // ## ffmpeg command
+    // ```
+    // ffmpeg -framerate 30 -pattern_type glob -i '*.png' \
+    //   -c:v libx264 -pix_fmt yuv420p out.mp4
+    // ```
   }
 
   average_rmse = average_rmse / sample_count;
