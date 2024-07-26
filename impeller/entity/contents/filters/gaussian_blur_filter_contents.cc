@@ -377,12 +377,15 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     return renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
                                 command_buffer, subpass_callback);
   } else {
-    // This assumes we don't scale below 1/8
+    // This assumes we don't scale below 1/16.
     Scalar edge = 1.0;
     Scalar ratio = 0.25;
-    if (pass_args.effective_scalar.x <= 0.125f) {
+    if (pass_args.effective_scalar.x <= 0.0625f) {
+      edge = 7.0;
+      ratio = 1.0f / 64.0f;
+    } else if (pass_args.effective_scalar.x <= 0.125f) {
       edge = 3.0;
-      ratio = 0.0625;
+      ratio = 1.0f / 16.0f;
     }
     ContentContext::SubpassCallback subpass_callback =
         [&](const ContentContext& renderer, RenderPass& pass) {
