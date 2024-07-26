@@ -689,6 +689,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     int restore_count = overlay_canvas->GetSaveCount();
     overlay_canvas->Save();
     overlay_canvas->ClipRect(overlay->second);
+    overlay_canvas->Clear(DlColor::kTransparent());
     slices_[view_id]->render_into(overlay_canvas);
     overlay_canvas->RestoreToCount(restore_count);
 
