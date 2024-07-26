@@ -168,28 +168,37 @@ struct FlutterPlatformViewLayer {
   void UpdateViewState(UIView* flutter_view, SkRect rect, int64_t view_id, int64_t overlay_id);
 };
 
-// This class isn't thread safe.
+/// @brief Storage for Overlay layers across frames.
+///
+/// Note: this class does not synchronize access to its layers or any layer removal. As it
+/// is currently used, layers must be created on the platform thread but other methods of
+/// it are called on the raster thread. This is safe as overlay layers are only ever added
+/// while the raster thread is latched.
 class FlutterPlatformViewLayerPool {
  public:
   FlutterPlatformViewLayerPool() = default;
 
   ~FlutterPlatformViewLayerPool() = default;
 
-  /// Gets a layer from the pool if available, or allocates a new one.
-  /// Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
+  /// @brief Gets a layer from the pool if available.
+  ///
+  /// The layer is marked as used until [RecycleLayers] is called.
   std::shared_ptr<FlutterPlatformViewLayer> GetNextLayer();
 
+  /// @brief Create a new overlay layer.
+  ///
+  /// This method can only be called on the Platform thread.
   void CreateLayer(GrDirectContext* gr_context,
                    const std::shared_ptr<IOSContext>& ios_context,
                    MTLPixelFormat pixel_format);
 
-  // Removes unused layers from the pool. Returns the unused layers.
+  /// @brief Removes unused layers from the pool. Returns the unused layers.
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> RemoveUnusedLayers();
 
-  // Marks the layers in the pool as available for reuse.
+  /// @brief Marks the layers in the pool as available for reuse.
   void RecycleLayers();
 
-  // Returns the count of layers currently in the pool.
+  /// @brief The count of layers currently in the pool.
   size_t size() const;
 
  private:
@@ -206,7 +215,6 @@ class FlutterPlatformViewLayerPool {
   /// This indicates that entries starting from 1 can be reused meanwhile the entry at position 0
   /// cannot be reused.
   size_t available_layer_index_ = 0;
-  mutable std::mutex layers_mutex_;
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewLayerPool);
@@ -333,8 +341,9 @@ class FlutterPlatformViewsController {
       __attribute__((cf_audited_transfer));
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult result)
       __attribute__((cf_audited_transfer));
-  // Dispose the views in `views_to_dispose_`.
-  std::vector<UIView*> DisposeViews();
+
+  /// @brief Return all views to be disposed on the platform thread.
+  std::vector<UIView*> GetViewsToDispose();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);

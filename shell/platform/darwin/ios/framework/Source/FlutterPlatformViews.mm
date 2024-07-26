@@ -93,15 +93,11 @@ namespace flutter {
 BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetNextLayer() {
-  layers_mutex_.lock();
-
   std::shared_ptr<FlutterPlatformViewLayer> result;
   if (available_layer_index_ < layers_.size()) {
     result = layers_[available_layer_index_];
     available_layer_index_++;
   }
-
-  layers_mutex_.unlock();
 
   return result;
 }
@@ -158,9 +154,7 @@ void FlutterPlatformViewLayerPool::CreateLayer(GrDirectContext* gr_context,
   layer->overlay_view_wrapper.get().clipsToBounds = YES;
   [layer->overlay_view_wrapper.get() addSubview:layer->overlay_view];
 
-  layers_mutex_.lock();
   layers_.push_back(layer);
-  layers_mutex_.unlock();
 }
 
 void FlutterPlatformViewLayerPool::RecycleLayers() {
@@ -169,13 +163,11 @@ void FlutterPlatformViewLayerPool::RecycleLayers() {
 
 std::vector<std::shared_ptr<FlutterPlatformViewLayer>>
 FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
-  layers_mutex_.lock();
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> results;
   for (size_t i = available_layer_index_; i < layers_.size(); i++) {
     results.push_back(layers_[i]);
   }
   layers_.erase(layers_.begin() + available_layer_index_, layers_.end());
-  layers_mutex_.unlock();
   return results;
 }
 
@@ -645,16 +637,11 @@ void FlutterPlatformViewsController::Reset() {
     views.push_back(root_views_[view_id].get());
   }
 
-  auto task = [views = views]() {
+  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, [views = views]() {
     for (auto* sub_view : views) {
       [sub_view removeFromSuperview];
     }
-  };
-  if ([[NSThread currentThread] isMainThread]) {
-    task();
-  } else {
-    platform_task_runner_->PostTask(task);
-  }
+  });
 
   root_views_.clear();
   touch_interceptors_.clear();
@@ -764,7 +751,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                callbacks = std::move(callbacks),                           //
                composition_order = composition_order_,                     //
                unused_layers = std::move(unused_layers),
-               views_to_dispose = DisposeViews()  //
+               views_to_dispose = GetViewsToDispose()  //
   ]() mutable {
     PerformSubmit(platform_view_layers,        //
                   callbacks,                   //
@@ -776,12 +763,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     );
   };
 
-  // Workaround for FlutterPlatformViewsTest.mm
-  if ([[NSThread currentThread] isMainThread]) {
-    task();
-  } else {
-    platform_task_runner_->PostTask(task);
-  }
+  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, task);
 
   return did_submit;
 }
@@ -793,6 +775,7 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::CreateMissingLayers");
 
   auto missing_layer_count = required_overlay_layers - layer_pool_->size();
+
   // Workaround for FLutterPlatformViewsTest
   if ([[NSThread currentThread] isMainThread]) {
     // Create Missing Layers
