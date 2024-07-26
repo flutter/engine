@@ -97,7 +97,7 @@ void IOSExternalViewEmbedder::EndFrame(
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
 #if FML_OS_IOS_SIMULATOR
-  return false;
+  return true;
 #else
   return false;
 #endif  // FML_OS_IOS_SIMULATOR
