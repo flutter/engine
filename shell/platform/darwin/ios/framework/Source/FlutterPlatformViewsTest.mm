@@ -134,7 +134,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   return fml::MessageLoop::GetCurrent().GetTaskRunner();
 }
 
-
 - (void)testFlutterViewOnlyCreateOnceInOneFrame {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
 
