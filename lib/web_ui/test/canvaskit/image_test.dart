@@ -106,7 +106,7 @@ void testMain() {
     final BitmapSize? size = scaledImageSize(200, 100, 600, null);
     expect(size?.width, 600);
     expect(size?.height, 300);
-  }
+  });
 
   test('instantiateImageCodecWithSize disposes temporary image', () async {
     final Set<ui.Image> activeImages = <ui.Image>{};
