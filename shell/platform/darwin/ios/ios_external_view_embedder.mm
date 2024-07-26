@@ -96,6 +96,7 @@ void IOSExternalViewEmbedder::EndFrame(
 
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
+// TODO(jonahwilliams): remove this once Software backend is removed for iOS Sim.
 #if FML_OS_IOS_SIMULATOR
   return true;
 #else
