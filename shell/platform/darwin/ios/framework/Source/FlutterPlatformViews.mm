@@ -437,7 +437,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     return;
   }
 
-  FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
