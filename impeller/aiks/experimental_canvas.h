@@ -31,6 +31,12 @@ struct LazyRenderingConfig {
     inline_pass_context =
         std::make_unique<InlinePassContext>(renderer, *entity_pass_target, 0);
   }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> entity_pass_target,
+                      std::unique_ptr<InlinePassContext> inline_pass_context)
+      : entity_pass_target(std::move(entity_pass_target)),
+        inline_pass_context(std::move(inline_pass_context)) {}
 };
 
 /// This Canvas attempts to translate from display lists to draw calls directly.

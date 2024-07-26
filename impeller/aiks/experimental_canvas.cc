@@ -83,13 +83,13 @@ static std::shared_ptr<Texture> FlipBackdrop(
     // unbalanced save layers. Ideally, this method would return false and the
     // renderer could handle that by terminating dispatch.
     render_passes.push_back(LazyRenderingConfig(
-        renderer, std::move(rendering_config.entity_pass_target)));
+        renderer, std::move(rendering_config.entity_pass_target),
+        std::move(rendering_config.inline_pass_context)));
     return nullptr;
   }
 
   std::shared_ptr<Texture> input_texture =
-      rendering_config.entity_pass_target->Flip(
-          *renderer.GetContext()->GetResourceAllocator());
+      rendering_config.inline_pass_context->GetTexture();
 
   if (!input_texture) {
     VALIDATION_LOG << "Failed to fetch the color texture in order to "
@@ -97,12 +97,14 @@ static std::shared_ptr<Texture> FlipBackdrop(
 
     // Note: see above.
     render_passes.push_back(LazyRenderingConfig(
-        renderer, std::move(rendering_config.entity_pass_target)));
+        renderer, std::move(rendering_config.entity_pass_target),
+        std::move(rendering_config.inline_pass_context)));
     return nullptr;
   }
 
   render_passes.push_back(LazyRenderingConfig(
-      renderer, std::move(rendering_config.entity_pass_target)));
+      renderer, std::move(rendering_config.entity_pass_target),
+      std::move(rendering_config.inline_pass_context)));
   // Eagerly restore the BDF contents.
 
   // If the pass context returns a backdrop texture, we need to draw it to the
@@ -674,14 +676,13 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   // conditionally update the backdrop color to its solid color value blended
   // with the current backdrop.
   if (render_passes_.back().IsApplyingClearColor()) {
-    std::optional<Color> maybe_color =
-        entity.AsBackgroundColor(render_passes_.back()
-                                     .entity_pass_target->GetRenderTarget()
-                                     .GetRenderTargetSize());
+    std::optional<Color> maybe_color = entity.AsBackgroundColor(
+        render_passes_.back().inline_pass_context->GetTexture()->GetSize());
     if (maybe_color.has_value()) {
       Color color = maybe_color.value();
-      RenderTarget& render_target =
-          render_passes_.back().entity_pass_target->GetRenderTarget();
+      RenderTarget& render_target = render_passes_.back()
+                                        .inline_pass_context->GetPassTarget()
+                                        .GetRenderTarget();
       ColorAttachment attachment =
           render_target.GetColorAttachments().find(0u)->second;
       attachment.clear_color = attachment.clear_color.Unpremultiply()
