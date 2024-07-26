@@ -17,8 +17,10 @@ dependencies:
   crypto: any
   engine_repo_tools: any
   git_repo_tools: any
-  litetest: any
   meta: any
   path: any
   process: any
+
+dev_dependencies:
+  litetest: any
   process_fakes: any
