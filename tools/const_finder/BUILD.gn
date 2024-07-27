@@ -10,9 +10,7 @@ application_snapshot("const_finder") {
 
   training_args = [ "--help" ]
 
-  inputs = [
-    "bin/main.dart",
-  ]
+  inputs = [ "bin/main.dart" ]
 
   deps = [ "//flutter/flutter_frontend_server:frontend_server" ]
 }
