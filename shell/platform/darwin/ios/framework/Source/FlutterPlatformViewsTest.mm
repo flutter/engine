@@ -129,10 +129,12 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 @implementation FlutterPlatformViewsTest
 
+namespace {
 fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   return fml::MessageLoop::GetCurrent().GetTaskRunner();
 }
+}  // namespace
 
 - (void)testFlutterViewOnlyCreateOnceInOneFrame {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
@@ -2708,10 +2710,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
-
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
@@ -2740,10 +2738,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-
-  latch = std::make_shared<fml::CountDownLatch>(1u);
-  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
                     [flutterView.subviews indexOfObject:clippingView2],
@@ -2818,9 +2812,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
 
   // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
   UIView* clippingView1 = view1.superview.superview;
@@ -2847,10 +2838,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-
-  latch = std::make_shared<fml::CountDownLatch>(1u);
-  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
 
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
                     [flutterView.subviews indexOfObject:clippingView2],
@@ -3290,10 +3277,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
 
-    auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-    latch->Wait();
-
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 2UL);
     XCTAssertNotNil(flutterPlatformViewsController->GetPlatformViewByID(0));
@@ -3319,10 +3302,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
         /*frame_size=*/SkISize::Make(800, 600));
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
-
-    auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-    latch->Wait();
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
@@ -3392,10 +3371,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       /*frame_size=*/SkISize::Make(800, 600));
 
   flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
-
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  GetDefaultTaskRunner()->PostTask([&latch]() { latch->CountDown(); });
-  latch->Wait();
 
   UIView* someView = [[UIView alloc] init];
   [flutterView addSubview:someView];
