@@ -635,13 +635,6 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  composition_order_.clear();
-  slices_.clear();
-  current_composition_params_.clear();
-  views_to_recomposite_.clear();
-  layer_pool_->RecycleLayers();
-  visited_platform_views_.clear();
-
   fml::TaskRunner::RunNowOrPostTask(
       platform_task_runner_, [&, composition_order = composition_order_]() {
         for (int64_t view_id : composition_order_) {
@@ -649,6 +642,13 @@ void FlutterPlatformViewsController::Reset() {
         }
         platform_views_.clear();
       });
+
+  composition_order_.clear();
+  slices_.clear();
+  current_composition_params_.clear();
+  views_to_recomposite_.clear();
+  layer_pool_->RecycleLayers();
+  visited_platform_views_.clear();
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
