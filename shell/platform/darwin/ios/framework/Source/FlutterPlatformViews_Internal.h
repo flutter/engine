@@ -316,7 +316,7 @@ class FlutterPlatformViewsController {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
   };
 
-  using LayersMap = std::map<int64_t, std::vector<LayerData>>;
+  using LayersMap = std::map<int64_t, LayerData>;
 
   /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
   void PerformSubmit(const LayersMap& platform_view_layers,
@@ -324,8 +324,7 @@ class FlutterPlatformViewsController {
                      std::map<int64_t, EmbeddedViewParams>& current_composition_params,
                      const std::unordered_set<int64_t>& views_to_recomposite,
                      const std::vector<int64_t>& composition_order,
-                     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
-                     const std::vector<UIView*>& views_to_dispose);
+                     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers);
 
   /// @brief Populate any missing overlay layers.
   ///
@@ -377,7 +376,8 @@ class FlutterPlatformViewsController {
 
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
-  void BringLayersIntoView(LayersMap layer_map, const std::vector<int64_t>& composition_order);
+  void BringLayersIntoView(const LayersMap& layer_map,
+                           const std::vector<int64_t>& composition_order);
 
   // Resets the state of the frame.
   void ResetFrameState();
@@ -396,54 +396,76 @@ class FlutterPlatformViewsController {
   fml::scoped_nsobject<UIViewController<FlutterViewResponder>> flutter_view_controller_;
   fml::scoped_nsobject<FlutterClippingMaskViewPool> mask_view_pool_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
-  std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
-  std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
-  // Mapping a platform view ID to the top most parent view (root_view) of a platform view. In
-  // |SubmitFrame|, root_views_ are added to flutter_view_ as child views.
-  //
-  // The platform view with the view ID is a child of the root view; If the platform view is not
-  // clipped, and no clipping view is added, the root view will be the intercepting view.
-  std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
-  // Mapping a platform view ID to its latest composition params.
-  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
-  // Mapping a platform view ID to the count of the clipping operations that were applied to the
-  // platform view last time it was composited.
-  std::map<int64_t, int64_t> clip_count_;
-  SkISize frame_size_;
-
-  // Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
-  // the next frame.
-  std::unordered_set<int64_t> views_to_dispose_;
-
-  // A vector of embedded view IDs according to their composition order.
-  // The last ID in this vector belond to the that is composited on top of all others.
-  std::vector<int64_t> composition_order_;
-
-  // A vector of visited platform view IDs.
-  std::vector<int64_t> visited_platform_views_;
-
-  // Only composite platform views in this set.
-  std::unordered_set<int64_t> views_to_recomposite_;
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies_;
 
+  /// The size of the current onscreen surface in physical pixels.
+  SkISize frame_size_;
+
+  /// The task runner for posting tasks to the platform thread.
+  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+
+  /// Each of the following maps stores part of the platform view hierarchy according to its
+  /// ID.
+  ///
+  /// The views_ map contains the platform view itself.
+  /// The touch_interceptors_ map contains the touch intercepting views to accept gestures.
+  /// Finally, the root views contains either the touch_interceptor or the child clipping
+  /// view.
+  ///
+  /// These maps must only be accessed on the platform thread.
+  struct PlatformViewData {
+    fml::scoped_nsobject<NSObject<FlutterPlatformView>> view;
+    fml::scoped_nsobject<FlutterTouchInterceptingView> touch_interceptor;
+    fml::scoped_nsobject<UIView> root_view;
+  };
+
+  std::map<int64_t, PlatformViewData> platform_views_;
+  /// The composition parameters for each platform view.
+  ///
+  /// This state is only modified on the raster thread.
+  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
+
+  /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
+  /// the next frame.
+  ///
+  /// This state is modified on both the platform and raster thread.
+  std::unordered_set<int64_t> views_to_dispose_;
+
+  /// view IDs in composition order.
+  ///
+  /// This state is only modified on the raster thread.
+  std::vector<int64_t> composition_order_;
+
+  /// platform view IDs visited during layer tree composition.
+  ///
+  /// This state is only modified on the raster thread.
+  std::vector<int64_t> visited_platform_views_;
+
+  /// Only composite platform views in this set.
+  ///
+  /// This state is only modified on the raster thread.
+  std::unordered_set<int64_t> views_to_recomposite_;
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  // A set to keep track of embedded views that does not have (0, 0) origin.
-  // An insertion triggers a warning message about non-zero origin logged on the debug console.
-  // See https://github.com/flutter/flutter/issues/109700 for details.
+  /// A set to keep track of embedded views that do not have (0, 0) origin.
+  /// An insertion triggers a warning message about non-zero origin logged on the debug console.
+  /// See https://github.com/flutter/flutter/issues/109700 for details.
   std::unordered_set<int64_t> non_zero_origin_views_;
 #endif
-
-  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
 
   /// @brief The composition order from the previous thread.
   ///
   /// Only accessed from the platform thread.
   std::vector<int64_t> previous_composition_order_;
 
-  /// Whether the previous frame had an active composition order.
+  /// Whether the previous frame had any platform views in active composition order.
+  ///
+  /// This state is tracked so that the first frame after removing the last platform view
+  /// runs through the platform view rendering code path, giving us a chance to remove the
+  /// platform view from the UIView hierarchy.
   ///
   /// Only accessed from the raster thread.
   bool had_platform_views_ = false;
