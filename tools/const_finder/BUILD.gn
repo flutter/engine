@@ -12,7 +12,6 @@ application_snapshot("const_finder") {
 
   inputs = [
     "bin/main.dart",
-    ".dart_tool/package_config.json",
   ]
 
   deps = [ "//flutter/flutter_frontend_server:frontend_server" ]
