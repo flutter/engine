@@ -114,8 +114,8 @@ GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
 }
 
 // |GPUSurfaceGLDelegate|
-SurfaceGLDelegate::GLProcResolver
-ShellTestPlatformViewGL::GetGLProcResolver() const {
+SurfaceGLDelegate::GLProcResolver ShellTestPlatformViewGL::GetGLProcResolver()
+    const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };
