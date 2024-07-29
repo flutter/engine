@@ -144,6 +144,8 @@ std::ostream& operator<<(std::ostream& os, const SaveLayerOptions& options) {
             << "can_distribute_opacity: " << options.can_distribute_opacity()
             << ", "
             << "contains_backdrop: " << options.contains_backdrop_filter()
+            << ", "
+            << "is_unbounded: " << options.content_is_unbounded()
             << ")";
 }
 
@@ -738,6 +740,14 @@ void DisplayListStreamDispatcher::clipRect(const SkRect& rect, ClipOp clip_op,
                                            bool is_aa) {
   startl() << "clipRect("
            << rect << ", "
+           << clip_op << ", "
+           << "isaa: " << is_aa
+           << ");" << std::endl;
+}
+void DisplayListStreamDispatcher::clipOval(const SkRect& bounds, ClipOp clip_op,
+                                           bool is_aa) {
+  startl() << "clipOval("
+           << bounds << ", "
            << clip_op << ", "
            << "isaa: " << is_aa
            << ");" << std::endl;

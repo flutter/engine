@@ -13,20 +13,26 @@
 namespace flutter {
 namespace testing {
 
-bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b);
-bool inline DisplayListsEQ_Verbose(const DisplayList& a, const DisplayList& b) {
+[[nodiscard]] bool DisplayListsEQ_Verbose(const DisplayList* a,
+                                          const DisplayList* b);
+[[nodiscard]] bool inline DisplayListsEQ_Verbose(const DisplayList& a,
+                                                 const DisplayList& b) {
   return DisplayListsEQ_Verbose(&a, &b);
 }
-bool inline DisplayListsEQ_Verbose(const sk_sp<const DisplayList>& a,
-                                   const sk_sp<const DisplayList>& b) {
+[[nodiscard]] bool inline DisplayListsEQ_Verbose(
+    const sk_sp<const DisplayList>& a,
+    const sk_sp<const DisplayList>& b) {
   return DisplayListsEQ_Verbose(a.get(), b.get());
 }
-bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b);
-bool inline DisplayListsNE_Verbose(const DisplayList& a, const DisplayList& b) {
+[[nodiscard]] bool DisplayListsNE_Verbose(const DisplayList* a,
+                                          const DisplayList* b);
+[[nodiscard]] bool inline DisplayListsNE_Verbose(const DisplayList& a,
+                                                 const DisplayList& b) {
   return DisplayListsNE_Verbose(&a, &b);
 }
-bool inline DisplayListsNE_Verbose(const sk_sp<const DisplayList>& a,
-                                   const sk_sp<const DisplayList>& b) {
+[[nodiscard]] bool inline DisplayListsNE_Verbose(
+    const sk_sp<const DisplayList>& a,
+    const sk_sp<const DisplayList>& b) {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
@@ -118,6 +124,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void transformReset() override;
 
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
