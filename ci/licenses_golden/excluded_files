@@ -287,7 +287,6 @@
 ../../../flutter/shell/common/switches_unittests.cc
 ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 ../../../flutter/shell/common/vsync_waiter_unittests.cc
-../../../flutter/shell/gpu/gpu_surface_metal_impeller_unittests.mm
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/README.md
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
@@ -421,6 +420,8 @@
 ../../../flutter/shell/platform/windows/window_unittests.cc
 ../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
+../../../flutter/shell/surface/README.md
+../../../flutter/shell/surface/surface_metal_impeller_unittests.mm
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
 ../../../flutter/shell/vmservice/pubspec.lock
