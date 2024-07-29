@@ -124,7 +124,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 
         const impeller::RenderTarget& render_target =
             surface->GetTargetRenderPassDescriptor();
-        return aiks_context->Render(picture, render_target, reset_host_buffer);
+        if (!aiks_context->Render(picture, render_target, reset_host_buffer)) {
+          return false;
+        }
+        return surface->Present();
       });
 
   return std::make_unique<SurfaceFrame>(

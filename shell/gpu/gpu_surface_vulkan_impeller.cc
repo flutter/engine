@@ -95,7 +95,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         aiks_context->GetContentContext()
             .GetLazyGlyphAtlas()
             ->ResetTextFrames();
-        return true;
+        return surface->Present();
 #else
         impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
         impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
@@ -105,7 +105,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
         const bool reset_host_buffer =
             surface_frame.submit_info().frame_boundary;
-        return aiks_context->Render(picture, render_target, reset_host_buffer);
+        if (!aiks_context->Render(picture, render_target, reset_host_buffer)) {
+          return false;
+        }
+        return surface->Present();
 #endif
       });
 
