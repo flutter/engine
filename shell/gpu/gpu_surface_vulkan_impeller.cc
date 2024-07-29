@@ -4,6 +4,7 @@
 
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
+#include "flow/surface_frame.h"
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
@@ -58,7 +59,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     return nullptr;
   }
 
-  SurfaceFrame::SubmitCallback submit_callback =
+  SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([aiks_context = aiks_context_,  //
                          surface = std::move(surface)   //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
@@ -110,12 +111,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
       });
 
   return std::make_unique<SurfaceFrame>(
-      nullptr,                          // surface
-      SurfaceFrame::FramebufferInfo{},  // framebuffer info
-      submit_callback,                  // submit callback
-      size,                             // frame size
-      nullptr,                          // context result
-      true                              // display list fallback
+      nullptr,                                   // surface
+      SurfaceFrame::FramebufferInfo{},           // framebuffer info
+      encode_callback,                           // encode callback
+      [](const SurfaceFrame&) { return true; },  // submit callback
+      size,                                      // frame size
+      nullptr,                                   // context result
+      true                                       // display list fallback
   );
 }
 

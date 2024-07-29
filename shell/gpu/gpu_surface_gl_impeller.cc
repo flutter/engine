@@ -4,6 +4,7 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
+#include "flow/surface_frame.h"
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
@@ -83,7 +84,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        size);
+        [](const SurfaceFrame& surface_frame) { return true; }, size);
   }
 
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
@@ -97,7 +98,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       impeller::ISize{size.width(), size.height()}  // fbo_size
   );
 
-  SurfaceFrame::SubmitCallback submit_callback =
+  SurfaceFrame::EncodeCallback encode_calback =
       fml::MakeCopyable([aiks_context = aiks_context_,  //
                          surface = std::move(surface)   //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
@@ -128,12 +129,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       });
 
   return std::make_unique<SurfaceFrame>(
-      nullptr,                                // surface
-      delegate_->GLContextFramebufferInfo(),  // framebuffer info
-      submit_callback,                        // submit callback
-      size,                                   // frame size
-      std::move(context_switch),              // context result
-      true                                    // display list fallback
+      nullptr,                                   // surface
+      delegate_->GLContextFramebufferInfo(),     // framebuffer info
+      encode_calback,                            // encode callback
+      [](const SurfaceFrame&) { return true; },  // submit callback
+      size,                                      // frame size
+      std::move(context_switch),                 // context result
+      true                                       // display list fallback
   );
 }
 

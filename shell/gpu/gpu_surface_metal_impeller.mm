@@ -6,6 +6,8 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+#include "flow/surface.h"
+#include "flow/surface_frame.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
@@ -100,7 +102,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 #endif  // IMPELLER_DEBUG
 
   id<MTLTexture> last_texture = static_cast<id<MTLTexture>>(last_texture_);
-  SurfaceFrame::SubmitCallback submit_callback =
+  SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([damage = damage_,
                          disable_partial_repaint = disable_partial_repaint_,  //
                          aiks_context = aiks_context_,                        //
@@ -149,7 +151,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         }
 
         if (clip_rect && clip_rect->IsEmpty()) {
-          return surface->Present();
+          return true; //surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
@@ -222,13 +224,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
   impeller::ContextMTL::Cast(*aiks_context_->GetContext()).GetCaptureManager()->StartCapture();
 #endif  // IMPELLER_DEBUG
 
-  SurfaceFrame::SubmitCallback submit_callback =
+  SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([disable_partial_repaint = disable_partial_repaint_,  //
                          damage = damage_,
                          aiks_context = aiks_context_,  //
-                         texture_info,                  //
-                         mtl_texture,                   //
-                         delegate = delegate_           //
+                         mtl_texture                    //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
@@ -299,8 +299,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
           return false;
         }
 
-        return delegate->PresentTexture(texture_info);
+        return true;
       });
+
+  SurfaceFrame::SubmitCallback submit_callback =
+      [texture_info, delegate = delegate_](const SurfaceFrame& surface_frame) {
+        return delegate->PresentTexture(texture_info);
+      };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -318,10 +323,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 
   return std::make_unique<SurfaceFrame>(nullptr,           // surface
                                         framebuffer_info,  // framebuffer info
-                                        submit_callback,   // submit callback
-                                        frame_size,        // frame size
-                                        nullptr,           // context result
-                                        true               // display list fallback
+                                        encode_callback,
+                                        submit_callback,  // submit callback
+                                        frame_size,       // frame size
+                                        nullptr,          // context result
+                                        true              // display list fallback
   );
 }
 

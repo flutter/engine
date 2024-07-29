@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flow/surface_frame.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/rasterizer.h"
@@ -209,7 +210,8 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -287,7 +289,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -365,7 +368,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -440,12 +444,14 @@ TEST(RasterizerTest,
   auto surface_frame1 = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   auto surface_frame2 = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
@@ -688,7 +694,8 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
     return std::make_unique<SurfaceFrame>(
         /*surface=*/
         nullptr, framebuffer_info,
-        /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+        /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+        /*submit_callback=*/[](const SurfaceFrame&) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
   });
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -765,7 +772,8 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -826,7 +834,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -888,7 +897,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -949,7 +959,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/
       nullptr, /*framebuffer_info=*/framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*encode_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*submit_callback=*/[](const SurfaceFrame&) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -1074,8 +1085,9 @@ TEST(RasterizerTest,
         return std::make_unique<SurfaceFrame>(
             /*surface=*/
             nullptr, framebuffer_info,
-            /*submit_callback=*/
-            [](const SurfaceFrame& frame, DlCanvas*) { return true; },
+            /*encode_callback=*/
+            [](const SurfaceFrame&, DlCanvas*) { return true; },
+            /*submit_callback=*/[](const SurfaceFrame& frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
       }));
   ON_CALL(*surface, MakeRenderContextCurrent())
