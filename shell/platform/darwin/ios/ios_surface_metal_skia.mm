@@ -26,7 +26,7 @@ static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>
 IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                          std::shared_ptr<IOSContext> context)
     : IOSSurface(std::move(context)),
-      GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
+      SurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
       layer_(layer) {
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
@@ -51,8 +51,8 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,               // delegate
-                                               sk_ref_sp(context)  // context
+  return std::make_unique<SurfaceMetalSkia>(this,               // delegate
+                                            sk_ref_sp(context)  // context
   );
 }
 

@@ -17,9 +17,8 @@ class Context;
 
 namespace flutter {
 
-class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final
-    : public IOSSurface,
-      public GPUSurfaceMetalDelegate {
+class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final : public IOSSurface,
+                                                                      public SurfaceMetalDelegate {
  public:
   IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
                           const std::shared_ptr<IOSContext>& context);

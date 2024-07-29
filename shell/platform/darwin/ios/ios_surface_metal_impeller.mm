@@ -15,7 +15,7 @@ namespace flutter {
 IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                                  const std::shared_ptr<IOSContext>& context)
     : IOSSurface(context),
-      GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
+      SurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
       layer_(layer),
       impeller_context_(context ? context->GetImpellerContext() : nullptr) {
   if (!impeller_context_) {
@@ -41,8 +41,8 @@ void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectContext*) {
   impeller_context_->UpdateOffscreenLayerPixelFormat(
       impeller::FromMTLPixelFormat(layer_.get().pixelFormat));
-  return std::make_unique<GPUSurfaceMetalImpeller>(this,              //
-                                                   impeller_context_  //
+  return std::make_unique<SurfaceMetalImpeller>(this,              //
+                                                impeller_context_  //
   );
 }
 
