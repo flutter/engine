@@ -313,6 +313,10 @@ bool Playground::OpenPlaygroundHere(
       }
     }
 
+    if (!result) {
+      return false;
+    }
+
     if (!ShouldKeepRendering()) {
       break;
     }
