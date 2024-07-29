@@ -313,6 +313,10 @@ bool Playground::OpenPlaygroundHere(
       }
     }
 
+    if (!result || !surface->Present()) {
+      return false;
+    }
+
     if (!ShouldKeepRendering()) {
       break;
     }
