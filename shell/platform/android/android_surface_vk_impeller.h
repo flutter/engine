@@ -11,7 +11,7 @@
 #include "flutter/shell/platform/android/android_context_vk_impeller.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
-#include "shell/gpu/gpu_surface_vulkan_impeller.h"
+#include "flutter/shell/surface/surface_vulkan_impeller.h"
 
 namespace flutter {
 
@@ -53,7 +53,7 @@ class AndroidSurfaceVKImpeller : public AndroidSurface {
   // The first GPU Surface is initialized as soon as the
   // AndroidSurfaceVulkanImpeller is created. This ensures that the pipelines
   // are bootstrapped as early as possible.
-  std::unique_ptr<GPUSurfaceVulkanImpeller> eager_gpu_surface_;
+  std::unique_ptr<SurfaceVulkanImpeller> eager_gpu_surface_;
 
   bool is_valid_ = false;
 

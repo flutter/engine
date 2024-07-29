@@ -6,7 +6,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
-#include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
+#include "flutter/shell/surface/surface_gl_impeller.h"
 
 namespace flutter {
 
@@ -35,7 +35,7 @@ bool AndroidSurfaceGLImpeller::IsValid() const {
 // |AndroidSurface|
 std::unique_ptr<Surface> AndroidSurfaceGLImpeller::CreateGPUSurface(
     GrDirectContext* gr_context) {
-  auto surface = std::make_unique<GPUSurfaceGLImpeller>(
+  auto surface = std::make_unique<SurfaceGLImpeller>(
       this,                                    // delegate
       android_context_->GetImpellerContext(),  // context
       true                                     // render to surface

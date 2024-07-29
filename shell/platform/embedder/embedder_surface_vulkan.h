@@ -7,11 +7,11 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/context_options.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_vulkan.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace flutter {

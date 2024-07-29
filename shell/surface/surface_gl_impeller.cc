@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
+#include "flutter/shell/surface/surface_gl_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
@@ -12,10 +12,9 @@
 
 namespace flutter {
 
-GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
-    GPUSurfaceGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context,
-    bool render_to_surface)
+SurfaceGLImpeller::SurfaceGLImpeller(SurfaceGLDelegate* delegate,
+                                     std::shared_ptr<impeller::Context> context,
+                                     bool render_to_surface)
     : weak_factory_(this) {
   if (delegate == nullptr) {
     return;
@@ -46,15 +45,15 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
 }
 
 // |Surface|
-GPUSurfaceGLImpeller::~GPUSurfaceGLImpeller() = default;
+SurfaceGLImpeller::~SurfaceGLImpeller() = default;
 
 // |Surface|
-bool GPUSurfaceGLImpeller::IsValid() {
+bool SurfaceGLImpeller::IsValid() {
   return is_valid_;
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
+std::unique_ptr<SurfaceFrame> SurfaceGLImpeller::AcquireFrame(
     const SkISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "OpenGL surface was invalid.";
@@ -151,40 +150,39 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceGLImpeller::GetRootTransformation() const {
+SkMatrix SurfaceGLImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceGLImpeller::GetContext() {
+GrDirectContext* SurfaceGLImpeller::GetContext() {
   // Impeller != Skia.
   return nullptr;
 }
 
 // |Surface|
-std::unique_ptr<GLContextResult>
-GPUSurfaceGLImpeller::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> SurfaceGLImpeller::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
 // |Surface|
-bool GPUSurfaceGLImpeller::ClearRenderContext() {
+bool SurfaceGLImpeller::ClearRenderContext() {
   return delegate_->GLContextClearCurrent();
 }
 
-bool GPUSurfaceGLImpeller::AllowsDrawingWhenGpuDisabled() const {
+bool SurfaceGLImpeller::AllowsDrawingWhenGpuDisabled() const {
   return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 
 // |Surface|
-bool GPUSurfaceGLImpeller::EnableRasterCache() const {
+bool SurfaceGLImpeller::EnableRasterCache() const {
   return false;
 }
 
 // |Surface|
-std::shared_ptr<impeller::AiksContext> GPUSurfaceGLImpeller::GetAiksContext()
+std::shared_ptr<impeller::AiksContext> SurfaceGLImpeller::GetAiksContext()
     const {
   return aiks_context_;
 }

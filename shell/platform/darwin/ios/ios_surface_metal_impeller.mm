@@ -6,7 +6,7 @@
 
 #include "flutter/impeller/renderer/backend/metal/formats_mtl.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
+#include "flutter/shell/surface/surface_metal_impeller.h"
 
 FLUTTER_ASSERT_ARC
 

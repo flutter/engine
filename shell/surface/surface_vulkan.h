@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_VULKAN_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_VULKAN_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_H_
 
 #include <memory>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_backbuffer.h"
 #include "flutter/vulkan/vulkan_native_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
@@ -24,17 +24,19 @@ namespace flutter {
 /// @brief  A GPU surface backed by VkImages provided by a
 ///         GPUSurfaceVulkanDelegate.
 ///
-class GPUSurfaceVulkan : public Surface {
+///         A user of this implementation is the embedder.
+///
+class SurfaceVulkan : public Surface {
  public:
   //------------------------------------------------------------------------------
   /// @brief      Create a GPUSurfaceVulkan while letting it reuse an existing
   ///             GrDirectContext.
   ///
-  GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
-                   const sk_sp<GrDirectContext>& context,
-                   bool render_to_surface);
+  SurfaceVulkan(SurfaceVulkanDelegate* delegate,
+                const sk_sp<GrDirectContext>& context,
+                bool render_to_surface);
 
-  ~GPUSurfaceVulkan() override;
+  ~SurfaceVulkan() override;
 
   // |Surface|
   bool IsValid() override;
@@ -51,19 +53,19 @@ class GPUSurfaceVulkan : public Surface {
   static SkColorType ColorTypeFromFormat(const VkFormat format);
 
  private:
-  GPUSurfaceVulkanDelegate* delegate_;
+  SurfaceVulkanDelegate* delegate_;
   sk_sp<GrDirectContext> skia_context_;
   bool render_to_surface_;
 
-  fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
+  fml::WeakPtrFactory<SurfaceVulkan> weak_factory_;
 
   sk_sp<SkSurface> CreateSurfaceFromVulkanImage(const VkImage image,
                                                 const VkFormat format,
                                                 const SkISize& size);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
+  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceVulkan);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_VULKAN_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_H_

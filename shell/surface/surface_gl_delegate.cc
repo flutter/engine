@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 
 #include "flutter/fml/build_config.h"
 
@@ -29,32 +29,31 @@
 
 namespace flutter {
 
-GPUSurfaceGLDelegate::~GPUSurfaceGLDelegate() = default;
+SurfaceGLDelegate::~SurfaceGLDelegate() = default;
 
-bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
+bool SurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
   return false;
 }
 
-SurfaceFrame::FramebufferInfo GPUSurfaceGLDelegate::GLContextFramebufferInfo()
+SurfaceFrame::FramebufferInfo SurfaceGLDelegate::GLContextFramebufferInfo()
     const {
   SurfaceFrame::FramebufferInfo res;
   res.supports_readback = true;
   return res;
 }
 
-SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
+SkMatrix SurfaceGLDelegate::GLContextSurfaceTransformation() const {
   SkMatrix matrix;
   matrix.setIdentity();
   return matrix;
 }
 
-GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()
-    const {
+SurfaceGLDelegate::GLProcResolver SurfaceGLDelegate::GetGLProcResolver() const {
   return nullptr;
 }
 
 static bool IsProcResolverOpenGLES(
-    const GPUSurfaceGLDelegate::GLProcResolver& proc_resolver) {
+    const SurfaceGLDelegate::GLProcResolver& proc_resolver) {
   // Version string prefix that identifies an OpenGL ES implementation.
 #define GPU_GL_VERSION 0x1F02
   constexpr char kGLESVersionPrefix[] = "OpenGL ES";
@@ -81,7 +80,7 @@ static bool IsProcResolverOpenGLES(
 }
 
 static sk_sp<const GrGLInterface> CreateGLInterface(
-    const GPUSurfaceGLDelegate::GLProcResolver& proc_resolver) {
+    const SurfaceGLDelegate::GLProcResolver& proc_resolver) {
   if (proc_resolver == nullptr) {
 #if defined(FML_OS_ANDROID)
     return GrGLInterfaces::MakeEGL();
@@ -104,7 +103,7 @@ static sk_sp<const GrGLInterface> CreateGLInterface(
   }
 
   struct ProcResolverContext {
-    GPUSurfaceGLDelegate::GLProcResolver resolver;
+    SurfaceGLDelegate::GLProcResolver resolver;
   };
 
   ProcResolverContext context = {proc_resolver};
@@ -131,16 +130,15 @@ static sk_sp<const GrGLInterface> CreateGLInterface(
   return nullptr;
 }
 
-sk_sp<const GrGLInterface> GPUSurfaceGLDelegate::GetGLInterface() const {
+sk_sp<const GrGLInterface> SurfaceGLDelegate::GetGLInterface() const {
   return CreateGLInterface(GetGLProcResolver());
 }
 
-sk_sp<const GrGLInterface>
-GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
+sk_sp<const GrGLInterface> SurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
 }
 
-bool GPUSurfaceGLDelegate::AllowsDrawingWhenGpuDisabled() const {
+bool SurfaceGLDelegate::AllowsDrawingWhenGpuDisabled() const {
   return true;
 }
 

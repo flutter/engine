@@ -2,32 +2,32 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_SKIA_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_SKIA_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_METAL_SKIA_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_METAL_SKIA_H_
 
 #if !SLIMPELLER
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
-class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
+class SK_API_AVAILABLE_CA_METAL_LAYER SurfaceMetalSkia : public Surface {
  public:
-  GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                      sk_sp<GrDirectContext> context,
-                      bool render_to_surface = true);
+  SurfaceMetalSkia(SurfaceMetalDelegate* delegate,
+                   sk_sp<GrDirectContext> context,
+                   bool render_to_surface = true);
 
   // |Surface|
-  ~GPUSurfaceMetalSkia();
+  ~SurfaceMetalSkia();
 
   // |Surface|
   bool IsValid() override;
 
  private:
-  const GPUSurfaceMetalDelegate* delegate_;
+  const SurfaceMetalDelegate* delegate_;
   const MTLRenderTargetType render_target_type_;
   sk_sp<GrDirectContext> context_;
   GrDirectContext* precompiled_sksl_context_ = nullptr;
@@ -65,11 +65,11 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
 
   void PrecompileKnownSkSLsIfNecessary();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalSkia);
+  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceMetalSkia);
 };
 
 }  // namespace flutter
 
 #endif  //  !SLIMPELLER
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_SKIA_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_METAL_SKIA_H_

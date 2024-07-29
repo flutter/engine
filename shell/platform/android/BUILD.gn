@@ -9,7 +9,7 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/shell/version/version.gni")
 import("//flutter/vulkan/config.gni")
 

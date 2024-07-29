@@ -10,15 +10,15 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/surface/surface_gl_skia.h"
 
 namespace flutter {
 
-class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
+class AndroidSurfaceGLSkia final : public SurfaceGLDelegate,
                                    public AndroidSurface {
  public:
   explicit AndroidSurfaceGLSkia(

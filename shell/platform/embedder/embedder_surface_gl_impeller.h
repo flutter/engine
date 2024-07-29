@@ -6,10 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_GL_IMPELLER_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"
+#include "flutter/shell/surface/surface_gl_impeller.h"
 
 namespace impeller {
 class ContextGLES;

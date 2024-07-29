@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_IMPELLER_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_IMPELLER_H_
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/surface.h"
@@ -11,31 +11,26 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "impeller/renderer/renderer.h"
 
 namespace flutter {
 
-class GPUSurfaceGLImpeller final : public Surface {
+class SurfaceVulkanImpeller final : public Surface {
  public:
-  explicit GPUSurfaceGLImpeller(GPUSurfaceGLDelegate* delegate,
-                                std::shared_ptr<impeller::Context> context,
-                                bool render_to_surface);
+  explicit SurfaceVulkanImpeller(std::shared_ptr<impeller::Context> context);
 
   // |Surface|
-  ~GPUSurfaceGLImpeller() override;
+  ~SurfaceVulkanImpeller() override;
 
   // |Surface|
   bool IsValid() override;
 
  private:
-  GPUSurfaceGLDelegate* delegate_ = nullptr;
   std::shared_ptr<impeller::Context> impeller_context_;
-  bool render_to_surface_ = true;
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   bool is_valid_ = false;
-  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGLImpeller> weak_factory_;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
@@ -50,20 +45,14 @@ class GPUSurfaceGLImpeller final : public Surface {
   std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
 
   // |Surface|
-  bool ClearRenderContext() override;
-
-  // |Surface|
-  bool AllowsDrawingWhenGpuDisabled() const override;
-
-  // |Surface|
   bool EnableRasterCache() const override;
 
   // |Surface|
   std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGLImpeller);
+  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceVulkanImpeller);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_VULKAN_IMPELLER_H_

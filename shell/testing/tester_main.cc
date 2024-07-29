@@ -23,7 +23,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/surface/surface_software.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
@@ -35,6 +35,7 @@
 
 #if ALLOW_IMPELLER
 #include <vulkan/vulkan.h>                                        // nogncheck
+#include "flutter/shell/surface/surface_vulkan_impeller.h"        // nogncheck
 #include "impeller/entity/vk/entity_shaders_vk.h"                 // nogncheck
 #include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"      // nogncheck
 #include "impeller/entity/vk/modern_shaders_vk.h"                 // nogncheck
@@ -42,7 +43,6 @@
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"  // nogncheck
 #include "impeller/renderer/context.h"                            // nogncheck
 #include "impeller/renderer/vk/compute_shaders_vk.h"              // nogncheck
-#include "shell/gpu/gpu_surface_vulkan_impeller.h"                // nogncheck
 #if IMPELLER_ENABLE_3D
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"  // nogncheck
 #endif                                                   // IMPELLER_ENABLE_3D
@@ -176,17 +176,16 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   DisplayListBuilder builder_;
 };
 
-class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
+class TesterGPUSurfaceSoftware : public SurfaceSoftware {
  public:
-  TesterGPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
+  TesterGPUSurfaceSoftware(SurfaceSoftwareDelegate* delegate,
                            bool render_to_surface)
-      : GPUSurfaceSoftware(delegate, render_to_surface) {}
+      : SurfaceSoftware(delegate, render_to_surface) {}
 
   bool EnableRasterCache() const override { return false; }
 };
 
-class TesterPlatformView : public PlatformView,
-                           public GPUSurfaceSoftwareDelegate {
+class TesterPlatformView : public PlatformView, public SurfaceSoftwareDelegate {
  public:
   TesterPlatformView(Delegate& delegate,
                      const TaskRunners& task_runners,
@@ -217,7 +216,7 @@ class TesterPlatformView : public PlatformView,
 #if ALLOW_IMPELLER
     if (delegate_.OnPlatformViewGetSettings().enable_impeller) {
       FML_DCHECK(impeller_context_holder_.context);
-      auto surface = std::make_unique<GPUSurfaceVulkanImpeller>(
+      auto surface = std::make_unique<SurfaceVulkanImpeller>(
           impeller_context_holder_.surface_context);
       FML_DCHECK(surface->IsValid());
       return surface;

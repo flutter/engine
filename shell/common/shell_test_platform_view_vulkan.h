@@ -7,7 +7,7 @@
 
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"

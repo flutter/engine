@@ -7,7 +7,7 @@
 
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 

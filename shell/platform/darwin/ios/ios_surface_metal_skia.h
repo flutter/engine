@@ -8,8 +8,8 @@
 #if !SLIMPELLER
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;

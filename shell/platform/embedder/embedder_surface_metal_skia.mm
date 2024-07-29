@@ -9,8 +9,8 @@
 #include "flutter/shell/platform/embedder/embedder_surface_metal_skia.h"
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 FLUTTER_ASSERT_NOT_ARC
@@ -21,7 +21,7 @@ EmbedderSurfaceMetalSkia::EmbedderSurfaceMetalSkia(
     GPUMTLCommandQueueHandle command_queue,
     MetalDispatchTable metal_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
+    : SurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_dispatch_table_(std::move(metal_dispatch_table)),
       external_view_embedder_(std::move(external_view_embedder)) {
   main_context_ =
@@ -49,7 +49,7 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalSkia::CreateGPUSurface() API_AVAILA
   }
 
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, render_to_surface);
+  auto surface = std::make_unique<SurfaceMetalSkia>(this, main_context_, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;

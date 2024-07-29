@@ -6,9 +6,9 @@ assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
 import("//flutter/build/zip_bundle.gni")
-import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_common.gni")
 import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
 shell_gpu_configuration("macos_gpu_configuration") {

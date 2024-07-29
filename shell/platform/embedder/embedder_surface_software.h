@@ -6,16 +6,16 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_SOFTWARE_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_software.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
 class EmbedderSurfaceSoftware final : public EmbedderSurface,
-                                      public GPUSurfaceSoftwareDelegate {
+                                      public SurfaceSoftwareDelegate {
  public:
   struct SoftwareDispatchTable {
     std::function<bool(const void* allocation, size_t row_bytes, size_t height)>

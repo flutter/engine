@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
+#include "flutter/shell/surface/surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
@@ -13,7 +13,7 @@
 
 namespace flutter {
 
-GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
+SurfaceVulkanImpeller::SurfaceVulkanImpeller(
     std::shared_ptr<impeller::Context> context) {
   if (!context || !context->IsValid()) {
     return;
@@ -37,15 +37,15 @@ GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
 }
 
 // |Surface|
-GPUSurfaceVulkanImpeller::~GPUSurfaceVulkanImpeller() = default;
+SurfaceVulkanImpeller::~SurfaceVulkanImpeller() = default;
 
 // |Surface|
-bool GPUSurfaceVulkanImpeller::IsValid() {
+bool SurfaceVulkanImpeller::IsValid() {
   return is_valid_;
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
+std::unique_ptr<SurfaceFrame> SurfaceVulkanImpeller::AcquireFrame(
     const SkISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
@@ -134,33 +134,33 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceVulkanImpeller::GetRootTransformation() const {
+SkMatrix SurfaceVulkanImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceVulkanImpeller::GetContext() {
+GrDirectContext* SurfaceVulkanImpeller::GetContext() {
   // Impeller != Skia.
   return nullptr;
 }
 
 // |Surface|
 std::unique_ptr<GLContextResult>
-GPUSurfaceVulkanImpeller::MakeRenderContextCurrent() {
+SurfaceVulkanImpeller::MakeRenderContextCurrent() {
   // This backend has no such concept.
   return std::make_unique<GLContextDefaultResult>(true);
 }
 
 // |Surface|
-bool GPUSurfaceVulkanImpeller::EnableRasterCache() const {
+bool SurfaceVulkanImpeller::EnableRasterCache() const {
   return false;
 }
 
 // |Surface|
-std::shared_ptr<impeller::AiksContext>
-GPUSurfaceVulkanImpeller::GetAiksContext() const {
+std::shared_ptr<impeller::AiksContext> SurfaceVulkanImpeller::GetAiksContext()
+    const {
   return aiks_context_;
 }
 

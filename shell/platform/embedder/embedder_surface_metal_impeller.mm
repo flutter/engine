@@ -9,9 +9,9 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/synchronization/sync_switch.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_impeller.h"
 #include "impeller/entity/mtl/entity_shaders.h"
 #include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
@@ -30,7 +30,7 @@ EmbedderSurfaceMetalImpeller::EmbedderSurfaceMetalImpeller(
     GPUMTLCommandQueueHandle command_queue,
     MetalDispatchTable metal_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
+    : SurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_dispatch_table_(std::move(metal_dispatch_table)),
       external_view_embedder_(std::move(external_view_embedder)) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
@@ -70,7 +70,7 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface()
   }
 
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<GPUSurfaceMetalImpeller>(this, context_, render_to_surface);
+  auto surface = std::make_unique<SurfaceMetalImpeller>(this, context_, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;

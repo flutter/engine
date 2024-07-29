@@ -8,7 +8,7 @@
 
 #include <EGL/egl.h>
 
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "flutter/shell/surface/surface_gl_skia.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
 
 #if IMPELLER_ENABLE_3D

@@ -7,7 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 
 namespace flutter {
 namespace testing {
@@ -15,7 +15,7 @@ namespace testing {
 class DarwinContextMetal;
 
 class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
-                                         public GPUSurfaceMetalDelegate {
+                                         public SurfaceMetalDelegate {
  public:
   ShellTestPlatformViewMetal(PlatformView::Delegate& delegate,
                              const TaskRunners& task_runners,

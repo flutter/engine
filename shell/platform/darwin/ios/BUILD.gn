@@ -9,8 +9,8 @@ import("//build/toolchain/clang.gni")
 import("//build/toolchain/toolchain.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_common.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"

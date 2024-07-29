@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/surface/surface_software.h"
 
 #include <memory>
 
@@ -12,21 +12,21 @@
 
 namespace flutter {
 
-GPUSurfaceSoftware::GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
-                                       bool render_to_surface)
+SurfaceSoftware::SurfaceSoftware(SurfaceSoftwareDelegate* delegate,
+                                 bool render_to_surface)
     : delegate_(delegate),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {}
 
-GPUSurfaceSoftware::~GPUSurfaceSoftware() = default;
+SurfaceSoftware::~SurfaceSoftware() = default;
 
 // |Surface|
-bool GPUSurfaceSoftware::IsValid() {
+bool SurfaceSoftware::IsValid() {
   return delegate_ != nullptr;
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
+std::unique_ptr<SurfaceFrame> SurfaceSoftware::AcquireFrame(
     const SkISize& logical_size) {
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -82,7 +82,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceSoftware::GetRootTransformation() const {
+SkMatrix SurfaceSoftware::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   SkMatrix matrix;
@@ -91,7 +91,7 @@ SkMatrix GPUSurfaceSoftware::GetRootTransformation() const {
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceSoftware::GetContext() {
+GrDirectContext* SurfaceSoftware::GetContext() {
   // There is no GrContext associated with a software surface.
   return nullptr;
 }

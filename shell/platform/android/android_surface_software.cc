@@ -13,7 +13,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
-
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -69,7 +68,7 @@ std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
   }
 
   auto surface =
-      std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
+      std::make_unique<SurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;

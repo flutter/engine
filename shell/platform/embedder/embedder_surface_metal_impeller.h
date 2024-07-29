@@ -7,10 +7,10 @@
 
 #include <memory>
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 #include "fml/concurrent_message_loop.h"
 
 namespace impeller {
@@ -20,7 +20,7 @@ class Context;
 namespace flutter {
 
 class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
-                                           public GPUSurfaceMetalDelegate {
+                                           public SurfaceMetalDelegate {
  public:
   struct MetalDispatchTable {
     std::function<bool(GPUMTLTextureInfo texture)> present;  // required

@@ -12,7 +12,7 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/swapchain/swapchain_vk.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
+#include "flutter/shell/surface/surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
 
 namespace flutter {
@@ -25,7 +25,7 @@ AndroidSurfaceVKImpeller::AndroidSurfaceVKImpeller(
       impeller::ContextVK::Cast(*android_context->GetImpellerContext());
   surface_context_vk_ = context_vk.CreateSurfaceContext();
   eager_gpu_surface_ =
-      std::make_unique<GPUSurfaceVulkanImpeller>(surface_context_vk_);
+      std::make_unique<SurfaceVulkanImpeller>(surface_context_vk_);
 }
 
 AndroidSurfaceVKImpeller::~AndroidSurfaceVKImpeller() = default;
@@ -56,8 +56,8 @@ std::unique_ptr<Surface> AndroidSurfaceVKImpeller::CreateGPUSurface(
     return gpu_surface;
   }
 
-  std::unique_ptr<GPUSurfaceVulkanImpeller> gpu_surface =
-      std::make_unique<GPUSurfaceVulkanImpeller>(surface_context_vk_);
+  std::unique_ptr<SurfaceVulkanImpeller> gpu_surface =
+      std::make_unique<SurfaceVulkanImpeller>(surface_context_vk_);
 
   if (!gpu_surface->IsValid()) {
     return nullptr;
