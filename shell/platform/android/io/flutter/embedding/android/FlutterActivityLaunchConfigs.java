@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.android;
 
-
 /** Collection of Flutter launch configuration options. */
 // This class is public so that Flutter app developers can reference
 // BackgroundMode
