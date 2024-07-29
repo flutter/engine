@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flow/surface_frame.h"
 #define FML_USED_ON_EMBEDDER
 
+#include "flow/surface_frame.h"
 #include "flutter/shell/common/rasterizer.h"
 
 #include <memory>
