@@ -18,6 +18,7 @@
 ../../../flutter/.github
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
+../../../flutter/.vscode
 ../../../flutter/AUTHORS
 ../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
@@ -80,6 +81,7 @@
 ../../../flutter/flow/surface_frame_unittests.cc
 ../../../flutter/flow/testing
 ../../../flutter/flow/texture_unittests.cc
+../../../flutter/flow/view_slicer_unittests.cc
 ../../../flutter/flutter_frontend_server
 ../../../flutter/fml/ascii_trie_unittests.cc
 ../../../flutter/fml/backtrace_unittests.cc
@@ -3187,7 +3189,6 @@
 ../../../flutter/tools/licenses/analysis_options.yaml
 ../../../flutter/tools/licenses/data
 ../../../flutter/tools/licenses/lib/README
-../../../flutter/tools/licenses/pubspec.lock
 ../../../flutter/tools/licenses/pubspec.yaml
 ../../../flutter/tools/licenses/test
 ../../../flutter/web_sdk
@@ -3309,6 +3310,8 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pin/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.bus/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
@@ -3439,6 +3442,9 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/hwasan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-17/sysroot/dist/lib/asan/ld.so.1
@@ -3451,6 +3457,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-20/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-21/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-21/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-17/sysroot/dist/lib/asan/ld.so.1
@@ -3463,6 +3471,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-20/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-21/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-21/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
 ../../../fuchsia/sdk/linux/packages/cmd-buf-benchmark-test/meta.json
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json

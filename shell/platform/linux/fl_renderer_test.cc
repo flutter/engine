@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/linux/fl_backing_store_provider.h"
+#include "flutter/shell/platform/linux/fl_framebuffer.h"
 #include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 #include "flutter/shell/platform/linux/testing/mock_epoxy.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
@@ -22,15 +22,14 @@ TEST(FlRendererTest, RestoresGLState) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlView) view = fl_view_new(project);
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlBackingStoreProvider) backing_store_provider =
-      fl_backing_store_provider_new(kWidth, kHeight);
+  g_autoptr(FlFramebuffer) framebuffer = fl_framebuffer_new(kWidth, kHeight);
 
-  fl_renderer_start(FL_RENDERER(renderer), view);
+  fl_renderer_add_view(FL_RENDERER(renderer), 0, view);
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
   backing_store.type = kFlutterBackingStoreTypeOpenGL;
-  backing_store.open_gl.framebuffer.user_data = backing_store_provider;
+  backing_store.open_gl.framebuffer.user_data = framebuffer;
 
   FlutterLayer layer;
   layer.type = kFlutterLayerContentTypeBackingStore;
@@ -43,7 +42,7 @@ TEST(FlRendererTest, RestoresGLState) {
   constexpr GLuint kFakeTextureName = 123;
   glBindTexture(GL_TEXTURE_2D, kFakeTextureName);
 
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers.data(),
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers.data(),
                              layers.size());
   fl_renderer_render(FL_RENDERER(renderer), kWidth, kHeight);
 
@@ -98,7 +97,7 @@ TEST(FlRendererTest, BlitFramebuffer) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
   fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
 }
 
@@ -132,7 +131,7 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
   fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
 }
 
@@ -161,7 +160,7 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
   fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
 }
 
@@ -191,6 +190,6 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
   fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
 }
