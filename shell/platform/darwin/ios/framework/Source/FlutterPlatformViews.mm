@@ -162,7 +162,8 @@ FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
   // platform views under an app bar continually adds and removes an
   // overlay layer. This logic could be removed if https://github.com/flutter/flutter/issues/150646
   // is fixed.
-  size_t erase_offset = std::max(available_layer_index_, 1u);
+  static constexpr size_t kLeakLayerCount = 1;
+  size_t erase_offset = std::max(available_layer_index_, kLeakLayerCount);
   layers_.erase(layers_.begin() + erase_offset, layers_.end());
   return results;
 }
