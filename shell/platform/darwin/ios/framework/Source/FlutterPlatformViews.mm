@@ -164,7 +164,9 @@ FlutterPlatformViewLayerPool::RemoveUnusedLayers() {
   // is fixed.
   static constexpr size_t kLeakLayerCount = 1;
   size_t erase_offset = std::max(available_layer_index_, kLeakLayerCount);
-  layers_.erase(layers_.begin() + erase_offset, layers_.end());
+  if (erase_offset < layers_.size()) {
+    layers_.erase(layers_.begin() + erase_offset, layers_.end());
+  }
   return results;
 }
 
