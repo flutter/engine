@@ -98,44 +98,44 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       impeller::ISize{size.width(), size.height()}  // fbo_size
   );
 
+  const impeller::RenderTarget& render_target =
+      surface->GetTargetRenderPassDescriptor();
+
   SurfaceFrame::EncodeCallback encode_calback =
-      fml::MakeCopyable([aiks_context = aiks_context_,  //
-                         surface = std::move(surface)   //
-  ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
-        if (!aiks_context) {
-          return false;
-        }
+      [aiks_context = aiks_context_,  //
+       render_target](SurfaceFrame& surface_frame,
+                      DlCanvas* canvas) mutable -> bool {
+    if (!aiks_context) {
+      return false;
+    }
 
-        auto display_list = surface_frame.BuildDisplayList();
-        if (!display_list) {
-          FML_LOG(ERROR) << "Could not build display list for surface frame.";
-          return false;
-        }
+    auto display_list = surface_frame.BuildDisplayList();
+    if (!display_list) {
+      FML_LOG(ERROR) << "Could not build display list for surface frame.";
+      return false;
+    }
 
-        auto cull_rect =
-            surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
-        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
-        display_list->Dispatch(
-            impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
-        const bool reset_host_buffer =
-            surface_frame.submit_info().frame_boundary;
+    auto cull_rect = render_target.GetRenderTargetSize();
+    impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
+    impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
+    display_list->Dispatch(impeller_dispatcher,
+                           SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+    auto picture = impeller_dispatcher.EndRecordingAsPicture();
+    const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 
-        const impeller::RenderTarget& render_target =
-            surface->GetTargetRenderPassDescriptor();
-        return aiks_context->Render(picture, render_target, reset_host_buffer);
-      });
+    return aiks_context->Render(picture, render_target, reset_host_buffer);
+  };
 
   return std::make_unique<SurfaceFrame>(
-      nullptr,                                   // surface
-      delegate_->GLContextFramebufferInfo(),     // framebuffer info
-      encode_calback,                            // encode callback
-      [](const SurfaceFrame&) { return true; },  // submit callback
-      size,                                      // frame size
-      std::move(context_switch),                 // context result
-      true                                       // display list fallback
+      nullptr,                                // surface
+      delegate_->GLContextFramebufferInfo(),  // framebuffer info
+      encode_calback,                         // encode callback
+      fml::MakeCopyable([surface = std::move(surface)](const SurfaceFrame&) {
+        return surface->Present();
+      }),                         // submit callback
+      size,                       // frame size
+      std::move(context_switch),  // context result
+      true                        // display list fallback
   );
 }
 

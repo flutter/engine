@@ -17,6 +17,10 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
+namespace impeller {
+class Surface;
+}
+
 namespace flutter {
 
 // This class represents a frame that has been fully configured for the
@@ -110,6 +114,14 @@ class SurfaceFrame {
 
   sk_sp<DisplayList> BuildDisplayList();
 
+  void set_user_data(std::shared_ptr<impeller::Surface> data) {
+    user_data_ = std::move(data);
+  }
+
+  std::shared_ptr<impeller::Surface> take_user_data() {
+    return std::move(user_data_);
+  }
+
  private:
   bool submitted_ = false;
   bool encoded_ = false;
@@ -124,6 +136,7 @@ class SurfaceFrame {
   SubmitInfo submit_info_;
   EncodeCallback encode_callback_;
   SubmitCallback submit_callback_;
+  std::shared_ptr<impeller::Surface> user_data_;
   std::unique_ptr<GLContextResult> context_result_;
 
   bool PerformSubmit();

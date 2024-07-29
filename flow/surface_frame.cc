@@ -62,7 +62,7 @@ bool SurfaceFrame::Encode() {
 
 bool SurfaceFrame::Submit() {
   TRACE_EVENT0("flutter", "SurfaceFrame::Submit");
-  if (!encoded_ && !Encode())  {
+  if (!encoded_ && !Encode()) {
     return false;
   }
 

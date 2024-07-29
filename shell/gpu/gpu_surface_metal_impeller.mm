@@ -62,7 +62,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },
+        [](const SurfaceFrame& surface_frame) { return true; }, frame_size);
   }
 
   switch (render_target_type_) {
@@ -102,6 +103,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 #endif  // IMPELLER_DEBUG
 
   id<MTLTexture> last_texture = static_cast<id<MTLTexture>>(last_texture_);
+
   SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([damage = damage_,
                          disable_partial_repaint = disable_partial_repaint_,  //
@@ -151,13 +153,17 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         }
 
         if (clip_rect && clip_rect->IsEmpty()) {
-          return true; //surface->Present();
+          surface_frame.set_user_data(std::move(surface));
+          return true;
         }
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 
         const impeller::RenderTarget& render_target = surface->GetTargetRenderPassDescriptor();
+        surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
+
+        surface_frame.set_user_data(std::move(surface));
 #if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
@@ -177,8 +183,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
         const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
-        surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
-
         return aiks_context->Render(picture, render_target, reset_host_buffer);
 #endif
       });
@@ -197,12 +201,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
     framebuffer_info.supports_partial_repaint = true;
   }
 
-  return std::make_unique<SurfaceFrame>(nullptr,           // surface
-                                        framebuffer_info,  // framebuffer info
-                                        submit_callback,   // submit callback
-                                        frame_size,        // frame size
-                                        nullptr,           // context result
-                                        true               // display list fallback
+  return std::make_unique<SurfaceFrame>(
+      nullptr,           // surface
+      framebuffer_info,  // framebuffer info
+      encode_callback,   // submit callback
+      [](SurfaceFrame& surface_frame) { return surface_frame.take_user_data()->Present(); },
+      frame_size,  // frame size
+      nullptr,     // context result
+      true         // display list fallback
   );
 }
 
