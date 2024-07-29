@@ -12,11 +12,8 @@
 
 namespace impeller {
 
-Renderer::Renderer(std::shared_ptr<Context> context,
-                   size_t max_frames_in_flight)
-    : frames_in_flight_sema_(std::make_shared<fml::Semaphore>(
-          std::max<std::size_t>(1u, max_frames_in_flight))),
-      context_(std::move(context)) {
+Renderer::Renderer(std::shared_ptr<Context> context)
+    : context_(std::move(context)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -47,13 +44,7 @@ bool Renderer::Render(std::unique_ptr<Surface> surface,
     return false;
   }
 
-  if (!frames_in_flight_sema_->Wait()) {
-    return false;
-  }
-
   const auto present_result = surface->Present();
-
-  frames_in_flight_sema_->Signal();
 
   return present_result;
 }
