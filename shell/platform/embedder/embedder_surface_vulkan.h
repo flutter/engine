@@ -17,7 +17,7 @@
 namespace flutter {
 
 class EmbedderSurfaceVulkan final : public EmbedderSurface,
-                                    public GPUSurfaceVulkanDelegate {
+                                    public SurfaceVulkanDelegate {
  public:
   struct VulkanDispatchTable {
     PFN_vkGetInstanceProcAddr get_instance_proc_address;  // required

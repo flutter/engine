@@ -73,7 +73,7 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGLSkia>(this, true);
+  return std::make_unique<SurfaceGLSkia>(this, true);
 }
 
 // |PlatformView|
@@ -114,7 +114,7 @@ GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
 }
 
 // |GPUSurfaceGLDelegate|
-GPUSurfaceGLDelegate::GLProcResolver
+SurfaceGLDelegate::GLProcResolver
 ShellTestPlatformViewGL::GetGLProcResolver() const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);

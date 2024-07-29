@@ -13,7 +13,7 @@
 namespace flutter {
 
 class EmbedderSurfaceGLSkia final : public EmbedderSurface,
-                                    public GPUSurfaceGLDelegate {
+                                    public SurfaceGLDelegate {
  public:
   struct GLDispatchTable {
     std::function<bool(void)> gl_make_current_callback;           // required

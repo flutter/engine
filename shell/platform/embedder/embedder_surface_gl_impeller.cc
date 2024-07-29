@@ -183,7 +183,7 @@ std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
   // current thread needs to be able to execute reactor operations.
   GLContextMakeCurrent();
 
-  return std::make_unique<GPUSurfaceGLImpeller>(
+  return std::make_unique<SurfaceGLImpeller>(
       this,                     // GPU surface GL delegate
       impeller_context_,        // Impeller context
       !external_view_embedder_  // render to surface

@@ -20,7 +20,7 @@ namespace flutter {
 class ReactorWorker;
 
 class EmbedderSurfaceGLImpeller final : public EmbedderSurface,
-                                        public GPUSurfaceGLDelegate {
+                                        public SurfaceGLDelegate {
  public:
   EmbedderSurfaceGLImpeller(
       EmbedderSurfaceGLSkia::GLDispatchTable gl_dispatch_table,

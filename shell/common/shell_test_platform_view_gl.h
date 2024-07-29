@@ -15,7 +15,7 @@ namespace flutter {
 namespace testing {
 
 class ShellTestPlatformViewGL : public ShellTestPlatformView,
-                                public GPUSurfaceGLDelegate {
+                                public SurfaceGLDelegate {
  public:
   ShellTestPlatformViewGL(PlatformView::Delegate& delegate,
                           const TaskRunners& task_runners,
