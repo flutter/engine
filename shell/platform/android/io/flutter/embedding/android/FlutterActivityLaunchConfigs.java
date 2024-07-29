@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.android;
 
-import javax.naming.Context;
 
 /** Collection of Flutter launch configuration options. */
 // This class is public so that Flutter app developers can reference
@@ -52,7 +51,7 @@ public class FlutterActivityLaunchConfigs {
    *
    * <p>Defaults to {@code true}.
    */
-  public static  boolean deepLinkEnabled(Bundle metaData) {
+  public static boolean deepLinkEnabled(Bundle metaData) {
     // Check if metadata is not null and contains the HANDLE_DEEPLINKING_META_DATA_KEY.
     if (metaData != null && metaData.containsKey(HANDLE_DEEPLINKING_META_DATA_KEY)) {
       return metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY);
