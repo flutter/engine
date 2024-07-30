@@ -58,7 +58,7 @@ bool CompositorOpenGL::CreateBackingStore(
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  gl_->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, config.size.width,
+  gl_->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, config.size.width,
                   config.size.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   gl_->BindTexture(GL_TEXTURE_2D, 0);
 
