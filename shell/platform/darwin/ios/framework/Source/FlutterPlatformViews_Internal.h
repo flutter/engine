@@ -320,11 +320,11 @@ class FlutterPlatformViewsController {
 
   /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
   void PerformSubmit(const LayersMap& platform_view_layers,
-                     const std::vector<SurfaceFrame::DeferredSubmit>& callbacks,
                      std::map<int64_t, EmbeddedViewParams>& current_composition_params,
                      const std::unordered_set<int64_t>& views_to_recomposite,
                      const std::vector<int64_t>& composition_order,
-                     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers);
+                     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
+                     std::vector<std::unique_ptr<SurfaceFrame>> surface_frames);
 
   /// @brief Populate any missing overlay layers.
   ///

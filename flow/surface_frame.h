@@ -31,9 +31,6 @@ class SurfaceFrame {
       std::function<bool(SurfaceFrame& surface_frame, DlCanvas* canvas)>;
   using SubmitCallback = std::function<bool(SurfaceFrame& surface_frame)>;
 
-  using DeferredSubmit = std::function<bool()>;
-  using SubmitReciever = std::function<void(DeferredSubmit)>;
-
   // Information about the underlying framebuffer
   struct FramebufferInfo {
     // Indicates whether or not the surface supports pixel readback as used in
@@ -98,8 +95,6 @@ class SurfaceFrame {
     bool frame_boundary = true;
 
     bool present_with_transaction = false;
-
-    SubmitReciever submit_receiver;
   };
 
   bool Encode();

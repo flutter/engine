@@ -58,11 +58,8 @@ class SurfaceMTL final : public Surface {
   // Returns a Rect defining the area of the surface in device pixels
   IRect coverage() const;
 
-  using DeferredSubmit = std::function<bool()>;
-  using SubmitReciever = std::function<void(DeferredSubmit)>;
-
-  void SetSubmitInfo(const SubmitReciever& submit_reciever) {
-    submit_reciever_ = submit_reciever;
+  void PresentWithTransaction(bool present_with_transaction) {
+    present_with_transaction_ = present_with_transaction;
   }
 
   // |Surface|
@@ -81,8 +78,7 @@ class SurfaceMTL final : public Surface {
   bool requires_blit_ = false;
   std::optional<IRect> clip_rect_;
   bool frame_boundary_ = false;
-
-  SubmitReciever submit_reciever_;
+  bool present_with_transaction_ = false;
 
   static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 

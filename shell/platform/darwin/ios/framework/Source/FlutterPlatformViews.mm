@@ -670,9 +670,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   }
   had_platform_views_ = true;
 
+  bool did_encode = true;
   LayersMap platform_view_layers;
-  std::vector<SurfaceFrame::DeferredSubmit> callbacks;
-  bool did_submit = true;
+  std::vector<std::unique_ptr<SurfaceFrame>> surface_frames;
   std::unordered_map<int64_t, SkRect> view_rects;
 
   for (int64_t view_id : composition_order_) {
@@ -724,56 +724,49 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
     // This flutter view is never the last in a frame, since we always submit the
     // underlay view last.
-    frame->set_submit_info(
-        {.frame_boundary = false,
-         .present_with_transaction = true,
-         .submit_receiver = [&callbacks](const SurfaceFrame::DeferredSubmit& cb) {
-           callbacks.push_back(cb);
-         }});
+    frame->set_submit_info({.frame_boundary = false, .present_with_transaction = true});
+    layer->did_submit_last_frame = frame->Encode();
 
-    layer->did_submit_last_frame = frame->Submit();
-
-    did_submit &= layer->did_submit_last_frame;
+    did_encode &= layer->did_submit_last_frame;
     platform_view_layers[view_id] = LayerData{
         .rect = overlay->second,   //
         .view_id = view_id,        //
         .overlay_id = overlay_id,  //
         .layer = layer             //
     };
+    surface_frames.push_back(std::move(frame));
     overlay_id++;
   }
 
-  background_frame->set_submit_info(
-      {.present_with_transaction = true,
-       .submit_receiver = [&callbacks](const SurfaceFrame::DeferredSubmit& cb) {
-         callbacks.push_back(cb);
-       }});
-  did_submit &= background_frame->Submit();
+  background_frame->set_submit_info({.present_with_transaction = true});
+  background_frame->Encode();
+  surface_frames.push_back(std::move(background_frame));
 
   // Mark all layers as available, so they can be used in the next frame.
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> unused_layers =
       layer_pool_->RemoveUnusedLayers();
   layer_pool_->RecycleLayers();
 
-  auto task = [&, platform_view_layers = std::move(platform_view_layers),  //
-               current_composition_params = current_composition_params_,   //
-               views_to_recomposite = views_to_recomposite_,               //
-               callbacks = std::move(callbacks),                           //
-               composition_order = composition_order_,                     //
-               unused_layers = std::move(unused_layers)                    //
+  auto task = [&,                                                         //
+               platform_view_layers = std::move(platform_view_layers),    //
+               current_composition_params = current_composition_params_,  //
+               views_to_recomposite = views_to_recomposite_,              //
+               composition_order = composition_order_,                    //
+               unused_layers = std::move(unused_layers),                  //
+               surface_frames = std::move(surface_frames)                 //
   ]() mutable {
     PerformSubmit(platform_view_layers,        //
-                  callbacks,                   //
                   current_composition_params,  //
                   views_to_recomposite,        //
                   composition_order,           //
-                  unused_layers                //
+                  unused_layers,               //
+                  std::move(surface_frames)    //
     );
   };
 
-  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, task);
+  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, fml::MakeCopyable(std::move(task)));
 
-  return did_submit;
+  return did_encode;
 }
 
 void FlutterPlatformViewsController::CreateMissingOverlays(
@@ -814,11 +807,11 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
 /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
 void FlutterPlatformViewsController::PerformSubmit(
     const LayersMap& platform_view_layers,
-    const std::vector<SurfaceFrame::DeferredSubmit>& callbacks,
     std::map<int64_t, EmbeddedViewParams>& current_composition_params,
     const std::unordered_set<int64_t>& views_to_recomposite,
     const std::vector<int64_t>& composition_order,
-    const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers) {
+    const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
+    std::vector<std::unique_ptr<SurfaceFrame>> surface_frames) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::PerformSubmit");
   FML_DCHECK([[NSThread currentThread] isMainThread]);
 
@@ -844,8 +837,8 @@ void FlutterPlatformViewsController::PerformSubmit(
   }
 
   // Present callbacks.
-  for (const auto& cb : callbacks) {
-    cb();
+  for (const auto& frame : surface_frames) {
+    frame->Submit();
   }
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,

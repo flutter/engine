@@ -161,7 +161,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         if (!surface) {
           return false;
         }
-        surface->SetSubmitInfo(surface_frame.submit_info().submit_receiver);
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
 
         if (clip_rect && clip_rect->IsEmpty()) {
           surface_frame.set_user_data(std::move(surface));
@@ -282,7 +282,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         auto surface = impeller::SurfaceMTL::MakeFromTexture(aiks_context->GetContext(),
                                                              mtl_texture, clip_rect);
 
-        surface->SetSubmitInfo(surface_frame.submit_info().submit_receiver);
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
 
         if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
