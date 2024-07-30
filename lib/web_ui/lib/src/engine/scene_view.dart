@@ -312,7 +312,7 @@ final class PictureSliceContainer extends SliceContainer {
 
 final class PlatformViewContainer extends SliceContainer {
   PlatformViewContainer(this.viewId, this._clipRegistry) :
-    container = createDomHTMLDivElement(),
+    container = createDomElement('flt-clip'),
     slot = createPlatformViewSlot(viewId) {
       container.appendChild(slot);
   }

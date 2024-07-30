@@ -128,13 +128,18 @@ void testMain() {
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
-    expect(children.length, 1);
-    final DomElement containerElement = children.first;
-    expect(
-        containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
+
+    // The scene element should have two children: the canvas container, and the
+    // SVG element for storing any clip paths that are needed for platform view
+    // clipping.
+    expect(children.length, 2);
+    final DomElement? containerElement = children.firstWhereOrNull(
+      (DomElement element) => element.tagName.toLowerCase() == 'flt-canvas-container'
+    );
+    expect(containerElement, isNotNull);
 
     final List<DomElement> containerChildren =
-        containerElement.children.toList();
+        containerElement!.children.toList();
     expect(containerChildren.length, 1);
     final DomElement canvasElement = containerChildren.first;
     final DomCSSStyleDeclaration style = canvasElement.style;
@@ -161,11 +166,20 @@ void testMain() {
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
-    expect(children.length, 1);
-    final DomElement containerElement = children.first;
-    expect(
-        containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
 
+    // The scene element should have two children: the platform view clip
+    // container and the SVG element for storing any clip paths that are
+    // needed for platform view clipping.
+    expect(children.length, 2);
+    final DomElement? clipElement = children.firstWhereOrNull(
+      (DomElement element) => element.tagName.toLowerCase() == 'flt-clip'
+    );
+    expect(clipElement, isNotNull);
+
+    final List<DomElement> clipChildren = clipElement!.children.toList();
+    expect(clipChildren.length, 1);
+
+    final DomElement containerElement = clipChildren.first;
     final DomCSSStyleDeclaration style = containerElement.style;
     expect(style.left, '');
     expect(style.top, '');

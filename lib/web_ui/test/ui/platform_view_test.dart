@@ -34,6 +34,8 @@ Future<void> testMain() async {
       (int viewId) {
         final DomElement element = createDomHTMLDivElement();
         element.style.backgroundColor = 'blue';
+        element.style.width = '100%';
+        element.style.height = '100%';
         return element;
       }
     );
