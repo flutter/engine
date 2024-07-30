@@ -141,10 +141,6 @@ void EntityPass::PopAllClips(uint64_t depth) {
   PopClips(active_clips_.size(), depth);
 }
 
-void EntityPass::FlushDrawOrder() {
-  draw_order_resolver_.Flush();
-}
-
 void EntityPass::SetElements(std::vector<Element> elements) {
   elements_ = std::move(elements);
 }
@@ -280,8 +276,7 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   FML_DCHECK(pass->superpass_ == nullptr);
   pass->superpass_ = this;
 
-  bool has_backdrop_filter = pass->backdrop_filter_proc_ != nullptr;
-  if (has_backdrop_filter) {
+  if (pass->backdrop_filter_proc_) {
     backdrop_filter_reads_from_pass_texture_ = true;
 
     // Since backdrop filters trigger the RenderPass to end and lose all depth
