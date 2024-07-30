@@ -17,11 +17,11 @@ void PlatformViewLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   // Ensure that Diff is called again even if this layer is in retained subtree.
   context->MarkSubtreeHasVolatileLayer();
-  // It is not necessary to track the actual paint region for the layer due to
-  // forced full repaint below, but the paint region carries the volatile layer
-  // flag.
+  // Partial repaint is disabled when platform view is present. This will also
+  // set whole frame as the layer paint region, which will ensure full repaint
+  // when the layer is removed.
+  context->RepaintEntireFrame();
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
-  context->ForceFullRepaint();
 }
 
 void PlatformViewLayer::Preroll(PrerollContext* context) {

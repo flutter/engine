@@ -162,10 +162,6 @@ bool DiffContext::PushCullRect(const SkRect& clip) {
   return !state_.matrix_clip.device_cull_rect().isEmpty();
 }
 
-void DiffContext::ForceFullRepaint() {
-  damage_ = SkRect::MakeIWH(frame_size_.width(), frame_size_.height());
-}
-
 SkMatrix DiffContext::GetTransform3x3() const {
   return state_.matrix_clip.matrix_3x3();
 }
@@ -205,6 +201,12 @@ void DiffContext::AddLayerBounds(const SkRect& rect) {
       AddDamage(transformed_rect);
     }
   }
+}
+
+void DiffContext::RepaintEntireFrame() {
+  auto frame_rect = SkRect::MakeIWH(frame_size_.width(), frame_size_.height());
+  rects_->push_back(frame_rect);
+  AddDamage(frame_rect);
 }
 
 void DiffContext::MarkSubtreeHasVolatileLayer() {

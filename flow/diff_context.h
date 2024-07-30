@@ -77,9 +77,6 @@ class DiffContext {
   // Pushes cull rect for current subtree
   bool PushCullRect(const SkRect& clip);
 
-  // Marks entire frame as dirty.
-  void ForceFullRepaint();
-
   // Function that adjusts layer bounds (in device coordinates) depending
   // on filter.
   using FilterBoundsAdjustment = std::function<SkRect(SkRect)>;
@@ -118,6 +115,9 @@ class DiffContext {
   // Add layer bounds to current paint region; rect is in "local" (layer)
   // coordinates.
   void AddLayerBounds(const SkRect& rect);
+
+  // Marks entire frame as dirty.
+  void RepaintEntireFrame();
 
   // Add entire paint region of retained layer for current subtree. This can
   // only be used in subtrees that are not dirty, otherwise ancestor transforms
