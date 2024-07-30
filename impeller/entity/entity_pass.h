@@ -54,6 +54,8 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
+  static bool IsSubpass(const Element& element);
+
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
@@ -215,8 +217,7 @@ class EntityPass {
       kSkip,
     };
 
-    /// @brief  The resulting entity that should be rendered. If `std::nullopt`,
-    ///         there is nothing to render.
+    /// @brief  The resulting entity that should be rendered.
     Entity entity;
     /// @brief  This is set to `false` if there was an unexpected rendering
     ///         error while resolving the Entity.
