@@ -252,6 +252,42 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
+void OnPointerDown(FlEngine* self,
+                   FlutterViewId view_id,
+                   double x,
+                   double y,
+                   FlutterPointerDeviceKind device_kind,
+                   int32_t device_id,
+                   FlutterPointerMouseButtons flutter_button);
+
+void OnPointerUp(FlEngine* self,
+                 FlutterViewId view_id,
+                 double x,
+                 double y,
+                 FlutterPointerDeviceKind device_kind,
+                 int32_t device_id,
+                 FlutterPointerMouseButtons flutter_button);
+
+void OnPointerLeave(FlEngine* self,
+                    FlutterViewId view_id,
+                    double x,
+                    double y,
+                    FlutterPointerDeviceKind device_kind,
+                    int32_t device_id);
+
+void OnPointerMove(FlEngine* self,
+                   FlutterViewId view_id,
+                   double x,
+                   double y,
+                   FlutterPointerDeviceKind device_kind,
+                   int32_t device_id,
+                   int modifiers_state);
+
+void SendPointerEventWithData(FlEngine* engine,
+                              FlutterViewId view_id,
+                              const FlutterPointerEvent& event_data,
+                              PointerState* state);
+
 /**
  * fl_engine_send_pointer_pan_zoom_event:
  * @engine: an #FlEngine.
