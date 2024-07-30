@@ -6,19 +6,27 @@ import '../dom.dart';
 import '../semantics.dart';
 import '../util.dart';
 
-/// Provides accessibility for routes, including dialogs and pop-up menus.
-class SemanticDialog extends SemanticRole {
-  SemanticDialog(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.dialog, semanticsObject) {
-    // The following behaviors can coexist with dialog. Generic `RouteName`
-    // and `LabelAndValue` are not used by this role because when the dialog
-    // names its own route an `aria-label` is used instead of `aria-describedby`.
+/// Denotes that all descendant nodes are inside a route.
+///
+/// Routes can include dialogs, pop-up menus, sub-screens, and more.
+///
+/// See also:
+///
+///   * [RouteName], which provides a description for this route in the absense
+///     of an explicit route label set on the route itself.
+class SemanticRoute extends SemanticRole {
+  SemanticRoute(SemanticsObject semanticsObject) : super.blank(SemanticRoleKind.route, semanticsObject) {
+    // The following behaviors can coexist with the route. Generic `RouteName`
+    // and `LabelAndValue` are not used by this role because when the route
+    // names its own route an `aria-label` is used instead of
+    // `aria-describedby`.
     addFocusManagement();
     addLiveRegion();
 
-    // When a route/dialog shows up it is expected that the screen reader will
-    // focus on something inside it. There could be two possibilities:
+    // When a route is pushed it is expected that the screen reader will focus
+    // on something inside it. There could be two possibilities:
     //
-    // 1. The framework explicitly marked a node inside the dialog as focused
+    // 1. The framework explicitly marked a node inside the route as focused
     //    via the `isFocusable` and `isFocused` flags. In this case, the node
     //    will request focus directly and there's nothing to do on top of that.
     // 2. No node inside the route takes focus explicitly. In this case, the
@@ -53,103 +61,114 @@ class SemanticDialog extends SemanticRole {
   void update() {
     super.update();
 
-    // If semantic object corresponding to the dialog also provides the label
-    // for itself it is applied as `aria-label`. See also [describeBy].
+    // If semantic object corresponding to the route also provides the label for
+    // itself it is applied as `aria-label`. See also [describeBy].
     if (semanticsObject.namesRoute) {
       final String? label = semanticsObject.label;
       assert(() {
         if (label == null || label.trim().isEmpty) {
           printWarning(
             'Semantic node ${semanticsObject.id} had both scopesRoute and '
-            'namesRoute set, indicating a self-labelled dialog, but it is '
-            'missing the label. A dialog should be labelled either by setting '
+            'namesRoute set, indicating a self-labelled route, but it is '
+            'missing the label. A route should be labelled either by setting '
             'namesRoute on itself and providing a label, or by containing a '
             'child node with namesRoute that can describe it with its content.'
           );
         }
         return true;
       }());
+
       setAttribute('aria-label', label ?? '');
-      setAriaRole('dialog');
+      _assignRole();
     }
   }
 
-  /// Sets the description of this dialog based on a [RouteName] descendant
-  /// node, unless the dialog provides its own label.
+  /// Sets the description of this route based on a [RouteName] descendant
+  /// node, unless the route provides its own label.
   void describeBy(RouteName routeName) {
     if (semanticsObject.namesRoute) {
-      // The dialog provides its own label, which takes precedence.
+      // The route provides its own label, which takes precedence.
       return;
     }
 
-    setAriaRole('dialog');
+    _assignRole();
     setAttribute(
       'aria-describedby',
       routeName.semanticsObject.element.id,
     );
   }
 
+  void _assignRole() {
+    // Lacking any more specific information, ARIA role "dialog" is the
+    // closest thing to Flutter's route. This can be revisited if better
+    // options become available, especially if the framework volunteers more
+    // specific information about the route. Other attributes in the vicinity
+    // of routes include: "alertdialog", `aria-modal`, "menu", "tooltip".
+    setAriaRole('dialog');
+  }
+
   @override
   bool focusAsRouteDefault() {
-    // Dialogs are the ones that look inside themselves to find elements to
-    // focus on. It doesn't make sense to focus on the dialog itself.
+    // Routes are the ones that look inside themselves to find elements to
+    // focus on. It doesn't make sense to focus on the route itself.
     return false;
   }
 }
 
-/// Supplies a description for the nearest ancestor [SemanticDialog].
+/// Supplies a description for the nearest ancestor [SemanticRoute].
 ///
 /// This role is assigned to nodes that have `namesRoute` set but not
-/// `scopesRoute`. When both flags are set the node only gets the [SemanticDialog] role.
+/// `scopesRoute`. When both flags are set the node only gets the
+/// [SemanticRoute] role.
 ///
-/// If the ancestor dialog is missing, this role has no effect. It is up to the
-/// framework, widget, and app authors to make sure a route name is scoped under
-/// a route.
+/// If the ancestor route is missing, this role has no effect. It is up to the
+/// framework, widget, and app authors to make sure a route name is scoped
+/// under a route.
 class RouteName extends SemanticBehavior {
   RouteName(super.semanticsObject, super.owner);
 
-  SemanticDialog? _dialog;
+  SemanticRoute? _route;
 
   @override
   void update() {
     // NOTE(yjbanov): this does not handle the case when the node structure
-    // changes such that this RouteName is no longer attached to the same
-    // dialog. While this is technically expressible using the semantics API,
-    // after discussing this case with customers I decided that this case is not
+    // changes such that this RouteName is no longer attached to the same route.
+    // While this is technically expressible using the semantics API, after
+    // discussing this case with customers I decided that this case is not
     // interesting enough to support. A tree restructure like this is likely to
     // confuse screen readers, and it would add complexity to the engine's
     // semantics code. Since reparenting can be done with no update to either
-    // the Dialog or RouteName we'd have to scan intermediate nodes for
-    // structural changes.
+    // the SemanticRoute or RouteName we'd have to scan intermediate nodes
+    // for structural changes.
     if (!semanticsObject.namesRoute) {
       return;
     }
 
     if (semanticsObject.isLabelDirty) {
-      final SemanticDialog? dialog = _dialog;
-      if (dialog != null) {
-        // Already attached to a dialog, just update the description.
-        dialog.describeBy(this);
+      final SemanticRoute? route = _route;
+      if (route != null) {
+        // Already attached to a route, just update the description.
+        route.describeBy(this);
       } else {
         // Setting the label for the first time. Wait for the DOM tree to be
-        // established, then find the nearest dialog and update its label.
+        // established, then find the nearest route and update its label.
         semanticsObject.owner.addOneTimePostUpdateCallback(() {
           if (!isDisposed) {
-            _lookUpNearestAncestorDialog();
-            _dialog?.describeBy(this);
+            _lookUpNearestAncestorRoute();
+            _route?.describeBy(this);
           }
         });
       }
     }
   }
 
-  void _lookUpNearestAncestorDialog() {
+  void _lookUpNearestAncestorRoute() {
     SemanticsObject? parent = semanticsObject.parent;
-    while (parent != null && parent.semanticRole?.kind != SemanticRoleKind.dialog) {
+    while (parent != null && parent.semanticRole?.kind != SemanticRoleKind.route) {
       parent = parent.parent;
     }
-    if (parent != null && parent.semanticRole?.kind == SemanticRoleKind.dialog) {
-      _dialog = parent.semanticRole! as SemanticDialog;
+    if (parent != null && parent.semanticRole?.kind == SemanticRoleKind.route) {
+      _route = parent.semanticRole! as SemanticRoute;
     }
   }
 }
