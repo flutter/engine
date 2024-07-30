@@ -323,7 +323,7 @@ class FlutterPlatformViewsController {
                      const std::unordered_set<int64_t>& views_to_recomposite,
                      const std::vector<int64_t>& composition_order,
                      const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
-                     std::vector<std::unique_ptr<SurfaceFrame>> surface_frames);
+                     const std::vector<std::unique_ptr<SurfaceFrame>>& surface_frames);
 
   /// @brief Populate any missing overlay layers.
   ///

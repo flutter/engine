@@ -760,7 +760,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                   views_to_recomposite,        //
                   composition_order,           //
                   unused_layers,               //
-                  std::move(surface_frames)    //
+                  surface_frames               //
     );
   };
 
@@ -811,7 +811,7 @@ void FlutterPlatformViewsController::PerformSubmit(
     const std::unordered_set<int64_t>& views_to_recomposite,
     const std::vector<int64_t>& composition_order,
     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
-    std::vector<std::unique_ptr<SurfaceFrame>> surface_frames) {
+    const std::vector<std::unique_ptr<SurfaceFrame>>& surface_frames) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::PerformSubmit");
   FML_DCHECK([[NSThread currentThread] isMainThread]);
 
