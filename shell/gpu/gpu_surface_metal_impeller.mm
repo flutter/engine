@@ -112,13 +112,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
                          last_texture,                                        //
                          mtl_layer                                            //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
-        // When there are platform views in the scene, the drawable needs to be presented in the
-        // same transaction as the one created for platform views. When the drawable are being
-        // presented from the raster thread, we may not be able to use a transaction as it will
-        // dirty the UIViews being presented. If there is a non-Flutter UIView active, such as in
-        // add2app or a presentViewController page transition, then this will cause CoreAnimation
-        // assertion errors and
-        // exit the app.
         mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
 
         if (!aiks_context) {
