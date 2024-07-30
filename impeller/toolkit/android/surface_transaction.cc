@@ -11,7 +11,8 @@
 namespace impeller::android {
 
 SurfaceTransaction::SurfaceTransaction()
-    : transaction_(WrappedSurfaceTransaction{GetProcTable().ASurfaceTransaction_create(), true}) {}
+    : transaction_(WrappedSurfaceTransaction{
+          GetProcTable().ASurfaceTransaction_create(), true}) {}
 
 SurfaceTransaction::~SurfaceTransaction() = default;
 
@@ -41,7 +42,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
   data->callback = callback;
   proc_table.ASurfaceTransaction_setOnComplete(
       transaction_.get().tx,  //
-      data.release(),      //
+      data.release(),         //
       [](void* context, ASurfaceTransactionStats* stats) -> void {
         auto data = reinterpret_cast<TransactionInFlightData*>(context);
         data->callback(stats);
@@ -65,14 +66,8 @@ bool SurfaceTransaction::SetContents(const SurfaceControl* control,
     VALIDATION_LOG << "Invalid control or buffer.";
     return false;
   }
-
-  const auto& proc_table = GetProcTable();
-
-  proc_table.ASurfaceTransaction_setEnableBackPressure(
-      transaction_.get().tx, control->GetHandle(), true);
-
-  proc_table.ASurfaceTransaction_setBuffer(
-      transaction_.get().tx,                                      //
+  GetProcTable().ASurfaceTransaction_setBuffer(
+      transaction_.get().tx,                                   //
       control->GetHandle(),                                    //
       buffer->GetHandle(),                                     //
       acquire_fence.is_valid() ? acquire_fence.release() : -1  //
@@ -86,7 +81,7 @@ bool SurfaceTransaction::SetBackgroundColor(const SurfaceControl& control,
     return false;
   }
 
-  GetProcTable().ASurfaceTransaction_setColor(transaction_.get().tx,     //
+  GetProcTable().ASurfaceTransaction_setColor(transaction_.get().tx,  //
                                               control.GetHandle(),    //
                                               color.red,              //
                                               color.green,            //
@@ -106,7 +101,7 @@ bool SurfaceTransaction::SetParent(const SurfaceControl& control,
     return false;
   }
   GetProcTable().ASurfaceTransaction_reparent(
-      transaction_.get().tx,                                        //
+      transaction_.get().tx,                                     //
       control.GetHandle(),                                       //
       new_parent == nullptr ? nullptr : new_parent->GetHandle()  //
   );

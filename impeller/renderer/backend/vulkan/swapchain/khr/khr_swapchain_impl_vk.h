@@ -12,7 +12,6 @@
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/swapchain/swapchain_transients_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/toolkit/android/surface_transaction.h"
 
 namespace impeller {
 

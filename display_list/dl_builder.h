@@ -117,6 +117,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
+  void ClipOval(const SkRect& bounds,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
+  // |DlCanvas|
   void ClipRRect(const SkRRect& rrect,
                  ClipOp clip_op = ClipOp::kIntersect,
                  bool is_aa = false) override;
@@ -400,6 +404,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
     ClipRect(rect, clip_op, is_aa);
   }
   // |DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override {
+    ClipOval(bounds, clip_op, is_aa);
+  }
+  // |DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override {
     ClipRRect(rrect, clip_op, is_aa);
   }
@@ -546,6 +554,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool opacity_incompatible_op_detected = false;
     bool affects_transparent_layer = false;
     bool contains_backdrop_filter = false;
+    bool is_unbounded = false;
 
     bool is_group_opacity_compatible() const {
       return !opacity_incompatible_op_detected &&

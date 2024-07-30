@@ -267,7 +267,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -293,7 +293,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });
@@ -479,7 +479,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -498,7 +498,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -579,7 +579,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -598,7 +598,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -684,7 +684,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -703,7 +703,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -774,7 +774,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -792,7 +792,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });
@@ -864,7 +864,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   auto frame_size = SkISize::Make(1000, 1000);
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [gr_context, window, frame_size, framebuffer_info]() {
+      [gr_context, window, frame_size, framebuffer_info, jni_mock]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
@@ -882,7 +882,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });

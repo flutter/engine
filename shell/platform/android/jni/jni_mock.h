@@ -59,9 +59,9 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (JavaLocalRef surface_texture),
               (override));
 
-  MOCK_METHOD(void,
+  MOCK_METHOD(SkM44,
               SurfaceTextureGetTransformMatrix,
-              (JavaLocalRef surface_texture, SkMatrix& transform),
+              (JavaLocalRef surface_texture),
               (override));
 
   MOCK_METHOD(JavaLocalRef,
@@ -98,10 +98,12 @@ class JNIMock final : public PlatformViewAndroidJNI {
                MutatorsStack mutators_stack),
               (override));
 
-  MOCK_METHOD(void,
+  MOCK_METHOD(ASurfaceTransaction*,
               FlutterViewDisplayOverlaySurface,
               (int surface_id, int x, int y, int width, int height),
               (override));
+
+  MOCK_METHOD(bool,  FlutterViewHasCurrentSyncGroup, (), (override));
 
   MOCK_METHOD(void, FlutterViewBeginFrame, (), (override));
 

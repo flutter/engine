@@ -72,7 +72,9 @@ AHBSwapchainImplVK::AHBSwapchainImplVK(
   }
   transients_ = std::make_shared<SwapchainTransientsVK>(
       context, ToSwapchainTextureDescriptor(desc_), enable_msaa);
-  is_valid_ = true;
+
+  auto control = surface_control_.lock();
+  is_valid_ = control && control->IsValid();
 }
 
 AHBSwapchainImplVK::~AHBSwapchainImplVK() = default;
