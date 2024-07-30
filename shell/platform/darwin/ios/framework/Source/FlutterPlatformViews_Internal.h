@@ -11,7 +11,6 @@
 #include "third_party/skia/include/core/SkRect.h"
 
 #include <Metal/Metal.h>
-#include <mutex>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/memory/weak_ptr.h"
