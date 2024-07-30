@@ -1268,6 +1268,44 @@ TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
   engine = nil;
 }
 
+TEST_F(FlutterEngineTest, ReportsHourFormat) {
+  // Setup test.
+  // NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
+  FlutterBasicMessageChannel* channel =
+      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/settings"
+                                       binaryMessenger:binaryMessenger
+                                                 codec:codec];
+  id channelMock = OCMPartialMock(channel);
+
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([settingsChannel messageChannelWithName:@"flutter/settings"
+                                  binaryMessenger:[OCMArg any]
+                                            codec:[OCMArg any]])
+      .andReturn(channelMock);
+
+  id mockHourFormat = OCMClassMock([FlutterHourFormat class]);
+  OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(YES);
+
+  EXPECT_TRUE([engineMock runWithEntrypoint:@"main"]);
+
+  OCMExpect([channelMock sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                           return message[@"alwaysUse24HourFormat"];
+                         }]]);
+
+  // Clean up
+  [engineMock shutDownEngine];
+  engineMock = nil;
+
+  [binaryMessenger stopMocking];
+  [codec stopMocking];
+  [settingsChannel stopMocking];
+  [mockHourFormat stopMocking];
+}
+
 }  // namespace flutter::testing
 
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)
