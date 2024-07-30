@@ -697,6 +697,10 @@ void Canvas::RestoreClip() {
   entity.SetContents(std::move(clip_restore));
 
   AddRenderEntityToCurrentPass(std::move(entity));
+
+  // Force a draw order barrier to ensure subsequent opaque items won't end up
+  // getting this clip's scissor applied.
+  GetCurrentPass().FlushDrawOrder();
 }
 
 void Canvas::DrawPoints(std::vector<Point> points,

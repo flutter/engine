@@ -103,6 +103,8 @@ class EntityPass {
 
   void PopAllClips(uint64_t depth);
 
+  void FlushDrawOrder();
+
   void SetElements(std::vector<Element> elements);
 
   //----------------------------------------------------------------------------
