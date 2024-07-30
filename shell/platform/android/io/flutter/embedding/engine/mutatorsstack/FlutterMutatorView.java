@@ -4,7 +4,9 @@ import static android.view.View.OnFocusChangeListener;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,7 +17,6 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
 
@@ -104,36 +105,35 @@ public class FlutterMutatorView extends FrameLayout {
     setWillNotDraw(false);
   }
 
-  // @Override
-  // public void draw(Canvas canvas) {
-  //   // Apply all clippings on the parent canvas.
-  //   canvas.save();
-  //   // canvas.translate(this.left, this.top);
-  //   for (Path path : mutatorsStack.getFinalClippingPaths()) {
-  //     // Reverse the current offset.
-  //     //
-  //     // The frame of this view includes the final offset of the bounding rect.
-  //     // We need to apply all the mutators to the view, which includes the mutation that leads to
-  //     // the final offset. We should reverse this final offset, both as a translate mutation and
-  // to
-  //     // all the clipping paths
-  //     Path pathCopy = new Path(path);
-  //     pathCopy.offset(-left, -top);
-  //     canvas.clipPath(pathCopy);
-  //   }
-  //   super.draw(canvas);
-  //   canvas.restore();
-  // }
+  @Override
+  public void draw(Canvas canvas) {
+    // Apply all clippings on the parent canvas.
+    canvas.save();
+    // canvas.translate(this.left, this.top);
+    for (Path path : mutatorsStack.getFinalClippingPaths()) {
+      // Reverse the current offset.
+      //
+      // The frame of this view includes the final offset of the bounding rect.
+      // We need to apply all the mutators to the view, which includes the mutation that leads to
+      // the final offset. We should reverse this final offset, both as a translate mutation and
+      // to all the clipping paths
+      Path pathCopy = new Path(path);
+      pathCopy.offset(-left, -top);
+      canvas.clipPath(pathCopy);
+    }
+    super.draw(canvas);
+    canvas.restore();
+  }
 
-  // @Override
-  // public void dispatchDraw(Canvas canvas) {
-  //   // Apply all the transforms on the child canvas.
-  //   canvas.save();
+  @Override
+  public void dispatchDraw(Canvas canvas) {
+    // Apply all the transforms on the child canvas.
+    canvas.save();
 
-  //   canvas.concat(getPlatformViewMatrix());
-  //   super.dispatchDraw(canvas);
-  //   canvas.restore();
-  // }
+    canvas.concat(getPlatformViewMatrix());
+    super.dispatchDraw(canvas);
+    canvas.restore();
+  }
 
   private Matrix getPlatformViewMatrix() {
     Matrix finalMatrix = new Matrix(mutatorsStack.getFinalMatrix());
@@ -153,7 +153,7 @@ public class FlutterMutatorView extends FrameLayout {
     // We need to apply all the mutators to the view, which includes the mutation that leads to
     // the final offset. We should reverse this final offset, both as a translate mutation and to
     // all the clipping paths
-    // finalMatrix.postTranslate(-left, -top);
+    finalMatrix.postTranslate(-left, -top);
 
     return finalMatrix;
   }
@@ -161,7 +161,7 @@ public class FlutterMutatorView extends FrameLayout {
   /** Intercept the events here and do not propagate them to the child platform views. */
   @Override
   public boolean onInterceptTouchEvent(MotionEvent event) {
-    return false;
+    return true;
   }
 
   @Override
@@ -185,33 +185,27 @@ public class FlutterMutatorView extends FrameLayout {
     if (androidTouchProcessor == null) {
       return super.onTouchEvent(event);
     }
-    if (!super.onTouchEvent(event)) {
-      Log.e("FLUTTER", "Touch event not handled");
-      final Matrix screenMatrix = new Matrix();
-      return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+
+    final Matrix screenMatrix = new Matrix();
+
+    switch (event.getAction()) {
+      case MotionEvent.ACTION_DOWN:
+        prevLeft = left;
+        prevTop = top;
+        screenMatrix.postTranslate(left, top);
+        break;
+      case MotionEvent.ACTION_MOVE:
+        // While the view is dragged, use the left and top positions as
+        // they were at the moment the touch event fired.
+        screenMatrix.postTranslate(prevLeft, prevTop);
+        prevLeft = left;
+        prevTop = top;
+        break;
+      case MotionEvent.ACTION_UP:
+      default:
+        screenMatrix.postTranslate(left, top);
+        break;
     }
-    return true;
-
-    // final Matrix screenMatrix = new Matrix();
-
-    // switch (event.getAction()) {
-    //   case MotionEvent.ACTION_DOWN:
-    //     prevLeft = left;
-    //     prevTop = top;
-    //     screenMatrix.postTranslate(left, top);
-    //     break;
-    //   case MotionEvent.ACTION_MOVE:
-    //     // While the view is dragged, use the left and top positions as
-    //     // they were at the moment the touch event fired.
-    //     screenMatrix.postTranslate(prevLeft, prevTop);
-    //     prevLeft = left;
-    //     prevTop = top;
-    //     break;
-    //   case MotionEvent.ACTION_UP:
-    //   default:
-    //     screenMatrix.postTranslate(left, top);
-    //     break;
-    // }
-    // return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+    return androidTouchProcessor.onTouchEvent(event, screenMatrix);
   }
 }
