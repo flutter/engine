@@ -160,5 +160,25 @@ TEST_F(PlatformViewLayerDiffTest, PlatformViewRetainedLayer) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 800, 600));
 }
 
+TEST_F(PlatformViewLayerDiffTest, FullRepaintAfterRemovingLayer) {
+  MockLayerTree tree1(SkISize::Make(800, 600));
+  auto container = std::make_shared<ContainerLayer>();
+  tree1.root()->Add(container);
+  auto layer = std::make_shared<PlatformViewLayer>(SkPoint::Make(100, 100),
+                                                   SkSize::Make(100, 100), 0);
+  container->Add(layer);
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree(SkISize::Make(800, 600)));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 800, 600));
+
+  // Second layer tree with the PlatformViewLayer removed.
+  MockLayerTree tree2(SkISize::Make(800, 600));
+  auto container2 = std::make_shared<ContainerLayer>();
+  tree2.root()->Add(container2);
+
+  damage = DiffLayerTree(tree2, tree1);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 800, 600));
+}
+
 }  // namespace testing
 }  // namespace flutter
