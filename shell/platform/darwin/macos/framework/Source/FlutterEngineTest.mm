@@ -1269,40 +1269,28 @@ TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
 }
 
 TEST_F(FlutterEngineTest, ReportsHourFormat) {
-  // Setup test.
-  // NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  id engineMock = CreateMockFlutterEngine(nil);
-
-  id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  FlutterBasicMessageChannel* channel =
-      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/settings"
-                                       binaryMessenger:binaryMessenger
-                                                 codec:codec];
-  id channelMock = OCMPartialMock(channel);
-
-  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([settingsChannel messageChannelWithName:@"flutter/settings"
-                                  binaryMessenger:[OCMArg any]
-                                            codec:[OCMArg any]])
-      .andReturn(channelMock);
-
   id mockHourFormat = OCMClassMock([FlutterHourFormat class]);
   OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(YES);
 
-  EXPECT_TRUE([engineMock runWithEntrypoint:@"main"]);
+  id channelMock = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([channelMock messageChannelWithName:@"flutter/settings"
+                              binaryMessenger:[OCMArg any]
+                                        codec:[OCMArg any]])
+      .andReturn(channelMock);
 
-  OCMExpect([channelMock sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-                           return message[@"alwaysUse24HourFormat"];
-                         }]]);
+  OCMStub([channelMock sendMessage:[OCMArg any]]).andDo((^(NSInvocation* invocation) {
+    __weak id message;
+    [invocation getArgument:&message atIndex:2];
+    EXPECT_TRUE(message[@"alwaysUse24HourFormat"]);
+  }));
+
+  id engineMock = CreateMockFlutterEngine(nil);
+  EXPECT_TRUE([engineMock runWithEntrypoint:@"main"]);
 
   // Clean up
   [engineMock shutDownEngine];
-  engineMock = nil;
-
-  [binaryMessenger stopMocking];
-  [codec stopMocking];
-  [settingsChannel stopMocking];
+  [engineMock stopMocking];
+  [channelMock stopMocking];
   [mockHourFormat stopMocking];
 }
 
