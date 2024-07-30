@@ -39,10 +39,12 @@ void EntityPassClipStack::PushSubpass(std::optional<Rect> subpass_coverage,
                                 .clip_height = clip_height},
           },
   });
+  next_replay_index_ = 0;
 }
 
 void EntityPassClipStack::PopSubpass() {
   subpass_state_.pop_back();
+  next_replay_index_ = subpass_state_.back().rendered_clip_entities.size();
 }
 
 const std::vector<ClipCoverageLayer>
