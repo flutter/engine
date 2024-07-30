@@ -1194,6 +1194,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     SurfaceControlViewHost scvh = viewHosts.get(viewId);
 
+
+    SurfaceControl control = scvh.getSurfacePackage().getSurfaceControl();
+    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
+    tx.setPosition(control, x, y);
+    currentSyncGroup.addTransaction(tx);
+
     currentSyncGroup.add(
         scvh.getSurfacePackage(),
         new Runnable() {
