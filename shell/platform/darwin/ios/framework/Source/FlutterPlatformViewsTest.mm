@@ -2506,6 +2506,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return false; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertFalse(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -2520,6 +2521,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto mock_surface_submit_true = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
                                                             std::move(mock_surface_submit_true)));
@@ -2708,6 +2710,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   XCTAssertTrue(
@@ -2735,6 +2738,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -2808,6 +2812,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   XCTAssertTrue(
@@ -2835,6 +2840,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -3273,6 +3279,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+        [](const flutter::SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -3299,6 +3306,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
         std::move(mock_sk_surface), framebuffer_info,
         [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+        [](const flutter::SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
     XCTAssertTrue(
         flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -3368,6 +3376,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
@@ -3407,10 +3416,10 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   pool.RecycleLayers();
   XCTAssertEqual(pool.size(), 2u);
 
-  // Free the unused layers.
+  // Free the unused layers. One should remain.
   auto unused_layers = pool.RemoveUnusedLayers();
   XCTAssertEqual(unused_layers.size(), 2u);
-  XCTAssertEqual(pool.size(), 0u);
+  XCTAssertEqual(pool.size(), 1u);
 }
 
 @end

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flow/surface_frame.h"
 #if !SLIMPELLER
 
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
@@ -102,8 +103,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
 
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        nullptr,                                                                   //
+        SurfaceFrame::FramebufferInfo(),                                           //
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },  //
+        [](const SurfaceFrame& surface_frame) { return true; },                    //
+        frame_size                                                                 //
+    );
   }
 
   PrecompileKnownSkSLsIfNecessary();
@@ -152,11 +157,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     return nullptr;
   }
 
-  auto submit_callback = [this, drawable, mtl_layer](const SurfaceFrame& surface_frame,
+  auto encode_callback = [this, drawable, mtl_layer](const SurfaceFrame& surface_frame,
                                                      DlCanvas* canvas) -> bool {
     mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
-
-    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -181,15 +184,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
       damage_[texture] = SkIRect::MakeEmpty();
     }
 
-    if (surface_frame.submit_info().submit_receiver) {
-      delegate_->PreparePresent(drawable);
-      surface_frame.submit_info().submit_receiver(
-          [&, drawable = drawable]() { return delegate_->PresentDrawable(drawable); });
-      return true;
-    } else {
-      delegate_->PreparePresent(drawable);
-      return delegate_->PresentDrawable(drawable);
-    }
+    return true;
+  };
+
+  auto submit_callback = [this, drawable](const SurfaceFrame& surface_frame) -> bool {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    return delegate_->PresentDrawable(drawable);
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
@@ -206,8 +206,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     framebuffer_info.supports_partial_repaint = true;
   }
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, encode_callback,
+                                        submit_callback, frame_info);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
@@ -230,9 +230,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     return nullptr;
   }
 
-  auto submit_callback = [texture = texture, delegate = delegate_](
-                             const SurfaceFrame& surface_frame, DlCanvas* canvas) -> bool {
-    TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
+  auto encode_callback = [](const SurfaceFrame& surface_frame, DlCanvas* canvas) -> bool {
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -243,14 +241,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
       canvas->Flush();
     }
 
+    return true;
+  };
+  auto submit_callback = [texture = texture,
+                          delegate = delegate_](const SurfaceFrame& surface_frame) {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
     return delegate->PresentTexture(texture);
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, encode_callback,
+                                        submit_callback, frame_info);
 }
 
 // |Surface|
