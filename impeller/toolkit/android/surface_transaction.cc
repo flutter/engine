@@ -49,6 +49,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
         delete data;
       });
   if (!transaction_.get().owned) {
+    transaction_.reset();
     return true;
   }
   // Java owned transactions are applied in the PlatformViewController.
