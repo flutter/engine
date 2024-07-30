@@ -27,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.Surface;
+import android.view.SurfaceControl;
 import android.view.SurfaceControlViewHost;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -1269,6 +1270,13 @@ public class FlutterView extends FrameLayout
 
   public IBinder GetBinder() {
     return flutterSurfaceView.getHostToken();
+  }
+
+  public SurfaceControl getAttachedSurfaceControl() {
+    if (flutterSurfaceView != null) {
+      return flutterSurfaceView.getSurfaceControl();
+    }
+    return null;
   }
 
   public void addPlatformView(SurfaceControlViewHost.SurfacePackage surfacePackage) {

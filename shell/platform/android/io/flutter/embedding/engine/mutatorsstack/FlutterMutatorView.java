@@ -2,7 +2,6 @@ package io.flutter.embedding.engine.mutatorsstack;
 
 import static android.view.View.OnFocusChangeListener;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -109,7 +108,6 @@ public class FlutterMutatorView extends FrameLayout {
   public void draw(Canvas canvas) {
     // Apply all clippings on the parent canvas.
     canvas.save();
-    // canvas.translate(this.left, this.top);
     for (Path path : mutatorsStack.getFinalClippingPaths()) {
       // Reverse the current offset.
       //
@@ -161,7 +159,7 @@ public class FlutterMutatorView extends FrameLayout {
   /** Intercept the events here and do not propagate them to the child platform views. */
   @Override
   public boolean onInterceptTouchEvent(MotionEvent event) {
-    return true;
+    return false;
   }
 
   @Override
@@ -179,33 +177,33 @@ public class FlutterMutatorView extends FrameLayout {
     return super.requestSendAccessibilityEvent(child, event);
   }
 
-  @Override
-  @SuppressLint("ClickableViewAccessibility")
-  public boolean onTouchEvent(MotionEvent event) {
-    if (androidTouchProcessor == null) {
-      return super.onTouchEvent(event);
-    }
+  // @Override
+  // @SuppressLint("ClickableViewAccessibility")
+  // public boolean onTouchEvent(MotionEvent event) {
+  //   if (androidTouchProcessor == null) {
+  //     return super.onTouchEvent(event);
+  //   }
 
-    final Matrix screenMatrix = new Matrix();
+  //   final Matrix screenMatrix = new Matrix();
 
-    switch (event.getAction()) {
-      case MotionEvent.ACTION_DOWN:
-        prevLeft = left;
-        prevTop = top;
-        screenMatrix.postTranslate(left, top);
-        break;
-      case MotionEvent.ACTION_MOVE:
-        // While the view is dragged, use the left and top positions as
-        // they were at the moment the touch event fired.
-        screenMatrix.postTranslate(prevLeft, prevTop);
-        prevLeft = left;
-        prevTop = top;
-        break;
-      case MotionEvent.ACTION_UP:
-      default:
-        screenMatrix.postTranslate(left, top);
-        break;
-    }
-    return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-  }
+  //   switch (event.getAction()) {
+  //     case MotionEvent.ACTION_DOWN:
+  //       prevLeft = left;
+  //       prevTop = top;
+  //       screenMatrix.postTranslate(left, top);
+  //       break;
+  //     case MotionEvent.ACTION_MOVE:
+  //       // While the view is dragged, use the left and top positions as
+  //       // they were at the moment the touch event fired.
+  //       screenMatrix.postTranslate(prevLeft, prevTop);
+  //       prevLeft = left;
+  //       prevTop = top;
+  //       break;
+  //     case MotionEvent.ACTION_UP:
+  //     default:
+  //       screenMatrix.postTranslate(left, top);
+  //       break;
+  //   }
+  //   return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+  // }
 }
