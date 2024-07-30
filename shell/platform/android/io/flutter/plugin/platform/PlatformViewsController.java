@@ -10,15 +10,20 @@ import android.annotation.TargetApi;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.SparseArray;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
+import android.view.SurfaceControl;
+import android.view.SurfaceControlViewHost;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.window.SurfaceSyncGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -40,11 +45,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import android.view.SurfaceControlViewHost;
-import android.hardware.display.DisplayManager;
-import android.view.Display;
-import android.window.SurfaceSyncGroup;
-import android.view.SurfaceControl;
 
 /**
  * Manages platform views.
@@ -287,7 +287,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (parentView != null) {
             parentView.removeAllViews();
             parentView.unsetOnDescendantFocusChangeListener();
-
 
             SurfaceControlViewHost viewHost = viewHosts.get(viewId);
             viewHosts.remove(viewId);
@@ -1153,10 +1152,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
     parentView.addView(embeddedView);
 
-    DisplayManager displayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+    DisplayManager displayManager =
+        (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
     Display[] displays = displayManager.getDisplays();
 
-    SurfaceControlViewHost scvh = new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
+    SurfaceControlViewHost scvh =
+        new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
     scvh.setView(parentView, flutterView.getWidth(), flutterView.getHeight());
     viewHosts.put(viewId, scvh);
     flutterView.addPlatformView(scvh.getSurfacePackage());
@@ -1193,15 +1194,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     SurfaceControlViewHost scvh = viewHosts.get(viewId);
 
-    currentSyncGroup.add(scvh.getSurfacePackage(), new Runnable() {
-      public void run() {
-        final FlutterMutatorView parentView = platformViewParent.get(viewId);
-        parentView.readyToDisplay(mutatorsStack, x, y, width, height);
-        parentView.setVisibility(View.VISIBLE);
-        parentView.bringToFront();
-
-      }
-    });
+    currentSyncGroup.add(
+        scvh.getSurfacePackage(),
+        new Runnable() {
+          public void run() {
+            final FlutterMutatorView parentView = platformViewParent.get(viewId);
+            parentView.readyToDisplay(mutatorsStack, x, y, width, height);
+            parentView.setVisibility(View.VISIBLE);
+            parentView.bringToFront();
+          }
+        });
 
     currentFrameUsedPlatformViewIds.add(viewId);
   }
@@ -1216,7 +1218,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param height The height of the surface. This member is not intended for public use, and is
    *     only visible for testing.
    */
-  public SurfaceControl.Transaction onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+  public SurfaceControl.Transaction onDisplayOverlaySurface(
+      int id, int x, int y, int width, int height) {
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     transactions.add(tx);
     currentFrameUsedOverlayLayerIds.add(id);

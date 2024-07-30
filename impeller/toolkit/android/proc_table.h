@@ -21,8 +21,8 @@
 
 namespace impeller::android {
 
-
-ASurfaceTransaction* ASurfaceTransaction_fromJava(JNIEnv* env, jobject transaction);
+ASurfaceTransaction* ASurfaceTransaction_fromJava(JNIEnv* env,
+                                                  jobject transaction);
 
 //------------------------------------------------------------------------------
 /// @brief      The Android procs along with the device API level on which these

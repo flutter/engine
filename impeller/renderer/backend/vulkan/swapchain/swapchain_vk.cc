@@ -65,9 +65,9 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
         context,             //
         window.GetHandle(),  //
         cb,
-        surface,             //
-        window.GetSize(),    //
-        enable_msaa          //
+        surface,           //
+        window.GetSize(),  //
+        enable_msaa        //
         ));
 
     if (ahb_swapchain->IsValid()) {

@@ -141,8 +141,7 @@ void PlatformViewAndroid::NotifyCreated(
     fml::TaskRunner::RunNowOrPostTask(
         task_runners_.GetRasterTaskRunner(),
         [&latch, surface = android_surface_.get(),
-         native_window = std::move(native_window),
-         jni_facade = jni_facade_]() {
+         native_window = std::move(native_window), jni_facade = jni_facade_]() {
           surface->SetNativeWindow(native_window, jni_facade);
           latch.Signal();
         });
@@ -159,8 +158,7 @@ void PlatformViewAndroid::NotifySurfaceWindowChanged(
     fml::TaskRunner::RunNowOrPostTask(
         task_runners_.GetRasterTaskRunner(),
         [&latch, surface = android_surface_.get(),
-         native_window = std::move(native_window),
-         jni_facade = jni_facade_]() {
+         native_window = std::move(native_window), jni_facade = jni_facade_]() {
           surface->TeardownOnScreenContext();
           surface->SetNativeWindow(native_window, jni_facade);
           latch.Signal();

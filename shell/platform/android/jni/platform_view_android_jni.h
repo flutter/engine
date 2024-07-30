@@ -161,10 +161,10 @@ class PlatformViewAndroidJNI {
   /// @note       Must be called from the platform thread.
   ///
   virtual ASurfaceTransaction* FlutterViewDisplayOverlaySurface(int surface_id,
-                                           int x,
-                                           int y,
-                                           int width,
-                                           int height) = 0;
+                                                                int x,
+                                                                int y,
+                                                                int width,
+                                                                int height) = 0;
 
   virtual bool FlutterViewHasCurrentSyncGroup() = 0;
 

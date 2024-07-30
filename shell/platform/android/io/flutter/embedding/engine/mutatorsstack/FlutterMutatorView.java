@@ -4,12 +4,12 @@ import static android.view.View.OnFocusChangeListener;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
@@ -18,8 +18,6 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
-import android.view.WindowManager;
-import android.graphics.PixelFormat;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
@@ -99,7 +97,8 @@ public class FlutterMutatorView extends FrameLayout {
     this.mutatorsStack = mutatorsStack;
     this.left = left;
     this.top = top;
-    WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(width, height, left, top, 0, 0, PixelFormat.RGBA_8888);
+    WindowManager.LayoutParams layoutParams =
+        new WindowManager.LayoutParams(width, height, left, top, 0, 0, PixelFormat.RGBA_8888);
 
     setLayoutParams(layoutParams);
     setWillNotDraw(false);
@@ -115,7 +114,8 @@ public class FlutterMutatorView extends FrameLayout {
   //     //
   //     // The frame of this view includes the final offset of the bounding rect.
   //     // We need to apply all the mutators to the view, which includes the mutation that leads to
-  //     // the final offset. We should reverse this final offset, both as a translate mutation and to
+  //     // the final offset. We should reverse this final offset, both as a translate mutation and
+  // to
   //     // all the clipping paths
   //     Path pathCopy = new Path(path);
   //     pathCopy.offset(-left, -top);
@@ -212,6 +212,6 @@ public class FlutterMutatorView extends FrameLayout {
     //     screenMatrix.postTranslate(left, top);
     //     break;
     // }
-    //return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+    // return androidTouchProcessor.onTouchEvent(event, screenMatrix);
   }
 }

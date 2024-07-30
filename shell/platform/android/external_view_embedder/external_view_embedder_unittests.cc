@@ -293,7 +293,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });
@@ -498,7 +499,8 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -598,7 +600,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -703,7 +706,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
         return android_surface_mock;
       });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
@@ -792,7 +796,8 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });
@@ -882,7 +887,8 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
             .WillOnce(Return(ByMove(std::move(surface_mock))));
 
-        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window, ::testing::_));
+        EXPECT_CALL(*android_surface_mock,
+                    SetNativeWindow(window, ::testing::_));
 
         return android_surface_mock;
       });

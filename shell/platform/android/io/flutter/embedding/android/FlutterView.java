@@ -16,6 +16,7 @@ import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
 import android.text.format.DateFormat;
@@ -26,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.Surface;
+import android.view.SurfaceControlViewHost;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -75,10 +77,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import android.os.IBinder;
-import android.view.SurfaceControlViewHost;
-import android.view.SurfaceControl;
-import android.window.SurfaceSyncGroup;
 
 /**
  * Displays a Flutter UI on an Android device.

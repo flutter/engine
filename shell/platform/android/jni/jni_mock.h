@@ -103,7 +103,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (int surface_id, int x, int y, int width, int height),
               (override));
 
-  MOCK_METHOD(bool,  FlutterViewHasCurrentSyncGroup, (), (override));
+  MOCK_METHOD(bool, FlutterViewHasCurrentSyncGroup, (), (override));
 
   MOCK_METHOD(void, FlutterViewBeginFrame, (), (override));
 

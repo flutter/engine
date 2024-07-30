@@ -26,7 +26,7 @@ AHBSwapchainVK::AHBSwapchainVK(const std::shared_ptr<Context>& context,
     : context_(context),
       surface_control_(
           std::make_shared<android::SurfaceControl>(window, "ImpellerSurface")),
-      enable_msaa_(enable_msaa) ,
+      enable_msaa_(enable_msaa),
       cb_(cb) {
   const auto [caps_result, surface_caps] =
       ContextVK::Cast(*context).GetPhysicalDevice().getSurfaceCapabilitiesKHR(
