@@ -1,4 +1,4 @@
-Signature: 05e40dfbf00cc44b67c18f8347c1d020
+Signature: d84a22c3f74017f80bffcb59e25a3758
 
 ====================================================================================================
 LIBRARY: etc1
@@ -6478,8 +6478,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/tessellate/StrokeIterator.h + 
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/tessellate/WangsFormula.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkScalerContext_mac_ct.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_mac_ct.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/SubRunControl.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/SubRunControl.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/SDFTControl.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/SDFTControl.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/mac/SkCGBase.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/mac/SkCGGeometry.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/mac/SkCTFont.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -6609,8 +6609,8 @@ FILE: ../../../flutter/third_party/skia/src/gpu/tessellate/StrokeIterator.h
 FILE: ../../../flutter/third_party/skia/src/gpu/tessellate/WangsFormula.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkScalerContext_mac_ct.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_mac_ct.h
-FILE: ../../../flutter/third_party/skia/src/text/gpu/SubRunControl.cpp
-FILE: ../../../flutter/third_party/skia/src/text/gpu/SubRunControl.h
+FILE: ../../../flutter/third_party/skia/src/text/gpu/SDFTControl.cpp
+FILE: ../../../flutter/third_party/skia/src/text/gpu/SDFTControl.h
 FILE: ../../../flutter/third_party/skia/src/utils/mac/SkCGBase.h
 FILE: ../../../flutter/third_party/skia/src/utils/mac/SkCGGeometry.h
 FILE: ../../../flutter/third_party/skia/src/utils/mac/SkCTFont.cpp
