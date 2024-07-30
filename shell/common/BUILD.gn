@@ -4,7 +4,7 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
 if (is_fuchsia) {
@@ -192,7 +192,7 @@ template("shell_host_executable") {
 }
 
 if (enable_unittests) {
-  shell_gpu_configuration("shell_unittests_gpu_configuration") {
+  surface_configuration("shell_unittests_surface_configuration") {
     enable_software = test_enable_software
     enable_vulkan = test_enable_vulkan
     enable_gl = test_enable_gl
@@ -255,7 +255,7 @@ if (enable_unittests) {
     ]
 
     deps = [
-      ":shell_unittests_gpu_configuration",
+      ":shell_unittests_surface_configuration",
       "//flutter/assets",
       "//flutter/common",
       "//flutter/lib/ui",
@@ -271,7 +271,7 @@ if (enable_unittests) {
 
     public_configs = [
       ":shell_test_fixture_sources_config",
-      ":shell_unittests_gpu_configuration_config",
+      ":shell_unittests_surface_configuration_config",
     ]
 
     if (test_enable_gl) {

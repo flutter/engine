@@ -9,11 +9,11 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/shell/version/version.gni")
 import("//flutter/vulkan/config.gni")
 
-shell_gpu_configuration("android_gpu_configuration") {
+surface_configuration("android_surface_configuration") {
   enable_software = true
   enable_gl = true
   enable_vulkan = true
@@ -142,7 +142,7 @@ source_set("flutter_shell_native_src") {
   sources += get_target_outputs(":icudtl_asm")
 
   public_deps = [
-    ":android_gpu_configuration",
+    ":android_surface_configuration",
     ":icudtl_asm",
     ":image_generator",
     "//flutter/assets",

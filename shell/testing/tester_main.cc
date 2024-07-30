@@ -23,7 +23,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/surface/surface_software.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
@@ -42,7 +42,7 @@
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"  // nogncheck
 #include "impeller/renderer/context.h"                            // nogncheck
 #include "impeller/renderer/vk/compute_shaders_vk.h"              // nogncheck
-#include "shell/gpu/gpu_surface_vulkan_impeller.h"                // nogncheck
+#include "shell/surface/surface_vulkan_impeller.h"                // nogncheck
 #if IMPELLER_ENABLE_3D
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"  // nogncheck
 #endif                                                   // IMPELLER_ENABLE_3D
@@ -176,17 +176,16 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   DisplayListBuilder builder_;
 };
 
-class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
+class TesterSurfaceSoftware : public SurfaceSoftware {
  public:
-  TesterGPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
-                           bool render_to_surface)
-      : GPUSurfaceSoftware(delegate, render_to_surface) {}
+  TesterSurfaceSoftware(SurfaceSoftwareDelegate* delegate,
+                        bool render_to_surface)
+      : SurfaceSoftware(delegate, render_to_surface) {}
 
   bool EnableRasterCache() const override { return false; }
 };
 
-class TesterPlatformView : public PlatformView,
-                           public GPUSurfaceSoftwareDelegate {
+class TesterPlatformView : public PlatformView, public SurfaceSoftwareDelegate {
  public:
   TesterPlatformView(Delegate& delegate,
                      const TaskRunners& task_runners,
@@ -217,19 +216,19 @@ class TesterPlatformView : public PlatformView,
 #if ALLOW_IMPELLER
     if (delegate_.OnPlatformViewGetSettings().enable_impeller) {
       FML_DCHECK(impeller_context_holder_.context);
-      auto surface = std::make_unique<GPUSurfaceVulkanImpeller>(
+      auto surface = std::make_unique<SurfaceVulkanImpeller>(
           impeller_context_holder_.surface_context);
       FML_DCHECK(surface->IsValid());
       return surface;
     }
 #endif  // ALLOW_IMPELLER
-    auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
+    auto surface = std::make_unique<TesterSurfaceSoftware>(
         this, true /* render to surface */);
     FML_DCHECK(surface->IsValid());
     return surface;
   }
 
-  // |GPUSurfaceSoftwareDelegate|
+  // |SurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override {
     if (sk_surface_ != nullptr &&
         SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
@@ -251,7 +250,7 @@ class TesterPlatformView : public PlatformView,
     return sk_surface_;
   }
 
-  // |GPUSurfaceSoftwareDelegate|
+  // |SurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override {
     return true;
   }

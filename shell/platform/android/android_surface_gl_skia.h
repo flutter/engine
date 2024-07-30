@@ -10,15 +10,15 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/surface/surface_gl_skia.h"
 
 namespace flutter {
 
-class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
+class AndroidSurfaceGLSkia final : public SurfaceGLDelegate,
                                    public AndroidSurface {
  public:
   explicit AndroidSurfaceGLSkia(
@@ -51,25 +51,25 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   // |AndroidSurface|
   virtual std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
   // Obtain a raw pointer to the on-screen AndroidEGLSurface.

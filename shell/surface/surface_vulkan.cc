@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_vulkan.h"
+#include "flutter/shell/surface/surface_vulkan.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
@@ -18,21 +18,21 @@
 
 namespace flutter {
 
-GPUSurfaceVulkan::GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
-                                   const sk_sp<GrDirectContext>& skia_context,
-                                   bool render_to_surface)
+SurfaceVulkan::SurfaceVulkan(SurfaceVulkanDelegate* delegate,
+                             const sk_sp<GrDirectContext>& skia_context,
+                             bool render_to_surface)
     : delegate_(delegate),
       skia_context_(skia_context),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {}
 
-GPUSurfaceVulkan::~GPUSurfaceVulkan() = default;
+SurfaceVulkan::~SurfaceVulkan() = default;
 
-bool GPUSurfaceVulkan::IsValid() {
+bool SurfaceVulkan::IsValid() {
   return skia_context_ != nullptr;
 }
 
-std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
+std::unique_ptr<SurfaceFrame> SurfaceVulkan::AcquireFrame(
     const SkISize& frame_size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
@@ -70,7 +70,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
   SurfaceFrame::SubmitCallback callback = [image = image, delegate = delegate_](
                                               const SurfaceFrame&,
                                               DlCanvas* canvas) -> bool {
-    TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
+    TRACE_EVENT0("flutter", "SurfaceVulkan::PresentImage");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -88,7 +88,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
                                         std::move(callback), frame_size);
 }
 
-SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
+SkMatrix SurfaceVulkan::GetRootTransformation() const {
   // This backend does not support delegating to the underlying platform to
   // query for root surface transformations. Just return identity.
   SkMatrix matrix;
@@ -96,11 +96,11 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
   return matrix;
 }
 
-GrDirectContext* GPUSurfaceVulkan::GetContext() {
+GrDirectContext* SurfaceVulkan::GetContext() {
   return skia_context_.get();
 }
 
-sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
+sk_sp<SkSurface> SurfaceVulkan::CreateSurfaceFromVulkanImage(
     const VkImage image,
     const VkFormat format,
     const SkISize& size) {
@@ -136,7 +136,7 @@ sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
 #endif  // SK_VULKAN
 }
 
-SkColorType GPUSurfaceVulkan::ColorTypeFromFormat(const VkFormat format) {
+SkColorType SurfaceVulkan::ColorTypeFromFormat(const VkFormat format) {
   switch (format) {
     case VK_FORMAT_R8G8B8A8_UNORM:
     case VK_FORMAT_R8G8B8A8_SRGB:

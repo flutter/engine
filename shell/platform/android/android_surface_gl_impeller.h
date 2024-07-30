@@ -7,14 +7,14 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 
 namespace flutter {
 
-class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
+class AndroidSurfaceGLImpeller final : public SurfaceGLDelegate,
                                        public AndroidSurface {
  public:
   explicit AndroidSurfaceGLImpeller(
@@ -51,25 +51,25 @@ class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
   // |AndroidSurface|
   std::shared_ptr<impeller::Context> GetImpellerContext() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
  private:

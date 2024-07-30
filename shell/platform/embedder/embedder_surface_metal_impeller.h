@@ -7,10 +7,10 @@
 
 #include <memory>
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 #include "fml/concurrent_message_loop.h"
 
 namespace impeller {
@@ -20,7 +20,7 @@ class Context;
 namespace flutter {
 
 class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
-                                           public GPUSurfaceMetalDelegate {
+                                           public SurfaceMetalDelegate {
  public:
   struct MetalDispatchTable {
     std::function<bool(GPUMTLTextureInfo texture)> present;  // required
@@ -48,17 +48,17 @@ class EmbedderSurfaceMetalImpeller final : public EmbedderSurface,
   // |EmbedderSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_size) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_size) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   // |EmbedderSurface|

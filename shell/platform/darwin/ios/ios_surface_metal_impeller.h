@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_METAL_IMPELLER_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 
 @class CAMetalLayer;
 
@@ -17,9 +17,8 @@ class Context;
 
 namespace flutter {
 
-class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final
-    : public IOSSurface,
-      public GPUSurfaceMetalDelegate {
+class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final : public IOSSurface,
+                                                                      public SurfaceMetalDelegate {
  public:
   IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
                           const std::shared_ptr<IOSContext>& context);
@@ -41,22 +40,22 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalImpeller final
   // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context) override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUCAMetalLayerHandle GetCAMetalLayer(const SkISize& frame_info) const override
       __attribute__((cf_audited_transfer));
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentDrawable(GrMTLHandle drawable) const override __attribute__((cf_audited_transfer));
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const override
       __attribute__((cf_audited_transfer));
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override
       __attribute__((cf_audited_transfer));
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool AllowsDrawingWhenGpuDisabled() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetalImpeller);

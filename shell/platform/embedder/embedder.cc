@@ -433,7 +433,7 @@ InferOpenGLPlatformViewCreationCallback(
     }
   }
 
-  flutter::GPUSurfaceGLDelegate::GLProcResolver gl_proc_resolver = nullptr;
+  flutter::SurfaceGLDelegate::GLProcResolver gl_proc_resolver = nullptr;
   if (SAFE_ACCESS(open_gl_config, gl_proc_resolver, nullptr) != nullptr) {
     gl_proc_resolver = [ptr = config->open_gl.gl_proc_resolver,
                         user_data](const char* gl_proc_name) {
@@ -1132,7 +1132,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
       1,                         // sample count
-      flutter::GPUSurfaceVulkan::ColorTypeFromFormat(
+      flutter::SurfaceVulkan::ColorTypeFromFormat(
           static_cast<VkFormat>(vulkan->image->format)),  // color type
       SkColorSpace::MakeSRGB(),                           // color space
       &surface_properties,                                // surface properties

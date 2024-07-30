@@ -9,10 +9,10 @@
 #include <utility>
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
+#include "flutter/shell/surface/surface_metal_impeller.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 
 namespace flutter {
 namespace testing {
@@ -74,7 +74,7 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
     std::shared_ptr<ShellTestExternalViewEmbedder> shell_test_external_view_embedder,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
     : ShellTestPlatformView(delegate, task_runners),
-      GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
+      SurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_context_(std::make_unique<DarwinContextMetal>(GetSettings().enable_impeller,
                                                           is_gpu_disabled_sync_switch)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
@@ -113,10 +113,10 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewMetal::CreateRenderingSurface() {
   if (GetSettings().enable_impeller) {
-    return std::make_unique<GPUSurfaceMetalImpeller>(this,
-                                                     [metal_context_->impeller_context() context]);
+    return std::make_unique<SurfaceMetalImpeller>(this,
+                                                  [metal_context_->impeller_context() context]);
   }
-  return std::make_unique<GPUSurfaceMetalSkia>(this, [metal_context_->context() mainContext]);
+  return std::make_unique<SurfaceMetalSkia>(this, [metal_context_->context() mainContext]);
 }
 
 // |PlatformView|
@@ -124,26 +124,26 @@ std::shared_ptr<impeller::Context> ShellTestPlatformViewMetal::GetImpellerContex
   return [metal_context_->impeller_context() context];
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUCAMetalLayerHandle ShellTestPlatformViewMetal::GetCAMetalLayer(const SkISize& frame_info) const {
   FML_CHECK(false) << "A Metal Delegate configured with MTLRenderTargetType::kMTLTexture was asked "
                       "to acquire a layer.";
   return nullptr;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool ShellTestPlatformViewMetal::PresentDrawable(GrMTLHandle drawable) const {
   FML_CHECK(false) << "A Metal Delegate configured with MTLRenderTargetType::kMTLTexture was asked "
                       "to present a layer drawable.";
   return true;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(const SkISize& frame_info) const {
   return metal_context_->offscreen_texture_info();
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool ShellTestPlatformViewMetal::PresentTexture(GPUMTLTextureInfo texture) const {
   // The texture resides offscreen. There is nothing to render to.
   return true;

@@ -8,9 +8,9 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/surface/surface_software.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -18,7 +18,7 @@
 
 namespace flutter {
 
-class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDelegate {
+class IOSSurfaceSoftware final : public IOSSurface, public SurfaceSoftwareDelegate {
  public:
   IOSSurfaceSoftware(const fml::scoped_nsobject<CALayer>& layer,
                      std::shared_ptr<IOSContext> context);
@@ -34,10 +34,10 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
   // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) override;
 
-  // |GPUSurfaceSoftwareDelegate|
+  // |SurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
-  // |GPUSurfaceSoftwareDelegate|
+  // |SurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
  private:

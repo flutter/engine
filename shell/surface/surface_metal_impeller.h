@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_METAL_IMPELLER_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_METAL_IMPELLER_H_
 
 #include <Metal/Metal.h>
 
@@ -12,20 +12,19 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
-class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
-    : public Surface {
+class IMPELLER_CA_METAL_LAYER_AVAILABLE SurfaceMetalImpeller : public Surface {
  public:
-  GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                          const std::shared_ptr<impeller::Context>& context,
-                          bool render_to_surface = true);
+  SurfaceMetalImpeller(SurfaceMetalDelegate* delegate,
+                       const std::shared_ptr<impeller::Context>& context,
+                       bool render_to_surface = true);
 
   // |Surface|
-  ~GPUSurfaceMetalImpeller();
+  ~SurfaceMetalImpeller();
 
   // |Surface|
   bool IsValid() override;
@@ -33,7 +32,7 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
   virtual Surface::SurfaceData GetSurfaceData() const override;
 
  private:
-  const GPUSurfaceMetalDelegate* delegate_;
+  const SurfaceMetalDelegate* delegate_;
   const MTLRenderTargetType render_target_type_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   fml::scoped_nsprotocol<id<MTLTexture>> last_texture_;
@@ -76,9 +75,9 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
   // |Surface|
   std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetalImpeller);
+  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceMetalImpeller);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_METAL_IMPELLER_H_

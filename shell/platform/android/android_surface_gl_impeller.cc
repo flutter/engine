@@ -6,7 +6,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
-#include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
+#include "flutter/shell/surface/surface_gl_impeller.h"
 
 namespace flutter {
 
@@ -35,7 +35,7 @@ bool AndroidSurfaceGLImpeller::IsValid() const {
 // |AndroidSurface|
 std::unique_ptr<Surface> AndroidSurfaceGLImpeller::CreateGPUSurface(
     GrDirectContext* gr_context) {
-  auto surface = std::make_unique<GPUSurfaceGLImpeller>(
+  auto surface = std::make_unique<SurfaceGLImpeller>(
       this,                                    // delegate
       android_context_->GetImpellerContext(),  // context
       true                                     // render to surface
@@ -90,7 +90,7 @@ AndroidSurfaceGLImpeller::GetImpellerContext() {
   return android_context_->GetImpellerContext();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 std::unique_ptr<GLContextResult>
 AndroidSurfaceGLImpeller::GLContextMakeCurrent() {
   return std::make_unique<GLContextDefaultResult>(OnGLContextMakeCurrent());
@@ -104,7 +104,7 @@ bool AndroidSurfaceGLImpeller::OnGLContextMakeCurrent() {
   return android_context_->OnscreenContextMakeCurrent(onscreen_surface_.get());
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool AndroidSurfaceGLImpeller::GLContextClearCurrent() {
   if (!onscreen_surface_) {
     return false;
@@ -113,7 +113,7 @@ bool AndroidSurfaceGLImpeller::GLContextClearCurrent() {
   return android_context_->OnscreenContextClearCurrent();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 SurfaceFrame::FramebufferInfo
 AndroidSurfaceGLImpeller::GLContextFramebufferInfo() const {
   auto info = SurfaceFrame::FramebufferInfo{};
@@ -122,13 +122,13 @@ AndroidSurfaceGLImpeller::GLContextFramebufferInfo() const {
   return info;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 void AndroidSurfaceGLImpeller::GLContextSetDamageRegion(
     const std::optional<SkIRect>& region) {
   // Not supported.
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool AndroidSurfaceGLImpeller::GLContextPresent(
     const GLPresentInfo& present_info) {
   // The FBO ID is superfluous and was introduced for iOS where the default
@@ -139,7 +139,7 @@ bool AndroidSurfaceGLImpeller::GLContextPresent(
   return onscreen_surface_->Present();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 GLFBOInfo AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
   // FBO0 is the default window bound framebuffer in EGL environments.
   return GLFBOInfo{
@@ -147,7 +147,7 @@ GLFBOInfo AndroidSurfaceGLImpeller::GLContextFBO(GLFrameInfo frame_info) const {
   };
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 sk_sp<const GrGLInterface> AndroidSurfaceGLImpeller::GetGLInterface() const {
   return nullptr;
 }

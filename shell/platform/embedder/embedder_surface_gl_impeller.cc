@@ -113,7 +113,7 @@ bool EmbedderSurfaceGLImpeller::IsValid() const {
   return valid_;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 std::unique_ptr<GLContextResult>
 EmbedderSurfaceGLImpeller::GLContextMakeCurrent() {
   worker_->SetReactionsAllowedOnCurrentThread(true);
@@ -121,20 +121,20 @@ EmbedderSurfaceGLImpeller::GLContextMakeCurrent() {
       gl_dispatch_table_.gl_make_current_callback());
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLImpeller::GLContextClearCurrent() {
   worker_->SetReactionsAllowedOnCurrentThread(false);
   return gl_dispatch_table_.gl_clear_current_callback();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLImpeller::GLContextPresent(
     const GLPresentInfo& present_info) {
   // Pass the present information to the embedder present callback.
   return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 GLFBOInfo EmbedderSurfaceGLImpeller::GLContextFBO(
     GLFrameInfo frame_info) const {
   // Get the FBO ID using the gl_fbo_callback and then get exiting damage by
@@ -143,12 +143,12 @@ GLFBOInfo EmbedderSurfaceGLImpeller::GLContextFBO(
       gl_dispatch_table_.gl_fbo_callback(frame_info));
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLImpeller::GLContextFBOResetAfterPresent() const {
   return fbo_reset_after_present_;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 SkMatrix EmbedderSurfaceGLImpeller::GLContextSurfaceTransformation() const {
   auto callback = gl_dispatch_table_.gl_surface_transformation_callback;
   if (!callback) {
@@ -159,13 +159,13 @@ SkMatrix EmbedderSurfaceGLImpeller::GLContextSurfaceTransformation() const {
   return callback();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 EmbedderSurfaceGLSkia::GLProcResolver
 EmbedderSurfaceGLImpeller::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 SurfaceFrame::FramebufferInfo
 EmbedderSurfaceGLImpeller::GLContextFramebufferInfo() const {
   // Enable partial repaint by default on the embedders.
@@ -179,11 +179,11 @@ EmbedderSurfaceGLImpeller::GLContextFramebufferInfo() const {
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
   // Ensure that the GL context is current before creating the GPU surface.
-  // GPUSurfaceGLImpeller initialization will set up shader pipelines, and the
+  // SurfaceGLImpeller initialization will set up shader pipelines, and the
   // current thread needs to be able to execute reactor operations.
   GLContextMakeCurrent();
 
-  return std::make_unique<GPUSurfaceGLImpeller>(
+  return std::make_unique<SurfaceGLImpeller>(
       this,                     // GPU surface GL delegate
       impeller_context_,        // Impeller context
       !external_view_embedder_  // render to surface

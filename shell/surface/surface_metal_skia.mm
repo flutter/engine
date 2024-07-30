@@ -4,7 +4,7 @@
 
 #if !SLIMPELLER
 
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
@@ -16,7 +16,7 @@
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
@@ -56,9 +56,9 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
 }
 }  // namespace
 
-GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                                         sk_sp<GrDirectContext> context,
-                                         bool render_to_surface)
+SurfaceMetalSkia::SurfaceMetalSkia(SurfaceMetalDelegate* delegate,
+                                   sk_sp<GrDirectContext> context,
+                                   bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
@@ -71,14 +71,14 @@ GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
   }
 }
 
-GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
+SurfaceMetalSkia::~SurfaceMetalSkia() = default;
 
 // |Surface|
-bool GPUSurfaceMetalSkia::IsValid() {
+bool SurfaceMetalSkia::IsValid() {
   return context_ != nullptr;
 }
 
-void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
+void SurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
   auto* current_context = GetContext();
   if (current_context == precompiled_sksl_context_) {
     // Known SkSLs have already been prepared in this context.
@@ -89,7 +89,7 @@ void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> SurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
@@ -120,7 +120,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
   return nullptr;
 }
 
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
+std::unique_ptr<SurfaceFrame> SurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     const SkISize& frame_info) {
   auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
@@ -200,7 +200,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
                                         frame_info);
 }
 
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
+std::unique_ptr<SurfaceFrame> SurfaceMetalSkia::AcquireFrameFromMTLTexture(
     const SkISize& frame_info) {
   GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
@@ -244,19 +244,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceMetalSkia::GetRootTransformation() const {
+SkMatrix SurfaceMetalSkia::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceMetalSkia::GetContext() {
+GrDirectContext* SurfaceMetalSkia::GetContext() {
   return context_.get();
 }
 
 // |Surface|
-std::unique_ptr<GLContextResult> GPUSurfaceMetalSkia::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> SurfaceMetalSkia::MakeRenderContextCurrent() {
   // A context may either be necessary to render to the surface or to snapshot an offscreen
   // surface. Either way, SkSL precompilation must be attempted.
   PrecompileKnownSkSLsIfNecessary();
@@ -265,7 +265,7 @@ std::unique_ptr<GLContextResult> GPUSurfaceMetalSkia::MakeRenderContextCurrent()
   return std::make_unique<GLContextDefaultResult>(true);
 }
 
-bool GPUSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
+bool SurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
   return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 

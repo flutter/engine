@@ -8,8 +8,8 @@
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/surface/surface_vulkan.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/VulkanBackendContext.h"
@@ -88,17 +88,17 @@ EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() {
   }
 }
 
-// |GPUSurfaceVulkanDelegate|
+// |SurfaceVulkanDelegate|
 const vulkan::VulkanProcTable& EmbedderSurfaceVulkan::vk() {
   return *vk_;
 }
 
-// |GPUSurfaceVulkanDelegate|
+// |SurfaceVulkanDelegate|
 FlutterVulkanImage EmbedderSurfaceVulkan::AcquireImage(const SkISize& size) {
   return vulkan_dispatch_table_.get_next_image(size);
 }
 
-// |GPUSurfaceVulkanDelegate|
+// |SurfaceVulkanDelegate|
 bool EmbedderSurfaceVulkan::PresentImage(VkImage image, VkFormat format) {
   return vulkan_dispatch_table_.present_image(image, format);
 }
@@ -111,8 +111,8 @@ bool EmbedderSurfaceVulkan::IsValid() const {
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceVulkan::CreateGPUSurface() {
   const bool render_to_surface = !external_view_embedder_;
-  return std::make_unique<GPUSurfaceVulkan>(this, main_context_,
-                                            render_to_surface);
+  return std::make_unique<SurfaceVulkan>(this, main_context_,
+                                         render_to_surface);
 }
 
 // |EmbedderSurface|

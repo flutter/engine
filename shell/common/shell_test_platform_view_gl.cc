@@ -8,7 +8,7 @@
 
 #include <EGL/egl.h>
 
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "flutter/shell/surface/surface_gl_skia.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
 
 #if IMPELLER_ENABLE_3D
@@ -73,7 +73,7 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGLSkia>(this, true);
+  return std::make_unique<SurfaceGLSkia>(this, true);
 }
 
 // |PlatformView|
@@ -89,33 +89,33 @@ PointerDataDispatcherMaker ShellTestPlatformViewGL::GetDispatcherMaker() {
   };
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 std::unique_ptr<GLContextResult>
 ShellTestPlatformViewGL::GLContextMakeCurrent() {
   return std::make_unique<GLContextDefaultResult>(gl_surface_.MakeCurrent());
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool ShellTestPlatformViewGL::GLContextClearCurrent() {
   return gl_surface_.ClearCurrent();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool ShellTestPlatformViewGL::GLContextPresent(
     const GLPresentInfo& present_info) {
   return gl_surface_.Present();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
   return GLFBOInfo{
       .fbo_id = gl_surface_.GetFramebuffer(frame_info.width, frame_info.height),
   };
 }
 
-// |GPUSurfaceGLDelegate|
-GPUSurfaceGLDelegate::GLProcResolver
-ShellTestPlatformViewGL::GetGLProcResolver() const {
+// |SurfaceGLDelegate|
+SurfaceGLDelegate::GLProcResolver ShellTestPlatformViewGL::GetGLProcResolver()
+    const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };

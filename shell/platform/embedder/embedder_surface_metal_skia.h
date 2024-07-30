@@ -8,10 +8,10 @@
 #if !SLIMPELLER
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -21,7 +21,7 @@ namespace flutter {
 // specifically for Impeller called EmbedderSurfaceMetalImpeller. Rename this to
 // EmbedderSurfaceMetalSkia to avoid confusion.
 class EmbedderSurfaceMetalSkia final : public EmbedderSurface,
-                                       public GPUSurfaceMetalDelegate {
+                                       public SurfaceMetalDelegate {
  public:
   struct MetalDispatchTable {
     std::function<bool(GPUMTLTextureInfo texture)> present;  // required
@@ -54,17 +54,17 @@ class EmbedderSurfaceMetalSkia final : public EmbedderSurface,
   // |EmbedderSurface|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_size) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_size) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceMetalSkia);

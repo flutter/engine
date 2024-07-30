@@ -7,7 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
 
 namespace flutter {
 namespace testing {
@@ -15,7 +15,7 @@ namespace testing {
 class DarwinContextMetal;
 
 class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
-                                         public GPUSurfaceMetalDelegate {
+                                         public SurfaceMetalDelegate {
  public:
   ShellTestPlatformViewMetal(PlatformView::Delegate& delegate,
                              const TaskRunners& task_runners,
@@ -54,17 +54,17 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   // |PlatformView|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_info) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const override;
 
-  // |GPUSurfaceMetalDelegate|
+  // |SurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewMetal);

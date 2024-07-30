@@ -6,9 +6,9 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
 
-#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
+#include "flutter/shell/surface/surface_metal_delegate.h"
+#include "flutter/shell/surface/surface_metal_skia.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -26,7 +26,7 @@ static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>
 IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                          std::shared_ptr<IOSContext> context)
     : IOSSurface(std::move(context)),
-      GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
+      SurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
       layer_(layer) {
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
@@ -51,12 +51,12 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,               // delegate
-                                               sk_ref_sp(context)  // context
+  return std::make_unique<SurfaceMetalSkia>(this,               // delegate
+                                            sk_ref_sp(context)  // context
   );
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();
   layer.device = device_;
@@ -79,7 +79,7 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
   return (__bridge GPUCAMetalLayerHandle)layer;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
   if (drawable == nullptr) {
     FML_DLOG(ERROR) << "Could not acquire next Metal drawable from the SkSurface.";
@@ -100,19 +100,19 @@ bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
   return true;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUMTLTextureInfo IOSSurfaceMetalSkia::GetMTLTexture(const SkISize& frame_info) const {
   FML_CHECK(false) << "render to texture not supported on ios";
   return {.texture_id = -1, .texture = nullptr};
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::PresentTexture(GPUMTLTextureInfo texture) const {
   FML_CHECK(false) << "render to texture not supported on ios";
   return false;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }

@@ -6,14 +6,14 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_GL_SKIA_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_gl_skia.h"
 
 namespace flutter {
 
 class EmbedderSurfaceGLSkia final : public EmbedderSurface,
-                                    public GPUSurfaceGLDelegate {
+                                    public SurfaceGLDelegate {
  public:
   struct GLDispatchTable {
     std::function<bool(void)> gl_make_current_callback;           // required
@@ -50,28 +50,28 @@ class EmbedderSurfaceGLSkia final : public EmbedderSurface,
   // |EmbedderSurface|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SkMatrix GLContextSurfaceTransformation() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGLSkia);

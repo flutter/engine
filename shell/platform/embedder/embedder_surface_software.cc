@@ -39,7 +39,7 @@ std::unique_ptr<Surface> EmbedderSurfaceSoftware::CreateGPUSurface() {
     return nullptr;
   }
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this, render_to_surface);
+  auto surface = std::make_unique<SurfaceSoftware>(this, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -53,7 +53,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceSoftware::CreateResourceContext() const {
   return nullptr;
 }
 
-// |GPUSurfaceSoftwareDelegate|
+// |SurfaceSoftwareDelegate|
 sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
     const SkISize& size) {
   TRACE_EVENT0("flutter", "EmbedderSurfaceSoftware::AcquireBackingStore");
@@ -81,7 +81,7 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
   return sk_surface_;
 }
 
-// |GPUSurfaceSoftwareDelegate|
+// |SurfaceSoftwareDelegate|
 bool EmbedderSurfaceSoftware::PresentBackingStore(
     sk_sp<SkSurface> backing_store) {
   if (!IsValid()) {

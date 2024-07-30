@@ -6,8 +6,8 @@ import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
 declare_args() {
@@ -17,7 +17,7 @@ declare_args() {
   embedder_enable_metal = shell_enable_metal
 }
 
-shell_gpu_configuration("embedder_gpu_configuration") {
+surface_configuration("embedder_surface_configuration") {
   enable_software = embedder_enable_software
   enable_vulkan = embedder_enable_vulkan
   enable_gl = embedder_enable_gl
@@ -99,7 +99,7 @@ template("embedder_source_set") {
 
     public_deps = [ ":embedder_headers" ]
     deps = [
-      ":embedder_gpu_configuration",
+      ":embedder_surface_configuration",
       "$dart_src/runtime/bin:dart_io_api",
       "$dart_src/runtime/bin:elf_loader",
       "//flutter/assets",
@@ -184,7 +184,7 @@ template("embedder_source_set") {
     }
 
     public_configs += [
-      ":embedder_gpu_configuration_config",
+      ":embedder_surface_configuration_config",
       ":embedder_header_config",
       "//flutter:config",
       "//flutter/impeller:impeller_public_config",
@@ -261,7 +261,7 @@ if (enable_unittests) {
     testonly = true
 
     configs += [
-      ":embedder_gpu_configuration_config",
+      ":embedder_surface_configuration_config",
       "//flutter:export_dynamic_symbols",
     ]
 
@@ -289,7 +289,7 @@ if (enable_unittests) {
 
     public_deps = [
       ":embedder",
-      ":embedder_gpu_configuration",
+      ":embedder_surface_configuration",
       ":fixtures",
       "$dart_src/runtime/bin:elf_loader",
       "//flutter/flow",
@@ -349,7 +349,7 @@ if (enable_unittests) {
 
     configs += [
       ":embedder_jit_snapshot_setup",
-      ":embedder_gpu_configuration_config",
+      ":embedder_surface_configuration_config",
       "//flutter:export_dynamic_symbols",
     ]
 
@@ -379,7 +379,7 @@ if (enable_unittests) {
     testonly = true
 
     configs += [
-      ":embedder_gpu_configuration_config",
+      ":embedder_surface_configuration_config",
       "//flutter:export_dynamic_symbols",
     ]
 
@@ -395,7 +395,7 @@ if (enable_unittests) {
     testonly = true
 
     configs += [
-      ":embedder_gpu_configuration_config",
+      ":embedder_surface_configuration_config",
       "//flutter:export_dynamic_symbols",
     ]
 
@@ -408,7 +408,7 @@ if (enable_unittests) {
 
     deps = [
       ":embedder",
-      ":embedder_gpu_configuration",
+      ":embedder_surface_configuration",
       ":fixtures",
       "//flutter/lib/snapshot",
       "//flutter/testing",

@@ -36,25 +36,25 @@ bool EmbedderSurfaceGLSkia::IsValid() const {
   return valid_;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 std::unique_ptr<GLContextResult> EmbedderSurfaceGLSkia::GLContextMakeCurrent() {
   return std::make_unique<GLContextDefaultResult>(
       gl_dispatch_table_.gl_make_current_callback());
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLSkia::GLContextClearCurrent() {
   return gl_dispatch_table_.gl_clear_current_callback();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLSkia::GLContextPresent(
     const GLPresentInfo& present_info) {
   // Pass the present information to the embedder present callback.
   return gl_dispatch_table_.gl_present_callback(present_info);
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 GLFBOInfo EmbedderSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   // Get the FBO ID using the gl_fbo_callback and then get exiting damage by
   // passing that ID to the gl_populate_existing_damage.
@@ -62,12 +62,12 @@ GLFBOInfo EmbedderSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
       gl_dispatch_table_.gl_fbo_callback(frame_info));
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 bool EmbedderSurfaceGLSkia::GLContextFBOResetAfterPresent() const {
   return fbo_reset_after_present_;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 SkMatrix EmbedderSurfaceGLSkia::GLContextSurfaceTransformation() const {
   auto callback = gl_dispatch_table_.gl_surface_transformation_callback;
   if (!callback) {
@@ -78,13 +78,13 @@ SkMatrix EmbedderSurfaceGLSkia::GLContextSurfaceTransformation() const {
   return callback();
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 EmbedderSurfaceGLSkia::GLProcResolver EmbedderSurfaceGLSkia::GetGLProcResolver()
     const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 SurfaceFrame::FramebufferInfo EmbedderSurfaceGLSkia::GLContextFramebufferInfo()
     const {
   // Enable partial repaint by default on the embedders.
@@ -98,9 +98,8 @@ SurfaceFrame::FramebufferInfo EmbedderSurfaceGLSkia::GLContextFramebufferInfo()
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGLSkia::CreateGPUSurface() {
   const bool render_to_surface = !external_view_embedder_;
-  return std::make_unique<GPUSurfaceGLSkia>(
-      this,              // GPU surface GL delegate
-      render_to_surface  // render to surface
+  return std::make_unique<SurfaceGLSkia>(this,  // GPU surface GL delegate
+                                         render_to_surface  // render to surface
   );
 }
 

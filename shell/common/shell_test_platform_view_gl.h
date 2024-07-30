@@ -7,7 +7,7 @@
 
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 
@@ -15,7 +15,7 @@ namespace flutter {
 namespace testing {
 
 class ShellTestPlatformViewGL : public ShellTestPlatformView,
-                                public GPUSurfaceGLDelegate {
+                                public SurfaceGLDelegate {
  public:
   ShellTestPlatformViewGL(PlatformView::Delegate& delegate,
                           const TaskRunners& task_runners,
@@ -59,19 +59,19 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   // |PlatformView|
   PointerDataDispatcherMaker GetDispatcherMaker() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewGL);

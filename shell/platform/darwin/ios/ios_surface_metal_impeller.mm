@@ -6,7 +6,7 @@
 
 #include "flutter/impeller/renderer/backend/metal/formats_mtl.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
+#include "flutter/shell/surface/surface_metal_impeller.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -15,7 +15,7 @@ namespace flutter {
 IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                                  const std::shared_ptr<IOSContext>& context)
     : IOSSurface(context),
-      GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
+      SurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
       layer_(layer),
       impeller_context_(context ? context->GetImpellerContext() : nullptr) {
   if (!impeller_context_) {
@@ -41,12 +41,12 @@ void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectContext*) {
   impeller_context_->UpdateOffscreenLayerPixelFormat(
       impeller::FromMTLPixelFormat(layer_.get().pixelFormat));
-  return std::make_unique<GPUSurfaceMetalImpeller>(this,              //
-                                                   impeller_context_  //
+  return std::make_unique<SurfaceMetalImpeller>(this,              //
+                                                impeller_context_  //
   );
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();
   const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());
@@ -69,13 +69,13 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   return (__bridge GPUCAMetalLayerHandle)layer;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalImpeller::PresentDrawable(GrMTLHandle drawable) const {
   FML_DCHECK(false);
   return false;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const SkISize& frame_info) const {
   FML_CHECK(false);
   return GPUMTLTextureInfo{
@@ -84,13 +84,13 @@ GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const SkISize& frame_in
   };
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalImpeller::PresentTexture(GPUMTLTextureInfo texture) const {
   FML_CHECK(false);
   return false;
 }
 
-// |GPUSurfaceMetalDelegate|
+// |SurfaceMetalDelegate|
 bool IOSSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }

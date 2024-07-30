@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_GL_SKIA_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_SKIA_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_GL_SKIA_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_GL_SKIA_H_
 
 #include <functional>
 #include <memory>
@@ -13,26 +13,26 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
-class GPUSurfaceGLSkia : public Surface {
+class SurfaceGLSkia : public Surface {
  public:
-  static sk_sp<GrDirectContext> MakeGLContext(GPUSurfaceGLDelegate* delegate);
+  static sk_sp<GrDirectContext> MakeGLContext(SurfaceGLDelegate* delegate);
 
-  GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate, bool render_to_surface);
+  SurfaceGLSkia(SurfaceGLDelegate* delegate, bool render_to_surface);
 
   // Creates a new GL surface reusing an existing GrDirectContext.
-  GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
-                   GPUSurfaceGLDelegate* delegate,
-                   bool render_to_surface);
+  SurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
+                SurfaceGLDelegate* delegate,
+                bool render_to_surface);
 
   // |Surface|
-  ~GPUSurfaceGLSkia() override;
+  ~SurfaceGLSkia() override;
 
   // |Surface|
   bool IsValid() override;
@@ -64,7 +64,7 @@ class GPUSurfaceGLSkia : public Surface {
 
   bool PresentSurface(const SurfaceFrame& frame, DlCanvas* canvas);
 
-  GPUSurfaceGLDelegate* delegate_;
+  SurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
   /// FBO backing the current `onscreen_surface_`.
@@ -82,10 +82,10 @@ class GPUSurfaceGLSkia : public Surface {
   bool valid_ = false;
 
   // WeakPtrFactory must be the last member.
-  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGLSkia> weak_factory_;
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGLSkia);
+  fml::TaskRunnerAffineWeakPtrFactory<SurfaceGLSkia> weak_factory_;
+  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceGLSkia);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_GL_SKIA_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_GL_SKIA_H_

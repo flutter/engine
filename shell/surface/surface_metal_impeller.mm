@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
+#include "flutter/shell/surface/surface_metal_impeller.h"
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
@@ -19,9 +19,9 @@ static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
 namespace flutter {
 
-GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 const std::shared_ptr<impeller::Context>& context,
-                                                 bool render_to_surface)
+SurfaceMetalImpeller::SurfaceMetalImpeller(SurfaceMetalDelegate* delegate,
+                                           const std::shared_ptr<impeller::Context>& context,
+                                           bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       aiks_context_(
@@ -36,16 +36,16 @@ GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delega
   }
 }
 
-GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
+SurfaceMetalImpeller::~SurfaceMetalImpeller() = default;
 
 // |Surface|
-bool GPUSurfaceMetalImpeller::IsValid() {
+bool SurfaceMetalImpeller::IsValid() {
   return !!aiks_context_ && aiks_context_->IsValid();
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size) {
-  TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
+std::unique_ptr<SurfaceFrame> SurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size) {
+  TRACE_EVENT0("impeller", "SurfaceMetalImpeller::AcquireFrame");
 
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
@@ -75,7 +75,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   return nullptr;
 }
 
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLayer(
+std::unique_ptr<SurfaceFrame> SurfaceMetalImpeller::AcquireFrameFromCAMetalLayer(
     const SkISize& frame_size) {
   auto layer = delegate_->GetCAMetalLayer(frame_size);
 
@@ -208,7 +208,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
   );
 }
 
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTexture(
+std::unique_ptr<SurfaceFrame> SurfaceMetalImpeller::AcquireFrameFromMTLTexture(
     const SkISize& frame_size) {
   GPUMTLTextureInfo texture_info = delegate_->GetMTLTexture(frame_size);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture_info.texture);
@@ -330,38 +330,38 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 }
 
 // |Surface|
-SkMatrix GPUSurfaceMetalImpeller::GetRootTransformation() const {
+SkMatrix SurfaceMetalImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};
 }
 
 // |Surface|
-GrDirectContext* GPUSurfaceMetalImpeller::GetContext() {
+GrDirectContext* SurfaceMetalImpeller::GetContext() {
   return nullptr;
 }
 
 // |Surface|
-std::unique_ptr<GLContextResult> GPUSurfaceMetalImpeller::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> SurfaceMetalImpeller::MakeRenderContextCurrent() {
   // This backend has no such concept.
   return std::make_unique<GLContextDefaultResult>(true);
 }
 
-bool GPUSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
+bool SurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
   return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 
 // |Surface|
-bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
+bool SurfaceMetalImpeller::EnableRasterCache() const {
   return false;
 }
 
 // |Surface|
-std::shared_ptr<impeller::AiksContext> GPUSurfaceMetalImpeller::GetAiksContext() const {
+std::shared_ptr<impeller::AiksContext> SurfaceMetalImpeller::GetAiksContext() const {
   return aiks_context_;
 }
 
-Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
+Surface::SurfaceData SurfaceMetalImpeller::GetSurfaceData() const {
   if (!(last_texture_ && [last_texture_ conformsToProtocol:@protocol(MTLTexture)])) {
     return {};
   }

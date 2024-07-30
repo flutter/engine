@@ -6,12 +6,12 @@ assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
 import("//flutter/build/zip_bundle.gni")
-import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_common.gni")
 import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
-shell_gpu_configuration("macos_gpu_configuration") {
+surface_configuration("macos_surface_configuration") {
   enable_software = true
   enable_gl = true
   enable_vulkan = false
@@ -120,7 +120,7 @@ source_set("flutter_framework_source") {
   sources += _flutter_framework_headers
 
   deps = [
-    ":macos_gpu_configuration",
+    ":macos_surface_configuration",
     "//flutter/flow:flow",
     "//flutter/fml",
     "//flutter/shell/platform/common:common_cpp_accessibility",

@@ -50,16 +50,15 @@ bool AndroidSurfaceGLSkia::IsValid() const {
 std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
     GrDirectContext* gr_context) {
   if (gr_context) {
-    return std::make_unique<GPUSurfaceGLSkia>(sk_ref_sp(gr_context), this,
-                                              true);
+    return std::make_unique<SurfaceGLSkia>(sk_ref_sp(gr_context), this, true);
   } else {
     sk_sp<GrDirectContext> main_skia_context =
         android_context_->GetMainSkiaContext();
     if (!main_skia_context) {
-      main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+      main_skia_context = SurfaceGLSkia::MakeGLContext(this);
       android_context_->SetMainSkiaContext(main_skia_context);
     }
-    return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
+    return std::make_unique<SurfaceGLSkia>(main_skia_context, this, true);
   }
 }
 
@@ -170,7 +169,7 @@ GLFBOInfo AndroidSurfaceGLSkia::GLContextFBO(GLFrameInfo frame_info) const {
   };
 }
 
-// |GPUSurfaceGLDelegate|
+// |SurfaceGLDelegate|
 sk_sp<const GrGLInterface> AndroidSurfaceGLSkia::GetGLInterface() const {
   // This is a workaround for a bug in the Android emulator EGL/GLES
   // implementation.  Some versions of the emulator will not update the
@@ -200,7 +199,7 @@ sk_sp<const GrGLInterface> AndroidSurfaceGLSkia::GetGLInterface() const {
     }
   }
 
-  return GPUSurfaceGLDelegate::GetGLInterface();
+  return SurfaceGLDelegate::GetGLInterface();
 }
 
 std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
@@ -210,11 +209,11 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
   sk_sp<GrDirectContext> main_skia_context =
       android_context_->GetMainSkiaContext();
   if (!main_skia_context) {
-    main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_skia_context = SurfaceGLSkia::MakeGLContext(this);
     android_context_->SetMainSkiaContext(main_skia_context);
   }
 
-  return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
+  return std::make_unique<SurfaceGLSkia>(main_skia_context, this, true);
 }
 
 }  // namespace flutter

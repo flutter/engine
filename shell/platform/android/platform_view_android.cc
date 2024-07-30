@@ -11,7 +11,6 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
 #include "flutter/shell/platform/android/android_context_vk_impeller.h"
@@ -23,6 +22,7 @@
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl_impeller.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl_skia.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_vk_impeller.h"
+#include "flutter/shell/surface/surface_gl_delegate.h"
 #include "fml/logging.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vk_impeller.h"
@@ -384,7 +384,7 @@ sk_sp<GrDirectContext> PlatformViewAndroid::CreateResourceContext() const {
     // this changes, this assumption breaks. Handle the same.
     resource_context = ShellIOManager::CreateCompatibleResourceLoadingContext(
         GrBackendApi::kOpenGL,
-        GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+        SurfaceGLDelegate::GetDefaultPlatformGLInterface());
   } else {
     FML_DLOG(ERROR) << "Could not make the resource context current.";
   }

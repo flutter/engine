@@ -4,7 +4,7 @@
 
 import("//flutter/shell/config.gni")
 
-template("shell_gpu_configuration") {
+template("surface_configuration") {
   assert(defined(invoker.enable_software),
          "Caller must declare if the Software backend must be enabled.")
   assert(defined(invoker.enable_vulkan),
@@ -18,19 +18,19 @@ template("shell_gpu_configuration") {
     public_deps = []
 
     if (invoker.enable_software) {
-      public_deps += [ "//flutter/shell/gpu:gpu_surface_software" ]
+      public_deps += [ "//flutter/shell/surface:software" ]
     }
 
     if (invoker.enable_gl) {
-      public_deps += [ "//flutter/shell/gpu:gpu_surface_gl" ]
+      public_deps += [ "//flutter/shell/surface:gl" ]
     }
 
     if (invoker.enable_vulkan) {
-      public_deps += [ "//flutter/shell/gpu:gpu_surface_vulkan" ]
+      public_deps += [ "//flutter/shell/surface:vulkan" ]
     }
 
     if (invoker.enable_metal) {
-      public_deps += [ "//flutter/shell/gpu:gpu_surface_metal" ]
+      public_deps += [ "//flutter/shell/surface:metal" ]
     }
   }
 

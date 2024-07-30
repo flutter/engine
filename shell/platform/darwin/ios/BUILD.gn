@@ -9,13 +9,13 @@ import("//build/toolchain/clang.gni")
 import("//build/toolchain/toolchain.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_common.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
-shell_gpu_configuration("ios_gpu_configuration") {
+surface_configuration("ios_surface_configuration") {
   enable_software = true
   enable_gl = false
   enable_vulkan = false
@@ -148,7 +148,7 @@ source_set("flutter_framework_source_arc") {
   ]
 
   deps += [
-    ":ios_gpu_configuration",
+    ":ios_surface_configuration",
     "//flutter/common:common",
     "//flutter/common/graphics",
     "//flutter/lib/ui",
@@ -206,7 +206,7 @@ source_set("flutter_framework_source") {
   ]
 
   public_configs = [
-    ":ios_gpu_configuration_config",
+    ":ios_surface_configuration_config",
     "//flutter:config",
   ]
 
@@ -287,7 +287,7 @@ shared_library("ios_test_flutter") {
     ":flutter_framework",
     ":flutter_framework_source",
     ":flutter_framework_source_arc",
-    ":ios_gpu_configuration",
+    ":ios_surface_configuration",
     "//flutter/common:common",
     "//flutter/lib/ui:ui",
     "//flutter/shell/platform/darwin/common:framework_common",
@@ -301,7 +301,7 @@ shared_library("ios_test_flutter") {
     "//flutter/third_party/txt",
   ]
   public_configs = [
-    ":ios_gpu_configuration_config",
+    ":ios_surface_configuration_config",
     "//flutter:config",
   ]
 

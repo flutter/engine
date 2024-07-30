@@ -7,17 +7,17 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/context_options.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan.h"
-#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "flutter/shell/surface/surface_vulkan.h"
+#include "flutter/shell/surface/surface_vulkan_delegate.h"
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace flutter {
 
 class EmbedderSurfaceVulkan final : public EmbedderSurface,
-                                    public GPUSurfaceVulkanDelegate {
+                                    public SurfaceVulkanDelegate {
  public:
   struct VulkanDispatchTable {
     PFN_vkGetInstanceProcAddr get_instance_proc_address;  // required
@@ -43,13 +43,13 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
 
   ~EmbedderSurfaceVulkan() override;
 
-  // |GPUSurfaceVulkanDelegate|
+  // |SurfaceVulkanDelegate|
   const vulkan::VulkanProcTable& vk() override;
 
-  // |GPUSurfaceVulkanDelegate|
+  // |SurfaceVulkanDelegate|
   FlutterVulkanImage AcquireImage(const SkISize& size) override;
 
-  // |GPUSurfaceVulkanDelegate|
+  // |SurfaceVulkanDelegate|
   bool PresentImage(VkImage image, VkFormat format) override;
 
  private:

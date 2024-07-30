@@ -6,10 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_GL_IMPELLER_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"
+#include "flutter/shell/surface/surface_gl_impeller.h"
 
 namespace impeller {
 class ContextGLES;
@@ -20,7 +20,7 @@ namespace flutter {
 class ReactorWorker;
 
 class EmbedderSurfaceGLImpeller final : public EmbedderSurface,
-                                        public GPUSurfaceGLDelegate {
+                                        public SurfaceGLDelegate {
  public:
   EmbedderSurfaceGLImpeller(
       EmbedderSurfaceGLSkia::GLDispatchTable gl_dispatch_table,
@@ -46,28 +46,28 @@ class EmbedderSurfaceGLImpeller final : public EmbedderSurface,
   // |EmbedderSurface|
   std::shared_ptr<impeller::Context> CreateImpellerContext() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextPresent(const GLPresentInfo& present_info) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SkMatrix GLContextSurfaceTransformation() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
-  // |GPUSurfaceGLDelegate|
+  // |SurfaceGLDelegate|
   SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
   // |EmbedderSurface|

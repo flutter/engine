@@ -6,7 +6,7 @@ assert(is_fuchsia)
 
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/surface/surface.gni")
 import("//flutter/testing/testing.gni")
 import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
@@ -15,7 +15,7 @@ import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/vulkan/config.gni")
 
 # Fuchsia uses its own custom Surface implementation.
-shell_gpu_configuration("fuchsia_gpu_configuration") {
+surface_configuration("fuchsia_surface_configuration") {
   enable_software = false
   enable_gl = false
 
@@ -128,7 +128,7 @@ template("runner_sources") {
     ]
 
     flutter_deps = [
-      ":fuchsia_gpu_configuration",
+      ":fuchsia_surface_configuration",
       "//flutter/assets",
       "//flutter/common",
       "//flutter/flutter_vma:flutter_skia_vma",

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_DELEGATE_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_DELEGATE_H_
+#ifndef FLUTTER_SHELL_SURFACE_SURFACE_METAL_DELEGATE_H_
+#define FLUTTER_SHELL_SURFACE_SURFACE_METAL_DELEGATE_H_
 
 #include <stdint.h>
 
@@ -49,17 +49,17 @@ enum class MTLRenderTargetType { kMTLTexture, kCAMetalLayer };
 ///
 /// @see        |IOSurfaceMetal| and |EmbedderSurfaceMetal|.
 ///
-class GPUSurfaceMetalDelegate {
+class SurfaceMetalDelegate {
  public:
   //------------------------------------------------------------------------------
-  /// @brief Construct a new GPUSurfaceMetalDelegate object with the specified
+  /// @brief Construct a new SurfaceMetalDelegate object with the specified
   /// render_target type.
   ///
   /// @see |MTLRenderTargetType|
   ///
-  explicit GPUSurfaceMetalDelegate(MTLRenderTargetType render_target);
+  explicit SurfaceMetalDelegate(MTLRenderTargetType render_target);
 
-  virtual ~GPUSurfaceMetalDelegate();
+  virtual ~SurfaceMetalDelegate();
 
   //------------------------------------------------------------------------------
   /// @brief Returns the handle to the CAMetalLayer to render to. This is only
@@ -73,7 +73,7 @@ class GPUSurfaceMetalDelegate {
   /// from the CAMetalLayer that given by `GetCAMetalLayer` call. This is only
   /// called when the specified render target type in `kCAMetalLayer`.
   ///
-  /// @see |GPUSurfaceMetalDelegate::GetCAMetalLayer|
+  /// @see |SurfaceMetalDelegate::GetCAMetalLayer|
   ///
   virtual bool PresentDrawable(GrMTLHandle drawable) const = 0;
 
@@ -89,7 +89,7 @@ class GPUSurfaceMetalDelegate {
   /// call to `GetMTLTexture`. This is only called when the specified render
   /// target type is `kMTLTexture`.
   ///
-  /// @see |GPUSurfaceMetalDelegate::GetMTLTexture|
+  /// @see |SurfaceMetalDelegate::GetMTLTexture|
   ///
   virtual bool PresentTexture(GPUMTLTextureInfo texture) const = 0;
 
@@ -106,4 +106,4 @@ class GPUSurfaceMetalDelegate {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_DELEGATE_H_
+#endif  // FLUTTER_SHELL_SURFACE_SURFACE_METAL_DELEGATE_H_
