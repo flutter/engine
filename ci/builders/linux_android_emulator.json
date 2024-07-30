@@ -16,6 +16,7 @@
                 "--no-lto",
                 "--rbe",
                 "--no-goma",
+                "--no-stripped",
                 "--target-dir",
                 "ci/android_emulator_debug_x64"
             ],
@@ -110,6 +111,7 @@
                 "--rbe",
                 "--no-goma",
                 "--target-dir",
+                "--no-stripped",
                 "ci/android_emulator_debug_x86"
             ],
             "dependencies": [

@@ -16,6 +16,7 @@
                 "--no-lto",
                 "--rbe",
                 "--no-goma",
+                "--no-stripped",
                 "--target-dir",
                 "ci/android_emulator_skia_debug_x64"
             ],
