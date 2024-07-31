@@ -164,6 +164,7 @@
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
+../../../flutter/impeller/entity/draw_order_resolver_unittests.cc
 ../../../flutter/impeller/entity/entity_pass_target_unittests.cc
 ../../../flutter/impeller/entity/entity_pass_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
@@ -211,7 +212,6 @@
 ../../../flutter/impeller/scene/scene_unittests.cc
 ../../../flutter/impeller/shader_archive/shader_archive_unittests.cc
 ../../../flutter/impeller/tessellator/dart/.dart_tool
-../../../flutter/impeller/tessellator/dart/pubspec.lock
 ../../../flutter/impeller/tessellator/dart/pubspec.yaml
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/toolkit/android/README.md
@@ -423,7 +423,6 @@
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
 ../../../flutter/shell/vmservice/.dart_tool
-../../../flutter/shell/vmservice/pubspec.lock
 ../../../flutter/shell/vmservice/pubspec.yaml
 ../../../flutter/sky/packages/sky_engine/.gitignore
 ../../../flutter/sky/packages/sky_engine/LICENSE
