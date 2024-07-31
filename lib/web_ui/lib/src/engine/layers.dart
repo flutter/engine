@@ -547,7 +547,7 @@ sealed class PlatformViewClip {
 
   bool covers(ui.Rect rect);
 
-  ScenePath get asPath;
+  ScenePath get toPath;
 
   static PlatformViewClip combine(PlatformViewClip outer, PlatformViewClip inner) {
     if (outer is PlatformViewNoClip) {
@@ -566,8 +566,8 @@ sealed class PlatformViewClip {
     }
 
     final ScenePath path = ui.Path() as ScenePath;
-    path.addPath(outer.asPath, ui.Offset.zero);
-    path.addPath(inner.asPath, ui.Offset.zero);
+    path.addPath(outer.toPath, ui.Offset.zero);
+    path.addPath(inner.toPath, ui.Offset.zero);
     return PlatformViewPathClip(path);
   }
 }
@@ -581,7 +581,7 @@ class PlatformViewNoClip implements PlatformViewClip {
   }
 
   @override
-  ScenePath get asPath => ui.Path() as ScenePath;
+  ScenePath get toPath => ui.Path() as ScenePath;
 
   @override
   ui.Rect get boundingRect => ui.Rect.zero;
@@ -593,10 +593,7 @@ class PlatformViewNoClip implements PlatformViewClip {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other) || (other.runtimeType == runtimeType)) {
-      return true;
-    }
-    return false;
+    return identical(this, other) || (other.runtimeType == PlatformViewNoClip);
   }
 
   @override
@@ -617,12 +614,12 @@ class PlatformViewRectClip implements PlatformViewClip {
     if (offset != null) {
       return PlatformViewRectClip(rect.shift(offset));
     } else {
-      return PlatformViewPathClip(asPath.transform(position.transform!.toFloat64()) as ScenePath);
+      return PlatformViewPathClip(toPath.transform(position.transform!.toFloat64()) as ScenePath);
     }
   }
 
   @override
-  ScenePath get asPath => (ui.Path() as ScenePath)..addRect(rect);
+  ScenePath get toPath => (ui.Path() as ScenePath)..addRect(rect);
 
   @override
   ui.Rect get boundingRect => rect;
@@ -637,8 +634,8 @@ class PlatformViewRectClip implements PlatformViewClip {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
+    if (identical(this, other)) {
+      return true;
     }
     return other is PlatformViewRectClip && rect == other.rect;
   }
@@ -661,12 +658,12 @@ class PlatformViewRRectClip implements PlatformViewClip {
     if (offset != null) {
       return PlatformViewRRectClip(rrect.shift(offset));
     } else {
-      return PlatformViewPathClip(asPath.transform(position.transform!.toFloat64()) as ScenePath);
+      return PlatformViewPathClip(toPath.transform(position.transform!.toFloat64()) as ScenePath);
     }
   }
 
   @override
-  ScenePath get asPath => (ui.Path() as ScenePath)..addRRect(rrect);
+  ScenePath get toPath => (ui.Path() as ScenePath)..addRRect(rrect);
 
   @override
   ui.Rect get boundingRect => throw UnimplementedError();
@@ -682,8 +679,8 @@ class PlatformViewRRectClip implements PlatformViewClip {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
+    if (identical(this, other)) {
+      return true;
     }
     return other is PlatformViewRRectClip && rrect == other.rrect;
   }
@@ -712,7 +709,7 @@ class PlatformViewPathClip implements PlatformViewClip {
   }
 
   @override
-  ScenePath get asPath => path;
+  ScenePath get toPath => path;
 
   @override
   ui.Rect get boundingRect => path.getBounds();
@@ -726,8 +723,8 @@ class PlatformViewPathClip implements PlatformViewClip {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
+    if (identical(this, other)) {
+      return true;
     }
     return other is PlatformViewPathClip && path == other.path;
   }

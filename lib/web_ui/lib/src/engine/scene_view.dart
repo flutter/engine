@@ -42,47 +42,18 @@ class _SceneRender {
   }
 }
 
-class SVGClipRegistry {
-  SVGClipRegistry(DomElement parentElement) {
-    _defsElement.id = 'sk_path_defs';
-    final SVGElement svgElement = kSvgResourceHeader.cloneNode(false) as SVGElement;
-    svgElement.appendChild(_defsElement);
-    parentElement.appendChild(svgElement);
-  }
-
-  final SVGDefsElement _defsElement = createSVGDefsElement();
-  final Map<String, SVGClipPathElement> _clipMap = <String, SVGClipPathElement>{};
-  int _svgCount = 0;
-
-  String registerPath(ScenePath path) {
-    final String id = 'flutter_svg${_svgCount++}';
-    final SVGClipPathElement newClipPath = createSVGClipPathElement();
-    newClipPath.id = id;
-    newClipPath.appendChild(createSVGPathElement()..setAttribute('d', path.toSvgString()));
-    _defsElement.appendChild(newClipPath);
-    _clipMap[id] = newClipPath;
-    return id;
-  }
-
-  void unregisterPath(String pathId) {
-    final SVGClipPathElement clipPath = _clipMap.remove(pathId)!;
-    _defsElement.removeChild(clipPath);
-  }
-}
-
 // This class builds a DOM tree that composites an `EngineScene`.
 class EngineSceneView {
   factory EngineSceneView(PictureRenderer pictureRenderer, ui.FlutterView flutterView) {
     final DomElement sceneElement = createDomElement('flt-scene');
-    return EngineSceneView._(pictureRenderer, flutterView, sceneElement, SVGClipRegistry(sceneElement));
+    return EngineSceneView._(pictureRenderer, flutterView, sceneElement);
   }
 
-  EngineSceneView._(this.pictureRenderer, this.flutterView, this.sceneElement, this.clipRegistry);
+  EngineSceneView._(this.pictureRenderer, this.flutterView, this.sceneElement);
 
   final PictureRenderer pictureRenderer;
   final DomElement sceneElement;
   final ui.FlutterView flutterView;
-  final SVGClipRegistry clipRegistry;
 
   List<SliceContainer> containers = <SliceContainer>[];
 
@@ -207,7 +178,7 @@ class EngineSceneView {
                 break;
               }
             }
-            container ??= PlatformViewContainer(view.viewId, clipRegistry);
+            container ??= PlatformViewContainer(view.viewId);
             container.bounds = view.bounds;
             container.styling = view.styling;
             container.updateContents();
@@ -219,7 +190,6 @@ class EngineSceneView {
     for (final SliceContainer? container in reusableContainers) {
       if (container != null) {
         sceneElement.removeChild(container.container);
-        container.dispose();
       }
     }
 
@@ -242,7 +212,6 @@ sealed class SliceContainer {
   DomElement get container;
 
   void updateContents();
-  void dispose();
 }
 
 final class PictureSliceContainer extends SliceContainer {
@@ -304,14 +273,10 @@ final class PictureSliceContainer extends SliceContainer {
   @override
   final DomElement container;
   final DomCanvasElement canvas;
-
-  @override
-  void dispose() {
-  }
 }
 
 final class PlatformViewContainer extends SliceContainer {
-  PlatformViewContainer(this.viewId, this._clipRegistry) :
+  PlatformViewContainer(this.viewId) :
     container = createDomElement('flt-clip'),
     slot = createPlatformViewSlot(viewId) {
       container.appendChild(slot);
@@ -322,9 +287,8 @@ final class PlatformViewContainer extends SliceContainer {
   ui.Rect? _bounds;
   bool _dirty = false;
 
-  final SVGClipRegistry _clipRegistry;
   ui.Path? _clipPath;
-  String? _clipPathId;
+  String? _clipPathString;
 
   @override
   final DomElement container;
@@ -350,15 +314,8 @@ final class PlatformViewContainer extends SliceContainer {
       return;
     }
 
-    if (_clipPath != null) {
-      _clipRegistry.unregisterPath(_clipPathId!);
-      _clipPathId = null;
-    }
-
-    if (path != null) {
-      _clipPath = path;
-      _clipPathId = _clipRegistry.registerPath(path);
-    }
+    _clipPath = path;
+    _clipPathString = path?.toSvgString();
   }
 
   String cssStringForClip(PlatformViewClip clip, double devicePixelRatio) {
@@ -390,7 +347,8 @@ final class PlatformViewContainer extends SliceContainer {
         return 'rect(${top}px ${right}px ${bottom}px ${left}px round ${tlRadiusX}px ${trRadiusX}px ${brRadiusX}px ${blRadiusX}px / ${tlRadiusY}px ${trRadiusY}px ${brRadiusY}px ${blRadiusY}px)';
       case PlatformViewPathClip():
         clipPath = clip.path;
-        return 'url(#$_clipPathId)';
+        print('$_clipPathString');
+        return "path('$_clipPathString')";
     }
   }
 
@@ -431,15 +389,6 @@ final class PlatformViewContainer extends SliceContainer {
       containerStyle.clipPath = clipPathString;
 
       _dirty = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_clipPath != null) {
-      _clipRegistry.unregisterPath(_clipPathId!);
-      _clipPath = null;
-      _clipPathId = null;
     }
   }
 }
