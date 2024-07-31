@@ -1337,28 +1337,33 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [mockTraitCollection stopMocking];
 }
 
-- (void)testItReportsAlwaysUsed24HourClock {
+- (void)testItReportsAlwaysUsed24HourFormat {
   // Setup test.
-  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  id settingsChannel = OCMStrictClassMock([FlutterBasicMessageChannel class]);
   OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
-
-  id mockHourFormat = OCMClassMock([FlutterHourFormat class]);
-  OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(YES);
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
-  // Exercise behavior under test.
-  [vc traitCollectionDidChange:nil];
-
-  // Verify behavior.
-  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-                               return message[@"alwaysUse24HourFormat"];
+  // Test the YES case.
+  id mockHourFormat = OCMClassMock([FlutterHourFormat class]);
+  OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(YES);
+  OCMExpect([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"alwaysUse24HourFormat"] isEqual:@(YES)];
                              }]]);
-
-  // Clean up mocks
-  [settingsChannel stopMocking];
+  [vc onUserSettingsChanged:nil];
   [mockHourFormat stopMocking];
+
+  // Test the NO case.
+  mockHourFormat = OCMClassMock([FlutterHourFormat class]);
+  OCMStub([mockHourFormat isAlwaysUse24HourFormat]).andReturn(NO);
+  OCMExpect([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"alwaysUse24HourFormat"] isEqual:@(NO)];
+                             }]]);
+  [vc onUserSettingsChanged:nil];
+  [mockHourFormat stopMocking];
+
+  // Clean up mocks.
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsAccessibilityOnOffSwitchLabelsFlagNotSet {
