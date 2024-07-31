@@ -843,8 +843,9 @@ bool EntityPass::RenderElement(Entity& element_entity,
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
     }
+  }
 
-    // We also need to restore the clips in addition to the backdrop.
+  if (result.just_created) {
     clip_coverage_stack.ActivateClipReplay();
   }
 
