@@ -518,7 +518,6 @@ public class FlutterFragmentActivity extends FragmentActivity
             ? TransparencyMode.opaque
             : TransparencyMode.transparent;
     final boolean shouldDelayFirstAndroidViewDraw = renderMode == RenderMode.surface;
-    final boolean shouldAutomaticallyHandleOnBackPressed = true;
 
     if (getCachedEngineId() != null) {
       Log.v(
@@ -543,7 +542,6 @@ public class FlutterFragmentActivity extends FragmentActivity
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
           .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
-          .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
           .build();
     } else {
       Log.v(
@@ -579,7 +577,6 @@ public class FlutterFragmentActivity extends FragmentActivity
             .transparencyMode(transparencyMode)
             .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
             .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
-            .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
             .build();
       }
 
@@ -595,7 +592,6 @@ public class FlutterFragmentActivity extends FragmentActivity
           .transparencyMode(transparencyMode)
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
-          .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
           .build();
     }
   }
@@ -618,6 +614,12 @@ public class FlutterFragmentActivity extends FragmentActivity
     // Forward Intents to our FlutterFragment in case it cares.
     flutterFragment.onNewIntent(intent);
     super.onNewIntent(intent);
+  }
+
+  @Override
+  @SuppressWarnings("MissingSuperCall")
+  public void onBackPressed() {
+    flutterFragment.onBackPressed();
   }
 
   @Override
