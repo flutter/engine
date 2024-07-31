@@ -26,9 +26,10 @@ std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
     const std::vector<std::shared_ptr<DlColorSource>>& samplers = {}) {
   auto runtime_stages =
       test->OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
-
   auto runtime_stage = runtime_stages[PlaygroundBackendToRuntimeStageBackend(
       test->GetBackend())];
+  FML_CHECK(runtime_stage);
+  FML_CHECK(runtime_stage->IsDirty());
 
   auto dl_runtime_effect = DlRuntimeEffect::MakeImpeller(runtime_stage);
 
@@ -75,7 +76,8 @@ TEST_P(AiksTest, DrawPaintTransformsBounds) {
       MakeRuntimeEffect(this, "gradient.frag.iplr", uniform_data));
 
   DisplayListBuilder builder;
-  builder.Save();
+  DlPaint save_paint;
+  builder.SaveLayer(nullptr, &save_paint);
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawPaint(paint);
   builder.Restore();
