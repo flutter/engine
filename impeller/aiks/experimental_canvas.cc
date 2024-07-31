@@ -322,15 +322,15 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
-  // Can we always guarantee that we get a bounds? Does a lack of bounds
-  // indicate something?
-  if (!bounds.has_value()) {
-    bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
-  }
+  // // Can we always guarantee that we get a bounds? Does a lack of bounds
+  // // indicate something?
+  // if (!bounds.has_value()) {
+  //   bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
+  // }
 
   // SaveLayer is a no-op, depending on the bounds promise. Should/Can DL elide
   // this?
-  if (bounds->IsEmpty()) {
+  if (bounds.has_value() && bounds->IsEmpty()) {
     Save(total_content_depth);
     return;
   }
@@ -408,7 +408,8 @@ void ExperimentalCanvas::SaveLayer(
   // Backdrop Filter must expand bounds to at least the clip stack, otherwise
   // the coverage of the parent render pass.
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
-  if (backdrop_filter_contents) {
+  if (backdrop_filter_contents ||
+      Entity::IsBlendModeDestructive(paint.blend_mode)) {
     FML_CHECK(clip_coverage_stack_.HasCoverage());
     // We should never hit this case as we check the intersection above.
     // NOLINTBEGIN(bugprone-unchecked-optional-access)
