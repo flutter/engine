@@ -161,7 +161,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
         const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 
-        const impeller::RenderTarget& render_target = surface->GetTargetRenderPassDescriptor();
+        impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
         surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
 
         surface_frame.set_user_data(std::move(surface));
@@ -284,7 +284,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
-        const impeller::RenderTarget& render_target = surface->GetTargetRenderPassDescriptor();
+        impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
         impeller::ExperimentalDlDispatcher impeller_dispatcher(
             aiks_context->GetContentContext(), render_target,
             display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),

@@ -62,7 +62,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   auto cull_rect =
       surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
 
-  const impeller::RenderTarget& render_target =
+  impeller::RenderTarget render_target =
       surface->GetTargetRenderPassDescriptor();
 
   SurfaceFrame::EncodeCallback encode_callback = [aiks_context =
