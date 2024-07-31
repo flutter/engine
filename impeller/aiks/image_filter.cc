@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/image_filter.h"
+#include <memory>
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -62,6 +63,14 @@ std::shared_ptr<ImageFilter> ImageFilter::MakeLocalMatrix(
 
 std::shared_ptr<FilterContents> ImageFilter::GetFilterContents() const {
   return WrapInput(FilterInput::Make(Rect()));
+}
+
+std::shared_ptr<ImageFilter> ImageFilter::MakeRuntimeEffect(
+    std::shared_ptr<RuntimeStage> runtime_stage,
+    std::shared_ptr<std::vector<uint8_t>> uniforms,
+    std::vector<RuntimeEffectContents::TextureInput> texture_inputs) {
+  return std::make_shared<RuntimeEffectImageFilter>(
+      std::move(runtime_stage), std::move(uniforms), std::move(texture_inputs));
 }
 
 /*******************************************************************************
@@ -203,6 +212,30 @@ std::shared_ptr<FilterContents> LocalMatrixImageFilter::WrapInput(
 
 std::shared_ptr<ImageFilter> LocalMatrixImageFilter::Clone() const {
   return std::make_shared<LocalMatrixImageFilter>(*this);
+}
+
+/*******************************************************************************
+ ******* RuntimeEffectImageFilter
+ ******************************************************************************/
+
+RuntimeEffectImageFilter::RuntimeEffectImageFilter(
+    std::shared_ptr<RuntimeStage> runtime_stage,
+    std::shared_ptr<std::vector<uint8_t>> uniforms,
+    std::vector<RuntimeEffectContents::TextureInput> texture_inputs)
+    : runtime_stage_(std::move(runtime_stage)),
+      uniforms_(std::move(uniforms)),
+      texture_inputs_(std::move(texture_inputs)) {}
+
+// |ImageFilter|
+std::shared_ptr<FilterContents> RuntimeEffectImageFilter::WrapInput(
+    const FilterInput::Ref& input) const {
+  return FilterContents::MakeRuntimeEffect(input, runtime_stage_, uniforms_,
+                                           texture_inputs_);
+}
+
+// |ImageFilter|
+std::shared_ptr<ImageFilter> RuntimeEffectImageFilter::Clone() const {
+  return std::make_shared<RuntimeEffectImageFilter>(*this);
 }
 
 }  // namespace impeller

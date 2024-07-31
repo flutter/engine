@@ -20,6 +20,7 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
@@ -27,8 +28,10 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
+#include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -1258,6 +1261,38 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Not currently supported on OpenGLES backend.";
+  }
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
+
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs = {
+      RuntimeEffectContents::TextureInput{
+          .sampler_descriptor = SamplerDescriptor{},
+          .texture = nullptr,
+      }};
+
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(Vector2));
+
+  Paint paint;
+  paint.color = Color::Aqua();
+  paint.image_filter = ImageFilter::MakeRuntimeEffect(
+      runtime_stage, uniform_data, texture_inputs);
+
+  Canvas canvas;
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

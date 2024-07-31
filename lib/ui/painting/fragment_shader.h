@@ -38,6 +38,8 @@ class ReusableFragmentShader : public Shader {
 
   bool ValidateSamplers();
 
+  bool ValidateImageFilter();
+
   void Dispose();
 
   // |Shader|
