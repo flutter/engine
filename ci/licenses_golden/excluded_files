@@ -164,7 +164,6 @@
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
-../../../flutter/impeller/entity/draw_order_resolver_unittests.cc
 ../../../flutter/impeller/entity/entity_pass_target_unittests.cc
 ../../../flutter/impeller/entity/entity_pass_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
@@ -433,7 +432,6 @@
 ../../../flutter/sky/packages/sky_engine/pubspec.yaml
 ../../../flutter/sky/tools/create_embedder_framework.py
 ../../../flutter/sky/tools/create_full_ios_framework.py
-../../../flutter/sky/tools/create_ios_framework.py
 ../../../flutter/sky/tools/create_macos_binary.py
 ../../../flutter/sky/tools/create_macos_framework.py
 ../../../flutter/sky/tools/create_macos_gen_snapshots.py
@@ -3190,7 +3188,6 @@
 ../../../flutter/tools/licenses/analysis_options.yaml
 ../../../flutter/tools/licenses/data
 ../../../flutter/tools/licenses/lib/README
-../../../flutter/tools/licenses/pubspec.lock
 ../../../flutter/tools/licenses/pubspec.yaml
 ../../../flutter/tools/licenses/test
 ../../../flutter/web_sdk
