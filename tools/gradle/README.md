@@ -8,12 +8,12 @@ The Android embedder is shipped to Flutter end-users, but Gradle is not.
 
 1. Ensure that you have [Depot tools](http://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)
 on your path. If you have a flutter/engine checkout, then you should already have it on your path.
-2. Ensure you have write access for cipd. See go/flutter-luci-cipd for instructions on how to
+2. Ensure that you have write access for CIPD. See go/flutter-luci-cipd for instructions on how to
 request access.
 
 ## Steps to download and verify new Gradle version
 These steps use Gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
-Gradle version you wish to use.
+Gradle version that you wish to use.
 
 1. Download the new version of Gradle you'd like from [the Gradle website](https://gradle.org/releases/).
 Please download the "complete" version.
@@ -25,14 +25,14 @@ command and the one from the Gradle website match.
 
 ## Steps to upload new Gradle version to CIPD
 These steps use Gradle version 7.5.1 as an example. Please replace 7.5.1 with the actual
-Gradle version you downloaded and verified.
+Gradle version that you downloaded and verified.
 
 1. Authenticate with CIPD by running `cipd auth-login`.
 2. Run `cipd create -in gradle-7.5.1 -install-mode copy -tag version:7.5.1 -name flutter/gradle` to
 upload the new Gradle version to CIPD.
-3. Update the `engine/src/flutter/DEPS` Gradle entry (which should look something like [this](https://github.com/flutter/engine/blob/39ee1a549581fe8f0fc3978e17a7f2f54e145bb7/DEPS#L732-L743))
- to contain the tag from the command above (version:7.5.1).
-4. Run `gclient sync` to verify that dependency can be fetched.
+3. Update the `engine/src/flutter/DEPS` Gradle entry (which should look something like [this](https://github.com/flutter/engine/blob/4caaab9f2502481b606b930abeea4a361022fa16/DEPS#L732-L743))
+to contain the tag from the command above (version:7.5.1).
+4. Run `gclient sync` to verify that the dependency can be fetched.
 
 ## Useful links
 * CIPD Gradle package: https://chrome-infra-packages.appspot.com/p/flutter/gradle/+/
