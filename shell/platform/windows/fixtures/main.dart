@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:typed_data' show ByteData, Uint8List;
 import 'dart:ui' as ui;
+import 'dart:ui';
 
 // Signals a waiting latch in the native test.
 @pragma('vm:external-name', 'Signal')

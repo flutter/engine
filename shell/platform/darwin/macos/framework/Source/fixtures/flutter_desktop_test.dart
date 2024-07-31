@@ -11,12 +11,10 @@ import 'dart:ui';
 @pragma('vm:external-name', 'SignalNativeTest')
 external void signalNativeTest();
 
-void main() {
-}
+void main() {}
 
 @pragma('vm:entry-point')
-void empty() {
-}
+void empty() {}
 
 /// Notifies the test of a string value.
 ///
@@ -54,7 +52,7 @@ void canCompositePlatformViews() {
 @pragma('vm:entry-point')
 void drawIntoAllViews() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
-    SceneBuilder builder = SceneBuilder();
+    final builder = SceneBuilder();
     builder.addPicture(const Offset(1.0, 1.0), _createSimplePicture());
     for (final FlutterView view in PlatformDispatcher.instance.views) {
       view.render(builder.build());
@@ -85,5 +83,6 @@ void backgroundTest() {
 
 @pragma('vm:entry-point')
 void sendFooMessage() {
-  PlatformDispatcher.instance.sendPlatformMessage('foo', null, (ByteData? result) {});
+  PlatformDispatcher.instance
+      .sendPlatformMessage('foo', null, (ByteData? result) {});
 }
