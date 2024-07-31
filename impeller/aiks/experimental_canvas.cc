@@ -407,9 +407,9 @@ void ExperimentalCanvas::SaveLayer(
 
   // Backdrop Filter must expand bounds to at least the clip stack, otherwise
   // the coverage of the parent render pass.
-  Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
+  Rect subpass_coverage;
   if (backdrop_filter_contents ||
-      Entity::IsBlendModeDestructive(paint.blend_mode)) {
+      Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
     FML_CHECK(clip_coverage_stack_.HasCoverage());
     // We should never hit this case as we check the intersection above.
     // NOLINTBEGIN(bugprone-unchecked-optional-access)
@@ -418,6 +418,8 @@ void ExperimentalCanvas::SaveLayer(
             .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
             .value();
     // NOLINTEND(bugprone-unchecked-optional-access)
+  } else {
+    subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   }
 
   render_passes_.push_back(LazyRenderingConfig(
