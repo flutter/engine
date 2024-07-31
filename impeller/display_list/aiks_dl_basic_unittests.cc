@@ -806,9 +806,8 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   builder.ClipRRect(clip_rrect, DlCanvas::ClipOp::kIntersect);
 
   DlPaint save_paint;
-  save_paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
-  builder.SaveLayer(&clip_rect, &save_paint);
+  auto bdf = std::make_shared<DlColorFilterImageFilter>(DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
+  builder.SaveLayer(&clip_rect, &save_paint, bdf.get());
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -891,7 +890,7 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
     DlPaint paint;
     paint.setColorSource(std::make_shared<DlImageColorSource>(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
-        DlImageSampling::kLinear, &matrix));
+        DlImageSampling::kNearestNeighbor, &matrix));
 
     builder.DrawRect(SkRect::MakeLTRB(0, 0, 100, 100), paint);
   }
@@ -909,7 +908,7 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
     SkMatrix matrix = SkM44::ColMajor(impeller_matrix.m).asM33();
     paint.setColorSource(std::make_shared<DlImageColorSource>(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
-        DlImageSampling::kLinear, &matrix));
+        DlImageSampling::kNearestNeighbor, &matrix));
     builder.DrawRect(SkRect::MakeLTRB(100, 0, 200, 100), paint);
     builder.Restore();
   }
@@ -923,7 +922,7 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
     SkMatrix matrix = SkMatrix::Scale(0.005, 0.005);
     paint.setColorSource(std::make_shared<DlImageColorSource>(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
-        DlImageSampling::kLinear, &matrix));
+        DlImageSampling::kNearestNeighbor, &matrix));
 
     builder.DrawRect(SkRect::MakeLTRB(0, 0, 1, 1), paint);
   }
