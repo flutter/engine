@@ -24,8 +24,7 @@ std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
     std::string_view name,
     const std::shared_ptr<std::vector<uint8_t>>& uniform_data = {},
     const std::vector<std::shared_ptr<DlColorSource>>& samplers = {}) {
-  auto runtime_stages =
-      test->OpenAssetAsRuntimeStage(name.data());
+  auto runtime_stages = test->OpenAssetAsRuntimeStage(name.data());
   auto runtime_stage = runtime_stages[PlaygroundBackendToRuntimeStageBackend(
       test->GetBackend())];
   FML_CHECK(runtime_stage);
