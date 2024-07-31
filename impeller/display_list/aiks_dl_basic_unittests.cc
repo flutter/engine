@@ -806,7 +806,8 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   builder.ClipRRect(clip_rrect, DlCanvas::ClipOp::kIntersect);
 
   DlPaint save_paint;
-  auto bdf = std::make_shared<DlColorFilterImageFilter>(DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
+  auto bdf = std::make_shared<DlColorFilterImageFilter>(
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
   builder.SaveLayer(&clip_rect, &save_paint, bdf.get());
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
