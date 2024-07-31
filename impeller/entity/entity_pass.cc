@@ -971,7 +971,9 @@ bool EntityPass::OnRender(
       // everything and disrupt the optimization.
       !backdrop_filter_proc_;
 
-  // Count the number of elements eaten by the clear color optimization.
+  // Count the number of elements eaten by the clear color optimization. Break
+  // it down in terms of opaque and translucent elements so that we can skip
+  // over these entities when applying the clear color optimization.
   size_t opaque_clear_entity_count = 0;
   size_t translucent_clear_entity_count = 0;
   if (should_collapse_clear_colors) {
@@ -985,10 +987,14 @@ bool EntityPass::OnRender(
           } else {
             translucent_clear_entity_count++;
           }
+          // We've found an entity that replaces the whole background color of
+          // this layer, so continue counting.
           continue;
         }
-        break;
       }
+      // We came across an element that doesn't replace the background color of
+      // this layer, so stop counting.
+      break;
     }
   }
 
