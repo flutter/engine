@@ -21,8 +21,10 @@
 FLUTTER_ASSERT_ARC
 
 #ifdef FML_OS_IOS_SIMULATOR
-// Note: this is an arbitrary number that attempts to account for cases
-// where the platform view might be momentarily off the screen.
+// The number of frames the rasterizer task runner will continue
+// to run on the platform thread after no platform view is rendered.
+//
+// Note: this is an arbitrary number.
 static const int kDefaultMergedLeaseDuration = 10;
 #endif  // FML_OS_IOS_SIMULATOR
 
@@ -105,6 +107,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetNextL
 void FlutterPlatformViewLayerPool::CreateLayer(GrDirectContext* gr_context,
                                                const std::shared_ptr<IOSContext>& ios_context,
                                                MTLPixelFormat pixel_format) {
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
   std::shared_ptr<FlutterPlatformViewLayer> layer;
   fml::scoped_nsobject<UIView> overlay_view;
   fml::scoped_nsobject<UIView> overlay_view_wrapper;
@@ -266,12 +269,13 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
 
-  platform_views_[viewId] = PlatformViewData{
-      .view = fml::scoped_nsobject<NSObject<FlutterPlatformView>>(embedded_view),  //
-      .touch_interceptor =
-          fml::scoped_nsobject<FlutterTouchInterceptingView>(touch_interceptor),  //
-      .root_view = fml::scoped_nsobject<UIView>(clipping_view)                    //
-  };
+  platform_views_.emplace(
+      viewId, PlatformViewData{
+                  .view = fml::scoped_nsobject<NSObject<FlutterPlatformView>>(embedded_view),  //
+                  .touch_interceptor =
+                      fml::scoped_nsobject<FlutterTouchInterceptingView>(touch_interceptor),  //
+                  .root_view = fml::scoped_nsobject<UIView>(clipping_view)                    //
+              });
 
   result(nil);
 }
@@ -643,6 +647,9 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
+  // Reset will only be called from the raster thread or a merged raster/platform thread.
+  // platform_views_ must only be modified on the platform thread, and any operations that
+  // read or modify platform views should occur there.
   fml::TaskRunner::RunNowOrPostTask(
       platform_task_runner_, [&, composition_order = composition_order_]() {
         for (int64_t view_id : composition_order_) {
@@ -664,6 +671,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::unique_ptr<SurfaceFrame> background_frame) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
 
+  // No platform views to render; we're done.
   if (flutter_view_ == nullptr || (composition_order_.empty() && !had_platform_views_)) {
     had_platform_views_ = false;
     return background_frame->Submit();
@@ -673,6 +681,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   bool did_encode = true;
   LayersMap platform_view_layers;
   std::vector<std::unique_ptr<SurfaceFrame>> surface_frames;
+  surface_frames.reserve(composition_order_.size());
   std::unordered_map<int64_t, SkRect> view_rects;
 
   for (int64_t view_id : composition_order_) {
@@ -694,9 +703,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // If there are not sufficient overlay layers, we must construct them on the platform
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
-  if (required_overlay_layers > layer_pool_->size()) {
-    CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
-  }
+  CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
 
   int64_t overlay_id = 0;
   for (int64_t view_id : composition_order_) {
@@ -775,24 +782,15 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
     size_t required_overlay_layers) {
   TRACE_EVENT0("flutter", "FlutterPlatformViewsController::CreateMissingLayers");
 
-  auto missing_layer_count = required_overlay_layers - layer_pool_->size();
-
-  // If raster thread is merged because we're in a unit test or running on simulator, then
-  // we don't need to post a task to create an overlay layer.
-  if ([[NSThread currentThread] isMainThread]) {
-    // Create Missing Layers
-    for (auto i = 0u; i < missing_layer_count; i++) {
-      CreateLayer(gr_context,                                      //
-                  ios_context,                                     //
-                  ((FlutterView*)flutter_view_.get()).pixelFormat  //
-      );
-    }
+  if (required_overlay_layers <= layer_pool_->size()) {
     return;
   }
+  auto missing_layer_count = required_overlay_layers - layer_pool_->size();
 
+  // If the raster thread isn't merged, create layers on the platform thread and block until
+  // complete.
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  platform_task_runner_->PostTask([&]() {
-    // Create Missing Layers
+  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, [&]() {
     for (auto i = 0u; i < missing_layer_count; i++) {
       CreateLayer(gr_context,                                      //
                   ios_context,                                     //
@@ -801,7 +799,9 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
     }
     latch->CountDown();
   });
-  latch->Wait();
+  if (![[NSThread currentThread] isMainThread]) {
+    latch->Wait();
+  }
 }
 
 /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
@@ -848,9 +848,6 @@ void FlutterPlatformViewsController::PerformSubmit(
   // Organize the layers by their z indexes.
   BringLayersIntoView(platform_view_layers, composition_order);
 
-  // If the frame is submitted with embedded platform views,
-  // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
-  // If that case, we need to commit the transaction.
   [CATransaction commit];
 }
 
@@ -862,8 +859,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(
 
   previous_composition_order_.clear();
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
-  for (size_t i = 0; i < composition_order.size(); i++) {
-    int64_t platform_view_id = composition_order[i];
+  for (int64_t platform_view_id : composition_order) {
     UIView* platform_view_root = platform_views_[platform_view_id].root_view.get();
     [desired_platform_subviews addObject:platform_view_root];
 
