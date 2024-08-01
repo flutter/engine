@@ -1067,5 +1067,39 @@ TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest,
+       CanPerformSaveLayerWithBoundsAndLargerIntermediateIsNotAllocated) {
+  DisplayListBuilder builder;
+
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+
+  DlPaint green;
+  green.setColor(DlColor::kGreen());
+
+  DlPaint blue;
+  blue.setColor(DlColor::kBlue());
+
+  DlPaint save;
+  save.setColor(DlColor::kBlack().modulateOpacity(0.5));
+
+  SkRect huge_bounds = SkRect::MakeXYWH(0, 0, 100000, 100000);
+  builder.SaveLayer(&huge_bounds, &save);
+
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 100, 100), red);
+  builder.DrawRect(SkRect::MakeXYWH(10, 10, 100, 100), green);
+  builder.DrawRect(SkRect::MakeXYWH(20, 20, 100, 100), blue);
+
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// This makes sure the WideGamut named tests use 16bit float pixel format.
+TEST_P(AiksTest, FormatWideGamut) {
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kB10G10R10A10XR);
+}
+
 }  // namespace testing
 }  // namespace impeller
