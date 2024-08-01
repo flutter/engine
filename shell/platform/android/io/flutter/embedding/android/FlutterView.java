@@ -1498,7 +1498,8 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
       List<Rect> boundingRects = delegate.getCaptionBarInsets(getContext());
       if (boundingRects != null && boundingRects.size() == 1) {
-        viewportMetrics.viewPaddingTop = boundingRects.get(0).bottom;
+        viewportMetrics.viewPaddingTop =
+            Math.max(boundingRects.get(0).bottom, viewportMetrics.viewPaddingTop);
       }
     } else {
       Log.w(TAG, "API level " + Build.VERSION.SDK_INT + " is too low to query bounding rects.");
