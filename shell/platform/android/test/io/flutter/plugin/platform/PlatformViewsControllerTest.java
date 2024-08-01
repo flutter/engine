@@ -1094,6 +1094,9 @@ public class PlatformViewsControllerTest {
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
+    platformViewsController.onBeginFrame();
+    platformViewsController.onEndFrame();
+
     assertEquals(flutterView.getChildCount(), 1);
   }
 

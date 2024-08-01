@@ -1066,6 +1066,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // Dispose deletes the entry from platformViews and clears associated resources.
       channelHandler.dispose(viewId);
     }
+    for (Integer viewId : platformViewsToDispose) {
+      disposeHybridCompositionPlatformView(viewId);
+    }
+    platformViewsToDispose.clear();
   }
 
   // Invoked when the Android system is requesting we reduce memory usage.
@@ -1251,18 +1255,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         continue;
       }
 
-      // Remove unused platform view.
-      final FlutterMutatorView parentView = platformViewParent.get(viewId);
-      if (parentView != null) {
-        parentView.removeAllViews();
-        parentView.unsetOnDescendantFocusChangeListener();
-
-        final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
-        if (mutatorViewParent != null) {
-          mutatorViewParent.removeView(parentView);
-        }
-        platformViewParent.remove(viewId);
-      }
+      disposeHybridCompositionPlatformView(viewId);
     }
     platformViewsToDispose = nextPlatformViewsToDispose;
 
@@ -1406,5 +1399,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   @VisibleForTesting
   public SparseArray<PlatformOverlayView> getOverlayLayerViews() {
     return overlayLayerViews;
+  }
+
+  private void disposeHybridCompositionPlatformView(int viewId) {
+    final FlutterMutatorView parentView = platformViewParent.get(viewId);
+    if (parentView != null) {
+      parentView.removeAllViews();
+      parentView.unsetOnDescendantFocusChangeListener();
+
+      final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
+      if (mutatorViewParent != null) {
+        mutatorViewParent.removeView(parentView);
+      }
+      platformViewParent.remove(viewId);
+    }
   }
 }
