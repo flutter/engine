@@ -281,8 +281,9 @@ void _ensureSimulatorsRotateAutomaticallyForPlatformViewRotationTest() {
 }
 
 void _deleteAnyExistingDevices({required String deviceName}) {
-  io.stderr
-      .writeln('Deleting any existing simulator devices named $deviceName...');
+  io.stderr.writeln(
+    'Deleting any existing simulator devices named $deviceName...',
+  );
 
   bool deleteSimulator() {
     final result = io.Process.runSync(
@@ -334,8 +335,9 @@ void _createDevice({
   ));
 
   // Create a temporary directory to store the test results.
-  final result =
-      io.Directory(scenarioPath).createTempSync('ios_scenario_xcresult');
+  final result = io.Directory(scenarioPath).createTempSync(
+    'ios_scenario_xcresult',
+  );
   return (scenarioPath, result);
 }
 
@@ -387,7 +389,11 @@ String _zipAndStoreFailedTestResults({
     ],
   );
   if (result.exitCode != 0) {
-    throw Exception('Failed to zip the test results: ${result.stderr}');
+    throw Exception(
+      'Failed to zip the test results (exit code = ${result.exitCode}).\n\n'
+      'Stderr: ${result.stderr}\n\n'
+      'Stdout: ${result.stdout}',
+    );
   }
   return outputPath;
 }
