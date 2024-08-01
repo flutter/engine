@@ -347,7 +347,6 @@ final class PlatformViewContainer extends SliceContainer {
         return 'rect(${top}px ${right}px ${bottom}px ${left}px round ${tlRadiusX}px ${trRadiusX}px ${brRadiusX}px ${blRadiusX}px / ${tlRadiusY}px ${trRadiusY}px ${brRadiusY}px ${blRadiusY}px)';
       case PlatformViewPathClip():
         clipPath = clip.path;
-        print('$_clipPathString');
         return "path('$_clipPathString')";
     }
   }
