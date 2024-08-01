@@ -315,11 +315,11 @@ class FlutterPlatformViewsController {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
   };
 
-  using LayersMap = std::map<int64_t, LayerData>;
+  using LayersMap = std::unordered_map<int64_t, LayerData>;
 
   /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
   void PerformSubmit(const LayersMap& platform_view_layers,
-                     std::map<int64_t, EmbeddedViewParams>& current_composition_params,
+                     std::unordered_map<int64_t, EmbeddedViewParams>& current_composition_params,
                      const std::unordered_set<int64_t>& views_to_recomposite,
                      const std::vector<int64_t>& composition_order,
                      const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
@@ -394,10 +394,11 @@ class FlutterPlatformViewsController {
   fml::scoped_nsobject<UIView> flutter_view_;
   fml::scoped_nsobject<UIViewController<FlutterViewResponder>> flutter_view_controller_;
   fml::scoped_nsobject<FlutterClippingMaskViewPool> mask_view_pool_;
-  std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
+  std::unordered_map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>>
+      factories_;
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
-  std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
+  std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies_;
 
   /// The size of the current onscreen surface in physical pixels.
@@ -421,11 +422,11 @@ class FlutterPlatformViewsController {
     fml::scoped_nsobject<UIView> root_view;
   };
 
-  std::map<int64_t, PlatformViewData> platform_views_;
+  std::unordered_map<int64_t, PlatformViewData> platform_views_;
   /// The composition parameters for each platform view.
   ///
   /// This state is only modified on the raster thread.
-  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
+  std::unordered_map<int64_t, EmbeddedViewParams> current_composition_params_;
 
   /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
   /// the next frame.

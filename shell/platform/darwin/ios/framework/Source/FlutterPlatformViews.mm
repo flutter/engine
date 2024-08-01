@@ -3,20 +3,19 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
-#include "fml/synchronization/count_down_latch.h"
 
 #include <Metal/Metal.h>
 #include <unordered_map>
 
 #include "flow/surface_frame.h"
-#include "fml/logging.h"
-
 #include "flutter/flow/view_slicer.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "fml/logging.h"
+#include "fml/synchronization/count_down_latch.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -807,7 +806,7 @@ void FlutterPlatformViewsController::CreateMissingOverlays(
 /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
 void FlutterPlatformViewsController::PerformSubmit(
     const LayersMap& platform_view_layers,
-    std::map<int64_t, EmbeddedViewParams>& current_composition_params,
+    std::unordered_map<int64_t, EmbeddedViewParams>& current_composition_params,
     const std::unordered_set<int64_t>& views_to_recomposite,
     const std::vector<int64_t>& composition_order,
     const std::vector<std::shared_ptr<FlutterPlatformViewLayer>>& unused_layers,
@@ -818,7 +817,7 @@ void FlutterPlatformViewsController::PerformSubmit(
   [CATransaction begin];
 
   // Configure Flutter overlay views.
-  for (const auto& [key, layer_data] : platform_view_layers) {
+  for (const auto& [view_id, layer_data] : platform_view_layers) {
     layer_data.layer->UpdateViewState(flutter_view_,         //
                                       layer_data.rect,       //
                                       layer_data.view_id,    //
