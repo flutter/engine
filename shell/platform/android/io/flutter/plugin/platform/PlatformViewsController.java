@@ -118,6 +118,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Map of unique IDs to views that render overlay layers.
   private final SparseArray<PlatformOverlayView> overlayLayerViews;
 
+  // Platform views to be disposed on the next frame.
+  private final ArrayList<Integer> platformViewsToDispose;
+
   // The platform view wrappers that are appended to FlutterView.
   //
   // These platform views use a TextureLayer in the framework. This is different than
@@ -280,18 +283,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             viewWrappers.remove(viewId);
             return;
           }
-          // The platform view is displayed using a PlatformViewLayer.
-          final FlutterMutatorView parentView = platformViewParent.get(viewId);
-          if (parentView != null) {
-            parentView.removeAllViews();
-            parentView.unsetOnDescendantFocusChangeListener();
-
-            final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
-            if (mutatorViewParent != null) {
-              mutatorViewParent.removeView(parentView);
-            }
-            platformViewParent.remove(viewId);
-          }
+          // The platform view is displayed using a PlatformViewLayer. Enqueue
+          // the platform view for deletion during the next frame.
+          platformViewsToDispose.add(viewId);
         }
 
         @Override
@@ -1247,6 +1241,27 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   public void onEndFrame() {
+    if (Integer viewId : platformViewsToDispose) {
+      // Any platform views that are queued for disposal but still in the composition
+      // tree must survive at least one more frame, but otherwise can be deleted.
+      if (currentFrameUsedPlatformViewIds.contains(viewId)) {
+        continue;
+      }
+
+      // Remove unused platform view.
+      final FlutterMutatorView parentView = platformViewParent.get(viewId);
+      if (parentView != null) {
+        parentView.removeAllViews();
+        parentView.unsetOnDescendantFocusChangeListener();
+
+        final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
+        if (mutatorViewParent != null) {
+          mutatorViewParent.removeView(parentView);
+        }
+        platformViewParent.remove(viewId);
+      }
+    }
+
     // If there are no platform views in the current frame,
     // then revert the image view surface and use the previous surface.
     //
