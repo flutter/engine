@@ -347,8 +347,14 @@ TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
       1.0,
   };
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {100, 100}, 2, colors,
-                                                 stops, DlTileMode::kRepeat));
+  paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},            //
+      /*end_point=*/{100, 100},          //
+      /*stop_count=*/2,                  //
+      /*colors=*/colors,                 //
+      /*stops=*/stops,                   //
+      /*tile_mode=*/DlTileMode::kRepeat  //
+      ));
 
   builder.Save();
   builder.Translate(100, 100);
@@ -788,13 +794,14 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
       1.0,
   };
   DlPaint paint;
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0},              //
-                                                 {100, 100},          //
-                                                 2,                   //
-                                                 colors.data(),       //
-                                                 stops.data(),        //
-                                                 DlTileMode::kRepeat  //
-                                                 ));
+  paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},            //
+      /*end_point=*/{100, 100},          //
+      /*stop_count=*/2,                  //
+      /*colors=*/colors.data(),          //
+      /*stops=*/stops.data(),            //
+      /*tile_mode=*/DlTileMode::kRepeat  //
+      ));
 
   builder.DrawPaint(paint);
 
@@ -806,9 +813,9 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   builder.ClipRRect(clip_rrect, DlCanvas::ClipOp::kIntersect);
 
   DlPaint save_paint;
-  auto bdf = std::make_shared<DlColorFilterImageFilter>(
+  auto backdrop_filter = std::make_shared<DlColorFilterImageFilter>(
       DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
-  builder.SaveLayer(&clip_rect, &save_paint, bdf.get());
+  builder.SaveLayer(&clip_rect, &save_paint, backdrop_filter.get());
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
