@@ -72,6 +72,7 @@ import io.flutter.view.AccessibilityBridge;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1449,6 +1450,39 @@ public class FlutterView extends FrameLayout
         .send();
   }
 
+  /** A delegate class that performs the task of retrieving the bounding rect values. */
+  public static class FlutterViewDelegate {
+
+    @VisibleForTesting
+    public WindowInsets getWindowInsets(Context context) {
+      Log.w(TAG, "getWindowInsets called for " + Build.VERSION.SDK_INT);
+      Activity activity = ViewUtils.getActivity(context);
+      if (activity == null || Build.VERSION.SDK_INT < 23) {
+        return null;
+      }
+      return activity.getWindow().getDecorView().getRootWindowInsets();
+    }
+
+    @VisibleForTesting
+    public List<Rect> getCaptionBarInsets(Context context) {
+      Log.w(TAG, "getCaptionBarInsets called for " + Build.VERSION.SDK_INT);
+      WindowInsets insets = getWindowInsets(context);
+      if (insets == null || Build.VERSION.SDK_INT < 35) {
+        return Collections.emptyList();
+      }
+      Log.w(TAG, "Called inner method: " + insets.getBoundingRects(WindowInsets.Type.captionBar()));
+      return insets.getBoundingRects(WindowInsets.Type.captionBar());
+    }
+  }
+
+  private FlutterViewDelegate delegate = new FlutterViewDelegate();
+
+  /** Set the FlutterViewDelegate, such as to a mock for testing. */
+  @VisibleForTesting
+  public void setDelegate(FlutterViewDelegate delegate) {
+    this.delegate = delegate;
+  }
+
   private void sendViewportMetricsToFlutter() {
     if (!isAttachedToFlutterEngine()) {
       Log.w(
@@ -1460,6 +1494,16 @@ public class FlutterView extends FrameLayout
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
+      List<Rect> boundingRects = delegate.getCaptionBarInsets(getContext());
+      if (boundingRects != null && boundingRects.size() == 1) {
+        viewportMetrics.viewPaddingTop = boundingRects.get(0).bottom;
+      }
+    } else {
+      Log.w(TAG, "API level " + Build.VERSION.SDK_INT + " is too low to query bounding rects.");
+    }
+
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 
@@ -1483,6 +1527,15 @@ public class FlutterView extends FrameLayout
     if (renderSurface instanceof FlutterSurfaceView) {
       ((FlutterSurfaceView) renderSurface).setVisibility(visibility);
     }
+  }
+
+  /**
+   * Allow access to the viewport metrics so that tests can set them to be valid with nonzero
+   * dimensions.
+   */
+  @VisibleForTesting
+  public FlutterRenderer.ViewportMetrics getViewportMetrics() {
+    return viewportMetrics;
   }
 
   /**
