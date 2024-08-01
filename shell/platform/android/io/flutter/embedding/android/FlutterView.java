@@ -1455,7 +1455,6 @@ public class FlutterView extends FrameLayout
 
     @VisibleForTesting
     public WindowInsets getWindowInsets(Context context) {
-      Log.w(TAG, "getWindowInsets called for " + Build.VERSION.SDK_INT);
       Activity activity = ViewUtils.getActivity(context);
       if (activity == null || Build.VERSION.SDK_INT < 23) {
         return null;
@@ -1465,12 +1464,10 @@ public class FlutterView extends FrameLayout
 
     @VisibleForTesting
     public List<Rect> getCaptionBarInsets(Context context) {
-      Log.w(TAG, "getCaptionBarInsets called for " + Build.VERSION.SDK_INT);
       WindowInsets insets = getWindowInsets(context);
       if (insets == null || Build.VERSION.SDK_INT < 35) {
         return Collections.emptyList();
       }
-      Log.w(TAG, "Called inner method: " + insets.getBoundingRects(WindowInsets.Type.captionBar()));
       return insets.getBoundingRects(WindowInsets.Type.captionBar());
     }
   }
