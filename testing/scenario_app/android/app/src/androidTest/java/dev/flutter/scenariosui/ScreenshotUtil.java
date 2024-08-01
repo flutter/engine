@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
  * further proccessed. On a LUCI environment, the screenshots are sent to Skia Gold.
  */
 public class ScreenshotUtil {
-  private static final String HOST = "localhost";
+  private static final String HOST = "127.0.0.1";
   private static final int PORT = 3000;
 
   private static Connection conn;
