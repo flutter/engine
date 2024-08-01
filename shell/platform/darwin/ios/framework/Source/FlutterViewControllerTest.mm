@@ -171,7 +171,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @interface FlutterViewControllerTest : XCTestCase
 @property(nonatomic, strong) id mockEngine;
 @property(nonatomic, strong) id mockTextInputPlugin;
-@property(nonatomic, strong) id mockHourCycle;
 @property(nonatomic, strong) id messageSent;
 - (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 @end
