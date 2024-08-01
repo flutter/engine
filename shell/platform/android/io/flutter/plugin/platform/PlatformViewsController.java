@@ -119,7 +119,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final SparseArray<PlatformOverlayView> overlayLayerViews;
 
   // Platform views to be disposed on the next frame.
-  private final ArrayList<Integer> platformViewsToDispose;
+  private ArrayList<Integer> platformViewsToDispose;
 
   // The platform view wrappers that are appended to FlutterView.
   //
@@ -738,6 +738,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     viewWrappers = new SparseArray<>();
     platformViews = new SparseArray<>();
     platformViewParent = new SparseArray<>();
+    platformViewsToDispose = new ArrayList<>();
 
     motionEventTracker = MotionEventTracker.getInstance();
   }
@@ -1241,10 +1242,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   public void onEndFrame() {
+    ArrayList<Integer> nextPlatformViewsToDispose
     if (Integer viewId : platformViewsToDispose) {
       // Any platform views that are queued for disposal but still in the composition
       // tree must survive at least one more frame, but otherwise can be deleted.
       if (currentFrameUsedPlatformViewIds.contains(viewId)) {
+        nextPlatformViewsToDispose.add(viewId);
         continue;
       }
 
@@ -1261,6 +1264,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         platformViewParent.remove(viewId);
       }
     }
+    platformViewsToDispose = nextPlatformViewsToDispose;
 
     // If there are no platform views in the current frame,
     // then revert the image view surface and use the previous surface.
