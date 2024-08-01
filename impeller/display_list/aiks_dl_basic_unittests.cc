@@ -999,7 +999,7 @@ TEST_P(AiksTest,
   DlPaint paint;
   paint.setImageFilter(DlMatrixImageFilter::Make(
       SkMatrix::Translate(300, 0) * SkMatrix::Scale(2, 2),
-      DlImageSampling::kLinear));
+      DlImageSampling::kNearestNeighbor));
   builder.SaveLayer(nullptr, &paint);
 
   DlPaint circle_paint;
