@@ -908,6 +908,10 @@ public class PlatformViewsControllerTest {
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
+    assertNotNull(androidView.getParent());
+
+    // pump frame to force disposal.
+    platformViewsController.onEndFrame();
     assertNull(androidView.getParent());
 
     // Simulate create call from the framework.

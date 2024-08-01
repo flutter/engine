@@ -1242,8 +1242,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   public void onEndFrame() {
-    ArrayList<Integer> nextPlatformViewsToDispose
-    if (Integer viewId : platformViewsToDispose) {
+    ArrayList<Integer> nextPlatformViewsToDispose = new ArrayList<>();
+    for (Integer viewId : platformViewsToDispose) {
       // Any platform views that are queued for disposal but still in the composition
       // tree must survive at least one more frame, but otherwise can be deleted.
       if (currentFrameUsedPlatformViewIds.contains(viewId)) {
