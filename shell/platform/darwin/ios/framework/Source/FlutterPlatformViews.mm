@@ -448,18 +448,6 @@ long FlutterPlatformViewsController::FindFirstResponderPlatformViewId() {
   return -1;
 }
 
-int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
-  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
-  int clipCount = 0;
-  while (iter != mutators_stack.Top()) {
-    if ((*iter)->IsClipType()) {
-      clipCount++;
-    }
-    ++iter;
-  }
-  return clipCount;
-}
-
 void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (clipView.maskView) {

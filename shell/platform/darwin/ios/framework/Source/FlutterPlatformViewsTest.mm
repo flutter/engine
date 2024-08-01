@@ -186,7 +186,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -337,7 +336,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -415,7 +413,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(5, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -495,7 +492,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(20, 20), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -572,7 +568,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -612,7 +607,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -697,7 +691,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -735,7 +728,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -777,7 +769,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -846,7 +837,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -893,7 +883,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -950,7 +939,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1005,7 +993,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1056,7 +1043,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1139,7 +1125,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1182,7 +1167,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1224,7 +1208,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1266,7 +1249,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1302,7 +1284,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                                      SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1465,7 +1446,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1527,7 +1507,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto filter = std::make_shared<flutter::DlBlurImageFilter>(5, 2, flutter::DlTileMode::kClamp);
   flutterPlatformViewsController->PushFilterToVisitedPlatformViews(
       filter, SkRect::MakeXYWH(0, 0, screenScale * 10, screenScale * 10));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1558,7 +1537,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
   flutterPlatformViewsController->BeginFrame(SkISize::Make(0, 0));
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams2));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1631,7 +1609,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1713,7 +1690,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       SkMatrix::Concat(screenScaleMatrix, translateMatrix), SkSize::Make(5, 5), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1784,7 +1760,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       SkMatrix::Concat(screenScaleMatrix, translateMatrix), SkSize::Make(5, 5), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1850,7 +1825,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -1927,7 +1901,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -2032,7 +2005,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -2498,7 +2470,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_1));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -2514,7 +2485,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams_2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_2));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -2571,7 +2541,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     auto embeddedViewParams =
         std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
     flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-    flutterPlatformViewsController->CompositeEmbeddedView(2);
 
     // Not calling |flutterPlatformViewsController::SubmitFrame| so that the platform views are not
     // added to flutter_view_.
@@ -2626,7 +2595,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams1 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
-  flutterPlatformViewsController->CompositeEmbeddedView(0);
   flutterPlatformViewsController->CompositeWithParams(
       0, flutterPlatformViewsController->GetCompositionParams(0));
 
@@ -2639,7 +2607,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
-  flutterPlatformViewsController->CompositeEmbeddedView(0);
   flutterPlatformViewsController->CompositeWithParams(
       0, flutterPlatformViewsController->GetCompositionParams(0));
 
@@ -2986,7 +2953,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       screenScaleMatrix, SkSize::Make(10, 10), stack1);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
-  flutterPlatformViewsController->CompositeEmbeddedView(1);
   flutterPlatformViewsController->CompositeWithParams(
       1, flutterPlatformViewsController->GetCompositionParams(1));
 
@@ -3002,7 +2968,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams3 = std::make_unique<flutter::EmbeddedViewParams>(
       screenScaleMatrix, SkSize::Make(10, 10), stack2);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams3));
-  flutterPlatformViewsController->CompositeEmbeddedView(1);
   flutterPlatformViewsController->CompositeWithParams(
       1, flutterPlatformViewsController->GetCompositionParams(1));
 
@@ -3018,7 +2983,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams4 = std::make_unique<flutter::EmbeddedViewParams>(
       screenScaleMatrix, SkSize::Make(10, 10), stack1);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams4));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -3095,14 +3059,12 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       screenScaleMatrix, SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
-  flutterPlatformViewsController->CompositeEmbeddedView(1);
   flutterPlatformViewsController->CompositeWithParams(
       1, flutterPlatformViewsController->GetCompositionParams(1));
 
   UIView* childClippingView1 = view1.superview.superview;
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams2));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
   flutterPlatformViewsController->CompositeWithParams(
       2, flutterPlatformViewsController->GetCompositionParams(2));
 
@@ -3168,7 +3130,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       screenScaleMatrix, SkSize::Make(10, 10), stack2);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
-  flutterPlatformViewsController->CompositeEmbeddedView(1);
   flutterPlatformViewsController->CompositeWithParams(
       1, flutterPlatformViewsController->GetCompositionParams(1));
 
@@ -3367,7 +3328,6 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeEmbeddedView(2);
 
   // SKSurface is required if the root FlutterView is present.
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);

@@ -250,6 +250,7 @@ class FlutterPlatformViewsController {
   // Also reverts the composition_order_ to its original state at the beginning of the frame.
   void CancelFrame();
 
+  // Runs on the raster thread.
   void PrerollCompositeEmbeddedView(int64_t view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
@@ -271,17 +272,27 @@ class FlutterPlatformViewsController {
   // returns nil.
   FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
 
+  // Runs on the raster thread.
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
+  // Runs on the raster thread.
   void EndFrame(bool should_resubmit_frame,
                 const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
+  // Return the Canvas for the overlay slice for the given platform view.
+  //
+  // Runs on the raster thread.
   DlCanvas* CompositeEmbeddedView(int64_t view_id);
 
   // Discards all platform views instances and auxiliary resources.
+  //
+  // Runs on the raster thread.
   void Reset();
 
+  // Encode rendering for the Flutter overlay views and queue up perform platform view mutations.
+  //
+  // Runs on the raster thread.
   bool SubmitFrame(GrDirectContext* gr_context,
                    const std::shared_ptr<IOSContext>& ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
@@ -317,7 +328,9 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::unordered_map<int64_t, LayerData>;
 
-  /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
+  // Update the buffers and mutate the platform views in CATransaction.
+  //
+  // Runs on the platform thread.
   void PerformSubmit(const LayersMap& platform_view_layers,
                      std::unordered_map<int64_t, EmbeddedViewParams>& current_composition_params,
                      const std::unordered_set<int64_t>& views_to_recomposite,
@@ -343,9 +356,6 @@ class FlutterPlatformViewsController {
   /// @brief Return all views to be disposed on the platform thread.
   std::vector<UIView*> GetViewsToDispose();
 
-  // Traverse the `mutators_stack` and return the number of clip operations.
-  int CountClips(const MutatorsStack& mutators_stack);
-
   void ClipViewSetMaskView(UIView* clipView) __attribute__((cf_audited_transfer));
 
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
@@ -363,6 +373,7 @@ class FlutterPlatformViewsController {
 
   std::shared_ptr<FlutterPlatformViewLayer> GetExistingLayer();
 
+  // Runs on the platform thread.
   void CreateLayer(GrDirectContext* gr_context,
                    const std::shared_ptr<IOSContext>& ios_context,
                    MTLPixelFormat pixel_format);
@@ -407,22 +418,19 @@ class FlutterPlatformViewsController {
   /// The task runner for posting tasks to the platform thread.
   fml::RefPtr<fml::TaskRunner> platform_task_runner_;
 
-  /// Each of the following maps stores part of the platform view hierarchy according to its
+  /// Each of the following structs stores part of the platform view hierarchy according to its
   /// ID.
   ///
-  /// The views_ map contains the platform view itself.
-  /// The touch_interceptors_ map contains the touch intercepting views to accept gestures.
-  /// Finally, the root views contains either the touch_interceptor or the child clipping
-  /// view.
-  ///
-  /// These maps must only be accessed on the platform thread.
+  /// This data must only be accessed on the platform thread.
   struct PlatformViewData {
     fml::scoped_nsobject<NSObject<FlutterPlatformView>> view;
     fml::scoped_nsobject<FlutterTouchInterceptingView> touch_interceptor;
     fml::scoped_nsobject<UIView> root_view;
   };
 
+  /// This data must only be accessed on the platform thread.
   std::unordered_map<int64_t, PlatformViewData> platform_views_;
+
   /// The composition parameters for each platform view.
   ///
   /// This state is only modified on the raster thread.
