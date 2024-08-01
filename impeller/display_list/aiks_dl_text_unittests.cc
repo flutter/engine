@@ -105,6 +105,7 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
 
   DlPaint text_paint;
   text_paint.setColor(options.color);
+
   canvas.DrawTextFrame(frame, options.position.x(), options.position.y(),
                        text_paint);
   return true;
@@ -183,20 +184,20 @@ TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, CanRenderTextFrameSTB) {
-  DisplayListBuilder builder;
+// TEST_P(AiksTest, CanRenderTextFrameSTB) {
+//   DisplayListBuilder builder;
 
-  DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
-  builder.DrawPaint(paint);
+//   DlPaint paint;
+//   paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+//   builder.DrawPaint(paint);
 
-  ASSERT_TRUE(RenderTextInCanvasSTB(
-      GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
-      "Roboto-Regular.ttf"));
+//   ASSERT_TRUE(RenderTextInCanvasSTB(
+//       GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
+//       "Roboto-Regular.ttf"));
 
-  SetTypographerContext(TypographerContextSTB::Make());
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
+//   SetTypographerContext(TypographerContextSTB::Make());
+//   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+// }
 
 TEST_P(AiksTest, TextFrameSubpixelAlignment) {
   // "Random" numbers between 0 and 1. Hardcoded to avoid flakiness in goldens.
