@@ -951,6 +951,9 @@ public class PlatformViewsControllerTest {
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
+    // pump frame to force disposal.
+    platformViewsController.onEndFrame();
+
     verify(platformView, times(1)).dispose();
   }
 
