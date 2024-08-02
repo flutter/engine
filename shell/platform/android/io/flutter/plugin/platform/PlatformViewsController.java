@@ -251,7 +251,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             return;
           }
 
-
           if (platformView.getView() != null) {
             final View embeddedView = platformView.getView();
             final ViewGroup pvParent = (ViewGroup) embeddedView.getParent();
