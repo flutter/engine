@@ -92,6 +92,14 @@ class NopCuller final : public Culler {
     // indices will be after it as well so all
     // clip and transform operations will execute.
     context.next_render_index = 0;
+
+    // The culling_needed flag is only consulted in
+    // ops that have a complicated determination
+    // as to whether they need to be culled (for
+    // example, save/restore will push/pop an entry
+    // onto a vector). Consulting this flag can
+    // save that time.
+    context.culling_needed = false;
     return true;
   }
   void update(DispatchContext& context) override {}
@@ -105,6 +113,10 @@ class VectorCuller final : public Culler {
   ~VectorCuller() = default;
 
   bool init(DispatchContext& context) override {
+    // No shortcuts for ops that have a complicated "needed"
+    // determination.
+    context.culling_needed = true;
+
     if (cur_ < end_) {
       context.next_render_index = rtree_->id(*cur_++);
       return true;
@@ -151,37 +163,94 @@ class VectorCuller final : public Culler {
 };
 
 void DisplayList::Dispatch(DlOpReceiver& receiver) const {
-  const uint8_t* ptr = storage_.get();
-  Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
+  Dispatcher dispatcher(sk_ref_sp(this));
+  dispatcher.Dispatch(receiver);
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const SkIRect& cull_rect) const {
-  Dispatch(receiver, SkRect::Make(cull_rect));
+  Dispatcher dispatcher(sk_ref_sp(this));
+  dispatcher.Dispatch(receiver, SkRect::Make(cull_rect));
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const SkRect& cull_rect) const {
+  Dispatcher dispatcher(sk_ref_sp(this));
+  dispatcher.Dispatch(receiver, cull_rect);
+}
+
+bool DisplayList::Bookmark::Dispatch(DlOpReceiver& receiver) const {
+  if (!DisplayList::IsValidOffset(offset_)) {
+    FML_LOG(WARNING) << "Dispatching invalid bookmark";
+    return false;
+  }
+  FML_DCHECK(offset_ < display_list_->byte_count_);
+
+  const uint8_t* ptr = display_list_->storage_.get() + offset_;
+  auto op = reinterpret_cast<const DLOp*>(ptr);
+  FML_DCHECK(offset_ + op->size <= display_list_->byte_count_);
+
+  Dispatcher dispatcher(display_list_);
+  display_list_->Dispatch(receiver, ptr, ptr + op->size, NopCuller::instance,
+                          dispatcher);
+  return true;
+}
+
+DisplayList::Bookmark DisplayList::Dispatcher::GetBookmark() const {
+  if (!DisplayList::IsValidOffset(current_offset_) ||
+      current_offset_ >= display_list_->byte_count_) {
+    FML_LOG(WARNING) << "Creating bookmark on invalid offset";
+    return Bookmark(nullptr, kInvalidOffset);
+  }
+  return Bookmark(display_list_, current_offset_);
+}
+
+bool DisplayList::Dispatcher::Dispatch(DlOpReceiver& receiver) {
+  if (DisplayList::IsValidOffset(current_offset_)) {
+    FML_LOG(WARNING) << "Attempting to dispatch on used DispatchTracker";
+    return false;
+  }
+  const uint8_t* ptr = display_list_->storage_.get();
+  const uint8_t* end = ptr + display_list_->byte_count_;
+  display_list_->Dispatch(receiver, ptr, end, NopCuller::instance, *this);
+  return true;
+}
+
+bool DisplayList::Dispatcher::Dispatch(DlOpReceiver& receiver,
+                                       const SkIRect& cull_rect) {
+  return Dispatch(receiver, SkRect::Make(cull_rect));
+}
+
+bool DisplayList::Dispatcher::Dispatch(DlOpReceiver& receiver,
+                                       const SkRect& cull_rect) {
+  if (DisplayList::IsValidOffset(current_offset_)) {
+    FML_LOG(WARNING) << "Attempting to dispatch on used DispatchTracker";
+    return false;
+  }
   if (cull_rect.isEmpty()) {
-    return;
+    current_offset_ = display_list_->byte_count_;
+    return true;
   }
-  if (!has_rtree() || cull_rect.contains(bounds())) {
-    Dispatch(receiver);
-    return;
+  if (!display_list_->has_rtree() ||
+      cull_rect.contains(display_list_->bounds())) {
+    return Dispatch(receiver);
   }
-  const DlRTree* rtree = this->rtree().get();
+  const DlRTree* rtree = display_list_->rtree().get();
   FML_DCHECK(rtree != nullptr);
-  const uint8_t* ptr = storage_.get();
+  const uint8_t* ptr = display_list_->storage_.get();
+  const uint8_t* end = ptr + display_list_->byte_count_;
   std::vector<int> rect_indices;
   rtree->search(cull_rect, &rect_indices);
   VectorCuller culler(rtree, rect_indices);
-  Dispatch(receiver, ptr, ptr + byte_count_, culler);
+  display_list_->Dispatch(receiver, ptr, end, culler, *this);
+  return true;
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const uint8_t* ptr,
                            const uint8_t* end,
-                           Culler& culler) const {
+                           Culler& culler,
+                           Dispatcher& tracker) const {
   DispatchContext context = {
       .receiver = receiver,
       .cur_index = 0,
@@ -189,9 +258,11 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
       .next_restore_index = std::numeric_limits<int>::max(),
   };
   if (!culler.init(context)) {
+    tracker.current_offset_ = byte_count_;
     return;
   }
   while (ptr < end) {
+    tracker.current_offset_ = ptr - storage_.get();
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
@@ -214,6 +285,7 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
     }
     culler.update(context);
   }
+  tracker.current_offset_ = byte_count_;
 }
 
 void DisplayList::DisposeOps(const uint8_t* ptr, const uint8_t* end) {

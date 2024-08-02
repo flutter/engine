@@ -231,6 +231,11 @@ class DisplayListTestBase : public BaseT {
 };
 using DisplayListTest = DisplayListTestBase<::testing::Test>;
 
+class DlOpReceiverNop : public IgnoreAttributeDispatchHelper,
+                        public IgnoreTransformDispatchHelper,
+                        public IgnoreClipDispatchHelper,
+                        public IgnoreDrawDispatchHelper {};
+
 TEST_F(DisplayListTest, Defaults) {
   DisplayListBuilder builder;
   check_defaults(builder);
@@ -260,6 +265,248 @@ TEST_F(DisplayListTest, BuilderCanBeReused) {
   builder.DrawRect(kTestBounds, DlPaint());
   auto dl2 = builder.Build();
   ASSERT_TRUE(dl->Equals(dl2));
+}
+
+TEST_F(DisplayListTest, DispatcherInvalidBookmarks) {
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  DisplayList::Dispatcher dispatcher(dl);
+  DlOpReceiverNop receiver;
+  EXPECT_FALSE(dispatcher.GetBookmark().Dispatch(receiver));
+  EXPECT_TRUE(dispatcher.Dispatch(receiver));
+  EXPECT_FALSE(dispatcher.GetBookmark().Dispatch(receiver));
+}
+
+TEST_F(DisplayListTest, DispatcherNoReDispatch) {
+  SkIRect irect = SkIRect::MakeLTRB(0, 0, 10, 10);
+  SkRect rect = SkRect::MakeLTRB(0, 0, 10, 10);
+  DisplayListBuilder builder;
+  auto dl = builder.Build();
+  DlOpReceiverNop receiver;
+
+  {
+    DisplayList::Dispatcher dispatcher(dl);
+    EXPECT_TRUE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, rect));
+  }
+
+  {
+    DisplayList::Dispatcher dispatcher(dl);
+    EXPECT_TRUE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, rect));
+  }
+
+  {
+    DisplayList::Dispatcher dispatcher(dl);
+    EXPECT_TRUE(dispatcher.Dispatch(receiver, rect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, rect));
+  }
+
+  {
+    DisplayList::Dispatcher dispatcher(dl);
+    EXPECT_TRUE(dispatcher.Dispatch(receiver, SkIRect::MakeEmpty()));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, rect));
+  }
+
+  {
+    DisplayList::Dispatcher dispatcher(dl);
+    EXPECT_TRUE(dispatcher.Dispatch(receiver, SkRect::MakeEmpty()));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, irect));
+    EXPECT_FALSE(dispatcher.Dispatch(receiver, rect));
+  }
+}
+
+class BookmarkRecorder : public DlOpReceiver {
+ public:
+  explicit BookmarkRecorder(sk_sp<DisplayList>& display_list)
+      : dispatcher_(display_list) {
+    dispatcher_.Dispatch(*this);
+  }
+
+  void setAntiAlias(bool aa) override { record(); }
+  void setInvertColors(bool invert) override { record(); }
+  void setStrokeCap(DlStrokeCap cap) override { record(); }
+  void setStrokeJoin(DlStrokeJoin join) override { record(); }
+  void setDrawStyle(DlDrawStyle style) override { record(); }
+  void setStrokeWidth(float width) override { record(); }
+  void setStrokeMiter(float limit) override { record(); }
+  void setColor(DlColor color) override { record(); }
+  void setBlendMode(DlBlendMode mode) override { record(); }
+  void setColorSource(const DlColorSource* source) override { record(); }
+  void setImageFilter(const DlImageFilter* filter) override { record(); }
+  void setColorFilter(const DlColorFilter* filter) override { record(); }
+  void setMaskFilter(const DlMaskFilter* filter) override { record(); }
+
+  void translate(SkScalar tx, SkScalar ty) override { record(); }
+  void scale(SkScalar sx, SkScalar sy) override { record(); }
+  void rotate(SkScalar degrees) override { record(); }
+  void skew(SkScalar sx, SkScalar sy) override { record(); }
+  // clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {
+    record();
+  }
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
+    record();
+  }
+  // clang-format on
+  void transformReset() override { record(); }
+
+  void clipRect(const SkRect& rect,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {
+    record();
+  }
+  void clipOval(const SkRect& bounds,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {
+    record();
+  }
+  void clipRRect(const SkRRect& rrect,
+                 DlCanvas::ClipOp clip_op,
+                 bool is_aa) override {
+    record();
+  }
+  void clipPath(const SkPath& path,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {
+    record();
+  }
+
+  void save() override { record(); }
+  void saveLayer(const SkRect& bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
+    record();
+  }
+  void restore() override { record(); }
+  void drawColor(DlColor color, DlBlendMode mode) override { record(); }
+  void drawPaint() override { record(); }
+  void drawLine(const SkPoint& p0, const SkPoint& p1) override { record(); }
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override {
+    record();
+  }
+  void drawRect(const SkRect& rect) override { record(); }
+  void drawOval(const SkRect& bounds) override { record(); }
+  void drawCircle(const SkPoint& center, SkScalar radius) override { record(); }
+  void drawRRect(const SkRRect& rrect) override { record(); }
+  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {
+    record();
+  }
+  void drawPath(const SkPath& path) override { record(); }
+  void drawArc(const SkRect& oval_bounds,
+               SkScalar start_degrees,
+               SkScalar sweep_degrees,
+               bool use_center) override {
+    record();
+  }
+  void drawPoints(DlCanvas::PointMode mode,
+                  uint32_t count,
+                  const SkPoint points[]) override {
+    record();
+  }
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override {
+    record();
+  }
+  void drawImage(const sk_sp<DlImage> image,
+                 const SkPoint point,
+                 DlImageSampling sampling,
+                 bool render_with_attributes) override {
+    record();
+  }
+  void drawImageRect(const sk_sp<DlImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     DlImageSampling sampling,
+                     bool render_with_attributes,
+                     SrcRectConstraint constraint) override {
+    record();
+  }
+  void drawImageNine(const sk_sp<DlImage> image,
+                     const SkIRect& center,
+                     const SkRect& dst,
+                     DlFilterMode filter,
+                     bool render_with_attributes) override {
+    record();
+  }
+  void drawAtlas(const sk_sp<DlImage> atlas,
+                 const SkRSXform xform[],
+                 const SkRect tex[],
+                 const DlColor colors[],
+                 int count,
+                 DlBlendMode mode,
+                 DlImageSampling sampling,
+                 const SkRect* cull_rect,
+                 bool render_with_attributes) override {
+    record();
+  }
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override {
+    record();
+  }
+  void drawTextBlob(const sk_sp<SkTextBlob> blob,
+                    SkScalar x,
+                    SkScalar y) override {
+    record();
+  }
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override {
+    record();
+  }
+  void drawShadow(const SkPath& path,
+                  const DlColor color,
+                  const SkScalar elevation,
+                  bool transparent_occluder,
+                  SkScalar dpr) override {
+    record();
+  }
+
+  const std::vector<DisplayList::Bookmark>& GetBookmarks() const {
+    return bookmarks_;
+  }
+
+ private:
+  DisplayList::Dispatcher dispatcher_;
+
+  void record() { bookmarks_.emplace_back(dispatcher_.GetBookmark()); }
+
+  std::vector<DisplayList::Bookmark> bookmarks_;
+};
+
+TEST_F(DisplayListTest, RedispatchOpsThroughBookmarks) {
+  for (auto& group : allGroups) {
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      auto& invocation = group.variants[i];
+      sk_sp<DisplayList> dl = Build(invocation);
+      BookmarkRecorder recorder(dl);
+      DisplayListBuilder builder;
+      DlOpReceiver& receiver = DisplayListBuilderTestingAccessor(builder);
+      for (const auto& bookmark : recorder.GetBookmarks()) {
+        EXPECT_TRUE(bookmark.Dispatch(receiver));
+      }
+      EXPECT_TRUE(DisplayListsEQ_Verbose(dl, builder.Build()));
+    }
+  }
 }
 
 TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {

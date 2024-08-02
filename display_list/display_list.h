@@ -360,6 +360,145 @@ class DisplayList : public SkRefCnt {
   /// be required for the indicated blend mode to do its work.
   DlBlendMode max_root_blend_mode() const { return max_root_blend_mode_; }
 
+  class Dispatcher;
+
+  /// @brief    A class that holds a reference to a specific operation
+  ///           recorded within a DisplayList buffer.
+  ///
+  /// This bookmark must be obtained from a |DispatchTracker| during an
+  /// execution of one of the Tracker's Dispatch methods. These objects
+  /// are not guaranteed to be thread safe, but they can be used during
+  /// or after the Tracker's Dispatch operation concludes. A reference
+  /// to the |DisplayList| from which the bookmark comes is maintained so
+  /// that their lifetime is not affected by the lifetime of the DisplayList
+  /// or the Tracker.
+  ///
+  /// A Bookmark obtained from a tracker that is not currently in the process
+  /// of one of its Dispatch methods will be a NOP and will log a WARNING.
+  class Bookmark {
+   public:
+    /// Dispatches the single |DlOpReceiver| method referred to by this
+    /// bookmark and returns true if the bookmark is valid.
+    bool Dispatch(DlOpReceiver& receiver) const;
+
+   private:
+    Bookmark(sk_sp<DisplayList> display_list, size_t offset)
+        : display_list_(std::move(display_list)), offset_(offset) {}
+
+    sk_sp<DisplayList> display_list_;
+    const size_t offset_;
+
+    friend class Dispatcher;
+  };
+
+  /// @brief    A class that manages a trackable traversal of the operations
+  ///           in a |DisplayList| so that |Bookmark|s can be queried during
+  ///           the traversal.
+  ///
+  /// Bookmarks must be obtained from this tracker during the execution of
+  /// one of the its Dispatch methods. A tracker can only be used for one
+  /// call of any of its Dispatch methods and an attempt to call any of the
+  /// Dispatch methods after that will be a NOP and will log a WARNING.
+  ///
+  /// An example of using a Dispatcher object to save Bookmarks for later
+  /// playback:
+  ///
+  /// {
+  ///   class MyBookmarkRecord {
+  ///     DisplayList::Bookmark bookmark;
+  ///     MyState other_state;
+  ///   };
+  ///   class MyBookmarkReceiver : public DlOpReceiver {
+  ///    public:
+  ///     void consume(sk_sp<DisplayList> display_list) {
+  ///       dispatcher_ = DisplayList::Dispatcher(display_list);
+  ///       dispatcher_.Dispatch(*this);
+  ///     }
+  ///
+  ///     ...
+  ///     // Remember transient state in current_state_
+  ///     ...
+  ///     void drawRect(const SkRect& rect) {
+  ///       if (bookmark_needed()) {
+  ///         my_records_.emplace_back(dispatcher_.GetBookmark(),
+  ///                                  current_state_);
+  ///       }
+  ///       ...
+  ///     }
+  ///     ...
+  ///
+  ///    private:
+  ///     MyState current_state_;
+  ///     DisplayList::Dispatcher dispatcher_;
+  ///     std::vector<MyBookmarkRecord> my_records_;
+  ///   };
+  ///
+  ///   sk_sp<DisplayList> my_dl = ...;
+  ///   MyReceiver my_receiver;
+  ///   my_receiver.consume(my_dl);
+  ///
+  ///   ... later ...
+  ///
+  ///   for (const auto& my_bookmark : my_receiver.GetRecords()) {
+  ///     my_other_receiver.SetState(my_bookmark.other_state);
+  ///     my_bookmark.bookmark.Dispatch(my_other_receiver);
+  ///   }
+  /// }
+  ///
+  /// Note that the bookmark only dispatches a single DlOpReceiver call and
+  /// any state that is associated with that call must be remembered along
+  /// with the bookmark. Also, if a bookmark is saved to a save or saveLayer
+  /// call then that call must be balanced with a restore call, whether by
+  /// getting a bookmark for that restore call from the original stream, or
+  /// by just calling restore() manually on the receiver the bookmark is
+  /// dispatching to, when appropriate.
+  class Dispatcher {
+   public:
+    explicit Dispatcher(sk_sp<DisplayList> display_list)
+        : display_list_(std::move(display_list)),
+          current_offset_(kInvalidOffset) {}
+
+    Dispatcher(const Dispatcher& copy) = delete;
+    Dispatcher(Dispatcher&& move) = delete;
+    Dispatcher& operator=(const Dispatcher&) = delete;
+    Dispatcher& operator=(Dispatcher&&) = delete;
+
+    /// @brief   Dispatch the tracked display list to the supplied receiver
+    ///          and return true if the operation is successful (i.e. the
+    ///          tracker has not already been used to dispatch the display
+    ///          list).
+    bool Dispatch(DlOpReceiver& receiver);
+
+    /// @brief   Dispatch the tracked display list to the supplied receiver
+    ///          with a supplied culling rectangle and return true if the
+    ///          operation is successful (i.e. the tracker has not already
+    ///          been used to dispatch the display list).
+    bool Dispatch(DlOpReceiver& receiver, const SkRect& cull_rect);
+
+    /// @brief   Dispatch the tracked display list to the supplied receiver
+    ///          with a supplied culling rectangle and return true if the
+    ///          operation is successful (i.e. the tracker has not already
+    ///          been used to dispatch the display list).
+    bool Dispatch(DlOpReceiver& receiver, const SkIRect& cull_rect);
+
+    /// @brief   Obtain a bookmark to the operation currently being
+    ///          dispatched by the tracker.
+    ///
+    /// The Bookmark can be used to re-dispatch the current |DlOpReceiver|
+    /// call and only that one call with no additional calls to re-establish
+    /// the current DisplayList state. As such, it is the responsibility
+    /// of the receiver asking for the bookmark to remember any contextual
+    /// state for that call, such as previous attribute, transform, and clip
+    /// settings.
+    Bookmark GetBookmark() const;
+
+   private:
+    sk_sp<DisplayList> display_list_;
+    size_t current_offset_;
+
+    friend class DisplayList;
+  };
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -375,6 +514,11 @@ class DisplayList : public SkRefCnt {
               bool root_has_backdrop_filter,
               bool root_is_unbounded,
               sk_sp<const DlRTree> rtree);
+
+  static constexpr size_t kInvalidOffset = 1u;
+  static constexpr bool IsValidOffset(size_t offset) {
+    return (offset & 0x1) == 0;
+  }
 
   static uint32_t next_unique_id();
 
@@ -404,9 +548,11 @@ class DisplayList : public SkRefCnt {
   void Dispatch(DlOpReceiver& ctx,
                 const uint8_t* ptr,
                 const uint8_t* end,
-                Culler& culler) const;
+                Culler& culler,
+                Dispatcher& tracker) const;
 
   friend class DisplayListBuilder;
+  friend class Bookmark;
 };
 
 }  // namespace flutter

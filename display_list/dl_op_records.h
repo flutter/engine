@@ -42,6 +42,8 @@ namespace flutter {
 struct DispatchContext {
   DlOpReceiver& receiver;
 
+  bool culling_needed;
+
   int cur_index;
   int next_render_index;
 
@@ -334,6 +336,11 @@ struct SaveOpBase : DLOp {
   uint32_t total_content_depth;
 
   inline bool save_needed(DispatchContext& ctx) const {
+    if (!ctx.culling_needed) {
+      FML_DCHECK(ctx.next_restore_index == std::numeric_limits<int>::max());
+      FML_DCHECK(ctx.save_infos.empty());
+      return true;
+    }
     bool needed = ctx.next_render_index <= restore_index;
     ctx.save_infos.emplace_back(ctx.next_restore_index, needed);
     ctx.next_restore_index = restore_index;
@@ -411,12 +418,20 @@ struct RestoreOp final : DLOp {
   RestoreOp() {}
 
   void dispatch(DispatchContext& ctx) const {
-    DispatchContext::SaveInfo& info = ctx.save_infos.back();
-    if (info.save_was_needed) {
+    bool save_was_needed;
+    if (ctx.culling_needed) {
+      DispatchContext::SaveInfo& info = ctx.save_infos.back();
+      save_was_needed = info.save_was_needed;
+      ctx.next_restore_index = info.previous_restore_index;
+      ctx.save_infos.pop_back();
+    } else {
+      FML_DCHECK(ctx.save_infos.empty());
+      FML_DCHECK(ctx.next_restore_index == std::numeric_limits<int>::max());
+      save_was_needed = true;
+    }
+    if (save_was_needed) {
       ctx.receiver.restore();
     }
-    ctx.next_restore_index = info.previous_restore_index;
-    ctx.save_infos.pop_back();
   }
 };
 
