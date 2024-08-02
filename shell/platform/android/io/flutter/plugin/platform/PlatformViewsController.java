@@ -242,6 +242,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             Log.e(TAG, "Disposing unknown platform view with id: " + viewId);
             return;
           }
+
+          // The platform view is displayed using a PlatformViewLayer. Enqueue
+          // the platform view for deletion during the next frame.
+          final FlutterMutatorView parentView = platformViewParent.get(viewId);
+          if (parentView != null) {
+            platformViewsToDispose.add(viewId);
+            return;
+          }
+
+
           if (platformView.getView() != null) {
             final View embeddedView = platformView.getView();
             final ViewGroup pvParent = (ViewGroup) embeddedView.getParent();
@@ -283,9 +293,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             viewWrappers.remove(viewId);
             return;
           }
-          // The platform view is displayed using a PlatformViewLayer. Enqueue
-          // the platform view for deletion during the next frame.
-          platformViewsToDispose.add(viewId);
         }
 
         @Override
@@ -1402,6 +1409,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void disposeHybridCompositionPlatformView(int viewId) {
+    final PlatformView platformView = platformViews.get(viewId);
+    if (platformView != null) {
+      if (platformView.getView() != null) {
+        final View embeddedView = platformView.getView();
+        final ViewGroup pvParent = (ViewGroup) embeddedView.getParent();
+        if (pvParent != null) {
+          // Eagerly remove the embedded view from the PlatformViewWrapper.
+          // Without this call, we see some crashes because removing the view
+          // is used as a signal to stop processing.
+          pvParent.removeView(embeddedView);
+        }
+      }
+      platformViews.remove(viewId);
+      try {
+        platformView.dispose();
+      } catch (RuntimeException exception) {
+        Log.e(TAG, "Disposing platform view threw an exception", exception);
+      }
+    }
+
     final FlutterMutatorView parentView = platformViewParent.get(viewId);
     if (parentView != null) {
       parentView.removeAllViews();
