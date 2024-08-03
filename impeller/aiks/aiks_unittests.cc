@@ -32,10 +32,7 @@
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "third_party/imgui/imgui.h"
-#include "third_party/skia/include/core/SkFontMgr.h"
-#include "txt/platform.h"
 
 namespace impeller {
 namespace testing {
@@ -877,42 +874,6 @@ TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   ASSERT_TRUE(entity.size() >= 1);
   ASSERT_TRUE(contents->IsOpaque());
   ASSERT_EQ(entity[0].GetBlendMode(), BlendMode::kSource);
-}
-
-// This currently renders solid blue, as the support for text color sources was
-// moved into DLDispatching. Path data requires the SkTextBlobs which are not
-// used in impeller::TextFrames.
-TEST_P(AiksTest, TextForegroundShaderWithTransform) {
-  auto mapping = flutter::testing::OpenFixtureAsSkData("Roboto-Regular.ttf");
-  ASSERT_NE(mapping, nullptr);
-
-  Scalar font_size = 100;
-  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
-  SkFont sk_font(font_mgr->makeFromData(mapping), font_size);
-
-  Paint text_paint;
-  text_paint.color = Color::Blue();
-
-  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                               Color{0.1294, 0.5882, 0.9529, 1.0}};
-  std::vector<Scalar> stops = {
-      0.0,
-      1.0,
-  };
-  text_paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {100, 100}, std::move(colors), std::move(stops),
-      Entity::TileMode::kRepeat, {});
-
-  Canvas canvas;
-  canvas.Translate({100, 100});
-  canvas.Rotate(Radians(kPi / 4));
-
-  auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
-  ASSERT_NE(blob, nullptr);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
-  canvas.DrawTextFrame(frame, Point(), text_paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, MatrixSaveLayerFilter) {

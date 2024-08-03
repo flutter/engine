@@ -4,6 +4,8 @@
 
 #include "display_list/display_list.h"
 #include "display_list/dl_blend_mode.h"
+#include "display_list/dl_tile_mode.h"
+#include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
@@ -441,6 +443,47 @@ TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "Hello world",
                                      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// This currently renders solid blue, as the support for text color sources was
+// moved into DLDispatching. Path data requires the SkTextBlobs which are not
+// used in impeller::TextFrames.
+TEST_P(AiksTest, TextForegroundShaderWithTransform) {
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Roboto-Regular.ttf");
+  ASSERT_NE(mapping, nullptr);
+
+  Scalar font_size = 100;
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  SkFont sk_font(font_mgr->makeFromData(mapping), font_size);
+
+  DlPaint text_paint;
+  text_paint.setColor(DlColor::kBlue());
+
+  std::vector<DlColor> colors = {DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0),
+                                 DlColor::RGBA(0.1294, 0.5882, 0.9529, 1.0)};
+  std::vector<Scalar> stops = {
+      0.0,
+      1.0,
+  };
+  text_paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},            //
+      /*end_point=*/{100, 100},          //
+      /*stop_count=*/2,                  //
+      /*colors=*/colors.data(),          //
+      /*stops=*/stops.data(),            //
+      /*tile_mode=*/DlTileMode::kRepeat  //
+      ));
+
+  DisplayListBuilder builder;
+  builder.Translate(100, 100);
+  builder.Rotate(45);
+
+  auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
+  ASSERT_NE(blob, nullptr);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  builder.DrawTextFrame(frame, 0, 0, text_paint);
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
