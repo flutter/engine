@@ -195,7 +195,7 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
       GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
-  // SetTypographerContext(TypographerContextSTB::Make());
+  SetTypographerContext(TypographerContextSTB::Make());
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
