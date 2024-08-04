@@ -18,6 +18,7 @@
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
 #include "impeller/typographer/backends/stb/typeface_stb.h"
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
+#include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 
 #include "txt/platform.h"
@@ -418,11 +419,16 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveSaveLayer) {
                   Matrix::MakeRotationY({Degrees{10}});
 
   DlPaint save_paint;
-  builder.SaveLayer(nullptr, &save_paint);
+  SkRect window_bounds =
+      SkRect::MakeXYWH(0, 0, GetWindowSize().width, GetWindowSize().height);
+  // Note: bounds were not needed by the AIKS version, which may indicate a bug.
+  builder.SaveLayer(&window_bounds, &save_paint);
   builder.Transform(SkM44::ColMajor(matrix.m));
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "Hello world",
                                      "Roboto-Regular.ttf"));
+
+  builder.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
