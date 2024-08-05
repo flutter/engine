@@ -10,6 +10,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/base/job_queue.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_cache_vk.h"
@@ -39,7 +40,7 @@ class PipelineLibraryVK final
 
   std::weak_ptr<DeviceHolderVK> device_holder_;
   std::shared_ptr<PipelineCacheVK> pso_cache_;
-  std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
+  std::shared_ptr<JobQueue> job_queue_;
   Mutex pipelines_mutex_;
   PipelineMap pipelines_ IPLR_GUARDED_BY(pipelines_mutex_);
   Mutex compute_pipelines_mutex_;

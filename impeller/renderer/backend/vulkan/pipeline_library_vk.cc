@@ -33,9 +33,8 @@ PipelineLibraryVK::PipelineLibraryVK(
       pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
                                                    device_holder,
                                                    std::move(cache_directory))),
-      worker_task_runner_(std::move(worker_task_runner)) {
-  FML_DCHECK(worker_task_runner_);
-  if (!pso_cache_->IsValid() || !worker_task_runner_) {
+      job_queue_(JobQueue::Make(std::move(worker_task_runner))) {
+  if (!pso_cache_->IsValid()) {
     return;
   }
 
@@ -155,6 +154,19 @@ std::unique_ptr<ComputePipelineVK> PipelineLibraryVK::CreateComputePipeline(
   );
 }
 
+fml::closure PostJobAndMakePrioritizationCallback(
+    const std::shared_ptr<JobQueue>& queue,
+    fml::closure job) {
+  FML_DCHECK(job);
+  FML_DCHECK(queue);
+  auto id = queue->AddJob(std::move(job));
+  return [id, weak = queue->weak_from_this()]() {
+    if (auto queue = weak.lock()) {
+      queue->DoJobNow(id);
+    }
+  };
+}
+
 // |PipelineLibrary|
 PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor,
@@ -196,7 +208,8 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
   };
 
   if (async) {
-    worker_task_runner_->PostTask(generation_task);
+    pipeline_future.on_prioritize = PostJobAndMakePrioritizationCallback(
+        job_queue_, std::move(generation_task));
   } else {
     generation_task();
   }
@@ -251,7 +264,7 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
   };
 
   if (async) {
-    worker_task_runner_->PostTask(generation_task);
+    GetWorkerTaskRunner()->PostTask(generation_task);
   } else {
     generation_task();
   }
@@ -281,7 +294,7 @@ void PipelineLibraryVK::DidAcquireSurfaceFrame() {
 }
 
 void PipelineLibraryVK::PersistPipelineCacheToDisk() {
-  worker_task_runner_->PostTask(
+  GetWorkerTaskRunner()->PostTask(
       [weak_cache = decltype(pso_cache_)::weak_type(pso_cache_)]() {
         auto cache = weak_cache.lock();
         if (!cache) {
@@ -297,7 +310,7 @@ const std::shared_ptr<PipelineCacheVK>& PipelineLibraryVK::GetPSOCache() const {
 
 const std::shared_ptr<fml::ConcurrentTaskRunner>&
 PipelineLibraryVK::GetWorkerTaskRunner() const {
-  return worker_task_runner_;
+  return job_queue_->GetTaskRunner();
 }
 
 }  // namespace impeller

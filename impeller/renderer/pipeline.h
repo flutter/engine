@@ -7,7 +7,8 @@
 
 #include <future>
 
-#include "compute_pipeline_descriptor.h"
+#include "flutter/fml/closure.h"
+#include "impeller/base/timing.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/context.h"
@@ -24,11 +25,27 @@ class Pipeline;
 template <typename T>
 struct PipelineFuture {
   std::optional<T> descriptor;
-  std::shared_future<std::shared_ptr<Pipeline<T>>> future;
 
-  const std::shared_ptr<Pipeline<T>> Get() const { return future.get(); }
+  fml::closure on_prioritize;
+
+  PipelineFuture() = default;
+
+  PipelineFuture(std::optional<T> p_descriptor,
+                 std::shared_future<std::shared_ptr<Pipeline<T>>> p_future)
+      : descriptor(std::move(p_descriptor)), future(std::move(p_future)) {}
+
+  const std::shared_ptr<Pipeline<T>> Get() const {
+    if (on_prioritize &&
+        future.wait_for(Nanoseconds{0u}) == std::future_status::timeout) {
+      on_prioritize();
+    }
+    return future.get();
+  }
 
   bool IsValid() const { return future.valid(); }
+
+ private:
+  std::shared_future<std::shared_ptr<Pipeline<T>>> future;
 };
 
 //------------------------------------------------------------------------------
