@@ -10,7 +10,6 @@
 #include <string>
 #include <string_view>
 
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/atomic_object.h"
 #include "flutter/fml/synchronization/shared_mutex.h"
@@ -29,7 +28,6 @@ class ServiceProtocol {
   static const std::string_view kGetDisplayRefreshRateExtensionName;
   static const std::string_view kGetSkSLsExtensionName;
   static const std::string_view kEstimateRasterCacheMemoryExtensionName;
-  static const std::string_view kRenderFrameWithRasterStatsExtensionName;
   static const std::string_view kReloadAssetFonts;
 
   class Handler {
