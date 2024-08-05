@@ -73,10 +73,10 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
 
   Matrix basis_invert = entity.GetTransform().Basis().Invert();
   Vector2 max_sigmas =
-      Vector2((basis_invert * Vector2(500.f, 0.f)).GetLength(),
-              (basis_invert * Vector2(0.f, 500.f)).GetLength());
+      Vector2((basis_invert * Vector2(250.f, 0.f)).GetLength(),
+              (basis_invert * Vector2(0.f, 250.f)).GetLength());
   Scalar max_sigma = std::min(max_sigmas.x, max_sigmas.y);
-  // Clamp the max kernel width/height to 1000 (@ 2x) to limit the extent
+  // Clamp the max kernel width/height to 1000 (@ 1x) to limit the extent
   // of the blur and to kEhCloseEnough to prevent NaN calculations
   // trying to evaluate a Gaussian distribution with a sigma of 0.
   auto blur_sigma = std::clamp(sigma_.sigma, kEhCloseEnough, max_sigma);
