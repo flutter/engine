@@ -233,6 +233,7 @@ TEST_P(DlGoldenTest, LargeDownscaleRrect) {
   impeller::Point content_scale = GetContentScale();
   auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
     canvas->Scale(content_scale.x, content_scale.y);
+    canvas->DrawColor(DlColor(0xff111111));
     {
       canvas->Save();
       canvas->Scale(0.25, 0.25);
