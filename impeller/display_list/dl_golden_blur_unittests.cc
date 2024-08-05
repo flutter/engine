@@ -226,7 +226,6 @@ TEST_P(DlGoldenTest, ShimmerTest) {
   EXPECT_TRUE(average_rmse >= 0.0) << "average_rmse: " << average_rmse;
 }
 
-
 // Top left and bottom right circles are expected to be comparable (not exactly
 // equal).
 // See also: https://github.com/flutter/flutter/issues/152778
