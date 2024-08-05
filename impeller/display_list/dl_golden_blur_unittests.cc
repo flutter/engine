@@ -226,5 +226,37 @@ TEST_P(DlGoldenTest, ShimmerTest) {
   EXPECT_TRUE(average_rmse >= 0.0) << "average_rmse: " << average_rmse;
 }
 
+
+// Top left and bottom right circles are expected to be comparable (not exactly
+// equal).
+// See also: https://github.com/flutter/flutter/issues/152778
+TEST_P(DlGoldenTest, LargeDownscaleRrect) {
+  impeller::Point content_scale = GetContentScale();
+  auto draw = [&](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
+    canvas->Scale(content_scale.x, content_scale.y);
+    {
+      canvas->Save();
+      canvas->Scale(0.25, 0.25);
+      DlPaint paint;
+      paint.setColor(DlColor::kYellow());
+      paint.setMaskFilter(
+          DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/1000));
+      canvas->DrawCircle(SkPoint::Make(0, 0), 1200, paint);
+      canvas->Restore();
+    }
+
+    DlPaint paint;
+    paint.setColor(DlColor::kYellow());
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/250));
+    canvas->DrawCircle(SkPoint::Make(1024, 768), 300, paint);
+  };
+
+  DisplayListBuilder builder;
+  draw(&builder, /*images=*/{});
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace flutter
