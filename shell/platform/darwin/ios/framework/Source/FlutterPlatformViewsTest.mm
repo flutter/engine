@@ -124,7 +124,7 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
 
 BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
   const CGFloat epsilon = 0.01;
-  return radius1 - radius2 < epsilon;
+  return std::abs(radius1 - radius2) < epsilon;
 }
 
 }  // namespace
