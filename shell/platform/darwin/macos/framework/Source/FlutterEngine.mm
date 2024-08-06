@@ -181,6 +181,24 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
+/**
+ * Notifies the Engine of the addition of the specified view.
+ *
+ * This method might be called in addViewController or when the engine is
+ * launched, whichever comes the last.
+ */
+- (void)addViewToEmbedderEngine:(FlutterViewController*)viewController;
+
+/**
+ * Notifies the Engine of the removal of the specified view.
+ */
+- (void)removeViewFromEmbedderEngine:(FlutterViewIdentifier)viewIdentifier;
+
+/**
+ * Generate a new view ID for non-implicit views.
+ */
+- (FlutterViewIdentifier)generateRegularViewIdentifier;
+
 @end
 
 #pragma mark -
@@ -457,6 +475,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, void* user_
 
   FlutterThreadSynchronizer* _threadSynchronizer;
 
+  // The next available view ID for non-implicit views.
+  FlutterViewIdentifier _nextRegularViewIdentifier;
+
   // Whether the application is currently the active application.
   BOOL _active;
 
@@ -513,6 +534,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
+  // kFlutterImplicitViewId is reserved for the implicit view.
+  _nextRegularViewIdentifier = kFlutterImplicitViewId + 1;
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
@@ -527,6 +550,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
+
   _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   // The macOS compositor must be initialized in the initializer because it is
   // used when adding views, which might happen before runWithEntrypoint.
@@ -699,6 +723,11 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    FlutterViewIdentifier viewIdentifier = nextViewController.viewIdentifier;
+    // The implicit view should never be sent to the embedder API.
+    if (viewIdentifier != kFlutterImplicitViewId) {
+      [self addViewToEmbedderEngine:nextViewController];
+    }
     [self updateWindowMetricsForViewController:nextViewController];
   }
 
@@ -893,14 +922,30 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 #pragma mark - Framework-internal methods
 
 - (void)addViewController:(FlutterViewController*)controller {
-  // FlutterEngine can only handle the implicit view for now. Adding more views
-  // throws an assertion.
-  NSAssert(self.viewController == nil,
-           @"The engine already has a view controller for the implicit view.");
-  self.viewController = controller;
+  if (self.viewController == nil) {
+    self.viewController = controller;
+    return;
+  }
+  FlutterViewIdentifier viewIdentifier = [self generateRegularViewIdentifier];
+  [self registerViewController:controller forIdentifier:viewIdentifier];
+  if (_engine != nullptr) {
+    return [self addViewToEmbedderEngine:controller];
+  } else {
+    // The embedder will be notified of the new view when it's launched.
+  }
 }
 
 - (void)removeViewController:(nonnull FlutterViewController*)viewController {
+  if (self.viewController == viewController) {
+    self.viewController = nil;
+    return;
+  }
+  if (_engine != nullptr) {
+    [self removeViewFromEmbedderEngine:viewController.viewIdentifier];
+  } else {
+    // Since the engine has not started, view has never been sent to the
+    // embedder.
+  }
   [self deregisterViewControllerForIdentifier:viewController.viewIdentifier];
   [self shutDownIfNeeded];
 }
@@ -986,27 +1031,32 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
 }
 
+void _populateMetricsEvent(FlutterViewController* viewController,
+                           FlutterWindowMetricsEvent* event) {
+  NSView* view = viewController.flutterView;
+  CGRect scaledBounds = [view convertRectToBacking:view.bounds];
+  CGSize scaledSize = scaledBounds.size;
+  double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
+  auto displayId = [view.window.screen.deviceDescription[@"NSScreenNumber"] integerValue];
+
+  event->struct_size = sizeof(FlutterWindowMetricsEvent);
+  event->width = static_cast<size_t>(scaledSize.width);
+  event->height = static_cast<size_t>(scaledSize.height);
+  event->pixel_ratio = pixelRatio;
+  event->left = static_cast<size_t>(scaledBounds.origin.x);
+  event->top = static_cast<size_t>(scaledBounds.origin.y);
+  event->display_id = static_cast<uint64_t>(displayId);
+  event->view_id = viewController.viewIdentifier;
+}
+
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
   if (!_engine || !viewController || !viewController.viewLoaded) {
     return;
   }
   NSAssert([self viewControllerForIdentifier:viewController.viewIdentifier] == viewController,
            @"The provided view controller is not attached to this engine.");
-  NSView* view = viewController.flutterView;
-  CGRect scaledBounds = [view convertRectToBacking:view.bounds];
-  CGSize scaledSize = scaledBounds.size;
-  double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-  auto displayId = [view.window.screen.deviceDescription[@"NSScreenNumber"] integerValue];
-  const FlutterWindowMetricsEvent windowMetricsEvent = {
-      .struct_size = sizeof(windowMetricsEvent),
-      .width = static_cast<size_t>(scaledSize.width),
-      .height = static_cast<size_t>(scaledSize.height),
-      .pixel_ratio = pixelRatio,
-      .left = static_cast<size_t>(scaledBounds.origin.x),
-      .top = static_cast<size_t>(scaledBounds.origin.y),
-      .display_id = static_cast<uint64_t>(displayId),
-      .view_id = viewController.viewIdentifier,
-  };
+  FlutterWindowMetricsEvent windowMetricsEvent{};
+  _populateMetricsEvent(viewController, &windowMetricsEvent);
   _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
@@ -1048,6 +1098,107 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 }
 
 #pragma mark - Private methods
+
+- (void)addViewToEmbedderEngine:(FlutterViewController*)controller {
+  struct Captures {
+    fml::AutoResetWaitableEvent latch;
+    bool added;
+  };
+  Captures captures = {};
+
+  FlutterWindowMetricsEvent windowMetricsEvent{};
+  _populateMetricsEvent(controller, &windowMetricsEvent);
+  FlutterAddViewInfo info{
+      .struct_size = sizeof(FlutterAddViewInfo),
+      .view_id = controller.viewIdentifier,
+      .view_metrics = &windowMetricsEvent,
+      .user_data = &captures,
+      .add_view_callback =
+          [](const FlutterAddViewResult* result) {
+            // This is invoked on an engine thread. If
+            // |FlutterRemoveViewResult.added| is `true`, the engine guarantees the
+            // view won't be presented.
+            Captures* captures = reinterpret_cast<Captures*>(result->user_data);
+            NSLog(@"Received added callback... %llx", (uint64_t)(void*)captures);
+            captures->added = result->added;
+            captures->latch.Signal();
+          },
+  };
+  FlutterEngineResult result = _embedderAPI.AddView(_engine, &info);
+  if (result != kSuccess) {
+    FML_LOG(ERROR) << "Starting the add view operation failed. "
+                      "FlutterEngineAddView "
+                      "returned an unexpected result: "
+                   << result << ". This indicates a bug in the macOS embedder.";
+    FML_DCHECK(false);
+    return;
+  }
+
+  // Block the platform thread until the engine has removed the view.
+  // TODO(loicsharma): This blocks the platform thread eagerly and can
+  // cause unnecessary delay in input processing. Instead, this should block
+  // lazily only when an operation needs the view.
+  // https://github.com/flutter/flutter/issues/146248
+  captures.latch.Wait();
+  if (!captures.added) {
+    FML_LOG(ERROR) << "The add view operation failed. "
+                      "The callback returned failure. "
+                   << "This indicates a bug in the macOS embedder.";
+    FML_DCHECK(false);
+    return;
+  }
+}
+
+- (void)removeViewFromEmbedderEngine:(FlutterViewIdentifier)viewIdentifier {
+  struct Captures {
+    fml::AutoResetWaitableEvent latch;
+    bool removed;
+  };
+  Captures captures = {};
+  FlutterRemoveViewInfo info{
+      .struct_size = sizeof(FlutterRemoveViewInfo),
+      .view_id = viewIdentifier,
+      .user_data = &captures,
+      .remove_view_callback =
+          [](const FlutterRemoveViewResult* result) {
+            // This is invoked on an engine thread. If
+            // |FlutterRemoveViewResult.removed| is `true`, the engine guarantees the
+            // view won't be presented.
+            Captures* captures = reinterpret_cast<Captures*>(result->user_data);
+            captures->removed = result->removed;
+            captures->latch.Signal();
+          },
+  };
+  FlutterEngineResult result = _embedderAPI.RemoveView(_engine, &info);
+  if (result != kSuccess) {
+    FML_LOG(ERROR) << "Starting the remove view operation failed. "
+                      "FlutterEngineRemoveView "
+                      "returned an unexpected result: "
+                   << result << ". This indicates a bug in the macOS embedder.";
+    FML_DCHECK(false);
+    return;
+  }
+
+  // Block the platform thread until the engine has removed the view.
+  // TODO(loicsharma): This blocks the platform thread eagerly and can
+  // cause unnecessary delay in input processing. Instead, this should block
+  // lazily only when an operation needs the view.
+  // https://github.com/flutter/flutter/issues/146248
+  captures.latch.Wait();
+  if (!captures.removed) {
+    FML_LOG(ERROR) << "The remove view operation failed. "
+                      "The callback returned failure. "
+                   << "This indicates a bug in the macOS embedder.";
+    FML_DCHECK(false);
+    return;
+  }
+}
+
+- (FlutterViewIdentifier)generateRegularViewIdentifier {
+  FlutterViewIdentifier result = _nextRegularViewIdentifier;
+  _nextRegularViewIdentifier += 1;
+  return result;
+}
 
 - (void)sendUserLocales {
   if (!self.running) {

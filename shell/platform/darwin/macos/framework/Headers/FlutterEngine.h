@@ -92,6 +92,51 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, nonnull, readonly) id<FlutterBinaryMessenger> binaryMessenger;
 
 /**
+ * Attach a view controller that has been detached.
+ *
+ * If the engine currently doesn't have the implicit view, then this view controller
+ * will be associated with the implicit view. Otherwise, this view controller
+ * will received a new unique view ID. This seemingly complicated rule is necessary
+ * to provide backward compatibility to apps that removes and re-assigns the
+ * implicit view, so that these apps continue to work even with plugins that
+ * involve additional views. The re-assigning process looks like this:
+ *
+ * ```swift
+ *   let engine = FlutterEngine(..., allowHeadlessExecution: true)
+ *   // Create the first view controller for the implicit view.
+ *   let flutterViewController1 = FlutterViewController(engine: engine, ...)
+ *   // Detach the first view controller from the engine.
+ *   engine.viewController = nil
+ *   // Create a new view controller. This attaches to the implicit view.
+ *   let flutterViewController2 = FlutterViewController(engine: engine, ...)
+ * ```
+ *
+ * The engine holds a weak reference to the attached view controller.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ */
+- (void)addViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * Dissociate the given view controller from this engine.
+ *
+ * Detach a view controller.
+ *
+ * The view controller will no longer be usable until reattached to an engine.
+ *
+ * If the given view controller is not attached to an engine, this call
+ * throws an assertion.
+ */
+- (void)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * The |FlutterViewController| associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForIdentifier:
+    (FlutterViewIdentifier)viewIdentifier;
+
+/**
  * Shuts the Flutter engine if it is running. The FlutterEngine instance must always be shutdown
  * before it may be collected. Not shutting down the FlutterEngine instance before releasing it will
  * result in the leak of that engine instance.
