@@ -71,10 +71,8 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
-  Matrix basis_invert = entity.GetTransform().Basis().Invert();
-  Vector2 max_sigmas =
-      Vector2((basis_invert * Vector2(250.f, 0.f)).GetLength(),
-              (basis_invert * Vector2(0.f, 250.f)).GetLength());
+  Vector2 max_sigmas = entity.GetTransform().Invert().GetMaxBasisLengthXY() *
+                       Vector2(250.f, 250.f);
   Scalar max_sigma = std::min(max_sigmas.x, max_sigmas.y);
   // Clamp the max kernel width/height to 1000 (@ 1x) to limit the extent
   // of the blur and to kEhCloseEnough to prevent NaN calculations
