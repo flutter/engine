@@ -1298,7 +1298,7 @@ CreateEmbedderRenderTarget(
           auto on_make_current =
               [callback = backing_store.open_gl.surface.make_current_callback,
                context = backing_store.open_gl.surface.user_data]()
-              -> std::pair<bool, bool> {
+              -> flutter::EmbedderRenderTarget::SetCurrentResult {
             bool invalidate_api_state = false;
             bool ok = callback(context, &invalidate_api_state);
             return {ok, invalidate_api_state};
@@ -1307,7 +1307,7 @@ CreateEmbedderRenderTarget(
           auto on_clear_current =
               [callback = backing_store.open_gl.surface.clear_current_callback,
                context = backing_store.open_gl.surface.user_data]()
-              -> std::pair<bool, bool> {
+              -> flutter::EmbedderRenderTarget::SetCurrentResult {
             bool invalidate_api_state = false;
             bool ok = callback(context, &invalidate_api_state);
             return {ok, invalidate_api_state};

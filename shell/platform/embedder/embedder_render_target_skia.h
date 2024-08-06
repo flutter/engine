@@ -33,10 +33,10 @@ class EmbedderRenderTargetSkia final : public EmbedderRenderTarget {
   SkISize GetRenderTargetSize() const override;
 
   // |EmbedderRenderTarget|
-  std::pair<bool, bool> MaybeMakeCurrent() const override;
+  SetCurrentResult MaybeMakeCurrent() const override;
 
   // |EmbedderRenderTarget|
-  std::pair<bool, bool> MaybeClearCurrent() const override;
+  SetCurrentResult MaybeClearCurrent() const override;
 
  private:
   sk_sp<SkSurface> render_surface_;

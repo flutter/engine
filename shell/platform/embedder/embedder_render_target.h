@@ -27,7 +27,19 @@ namespace flutter {
 ///
 class EmbedderRenderTarget {
  public:
-  using MakeOrClearCurrentCallback = std::function<std::pair<bool, bool>()>;
+  struct SetCurrentResult {
+    /// This is true if the operation succeeded (even if it was a no-op),
+    /// false if the surface could not be made current / the current surface
+    /// could not be cleared.
+    bool success;
+
+    /// This is true if any native graphics API (e.g. GL, but not EGL) state has
+    /// changed and Skia/Impeller should not assume any GL state values are the
+    /// same as before the context change operation was attempted.
+    bool gl_state_trampled;
+  };
+
+  using MakeOrClearCurrentCallback = std::function<SetCurrentResult()>;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys this instance of the render target and invokes the
@@ -88,30 +100,14 @@ class EmbedderRenderTarget {
   ///             the embedder will provide a callback that should be called
   ///             when the target surface should be made current.
   ///
-  /// @return     A pair of booleans. The first bool is true if the operation
-  ///             succeeded (even if it was a no-op), false if the target could
-  ///             not be make current.
-  ///             The second boolean is true if any native graphics API
-  ///             (e.g. GL, but not EGL) state has changed and skia/impeller
-  ///             should not assume any GL state values are the same as before
-  ///             MaybeMakeCurrent was called.
-  virtual std::pair<bool, bool> MaybeMakeCurrent() const {
-    return {true, false};
-  }
+  /// @return     The result of the operation.
+  virtual SetCurrentResult MaybeMakeCurrent() const { return {true, false}; }
 
   //----------------------------------------------------------------------------
   /// @brief      Clear the current render target. @see MaybeMakeCurrent
   ///
-  /// @return     A pair of booleans. The first bool is true if the operation
-  ///             succeeded (even if it was a no-op), false if the target could
-  ///             not be cleared.
-  ///             The second boolean is true if any native graphics API
-  ///             (e.g. GL, but not EGL) state has changed and skia/impeller
-  ///             should not assume any GL state values are the same as before
-  ///             MaybeClearCurrent was called.
-  virtual std::pair<bool, bool> MaybeClearCurrent() const {
-    return {true, false};
-  }
+  /// @return     The result of the operation.
+  virtual SetCurrentResult MaybeClearCurrent() const { return {true, false}; }
 
  protected:
   //----------------------------------------------------------------------------

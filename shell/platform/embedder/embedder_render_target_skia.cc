@@ -41,7 +41,8 @@ SkISize EmbedderRenderTargetSkia::GetRenderTargetSize() const {
   return SkISize::Make(render_surface_->width(), render_surface_->height());
 }
 
-std::pair<bool, bool> EmbedderRenderTargetSkia::MaybeMakeCurrent() const {
+EmbedderRenderTarget::SetCurrentResult
+EmbedderRenderTargetSkia::MaybeMakeCurrent() const {
   if (on_make_current_ != nullptr) {
     return on_make_current_();
   }
@@ -49,7 +50,8 @@ std::pair<bool, bool> EmbedderRenderTargetSkia::MaybeMakeCurrent() const {
   return {true, false};
 }
 
-std::pair<bool, bool> EmbedderRenderTargetSkia::MaybeClearCurrent() const {
+EmbedderRenderTarget::SetCurrentResult
+EmbedderRenderTargetSkia::MaybeClearCurrent() const {
   if (on_clear_current_ != nullptr) {
     return on_clear_current_();
   }
