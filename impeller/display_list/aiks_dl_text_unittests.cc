@@ -44,7 +44,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
                             const TextRenderOptions& options = {}) {
   // Draw the baseline.
   DlPaint paint;
-  paint.setColor(DlColor::kBlue().modulateOpacity(0.25));
+  paint.setColor(DlColor::kAqua().modulateOpacity(0.25));
   canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
                                    options.position.y(), 900, 10),
                   paint);
@@ -87,7 +87,7 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
                            const TextRenderOptions& options = {}) {
   // Draw the baseline.
   DlPaint paint;
-  paint.setColor(DlColor::kBlue().modulateOpacity(0.25));
+  paint.setColor(DlColor::kAqua().modulateOpacity(0.25));
   canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
                                    options.position.y(), 900, 10),
                   paint);
@@ -118,7 +118,7 @@ TEST_P(AiksTest, CanRenderTextFrame) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
@@ -131,7 +131,7 @@ TEST_P(AiksTest, CanRenderTextFrameWithInvertedTransform) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
   builder.Translate(1000, 0);
   builder.Scale(-1, 1);
@@ -147,7 +147,7 @@ TEST_P(AiksTest, CanRenderStrokedTextFrame) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSkia(
@@ -163,7 +163,7 @@ TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
   builder.Scale(0.5, 0.5);
 
@@ -177,7 +177,7 @@ TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
   builder.Scale(2.625, 2.625);
 
@@ -191,7 +191,7 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSTB(

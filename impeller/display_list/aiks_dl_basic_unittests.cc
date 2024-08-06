@@ -1122,7 +1122,7 @@ TEST_P(AiksTest, CoordinateConversionsAreCorrect) {
     builder.Translate(100, 200);
     builder.Scale(0.5, 0.5);
     builder.DrawImage(image, SkPoint::Make(100.0, 100.0),
-                      DlImageSampling::kLinear);
+                      DlImageSampling::kNearestNeighbor);
     builder.Restore();
   }
 
