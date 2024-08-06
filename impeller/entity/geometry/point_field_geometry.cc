@@ -4,7 +4,7 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
-#include "impeller/core/vertex_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/renderer/command_buffer.h"
 
@@ -28,17 +28,17 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     return {};
   }
 
-  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar min_size = 0.5f / sqrt(std::abs(determinant));
   Scalar radius = std::max(radius_, min_size);
 
   HostBuffer& host_buffer = renderer.GetTransientsBuffer();
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
-
   if (round_) {
     // Get triangulation relative to {0, 0} so we can translate it to each
-    // point in turn.
+    // point in turn. Note: we intentionally used the original radius here
+    // to capture any scaling < 1.0.
     auto generator =
-        renderer.GetTessellator()->FilledCircle(transform, {}, radius);
+        renderer.GetTessellator()->FilledCircle(transform, {}, radius_);
     FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
     std::vector<Point> circle_vertices;
     circle_vertices.reserve(generator.GetVertexCount());

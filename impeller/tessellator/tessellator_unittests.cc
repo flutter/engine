@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cmath>
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
@@ -170,6 +171,15 @@ TEST(TessellatorTest, CircleVertexCounts) {
   for (int i = 36; i < 10000; i += 4) {
     test({}, i);
   }
+}
+
+// If a NaN or Inf value is encountered a fixed number of divisions is returned.
+TEST(TessellatorTest, CircleNanDivisions) {
+  auto tessellator = std::make_shared<Tessellator>();
+  auto generator = tessellator->FilledCircle(
+      {}, {}, std::numeric_limits<float>::quiet_NaN());
+
+  EXPECT_FALSE(std::isfinite(generator.GetVertexCount()));
 }
 
 TEST(TessellatorTest, FilledCircleTessellationVertices) {

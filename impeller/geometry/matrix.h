@@ -298,6 +298,13 @@ struct Matrix {
   Scalar GetMaxBasisLength() const;
 
   constexpr Scalar GetMaxBasisLengthXY() const {
+    // The full basis computation requires computing the squared scaling factor
+    // for translate/scale only matrices. This substantially limits the range of
+    // precision for small and large scales. Instead, check for the common cases
+    // and directly return the max scaling factor.
+    if (IsTranslationScaleOnly()) {
+      return std::max(m[0], m[5]);
+    }
     return std::sqrt(std::max(e[0][0] * e[0][0] + e[0][1] * e[0][1],
                               e[1][0] * e[1][0] + e[1][1] * e[1][1]));
   }
