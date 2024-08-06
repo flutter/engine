@@ -176,8 +176,8 @@ TEST(TessellatorTest, CircleVertexCounts) {
 // If a NaN or Inf value is encountered a fixed number of divisions is returned.
 TEST(TessellatorTest, CircleNanDivisions) {
   auto tessellator = std::make_shared<Tessellator>();
-  auto generator = tessellator->FilledCircle(
-      {}, {}, std::numeric_limits<float>::quiet_NaN());
+  auto matix = Matrix::MakeScale(Vector2{2.625e+20, 2.625e+20});
+  auto generator = tessellator->FilledCircle(matix, {}, 2.625e+20);
 
   EXPECT_FALSE(std::isfinite(generator.GetVertexCount()));
 }
