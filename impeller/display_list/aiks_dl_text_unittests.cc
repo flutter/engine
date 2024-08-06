@@ -44,13 +44,13 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
                             const TextRenderOptions& options = {}) {
   // Draw the baseline.
   DlPaint paint;
-  paint.setColor(DlColor::kAqua().modulateOpacity(0.25));
+  paint.setColor(DlColor::kAqua().withAlpha(255 * 0.25));
   canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
                                    options.position.y(), 900, 10),
                   paint);
 
   // Mark the point at which the text is drawn.
-  paint.setColor(DlColor::kRed().modulateOpacity(0.25));
+  paint.setColor(DlColor::kRed().withAlpha(255 * 0.25));
   canvas.DrawCircle(options.position, 5.0, paint);
 
   // Construct the text blob.
@@ -87,13 +87,13 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
                            const TextRenderOptions& options = {}) {
   // Draw the baseline.
   DlPaint paint;
-  paint.setColor(DlColor::kAqua().modulateOpacity(0.25));
+  paint.setColor(DlColor::kAqua().withAlpha(255 * 0.25));
   canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
                                    options.position.y(), 900, 10),
                   paint);
 
   // Mark the point at which the text is drawn.
-  paint.setColor(DlColor::kRed().modulateOpacity(0.25));
+  paint.setColor(DlColor::kRed().withAlpha(255 * 0.25));
   canvas.DrawCircle(options.position, 5.0, paint);
 
   // Construct the text blob.
@@ -272,7 +272,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSkia(
@@ -347,7 +347,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
   SkFont sk_font(font_mgr->makeFromData(mapping), font_size);
 
   DlPaint text_paint;
-  text_paint.setColor(DlColor::kBlue().modulateOpacity(0.8));
+  text_paint.setColor(DlColor::kBlue().withAlpha(255 * 0.8));
 
   struct {
     SkPoint position;

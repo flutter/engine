@@ -1199,7 +1199,7 @@ TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   DlColor colors[color_count] = {
       DlColor::kBlue(),
       DlColor::kGreen(),
-      DlColor::kCrimson(),
+      DlColor::ARGB(1.0, 220.0f / 255.0f, 20.0f / 255.0f, 60.0f / 255.0f),
   };
 
   paint.setColor(DlColor::kWhite());
@@ -1275,7 +1275,7 @@ TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   paint.setColor(DlColor::kWhite().modulateOpacity(0.1));
   paint.setColorSource(std::make_shared<DlImageColorSource>(
       texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &matrix));
+      DlImageSampling::kMipmapLinear, &matrix));
   for (int i = 1; i <= 10; i++) {
     int j = 11 - i;
     draw_rrect_as_path(SkRect::MakeLTRB(720 - i * 20, 220 - j * 20,  //
@@ -1286,7 +1286,7 @@ TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   paint.setColor(DlColor::kWhite().modulateOpacity(0.5));
   paint.setColorSource(std::make_shared<DlImageColorSource>(
       texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &matrix));
+      DlImageSampling::kMipmapLinear, &matrix));
 
   draw_rrect_as_path(SkRect::MakeLTRB(800, 410, 1000, 490), 40, 40, paint);
   draw_rrect_as_path(SkRect::MakeLTRB(860, 350, 940, 550), 40, 40, paint);
