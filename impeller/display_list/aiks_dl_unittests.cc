@@ -469,7 +469,7 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
 
 TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
   std::vector<SkPoint> point = {
-      {0, 0},      //
+      {0, 0},  //
   };
 
   DlPaint paint;
@@ -489,7 +489,7 @@ TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
 
 TEST_P(AiksTest, CanDrawScaledPointsSmallScaleLargeRadius) {
   std::vector<SkPoint> point = {
-      {0, 0},      //
+      {0, 0},  //
   };
 
   DlPaint paint;
@@ -506,7 +506,6 @@ TEST_P(AiksTest, CanDrawScaledPointsSmallScaleLargeRadius) {
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
-
 
 }  // namespace testing
 }  // namespace impeller
