@@ -462,7 +462,7 @@ static BOOL _preparedOnce = NO;
 }
 @end
 
-// This recognizers delays touch events from being dispatched to the responder chain until it failed
+// This recognizer delays touch events from being dispatched to the responder chain until it failed
 // recognizing a gesture.
 //
 // We only fail this recognizer when asked to do so by the Flutter framework (which does so by
