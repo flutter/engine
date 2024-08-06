@@ -3,7 +3,7 @@
 > [!Warning]
 > - Flutter GPU is in an early preview state and does not guarantee API stability.
 > - Flutter GPU currently requires [Impeller to be enabled](https://docs.flutter.dev/perf/impeller#availability).
-> - Automated shader building relies on the experimental Dart "Native Assets" feature.
+> - Automated shader building relies on the experimental [Dart "Native Assets"](https://github.com/dart-lang/sdk/issues/50565) feature.
 > - Because Flutter GPU is experimental and relies on experimental features, switching to the [master channel](https://docs.flutter.dev/release/upgrade#other-channels) is strongly recommended.
 
 ## How to use
@@ -16,16 +16,15 @@ Flutter GPU is a low level API for building rendering packages from scratch. Gra
 
 ## Distribution
 
-Flutter GPU can be used on the Flutter [master channel](https://docs.flutter.dev/release/upgrade#other-channels) by 
+Flutter GPU can be used on the Flutter [master channel](https://docs.flutter.dev/release/upgrade#other-channels).
 
 Similar to `dart:ui`, Flutter GPU calls into Flutter's native runtime. As such, it's coupled with Flutter Engine The Flutter GPU package is closely tied to  Flutter GPU is distributed as part of the Flutter SDK
 
 ## Useful links
 
 - [Project dashboard](https://github.com/orgs/flutter/projects/134/views/1)
-- Flutter GPU's pac https://github.com/orgs/flutter/projects/134/
-- Original design doc (now outdated!): https://flutter.dev/go/impeller-dart
-- Package source: https://github.com/flutter/engine/tree/main/lib/gpu
+- [Original design doc](https://flutter.dev/go/impeller-dart) (now outdated!)
+- [flutter_gpu package source](https://github.com/flutter/engine/tree/main/lib/gpu)
 
 ## Dart FFI
 
