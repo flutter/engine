@@ -99,7 +99,23 @@ class Color {
   /// For example, to get a fully opaque orange, you would use `const
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
-  const Color(int value) : value = value & 0xFFFFFFFF;
+  const Color(int value)
+      : a = ((0xff000000 & value) >> 24) / 255.0,
+        r = ((0x00ff0000 & value) >> 16) / 255.0,
+        g = ((0x0000ff00 & value) >> 8) / 255.0,
+        b = ((0x000000ff & value) >> 0) / 255.0,
+        colorSpace = ColorSpace.sRGB;
+
+  const Color.from(
+      {required double alpha,
+      required double red,
+      required double green,
+      required double blue,
+      this.colorSpace = ColorSpace.sRGB})
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
 
   /// Construct a color from the lower 8 bits of four integers.
   ///
@@ -113,11 +129,12 @@ class Color {
   ///
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
-  const Color.fromARGB(int a, int r, int g, int b) :
-    value = (((a & 0xff) << 24) |
-             ((r & 0xff) << 16) |
-             ((g & 0xff) << 8)  |
-             ((b & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromARGB(int alpha, int red, int green, int blue)
+      : a = alpha / 255.0,
+        r = red / 255.0,
+        g = green / 255.0,
+        b = blue / 255.0,
+        colorSpace = ColorSpace.sRGB;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -130,11 +147,18 @@ class Color {
   /// Out of range values are brought into range using modulo 255.
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
-  const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-              ((r                    & 0xff) << 16) |
-              ((g                    & 0xff) << 8)  |
-              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromRGBO(int red, int green, int blue, double opacity) :
+    a = opacity,
+    r = red / 255.0,
+    g = green / 255.0,
+    b = blue / 255.0,
+    colorSpace = ColorSpace.sRGB;
+
+  final double a;
+  final double r;
+  final double g;
+  final double b;
+  final ColorSpace colorSpace;
 
   /// A 32 bit value representing this color.
   ///
@@ -144,35 +168,62 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
-  final int value;
+  @Deprecated('Use component accessors like .r or .g.')
+  int get value =>
+      ((a * 255.0).round() << 24) &
+      ((r * 255.0).round() << 16) &
+      ((g * 255.0).round() << 8) &
+      ((b * 255.0).round() << 0);
 
   /// The alpha channel of this color in an 8 bit value.
   ///
   /// A value of 0 means this color is fully transparent. A value of 255 means
   /// this color is fully opaque.
+  @Deprecated('Use .a.')
   int get alpha => (0xff000000 & value) >> 24;
 
   /// The alpha channel of this color as a double.
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  double get opacity => alpha / 0xFF;
+  double get opacity => a;
 
   /// The red channel of this color in an 8 bit value.
-  int get red => (0x00ff0000 & value) >> 16;
+  @Deprecated('Use .r.')
+  int get red => (r * 255.0).round();
 
   /// The green channel of this color in an 8 bit value.
-  int get green => (0x0000ff00 & value) >> 8;
+  @Deprecated('Use .g.')
+  int get green => (g * 255.0).round();
 
   /// The blue channel of this color in an 8 bit value.
-  int get blue => (0x000000ff & value) >> 0;
+  @Deprecated('Use .b.')
+  int get blue => (b * 255.0).round();
+
+  Color withComponents(
+      {double? alpha,
+      double? red,
+      double? green,
+      double? blue,
+      ColorSpace? colorSpace}) {
+    if (colorSpace != null && colorSpace == this.colorSpace) {
+      return Color.from(
+          alpha: alpha ?? a,
+          red: red ?? r,
+          green: green ?? g,
+          blue: blue ?? b,
+          colorSpace: colorSpace);
+    } else {
+      throw Error();
+    }
+  }
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return Color.fromARGB(a, red, green, blue);
+    return Color.from(alpha: a / 255.0, red: r, green: g, blue: b);
   }
 
   /// Returns a new color that matches this color with the alpha channel
@@ -181,7 +232,7 @@ class Color {
   /// Out of range values will have unexpected effects.
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return withAlpha((255.0 * opacity).round());
+    return Color.from(alpha: opacity, red: r, green: g, blue: b);
   }
 
   /// Returns a new color that matches this color with the red channel replaced
@@ -189,7 +240,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return Color.from(alpha: a, red: r / 255.0, green: g, blue: b);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -197,7 +248,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return Color.from(alpha: a, red: r, green: g / 255.0, blue: b);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -205,7 +256,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return Color.from(alpha: a, red: r, green: g, blue: b / 255.0);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -224,9 +275,9 @@ class Color {
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -323,8 +374,12 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is Color
-        && other.value == value;
+    return other is Color &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
+        other.colorSpace == colorSpace;
   }
 
   @override
