@@ -18,7 +18,15 @@ Flutter GPU is a low level API for building rendering packages from scratch. Gra
 
 Flutter GPU can be used on the Flutter [master channel](https://docs.flutter.dev/release/upgrade#other-channels).
 
-Similar to `dart:ui`, Flutter GPU calls into Flutter's native runtime. As such, it's coupled with Flutter Engine The Flutter GPU package is closely tied to  Flutter GPU is distributed as part of the Flutter SDK
+Flutter GPU is distributed using the same mechanism as `dart:ui`/`sky_engine`. While fetching artifacts, the Flutter tool downloads a zip containing the `flutter_gpu` package and places it in a package cache location searched when importing SDK packages.
+And so Flutter GPU can be used by adding an SDK dependency to a package pubspec:
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_gpu:
+    sdk: flutter
+```
 
 ## Useful links
 
