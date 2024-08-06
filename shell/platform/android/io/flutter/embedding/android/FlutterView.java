@@ -1451,7 +1451,6 @@ public class FlutterView extends FrameLayout
 
   private FlutterViewDelegate delegate = new FlutterViewDelegate();
 
-  /** Set the FlutterViewDelegate, such as to a mock for testing. */
   @VisibleForTesting
   public void setDelegate(FlutterViewDelegate delegate) {
     this.delegate = delegate;

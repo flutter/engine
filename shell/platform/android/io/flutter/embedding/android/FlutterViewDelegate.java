@@ -7,6 +7,7 @@ package io.flutter.embedding.android;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
+import android.view.Window;
 import android.view.WindowInsets;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
@@ -28,7 +29,11 @@ public class FlutterViewDelegate {
     if (activity == null) {
       return null;
     }
-    return activity.getWindow().getDecorView().getRootWindowInsets();
+    Window window = activity.getWindow();
+    if (window == null) {
+      return null;
+    }
+    return window.getDecorView().getRootWindowInsets();
   }
 
   @RequiresApi(api = Build.API_LEVELS.API_35)
