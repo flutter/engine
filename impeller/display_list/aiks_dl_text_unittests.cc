@@ -252,7 +252,7 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSkia(
@@ -284,7 +284,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithBlur) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSkia(
@@ -299,7 +299,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   DisplayListBuilder builder;
 
   DlPaint paint;
-  paint.setColor(DlColor::ARGB(0.1, 0.1, 0.1, 0.1));
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
 
   ASSERT_TRUE(RenderTextInCanvasSkia(
