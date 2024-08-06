@@ -109,6 +109,8 @@ source_set("flutter_framework_source_arc") {
     "framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm",
     "framework/Source/connection_collection.h",
     "framework/Source/connection_collection.mm",
+    "framework/Source/overlay_layer_pool.h",
+    "framework/Source/overlay_layer_pool.mm",
     "framework/Source/platform_message_response_darwin.h",
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/platform_views_controller.h",
