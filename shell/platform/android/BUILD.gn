@@ -358,7 +358,6 @@ android_java_sources = [
   "io/flutter/view/FlutterNativeView.java",
   "io/flutter/view/FlutterRunArguments.java",
   "io/flutter/view/FlutterView.java",
-  "io/flutter/view/FlutterViewDelegate.java",
   "io/flutter/view/TextureRegistry.java",
   "io/flutter/view/VsyncWaiter.java",
 ]
