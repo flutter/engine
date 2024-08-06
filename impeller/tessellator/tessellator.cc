@@ -194,14 +194,7 @@ static size_t ComputeQuadrantDivisions(Scalar pixel_radius) {
   // Since we have precomputed the divisions for radii up to 1024, we can
   // afford to be more accurate using the acos formula here for larger radii.
   double k = Tessellator::kCircleTolerance / pixel_radius;
-  auto res = ceil(kPiOver4 / std::acos(1 - k));
-  if (std::isfinite(res)) {
-    return res;
-  }
-  // If infinite divisions are computed, something has gone horribly wrong.
-  // Choose a large but otherwise safe default value for cicles on mobile phone
-  // screen size dimensions.
-  return 256;
+  return ceil(kPiOver4 / std::acos(1 - k));
 }
 
 void Tessellator::Trigs::init(size_t divisions) {
