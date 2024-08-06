@@ -19,8 +19,9 @@ import java.util.List;
 /** A delegate class that performs the task of retrieving the bounding rect values. */
 public class FlutterViewDelegate {
   /**
-   * Return the WindowInsets object for the provided Context, or null if there is no associated
-   * activity.
+   * Return the WindowInsets object for the provided Context. Returns null if there is no associated
+   * activity, the window of the associated activity is null, or the root window insets of the
+   * activity's window is null.
    */
   @RequiresApi(api = Build.API_LEVELS.API_23)
   @VisibleForTesting
