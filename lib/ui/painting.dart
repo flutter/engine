@@ -170,9 +170,9 @@ class Color {
   /// * Bits 0-7 are the blue value.
   @Deprecated('Use component accessors like .r or .g.')
   int get value =>
-      ((a * 255.0).round() << 24) &
-      ((r * 255.0).round() << 16) &
-      ((g * 255.0).round() << 8) &
+      ((a * 255.0).round() << 24) |
+      ((r * 255.0).round() << 16) |
+      ((g * 255.0).round() << 8) |
       ((b * 255.0).round() << 0);
 
   /// The alpha channel of this color in an 8 bit value.
