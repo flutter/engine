@@ -10,6 +10,7 @@
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -58,13 +59,13 @@ TEST(SurfacePool, GetLayerAllocateOneLayer) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  auto layer = pool->GetLayer(gr_context.get(), *android_context, jni_mock,
-                              surface_factory);
+  EXPECT_FALSE(pool->CheckLayerProperties(gr_context.get(), SkISize{100, 100}));
+  pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                    surface_factory);
+  auto layer = pool->GetNextLayer();
 
-  ASSERT_TRUE(pool->HasLayers());
-  ASSERT_NE(nullptr, layer);
-  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context.get()),
-            layer->gr_context_key);
+  EXPECT_TRUE(pool->size() > 0);
+  EXPECT_NE(nullptr, layer);
 }
 
 TEST(SurfacePool, GetUnusedLayers) {
@@ -89,15 +90,17 @@ TEST(SurfacePool, GetUnusedLayers) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  auto layer = pool->GetLayer(gr_context.get(), *android_context, jni_mock,
-                              surface_factory);
-  ASSERT_EQ(0UL, pool->GetUnusedLayers().size());
+  EXPECT_FALSE(pool->CheckLayerProperties(gr_context.get(), SkISize{100, 100}));
+  pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                    surface_factory);
+  EXPECT_EQ(0UL, pool->GetUnusedLayers().size());
 
+  auto layer = pool->GetNextLayer();
   pool->RecycleLayers();
 
-  ASSERT_TRUE(pool->HasLayers());
-  ASSERT_EQ(1UL, pool->GetUnusedLayers().size());
-  ASSERT_EQ(layer, pool->GetUnusedLayers()[0]);
+  EXPECT_EQ(pool->size(), 1u);
+  EXPECT_EQ(1UL, pool->GetUnusedLayers().size());
+  EXPECT_EQ(layer, pool->GetUnusedLayers()[0]);
 }
 
 TEST(SurfacePool, GetLayerRecycle) {
@@ -128,21 +131,24 @@ TEST(SurfacePool, GetLayerRecycle) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  auto layer_1 = pool->GetLayer(gr_context_1.get(), *android_context, jni_mock,
-                                surface_factory);
-
+  EXPECT_FALSE(
+      pool->CheckLayerProperties(gr_context_1.get(), SkISize{100, 100}));
+  pool->CreateLayer(gr_context_1.get(), *android_context, jni_mock,
+                    surface_factory);
+  auto layer_1 = pool->GetNextLayer();
   pool->RecycleLayers();
 
-  auto layer_2 = pool->GetLayer(gr_context_2.get(), *android_context, jni_mock,
-                                surface_factory);
+  EXPECT_TRUE(
+      pool->CheckLayerProperties(gr_context_2.get(), SkISize{100, 100}));
+  pool->DestroyLayers(jni_mock);
 
-  ASSERT_TRUE(pool->HasLayers());
-  ASSERT_NE(nullptr, layer_1);
-  ASSERT_EQ(layer_1, layer_2);
-  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context_2.get()),
-            layer_1->gr_context_key);
-  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context_2.get()),
-            layer_2->gr_context_key);
+  pool->CreateLayer(gr_context_2.get(), *android_context, jni_mock,
+                    surface_factory);
+  auto layer_2 = pool->GetNextLayer();
+
+  EXPECT_TRUE(pool->size() > 0);
+  EXPECT_NE(nullptr, layer_1);
+  EXPECT_NE(layer_1, layer_2);
 }
 
 TEST(SurfacePool, GetLayerAllocateTwoLayers) {
@@ -171,17 +177,21 @@ TEST(SurfacePool, GetLayerAllocateTwoLayers) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  auto layer_1 = pool->GetLayer(gr_context.get(), *android_context, jni_mock,
-                                surface_factory);
-  auto layer_2 = pool->GetLayer(gr_context.get(), *android_context, jni_mock,
-                                surface_factory);
 
-  ASSERT_TRUE(pool->HasLayers());
-  ASSERT_NE(nullptr, layer_1);
-  ASSERT_NE(nullptr, layer_2);
-  ASSERT_NE(layer_1, layer_2);
-  ASSERT_EQ(0, layer_1->id);
-  ASSERT_EQ(1, layer_2->id);
+  EXPECT_FALSE(pool->CheckLayerProperties(gr_context.get(), SkISize{100, 100}));
+  for (auto i = 0; i < 2; i++) {
+    pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                      surface_factory);
+  }
+  auto layer_1 = pool->GetNextLayer();
+  auto layer_2 = pool->GetNextLayer();
+
+  EXPECT_EQ(pool->size(), 1u);
+  EXPECT_NE(nullptr, layer_1);
+  EXPECT_NE(nullptr, layer_2);
+  EXPECT_NE(layer_1, layer_2);
+  EXPECT_EQ(0, layer_1->id);
+  EXPECT_EQ(1, layer_2->id);
 }
 
 TEST(SurfacePool, DestroyLayers) {
@@ -210,14 +220,16 @@ TEST(SurfacePool, DestroyLayers) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  pool->GetLayer(gr_context.get(), *android_context, jni_mock, surface_factory);
+  EXPECT_FALSE(pool->CheckLayerProperties(gr_context.get(), SkISize{100, 100}));
+  pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                    surface_factory);
 
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces());
 
-  ASSERT_TRUE(pool->HasLayers());
+  EXPECT_EQ(pool->size(), 1u);
   pool->DestroyLayers(jni_mock);
 
-  ASSERT_FALSE(pool->HasLayers());
+  EXPECT_EQ(pool->size(), 0u);
   ASSERT_TRUE(pool->GetUnusedLayers().empty());
 }
 
@@ -239,7 +251,8 @@ TEST(SurfacePool, DestroyLayersFrameSizeChanged) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  pool->SetFrameSize(SkISize::Make(10, 10));
+  EXPECT_FALSE(pool->CheckLayerProperties(gr_context.get(), SkISize{10, 10}));
+
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(0);
   EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
       .Times(1)
@@ -247,23 +260,27 @@ TEST(SurfacePool, DestroyLayersFrameSizeChanged) {
           ByMove(std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
               0, window))));
 
-  ASSERT_FALSE(pool->HasLayers());
+  EXPECT_EQ(pool->size(), 0u);
+  pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                    surface_factory);
 
-  pool->GetLayer(gr_context.get(), *android_context, jni_mock, surface_factory);
+  EXPECT_EQ(pool->size(), 1u);
+  EXPECT_TRUE(pool->CheckLayerProperties(gr_context.get(), SkISize{20, 20}));
+  pool->DestroyLayers(jni_mock);
 
-  ASSERT_TRUE(pool->HasLayers());
-
-  pool->SetFrameSize(SkISize::Make(20, 20));
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(1);
   EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
       .Times(1)
       .WillOnce(Return(
           ByMove(std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
               1, window))));
-  pool->GetLayer(gr_context.get(), *android_context, jni_mock, surface_factory);
 
-  ASSERT_TRUE(pool->GetUnusedLayers().empty());
-  ASSERT_TRUE(pool->HasLayers());
+  pool->CreateLayer(gr_context.get(), *android_context, jni_mock,
+                    surface_factory);
+  pool->GetNextLayer();
+
+  EXPECT_TRUE(pool->GetUnusedLayers().empty());
+  EXPECT_EQ(pool->size(), 1u);
 }
 
 }  // namespace testing

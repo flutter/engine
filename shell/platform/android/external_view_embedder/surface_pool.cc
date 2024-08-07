@@ -24,8 +24,9 @@ SurfacePool::~SurfacePool() = default;
 bool SurfacePool::CheckLayerProperties(GrDirectContext* gr_context,
                                        SkISize frame_size) {
   intptr_t gr_context_key = reinterpret_cast<intptr_t>(gr_context);
-  bool destroy_all_layers =
-      gr_context_key != gr_context_key_ || frame_size != current_frame_size_;
+  bool destroy_all_layers = (gr_context_key != gr_context_key_ ||
+                             frame_size != current_frame_size_) &&
+                            layers_.size() > 0;
   current_frame_size_ = frame_size;
   gr_context_key_ = gr_context_key;
   return destroy_all_layers;
