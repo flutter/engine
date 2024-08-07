@@ -1243,6 +1243,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
+    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");

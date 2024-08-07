@@ -139,11 +139,6 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Whether the layer tree in the current frame has platform layers.
   bool FrameHasPlatformLayers();
-
-  std::shared_ptr<OverlayLayer> CreateSurfaceIfNeeded(GrDirectContext* context,
-                                                      int64_t view_id,
-                                                      EmbedderViewSlice* slice,
-                                                      const SkRect& rect);
 };
 
 }  // namespace flutter

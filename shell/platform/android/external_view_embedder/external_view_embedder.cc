@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
 #include <cstdint>
+#include <memory>
 #include <unordered_map>
 
 #include "flow/surface_frame.h"
@@ -13,6 +14,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/make_copyable.h"
+#include "fml/synchronization/count_down_latch.h"
 #include "shell/platform/android/external_view_embedder/surface_pool.h"
 
 namespace flutter {
@@ -109,13 +111,27 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     frame->Submit();
   }
 
+  // Overlay layers must be created or destroyed on the platfor thread.
+  bool destroy_all_layers =
+      surface_pool_->CheckLayerProperties(context, frame_size_);
+  if (destroy_all_layers || surface_pool_->size() < overlay_layers.size()) {
+    auto latch = std::make_shared<fml::CountDownLatch>(1u);
+    task_runners_.GetPlatformTaskRunner()->PostTask([&]() {
+      if (destroy_all_layers) {
+        surface_pool_->DestroyLayers(jni_facade_);
+      }
+      for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
+        surface_pool_->CreateLayer(context, android_context_, jni_facade_,
+                                   surface_factory_);
+      }
+      latch->CountDown();
+    });
+    latch->Wait();
+  }
+
   std::unordered_map<int64_t, std::shared_ptr<OverlayLayer>> layers;
   for (const auto& [view_id, rect] : overlay_layers) {
-    auto overlay_layer = CreateSurfaceIfNeeded(context,                    //
-                                               view_id,                    //
-                                               slices_.at(view_id).get(),  //
-                                               rect                        //
-    );
+    auto overlay_layer = surface_pool_->GetNextLayer();
     if (!overlay_layer) {
       continue;
     }
@@ -140,7 +156,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   }
 
   surface_pool_->RecycleLayers();
-  task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
+  task_runners_.GetPlatformTaskRunner()->PostTask(
       [&, composition_order = composition_order_, view_params = view_params_,
        overlay_layers = std::move(overlay_layers),
        layers = std::move(layers)]() {
@@ -189,17 +205,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
         }
 
         jni_facade_->FlutterViewEndFrame();
-      }));
-}
-
-// |ExternalViewEmbedder|
-std::shared_ptr<OverlayLayer>
-AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
-                                                   int64_t view_id,
-                                                   EmbedderViewSlice* slice,
-                                                   const SkRect& rect) {
-  return surface_pool_->GetLayer(context, android_context_, jni_facade_,
-                                 surface_factory_);
+      });
 }
 
 // |ExternalViewEmbedder|
@@ -238,14 +244,6 @@ void AndroidExternalViewEmbedder::PrepareFlutterView(
     SkISize frame_size,
     double device_pixel_ratio) {
   Reset();
-
-  // The surface size changed. Therefore, destroy existing surfaces as
-  // the existing surfaces in the pool can't be recycled.
-  if (frame_size_ != frame_size) {
-    DestroySurfaces();
-  }
-  surface_pool_->SetFrameSize(frame_size);
-
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
 }
@@ -272,7 +270,7 @@ void AndroidExternalViewEmbedder::Teardown() {
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::DestroySurfaces() {
-  if (!surface_pool_->HasLayers()) {
+  if (surface_pool_->size() == 0) {
     return;
   }
   fml::AutoResetWaitableEvent latch;
