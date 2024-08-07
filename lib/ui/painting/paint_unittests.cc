@@ -89,6 +89,5 @@ TEST_F(ShellTest, ColorTests) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-
 }  // namespace testing
 }  // namespace flutter
