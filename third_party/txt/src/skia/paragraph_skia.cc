@@ -120,7 +120,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     DlPaint paint;
     paint.setColor(DlColor(color));
     if (blur_sigma > 0.0) {
-      DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
+      DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma);
       paint.setMaskFilter(&filter);
     }
     if (impeller_enabled_) {
