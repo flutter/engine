@@ -762,7 +762,11 @@ public class PlatformViewsControllerTest {
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+        });
   }
 
   @Test
@@ -788,7 +792,11 @@ public class PlatformViewsControllerTest {
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+        });
   }
 
   @Test
