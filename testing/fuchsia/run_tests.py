@@ -33,7 +33,7 @@ sys.path.insert(
 )
 
 # pylint: disable=import-error, wrong-import-position
-import run_test
+from bundled_test_runner import run_tests, TestCase
 from common import DIR_SRC_ROOT
 from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
@@ -46,36 +46,6 @@ elif len(sys.argv) == 1:
 else:
   assert False, 'Expect only one parameter as the compile output directory.'
 OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out', VARIANT)
-
-
-# Visible for testing
-class TestCase(NamedTuple):
-  package: str
-  args: str = ''
-
-
-class _BundledTestRunner(TestRunner):
-
-  # private, use bundled_test_runner_of function instead.
-  def __init__(self, target_id: str, package_deps: Set[str], tests: List[TestCase], logs_dir: str):
-    super().__init__(OUT_DIR, [], None, target_id, list(package_deps))
-    self.tests = tests
-    self.logs_dir = logs_dir
-
-  def run_test(self) -> CompletedProcess:
-    returncode = 0
-    for test in self.tests:
-      assert test.package.endswith('.cm')
-      test_runner = ExecutableTestRunner(
-          OUT_DIR, test.args.split(), test.package, self._target_id, None, self.logs_dir, [], None
-      )
-      # pylint: disable=protected-access
-      test_runner._package_deps = self._package_deps
-      result = test_runner.run_test().returncode
-      logging.info('Result of test %s is %s', test, result)
-      if result != 0:
-        returncode = result
-    return CompletedProcess(args='', returncode=returncode)
 
 
 # Visible for testing
@@ -121,8 +91,14 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   return test_cases
 
 
-def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
-  log_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
+if __name__ == '__main__':
+  logging.basicConfig(level=logging.INFO)
+  logging.info('Running tests in %s', OUT_DIR)
+  sys.argv.append('--out-dir=' + OUT_DIR)
+  if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
+    sys.argv.append('--product=terminal.qemu-arm64')
+
+  logs_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'), 'r') as file:
     tests = yaml.safe_load(file)
   # TODO(zijiehe-google-com): Run all tests in release build,
@@ -131,21 +107,5 @@ def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
     return 'variant' not in test or test['variant'] in VARIANT
 
   tests = [t for t in tests if variant(t)]
-  return _BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
 
-
-def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
-  return _bundled_test_runner_of(runner_args.target_id)
-
-
-if __name__ == '__main__':
-  logging.basicConfig(level=logging.INFO)
-  logging.info('Running tests in %s', OUT_DIR)
-  sys.argv.append('--out-dir=' + OUT_DIR)
-  if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
-    sys.argv.append('--product=terminal.qemu-arm64')
-  # The 'flutter-test-type' is a place holder and has no specific meaning; the
-  # _get_test_runner is overrided.
-  sys.argv.append('flutter-test-type')
-  run_test._get_test_runner = _get_test_runner  # pylint: disable=protected-access
-  sys.exit(run_test.main())
+  sys.exit(run_tests(resolve_packages(tests), build_test_cases(tests), logs_dir))
