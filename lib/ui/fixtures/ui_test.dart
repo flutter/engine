@@ -523,6 +523,14 @@ void colorTests() async {
     expectEquals(color.blue, 102);
   });
 
+  await test('fromARGB and accessors', () {
+    Color color = Color.fromARGB(10, 20, 35, 47);
+    expectEquals(color.alpha, 10);
+    expectEquals(color.red, 20);
+    expectEquals(color.green, 35);
+    expectEquals(color.blue, 47);
+  });
+
   _finish();
 }
 
