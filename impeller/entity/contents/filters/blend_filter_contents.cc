@@ -365,7 +365,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
 
-    frame_info.mvp = pass.GetOrthographicTransform() * dst_snapshot->transform;
+    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
+                                                pass, dst_snapshot->transform);
 
     blend_info.dst_input_alpha =
         absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
@@ -454,7 +455,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
 
-    frame_info.mvp = pass.GetOrthographicTransform() * dst_snapshot->transform;
+    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
+                                                pass, dst_snapshot->transform);
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -867,7 +869,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
     }
     auto blit_pass = cmd_buffer->CreateBlitPass();
     auto buffer_view = renderer.GetTransientsBuffer().Emplace(
-        foreground_color->Premultiply().ToR8G8B8A8());
+        foreground_color->Premultiply().ToR8G8B8A8(), /*alignment=*/4);
 
     blit_pass->AddCopy(std::move(buffer_view), foreground_texture);
     if (!blit_pass->EncodeCommands(

@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io' as io;
+
 import 'package:engine_build_configs/engine_build_configs.dart';
+import 'package:path/path.dart' as p;
 
 import 'environment.dart';
+import 'label.dart';
 import 'logger.dart';
 
 /// A function that returns true or false when given a [BuilderConfig] and its
@@ -121,7 +125,8 @@ Future<int> runBuild(
   Build build, {
   required bool enableRbe,
   List<String> extraGnArgs = const <String>[],
-  List<String> targets = const <String>[],
+  List<Label> targets = const <Label>[],
+  int concurrency = 0,
 }) async {
   final List<String> gnArgs = <String>[
     if (!enableRbe) '--no-rbe',
@@ -135,10 +140,11 @@ Future<int> runBuild(
     abi: environment.abi,
     engineSrcDir: environment.engine.srcDir,
     build: build,
+    concurrency: concurrency,
     extraGnArgs: gnArgs,
     runTests: false,
     extraNinjaArgs: <String>[
-      ...targets,
+      ...targets.map((Label label) => label.toNinjaLabel()),
       // If the environment is verbose, pass the verbose flag to ninja.
       if (environment.verbose) '--verbose',
     ],
@@ -178,8 +184,41 @@ Future<int> runBuild(
   return buildResult ? 0 : 1;
 }
 
-/// Given a [Build] object, run only its GN step.
-Future<int> runGn(
+/// Run a [build]'s GN step if the output directory is missing.
+Future<bool> ensureBuildDir(
+  Environment environment,
+  Build build, {
+  List<String> extraGnArgs = const <String>[],
+  required bool enableRbe,
+}) async {
+  // TODO(matanlurey): https://github.com/flutter/flutter/issues/148442.
+  final io.Directory buildDir = io.Directory(
+    p.join(
+      environment.engine.outDir.path,
+      build.ninja.config,
+    ),
+  );
+  if (buildDir.existsSync()) {
+    return true;
+  }
+
+  final bool built = await _runGn(
+    environment,
+    build,
+    extraGnArgs: extraGnArgs,
+    enableRbe: enableRbe,
+  );
+  if (built && !buildDir.existsSync()) {
+    environment.logger.error(
+      'The specified build did not produce the expected output directory: '
+      '${buildDir.path}',
+    );
+    return false;
+  }
+  return built;
+}
+
+Future<bool> _runGn(
   Environment environment,
   Build build, {
   List<String> extraGnArgs = const <String>[],
@@ -202,12 +241,11 @@ Future<int> runGn(
     runTests: false,
   );
 
-  final bool buildResult = await buildRunner.run((RunnerEvent event) {
+  return buildRunner.run((RunnerEvent event) {
     switch (event) {
       case RunnerResult(ok: false):
         environment.logger.error(event);
       default:
     }
   });
-  return buildResult ? 0 : 1;
 }

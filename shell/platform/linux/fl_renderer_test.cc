@@ -4,14 +4,17 @@
 
 #include "gtest/gtest.h"
 
-#include <epoxy/egl.h>
-
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/linux/fl_backing_store_provider.h"
+#include "flutter/shell/platform/linux/fl_framebuffer.h"
 #include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
+#include "flutter/shell/platform/linux/testing/mock_epoxy.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
+#include <epoxy/egl.h>
+
 TEST(FlRendererTest, RestoresGLState) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
   constexpr int kWidth = 100;
   constexpr int kHeight = 100;
 
@@ -19,15 +22,14 @@ TEST(FlRendererTest, RestoresGLState) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlView) view = fl_view_new(project);
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlBackingStoreProvider) backing_store_provider =
-      fl_backing_store_provider_new(kWidth, kHeight);
+  g_autoptr(FlFramebuffer) framebuffer = fl_framebuffer_new(kWidth, kHeight);
 
-  fl_renderer_start(FL_RENDERER(renderer), view);
+  fl_renderer_add_view(FL_RENDERER(renderer), 0, view);
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
   backing_store.type = kFlutterBackingStoreTypeOpenGL;
-  backing_store.open_gl.framebuffer.user_data = backing_store_provider;
+  backing_store.open_gl.framebuffer.user_data = framebuffer;
 
   FlutterLayer layer;
   layer.type = kFlutterLayerContentTypeBackingStore;
@@ -40,7 +42,7 @@ TEST(FlRendererTest, RestoresGLState) {
   constexpr GLuint kFakeTextureName = 123;
   glBindTexture(GL_TEXTURE_2D, kFakeTextureName);
 
-  fl_renderer_present_layers(FL_RENDERER(renderer), layers.data(),
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers.data(),
                              layers.size());
   fl_renderer_render(FL_RENDERER(renderer), kWidth, kHeight);
 
@@ -50,4 +52,144 @@ TEST(FlRendererTest, RestoresGLState) {
   EXPECT_EQ(texture_2d_binding, kFakeTextureName);
 
   g_object_ref_sink(view);
+}
+
+static constexpr double kExpectedRefreshRate = 120.0;
+static gdouble renderer_get_refresh_rate(FlRenderer* renderer) {
+  return kExpectedRefreshRate;
+}
+
+TEST(FlRendererTest, RefreshRate) {
+  flutter::testing::fl_ensure_gtk_init();
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
+
+  gdouble result_refresh_rate =
+      fl_renderer_get_refresh_rate(FL_RENDERER(renderer));
+  EXPECT_DOUBLE_EQ(result_refresh_rate, kExpectedRefreshRate);
+}
+
+TEST(FlRendererTest, BlitFramebuffer) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 3.0
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
+
+  EXPECT_CALL(epoxy, glBlitFramebuffer);
+
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
+}
+
+TEST(FlRendererTest, BlitFramebufferExtension) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 2.0 with GL_EXT_framebuffer_blit extension
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
+  EXPECT_CALL(epoxy, epoxy_has_gl_extension(
+                         ::testing::StrEq("GL_EXT_framebuffer_blit")))
+      .WillRepeatedly(::testing::Return(true));
+
+  EXPECT_CALL(epoxy, glBlitFramebuffer);
+
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
+}
+
+TEST(FlRendererTest, NoBlitFramebuffer) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 2.0
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
+
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
+}
+
+TEST(FlRendererTest, BlitFramebufferNvidia) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 3.0, but on NVIDIA driver so temporarily disabled due to
+  // https://github.com/flutter/flutter/issues/152099
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("NVIDIA")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
+
+  g_autoptr(FlMockRenderer) renderer =
+      fl_mock_renderer_new(&renderer_get_refresh_rate);
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024);
 }

@@ -562,6 +562,7 @@ class BrowserPlatform extends PlatformPlugin {
 </script>
 <script>
   _flutter.buildConfig = {
+    useLocalCanvaskit: true,
     builds: [
       $buildConfigsString
     ]
@@ -571,10 +572,10 @@ class BrowserPlatform extends PlatformPlugin {
 <script>
   _flutter.loader.load({
     config: {
-      canvasKitBaseUrl: "/canvaskit/",
       // Some of our tests rely on color emoji
       useColorEmoji: true,
       canvasKitVariant: "${getCanvasKitVariant()}",
+      canvasKitBaseUrl: "/canvaskit",
     },
   });
 </script>

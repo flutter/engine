@@ -185,37 +185,6 @@ void Canvas::Save(uint32_t total_content_depth) {
   Save(false, total_content_depth);
 }
 
-namespace {
-class MipCountVisitor : public ImageFilterVisitor {
- public:
-  virtual void Visit(const BlurImageFilter& filter) {
-    required_mip_count_ = FilterContents::kBlurFilterRequiredMipCount;
-  }
-  virtual void Visit(const LocalMatrixImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const DilateImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ErodeImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const MatrixImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ComposeImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ColorImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  int32_t GetRequiredMipCount() const { return required_mip_count_; }
-
- private:
-  int32_t required_mip_count_ = -1;
-};
-}  // namespace
-
 void Canvas::Save(bool create_subpass,
                   uint32_t total_content_depth,
                   BlendMode blend_mode,
@@ -224,8 +193,10 @@ void Canvas::Save(bool create_subpass,
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_height = transform_stack_.back().clip_height;
+  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   if (create_subpass) {
-    entry.rendering_mode = Entity::RenderingMode::kSubpass;
+    entry.rendering_mode =
+        Entity::RenderingMode::kSubpassAppendSnapshotTransform;
     auto subpass = std::make_unique<EntityPass>();
     if (backdrop_filter) {
       EntityPass::BackdropFilterProc backdrop_filter_proc =
@@ -238,11 +209,6 @@ void Canvas::Save(bool create_subpass,
             return filter;
           };
       subpass->SetBackdropFilter(backdrop_filter_proc);
-      MipCountVisitor mip_count_visitor;
-      backdrop_filter->Visit(mip_count_visitor);
-      current_pass_->SetRequiredMipCount(
-          std::max(current_pass_->GetRequiredMipCount(),
-                   mip_count_visitor.GetRequiredMipCount()));
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
@@ -261,7 +227,9 @@ bool Canvas::Restore() {
   current_pass_->PopClips(num_clips, current_depth_);
 
   if (transform_stack_.back().rendering_mode ==
-      Entity::RenderingMode::kSubpass) {
+          Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
+      transform_stack_.back().rendering_mode ==
+          Entity::RenderingMode::kSubpassPrependSnapshotTransform) {
     current_pass_->SetClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
@@ -508,7 +476,12 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 }
 
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
-  if (rect.IsSquare()) {
+  // TODO(jonahwilliams): This additional condition avoids an assert in the
+  // stroke circle geometry generator. I need to verify the condition that this
+  // assert prevents.
+  if (rect.IsSquare() && (paint.style == Paint::Style::kFill ||
+                          (paint.style == Paint::Style::kStroke &&
+                           paint.stroke_width < rect.GetWidth()))) {
     // Circles have slightly less overhead and can do stroking
     DrawCircle(rect.GetCenter(), rect.GetWidth() * 0.5f, paint);
     return;
@@ -827,6 +800,7 @@ void Canvas::AddRenderEntityToCurrentPass(Entity entity, bool reuse_depth) {
     ++current_depth_;
   }
   entity.SetClipDepth(current_depth_);
+  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
@@ -838,8 +812,16 @@ void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter,
                        ContentBoundsPromise bounds_promise,
-                       uint32_t total_content_depth) {
+                       uint32_t total_content_depth,
+                       bool can_distribute_opacity) {
+  if (can_distribute_opacity && !backdrop_filter &&
+      Paint::CanApplyOpacityPeephole(paint)) {
+    Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
+    transform_stack_.back().distributed_opacity *= paint.color.alpha;
+    return;
+  }
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
+
   Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
 
   // The DisplayList bounds/rtree doesn't account for filters applied to parent
@@ -855,19 +837,12 @@ void Canvas::SaveLayer(const Paint& paint,
     new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
   }
 
-  if (paint.image_filter) {
-    MipCountVisitor mip_count_visitor;
-    paint.image_filter->Visit(mip_count_visitor);
-    new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
-  }
+  // When applying a save layer, absorb any pending distributed opacity.
+  Paint paint_copy = paint;
+  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
+  transform_stack_.back().distributed_opacity = 1.0;
 
-  // Only apply opacity peephole on default blending.
-  if (paint.blend_mode == BlendMode::kSourceOver) {
-    new_layer_pass.SetDelegate(
-        std::make_shared<OpacityPeepholePassDelegate>(paint));
-  } else {
-    new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
-  }
+  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
 }
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
@@ -878,8 +853,16 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetColor(paint.color);
   text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
+  text_contents->SetOffset(position);
+  text_contents->SetColor(paint.color);
+  text_contents->SetTextProperties(paint.color,                           //
+                                   paint.style == Paint::Style::kStroke,  //
+                                   paint.stroke_width,                    //
+                                   paint.stroke_cap,                      //
+                                   paint.stroke_join,                     //
+                                   paint.stroke_miter                     //
+  );
 
   entity.SetTransform(GetCurrentTransform() *
                       Matrix::MakeTranslation(position));
@@ -890,8 +873,8 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   //              needs to be reworked in order to interact correctly with
   //              mask filters.
   //              https://github.com/flutter/flutter/issues/133297
-  entity.SetContents(
-      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
+  entity.SetContents(paint.WithFilters(paint.WithMaskBlur(
+      std::move(text_contents), true, GetCurrentTransform())));
 
   AddRenderEntityToCurrentPass(std::move(entity));
 }
@@ -984,16 +967,23 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
-  src_contents =
-      src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+  Rect translated_coverage = Rect::MakeSize(src_coverage.GetSize());
+  src_contents = src_paint.CreateContentsForGeometry(
+      Geometry::MakeRect(translated_coverage));
 
   auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
   contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetLazyTexture([src_contents](const ContentContext& renderer) {
-    return src_contents->RenderToSnapshot(renderer, {})->texture;
-  });
+  contents->SetLazyTextureCoverage(src_coverage);
+  contents->SetLazyTexture(
+      [src_contents, translated_coverage](const ContentContext& renderer) {
+        // Applying the src coverage as the coverage limit prevents the 1px
+        // coverage pad from adding a border that is picked up by developer
+        // specified UVs.
+        return src_contents->RenderToSnapshot(renderer, {}, translated_coverage)
+            ->texture;
+      });
   entity.SetContents(paint.WithFilters(std::move(contents)));
   AddRenderEntityToCurrentPass(std::move(entity));
 }

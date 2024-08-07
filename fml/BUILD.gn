@@ -18,7 +18,6 @@ source_set("fml") {
     "base32.h",
     "build_config.h",
     "closure.h",
-    "compiler_specific.h",
     "concurrent_message_loop.cc",
     "concurrent_message_loop.h",
     "container.h",
@@ -289,6 +288,13 @@ source_set("command_line") {
   ]
 }
 
+config("string_conversion_config") {
+  if (is_win) {
+    # TODO(50053): Replace codecvt usage.
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
+  }
+}
+
 source_set("string_conversion") {
   sources = [
     "string_conversion.cc",
@@ -304,14 +310,12 @@ source_set("string_conversion") {
       "platform/win/wstring_conversion.cc",
       "platform/win/wstring_conversion.h",
     ]
-
-    # TODO(cbracken): https://github.com/flutter/flutter/issues/50053
-    defines += [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   }
 
   deps = [ ":build_config" ]
 
   public_configs = [
+    ":string_conversion_config",
     "//flutter:config",
     "//flutter/common:flutter_config",
   ]

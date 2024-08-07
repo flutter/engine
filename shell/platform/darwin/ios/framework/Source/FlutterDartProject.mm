@@ -176,10 +176,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   settings.enable_wide_gamut = enableWideGamut;
 #endif
 
-  // TODO(dnfield): We should reverse the order for all these settings so that command line options
-  // are preferred to plist settings. https://github.com/flutter/flutter/issues/124049
-  // Whether to enable Impeller. If the command line explicitly
-  // specified an option for this, ignore what's in the plist.
   if (!command_line.HasOption("enable-impeller")) {
     // Next, look in the app bundle.
     NSNumber* enableImpeller = [bundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
@@ -210,6 +206,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   // Change the default only if the option is present.
   if (enableDartProfiling != nil) {
     settings.enable_dart_profiling = enableDartProfiling.boolValue;
+  }
+
+  NSNumber* enableMergedPlatformUIThread =
+      [mainBundle objectForInfoDictionaryKey:@"FLTEnableMergedPlatformUIThread"];
+  if (enableMergedPlatformUIThread != nil) {
+    settings.merged_platform_ui_thread = enableMergedPlatformUIThread.boolValue;
   }
 
   // Leak Dart VM settings, set whether leave or clean up the VM after the last shell shuts down.

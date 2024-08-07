@@ -63,6 +63,9 @@ class HtmlViewEmbedder {
   /// The most recent rendering.
   Rendering _activeRendering = Rendering();
 
+  /// Returns the most recent rendering. Only used in tests.
+  Rendering get debugActiveRendering => _activeRendering;
+
   DisplayCanvas? debugBoundsCanvas;
 
   /// The size of the frame, in physical pixels.
@@ -278,7 +281,7 @@ class HtmlViewEmbedder {
             final SVGClipPathElement newClipPath = createSVGClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                createSVGPathElement()..setAttribute('d', path.toSvgString()!));
+                createSVGPathElement()..setAttribute('d', path.toSvgString()));
 
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
@@ -296,7 +299,7 @@ class HtmlViewEmbedder {
             final SVGClipPathElement newClipPath = createSVGClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                createSVGPathElement()..setAttribute('d', path.toSvgString()!));
+                createSVGPathElement()..setAttribute('d', path.toSvgString()));
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -489,7 +492,6 @@ class HtmlViewEmbedder {
       if (entity is RenderingRenderCanvas) {
         if (!sawLastCanvas) {
           sawLastCanvas = true;
-          picturesForLastCanvas.insertAll(0, entity.pictures);
           continue;
         }
         modifiedEntities.removeAt(i);
@@ -500,14 +502,18 @@ class HtmlViewEmbedder {
         }
       }
     }
-    // Replace the pictures in the last canvas with all the pictures from the
-    // deleted canvases.
+
+    // Add all the pictures from the deleted canvases to the second-to-last
+    // canvas (or the last canvas if there is only one).
+    sawLastCanvas = (maximumCanvases == 1);
     for (int i = modifiedEntities.length - 1; i > 0; i--) {
       final RenderingEntity entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
-        entity.pictures.clear();
-        entity.pictures.addAll(picturesForLastCanvas);
-        break;
+        if (sawLastCanvas) {
+          entity.pictures.addAll(picturesForLastCanvas);
+          break;
+        }
+        sawLastCanvas = true;
       }
     }
 

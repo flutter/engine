@@ -177,6 +177,33 @@ void main() {
     }
   });
 
+  test('build command plumbs -j to ninja', () async {
+    final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+      withRbe: true,
+      cannedProcesses: cannedProcesses,
+    );
+    try {
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: testEnv.environment,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'build',
+        '--config',
+        'ci/android_debug_rbe_arm64',
+        '-j',
+        '500',
+      ]);
+      expect(result, equals(0));
+      expect(testEnv.processHistory[0].command[0],
+          contains(path.join('tools', 'gn')));
+      expect(testEnv.processHistory[0].command[2], equals('--rbe'));
+      expect(testEnv.processHistory[2].command.contains('500'), isTrue);
+    } finally {
+      testEnv.cleanup();
+    }
+  });
+
   test('build command fails when rbe is enabled but not supported', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
@@ -383,7 +410,11 @@ void main() {
             command[0].contains('ninja') &&
             command[1].contains('-C') &&
             command[2].endsWith('/host_debug') &&
-            command[3] == 'flutter/fml:fml_arc_unittests';
+            // TODO(matanlurey): Tighten this up to be more specific.
+            // The reason we need a broad check is because the test fixture
+            // always returns multiple targets for gn desc, even though that is
+            // not the actual behavior.
+            command.sublist(3).contains('flutter/fml:fml_arc_unittests');
       }));
     } finally {
       testEnv.cleanup();
@@ -415,6 +446,36 @@ void main() {
             command[4] == 'flutter/flow:flow_unittests' &&
             command[5] == 'flutter/fml:fml_arc_unittests';
       }));
+    } finally {
+      testEnv.cleanup();
+    }
+  });
+
+  test('build command gracefully handles no matched targets', () async {
+    final List<CannedProcess> cannedProcesses = <CannedProcess>[
+      CannedProcess((List<String> command) =>
+          command.contains('desc'),
+          stdout: fixtures.gnDescOutputEmpty(gnPattern: 'testing/scenario_app:sceario_app'),
+          exitCode: 1),
+    ];
+    final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
+    );
+    try {
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: testEnv.environment,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'build',
+        '--config',
+        'host_debug',
+        // Intentionally omit the prefix '//flutter/' to trigger the warning.
+        '//testing/scenario_app',
+      ]);
+      expect(result, equals(0));
+      expect(testEnv.testLogs.map((LogRecord r) => r.message).join(),
+          contains('No targets matched the pattern `testing/scenario_app'));
     } finally {
       testEnv.cleanup();
     }

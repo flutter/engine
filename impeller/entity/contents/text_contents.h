@@ -9,7 +9,7 @@
 
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
-#include "impeller/typographer/glyph_atlas.h"
+#include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
@@ -33,6 +33,14 @@ class TextContents final : public Contents {
   ///        This is used to ensure that mask blurs work correctly on emoji.
   void SetForceTextColor(bool value);
 
+  /// Must be set after text frame.
+  void SetTextProperties(Color color,
+                         bool stroke,
+                         Scalar stroke_width,
+                         Cap stroke_cap,
+                         Join stroke_join,
+                         Scalar stroke_miter);
+
   Color GetColor() const;
 
   // |Contents|
@@ -41,6 +49,7 @@ class TextContents final : public Contents {
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
+  // The offset is only used for computing the subpixel glyph position.
   void SetOffset(Vector2 offset);
 
   std::optional<Rect> GetTextFrameBounds() const;
@@ -63,10 +72,11 @@ class TextContents final : public Contents {
  private:
   std::shared_ptr<TextFrame> frame_;
   Scalar scale_ = 1.0;
-  Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
   bool force_text_color_ = false;
+  Color color_;
+  GlyphProperties properties_;
 
   TextContents(const TextContents&) = delete;
 

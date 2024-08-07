@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "display_list/display_list.h"
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
 #include "flutter/impeller/aiks/picture.h"
@@ -14,6 +15,7 @@
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "fml/closure.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
@@ -21,6 +23,8 @@
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
+
+#define EXPERIMENTAL_CANVAS false
 
 namespace impeller {
 
@@ -40,21 +44,71 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
     static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
         vulkan_validation_playground(
             MakeVulkanPlayground(/*enable_validations=*/true));
-    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
-    // removed when the thread local storage is removed.
+    // TODO(142237): This can be removed when the thread local storage is
+    // removed.
     static fml::ScopedCleanupClosure context_cleanup(
         [&] { (*vulkan_validation_playground)->GetContext()->Shutdown(); });
     return *vulkan_validation_playground;
   } else {
     static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
         vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
-    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
-    // removed when the thread local storage is removed.
+    // TODO(142237): This can be removed when the thread local storage is
+    // removed.
     static fml::ScopedCleanupClosure context_cleanup(
         [&] { (*vulkan_playground)->GetContext()->Shutdown(); });
     return *vulkan_playground;
   }
 }
+
+#if EXPERIMENTAL_CANVAS
+std::shared_ptr<Texture> DisplayListToTexture(
+    sk_sp<flutter::DisplayList>& display_list,
+    ISize size,
+    AiksContext& context) {
+  // Do not use the render target cache as the lifecycle of this texture
+  // will outlive a particular frame.
+  impeller::RenderTargetAllocator render_target_allocator =
+      impeller::RenderTargetAllocator(
+          context.GetContext()->GetResourceAllocator());
+  impeller::RenderTarget target;
+  if (context.GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    target = render_target_allocator.CreateOffscreenMSAA(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/1,
+        "Picture Snapshot MSAA",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+    );
+  } else {
+    target = render_target_allocator.CreateOffscreen(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/1,
+        "Picture Snapshot",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfig  // color_attachment_config
+    );
+  }
+
+  impeller::TextFrameDispatcher collector(context.GetContentContext(),
+                                          impeller::Matrix());
+  display_list->Dispatch(
+      collector, SkIRect::MakeSize(SkISize::Make(size.width, size.height)));
+  impeller::ExperimentalDlDispatcher impeller_dispatcher(
+      context.GetContentContext(), target,
+      display_list->root_has_backdrop_filter(),
+      display_list->max_root_blend_mode(), impeller::IRect::MakeSize(size));
+  display_list->Dispatch(impeller_dispatcher, SkIRect::MakeSize(SkISize::Make(
+                                                  size.width, size.height)));
+  impeller_dispatcher.FinishRecording();
+
+  context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+
+  return target.GetRenderTargetTexture();
+}
+#endif  // EXPERIMENTAL_CANVAS
+
 }  // namespace
 
 #define IMP_AIKSTEST(name)                         \
@@ -86,17 +140,20 @@ std::string GetTestName() {
   return result;
 }
 
-std::string GetGoldenFilename() {
-  return GetTestName() + ".png";
+std::string GetGoldenFilename(const std::string& postfix) {
+  return GetTestName() + postfix + ".png";
 }
+}  // namespace
 
-bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
+bool GoldenPlaygroundTest::SaveScreenshot(
+    std::unique_ptr<testing::Screenshot> screenshot,
+    const std::string& postfix) {
   if (!screenshot || !screenshot->GetBytes()) {
     FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
     return false;
   }
   std::string test_name = GetTestName();
-  std::string filename = GetGoldenFilename();
+  std::string filename = GetGoldenFilename(postfix);
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   if (!screenshot->WriteToPNG(
@@ -106,8 +163,6 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   }
   return true;
 }
-
-}  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
@@ -156,15 +211,15 @@ void GoldenPlaygroundTest::SetUp() {
   switch (GetParam()) {
     case PlaygroundBackend::kMetal:
       if (!DoesSupportWideGamutTests()) {
-        GTEST_SKIP_(
-            "This metal device doesn't support wide gamut golden tests.");
+        GTEST_SKIP()
+            << "This metal device doesn't support wide gamut golden tests.";
       }
       pimpl_->screenshotter =
           std::make_unique<testing::MetalScreenshotter>(enable_wide_gamut);
       break;
     case PlaygroundBackend::kVulkan: {
       if (enable_wide_gamut) {
-        GTEST_SKIP_("Vulkan doesn't support wide gamut golden tests.");
+        GTEST_SKIP() << "Vulkan doesn't support wide gamut golden tests.";
       }
       const std::unique_ptr<PlaygroundImpl>& playground =
           GetSharedVulkanPlayground(/*enable_validations=*/true);
@@ -174,7 +229,7 @@ void GoldenPlaygroundTest::SetUp() {
     }
     case PlaygroundBackend::kOpenGLES: {
       if (enable_wide_gamut) {
-        GTEST_SKIP_("OpenGLES doesn't support wide gamut golden tests.");
+        GTEST_SKIP() << "OpenGLES doesn't support wide gamut golden tests.";
       }
       FML_CHECK(::glfwInit() == GLFW_TRUE);
       PlaygroundSwitches playground_switches;
@@ -189,9 +244,9 @@ void GoldenPlaygroundTest::SetUp() {
 
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
       kSkipTests.end()) {
-    GTEST_SKIP_(
-        "GoldenPlaygroundTest doesn't support interactive playground tests "
-        "yet.");
+    GTEST_SKIP()
+        << "GoldenPlaygroundTest doesn't support interactive playground tests "
+           "yet.";
   }
 
   testing::GoldenDigest::Instance()->AddDimension(
@@ -207,6 +262,33 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
 
   auto screenshot = pimpl_->screenshotter->MakeScreenshot(renderer, picture,
                                                           pimpl_->window_size);
+  return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  std::unique_ptr<testing::Screenshot> screenshot;
+#if EXPERIMENTAL_CANVAS
+  for (int i = 0; i < 2; ++i) {
+    auto display_list = callback();
+    auto texture =
+        DisplayListToTexture(display_list, pimpl_->window_size, renderer);
+    screenshot = pimpl_->screenshotter->MakeScreenshot(renderer, texture);
+  }
+#else
+  std::optional<Picture> picture;
+  for (int i = 0; i < 2; ++i) {
+    auto display_list = callback();
+    DlDispatcher dispatcher;
+    display_list->Dispatch(dispatcher);
+    Picture picture = dispatcher.EndRecordingAsPicture();
+
+    screenshot = pimpl_->screenshotter->MakeScreenshot(renderer, picture,
+                                                       pimpl_->window_size);
+  }
+#endif  // EXPERIMENTAL_CANVAS
   return SaveScreenshot(std::move(screenshot));
 }
 
@@ -231,10 +313,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
     const sk_sp<flutter::DisplayList>& list) {
-  DlDispatcher dispatcher;
-  list->Dispatch(dispatcher);
-  Picture picture = dispatcher.EndRecordingAsPicture();
-  return OpenPlaygroundHere(std::move(picture));
+  return OpenPlaygroundHere([&list]() { return list; });
 }
 
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
@@ -316,6 +395,21 @@ void GoldenPlaygroundTest::GoldenPlaygroundTest::SetWindowSize(ISize size) {
 fml::Status GoldenPlaygroundTest::SetCapabilities(
     const std::shared_ptr<Capabilities>& capabilities) {
   return pimpl_->screenshotter->GetPlayground().SetCapabilities(capabilities);
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+
+  std::unique_ptr<testing::Screenshot> screenshot =
+      pimpl_->screenshotter->MakeScreenshot(renderer, picture,
+                                            pimpl_->window_size);
+
+  return screenshot;
 }
 
 }  // namespace impeller

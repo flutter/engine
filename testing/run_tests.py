@@ -691,10 +691,8 @@ def assert_expected_xcode_version():
 def java_home():
   script_path = os.path.dirname(os.path.realpath(__file__))
   if is_mac():
-    return os.path.join(
-        script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home'
-    )
-  return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk')
+    return os.path.join(script_path, '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home')
+  return os.path.join(script_path, '..', 'third_party', 'java', 'openjdk')
 
 
 def java_bin():
@@ -707,7 +705,8 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
       BUILDROOT_DIR, 'flutter', 'shell', 'platform', 'android', 'test_runner'
   )
   gradle_bin = os.path.join(
-      BUILDROOT_DIR, 'third_party', 'gradle', 'bin', 'gradle.bat' if is_windows() else 'gradle'
+      BUILDROOT_DIR, 'flutter', 'third_party', 'gradle', 'bin',
+      'gradle.bat' if is_windows() else 'gradle'
   )
   flutter_jar = os.path.join(OUT_DIR, android_variant, 'flutter.jar')
   android_home = os.path.join(BUILDROOT_DIR, 'flutter', 'third_party', 'android_tools', 'sdk')

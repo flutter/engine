@@ -162,6 +162,8 @@ typedef enum {
   kFlutterSemanticsActionMoveCursorBackwardByWord = 1 << 20,
   /// Replace the current text in the text field.
   kFlutterSemanticsActionSetText = 1 << 21,
+  /// Request that the respective focusable widget gain input focus.
+  kFlutterSemanticsActionFocus = 1 << 22,
 } FlutterSemanticsAction;
 
 /// The set of properties that may be associated with a semantics node.
@@ -385,9 +387,14 @@ typedef struct {
 } FlutterOpenGLTexture;
 
 typedef struct {
-  /// The target of the color attachment of the frame-buffer. For example,
-  /// GL_TEXTURE_2D or GL_RENDERBUFFER. In case of ambiguity when dealing with
-  /// Window bound frame-buffers, 0 may be used.
+  /// The format of the color attachment of the frame-buffer. For example,
+  /// GL_RGBA8.
+  ///
+  /// In case of ambiguity when dealing with Window bound frame-buffers, 0 may
+  /// be used.
+  ///
+  /// @bug      This field is incorrectly named as "target" when it actually
+  ///           refers to a format.
   uint32_t target;
 
   /// The name of the framebuffer.
@@ -1531,7 +1538,7 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
 
 /// An update to whether a message channel has a listener set or not.
 typedef struct {
-  // The size of the struct. Must be sizeof(FlutterChannelUpdate).
+  /// The size of the struct. Must be sizeof(FlutterChannelUpdate).
   size_t struct_size;
   /// The name of the channel.
   const char* channel;
@@ -1633,6 +1640,7 @@ typedef struct {
 } FlutterSoftwareBackingStore;
 
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSoftwareBackingStore2).
   size_t struct_size;
   /// A pointer to the raw bytes of the allocation described by this software
   /// backing store.
@@ -1806,6 +1814,7 @@ typedef struct {
 /// Contains additional information about the backing store provided
 /// during presentation to the embedder.
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterBackingStorePresentInfo).
   size_t struct_size;
 
   /// The area of the backing store that contains Flutter contents. Pixels
@@ -1967,7 +1976,7 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     size_t /* Number of locales*/);
 
 typedef struct {
-  /// This size of this struct. Must be sizeof(FlutterDisplay).
+  /// The size of this struct. Must be sizeof(FlutterEngineDisplay).
   size_t struct_size;
 
   FlutterEngineDisplayId display_id;

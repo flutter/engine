@@ -5,7 +5,8 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-import '../gn_utils.dart';
+import '../gn.dart';
+import '../label.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -28,6 +29,7 @@ final class BuildCommand extends CommandBase {
       argParser,
       builds,
     );
+    addConcurrencyOption(argParser);
     argParser.addFlag(
       rbeFlag,
       defaultsTo: environment.hasRbeConfigInTree(),
@@ -48,8 +50,9 @@ final class BuildCommand extends CommandBase {
   @override
   String get description => '''
 Builds the engine
-et build //flutter/fml/...             # Build all targets in `//flutter/fml/`
-et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml/`
+et build //flutter/fml/...             # Build all targets in `//flutter/fml` and its subdirectories.
+et build //flutter/fml:all             # Build all targets in `//flutter/fml`.
+et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml`.
 ''';
 
   @override
@@ -69,34 +72,43 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
       return 1;
     }
 
-    final List<String> extraGnArgs = <String>[
-      if (!useRbe) '--no-rbe',
-      if (useLto) '--lto',
-      if (!useLto) '--no-lto',
-    ];
-
-    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
-      environment,
-      build,
-      argResults!.rest,
-      enableRbe: useRbe,
-    );
-    if (selectedTargets == null) {
-      // The user typed something wrong and targetsFromCommandLine has already
-      // logged the error message.
+    final String dashJ = argResults![concurrencyFlag] as String;
+    final int? concurrency = int.tryParse(dashJ);
+    if (concurrency == null || concurrency < 0) {
+      environment.logger.error('-j must specify a positive integer.');
       return 1;
     }
 
-    // Chop off the '//' prefix.
-    final List<String> ninjaTargets = selectedTargets.map<String>(
-      (BuildTarget target) => target.label.substring('//'.length),
-    ).toList();
+    final List<String> extraGnArgs = <String>[
+      if (!useRbe) '--no-rbe',
+      if (useLto) '--lto' else '--no-lto',
+    ];
+
+    final List<String> commandLineTargets = argResults!.rest;
+    if (commandLineTargets.isNotEmpty &&
+        !await ensureBuildDir(environment, build, enableRbe: useRbe)) {
+      return 1;
+    }
+
+    // Builds only accept labels as arguments, so convert patterns to labels.
+    // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
+    final Gn gn = Gn.fromEnvironment(environment);
+    final Set<Label> allTargets = <Label>{};
+    for (final String pattern in commandLineTargets) {
+      final TargetPattern target = TargetPattern.parse(pattern);
+      final List<BuildTarget> targets = await gn.desc(
+        'out/${build.ninja.config}',
+        target,
+      );
+      allTargets.addAll(targets.map((BuildTarget target) => target.label));
+    }
 
     return runBuild(
       environment,
       build,
+      concurrency: concurrency,
       extraGnArgs: extraGnArgs,
-      targets: ninjaTargets,
+      targets: allTargets.toList(),
       enableRbe: useRbe,
     );
   }

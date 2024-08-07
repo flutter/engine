@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
@@ -68,9 +69,6 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(SetPodPathEffect)               \
-  V(ClearPathEffect)                \
-                                    \
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
                                     \
@@ -100,9 +98,11 @@ namespace flutter {
   V(TransformReset)                 \
                                     \
   V(ClipIntersectRect)              \
+  V(ClipIntersectOval)              \
   V(ClipIntersectRRect)             \
   V(ClipIntersectPath)              \
   V(ClipDifferenceRect)             \
+  V(ClipDifferenceOval)             \
   V(ClipDifferenceRRect)            \
   V(ClipDifferencePath)             \
                                     \
@@ -110,6 +110,7 @@ namespace flutter {
   V(DrawColor)                      \
                                     \
   V(DrawLine)                       \
+  V(DrawDashedLine)                 \
   V(DrawRect)                       \
   V(DrawOval)                       \
   V(DrawCircle)                     \
@@ -208,6 +209,20 @@ class SaveLayerOptions {
     return options;
   }
 
+  bool contains_backdrop_filter() const { return fHasBackdropFilter; }
+  SaveLayerOptions with_contains_backdrop_filter() const {
+    SaveLayerOptions options(this);
+    options.fHasBackdropFilter = true;
+    return options;
+  }
+
+  bool content_is_unbounded() const { return fContentIsUnbounded; }
+  SaveLayerOptions with_content_is_unbounded() const {
+    SaveLayerOptions options(this);
+    options.fContentIsUnbounded = true;
+    return options;
+  }
+
   SaveLayerOptions& operator=(const SaveLayerOptions& other) {
     flags_ = other.flags_;
     return *this;
@@ -226,6 +241,8 @@ class SaveLayerOptions {
       unsigned fCanDistributeOpacity : 1;
       unsigned fBoundsFromCaller : 1;
       unsigned fContentIsClipped : 1;
+      unsigned fHasBackdropFilter : 1;
+      unsigned fContentIsUnbounded : 1;
     };
     uint32_t flags_;
   };
@@ -313,6 +330,36 @@ class DisplayList : public SkRefCnt {
 
   const DisplayListStorage& GetStorage() const { return storage_; }
 
+  /// @brief    Indicates if there are any saveLayer operations at the root
+  ///           surface level of the DisplayList that use a backdrop filter.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the backdrop filter to do its work.
+  bool root_has_backdrop_filter() const { return root_has_backdrop_filter_; }
+
+  /// @brief    Indicates if a rendering operation at the root level of the
+  ///           DisplayList had an unbounded result, not otherwise limited by
+  ///           a clip operation.
+  ///
+  /// This condition can occur in a number of situations. The most common
+  /// situation is when there is a drawPaint or drawColor rendering
+  /// operation which fills out the entire drawable surface unless it is
+  /// bounded by a clip. Other situations include an operation rendered
+  /// through an ImageFilter that cannot compute the resulting bounds or
+  /// when an unclipped backdrop filter is applied by a save layer.
+  bool root_is_unbounded() const { return root_is_unbounded_; }
+
+  /// @brief    Indicates the maximum DlBlendMode used on any rendering op
+  ///           in the root surface of the DisplayList.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the indicated blend mode to do its work.
+  DlBlendMode max_root_blend_mode() const { return max_root_blend_mode_; }
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -324,6 +371,9 @@ class DisplayList : public SkRefCnt {
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
               bool modifies_transparent_black,
+              DlBlendMode max_root_blend_mode,
+              bool root_has_backdrop_filter,
+              bool root_is_unbounded,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
@@ -345,6 +395,9 @@ class DisplayList : public SkRefCnt {
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
   const bool modifies_transparent_black_;
+  const bool root_has_backdrop_filter_;
+  const bool root_is_unbounded_;
+  const DlBlendMode max_root_blend_mode_;
 
   const sk_sp<const DlRTree> rtree_;
 

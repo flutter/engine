@@ -30,6 +30,7 @@
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTypeface.h"
+#include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
@@ -583,6 +584,8 @@ struct DisplayListJobRenderer : public JobRenderer {
 
 class RenderEnvironment {
  public:
+  static bool EnableImpeller;
+
   RenderEnvironment(const DlSurfaceProvider* provider, PixelFormat format)
       : provider_(provider), format_(format) {
     if (provider->supports(format)) {
@@ -619,7 +622,7 @@ class RenderEnvironment {
     ref_clip_bounds_ = dl_job.setup_clip_bounds();
     ASSERT_EQ(sk_job.setup_matrix(), ref_matrix_);
     ASSERT_EQ(sk_job.setup_clip_bounds(), ref_clip_bounds_);
-    if (provider_->supports_impeller()) {
+    if (supports_impeller()) {
       test_impeller_image_ = makeTestImpellerImage(provider_);
       DlJobRenderer imp_job(dl_setup, imp_renderer, kEmptyDlRenderer,
                             test_impeller_image_);
@@ -670,7 +673,9 @@ class RenderEnvironment {
   const DlSurfaceProvider* provider() const { return provider_; }
   bool valid() const { return provider_->supports(format_); }
   const std::string backend_name() const { return provider_->backend_name(); }
-  bool supports_impeller() const { return provider_->supports_impeller(); }
+  bool supports_impeller() const {
+    return EnableImpeller && provider_->supports_impeller();
+  }
 
   PixelFormat format() const { return format_; }
   const DlPaint& ref_dl_paint() const { return ref_dl_paint_; }
@@ -907,30 +912,14 @@ class TestParameters {
     if (flags_.is_stroked(ref_attr.getDrawStyle()) != is_stroked) {
       return false;
     }
-    DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(attr.getPathEffect().get(), is_stroked);
-    if (flags_.applies_path_effect() &&  //
-        ref_attr.getPathEffect() != attr.getPathEffect()) {
-      if (renderer.targets_impeller()) {
-        // Impeller ignores DlPathEffect objects:
-        // https://github.com/flutter/flutter/issues/109736
-      } else {
-        switch (attr.getPathEffect()->type()) {
-          case DlPathEffectType::kDash: {
-            if (is_stroked && !ignores_dashes()) {
-              return false;
-            }
-            break;
-          }
-        }
-      }
-    }
     if (!is_stroked) {
       return true;
     }
     if (ref_attr.getStrokeWidth() != attr.getStrokeWidth()) {
       return false;
     }
+    DisplayListSpecialGeometryFlags geo_flags =
+        flags_.GeometryFlags(is_stroked);
     if (geo_flags.may_have_end_caps() &&  //
         getCap(ref_attr, geo_flags) != getCap(attr, geo_flags)) {
       return false;
@@ -1005,10 +994,8 @@ class TestParameters {
       adjust =
           half_width * paint.getStrokeMiter() + tolerance.discrete_offset();
     }
-    auto path_effect = paint.getPathEffect();
 
-    DisplayListSpecialGeometryFlags geo_flags =
-        flags_.WithPathEffect(path_effect.get(), true);
+    DisplayListSpecialGeometryFlags geo_flags = flags_.GeometryFlags(true);
     if (paint.getStrokeCap() == DlStrokeCap::kButt &&
         !geo_flags.butt_cap_becomes_square()) {
       adjust = std::max(adjust, half_width);
@@ -1108,6 +1095,7 @@ class CanvasCompareTester {
   static std::string ImpellerFailureImageDirectory;
   static bool SaveImpellerFailureImages;
   static std::vector<std::string> ImpellerFailureImages;
+  static bool ImpellerSupported;
 
   static std::unique_ptr<DlSurfaceProvider> GetProvider(BackendType type) {
     auto provider = DlSurfaceProvider::Create(type);
@@ -1121,12 +1109,17 @@ class CanvasCompareTester {
     return provider;
   }
 
+  static void ClearProviders() { TestBackends.clear(); }
+
   static bool AddProvider(BackendType type) {
     auto provider = GetProvider(type);
     if (!provider) {
       return false;
     }
-    CanvasCompareTester::TestBackends.push_back(type);
+    if (provider->supports_impeller()) {
+      ImpellerSupported = true;
+    }
+    TestBackends.push_back(type);
     return true;
   }
 
@@ -1967,68 +1960,6 @@ class CanvasCompareTester {
                      ctx.paint.setStrokeMiter(0.0);
                      ctx.paint.setStrokeJoin(DlStrokeJoin::kMiter);
                    }));
-
-    {
-      const SkScalar test_dashes_1[] = {29.0, 2.0};
-      const SkScalar test_dashes_2[] = {17.0, 1.5};
-      auto dl_dash_effect = DlDashPathEffect::Make(test_dashes_1, 2, 0.0f);
-      auto sk_dash_effect = SkDashPathEffect::Make(test_dashes_1, 2, 0.0f);
-      {
-        RenderWith(testP, stroke_base_env, tolerance,
-                   CaseParameters(
-                       "PathEffect without forced stroking == Dash-29-2",
-                       [=](const SkSetupContext& ctx) {
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(sk_dash_effect);
-                       },
-                       [=](const DlSetupContext& ctx) {
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(dl_dash_effect);
-                       }));
-      }
-      {
-        RenderWith(testP, stroke_base_env, tolerance,
-                   CaseParameters(
-                       "PathEffect == Dash-29-2",
-                       [=](const SkSetupContext& ctx) {
-                         // Need stroke style to see dashing properly
-                         ctx.paint.setStyle(SkPaint::kStroke_Style);
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(sk_dash_effect);
-                       },
-                       [=](const DlSetupContext& ctx) {
-                         // Need stroke style to see dashing properly
-                         ctx.paint.setDrawStyle(DlDrawStyle::kStroke);
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(dl_dash_effect);
-                       }));
-      }
-      dl_dash_effect = DlDashPathEffect::Make(test_dashes_2, 2, 0.0f);
-      sk_dash_effect = SkDashPathEffect::Make(test_dashes_2, 2, 0.0f);
-      {
-        RenderWith(testP, stroke_base_env, tolerance,
-                   CaseParameters(
-                       "PathEffect == Dash-17-1.5",
-                       [=](const SkSetupContext& ctx) {
-                         // Need stroke style to see dashing properly
-                         ctx.paint.setStyle(SkPaint::kStroke_Style);
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(sk_dash_effect);
-                       },
-                       [=](const DlSetupContext& ctx) {
-                         // Need stroke style to see dashing properly
-                         ctx.paint.setDrawStyle(DlDrawStyle::kStroke);
-                         // Provide some non-trivial stroke size to get dashed
-                         ctx.paint.setStrokeWidth(5.0);
-                         ctx.paint.setPathEffect(dl_dash_effect);
-                       }));
-      }
-    }
   }
 
   static void RenderWithTransforms(const TestParameters& testP,
@@ -2140,6 +2071,39 @@ class CanvasCompareTester {
                    },
                    [=](const DlSetupContext& ctx) {
                      ctx.canvas->ClipRect(r_clip, ClipOp::kDifference, false);
+                   })
+                   .with_diff_clip());
+    // Skia lacks clipOval and requires us to make an oval SkRRect
+    SkRRect rr_oval_clip = SkRRect::MakeOval(r_clip);
+    RenderWith(testP, env, intersect_tolerance,
+               CaseParameters(
+                   "Hard ClipOval",
+                   [=](const SkSetupContext& ctx) {
+                     ctx.canvas->clipRRect(rr_oval_clip, SkClipOp::kIntersect,
+                                           false);
+                   },
+                   [=](const DlSetupContext& ctx) {
+                     ctx.canvas->ClipOval(r_clip, ClipOp::kIntersect, false);
+                   }));
+    RenderWith(testP, env, intersect_tolerance,
+               CaseParameters(
+                   "AntiAlias ClipOval",
+                   [=](const SkSetupContext& ctx) {
+                     ctx.canvas->clipRRect(rr_oval_clip, SkClipOp::kIntersect,
+                                           true);
+                   },
+                   [=](const DlSetupContext& ctx) {
+                     ctx.canvas->ClipOval(r_clip, ClipOp::kIntersect, true);
+                   }));
+    RenderWith(testP, env, diff_tolerance,
+               CaseParameters(
+                   "Hard ClipOval Diff",
+                   [=](const SkSetupContext& ctx) {
+                     ctx.canvas->clipRRect(rr_oval_clip, SkClipOp::kDifference,
+                                           false);
+                   },
+                   [=](const DlSetupContext& ctx) {
+                     ctx.canvas->ClipOval(r_clip, ClipOp::kDifference, false);
                    })
                    .with_diff_clip());
     // This test RR clip used to use very small radii, but due to
@@ -2640,7 +2604,7 @@ class CanvasCompareTester {
   static void compareToReference(const RenderResult* test_result,
                                  const RenderResult* ref_result,
                                  const std::string& info,
-                                 SkRect* bounds,
+                                 const SkRect* bounds,
                                  const BoundsTolerance* tolerance,
                                  const DlColor bg,
                                  bool fuzzyCompares = false,
@@ -2765,6 +2729,8 @@ std::vector<BackendType> CanvasCompareTester::TestBackends;
 std::string CanvasCompareTester::ImpellerFailureImageDirectory = "";
 bool CanvasCompareTester::SaveImpellerFailureImages = false;
 std::vector<std::string> CanvasCompareTester::ImpellerFailureImages;
+bool CanvasCompareTester::ImpellerSupported = false;
+bool RenderEnvironment::EnableImpeller = true;
 
 BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
@@ -2805,6 +2771,9 @@ class DisplayListRenderingTestBase : public BaseT,
       if (StartsWith(arg, "--no")) {
         enable = false;
         arg = "-" + arg.substr(4);
+      } else if (StartsWith(arg, "--disable")) {
+        enable = false;
+        arg = "--en" + arg.substr(5);
       }
       if (arg == "--enable-software") {
         do_software = enable;
@@ -2812,8 +2781,13 @@ class DisplayListRenderingTestBase : public BaseT,
         do_opengl = enable;
       } else if (arg == "--enable-metal") {
         do_metal = enable;
+      } else if (arg == "--enable-impeller") {
+        RenderEnvironment::EnableImpeller = enable;
       }
     }
+    // Multiple test suites use this test base. Make sure that they don't
+    // double-register the supported providers.
+    CanvasCompareTester::ClearProviders();
     if (do_software) {
       CanvasCompareTester::AddProvider(BackendType::kSoftwareBackend);
     }
@@ -2827,7 +2801,13 @@ class DisplayListRenderingTestBase : public BaseT,
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       providers += " " + DlSurfaceProvider::BackendName(back_end);
     }
-    FML_LOG(INFO) << "Running tests on [" << providers << " ]";
+    std::string libraries = " Skia";
+    if (CanvasCompareTester::ImpellerSupported &&
+        RenderEnvironment::EnableImpeller) {
+      libraries += " Impeller";
+    }
+    FML_LOG(INFO) << "Running tests on [" << providers  //
+                  << " ], and [" << libraries << " ]";
   }
 
   static void TearDownTestSuite() {
@@ -2903,12 +2883,14 @@ TEST_F(DisplayListRendering, DrawDiagonalLines) {
   SkPoint p2 = SkPoint::Make(kRenderRight, kRenderBottom);
   SkPoint p3 = SkPoint::Make(kRenderLeft, kRenderBottom);
   SkPoint p4 = SkPoint::Make(kRenderRight, kRenderTop);
+  // Adding some edge to edge diagonals that run through the points about
+  // 16 units in from the center of that edge.
   // Adding some edge center to edge center diagonals to better fill
   // out the RRect Clip so bounds checking sees less empty bounds space.
-  SkPoint p5 = SkPoint::Make(kRenderCenterX, kRenderTop);
-  SkPoint p6 = SkPoint::Make(kRenderRight, kRenderCenterY);
-  SkPoint p7 = SkPoint::Make(kRenderLeft, kRenderCenterY);
-  SkPoint p8 = SkPoint::Make(kRenderCenterX, kRenderBottom);
+  SkPoint p5 = SkPoint::Make(kRenderCenterX, kRenderTop + 15);
+  SkPoint p6 = SkPoint::Make(kRenderRight - 15, kRenderCenterY);
+  SkPoint p7 = SkPoint::Make(kRenderCenterX, kRenderBottom - 15);
+  SkPoint p8 = SkPoint::Make(kRenderLeft + 15, kRenderCenterY);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2933,9 +2915,13 @@ TEST_F(DisplayListRendering, DrawDiagonalLines) {
           .set_draw_line());
 }
 
-TEST_F(DisplayListRendering, DrawHorizontalLine) {
-  SkPoint p1 = SkPoint::Make(kRenderLeft, kRenderCenterY);
-  SkPoint p2 = SkPoint::Make(kRenderRight, kRenderCenterY);
+TEST_F(DisplayListRendering, DrawHorizontalLines) {
+  SkPoint p1 = SkPoint::Make(kRenderLeft, kRenderTop + 16);
+  SkPoint p2 = SkPoint::Make(kRenderRight, kRenderTop + 16);
+  SkPoint p3 = SkPoint::Make(kRenderLeft, kRenderCenterY);
+  SkPoint p4 = SkPoint::Make(kRenderRight, kRenderCenterY);
+  SkPoint p5 = SkPoint::Make(kRenderLeft, kRenderBottom - 16);
+  SkPoint p6 = SkPoint::Make(kRenderRight, kRenderBottom - 16);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2946,18 +2932,26 @@ TEST_F(DisplayListRendering, DrawHorizontalLine) {
             SkPaint p = ctx.paint;
             p.setStyle(SkPaint::kStroke_Style);
             ctx.canvas->drawLine(p1, p2, p);
+            ctx.canvas->drawLine(p3, p4, p);
+            ctx.canvas->drawLine(p5, p6, p);
           },
           [=](const DlRenderContext& ctx) {  //
             ctx.canvas->DrawLine(p1, p2, ctx.paint);
+            ctx.canvas->DrawLine(p3, p4, ctx.paint);
+            ctx.canvas->DrawLine(p5, p6, ctx.paint);
           },
           kDrawHVLineFlags)
           .set_draw_line()
           .set_horizontal_line());
 }
 
-TEST_F(DisplayListRendering, DrawVerticalLine) {
-  SkPoint p1 = SkPoint::Make(kRenderCenterX, kRenderTop);
-  SkPoint p2 = SkPoint::Make(kRenderCenterY, kRenderBottom);
+TEST_F(DisplayListRendering, DrawVerticalLines) {
+  SkPoint p1 = SkPoint::Make(kRenderLeft + 16, kRenderTop);
+  SkPoint p2 = SkPoint::Make(kRenderLeft + 16, kRenderBottom);
+  SkPoint p3 = SkPoint::Make(kRenderCenterX, kRenderTop);
+  SkPoint p4 = SkPoint::Make(kRenderCenterX, kRenderBottom);
+  SkPoint p5 = SkPoint::Make(kRenderRight - 16, kRenderTop);
+  SkPoint p6 = SkPoint::Make(kRenderRight - 16, kRenderBottom);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2968,13 +2962,70 @@ TEST_F(DisplayListRendering, DrawVerticalLine) {
             SkPaint p = ctx.paint;
             p.setStyle(SkPaint::kStroke_Style);
             ctx.canvas->drawLine(p1, p2, p);
+            ctx.canvas->drawLine(p3, p4, p);
+            ctx.canvas->drawLine(p5, p6, p);
           },
           [=](const DlRenderContext& ctx) {  //
             ctx.canvas->DrawLine(p1, p2, ctx.paint);
+            ctx.canvas->DrawLine(p3, p4, ctx.paint);
+            ctx.canvas->DrawLine(p5, p6, ctx.paint);
           },
           kDrawHVLineFlags)
           .set_draw_line()
           .set_vertical_line());
+}
+
+TEST_F(DisplayListRendering, DrawDiagonalDashedLines) {
+  SkPoint p1 = SkPoint::Make(kRenderLeft, kRenderTop);
+  SkPoint p2 = SkPoint::Make(kRenderRight, kRenderBottom);
+  SkPoint p3 = SkPoint::Make(kRenderLeft, kRenderBottom);
+  SkPoint p4 = SkPoint::Make(kRenderRight, kRenderTop);
+  // Adding some edge to edge diagonals that run through the points about
+  // 16 units in from the center of that edge.
+  // Adding some edge center to edge center diagonals to better fill
+  // out the RRect Clip so bounds checking sees less empty bounds space.
+  SkPoint p5 = SkPoint::Make(kRenderCenterX, kRenderTop + 15);
+  SkPoint p6 = SkPoint::Make(kRenderRight - 15, kRenderCenterY);
+  SkPoint p7 = SkPoint::Make(kRenderCenterX, kRenderBottom - 15);
+  SkPoint p8 = SkPoint::Make(kRenderLeft + 15, kRenderCenterY);
+
+  // Full diagonals are 100x100 which are 140 in length
+  // Dashing them with 25 on, 5 off means that the last
+  // dash goes from 120 to 145 which means both ends of the
+  // diagonals will be in an "on" dash for maximum bounds
+
+  // Edge to edge diagonals are 50x50 which are 70 in length
+  // Dashing them with 25 on, 5 off means that the last
+  // dash goes from 60 to 85 which means both ends of the
+  // edge diagonals will be in a dash segment
+
+  CanvasCompareTester::RenderAll(  //
+      TestParameters(
+          [=](const SkRenderContext& ctx) {  //
+            // Skia requires kStroke style on horizontal and vertical
+            // lines to get the bounds correct.
+            // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
+            SkPaint p = ctx.paint;
+            p.setStyle(SkPaint::kStroke_Style);
+            SkScalar intervals[2] = {25.0f, 5.0f};
+            p.setPathEffect(SkDashPathEffect::Make(intervals, 2, 0.0f));
+            ctx.canvas->drawLine(p1, p2, p);
+            ctx.canvas->drawLine(p3, p4, p);
+            ctx.canvas->drawLine(p5, p6, p);
+            ctx.canvas->drawLine(p7, p8, p);
+          },
+          [=](const DlRenderContext& ctx) {                           //
+            ctx.canvas->DrawDashedLine(ToDlPoint(p1), ToDlPoint(p2),  //
+                                       25.0f, 5.0f, ctx.paint);
+            ctx.canvas->DrawDashedLine(ToDlPoint(p3), ToDlPoint(p4),  //
+                                       25.0f, 5.0f, ctx.paint);
+            ctx.canvas->DrawDashedLine(ToDlPoint(p5), ToDlPoint(p6),  //
+                                       25.0f, 5.0f, ctx.paint);
+            ctx.canvas->DrawDashedLine(ToDlPoint(p7), ToDlPoint(p8),  //
+                                       25.0f, 5.0f, ctx.paint);
+          },
+          kDrawLineFlags)
+          .set_draw_line());
 }
 
 TEST_F(DisplayListRendering, DrawRect) {
@@ -3127,7 +3178,7 @@ TEST_F(DisplayListRendering, DrawPointsAsPoints) {
   const SkScalar x3 = kRenderCenterX + 0.1;
   const SkScalar x4 = (kRenderRight + kRenderCenterX) * 0.5;
   const SkScalar x5 = kRenderRight - 16;
-  const SkScalar x6 = kRenderRight;
+  const SkScalar x6 = kRenderRight - 1;
 
   const SkScalar y0 = kRenderTop;
   const SkScalar y1 = kRenderTop + 16;
@@ -3135,7 +3186,7 @@ TEST_F(DisplayListRendering, DrawPointsAsPoints) {
   const SkScalar y3 = kRenderCenterY + 0.1;
   const SkScalar y4 = (kRenderBottom + kRenderCenterY) * 0.5;
   const SkScalar y5 = kRenderBottom - 16;
-  const SkScalar y6 = kRenderBottom;
+  const SkScalar y6 = kRenderBottom - 1;
 
   // clang-format off
   const SkPoint points[] = {
@@ -3179,7 +3230,7 @@ TEST_F(DisplayListRendering, DrawPointsAsLines) {
   const SkScalar y0 = kRenderTop;
   const SkScalar y1 = kRenderTop + 16;
   const SkScalar y2 = kRenderBottom - 16;
-  const SkScalar y3 = kRenderBottom;
+  const SkScalar y3 = kRenderBottom - 1;
 
   // clang-format off
   const SkPoint points[] = {
@@ -3228,10 +3279,12 @@ TEST_F(DisplayListRendering, DrawPointsAsPolygon) {
       SkPoint::Make(kRenderRight, kRenderBottom),
       SkPoint::Make(kRenderLeft, kRenderBottom),
       SkPoint::Make(kRenderLeft, kRenderTop),
-      SkPoint::Make(kRenderCenterX, kRenderTop),
-      SkPoint::Make(kRenderRight, kRenderCenterY),
-      SkPoint::Make(kRenderCenterX, kRenderBottom),
-      SkPoint::Make(kRenderLeft, kRenderCenterY),
+
+      SkPoint::Make(kRenderCenterX, kRenderTop + 15),
+      SkPoint::Make(kRenderRight - 15, kRenderCenterY),
+      SkPoint::Make(kRenderCenterX, kRenderBottom - 15),
+      SkPoint::Make(kRenderLeft + 15, kRenderCenterY),
+      SkPoint::Make(kRenderCenterX, kRenderTop + 15),
   };
   const int count1 = sizeof(points1) / sizeof(points1[0]);
 
@@ -3732,7 +3785,7 @@ TEST_F(DisplayListRendering, DrawShadow) {
       },
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const SkScalar elevation = 7;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3758,7 +3811,7 @@ TEST_F(DisplayListRendering, DrawShadowTransparentOccluder) {
       },
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const SkScalar elevation = 7;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3784,7 +3837,7 @@ TEST_F(DisplayListRendering, DrawShadowDpr) {
       },
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const SkScalar elevation = 7;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3934,15 +3987,24 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
         // when we claim that they are compatible and they aren't.
         const bool always = false;
 
+        // In some circumstances, Skia can combine image filter evaluations
+        // and elide a renderpass. In this case rounding and precision of inputs
+        // to color filters may cause the output to differ by 1.
         if (always || same) {
-          CanvasCompareTester::quickCompareToReference(
-              nested_results.get(), combined_results.get(), same,
-              "nested " + desc1 + " then " + desc2);
+          CanvasCompareTester::compareToReference(
+              nested_results.get(), combined_results.get(),
+              "nested " + desc1 + " then " + desc2, /*bounds=*/nullptr,
+              /*tolerance=*/nullptr, DlColor::kTransparent(),
+              /*fuzzyCompares=*/true, combined_results->width(),
+              combined_results->height(), /*printMismatches=*/true);
         }
         if (always || rev_same) {
-          CanvasCompareTester::quickCompareToReference(
-              reverse_results.get(), combined_results.get(), rev_same,
-              "nested " + desc2 + " then " + desc1);
+          CanvasCompareTester::compareToReference(
+              reverse_results.get(), combined_results.get(),
+              "nested " + desc2 + " then " + desc1, /*bounds=*/nullptr,
+              /*tolerance=*/nullptr, DlColor::kTransparent(),
+              /*fuzzyCompares=*/true, combined_results->width(),
+              combined_results->height(), /*printMismatches=*/true);
         }
       };
 

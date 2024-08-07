@@ -23,7 +23,7 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'] as String?)
+        .setData((methodCall.arguments as Map<String, Object?>)['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -184,7 +184,7 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
     final DomHTMLTextAreaElement tempTextArea = _appendTemporaryTextArea();
     tempTextArea.value = text;
-    tempTextArea.focus();
+    tempTextArea.focusWithoutScroll();
     tempTextArea.select();
     bool result = false;
     try {

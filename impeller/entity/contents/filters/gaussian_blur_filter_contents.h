@@ -12,6 +12,9 @@
 
 namespace impeller {
 
+// Comes from gaussian.frag.
+static constexpr int32_t kGaussianBlurMaxKernelSize = 50;
+
 struct BlurParameters {
   Point blur_uv_offset;
   Scalar blur_sigma;
@@ -19,13 +22,23 @@ struct BlurParameters {
   int step_size;
 };
 
-GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
-    BlurParameters parameters);
+/// A larger mirror of GaussianBlurPipeline::FragmentShader::KernelSamples.
+///
+/// This is a mirror of GaussianBlurPipeline::FragmentShader::KernelSamples that
+/// can hold 2x the max kernel size since it will get reduced with the lerp
+/// hack.
+struct KernelSamples {
+  static constexpr int kMaxKernelSize = kGaussianBlurMaxKernelSize * 2;
+  int sample_count;
+  GaussianBlurPipeline::FragmentShader::KernelSample samples[kMaxKernelSize];
+};
+
+KernelSamples GenerateBlurInfo(BlurParameters parameters);
 
 /// This will shrink the size of a kernel by roughly half by sampling between
 /// samples and relying on linear interpolation between the samples.
 GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
-    GaussianBlurPipeline::FragmentShader::KernelSamples samples);
+    KernelSamples samples);
 
 /// Performs a bidirectional Gaussian blur.
 ///
@@ -33,9 +46,6 @@ GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
 /// Note: This will replace `DirectionalGaussianBlurFilterContents`.
 class GaussianBlurFilterContents final : public FilterContents {
  public:
-  static std::string_view kNoMipsError;
-  static const int32_t kBlurFilterRequiredMipCount;
-
   explicit GaussianBlurFilterContents(
       Scalar sigma_x,
       Scalar sigma_y,
@@ -43,8 +53,8 @@ class GaussianBlurFilterContents final : public FilterContents {
       BlurStyle mask_blur_style,
       const std::shared_ptr<Geometry>& mask_geometry);
 
-  Scalar GetSigmaX() const { return sigma_x_; }
-  Scalar GetSigmaY() const { return sigma_y_; }
+  Scalar GetSigmaX() const { return sigma_.x; }
+  Scalar GetSigmaY() const { return sigma_.y; }
 
   // |FilterContents|
   std::optional<Rect> GetFilterSourceCoverage(
@@ -95,8 +105,7 @@ class GaussianBlurFilterContents final : public FilterContents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
 
-  const Scalar sigma_x_ = 0.0;
-  const Scalar sigma_y_ = 0.0;
+  const Vector2 sigma_ = Vector2(0.0, 0.0);
   const Entity::TileMode tile_mode_;
   const BlurStyle mask_blur_style_;
   std::shared_ptr<Geometry> mask_geometry_;

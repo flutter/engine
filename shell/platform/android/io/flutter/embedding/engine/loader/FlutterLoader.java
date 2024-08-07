@@ -47,6 +47,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableOpenGLGPUTracing";
   private static final String IMPELLER_VULKAN_GPU_TRACING_DATA_KEY =
       "io.flutter.embedding.android.EnableVulkanGPUTracing";
+  private static final String ENABLED_MERGED_PLATFORM_UI_THREAD_KEY =
+      "io.flutter.embedding.android.EnableMergedPlatformUIThread";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -205,8 +207,11 @@ public class FlutterLoader {
                             + cpuArch
                             + ", and the native libraries directory (with path "
                             + nativeLibsDir.getAbsolutePath()
-                            + ") contains the following files: "
-                            + Arrays.toString(nativeLibsContents),
+                            + ") "
+                            + (nativeLibsDir.exists()
+                                ? "contains the following files: "
+                                    + Arrays.toString(nativeLibsContents)
+                                : "does not exist."),
                         unsatisfiedLinkError);
                   }
 
@@ -340,8 +345,12 @@ public class FlutterLoader {
       shellArgs.add("--prefetched-default-font-manager");
 
       if (metaData != null) {
-        if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
-          shellArgs.add("--enable-impeller");
+        if (metaData.containsKey(ENABLE_IMPELLER_META_DATA_KEY)) {
+          if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY)) {
+            shellArgs.add("--enable-impeller=true");
+          } else {
+            shellArgs.add("--enable-impeller=false");
+          }
         }
         if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-validation");
@@ -351,6 +360,9 @@ public class FlutterLoader {
         }
         if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-gpu-tracing");
+        }
+        if (metaData.getBoolean(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY, false)) {
+          shellArgs.add("--enable-merged-platform-ui-thread");
         }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {

@@ -6,7 +6,7 @@ environment:
 
 dependencies:
   collection: 1.17.0
-  crypto: 3.0.1
+  crypto: 3.0.3
   image: 3.0.1
   js: 0.6.4
   meta: ^1.7.0
@@ -20,3 +20,5 @@ dependencies:
 dependency_overrides:
   engine_repo_tools:
     path: ../../tools/pkg/engine_repo_tools
+  git_repo_tools:
+    path: ../../tools/pkg/git_repo_tools

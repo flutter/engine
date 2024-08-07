@@ -107,13 +107,17 @@ class DiffContext {
 
   bool IsSubtreeDirty() const { return state_.dirty; }
 
-  // Marks that current subtree contains a TextureLayer. This is needed to
-  // ensure that we'll Diff the TextureLayer even if inside retained layer.
-  void MarkSubtreeHasTextureLayer();
+  // Marks that current subtree contains a volatile layer. A volatile layer will
+  // do diffing even if it is a retained subtree. Necessary for TextureLayer
+  // and PlatformViewLayer.
+  void MarkSubtreeHasVolatileLayer();
 
   // Add layer bounds to current paint region; rect is in "local" (layer)
   // coordinates.
   void AddLayerBounds(const SkRect& rect);
+
+  // Marks entire frame as dirty.
+  void RepaintEntireFrame();
 
   // Add entire paint region of retained layer for current subtree. This can
   // only be used in subtrees that are not dirty, otherwise ancestor transforms
@@ -223,20 +227,19 @@ class DiffContext {
     // when starting subtree to paint layer children).
     bool integral_transform = false;
 
-    // Used to restoring clip tracker when popping state.
-    int clip_tracker_save_count = 0;
+    // Current transform and clip for the layer
+    DisplayListMatrixClipState matrix_clip;
 
     // Whether this subtree has filter bounds adjustment function. If so,
     // it will need to be removed from stack when subtree is closed.
     bool has_filter_bounds_adjustment = false;
 
     // Whether there is a texture layer in this subtree.
-    bool has_texture = false;
+    bool has_volatile_layer = false;
   };
 
-  void MakeCurrentTransformIntegral();
+  void MakeTransformIntegral(DisplayListMatrixClipState& matrix_clip);
 
-  DisplayListMatrixClipTracker clip_tracker_;
   std::shared_ptr<std::vector<SkRect>> rects_;
   State state_;
   SkISize frame_size_;

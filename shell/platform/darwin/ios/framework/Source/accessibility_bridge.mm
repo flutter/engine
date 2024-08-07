@@ -9,7 +9,7 @@
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/TextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 #pragma GCC diagnostic error "-Wundeclared-selector"
@@ -42,7 +42,7 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 AccessibilityBridge::AccessibilityBridge(
     FlutterViewController* view_controller,
     PlatformViewIOS* platform_view,
-    std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
+    std::shared_ptr<PlatformViewsController> platform_views_controller,
     std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),

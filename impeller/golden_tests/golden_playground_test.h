@@ -10,6 +10,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 #include "flutter/impeller/playground/playground.h"
 #include "flutter/impeller/renderer/render_target.h"
 #include "flutter/testing/testing.h"
@@ -28,6 +29,8 @@ class GoldenPlaygroundTest
   using AiksPlaygroundCallback =
       std::function<std::optional<Picture>(AiksContext& renderer)>;
 
+  using AiksDlPlaygroundCallback = std::function<sk_sp<flutter::DisplayList>()>;
+
   GoldenPlaygroundTest();
 
   ~GoldenPlaygroundTest() override;
@@ -45,7 +48,15 @@ class GoldenPlaygroundTest
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
+  bool OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback);
+
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
+
+  std::unique_ptr<testing::Screenshot> MakeScreenshot(
+      const sk_sp<flutter::DisplayList>& list);
+
+  static bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot,
+                             const std::string& postfix = "");
 
   static bool ImGuiBegin(const char* name,
                          bool* p_open,
@@ -74,7 +85,6 @@ class GoldenPlaygroundTest
   [[nodiscard]] fml::Status SetCapabilities(
       const std::shared_ptr<Capabilities>& capabilities);
 
-  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
   /// Returns true if `OpenPlaygroundHere` will actually render anything.
   bool WillRenderSomething() const { return true; }
 
