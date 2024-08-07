@@ -1115,7 +1115,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     testing.
    */
   @VisibleForTesting
-  bool initializePlatformViewIfNeeded(int viewId) {
+  boolean initializePlatformViewIfNeeded(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
       return false;
