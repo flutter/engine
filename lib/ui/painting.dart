@@ -186,6 +186,7 @@ class Color {
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
+  @Deprecated('Use .a.')
   double get opacity => a;
 
   /// The red channel of this color in an 8 bit value.
@@ -1635,6 +1636,7 @@ enum ColorSpace {
   /// see the extended values an [ImageByteFormat] like
   /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
+  displayP3,
 }
 
 /// The format in which image bytes should be returned when using
@@ -3518,6 +3520,72 @@ class MaskFilter {
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
+
+abstract class _ColorTransform {
+  Color transform(Color color, ColorSpace resultColorSpace);
+}
+
+class _IdentityColorTransform implements _ColorTransform {
+  const _IdentityColorTransform();
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) => color;
+}
+
+class _MatrixColorTransform implements _ColorTransform {
+  /// Row-major.
+  _MatrixColorTransform(this.values);
+
+  final List<double> values;
+
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+        alpha: color.a,
+        red: values[0] * color.r +
+            values[1] * color.g +
+            values[2] * color.b +
+            values[3],
+        green: values[4] * color.r +
+            values[5] * color.g +
+            values[6] * color.b +
+            values[7],
+        blue: values[8] * color.r +
+            values[9] * color.g +
+            values[10] * color.b +
+            values[11],
+        colorSpace: resultColorSpace);
+  }
+}
+
+final Map<ColorSpace, Map<ColorSpace, _ColorTransform>> _colorTransforms = {
+  ColorSpace.sRGB: <ColorSpace, _ColorTransform>{
+    ColorSpace.sRGB: const _IdentityColorTransform(),
+    ColorSpace.extendedSRGB: const _IdentityColorTransform(),
+    ColorSpace.displayP3: _MatrixColorTransform(<double>[
+      0.8081, 0.2202, -0.1396, 0.1457, //
+      0.0965, 0.9164, -0.0861, 0.0895, //
+      -0.1271, -0.0690, 0.7354, 0.2337
+    ]),
+  },
+  ColorSpace.extendedSRGB: <ColorSpace, _ColorTransform>{
+    ColorSpace.sRGB: const _IdentityColorTransform(),
+    ColorSpace.extendedSRGB: const _IdentityColorTransform(),
+    ColorSpace.displayP3: _MatrixColorTransform(<double>[
+      0.8081, 0.2202, -0.1396, 0.1457, //
+      0.0965, 0.9164, -0.0861, 0.0895, //
+      -0.1271, -0.0690, 0.7354, 0.2337
+    ]),
+  },
+  ColorSpace.displayP3: <ColorSpace, _ColorTransform>{
+    ColorSpace.sRGB: const _IdentityColorTransform(),
+    ColorSpace.extendedSRGB: _MatrixColorTransform(<double>[
+      1.3067, -0.2981, 0.2132, -0.2136, //
+      -0.1174, 1.1277, 0.1097, -0.1095, //
+      0.2148, 0.0543, 1.4069, -0.3649
+    ]),
+    ColorSpace.displayP3: const _IdentityColorTransform(),
+  }
+};
 
 /// A description of a color filter to apply when drawing a shape or compositing
 /// a layer with a particular [Paint]. A color filter is a function that takes
