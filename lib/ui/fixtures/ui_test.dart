@@ -521,6 +521,8 @@ void colorTests() async {
     expectEquals(color.red, 51);
     expectEquals(color.green, 77);
     expectEquals(color.blue, 102);
+
+    expectEquals(color.value, 0x1a334d66);
   });
 
   await test('fromARGB and accessors', () {
@@ -529,6 +531,14 @@ void colorTests() async {
     expectEquals(color.red, 20);
     expectEquals(color.green, 35);
     expectEquals(color.blue, 47);
+  });
+
+  await test('constructor and accessors', () {
+    Color color = Color(0xffeeddcc);
+    expectEquals(color.alpha, 0xff);
+    expectEquals(color.red, 0xee);
+    expectEquals(color.green, 0xdd);
+    expectEquals(color.blue, 0xcc);
   });
 
   _finish();
