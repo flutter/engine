@@ -201,21 +201,24 @@ class Color {
   @Deprecated('Use .b.')
   int get blue => (b * 255.0).round();
 
-  Color withComponents(
+  Color change(
       {double? alpha,
       double? red,
       double? green,
       double? blue,
       ColorSpace? colorSpace}) {
-    if (colorSpace != null && colorSpace == this.colorSpace) {
-      return Color.from(
+    final Color tweaked = Color.from(
           alpha: alpha ?? a,
           red: red ?? r,
           green: green ?? g,
           blue: blue ?? b,
-          colorSpace: colorSpace);
+          colorSpace: this.colorSpace);
+    if (colorSpace != null && colorSpace != this.colorSpace) {
+      final _ColorTransform transform =
+          _getColorTransform(this.colorSpace, colorSpace);
+      return transform.transform(tweaked, colorSpace);
     } else {
-      throw Error();
+      return tweaked;
     }
   }
 
@@ -3557,35 +3560,49 @@ class _MatrixColorTransform implements _ColorTransform {
   }
 }
 
-final Map<ColorSpace, Map<ColorSpace, _ColorTransform>> _colorTransforms = {
-  ColorSpace.sRGB: <ColorSpace, _ColorTransform>{
-    ColorSpace.sRGB: const _IdentityColorTransform(),
-    ColorSpace.extendedSRGB: const _IdentityColorTransform(),
-    ColorSpace.displayP3: _MatrixColorTransform(<double>[
-      0.8081, 0.2202, -0.1396, 0.1457, //
-      0.0965, 0.9164, -0.0861, 0.0895, //
-      -0.1271, -0.0690, 0.7354, 0.2337
-    ]),
-  },
-  ColorSpace.extendedSRGB: <ColorSpace, _ColorTransform>{
-    ColorSpace.sRGB: const _IdentityColorTransform(),
-    ColorSpace.extendedSRGB: const _IdentityColorTransform(),
-    ColorSpace.displayP3: _MatrixColorTransform(<double>[
-      0.8081, 0.2202, -0.1396, 0.1457, //
-      0.0965, 0.9164, -0.0861, 0.0895, //
-      -0.1271, -0.0690, 0.7354, 0.2337
-    ]),
-  },
-  ColorSpace.displayP3: <ColorSpace, _ColorTransform>{
-    ColorSpace.sRGB: const _IdentityColorTransform(),
-    ColorSpace.extendedSRGB: _MatrixColorTransform(<double>[
-      1.3067, -0.2981, 0.2132, -0.2136, //
-      -0.1174, 1.1277, 0.1097, -0.1095, //
-      0.2148, 0.0543, 1.4069, -0.3649
-    ]),
-    ColorSpace.displayP3: const _IdentityColorTransform(),
+_ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
+  switch (source) {
+    case ColorSpace.sRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return _MatrixColorTransform(<double>[
+            0.8081, 0.2202, -0.1396, 0.1457, //
+            0.0965, 0.9164, -0.0861, 0.0895, //
+            -0.1271, -0.0690, 0.7354, 0.2337
+          ]);
+      }
+    case ColorSpace.extendedSRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return _MatrixColorTransform(<double>[
+            0.8081, 0.2202, -0.1396, 0.1457, //
+            0.0965, 0.9164, -0.0861, 0.0895, //
+            -0.1271, -0.0690, 0.7354, 0.2337
+          ]);
+      }
+    case ColorSpace.displayP3:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return _MatrixColorTransform(<double>[
+            1.3067, -0.2981, 0.2132, -0.2136, //
+            -0.1174, 1.1277, 0.1097, -0.1095, //
+            0.2148, 0.0543, 1.4069, -0.3649
+          ]);
+        case ColorSpace.displayP3:
+          return const _IdentityColorTransform();
+      }
   }
-};
+}
 
 /// A description of a color filter to apply when drawing a shape or compositing
 /// a layer with a particular [Paint]. A color filter is a function that takes

@@ -509,6 +509,12 @@ void colorTests() async {
     }
   }
 
+  void expectClose(double value, double expected, double delta) {
+    if ((value - expected).abs() > delta) {
+      throw 'Expected $value to be $expected.';
+    }
+  }
+
   await test('from and accessors', () {
     Color color = Color.from(alpha: 0.1, red: 0.2, green: 0.3, blue: 0.4);
     expectEquals(color.a, 0.1);
@@ -539,6 +545,16 @@ void colorTests() async {
     expectEquals(color.red, 0xee);
     expectEquals(color.green, 0xdd);
     expectEquals(color.blue, 0xcc);
+  });
+
+  await test('p3 to extended srgb', () {
+    Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    Color srgb = p3.change(colorSpace: ColorSpace.extendedSRGB);
+    expectEquals(srgb.a, 1.0);
+    expectClose(srgb.r, 1.0931, 0.001);
+    expectClose(srgb.g, -0.2268, 0.001);
+    expectClose(srgb.b, -0.1501, 0.001);
   });
 
   _finish();
