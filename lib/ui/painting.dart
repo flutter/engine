@@ -180,7 +180,7 @@ class Color {
   /// A value of 0 means this color is fully transparent. A value of 255 means
   /// this color is fully opaque.
   @Deprecated('Use .a.')
-  int get alpha => (0xff000000 & value) >> 24;
+  int get alpha => (a * 255.0).round();
 
   /// The alpha channel of this color as a double.
   ///
