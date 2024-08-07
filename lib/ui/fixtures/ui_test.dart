@@ -515,6 +515,12 @@ void colorTests() async {
     expectEquals(color.r, 0.2);
     expectEquals(color.g, 0.3);
     expectEquals(color.b, 0.4);
+    expectEquals(color.colorSpace, ColorSpace.sRGB);
+
+    expectEquals(color.alpha, 26);
+    expectEquals(color.red, 51);
+    expectEquals(color.green, 77);
+    expectEquals(color.blue, 102);
   });
 
   _finish();
