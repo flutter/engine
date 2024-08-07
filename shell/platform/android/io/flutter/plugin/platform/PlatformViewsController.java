@@ -1121,7 +1121,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return false;
     }
     if (platformViewParent.get(viewId) != null) {
-      return;
+      return true;
     }
     final View embeddedView = platformView.getView();
     if (embeddedView == null) {
