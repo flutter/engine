@@ -306,8 +306,7 @@ static bool BulkUpdateAtlasBitmap(const GlyphAtlas& atlas,
   return blit_pass->AddCopy(std::move(buffer_view),  //
                             texture,                 //
                             IRect::MakeXYWH(0, 0, texture->GetSize().width,
-                                            texture->GetSize().height)
-  );
+                                            texture->GetSize().height));
 }
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
