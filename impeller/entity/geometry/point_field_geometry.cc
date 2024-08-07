@@ -38,7 +38,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     // point in turn. Note: we intentionally used the original radius here
     // to capture any scaling < 1.0.
     auto generator =
-        renderer.GetTessellator()->FilledCircle(transform, {}, radius_);
+        renderer.GetTessellator()->FilledCircle(transform, {}, radius_, radius);
     FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
     std::vector<Point> circle_vertices;
     circle_vertices.reserve(generator.GetVertexCount());

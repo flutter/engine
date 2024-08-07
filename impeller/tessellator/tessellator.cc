@@ -237,9 +237,10 @@ EllipticalVertexGenerator::EllipticalVertexGenerator(
 EllipticalVertexGenerator Tessellator::FilledCircle(
     const Matrix& view_transform,
     const Point& center,
+    Scalar raw_radius,
     Scalar radius) {
-  size_t divisions =
-      ComputeQuadrantDivisions(view_transform.GetMaxBasisLengthXY() * radius);
+  size_t divisions = ComputeQuadrantDivisions(
+      view_transform.GetMaxBasisLengthXY() * raw_radius);
   return EllipticalVertexGenerator(Tessellator::GenerateFilledCircle,
                                    GetTrigsForDivisions(divisions),
                                    PrimitiveType::kTriangleStrip, 4,
@@ -267,7 +268,7 @@ EllipticalVertexGenerator Tessellator::StrokedCircle(
                                          .half_width = half_width,
                                      });
   } else {
-    return FilledCircle(view_transform, center, radius);
+    return FilledCircle(view_transform, center, radius, radius);
   }
 }
 
@@ -290,7 +291,7 @@ EllipticalVertexGenerator Tessellator::RoundCapLine(
                                          .half_width = -1.0f,
                                      });
   } else {
-    return FilledCircle(view_transform, p0, radius);
+    return FilledCircle(view_transform, p0, radius, radius);
   }
 }
 
@@ -299,7 +300,7 @@ EllipticalVertexGenerator Tessellator::FilledEllipse(
     const Rect& bounds) {
   if (bounds.IsSquare()) {
     return FilledCircle(view_transform, bounds.GetCenter(),
-                        bounds.GetWidth() * 0.5f);
+                        bounds.GetWidth() * 0.5f, bounds.GetWidth() * 0.5f);
   }
   auto max_radius = bounds.GetSize().MaxDimension();
   auto divisions = ComputeQuadrantDivisions(

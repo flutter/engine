@@ -467,6 +467,7 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+// Regression test for flutter/flutter#152780
 TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
   std::vector<SkPoint> point = {
       {0, 0},  //
@@ -487,6 +488,7 @@ TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+// Regression test for flutter/flutter#152780
 TEST_P(AiksTest, CanDrawScaledPointsSmallScaleLargeRadius) {
   std::vector<SkPoint> point = {
       {0, 0},  //
