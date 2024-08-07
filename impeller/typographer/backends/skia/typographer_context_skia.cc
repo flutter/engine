@@ -289,7 +289,7 @@ static bool BulkUpdateAtlasBitmap(const GlyphAtlas& atlas,
       continue;
     }
 
-    DrawGlyph(canvas, SkPoint::Make(pos.GetLeft() + 1, pos.GetTop() + 1),
+    DrawGlyph(canvas, SkPoint::Make(pos.GetLeft(), pos.GetTop()),
               pair.scaled_font, pair.glyph, bounds, pair.glyph.properties,
               has_color);
   }
@@ -306,10 +306,7 @@ static bool BulkUpdateAtlasBitmap(const GlyphAtlas& atlas,
   return blit_pass->AddCopy(std::move(buffer_view),  //
                             texture,                 //
                             IRect::MakeXYWH(0, 0, texture->GetSize().width,
-                                            texture->GetSize().height),  //
-                            /*label=*/"",                                //
-                            /*slice=*/0,                                 //
-                            /*convert_to_read=*/true                     //
+                                            texture->GetSize().height)
   );
 }
 
