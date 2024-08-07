@@ -173,3 +173,14 @@ bool isAvif(Uint8List data) {
   }
   return false;
 }
+
+class ImageHeaderReader {
+  ImageHeaderReader(this.bytes);
+
+  final ByteData bytes;
+  int _position = 0;
+
+  bool isAnimated() {
+    return true;
+  }
+}
