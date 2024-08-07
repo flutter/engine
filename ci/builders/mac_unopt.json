@@ -248,7 +248,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             },
             "tests": [
@@ -276,9 +276,9 @@
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
-                        "ios-18-0_16a5202i"
+                        "ios-18-0_16a5221g"
                     ],
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             },
             "drone_dimensions": [
@@ -370,7 +370,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             },
             "tests": [
@@ -394,9 +394,9 @@
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
-                        "ios-18-0_16a5202i"
+                        "ios-18-0_16a5221g"
                     ],
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             },
             "drone_dimensions": [
@@ -461,9 +461,9 @@
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
-                        "ios-18-0_16a5202i"
+                        "ios-18-0_16a5221g"
                     ],
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             },
             "drone_dimensions": [
@@ -559,7 +559,7 @@
             {
                 "$flutter/osx_sdk":
                 {
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             }
         },
@@ -600,7 +600,7 @@
             {
                 "$flutter/osx_sdk":
                 {
-                    "sdk_version": "16a5202i"
+                    "sdk_version": "16a5221g"
                 }
             }
         }
