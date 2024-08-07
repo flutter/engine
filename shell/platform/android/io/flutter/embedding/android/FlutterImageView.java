@@ -165,7 +165,7 @@ public class FlutterImageView extends View implements RenderSurface {
     setAlpha(0.0f);
     // Drop the latest image as it shouldn't render this image if this view is
     // attached to the renderer again.
-    acquireNextImage();
+    acquireLatestImage();
     // Clear drawings.
     currentBitmap = null;
 
@@ -187,7 +187,7 @@ public class FlutterImageView extends View implements RenderSurface {
    * Acquires the next image to be drawn to the {@link android.graphics.Canvas}. Returns true if
    * there's an image available in the queue.
    */
-  public boolean acquireNextImage() {
+  public boolean acquireLatestImage() {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
@@ -197,7 +197,7 @@ public class FlutterImageView extends View implements RenderSurface {
     // or some special Android devices so the calls to `invalidate()` queued up
     // until the device produces a new frame.
     // 3. While the engine will also stop producing frames, there is a race condition.
-    final Image newImage = imageReader.acquireNextImage();
+    final Image newImage = imageReader.acquireLatestImage();
     if (newImage != null) {
       // Only close current image after acquiring valid new image
       closeCurrentImage();

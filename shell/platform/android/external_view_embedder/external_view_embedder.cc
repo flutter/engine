@@ -114,7 +114,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     auto overlay_layer = CreateSurfaceIfNeeded(context,                    //
                                                view_id,                    //
                                                slices_.at(view_id).get(),  //
-                                               rect            //
+                                               rect                        //
     );
     if (!overlay_layer) {
       continue;
@@ -142,7 +142,8 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   surface_pool_->RecycleLayers();
   task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
       [&, composition_order = composition_order_, view_params = view_params_,
-       overlay_layers = std::move(overlay_layers), layers = std::move(layers)]() {
+       overlay_layers = std::move(overlay_layers),
+       layers = std::move(layers)]() {
         TRACE_EVENT0("flutter",
                      "AndroidExternalViewEmbedder::RenderNativeViews");
         jni_facade_->FlutterViewBeginFrame();
@@ -169,24 +170,22 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
               params.mutatorsStack()  //
           );
 
-          if (i < overlay_layers.size()) {
-            auto overlay_rect = overlay_layers.find(i);
-            if (overlay_rect == overlay_layers.end()) {
-              continue;
-            }
-            SkRect rect = overlay_rect->second;
-            auto maybe_layer = layers.find(i);
-            if (maybe_layer == layers.end())  {
-              continue;
-            }
-            jni_facade_->FlutterViewDisplayOverlaySurface(
-                maybe_layer->second->id,     //
-                rect.x(),      //
-                rect.y(),      //
-                rect.width(),  //
-                rect.height()  //
-            );
+          auto overlay_rect = overlay_layers.find(view_id);
+          if (overlay_rect == overlay_layers.end()) {
+            continue;
           }
+          SkRect rect = overlay_rect->second;
+          auto maybe_layer = layers.find(view_id);
+          if (maybe_layer == layers.end()) {
+            continue;
+          }
+          jni_facade_->FlutterViewDisplayOverlaySurface(
+              maybe_layer->second->id,  //
+              rect.x(),                 //
+              rect.y(),                 //
+              rect.width(),             //
+              rect.height()             //
+          );
         }
 
         jni_facade_->FlutterViewEndFrame();

@@ -1344,9 +1344,9 @@ public class FlutterView extends FrameLayout
     }
   }
 
-  public boolean acquireNextImageViewFrame() {
+  public boolean acquireLatestImageViewFrame() {
     if (flutterImageView != null) {
-      return flutterImageView.acquireNextImage();
+      return flutterImageView.acquireLatestImage();
     }
     return false;
   }
