@@ -12,13 +12,11 @@
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
 
-import argparse
 import logging
 import os
 import sys
 
-from subprocess import CompletedProcess
-from typing import Any, Iterable, List, Mapping, NamedTuple, Set
+from typing import Any, Iterable, List, Mapping, Set
 
 # The import is coming from vpython wheel and pylint cannot find it.
 import yaml  # pylint: disable=import-error
@@ -35,8 +33,6 @@ sys.path.insert(
 # pylint: disable=import-error, wrong-import-position
 from bundled_test_runner import run_tests, TestCase
 from common import DIR_SRC_ROOT
-from run_executable_test import ExecutableTestRunner
-from test_runner import TestRunner
 
 if len(sys.argv) == 2:
   VARIANT = sys.argv[1]
@@ -91,7 +87,7 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   return test_cases
 
 
-if __name__ == '__main__':
+def main() -> int:
   logging.basicConfig(level=logging.INFO)
   logging.info('Running tests in %s', OUT_DIR)
   sys.argv.append('--out-dir=' + OUT_DIR)
@@ -108,4 +104,8 @@ if __name__ == '__main__':
 
   tests = [t for t in tests if variant(t)]
 
-  sys.exit(run_tests(resolve_packages(tests), build_test_cases(tests), logs_dir))
+  return run_tests(resolve_packages(tests), build_test_cases(tests), logs_dir)
+
+
+if __name__ == '__main__':
+  sys.exit(main())
