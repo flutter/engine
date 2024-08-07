@@ -58,5 +58,37 @@ TEST_F(ShellTest, ConvertPaintToDlPaint) {
   ASSERT_EQ(dl_paint.getDrawStyle(), DlDrawStyle::kStroke);
 }
 
+TEST_F(ShellTest, ColorTests) {
+  auto settings = CreateSettingsForFixture();
+
+  TaskRunners task_runners(GetCurrentTestName(),       // label
+                           GetCurrentTaskRunner(),     // platform
+                           CreateNewThread("raster"),  // raster
+                           CreateNewThread("ui"),      // ui
+                           CreateNewThread("io")       // io
+  );
+
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell->IsSetup());
+
+  auto finished = [&message_latch](Dart_NativeArguments args) {
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finished));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("colorTests");
+
+  shell->RunEngine(std::move(configuration), [](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch->Wait();
+  DestroyShell(std::move(shell), task_runners);
+}
+
+
 }  // namespace testing
 }  // namespace flutter

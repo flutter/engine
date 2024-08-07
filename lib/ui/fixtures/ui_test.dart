@@ -493,6 +493,34 @@ void convertPaintToDlPaint() {
 external void _convertPaintToDlPaint(Paint paint);
 
 @pragma('vm:entry-point')
+void colorTests() async {
+  Future<void> test(String name, FutureOr<void> Function() testFunction) async {
+    try {
+      await testFunction();
+    } catch (e) {
+      print('Test "$name" failed!');
+      rethrow;
+    }
+  }
+
+  void expectEquals(Object? value, Object? expected) {
+    if (value != expected) {
+      throw 'Expected $value to be $expected.';
+    }
+  }
+
+  await test('from and accessors', () {
+    Color color = Color.from(alpha: 0.1, red: 0.2, green: 0.3, blue: 0.4);
+    expectEquals(color.a, 0.1);
+    expectEquals(color.r, 0.2);
+    expectEquals(color.g, 0.3);
+    expectEquals(color.b, 0.4);
+  });
+
+  _finish();
+}
+
+@pragma('vm:entry-point')
 void hooksTests() async {
   Future<void> test(String name, FutureOr<void> Function() testFunction) async {
     try {
