@@ -33,6 +33,7 @@ sys.path.insert(
 # pylint: disable=import-error, wrong-import-position
 from bundled_test_runner import run_tests, TestCase
 from common import DIR_SRC_ROOT
+from compatible_utils import force_running_unattended
 
 if len(sys.argv) == 2:
   VARIANT = sys.argv[1]
@@ -90,11 +91,12 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
 def main() -> int:
   logging.basicConfig(level=logging.INFO)
   logging.info('Running tests in %s', OUT_DIR)
+  force_running_unattended()
   sys.argv.append('--out-dir=' + OUT_DIR)
   if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
     sys.argv.append('--product=terminal.qemu-arm64')
 
-  logs_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
+  sys.argv.append('--logs-dir=' + os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log'))
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'), 'r') as file:
     tests = yaml.safe_load(file)
   # TODO(zijiehe-google-com): Run all tests in release build,
@@ -103,8 +105,9 @@ def main() -> int:
     return 'variant' not in test or test['variant'] in VARIANT
 
   tests = [t for t in tests if variant(t)]
-
-  return run_tests(resolve_packages(tests), build_test_cases(tests), logs_dir)
+  for package in resolve_packages(tests):
+      sys.argv.append('--packages=' + package)
+  return run_tests(build_test_cases(tests))
 
 
 if __name__ == '__main__':
