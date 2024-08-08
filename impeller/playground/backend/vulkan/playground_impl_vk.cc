@@ -24,7 +24,6 @@
 #include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/vk/compute_shaders_vk.h"
-#include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace impeller {
 

@@ -22,7 +22,6 @@
 #include "impeller/playground/imgui/gles/imgui_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
 
 namespace impeller {
 
