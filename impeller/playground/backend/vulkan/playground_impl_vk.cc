@@ -46,8 +46,6 @@ ShaderLibraryMappingsForPlayground() {
           impeller_modern_fixtures_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_vk_data,
                                              impeller_imgui_shaders_vk_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
-                                             impeller_scene_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_compute_shaders_vk_data, impeller_compute_shaders_vk_length),
   };

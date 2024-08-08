@@ -123,8 +123,6 @@ ShaderLibraryMappingsForPlayground() {
           impeller_modern_fixtures_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_imgui_shaders_gles_data, impeller_imgui_shaders_gles_length),
-      std::make_shared<fml::NonOwnedMapping>(
-          impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
   };
 }
 
