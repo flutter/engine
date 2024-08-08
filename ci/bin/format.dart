@@ -555,7 +555,12 @@ class JavaFormatChecker extends FormatChecker {
     try {
       javaVersion = await _getJavaVersion();
     } on ProcessRunnerException {
-      error('Cannot run Java, skipping Java file formatting!');
+      if (!javaExe.existsSync()) {
+        error('Cannot find Java (${javaExe.path}). '
+        'Did you run `gclient sync`? Skipping Java format check.');
+        return const <String>[_javaFormatErrorString];
+      }
+      error('Cannot run Java (${javaExe.path}), skipping Java file formatting!');
       return const <String>[_javaFormatErrorString];
     }
     try {
