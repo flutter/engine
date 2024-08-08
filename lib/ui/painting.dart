@@ -3559,7 +3559,7 @@ class _ClampTransform implements _ColorTransform {
 
 class _MatrixColorTransform implements _ColorTransform {
   /// Row-major.
-  _MatrixColorTransform(this.values);
+  const _MatrixColorTransform(this.values);
 
   final List<double> values;
 
@@ -3592,7 +3592,7 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
         case ColorSpace.extendedSRGB:
           return const _IdentityColorTransform();
         case ColorSpace.displayP3:
-          return _MatrixColorTransform(<double>[
+          return const _MatrixColorTransform(<double>[
             0.8081, 0.2202, -0.1396, 0.1457, //
             0.0965, 0.9164, -0.0861, 0.0895, //
             -0.1271, -0.0690, 0.7354, 0.2337
@@ -3605,7 +3605,7 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
         case ColorSpace.extendedSRGB:
           return const _IdentityColorTransform();
         case ColorSpace.displayP3:
-          return _MatrixColorTransform(<double>[
+          return const _MatrixColorTransform(<double>[
             0.8081, 0.2202, -0.1396, 0.1457, //
             0.0965, 0.9164, -0.0861, 0.0895, //
             -0.1271, -0.0690, 0.7354, 0.2337
@@ -3614,13 +3614,13 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
     case ColorSpace.displayP3:
       switch (destination) {
         case ColorSpace.sRGB:
-          return _ClampTransform(_MatrixColorTransform(<double>[
+          return const _ClampTransform(_MatrixColorTransform(<double>[
             1.3067, -0.2981, 0.2132, -0.2136, //
             -0.1174, 1.1277, 0.1097, -0.1095, //
             0.2148, 0.0543, 1.4069, -0.3649
           ]));
         case ColorSpace.extendedSRGB:
-          return _MatrixColorTransform(<double>[
+          return const _MatrixColorTransform(<double>[
             1.3067, -0.2981, 0.2132, -0.2136, //
             -0.1174, 1.1277, 0.1097, -0.1095, //
             0.2148, 0.0543, 1.4069, -0.3649

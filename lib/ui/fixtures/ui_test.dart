@@ -555,6 +555,7 @@ void colorTests() async {
     expectClose(srgb.r, 1.0931, 0.001);
     expectClose(srgb.g, -0.2268, 0.001);
     expectClose(srgb.b, -0.1501, 0.001);
+    expectEquals(srgb.colorSpace, ColorSpace.extendedSRGB);
   });
 
   await test('p3 to srgb', () {
@@ -565,6 +566,7 @@ void colorTests() async {
     expectClose(srgb.r, 1, 0.001);
     expectClose(srgb.g, 0, 0.001);
     expectClose(srgb.b, 0, 0.001);
+    expectEquals(srgb.colorSpace, ColorSpace.sRGB);
   });
 
   await test('extended srgb to p3', () {
@@ -579,6 +581,7 @@ void colorTests() async {
     expectClose(p3.r, 1.0, 0.001);
     expectClose(p3.g, 0.0, 0.001);
     expectClose(p3.b, 0.0, 0.001);
+    expectEquals(p3.colorSpace, ColorSpace.displayP3);
   });
 
   _finish();
