@@ -106,7 +106,7 @@ def main() -> int:
 
   tests = [t for t in tests if variant(t)]
   for package in resolve_packages(tests):
-      sys.argv.append('--packages=' + package)
+    sys.argv.append('--packages=' + package)
   return run_tests(build_test_cases(tests))
 
 
