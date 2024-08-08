@@ -3534,6 +3534,29 @@ class _IdentityColorTransform implements _ColorTransform {
   Color transform(Color color, ColorSpace resultColorSpace) => color;
 }
 
+double _doubleClamp(double x, double min, double max) {
+  assert(min < max);
+  if (x < min) {
+    return min;
+  } else if (x > max) {
+    return max;
+  } else {
+    return x;
+  }
+}
+
+class _ClampTransform implements _ColorTransform {
+  const _ClampTransform(this.child);
+  final _ColorTransform child;
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) =>
+    Color.from(
+      alpha: _doubleClamp(color.a, 0, 1),
+      red: _doubleClamp(color.r, 0, 1),
+      green: _doubleClamp(color.g, 0, 1),
+      blue: _doubleClamp(color.b, 0, 1));
+}
+
 class _MatrixColorTransform implements _ColorTransform {
   /// Row-major.
   _MatrixColorTransform(this.values);
@@ -3578,7 +3601,7 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
     case ColorSpace.extendedSRGB:
       switch (destination) {
         case ColorSpace.sRGB:
-          return const _IdentityColorTransform();
+          return const _ClampTransform(_IdentityColorTransform());
         case ColorSpace.extendedSRGB:
           return const _IdentityColorTransform();
         case ColorSpace.displayP3:
@@ -3591,7 +3614,11 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
     case ColorSpace.displayP3:
       switch (destination) {
         case ColorSpace.sRGB:
-          return const _IdentityColorTransform();
+          return _ClampTransform(_MatrixColorTransform(<double>[
+            1.3067, -0.2981, 0.2132, -0.2136, //
+            -0.1174, 1.1277, 0.1097, -0.1095, //
+            0.2148, 0.0543, 1.4069, -0.3649
+          ]));
         case ColorSpace.extendedSRGB:
           return _MatrixColorTransform(<double>[
             1.3067, -0.2981, 0.2132, -0.2136, //
