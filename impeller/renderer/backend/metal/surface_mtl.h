@@ -65,6 +65,9 @@ class SurfaceMTL final : public Surface {
     present_with_transaction_ = present_with_transaction;
   }
 
+  /// @brief Perform the final blit and trigger end of frame workloads.
+  bool PreparePresent();
+
   // |Surface|
   bool Present() const override;
 
