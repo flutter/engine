@@ -509,6 +509,12 @@ void colorTests() async {
     }
   }
 
+  void expectTrue(bool value) {
+    if (!value) {
+      throw 'Expected $value to be true';
+    }
+  }
+
   void expectClose(double value, double expected, double delta) {
     if ((value - expected).abs() > delta) {
       throw 'Expected $value to be $expected.';
@@ -582,6 +588,23 @@ void colorTests() async {
     expectClose(p3.g, 0.0, 0.001);
     expectClose(p3.b, 0.0, 0.001);
     expectEquals(p3.colorSpace, ColorSpace.displayP3);
+  });
+
+  await test('extended srgb to p3 clamped', () {
+    Color srgb = Color.from(
+        alpha: 1,
+        red: 2,
+        green: 0,
+        blue: 0,
+        colorSpace: ColorSpace.extendedSRGB);
+    Color p3 = srgb.change(colorSpace: ColorSpace.displayP3);
+    expectEquals(srgb.a, 1.0);
+    expectTrue(p3.r <= 1.0);
+    expectTrue(p3.g <= 1.0);
+    expectTrue(p3.b <= 1.0);
+    expectTrue(p3.r >= 0.0);
+    expectTrue(p3.g >= 0.0);
+    expectTrue(p3.b >= 0.0);
   });
 
   _finish();

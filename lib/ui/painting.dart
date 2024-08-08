@@ -3549,12 +3549,14 @@ class _ClampTransform implements _ColorTransform {
   const _ClampTransform(this.child);
   final _ColorTransform child;
   @override
-  Color transform(Color color, ColorSpace resultColorSpace) =>
-    Color.from(
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
       alpha: _doubleClamp(color.a, 0, 1),
       red: _doubleClamp(color.r, 0, 1),
       green: _doubleClamp(color.g, 0, 1),
-      blue: _doubleClamp(color.b, 0, 1));
+      blue: _doubleClamp(color.b, 0, 1),
+      colorSpace: resultColorSpace);
+  }
 }
 
 class _MatrixColorTransform implements _ColorTransform {
@@ -3584,6 +3586,16 @@ class _MatrixColorTransform implements _ColorTransform {
 }
 
 _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
+  const _MatrixColorTransform srgbToP3 = _MatrixColorTransform(<double>[
+    0.8081, 0.2202, -0.1396, 0.1457, //
+    0.0965, 0.9164, -0.0861, 0.0895, //
+    -0.1271, -0.0690, 0.7354, 0.2337
+  ]);
+  const _ColorTransform p3ToSrgb = _MatrixColorTransform(<double>[
+    1.3067, -0.2981, 0.2132, -0.2136, //
+    -0.1174, 1.1277, 0.1097, -0.1095, //
+    0.2148, 0.0543, 1.4069, -0.3649
+  ]);
   switch (source) {
     case ColorSpace.sRGB:
       switch (destination) {
@@ -3592,11 +3604,7 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
         case ColorSpace.extendedSRGB:
           return const _IdentityColorTransform();
         case ColorSpace.displayP3:
-          return const _MatrixColorTransform(<double>[
-            0.8081, 0.2202, -0.1396, 0.1457, //
-            0.0965, 0.9164, -0.0861, 0.0895, //
-            -0.1271, -0.0690, 0.7354, 0.2337
-          ]);
+          return srgbToP3;
       }
     case ColorSpace.extendedSRGB:
       switch (destination) {
@@ -3605,26 +3613,14 @@ _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
         case ColorSpace.extendedSRGB:
           return const _IdentityColorTransform();
         case ColorSpace.displayP3:
-          return const _MatrixColorTransform(<double>[
-            0.8081, 0.2202, -0.1396, 0.1457, //
-            0.0965, 0.9164, -0.0861, 0.0895, //
-            -0.1271, -0.0690, 0.7354, 0.2337
-          ]);
+          return const _ClampTransform(srgbToP3);
       }
     case ColorSpace.displayP3:
       switch (destination) {
         case ColorSpace.sRGB:
-          return const _ClampTransform(_MatrixColorTransform(<double>[
-            1.3067, -0.2981, 0.2132, -0.2136, //
-            -0.1174, 1.1277, 0.1097, -0.1095, //
-            0.2148, 0.0543, 1.4069, -0.3649
-          ]));
+          return const _ClampTransform(p3ToSrgb);
         case ColorSpace.extendedSRGB:
-          return const _MatrixColorTransform(<double>[
-            1.3067, -0.2981, 0.2132, -0.2136, //
-            -0.1174, 1.1277, 0.1097, -0.1095, //
-            0.2148, 0.0543, 1.4069, -0.3649
-          ]);
+          return p3ToSrgb;
         case ColorSpace.displayP3:
           return const _IdentityColorTransform();
       }
