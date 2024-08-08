@@ -19,6 +19,12 @@ class SemanticLink extends SemanticRole {
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
     element.style.display = 'block';
+    // Prevent the default action of clicking the anchor tag, which is to
+    // navigate to the href. Instead the click action is handled by the
+    // framework.
+    element.addEventListener('click', createDomEventListener((DomEvent event) {
+      event.preventDefault();
+    }));
     return element;
   }
 
