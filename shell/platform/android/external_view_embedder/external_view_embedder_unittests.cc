@@ -134,61 +134,6 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
   ASSERT_EQ(embedder->CompositeEmbeddedView(0), nullptr);
 }
 
-TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
-  auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
-  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
-      android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
-
-  fml::Thread rasterizer_thread("rasterizer");
-  auto raster_thread_merger =
-      GetThreadMergerFromPlatformThread(&rasterizer_thread);
-  ASSERT_FALSE(raster_thread_merger->IsMerged());
-
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(nullptr, raster_thread_merger);
-  embedder->PrepareFlutterView(SkISize::Make(10, 20), 1.0);
-
-  // Push a platform view.
-  embedder->PrerollCompositeEmbeddedView(
-      0, std::make_unique<EmbeddedViewParams>());
-
-  auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
-  ASSERT_EQ(PostPrerollResult::kSkipAndRetryFrame, postpreroll_result);
-
-  EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
-  embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);
-
-  ASSERT_TRUE(raster_thread_merger->IsMerged());
-
-  int pending_frames = 0;
-  while (raster_thread_merger->IsMerged()) {
-    raster_thread_merger->DecrementLease();
-    pending_frames++;
-  }
-  ASSERT_EQ(10, pending_frames);  // kDefaultMergedLeaseDuration
-}
-
-TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
-  auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
-  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
-      android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
-
-  fml::Thread rasterizer_thread("rasterizer");
-  auto raster_thread_merger =
-      GetThreadMergerFromPlatformThread(&rasterizer_thread);
-  ASSERT_FALSE(raster_thread_merger->IsMerged());
-
-  PostPrerollResult result = embedder->PostPrerollAction(raster_thread_merger);
-  ASSERT_EQ(PostPrerollResult::kSuccess, result);
-
-  EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
-  embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);
-
-  ASSERT_FALSE(raster_thread_merger->IsMerged());
-}
-
 TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
   auto jni_mock = std::make_shared<JNIMock>();
 

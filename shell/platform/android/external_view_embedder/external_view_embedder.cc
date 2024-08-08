@@ -116,17 +116,20 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
       surface_pool_->CheckLayerProperties(context, frame_size_);
   if (destroy_all_layers || surface_pool_->size() < overlay_layers.size()) {
     auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    task_runners_.GetPlatformTaskRunner()->PostTask([&]() {
-      if (destroy_all_layers) {
-        surface_pool_->DestroyLayers(jni_facade_);
-      }
-      for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
-        surface_pool_->CreateLayer(context, android_context_, jni_facade_,
-                                   surface_factory_);
-      }
-      latch->CountDown();
-    });
-    latch->Wait();
+    fml::TaskRunner::RunNowOrPostTask(
+        task_runners_.GetPlatformTaskRunner(), [&]() {
+          if (destroy_all_layers) {
+            surface_pool_->DestroyLayers(jni_facade_);
+          }
+          for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
+            surface_pool_->CreateLayer(context, android_context_, jni_facade_,
+                                       surface_factory_);
+          }
+          latch->CountDown();
+        });
+    if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+      latch->Wait();
+    }
   }
 
   std::unordered_map<int64_t, std::shared_ptr<OverlayLayer>> layers;
@@ -156,7 +159,8 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   }
 
   surface_pool_->RecycleLayers();
-  task_runners_.GetPlatformTaskRunner()->PostTask(
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
       [&, composition_order = composition_order_, view_params = view_params_,
        overlay_layers = std::move(overlay_layers),
        layers = std::move(layers)]() {
@@ -279,7 +283,9 @@ void AndroidExternalViewEmbedder::DestroySurfaces() {
                                       surface_pool_->DestroyLayers(jni_facade_);
                                       latch.Signal();
                                     });
-  latch.Wait();
+  if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+    latch.Wait();
+  }
 }
 
 }  // namespace flutter
