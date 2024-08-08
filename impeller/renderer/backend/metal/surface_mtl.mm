@@ -259,11 +259,13 @@ bool SurfaceMTL::PreparePresent() {
 #ifdef IMPELLER_DEBUG
   ContextMTL::Cast(context.get())->GetGPUTracer()->MarkFrameEnd();
 #endif  // IMPELLER_DEBUG
+  prepared_ = true;
   return true;
 }
 
 // |Surface|
 bool SurfaceMTL::Present() const {
+  FML_CHECK(prepared_);
   auto context = context_.lock();
   if (!context) {
     return false;
