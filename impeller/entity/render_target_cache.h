@@ -25,6 +25,7 @@ class RenderTargetCache : public RenderTargetAllocator {
   // |RenderTargetAllocator|
   void End() override;
 
+  // |RenderTargetAllocator|
   RenderTarget CreateOffscreen(
       const Context& context,
       ISize size,
@@ -38,6 +39,7 @@ class RenderTargetCache : public RenderTargetAllocator {
       const std::shared_ptr<Texture>& existing_depth_stencil_texture =
           nullptr) override;
 
+  // |RenderTargetAllocator|
   RenderTarget CreateOffscreenMSAA(
       const Context& context,
       ISize size,
@@ -52,12 +54,16 @@ class RenderTargetCache : public RenderTargetAllocator {
       const std::shared_ptr<Texture>& existing_depth_stencil_texture =
           nullptr) override;
 
+  // |RenderTargetAllocator|
+  void Reclaim(const RenderTarget& render_target) override;
+
   // visible for testing.
   size_t CachedTextureCount() const;
 
  private:
   struct RenderTargetData {
     bool used_this_frame;
+    bool safe_for_use;
     RenderTargetConfig config;
     RenderTarget render_target;
   };

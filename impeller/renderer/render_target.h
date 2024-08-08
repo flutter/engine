@@ -131,7 +131,18 @@ class RenderTarget final {
         .has_depth_stencil = depth_.has_value() && stencil_.has_value()};
   }
 
+  /// @brief Update the key used by this render target.
+  ///
+  /// See also: [RenderTargetAllocator::Reclaim].
+  void SetFrameKey(std::optional<size_t> value);
+
+  /// @brief Retrieve the key used by this render target.
+  ///
+  /// See also: [RenderTargetAllocator::Reclaim].
+  std::optional<size_t> GetFrameKey() const;
+
  private:
+  std::optional<size_t> frame_key_ = std::nullopt;
   std::map<size_t, ColorAttachment> colors_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
@@ -144,6 +155,12 @@ class RenderTargetAllocator {
   explicit RenderTargetAllocator(std::shared_ptr<Allocator> allocator);
 
   virtual ~RenderTargetAllocator() = default;
+
+  /// @brief Mark this render target as safe for re-use within the current
+  /// frame.
+  ///
+  /// The value of the render target key is used as a lookup.
+  virtual void Reclaim(const RenderTarget& render_target);
 
   virtual RenderTarget CreateOffscreen(
       const Context& context,

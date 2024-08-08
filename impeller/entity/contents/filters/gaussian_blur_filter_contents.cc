@@ -818,9 +818,16 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode());
 
-  return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
-                        input_snapshot.value(), std::move(blur_output_entity),
-                        mask_geometry_, blur_info.source_space_scalar);
+  auto result =
+      ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
+                     input_snapshot.value(), std::move(blur_output_entity),
+                     mask_geometry_, blur_info.source_space_scalar);
+
+  renderer.GetRenderTargetCache()->Reclaim(pass1_out.value());
+  renderer.GetRenderTargetCache()->Reclaim(pass2_out.value());
+  renderer.GetRenderTargetCache()->Reclaim(pass3_out.value());
+
+  return result;
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
