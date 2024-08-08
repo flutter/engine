@@ -36,9 +36,7 @@ ImageType? detectImageType(Uint8List data) {
 
     // If we detect a WebP image, check if it is animated.
     if (format.imageType == ImageType.webp) {
-      final _WebpHeaderReader webpHeaderReader =
-          _WebpHeaderReader(data.buffer.asByteData());
-      if (webpHeaderReader.isAnimated()) {
+      if (_WebpHeaderReader(data.buffer.asByteData()).isAnimated()) {
         return ImageType.animatedWebp;
       }
     }

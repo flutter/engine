@@ -70,7 +70,7 @@ Future<void> testMain() async {
         'avif' => ImageType.avif,
         'bmp' => ImageType.bmp,
         'png' => ImageType.png,
-        String() => null,
+        _ => null,
       };
 
       expect(detectImageType(responseBytes), expectedImageType);
