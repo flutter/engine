@@ -58,29 +58,20 @@ Future<void> testMain() async {
         'stoplight.webp',
       ];
 
-      ImageType? expectedImageType;
       final String testFileExtension =
           testFile.substring(testFile.lastIndexOf('.') + 1);
-      switch (testFileExtension) {
-        case 'jpg':
-          expectedImageType = ImageType.jpeg;
-        case 'jpeg':
-          expectedImageType = ImageType.jpeg;
-        case 'gif':
-          expectedImageType = ImageType.animatedGif;
-        case 'webp':
-          if (animatedWebpFiles.contains(testFile)) {
-            expectedImageType = ImageType.animatedWebp;
-          } else {
-            expectedImageType = ImageType.webp;
-          }
-        case 'avif':
-          expectedImageType = ImageType.avif;
-        case 'bmp':
-          expectedImageType = ImageType.bmp;
-        case 'png':
-          expectedImageType = ImageType.png;
-      }
+      final ImageType? expectedImageType = switch (testFileExtension) {
+        'jpg' => ImageType.jpeg,
+        'jpeg' => ImageType.jpeg,
+        'gif' => ImageType.animatedGif,
+        'webp' => animatedWebpFiles.contains(testFile)
+            ? ImageType.animatedWebp
+            : ImageType.webp,
+        'avif' => ImageType.avif,
+        'bmp' => ImageType.bmp,
+        'png' => ImageType.png,
+        String() => null,
+      };
 
       expect(detectImageType(responseBytes), expectedImageType);
     });

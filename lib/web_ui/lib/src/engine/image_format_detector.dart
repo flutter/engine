@@ -36,8 +36,8 @@ ImageType? detectImageType(Uint8List data) {
 
     // If we detect a WebP image, check if it is animated.
     if (format.imageType == ImageType.webp) {
-      final WebpHeaderReader webpHeaderReader =
-          WebpHeaderReader(data.buffer.asByteData());
+      final _WebpHeaderReader webpHeaderReader =
+          _WebpHeaderReader(data.buffer.asByteData());
       if (webpHeaderReader.isAnimated()) {
         return ImageType.animatedWebp;
       }
@@ -187,8 +187,8 @@ bool isAvif(Uint8List data) {
 /// Reads the header of a WebP file to determine if it is animated or not.
 ///
 /// See https://developers.google.com/speed/webp/docs/riff_container
-class WebpHeaderReader {
-  WebpHeaderReader(this.bytes);
+class _WebpHeaderReader {
+  _WebpHeaderReader(this.bytes);
 
   final ByteData bytes;
 
