@@ -1185,22 +1185,31 @@ final class Paint {
   @pragma('vm:entry-point')
   final ByteData _data = ByteData(_kDataByteCount);
 
+  // Must match //lib/ui/painting/paint.cc.
   static const int _kIsAntiAliasIndex = 0;
-  static const int _kColorIndex = 1;
-  static const int _kBlendModeIndex = 2;
-  static const int _kStyleIndex = 3;
-  static const int _kStrokeWidthIndex = 4;
-  static const int _kStrokeCapIndex = 5;
-  static const int _kStrokeJoinIndex = 6;
-  static const int _kStrokeMiterLimitIndex = 7;
-  static const int _kFilterQualityIndex = 8;
-  static const int _kMaskFilterIndex = 9;
-  static const int _kMaskFilterBlurStyleIndex = 10;
-  static const int _kMaskFilterSigmaIndex = 11;
-  static const int _kInvertColorIndex = 12;
+  static const int _kColorRedIndex = 1;
+  static const int _kColorGreenIndex = 2;
+  static const int _kColorBlueIndex = 3;
+  static const int _kColorAlphaIndex = 4;
+  static const int _kColorSpaceIndex = 5;
+  static const int _kBlendModeIndex = 6;
+  static const int _kStyleIndex = 7;
+  static const int _kStrokeWidthIndex = 8;
+  static const int _kStrokeCapIndex = 9;
+  static const int _kStrokeJoinIndex = 10;
+  static const int _kStrokeMiterLimitIndex = 11;
+  static const int _kFilterQualityIndex = 12;
+  static const int _kMaskFilterIndex = 13;
+  static const int _kMaskFilterBlurStyleIndex = 14;
+  static const int _kMaskFilterSigmaIndex = 15;
+  static const int _kInvertColorIndex = 16;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorOffset = _kColorIndex << 2;
+  static const int _kColorRedOffset = _kColorRedIndex << 2;
+  static const int _kColorGreenOffset = _kColorGreenIndex << 2;
+  static const int _kColorBlueOffset = _kColorBlueIndex << 2;
+  static const int _kColorAlphaOffset = _kColorAlphaIndex << 2;
+  static const int _kColorSpaceOffset = _kColorSpaceIndex << 2;
   static const int _kBlendModeOffset = _kBlendModeIndex << 2;
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
@@ -1214,7 +1223,7 @@ final class Paint {
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
 
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 52; // 4 * (last index + 1).
+  static const int _kDataByteCount = 68; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1260,12 +1269,28 @@ final class Paint {
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
   Color get color {
-    final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    final double red = _data.getFloat32(_kColorRedOffset, _kFakeHostEndian);
+    final double green = _data.getFloat32(_kColorGreenOffset, _kFakeHostEndian);
+    final double blue = _data.getFloat32(_kColorBlueOffset, _kFakeHostEndian);
+    final double alpha =
+        1.0 - _data.getFloat32(_kColorAlphaOffset, _kFakeHostEndian);
+    final ColorSpace colorSpace = _indexToColorSpace(
+        _data.getInt32(_kColorSpaceOffset, _kFakeHostEndian));
+    return Color.from(
+        alpha: alpha,
+        red: red,
+        green: green,
+        blue: blue,
+        colorSpace: colorSpace);
   }
+
   set color(Color value) {
-    final int encoded = value.value ^ _kColorDefault;
-    _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+    _data.setFloat32(_kColorRedOffset, value.r, _kFakeHostEndian);
+    _data.setFloat32(_kColorGreenOffset, value.g, _kFakeHostEndian);
+    _data.setFloat32(_kColorBlueOffset, value.b, _kFakeHostEndian);
+    _data.setFloat32(_kColorAlphaOffset, 1.0 - value.a, _kFakeHostEndian);
+    _data.setInt32(_kColorSpaceOffset, _colorSpaceToIndex(value.colorSpace),
+        _kFakeHostEndian);
   }
 
   // Must be kept in sync with the default in paint.cc.
@@ -1640,6 +1665,30 @@ enum ColorSpace {
   /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
   displayP3,
+}
+
+int _colorSpaceToIndex(ColorSpace colorSpace) {
+  switch (colorSpace) {
+    case ColorSpace.sRGB:
+      return 0;
+    case ColorSpace.extendedSRGB:
+      return 1;
+    case ColorSpace.displayP3:
+      return 2;
+  }
+}
+
+ColorSpace _indexToColorSpace(int index) {
+  switch(index) {
+    case 0:
+      return ColorSpace.sRGB;
+    case 1:
+      return ColorSpace.extendedSRGB;
+    case 2:
+      return ColorSpace.displayP3;
+    default:
+      throw ArgumentError('Unknown color space: $index');
+  }
 }
 
 /// The format in which image bytes should be returned when using
