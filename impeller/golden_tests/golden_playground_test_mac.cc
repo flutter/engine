@@ -24,8 +24,6 @@
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
 
-#define EXPERIMENTAL_CANVAS false
-
 namespace impeller {
 
 namespace {
