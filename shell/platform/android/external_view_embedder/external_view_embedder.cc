@@ -13,7 +13,6 @@
 #include "flutter/common/constants.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
-#include "fml/make_copyable.h"
 #include "fml/synchronization/count_down_latch.h"
 #include "shell/platform/android/external_view_embedder/surface_pool.h"
 
@@ -215,6 +214,10 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
+  if (!FrameHasPlatformLayers()) {
+    return PostPrerollResult::kSuccess;
+  }
+
   if (previous_frame_view_count_ == 0) {
     return PostPrerollResult::kResubmitFrame;
   }
