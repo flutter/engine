@@ -52,15 +52,14 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
   if (gr_context) {
     return std::make_unique<GPUSurfaceGLSkia>(sk_ref_sp(gr_context), this,
                                               true);
-  } else {
-    sk_sp<GrDirectContext> main_skia_context =
-        android_context_->GetMainSkiaContext();
-    if (!main_skia_context) {
-      main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
-      android_context_->SetMainSkiaContext(main_skia_context);
-    }
-    return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
   }
+  sk_sp<GrDirectContext> main_skia_context =
+      android_context_->GetMainSkiaContext();
+  if (!main_skia_context) {
+    main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+    android_context_->SetMainSkiaContext(main_skia_context);
+  }
+  return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
 }
 
 bool AndroidSurfaceGLSkia::OnScreenSurfaceResize(const SkISize& size) {

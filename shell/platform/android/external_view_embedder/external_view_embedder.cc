@@ -110,24 +110,17 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     frame->Submit();
   }
 
-  // Overlay layers must be created or destroyed on the platfor thread.
   bool destroy_all_layers =
       surface_pool_->CheckLayerProperties(context, frame_size_);
   if (destroy_all_layers || surface_pool_->size() < overlay_layers.size()) {
-    auto latch = std::make_shared<fml::CountDownLatch>(1u);
-    fml::TaskRunner::RunNowOrPostTask(
-        task_runners_.GetPlatformTaskRunner(), [&]() {
-          if (destroy_all_layers) {
-            surface_pool_->DestroyLayers(jni_facade_);
-          }
-          for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
-            surface_pool_->CreateLayer(context, android_context_, jni_facade_,
-                                       surface_factory_);
-          }
-          latch->CountDown();
-        });
-    if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
-      latch->Wait();
+    if (destroy_all_layers) {
+      surface_pool_->DestroyLayers(jni_facade_);
+    }
+    for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
+      surface_pool_->CreateLayer(context,            //
+                                 android_context_,   //
+                                 jni_facade_,        //
+                                 surface_factory_);  //
     }
   }
 
@@ -280,15 +273,7 @@ void AndroidExternalViewEmbedder::DestroySurfaces() {
   if (surface_pool_->size() == 0) {
     return;
   }
-  fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetPlatformTaskRunner(),
-                                    [&]() {
-                                      surface_pool_->DestroyLayers(jni_facade_);
-                                      latch.Signal();
-                                    });
-  if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
-    latch.Wait();
-  }
+  surface_pool_->DestroyLayers(jni_facade_);
 }
 
 }  // namespace flutter

@@ -1241,9 +1241,8 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
-    ensureRunningOnMainThread();
+    ensureNotRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
@@ -1252,9 +1251,8 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void destroyOverlaySurfaces() {
-    ensureRunningOnMainThread();
+    ensureNotRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to destroy an overlay surface");
@@ -1487,6 +1485,14 @@ public class FlutterJNI {
     if (Looper.myLooper() != mainLooper) {
       throw new RuntimeException(
           "Methods marked with @UiThread must be executed on the main thread. Current thread: "
+              + Thread.currentThread().getName());
+    }
+  }
+
+  private void ensureNotRunningOnMainThread() {
+    if (Looper.myLooper() == mainLooper) {
+      throw new RuntimeException(
+          "Method must not be called from UI thread. Current thread: "
               + Thread.currentThread().getName());
     }
   }
