@@ -486,19 +486,20 @@ class JavaFormatChecker extends FormatChecker {
     // Use java from the checkout to avoid contributors needing to install java.
     // We could find Java with a fallback list like `flutter_tools` does, but
     // this is simple and works.
-    javaExe = File(
-      path.join(
-        srcDir.absolute.path,
-        'flutter',
-        'third_party',
-        'java',
-        'openjdk',
-        'Contents',
-        'Home',
-        'bin',
-        Platform.isWindows ? 'java.exe' : 'java',
-      ),
-    );
+    final javaPath = [
+      srcDir.absolute.path,
+      'flutter',
+      'third_party',
+      'java',
+      'openjdk',
+    ];
+    if (Platform.isMacOS) {
+      javaPath.add('Contents');
+      javaPath.add('Home');
+    }
+    javaPath.add('bin');
+    javaPath.add(Platform.isWindows ? 'java.exe' : 'java');
+    javaExe = File(path.joinAll(javaPath));
   }
 
   late final File javaExe;
