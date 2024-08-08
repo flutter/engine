@@ -461,7 +461,7 @@ class ClangFormatChecker extends FormatChecker {
   }
 }
 
-/// Checks the format of Java files uing the Google Java format checker.
+/// Checks the format of Java files using the Google Java format checker.
 class JavaFormatChecker extends FormatChecker {
   JavaFormatChecker({
     super.processManager,
@@ -483,8 +483,25 @@ class JavaFormatChecker extends FormatChecker {
         ),
       ),
     );
+    // Use java from the checkout to avoid contributors needing to install java.
+    // We could find Java with a fallback list like `flutter_tools` does, but
+    // this is simple and works.
+    javaExe = File(
+      path.join(
+        srcDir.absolute.path,
+        'flutter',
+        'third_party',
+        'java',
+        'openjdk',
+        'Contents',
+        'Home',
+        'bin',
+        Platform.isWindows ? 'java.exe' : 'java',
+      ),
+    );
   }
 
+  late final File javaExe;
   late final File googleJavaFormatJar;
 
   // String to return if java formatting cant check java code for any reson.
@@ -492,7 +509,7 @@ class JavaFormatChecker extends FormatChecker {
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
-        .runProcess(<String>['java', '-jar', googleJavaFormatJar.path, '--version']);
+        .runProcess(<String>[javaExe.path, '-jar', googleJavaFormatJar.path, '--version']);
     return result.stderr.trim();
   }
 
@@ -521,7 +538,7 @@ class JavaFormatChecker extends FormatChecker {
 
   Future<String> _getJavaVersion() async {
     final ProcessRunnerResult result =
-        await _processRunner.runProcess(<String>['java', '-version']);
+        await _processRunner.runProcess(<String>[javaExe.path, '-version']);
     return result.stderr.trim().split('\n')[0];
   }
 
@@ -556,7 +573,7 @@ class JavaFormatChecker extends FormatChecker {
       }
       formatJobs.add(
         WorkerJob(
-          <String>['java', '-jar', googleJavaFormatJar.path, file.trim()],
+          <String>[javaExe.path, '-jar', googleJavaFormatJar.path, file.trim()],
         ),
       );
     }
