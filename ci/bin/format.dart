@@ -625,7 +625,7 @@ class JavaFormatChecker extends FormatChecker {
     if (failed.isNotEmpty) {
       final bool plural = failed.length > 1;
       if (fixing) {
-        error('Fixing ${failed.length} Java file${plural ? 's' : ''}'
+        message('Fixing ${failed.length} Java file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
       } else {
         error('Found ${failed.length} Java file${plural ? 's' : ''}'
