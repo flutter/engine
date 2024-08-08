@@ -22,20 +22,16 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   if (radius_ < 0.0) {
     return {};
   }
-  Matrix transform = entity.GetTransform();
-  Scalar determinant = transform.GetDeterminant();
-  if (determinant == 0) {
-    return {};
-  }
+  const Matrix& transform = entity.GetTransform();
 
-  Scalar min_size = 0.5f / sqrt(std::abs(determinant));
+  Scalar min_size = 0.5f / transform.GetMaxBasisLengthXY();
   Scalar radius = std::max(radius_, min_size);
 
   HostBuffer& host_buffer = renderer.GetTransientsBuffer();
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
   if (round_) {
     // Get triangulation relative to {0, 0} so we can translate it to each
-    // point in turn. Note: we intentionally used the original radius here
+    // point in turn. The original radius is also specified in order to
     // to capture any scaling < 1.0.
     auto generator =
         renderer.GetTessellator()->FilledCircle(transform, {}, radius_, radius);
