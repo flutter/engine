@@ -164,7 +164,7 @@ std::optional<std::u16string> TextInputManager::GetString(int type) const {
 }
 
 void TextInputManager::MoveImeWindow(HIMC imm_context) {
-  if (GetFocus() != window_handle_ || !ime_active_) {
+  if (GetFocus() != window_handle_) {
     return;
   }
   LONG left = caret_rect_.left();
