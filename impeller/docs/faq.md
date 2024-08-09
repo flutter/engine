@@ -101,7 +101,7 @@
 * How do you run `impeller_unittests` with Playgrounds enabled?
   * Specify the `--enable_playground` command-line option.
 * Describe Impeller in a Tweet.
-  * "Impeller is AOT mode for rendering."
+  * "Impeller is ahead-of-time (AOT) mode for rendering."
 * Why did the Flutter team build Impeller?
   * The short answer, for consistent performance, which could not be achieved
     with Skia after years of effort by graphics experts. The longer answer...
@@ -154,7 +154,13 @@
     multiple times (on all platforms) to ensure success. Moreover, applications
     that were really effective at training began to run into egregiously high
     first-frame times ([some as high as 6
-    seconds](http://github.com/flutter/flutter/issues/97884)).
+    seconds](http://github.com/flutter/flutter/issues/97884)). Shaders captured
+    from training runs weren't fully guaranteed to be consistent across devices
+    on the same platform either and [bugs were
+    common](https://github.com/flutter/flutter/issues/102655#issuecomment-1115179271).
+    All the while the team was [desperately trying to
+    reduce](https://github.com/flutter/flutter/issues/84213) the number of
+    shader variants that might be required.
   * Due to these reasons, developers abandoned this self-serve warmup mechanism.
     For instance, no application in Google used this due to the all the problems
     mentioned.
@@ -192,7 +198,7 @@
     their feedback. We also keep collaborating on an ongoing basis. Ideas such
     as stencil-then-cover that Impeller now uses originated from Skia. Flutter
     also continues to use Skia for text layout and its image codecs and has no
-    plans to migrate away from using those sub-components. We'd wholeheartedly
+    plans to migrate away from using those sub-components. We wholeheartedly
     recommend Skia for most rendering needs.
   * All of Impellers shaders are [manually authored and
     compiled](https://github.com/flutter/engine/tree/0a8de3dd3285c0b64de47630a8218ae38b8e04e1/impeller#the-offline-shader-compilation-pipeline)
