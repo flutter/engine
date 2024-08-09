@@ -85,6 +85,12 @@ class PlatformViewAndroidJNI {
   virtual void FlutterViewOnPreEngineRestart() = 0;
 
   //----------------------------------------------------------------------------
+  /// @brief      Whether the platform view controller is actively connected to
+  ///             a FlutterView instance.
+  ///
+  virtual bool IsAttachedToView() = 0;
+
+  //----------------------------------------------------------------------------
   /// @brief      Attach the SurfaceTexture to the OpenGL ES context that is
   ///             current on the calling thread.
   ///

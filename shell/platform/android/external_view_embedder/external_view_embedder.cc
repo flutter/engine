@@ -14,6 +14,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/synchronization/count_down_latch.h"
+#include "fml/task_runner.h"
 #include "shell/platform/android/external_view_embedder/surface_pool.h"
 
 namespace flutter {
@@ -110,17 +111,27 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
     frame->Submit();
   }
 
+  // Layers must be created and destroyed on the platform thread. If there are
+  // not sufficient overlays, or if the overlay properties changed then a task
+  // must be posted to the platform thread to construct them.
   bool destroy_all_layers =
       surface_pool_->CheckLayerProperties(context, frame_size_);
   if (destroy_all_layers || surface_pool_->size() < overlay_layers.size()) {
-    if (destroy_all_layers) {
-      surface_pool_->DestroyLayers(jni_facade_);
-    }
-    for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
-      surface_pool_->CreateLayer(context,            //
-                                 android_context_,   //
-                                 jni_facade_,        //
-                                 surface_factory_);  //
+    auto latch = std::make_shared<fml::CountDownLatch>(1u);
+    fml::TaskRunner::RunNowOrPostTask(
+        task_runners_.GetPlatformTaskRunner(), [&]() {
+          if (destroy_all_layers) {
+            surface_pool_->DestroyLayers(jni_facade_);
+          }
+          for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
+            surface_pool_->CreateLayer(context,            //
+                                       android_context_,   //
+                                       jni_facade_,        //
+                                       surface_factory_);  //
+          }
+        });
+    if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+      latch->Wait();
     }
   }
 
@@ -156,6 +167,10 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
       [&, composition_order = composition_order_, view_params = view_params_,
        overlay_layers = std::move(overlay_layers),
        layers = std::move(layers)]() {
+        if (!jni_facade_->IsAttachedToView()) {
+          return;
+        }
+
         TRACE_EVENT0("flutter",
                      "AndroidExternalViewEmbedder::RenderNativeViews");
         jni_facade_->FlutterViewBeginFrame();

@@ -1241,7 +1241,9 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
+  @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
+    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
@@ -1250,7 +1252,9 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
+  @UiThread
   public void destroyOverlaySurfaces() {
+    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to destroy an overlay surface");
@@ -1452,6 +1456,15 @@ public class FlutterJNI {
     }
     platformViewsController.onDisplayPlatformView(
         viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
+  }
+
+  @UiThread
+  public boolean isAttachedToView() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      return false;
+    }
+    return platformViewsController.isAttachedToView();
   }
 
   @UiThread

@@ -801,10 +801,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewsChannel != null) {
       platformViewsChannel.setPlatformViewsHandler(null);
     }
-    destroyOverlaySurfaces();
+    // destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
+  }
+
+  /** Whether the platform view controller is attached to an engine. */
+  public boolean isAttachedToView() {
+    return flutterView != null;
   }
 
   /**
@@ -851,7 +856,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       flutterView.removeView(view);
     }
 
-    destroyOverlaySurfaces();
+    // destroyOverlaySurfaces();
     removeOverlaySurfaces();
     flutterView = null;
     flutterViewConvertedToImageView = false;

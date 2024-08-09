@@ -81,6 +81,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void FlutterViewEndFrame() override;
 
+  bool IsAttachedToView() override;
+
   std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
   FlutterViewCreateOverlaySurface() override;
 

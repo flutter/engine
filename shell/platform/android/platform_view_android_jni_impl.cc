@@ -134,6 +134,8 @@ static jmethodID g_on_display_platform_view_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
+static jmethodID g_is_flutter_view_attached_method = nullptr;
+
 static jmethodID g_overlay_surface_id_method = nullptr;
 
 static jmethodID g_overlay_surface_surface_method = nullptr;
@@ -1107,6 +1109,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_is_flutter_view_attached_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "isAttachedToView", "()Z");
+  if (g_is_flutter_view_attached_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate isAttachedToView method";
+    return false;
+  }
+
   g_on_end_frame_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onEndFrame", "()V");
 
@@ -1614,6 +1623,20 @@ void PlatformViewAndroidJNIImpl::HardwareBufferClose(
   }
   env->CallVoidMethod(hardware_buffer.obj(), g_hardware_buffer_close_method);
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+bool PlatformViewAndroidJNIImpl::IsAttachedToView() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return false;
+  }
+
+  jboolean result = env->CallBooleanMethod(java_object.obj(),
+                                           g_is_flutter_view_attached_method);
+  FML_CHECK(fml::jni::CheckException(env));
+  return result;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
