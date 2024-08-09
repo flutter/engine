@@ -484,9 +484,14 @@ class JavaFormatChecker extends FormatChecker {
       ),
     );
     // Use java from the checkout to avoid contributors needing to install java.
-    // We could find Java with a fallback list like `flutter_tools` does, but
-    // this is simple and works.
-    final javaPath = [
+    final File hermetic = hermeticJava(srcDir);
+    // If for some reason the hermetic java doesn't exist, fall back to the system java.
+    javaExe = hermetic.existsSync() ? hermetic.path : 'java';
+  }
+
+  /// Returns the path to the java executable in the flutter repository.
+  static File hermeticJava(Directory srcDir) {
+    final List<String> javaPath = <String>[
       srcDir.absolute.path,
       'flutter',
       'third_party',
@@ -499,10 +504,10 @@ class JavaFormatChecker extends FormatChecker {
     }
     javaPath.add('bin');
     javaPath.add(Platform.isWindows ? 'java.exe' : 'java');
-    javaExe = File(path.joinAll(javaPath));
+    return File(path.joinAll(javaPath));
   }
 
-  late final File javaExe;
+  late final String javaExe;
   late final File googleJavaFormatJar;
 
   // String to return if java formatting cant check java code for any reson.
@@ -510,7 +515,7 @@ class JavaFormatChecker extends FormatChecker {
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
-        .runProcess(<String>[javaExe.path, '-jar', googleJavaFormatJar.path, '--version']);
+        .runProcess(<String>[javaExe, '-jar', googleJavaFormatJar.path, '--version']);
     return result.stderr.trim();
   }
 
@@ -539,7 +544,7 @@ class JavaFormatChecker extends FormatChecker {
 
   Future<String> _getJavaVersion() async {
     final ProcessRunnerResult result =
-        await _processRunner.runProcess(<String>[javaExe.path, '-version']);
+        await _processRunner.runProcess(<String>[javaExe, '-version']);
     return result.stderr.trim().split('\n')[0];
   }
 
@@ -556,12 +561,12 @@ class JavaFormatChecker extends FormatChecker {
     try {
       javaVersion = await _getJavaVersion();
     } on ProcessRunnerException {
-      if (!javaExe.existsSync()) {
-        error('Cannot find Java (${javaExe.path}). '
-        'Did you run `gclient sync`? Skipping Java format check.');
+      if (!_processRunner.processManager.canRun(javaExe)) {
+        error('Cannot find Java ($javaExe). '
+        'Skipping Java format check.');
         return const <String>[_javaFormatErrorString];
       }
-      error('Cannot run Java (${javaExe.path}), skipping Java file formatting!');
+      error('Cannot run Java ($javaExe), skipping Java file formatting!');
       return const <String>[_javaFormatErrorString];
     }
     try {
@@ -579,7 +584,7 @@ class JavaFormatChecker extends FormatChecker {
       }
       formatJobs.add(
         WorkerJob(
-          <String>[javaExe.path, '-jar', googleJavaFormatJar.path, file.trim()],
+          <String>[javaExe, '-jar', googleJavaFormatJar.path, file.trim()],
         ),
       );
     }
