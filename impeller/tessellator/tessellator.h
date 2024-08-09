@@ -222,8 +222,12 @@ class Tessellator {
   ///          number of sample points to use per quarter circle and the
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the center point.
+  ///
+  ///          The `raw_radius` should be untransformed and unclamped, while
+  ///          `radius` may be rounded up to a minimal pixel size.
   EllipticalVertexGenerator FilledCircle(const Matrix& view_transform,
                                          const Point& center,
+                                         Scalar raw_radius,
                                          Scalar radius);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
