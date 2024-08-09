@@ -122,38 +122,9 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
 
 /**
- * Attach a view controller to the engine as its default controller.
- *
- * Since FlutterEngine can only handle the implicit view for now, the given
- * controller will always be assigned to the implicit view, if there isn't an
- * implicit view yet. If the engine already has an implicit view, this call
- * throws an assertion.
- *
- * The engine holds a weak reference to the attached view controller.
- *
- * If the given view controller is already attached to an engine, this call
- * throws an assertion.
- */
-- (void)addViewController:(FlutterViewController*)viewController;
-
-/**
  * Notify the engine that a view for the given view controller has been loaded.
  */
 - (void)viewControllerViewDidLoad:(FlutterViewController*)viewController;
-
-/**
- * Dissociate the given view controller from this engine.
- *
- * If the view controller is not associated with this engine, this call throws an
- * assertion.
- */
-- (void)removeViewController:(FlutterViewController*)viewController;
-
-/**
- * The |FlutterViewController| associated with the given view ID, if any.
- */
-- (nullable FlutterViewController*)viewControllerForIdentifier:
-    (FlutterViewIdentifier)viewIdentifier;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.

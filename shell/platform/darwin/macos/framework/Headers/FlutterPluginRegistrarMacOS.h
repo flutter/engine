@@ -18,6 +18,14 @@
 // sharing all but the platform-specific methods.
 
 /**
+ * A unique identifier for a view within which Flutter content is hosted.
+ *
+ * Identifiers are guaranteed to be unique for views owned by a given engine but
+ * can collide for views owned by different engines.
+ */
+typedef int64_t FlutterViewIdentifier;
+
+/**
  * The protocol for an object managing registration for a plugin. It provides access to application
  * context, as allowing registering for callbacks for handling various conditions.
  *
