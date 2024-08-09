@@ -114,9 +114,9 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColor",
        {
-           {0, 8, 0,
+           {0, 4 + sizeof(DlColor), 0,
             [](DlOpReceiver& r) { r.setColor(DlColor(SK_ColorGREEN)); }},
-           {0, 8, 0,
+           {0, 4 + sizeof(DlColor), 0,
             [](DlOpReceiver& r) { r.setColor(DlColor(SK_ColorBLUE)); }},
 
            // Reset attribute to default as last entry
