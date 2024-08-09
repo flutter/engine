@@ -1471,6 +1471,10 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
       List<Rect> boundingRects = delegate.getCaptionBarInsets(getContext());
       if (boundingRects != null && boundingRects.size() == 1) {
+        // The value getCaptionBarInset returns is only the bounding rects of the caption bar.
+        // When assigning the new value of viewPaddingTop, the maximum is taken with its old value
+        // to ensure that any previous top padding that is greater than that from the caption bar
+        // is not destroyed by this operation.
         viewportMetrics.viewPaddingTop =
             Math.max(boundingRects.get(0).bottom, viewportMetrics.viewPaddingTop);
       }
