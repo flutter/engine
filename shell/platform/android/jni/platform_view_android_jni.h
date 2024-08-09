@@ -153,8 +153,6 @@ class PlatformViewAndroidJNI {
       int viewHeight,
       MutatorsStack mutators_stack) = 0;
 
-  virtual bool IsRendererAttached() = 0;
-
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes an overlay surface in hybrid composition.
   ///
