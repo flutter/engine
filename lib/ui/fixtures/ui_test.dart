@@ -493,6 +493,88 @@ void convertPaintToDlPaint() {
 external void _convertPaintToDlPaint(Paint paint);
 
 @pragma('vm:entry-point')
+void colorTests() async {
+  Future<void> test(String name, FutureOr<void> Function() testFunction) async {
+    try {
+      await testFunction();
+    } catch (e) {
+      print('Test "$name" failed!');
+      rethrow;
+    }
+  }
+
+  void expectEquals(Object? value, Object? expected) {
+    if (value != expected) {
+      throw 'Expected $value to be $expected.';
+    }
+  }
+
+  void expectClose(double value, double expected, double delta) {
+    if ((value - expected).abs() > delta) {
+      throw 'Expected $value to be $expected.';
+    }
+  }
+
+  await test('from and accessors', () {
+    Color color = Color.from(alpha: 0.1, red: 0.2, green: 0.3, blue: 0.4);
+    expectEquals(color.a, 0.1);
+    expectEquals(color.r, 0.2);
+    expectEquals(color.g, 0.3);
+    expectEquals(color.b, 0.4);
+    expectEquals(color.colorSpace, ColorSpace.sRGB);
+
+    expectEquals(color.alpha, 26);
+    expectEquals(color.red, 51);
+    expectEquals(color.green, 77);
+    expectEquals(color.blue, 102);
+
+    expectEquals(color.value, 0x1a334d66);
+  });
+
+  await test('fromARGB and accessors', () {
+    Color color = Color.fromARGB(10, 20, 35, 47);
+    expectEquals(color.alpha, 10);
+    expectEquals(color.red, 20);
+    expectEquals(color.green, 35);
+    expectEquals(color.blue, 47);
+  });
+
+  await test('constructor and accessors', () {
+    Color color = Color(0xffeeddcc);
+    expectEquals(color.alpha, 0xff);
+    expectEquals(color.red, 0xee);
+    expectEquals(color.green, 0xdd);
+    expectEquals(color.blue, 0xcc);
+  });
+
+  await test('p3 to extended srgb', () {
+    Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    Color srgb = p3.change(colorSpace: ColorSpace.extendedSRGB);
+    expectEquals(srgb.a, 1.0);
+    expectClose(srgb.r, 1.0931, 0.001);
+    expectClose(srgb.g, -0.2268, 0.001);
+    expectClose(srgb.b, -0.1501, 0.001);
+  });
+
+  await test('extended srgb to p3', () {
+    Color p3 = Color.from(
+        alpha: 1,
+        red: 1.0931,
+        green: -0.2268,
+        blue: -0.1501,
+        colorSpace: ColorSpace.extendedSRGB);
+    Color srgb = p3.change(colorSpace: ColorSpace.displayP3);
+    expectEquals(srgb.a, 1.0);
+    expectClose(srgb.r, 1.0, 0.001);
+    expectClose(srgb.g, 0.0, 0.001);
+    expectClose(srgb.b, 0.0, 0.001);
+  });
+
+  _finish();
+}
+
+@pragma('vm:entry-point')
 void hooksTests() async {
   Future<void> test(String name, FutureOr<void> Function() testFunction) async {
     try {
