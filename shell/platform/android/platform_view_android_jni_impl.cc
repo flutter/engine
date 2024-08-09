@@ -132,8 +132,6 @@ static jmethodID g_request_dart_deferred_library_method = nullptr;
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
-// static jmethodID g_on_composite_platform_view_method = nullptr;
-
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
 static jmethodID g_overlay_surface_id_method = nullptr;

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/surface/android_surface.h"
-#include "flutter/fml/logging.h"
 
 namespace flutter {
 

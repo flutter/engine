@@ -1241,9 +1241,7 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
-    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
@@ -1252,9 +1250,7 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void destroyOverlaySurfaces() {
-    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to destroy an overlay surface");
@@ -1356,7 +1352,6 @@ public class FlutterJNI {
     if (deferredComponentManager != null) {
       deferredComponentManager.installDeferredComponent(loadingUnitId, null);
     } else {
-      // TODO(garyq): Add link to setup/instructions guide wiki.
       Log.e(
           TAG,
           "No DeferredComponentManager found. Android setup must be completed before using split AOT deferred components.");
@@ -1459,7 +1454,6 @@ public class FlutterJNI {
         viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
   }
 
-  // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
   public Bitmap getBitmap() {
     ensureRunningOnMainThread();
@@ -1467,7 +1461,6 @@ public class FlutterJNI {
     return nativeGetBitmap(nativeShellHolderId);
   }
 
-  // TODO(mattcarroll): determine if this is nonull or nullable
   private native Bitmap nativeGetBitmap(long nativeShellHolderId);
 
   /**

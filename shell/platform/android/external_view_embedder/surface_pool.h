@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_EXTERNAL_VIEW_EMBEDDER_SURFACE_POOL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_EXTERNAL_VIEW_EMBEDDER_SURFACE_POOL_H_
 
-#include <mutex>
-
 #include "flutter/flow/surface.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
@@ -34,13 +32,6 @@ struct OverlayLayer {
 
   // A GPU surface. This may change when the overlay is recycled.
   std::unique_ptr<Surface> surface;
-
-  // The `GrContext` that is currently used by the overlay surfaces.
-  // We track this to know when the GrContext for the Flutter app has changed
-  // so we can update the overlay with the new context.
-  //
-  // This may change when the overlay is recycled.
-  intptr_t gr_context_key;
 };
 
 class SurfacePool {
@@ -49,32 +40,37 @@ class SurfacePool {
 
   ~SurfacePool();
 
-  // Gets a layer from the pool if available, or allocates a new one.
-  // Finally, it marks the layer as used. That is, it increments
-  // `available_layer_index_`.
-  std::shared_ptr<OverlayLayer> GetLayer(
+  /// @brief Returns whether the cached layers are still valid.
+  ///
+  /// If the frame size or layer has changed, then all layers must be
+  /// destroyed and recreated.
+  bool CheckLayerProperties(GrDirectContext* gr_context, SkISize frame_size);
+
+  /// @brief Gets a layer from the pool if available.
+  ///
+  /// The layer is marked as used until [RecycleLayers] is called.
+  std::shared_ptr<OverlayLayer> GetNextLayer();
+
+  /// @brief Create a new overlay layer.
+  ///
+  /// This method can only be called on the Platform thread.
+  void CreateLayer(
       GrDirectContext* gr_context,
       const AndroidContext& android_context,
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
       const std::shared_ptr<AndroidSurfaceFactory>& surface_factory);
 
-  // Gets the layers in the pool that aren't currently used.
-  // This method doesn't mark the layers as unused.
+  /// @brief Removes unused layers from the pool. Returns the unused layers.
   std::vector<std::shared_ptr<OverlayLayer>> GetUnusedLayers();
 
-  // Marks the layers in the pool as available for reuse.
+  /// @brief Marks the layers in the pool as available for reuse.
   void RecycleLayers();
 
-  // Destroys all the layers in the pool.
+  /// @brief The count of layers currently in the pool.
+  size_t size() const;
+
+  /// @brief Destroys all the layers in the pool.
   void DestroyLayers(const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
-
-  // Sets the frame size used by the layers in the pool.
-  // If the current layers in the pool have a different frame size,
-  // then they are deallocated as soon as |GetLayer| is called.
-  void SetFrameSize(SkISize frame_size);
-
-  // Returns true if the current pool has layers in use.
-  bool HasLayers();
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning
@@ -97,14 +93,12 @@ class SurfacePool {
   // The frame size of the layers in the pool.
   SkISize current_frame_size_;
 
-  // The frame size to be used by future layers.
-  SkISize requested_frame_size_;
-
-  // Used to guard public methods.
-  std::mutex mutex_;
-
-  void DestroyLayersLocked(
-      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
+  // The `GrContext` that is currently used by the overlay surfaces.
+  // We track this to know when the GrContext for the Flutter app has changed
+  // so we can update the overlay with the new context.
+  //
+  // This may change when the overlay is recycled.
+  intptr_t gr_context_key_;
 };
 
 }  // namespace flutter

@@ -115,6 +115,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // The order of composition. Each entry contains a unique id for the platform
   // view.
   std::vector<int64_t> composition_order_;
+  bool had_platform_views_ = false;
 
   // The |EmbedderViewSlice| implementation keyed off the platform view id,
   // which contains any subsequent operations until the next platform view or
@@ -138,13 +139,6 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Whether the layer tree in the current frame has platform layers.
   bool FrameHasPlatformLayers();
-
-  // Creates a Surface when needed or recycles an existing one.
-  // Finally, draws the picture on the frame's canvas.
-  std::unique_ptr<SurfaceFrame> CreateSurfaceIfNeeded(GrDirectContext* context,
-                                                      int64_t view_id,
-                                                      EmbedderViewSlice* slice,
-                                                      const SkRect& rect);
 };
 
 }  // namespace flutter

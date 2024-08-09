@@ -599,7 +599,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       @NonNull PlatformView platformView,
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
     // This mode attaches the view to the Android view hierarchy and record its drawing
-    // operations, so they can be forwarded to a GL texture that is composed by the
+    // operations, so they can be forwarded to a GL texture that is composited by the
     // Flutter engine.
 
     // API level 23 is required to use Surface#lockHardwareCanvas().
@@ -987,16 +987,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       TextureRegistry textureRegistry) {
     if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.SurfaceProducer textureEntry = textureRegistry.createSurfaceProducer();
-      Log.i(TAG, "PlatformView is using SurfaceProducer backend");
+      Log.v(TAG, "PlatformView is using SurfaceProducer backend");
       return new SurfaceProducerPlatformViewRenderTarget(textureEntry);
     }
     if (enableImageRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
-      Log.i(TAG, "PlatformView is using ImageReader backend");
+      Log.v(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
     }
     final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
-    Log.i(TAG, "PlatformView is using SurfaceTexture backend");
+    Log.v(TAG, "PlatformView is using SurfaceTexture backend");
     return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
@@ -1271,9 +1271,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // If one of the surfaces doesn't have an image, the frame may be incomplete and must be
     // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
-    final boolean isFrameRenderedUsingImageReaders =
-        flutterViewConvertedToImageView && flutterView.acquireLatestImageViewFrame();
-    finishFrame(isFrameRenderedUsingImageReaders);
+    flutterView.acquireLatestImageViewFrame();
+
+    finishFrame(flutterViewConvertedToImageView);
   }
 
   private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
@@ -1283,8 +1283,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         flutterView.attachOverlaySurfaceToRender(overlayView);
-        final boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
-        isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
+        isFrameRenderedUsingImageReaders |= overlayView.acquireLatestImage();
       } else {
         // If the background surface isn't rendered by the image view, then the
         // overlay surfaces can be detached from the rendered.
