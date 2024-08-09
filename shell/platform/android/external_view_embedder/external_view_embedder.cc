@@ -158,6 +158,9 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
        layers = std::move(layers)]() {
         TRACE_EVENT0("flutter",
                      "AndroidExternalViewEmbedder::RenderNativeViews");
+        if (!jni_facade_->IsRendererAttached()) {
+          return;
+        }
         jni_facade_->FlutterViewBeginFrame();
 
         for (int64_t view_id : composition_order) {

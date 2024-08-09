@@ -154,6 +154,14 @@ class PlatformViewAndroidJNI {
       MutatorsStack mutators_stack) = 0;
 
   //----------------------------------------------------------------------------
+  /// @brief      Verifies that the flutter view is still attached to the
+  ///             engine.
+  ///
+  /// @note       Must be called from the platform thread.
+  ///
+  virtual bool IsRendererAttached() = 0;
+
+  //----------------------------------------------------------------------------
   /// @brief      Positions and sizes an overlay surface in hybrid composition.
   ///
   /// @note       Must be called from the platform thread.

@@ -1454,6 +1454,16 @@ public class FlutterJNI {
         viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
   }
 
+  @SuppressWarnings("unused")
+  @UiThread
+  public boolean isRendererAttached() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      return false;
+    }
+    return platformViewsController.isRendererAttached();
+  }
+
   @UiThread
   public Bitmap getBitmap() {
     ensureRunningOnMainThread();
