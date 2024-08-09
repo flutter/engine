@@ -130,6 +130,14 @@ DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
 }
 
 void DisplayListBuilder::Init(bool prepare_rtree) {
+  // Ensure that DisplayList's invalid offset would not be an aligned
+  // offset within a display list buffer.
+  static_assert(SkAlignPtr(DisplayList::kInvalidOffset) !=
+                DisplayList::kInvalidOffset);
+  // Ensure that aligned values are considered valid offsets within
+  // a display list buffer.
+  static_assert(
+      DisplayList::IsValidOffset(SkAlignPtr(DisplayList::kInvalidOffset)));
   FML_DCHECK(save_stack_.empty());
   FML_DCHECK(!rtree_data_.has_value());
 
