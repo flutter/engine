@@ -736,7 +736,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders heading role for headers', () {
+  test('renders banner role for headers', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -752,7 +752,7 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="heading">Header of the page</sem>
+<sem role="banner">Header of the page</sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -764,7 +764,7 @@ void _testHeader() {
   // heading to be announced as a heading, the developer can restructure the UI
   // such that the heading is not a parent node, but a side-note, e.g. preceding
   // the child list.
-  test('uses group role for headers when children are present', () {
+  test('uses banner role for headers when children are present', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -788,7 +788,7 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="group" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
+<sem role="banner" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
 ''');
 
     semantics().semanticsEnabled = false;

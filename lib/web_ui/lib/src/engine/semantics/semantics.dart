@@ -354,6 +354,12 @@ enum SemanticRoleKind {
   /// Able to scroll its contents vertically or horizontally.
   scrollable,
 
+  /// Adds the "banner" ARIA role to the node.
+  /// 
+  /// This corresponds to the html tag <header> indicating a specific type of
+  /// semantic section of the page.
+  banner,
+  
   /// Accepts tap or click gestures.
   button,
 
@@ -364,7 +370,8 @@ enum SemanticRoleKind {
   checkable,
 
   /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is
-  /// also assigned.
+  /// also assigned. Indicates h1, h2, h3, h4, h5, h6 type of tag in combination
+  /// with usage of headingLevel:<int 1-6>.
   heading,
 
   /// Visual only element.
@@ -657,13 +664,20 @@ final class GenericRole extends SemanticRole {
       return;
     }
 
-    // Assign one of three roles to the element: group, heading, text.
+    // Assign one of three roles to the element: group, banner, heading, text.
     //
     // - "group" is used when the node has children, irrespective of whether the
     //   node is marked as a header or not. This is because marking a group
     //   as a "heading" will prevent the AT from reaching its children.
+    // - "banner" is used to identify site-oriented content at the beginning
+    //   of each page within a website. Site-oriented content children can be
+    //   a logo, identity of the site sponsor, and site-specific-search tool.
+    //   Typically appears at the top of the page and typically spans the
+    //   full width. W3.org reference:
+    //   https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/banner.html
     // - "heading" is used when the framework explicitly marks the node as a
     //   heading and the node does not have children.
+    //   W3.org reference: https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA12
     // - If a node has a label and no children, assume is a paragraph of text.
     //   In HTML text has no ARIA role. It's just a DOM node with text inside
     //   it. Previously, role="text" was used, but it was only supported by
@@ -671,6 +685,9 @@ final class GenericRole extends SemanticRole {
     if (semanticsObject.hasChildren) {
       labelAndValue!.preferredRepresentation = LabelRepresentation.ariaLabel;
       setAriaRole('group');
+    } else if (semanticsObject.hasChildren && semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
+      labelAndValue!.preferredRepresentation = LabelRepresentation.domText;
+      setAriaRole('banner');
     } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
       labelAndValue!.preferredRepresentation = LabelRepresentation.domText;
       setAriaRole('heading');
