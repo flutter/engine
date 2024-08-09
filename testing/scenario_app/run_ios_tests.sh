@@ -60,8 +60,8 @@ zip_and_upload_xcresult_to_luci () {
 
 readonly DEVICE_NAME="iPhone SE (3rd generation)"
 readonly DEVICE=com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
-readonly OS_RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-17-0
-readonly OS="17.0"
+readonly OS_RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-18-0
+readonly OS="18.0"
 
 # Delete any existing devices named "iPhone SE (3rd generation)". Having more
 # than one may cause issues when builds target the device.
