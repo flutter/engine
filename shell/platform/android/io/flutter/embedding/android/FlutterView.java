@@ -1449,6 +1449,13 @@ public class FlutterView extends FrameLayout
         .send();
   }
 
+  private FlutterViewDelegate delegate = new FlutterViewDelegate();
+
+  @VisibleForTesting
+  public void setDelegate(FlutterViewDelegate delegate) {
+    this.delegate = delegate;
+  }
+
   private void sendViewportMetricsToFlutter() {
     if (!isAttachedToFlutterEngine()) {
       Log.w(
@@ -1460,6 +1467,17 @@ public class FlutterView extends FrameLayout
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
+      List<Rect> boundingRects = delegate.getCaptionBarInsets(getContext());
+      if (boundingRects != null && boundingRects.size() == 1) {
+        viewportMetrics.viewPaddingTop =
+            Math.max(boundingRects.get(0).bottom, viewportMetrics.viewPaddingTop);
+      }
+    } else {
+      Log.w(TAG, "API level " + Build.VERSION.SDK_INT + " is too low to query bounding rects.");
+    }
+
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 
@@ -1483,6 +1501,15 @@ public class FlutterView extends FrameLayout
     if (renderSurface instanceof FlutterSurfaceView) {
       ((FlutterSurfaceView) renderSurface).setVisibility(visibility);
     }
+  }
+
+  /**
+   * Allow access to the viewport metrics so that tests can set them to be valid with nonzero
+   * dimensions.
+   */
+  @VisibleForTesting
+  public FlutterRenderer.ViewportMetrics getViewportMetrics() {
+    return viewportMetrics;
   }
 
   /**
