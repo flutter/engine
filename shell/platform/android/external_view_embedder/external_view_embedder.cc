@@ -158,6 +158,9 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
        layers = std::move(layers)]() {
         TRACE_EVENT0("flutter",
                      "AndroidExternalViewEmbedder::RenderNativeViews");
+        if (!jni_facade_->IsRendererAttached()) {
+          return;
+        }
         jni_facade_->FlutterViewBeginFrame();
 
         for (int64_t view_id : composition_order) {
@@ -266,6 +269,12 @@ bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::Teardown() {
   DestroySurfaces();
+  // Post a platform task to ensure that the task runner has flushed all
+  // platform view composition.
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetPlatformTaskRunner(),
+                                    [&latch]() { latch->CountDown(); });
+  latch->Wait();
 }
 
 // |ExternalViewEmbedder|

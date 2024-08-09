@@ -132,7 +132,7 @@ static jmethodID g_request_dart_deferred_library_method = nullptr;
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
-// static jmethodID g_on_composite_platform_view_method = nullptr;
+static jmethodID g_is_renderer_attached_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
@@ -1101,6 +1101,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_is_renderer_attached_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "isRendererAttached", "()Z");
+  if (g_is_renderer_attached_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate isRendererAttached method";
+    return false;
+  }
+
   g_on_begin_frame_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
 
@@ -1616,6 +1623,20 @@ void PlatformViewAndroidJNIImpl::HardwareBufferClose(
   }
   env->CallVoidMethod(hardware_buffer.obj(), g_hardware_buffer_close_method);
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+bool PlatformViewAndroidJNIImpl::IsRendererAttached() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return false;
+  }
+
+  jboolean result =
+      env->CallBooleanMethod(java_object.obj(), g_is_renderer_attached_method);
+  FML_CHECK(fml::jni::CheckException(env));
+  return result;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
