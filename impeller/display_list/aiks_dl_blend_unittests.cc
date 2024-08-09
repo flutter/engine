@@ -211,7 +211,7 @@ TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
   builder.DrawRect(SkRect::MakeXYWH(100, 100, 400, 400), paint);
   paint.setColor(DlColor::kWhite());
 
-  auto rect = Rect::MakeXYWH(200, 100, 400, 400).Expand(-100, -100);
+  auto rect = Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100);
   builder.DrawImageRect(
       DlImageImpeller::Make(texture),
       SkRect::MakeSize(
@@ -269,7 +269,7 @@ TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
   builder.SaveLayer(nullptr, &save_paint);
 
   builder.Translate(500, 300);
-  builder.Rotate(115);
+  builder.Rotate(120);
 
   DlPaint paint;
   paint.setColor(DlColor::kBlue());
