@@ -79,6 +79,7 @@ bool InlinePassContext::EndPass() {
            .ok()) {
     return false;
   }
+  renderer_.GetRenderTargetCache()->Reclaim(GetPassTarget().GetRenderTarget());
 
   pass_ = nullptr;
   command_buffer_ = nullptr;

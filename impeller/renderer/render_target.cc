@@ -228,6 +228,14 @@ size_t RenderTarget::GetTotalAttachmentCount() const {
   return count;
 }
 
+void RenderTarget::SetFrameKey(std::optional<size_t> value) {
+  frame_key_ = value;
+}
+
+std::optional<size_t> RenderTarget::GetFrameKey() const {
+  return frame_key_;
+}
+
 std::string RenderTarget::ToString() const {
   std::stringstream stream;
 
@@ -409,6 +417,8 @@ RenderTarget RenderTargetAllocator::CreateOffscreenMSAA(
 
   return target;
 }
+
+void RenderTargetAllocator::Reclaim(const RenderTarget& render_target) {}
 
 void RenderTarget::SetupDepthStencilAttachments(
     const Context& context,
