@@ -137,14 +137,13 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
       {"SetColorSource",
        {
            {0, 96, 0, [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
-           // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
-           {0, 80 + 6 * 4, 0,
+           {0, 152, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 80 + 6 * 4, 0,
+           {0, 152, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 88 + 6 * 4, 0,
+           {0, 160, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 80 + 6 * 4, 0,
+           {0, 152, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
 
            // Reset attribute to default as last entry
