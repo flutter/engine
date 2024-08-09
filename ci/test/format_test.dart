@@ -155,12 +155,8 @@ void main() {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.clang);
     try {
       fixture.gitAdd();
-      final result = io.Process.runSync(formatterPath, <String>['--check', 'clang', '--fix'],
+      io.Process.runSync(formatterPath, <String>['--check', 'clang', '--fix'],
           workingDirectory: repoDir.path);
-
-      print('C++ formatting result:');
-      print(result.stdout);
-      print(result.stderr);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
       for (final FileContentPair pair in files) {
@@ -193,9 +189,9 @@ void main() {
       fixture.gitAdd();
       final result = io.Process.runSync(formatterPath, <String>['--check', 'java', '--fix'],
           workingDirectory: repoDir.path);
-      print('Java formatting result:');
-      print(result.stdout);
-      print(result.stderr);
+      print('Java formatting result:'); // ignore: avoid_print
+      print(result.stdout); // ignore: avoid_print
+      print(result.stderr); // ignore: avoid_print
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
       for (final FileContentPair pair in files) {
