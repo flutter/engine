@@ -45,11 +45,11 @@ void main(List<String> args) async {
   } else {
     iosEngineVariant = 'ios_debug_sim_unopt';
   }
-  final String dumpXcresultOnFailurePath;
+
+  // Null if the tests should create and dispose their own temporary directory.
+  String? dumpXcresultOnFailurePath;
   if (results.option('dump-xcresult-on-failure') case final String path) {
     dumpXcresultOnFailurePath = path;
-  } else {
-    dumpXcresultOnFailurePath = io.Directory.systemTemp.createTempSync().path;
   }
 
   // Run the actual script.
@@ -105,7 +105,7 @@ Future<void> _run(
   required String osVersion,
   required bool withImpeller,
   required bool withSkia,
-  required String dumpXcresultOnFailure,
+  required String? dumpXcresultOnFailure,
 }) async {
   // Terminate early on SIGINT.
   late final StreamSubscription<void> sigint;
@@ -141,11 +141,19 @@ Future<void> _run(
     );
     cleanup.add(process.kill);
 
+    // Create a temporary directory, if needed.
+    var storePath = dumpXcresultOnFailure;
+    if (storePath == null) {
+      final dumpDir = io.Directory.systemTemp.createTempSync();
+      storePath = dumpDir.path;
+      cleanup.add(() => dumpDir.delete(recursive: true));
+    }
+
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
-        resultBundlePath: resultBundle.path,
-        storePath: dumpXcresultOnFailure,
+        resultBundle: resultBundle,
+        storePath: storePath,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
       throw _ToolFailure('test failed.');
@@ -153,6 +161,8 @@ Future<void> _run(
       io.stderr.writeln('test succcess.');
     }
   }
+
+  resultBundle.deleteSync(recursive: true);
 
   if (withImpeller) {
     final process = await _runTests(
@@ -168,11 +178,19 @@ Future<void> _run(
     );
     cleanup.add(process.kill);
 
+    // Create a temporary directory, if needed.
+    var storePath = dumpXcresultOnFailure;
+    if (storePath == null) {
+      final dumpDir = io.Directory.systemTemp.createTempSync();
+      storePath = dumpDir.path;
+      cleanup.add(() => dumpDir.delete(recursive: true));
+    }
+
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
-        resultBundlePath: resultBundle.path,
-        storePath: dumpXcresultOnFailure,
+        resultBundle: resultBundle,
+        storePath: storePath,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
       throw _ToolFailure('test failed.');
@@ -180,6 +198,8 @@ Future<void> _run(
       io.stderr.writeln('test succcess.');
     }
   }
+
+  resultBundle.deleteSync(recursive: true);
 }
 
 /// Exception thrown when the tool should halt execution intentionally.
@@ -260,8 +280,9 @@ void _ensureSimulatorsRotateAutomaticallyForPlatformViewRotationTest() {
 }
 
 void _deleteAnyExistingDevices({required String deviceName}) {
-  io.stderr
-      .writeln('Deleting any existing simulator devices named $deviceName...');
+  io.stderr.writeln(
+    'Deleting any existing simulator devices named $deviceName...',
+  );
 
   bool deleteSimulator() {
     final result = io.Process.runSync(
@@ -313,8 +334,9 @@ void _createDevice({
   ));
 
   // Create a temporary directory to store the test results.
-  final result =
-      io.Directory(scenarioPath).createTempSync('ios_scenario_xcresult');
+  final result = io.Directory(scenarioPath).createTempSync(
+    'ios_scenario_xcresult',
+  );
   return (scenarioPath, result);
 }
 
@@ -393,13 +415,16 @@ String _infoPlistFPathForImpeller(Engine engine) {
     'Scenarios',
     'Info_Impeller.plist',
   );
+  if (!io.File(infoPath).existsSync()) {
+    throw Exception('Info_Impeller.plist does not exist at $infoPath');
+  }
   return 'INFOPLIST_FILE=$infoPath';
 }
 
 @useResult
 String _zipAndStoreFailedTestResults({
   required String iosEngineVariant,
-  required String resultBundlePath,
+  required io.Directory resultBundle,
   required String storePath,
 }) {
   final outputPath = path.join(storePath, '$iosEngineVariant.zip');
@@ -409,11 +434,15 @@ String _zipAndStoreFailedTestResults({
       '-q',
       '-r',
       outputPath,
-      resultBundlePath,
+      resultBundle.path,
     ],
   );
   if (result.exitCode != 0) {
-    throw Exception('Failed to zip the test results: ${result.stderr}');
+    throw Exception(
+      'Failed to zip the test results (exit code = ${result.exitCode}).\n\n'
+      'Stderr: ${result.stderr}\n\n'
+      'Stdout: ${result.stdout}',
+    );
   }
   return outputPath;
 }
