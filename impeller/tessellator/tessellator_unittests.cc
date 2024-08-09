@@ -140,7 +140,7 @@ TEST(TessellatorTest, CircleVertexCounts) {
   auto tessellator = std::make_shared<Tessellator>();
 
   auto test = [&tessellator](const Matrix& transform, Scalar radius) {
-    auto generator = tessellator->FilledCircle(transform, {}, radius, radius);
+    auto generator = tessellator->FilledCircle(transform, {}, radius);
     size_t quadrant_divisions = generator.GetVertexCount() / 4;
 
     // Confirm the approximation error is within the currently accepted
@@ -177,8 +177,7 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
 
   auto test = [&tessellator](const Matrix& transform, const Point& center,
                              Scalar radius) {
-    auto generator =
-        tessellator->FilledCircle(transform, center, radius, radius);
+    auto generator = tessellator->FilledCircle(transform, center, radius);
     EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
 
     auto vertex_count = generator.GetVertexCount();
