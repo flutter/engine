@@ -518,7 +518,7 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
       image,
       SkRect::MakeSize(
           SkSize::Make(texture->GetSize().width, texture->GetSize().height)),
-      SkRect::MakeLTRB(0, 0, 100, 100), {});
+      SkRect::MakeLTRB(0, 0, 100, 100), DlImageSampling::kMipmapLinear);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

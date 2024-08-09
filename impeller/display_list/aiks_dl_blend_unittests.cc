@@ -218,7 +218,7 @@ TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
           SkSize::Make(texture->GetSize().width, texture->GetSize().height)),
       SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(),
                        rect.GetBottom()),
-      DlImageSampling::kNearestNeighbor, &paint);
+      DlImageSampling::kMipmapLinear, &paint);
   builder.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -254,7 +254,7 @@ TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
           SkSize::Make(texture->GetSize().width, texture->GetSize().height)),
       SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(),
                        rect.GetBottom()),
-      DlImageSampling::kNearestNeighbor, &paint);
+      DlImageSampling::kMipmapLinear, &paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -411,12 +411,12 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
   builder.Save();
   builder.SaveLayer(nullptr, &paint);
   {
-    builder.DrawImage(dst_image, {0, 0}, DlImageSampling::kNearestNeighbor,
+    builder.DrawImage(dst_image, {0, 0}, DlImageSampling::kMipmapLinear,
                       &paint);
 
     paint.setColor(DlColor::kWhite().withAlpha(src_alpha * 255));
     paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
-    builder.DrawImage(src_image, {0, 0}, DlImageSampling::kNearestNeighbor,
+    builder.DrawImage(src_image, {0, 0}, DlImageSampling::kMipmapLinear,
                       &paint);
   }
   builder.Restore();
@@ -428,7 +428,7 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
   DlPaint save_paint;
   builder.SaveLayer(nullptr, &save_paint);
   {
-    builder.DrawImage(dst_image, {400, 0}, DlImageSampling::kNearestNeighbor,
+    builder.DrawImage(dst_image, {400, 0}, DlImageSampling::kMipmapLinear,
                       nullptr);
 
     DlPaint save_paint;
@@ -436,7 +436,7 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
     save_paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
     builder.SaveLayer(nullptr, &save_paint);
     {
-      builder.DrawImage(src_image, {400, 0}, DlImageSampling::kNearestNeighbor,
+      builder.DrawImage(src_image, {400, 0}, DlImageSampling::kMipmapLinear,
                         nullptr);
     }
     builder.Restore();
@@ -520,7 +520,7 @@ TEST_P(AiksTest, ForegroundPipelineBlendAppliesTransformCorrectly) {
       DlBlendMode::kSrcIn));
 
   builder.DrawImage(DlImageImpeller::Make(texture), {200, 200},
-                    DlImageSampling::kNearestNeighbor, &image_paint);
+                    DlImageSampling::kMipmapLinear, &image_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -538,7 +538,7 @@ TEST_P(AiksTest, ForegroundAdvancedBlendAppliesTransformCorrectly) {
       DlBlendMode::kColorDodge));
 
   builder.DrawImage(DlImageImpeller::Make(texture), {200, 200},
-                    DlImageSampling::kNearestNeighbor, &image_paint);
+                    DlImageSampling::kMipmapLinear, &image_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -561,7 +561,7 @@ TEST_P(AiksTest, FramebufferAdvancedBlendCoverage) {
   image_paint.setBlendMode(DlBlendMode::kMultiply);
 
   builder.DrawImage(DlImageImpeller::Make(texture), {20, 20},
-                    DlImageSampling::kNearestNeighbor, &image_paint);
+                    DlImageSampling::kMipmapLinear, &image_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
