@@ -832,10 +832,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
-  public boolean isRendererAttached() {
-    return flutterView != null && flutterView.isAttachedToFlutterEngine();
-  }
-
   /**
    * Detaches the controller from {@link FlutterView}.
    *

@@ -1355,6 +1355,7 @@ public class FlutterView extends FrameLayout
    * Returns true if this {@code FlutterView} is currently attached to a {@link
    * io.flutter.embedding.engine.FlutterEngine}.
    */
+  @VisibleForTesting
   public boolean isAttachedToFlutterEngine() {
     return flutterEngine != null
         && flutterEngine.getRenderer() == renderSurface.getAttachedRenderer();

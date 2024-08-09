@@ -98,8 +98,6 @@ class JNIMock final : public PlatformViewAndroidJNI {
                MutatorsStack mutators_stack),
               (override));
 
-  MOCK_METHOD(bool, IsRendererAttached, (), (override));
-
   MOCK_METHOD(void,
               FlutterViewDisplayOverlaySurface,
               (int surface_id, int x, int y, int width, int height),
