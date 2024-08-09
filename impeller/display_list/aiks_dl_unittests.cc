@@ -765,5 +765,40 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, MatrixSaveLayerFilter) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  paint.setColor(DlColor::kBlack());
+  builder.DrawPaint(paint);
+  builder.SaveLayer({}, nullptr);
+  {
+    paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
+    paint.setBlendMode(DlBlendMode::kPlus);
+    builder.DrawCircle({200, 200}, 100, paint);
+    // Should render a second circle, centered on the bottom-right-most edge of
+    // the circle.
+
+    SkMatrix matrix = SkMatrix::Translate((200 + 100 * k1OverSqrt2),
+                                          (200 + 100 * k1OverSqrt2)) *
+                      SkMatrix::Scale(0.5, 0.5) *
+                      SkMatrix::Translate(-200, -200);
+    DlPaint save_paint;
+    save_paint.setImageFilter(
+        DlMatrixImageFilter::Make(matrix, DlImageSampling::kLinear));
+
+    builder.SaveLayer(nullptr, &save_paint);
+
+    DlPaint circle_paint;
+    circle_paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
+    circle_paint.setBlendMode(DlBlendMode::kPlus);
+    builder.DrawCircle({200, 200}, 100, circle_paint);
+    builder.Restore();
+  }
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
