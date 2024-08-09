@@ -9,10 +9,32 @@
 
 namespace flutter {
 
+enum class DlColorSpace { kSRGB = 0, kExtendedSRGB = 1, kDisplayP3 = 2 };
+
 struct DlColor {
  public:
-  constexpr DlColor() : argb_(0xFF000000) {}
-  constexpr explicit DlColor(uint32_t argb) : argb_(argb) {}
+  constexpr DlColor()
+      : alpha_(0.f),
+        red_(0.f),
+        green_(0.f),
+        blue_(0.f),
+        color_space_(DlColorSpace::kSRGB) {}
+  constexpr explicit DlColor(uint32_t argb)
+      : alpha_((argb >> 24) / 255.f),
+        red_((argb >> 16) / 255.f),
+        green_((argb >> 8) / 255.f),
+        blue_((argb >> 0) / 255.f),
+        color_space_(DlColorSpace::kSRGB) {}
+  constexpr explicit DlColor(float alpha,
+                             float red,
+                             float green,
+                             float blue,
+                             DlColorSpace colorspace)
+      : alpha_(alpha),
+        red_(red),
+        green_(green),
+        blue_(blue),
+        color_space_(colorspace) {}
 
   /// @brief Construct a 32 bit color from floating point R, G, B, and A color
   /// channels.
@@ -29,10 +51,7 @@ struct DlColor {
                                 DlScalar r,
                                 DlScalar g,
                                 DlScalar b) {
-    return DlColor(toC(a) << 24 |  //
-                   toC(r) << 16 |  //
-                   toC(g) << 8 |   //
-                   toC(b));
+    return DlColor(a, r, g, b, DlColorSpace::kSRGB);
   }
 
   static constexpr uint8_t toAlpha(DlScalar opacity) { return toC(opacity); }
@@ -58,41 +77,55 @@ struct DlColor {
   static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFF6495ED);};
   // clang-format on
 
-  constexpr bool isOpaque() const { return getAlpha() == 0xFF; }
-  constexpr bool isTransparent() const { return getAlpha() == 0; }
+  constexpr bool isOpaque() const { return alpha_ >= 1.f; }
+  constexpr bool isTransparent() const { return alpha_ <= 0.f; }
 
-  constexpr int getAlpha() const { return argb_ >> 24; }
-  constexpr int getRed() const { return (argb_ >> 16) & 0xFF; }
-  constexpr int getGreen() const { return (argb_ >> 8) & 0xFF; }
-  constexpr int getBlue() const { return argb_ & 0xFF; }
+  constexpr int getAlpha() const { return toC(alpha_); }
+  constexpr int getRed() const { return toC(red_); }
+  constexpr int getGreen() const { return toC(green_); }
+  constexpr int getBlue() const { return toC(blue_); }
 
-  constexpr DlScalar getAlphaF() const { return toF(getAlpha()); }
-  constexpr DlScalar getRedF() const { return toF(getRed()); }
-  constexpr DlScalar getGreenF() const { return toF(getGreen()); }
-  constexpr DlScalar getBlueF() const { return toF(getBlue()); }
+  constexpr DlScalar getAlphaF() const { return alpha_; }
+  constexpr DlScalar getRedF() const { return red_; }
+  constexpr DlScalar getGreenF() const { return green_; }
+  constexpr DlScalar getBlueF() const { return blue_; }
+
+  constexpr DlColorSpace getColorSpace() const { return color_space_; }
 
   constexpr uint32_t premultipliedArgb() const {
     if (isOpaque()) {
-      return argb_;
+      return argb();
     }
     DlScalar f = getAlphaF();
-    return (argb_ & 0xFF000000) |       //
+    return (argb() & 0xFF000000) |      //
            toC(getRedF() * f) << 16 |   //
            toC(getGreenF() * f) << 8 |  //
            toC(getBlueF() * f);
   }
 
   constexpr DlColor withAlpha(uint8_t alpha) const {  //
-    return DlColor((argb_ & 0x00FFFFFF) | (alpha << 24));
+    return DlColor((argb() & 0x00FFFFFF) | (alpha << 24));
   }
   constexpr DlColor withRed(uint8_t red) const {  //
-    return DlColor((argb_ & 0xFF00FFFF) | (red << 16));
+    return DlColor((argb() & 0xFF00FFFF) | (red << 16));
   }
   constexpr DlColor withGreen(uint8_t green) const {  //
-    return DlColor((argb_ & 0xFFFF00FF) | (green << 8));
+    return DlColor((argb() & 0xFFFF00FF) | (green << 8));
   }
   constexpr DlColor withBlue(uint8_t blue) const {  //
-    return DlColor((argb_ & 0xFFFFFF00) | (blue << 0));
+    return DlColor((argb() & 0xFFFFFF00) | (blue << 0));
+  }
+  constexpr DlColor withAlphaF(float alpha) const {  //
+    return DlColor(alpha, red_, green_, blue_, color_space_);
+  }
+  constexpr DlColor withRedF(float red) const {  //
+    return DlColor(alpha_, red, green_, blue_, color_space_);
+  }
+  constexpr DlColor withGreenF(float green) const {  //
+    return DlColor(alpha_, red_, green, blue_, color_space_);
+  }
+  constexpr DlColor withBlueF(float blue) const {  //
+    return DlColor(alpha_, red_, green_, blue, color_space_);
   }
 
   constexpr DlColor modulateOpacity(DlScalar opacity) const {
@@ -101,15 +134,24 @@ struct DlColor {
                           : withAlpha(round(getAlpha() * opacity));
   }
 
-  constexpr uint32_t argb() const { return argb_; }
+  constexpr uint32_t argb() const {
+    return toC(alpha_) << 24 |  //
+           toC(red_) << 16 |    //
+           toC(green_) << 8 |   //
+           toC(blue_) << 0;
+  }
 
-  bool operator==(DlColor const& other) const { return argb_ == other.argb_; }
-  bool operator!=(DlColor const& other) const { return argb_ != other.argb_; }
-  bool operator==(uint32_t const& other) const { return argb_ == other; }
-  bool operator!=(uint32_t const& other) const { return argb_ != other; }
+  bool operator==(DlColor const& other) const { return argb() == other.argb(); }
+  bool operator!=(DlColor const& other) const { return argb() != other.argb(); }
+  bool operator==(uint32_t const& other) const { return argb() == other; }
+  bool operator!=(uint32_t const& other) const { return argb() != other; }
 
  private:
-  uint32_t argb_;
+  float alpha_;
+  float red_;
+  float green_;
+  float blue_;
+  DlColorSpace color_space_;
 
   static constexpr DlScalar toF(uint8_t comp) { return comp * (1.0f / 255); }
   static constexpr uint8_t toC(DlScalar fComp) { return round(fComp * 255); }
