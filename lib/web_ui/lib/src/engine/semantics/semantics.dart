@@ -30,6 +30,7 @@ import 'live_region.dart';
 import 'platform_view.dart';
 import 'route.dart';
 import 'scrollable.dart';
+import 'selectable.dart';
 import 'semantics_helper.dart';
 import 'tappable.dart';
 import 'text_field.dart';
@@ -362,6 +363,9 @@ enum SemanticRoleKind {
 
   /// A control that has a checked state, such as a check box or a radio button.
   checkable,
+
+  /// A control that has a selected state, such as a tab
+  selectable,
 
   /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is
   /// also assigned.
@@ -711,7 +715,7 @@ final class GenericRole extends SemanticRole {
 /// Provides a piece of functionality to a [SemanticsObject].
 ///
 /// Semantic behaviors can be shared by multiple types of [SemanticRole]s. For
-/// example, [SemanticButton] and [SemanticCheckable] both use the [Tappable] behavior. If a
+/// example, [SemanticButton], [SemanticCheckable], and [SemanticSelectable] both use the [Tappable] behavior. If a
 /// semantic role needs bespoke functionality, it is simpler to implement it
 /// directly in the [SemanticRole] implementation.
 ///
@@ -1648,6 +1652,8 @@ class SemanticsObject {
       return SemanticRoleKind.image;
     } else if (isCheckable) {
       return SemanticRoleKind.checkable;
+    } else if (isSelectable) {
+      return SemanticRoleKind.selectable;
     } else if (isButton) {
       return SemanticRoleKind.button;
     } else if (isScrollContainer) {
@@ -1668,6 +1674,7 @@ class SemanticsObject {
       SemanticRoleKind.incrementable => SemanticIncrementable(this),
       SemanticRoleKind.button => SemanticButton(this),
       SemanticRoleKind.checkable => SemanticCheckable(this),
+      SemanticRoleKind.selectable => SemanticSelectable(this),
       SemanticRoleKind.route => SemanticRoute(this),
       SemanticRoleKind.image => SemanticImage(this),
       SemanticRoleKind.platformView => SemanticPlatformView(this),
@@ -1744,6 +1751,9 @@ class SemanticsObject {
       hasFlag(ui.SemanticsFlag.hasCheckedState) ||
       hasFlag(ui.SemanticsFlag.hasToggledState);
 
+  bool get isSelectable =>
+      hasFlag(ui.SemanticsFlag.isSelectable);
+  
   /// Role-specific adjustment of the vertical position of the child container.
   ///
   /// This is used, for example, by the [SemanticScrollable] to compensate for the

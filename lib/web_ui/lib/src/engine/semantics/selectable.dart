@@ -12,7 +12,7 @@ import 'semantics.dart';
 /// See also [ui.SemanticsFlag.isSelected]
 class SemanticSelectable extends SemanticRole {
   SemanticSelectable(SemanticsObject semanticsObject) : super.withBasics(
-    SemanticRoleKind.checkable,
+    SemanticRoleKind.selectable,
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.ariaLabel,) {
       addTappable();
