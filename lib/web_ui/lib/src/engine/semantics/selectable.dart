@@ -16,7 +16,6 @@ class SemanticSelectable extends SemanticRole {
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.ariaLabel,) {
       addTappable();
-      setAriaRole('tab');
   }
 
   @override
