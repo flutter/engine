@@ -128,6 +128,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
           for (auto i = surface_pool_->size(); i < overlay_layers.size(); i++) {
             overlays.push_back(jni_facade_->FlutterViewCreateOverlaySurface());
           }
+          latch->CountDown();
         });
     if (!task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
       latch->Wait();
