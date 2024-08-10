@@ -309,6 +309,11 @@ void ExperimentalCanvas::SaveLayer(
     bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
+  // TODO(jonahwilliams): understand why we sometimes get empty bounds instead of nullopt bounds.
+  if (bounds.has_value() && bounds->IsEmpty()) {
+    bounds = std::nullopt;
+  }
+
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
@@ -318,11 +323,6 @@ void ExperimentalCanvas::SaveLayer(
 
   auto clip_coverage_back = clip_coverage_stack_.CurrentClipCoverage();
   if (!clip_coverage_back.has_value()) {
-    Save(total_content_depth);
-    return;
-  }
-
-  if (bounds.has_value() && bounds->IsEmpty()) {
     Save(total_content_depth);
     return;
   }
