@@ -495,7 +495,8 @@ bool ExperimentalCanvas::Restore() {
         PaintPassDelegate(save_layer_state.paint)
             .CreateContentsForSubpassTarget(
                 lazy_render_pass.inline_pass_context->GetTexture(),
-                transform_stack_.back().transform);
+                Matrix::MakeTranslation(Vector3{-GetGlobalPassPosition()}) *
+                    transform_stack_.back().transform);
 
     lazy_render_pass.inline_pass_context->EndPass();
 

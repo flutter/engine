@@ -771,7 +771,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
   DlPaint paint;
   paint.setColor(DlColor::kBlack());
   builder.DrawPaint(paint);
-  builder.SaveLayer({}, nullptr);
+  builder.SaveLayer(nullptr, nullptr);
   {
     paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
     paint.setBlendMode(DlBlendMode::kPlus);
