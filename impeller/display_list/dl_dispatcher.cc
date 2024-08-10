@@ -1301,7 +1301,9 @@ void TextFrameDispatcher::drawTextFrame(
     properties.stroke_width = paint_.stroke_width;
   }
   if (text_frame->HasColor()) {
-    properties.color = paint_.color;
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties.color = paint_.color.WithAlpha(1.0);
   }
   auto scale =
       (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();

@@ -182,7 +182,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         impeller_dispatcher.FinishRecording();
-        aiks_context->GetContentContext().GetTransientsBuffer().Reset();
         aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
         if (reset_host_buffer) {
           aiks_context->GetContentContext().GetTransientsBuffer().Reset();
