@@ -108,12 +108,6 @@ struct GetTextureColorSourceDataVisitor {
   std::optional<ImageData> operator()(const std::monostate& data) {
     return std::nullopt;
   }
-
-#if IMPELLER_ENABLE_3D
-  std::optional<ImageData> operator()(const SceneData& data) {
-    return std::nullopt;
-  }
-#endif  // IMPELLER_ENABLE_3D
 };
 
 static std::optional<ImageData> GetImageColorSourceData(
@@ -815,7 +809,8 @@ void Canvas::SaveLayer(const Paint& paint,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity) {
   if (can_distribute_opacity && !backdrop_filter &&
-      Paint::CanApplyOpacityPeephole(paint)) {
+      Paint::CanApplyOpacityPeephole(paint) &&
+      bounds_promise != ContentBoundsPromise::kMayClipContents) {
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;
