@@ -537,6 +537,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
             videoFrame.format != 'I422') {
           return readPixelsFromVideoFrame(videoFrame, format);
         }
+      case LazyImageSource():
+        return Future<ByteData>.value(_readPixelsFromImageViaSurface(format));
       case null:
     }
     ByteData? data = _readPixelsFromSkImage(format);
@@ -709,3 +711,25 @@ class ImageBitmapImageSource extends ImageSource {
   @override
   DomCanvasImageSource get canvasImageSource => imageBitmap;
 }
+
+class LazyImageSource extends ImageSource {
+  LazyImageSource(this.imageData, { required this.width, required this.height });
+
+  DomCanvasImageSource imageData;
+
+  @override
+  void close() {
+    // do nothing, let browser garbage collect
+  }
+
+  @override
+  final int height;
+
+  @override
+  final int width;
+
+  @override
+  DomCanvasImageSource get canvasImageSource => imageData;
+}
+
+

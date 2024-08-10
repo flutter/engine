@@ -225,60 +225,6 @@ typedef PredefinedColorSpace = String;
 
 @JS()
 @staticInterop
-class ImageData  {
-   external factory ImageData(
-    JSAny dataOrSw,
-    int shOrSw, [
-    JSAny settingsOrSh,
-    JSAny settings,
-  ]);
-}
-
-
-/// The **`ImageData`** interface represents the underlying pixel data of an
-/// area of a `canvas` element.
-///
-/// It is created using the [ImageData.ImageData] constructor or creator methods
-/// on the [CanvasRenderingContext2D] object associated with a canvas:
-/// [CanvasRenderingContext2D.createImageData] and
-/// [CanvasRenderingContext2D.getImageData]. It can also be used to set a part
-/// of the canvas by using [CanvasRenderingContext2D.putImageData].
-///
-/// ---
-///
-/// API documentation sourced from
-/// [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/API/ImageData).
-extension ImageDataExtension on ImageData {
-
-  /// The readonly **`ImageData.width`** property returns the number
-  /// of pixels per row in the [ImageData] object.
-  external int get width;
-
-  /// The readonly **`ImageData.height`** property returns the number
-  /// of rows in the [ImageData] object.
-  external int get height;
-
-  /// The readonly **`ImageData.data`** property returns a
-  /// `Uint8ClampedArray` that contains the [ImageData] object's
-  /// pixel data. Data is stored as a one-dimensional array in the RGBA order,
-  /// with integer
-  /// values between `0` and `255` (inclusive).
-  external JSUint8ClampedArray get data;
-
-  /// The read-only **`ImageData.colorSpace`** property is a string indicating
-  /// the color space of the image data.
-  ///
-  /// The color space can be set during `ImageData` initialization using either
-  /// the
-  /// [`ImageData()`](https://developer.mozilla.org/en-US/docs/Web/API/ImageData/ImageData)
-  /// constructor or the
-  /// [`createImageData()`](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createImageData)
-  /// method.
-  external PredefinedColorSpace get colorSpace;
-}
-
-@JS()
-@staticInterop
 class DomNavigator {}
 
 extension DomNavigatorExtension on DomNavigator {
@@ -1572,8 +1518,10 @@ extension DomImageDataExtension on DomImageData {
   @JS('data')
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
+  external int get width;
+  external int get height;
+  external PredefinedColorSpace get colorSpace;
 }
-
 
 @JS('Uint8ClampedArray')
 @staticInterop

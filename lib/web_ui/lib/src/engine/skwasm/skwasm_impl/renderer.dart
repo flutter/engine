@@ -349,8 +349,7 @@ class SkwasmRenderer implements Renderer {
 
     try {
       (() async {
-        final JSAny imageData = ImageData((await pixelImage.toUint8ClampedList()).toJSAnyShallow, width, height.toJS,
-              <String,dynamic>{ 'colorSpace' : 'srgb' }.toJSAnyShallow).toJSAnyShallow;
+        final JSAny imageData = createDomImageData((await pixelImage.toUint8ClampedList()).toJSAnyShallow, width, height).toJSAnyShallow;
 
         final BitmapSize? size = scaledImageSize(width, height, targetWidth, targetHeight);
 

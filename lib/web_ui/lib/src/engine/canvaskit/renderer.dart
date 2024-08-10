@@ -260,7 +260,7 @@ class CanvasKitRenderer implements Renderer {
     if (skImage == null) {
       throw Exception('Failed to convert image bitmap to an SkImage.');
     }
-    return CkImage(skImage);
+    return CkImage(skImage, imageSource: LazyImageSource(object as DomCanvasImageSource, width: width, height: height));
   }
 
   @override
@@ -298,8 +298,7 @@ class CanvasKitRenderer implements Renderer {
     final BitmapSize? size = scaledImageSize(width, height, targetWidth, targetHeight);
 
     final FutureOr<ui.Image> image = createImageFromTextureSource(
-        ImageData(convertedPixels.toJS, width, height.toJS,
-            <String,dynamic>{ 'colorSpace' : 'srgb' }.toJSAnyShallow ).toJSAnyShallow,
+        createDomImageData(convertedPixels.toJS, width, height).toJSAnyShallow,
         width: size?.width ?? width,
         height: size?.height ?? height,
         transferOwnership: true);
