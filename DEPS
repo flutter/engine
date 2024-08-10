@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'eeffce72693c30d33c2fc61fe37e669de5c3a7fe',
+  'skia_revision': '8f5705639815e9548b37f19f5cad7480d5fed586',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -251,7 +251,7 @@ vars = {
   # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
   # will be used altogether with fuchsia-sdk to setup the build / test
   # environment.
-  'fuchsia_test_scripts_version': 'q3WfgLnPmQ-1lBu8MambVEHLsjvSnnZZ2gYpR8WSxn4C',
+  'fuchsia_test_scripts_version': '8WCo7tLjg_GoImlj5eax_w-wxsvRPnmaChqN4ok-5rYC',
 
   # The version / instance id of the cipd:chromium/fuchsia/gn-sdk which will be
   # used altogether with fuchsia-sdk to generate gn based build rules.
