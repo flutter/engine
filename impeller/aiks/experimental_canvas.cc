@@ -720,12 +720,19 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
         return;
       }
 
+      // The coverage hint tells the rendered Contents which portion of the
+      // rendered output will actually be used, and so we set this to the
+      // current clip coverage (which is the max clip bounds). The contents may
+      // optionally use this hint to avoid unnecessary rendering work.
+      auto element_coverage_hint = entity.GetContents()->GetCoverageHint();
+      entity.GetContents()->SetCoverageHint(Rect::Intersection(
+          element_coverage_hint, clip_coverage_stack_.CurrentClipCoverage()));
+
       FilterInput::Vector inputs = {
           FilterInput::Make(input_texture, entity.GetTransform().Invert()),
           FilterInput::Make(entity.GetContents())};
       auto contents =
           ColorFilterContents::MakeBlend(entity.GetBlendMode(), inputs);
-      contents->SetCoverageHint(entity.GetCoverage());
       entity.SetContents(std::move(contents));
       entity.SetBlendMode(BlendMode::kSource);
     }
