@@ -322,14 +322,6 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
-  // // Can we always guarantee that we get a bounds? Does a lack of bounds
-  // // indicate something?
-  // if (!bounds.has_value()) {
-  //   bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
-  // }
-
-  // SaveLayer is a no-op, depending on the bounds promise. Should/Can DL elide
-  // this?
   if (bounds.has_value() && bounds->IsEmpty()) {
     Save(total_content_depth);
     return;
@@ -358,7 +350,8 @@ void ExperimentalCanvas::SaveLayer(
   auto coverage_limit = maybe_coverage_limit.value();
 
   if (can_distribute_opacity && !backdrop_filter &&
-      Paint::CanApplyOpacityPeephole(paint)) {
+      Paint::CanApplyOpacityPeephole(paint) &&
+      bounds_promise != ContentBoundsPromise::kMayClipContents) {
     Save(total_content_depth);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;
