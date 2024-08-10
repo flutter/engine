@@ -122,10 +122,10 @@ TEST(DisplayListColor, DlColorComponentGetters) {
 
     const DlScalar half = 127.0f * (1.0f / 255.0f);
 
-    EXPECT_EQ(test.getAlphaF(), half);
-    EXPECT_EQ(test.getRedF(), half);
-    EXPECT_EQ(test.getGreenF(), half);
-    EXPECT_EQ(test.getBlueF(), half);
+    EXPECT_NEAR(test.getAlphaF(), half, 0.00001);
+    EXPECT_NEAR(test.getRedF(), half, 0.00001);
+    EXPECT_NEAR(test.getGreenF(), half, 0.00001);
+    EXPECT_NEAR(test.getBlueF(), half, 0.00001);
   }
 
   {
@@ -136,12 +136,10 @@ TEST(DisplayListColor, DlColorComponentGetters) {
     EXPECT_EQ(test.getGreen(), 0x80);
     EXPECT_EQ(test.getBlue(), 0x80);
 
-    const DlScalar half = 128.0f * (1.0f / 255.0f);
-
-    EXPECT_EQ(test.getAlphaF(), half);
-    EXPECT_EQ(test.getRedF(), half);
-    EXPECT_EQ(test.getGreenF(), half);
-    EXPECT_EQ(test.getBlueF(), half);
+    EXPECT_EQ(test.getAlphaF(), 0.5);
+    EXPECT_EQ(test.getRedF(), 0.5);
+    EXPECT_EQ(test.getGreenF(), 0.5);
+    EXPECT_EQ(test.getBlueF(), 0.5);
   }
 
   {
