@@ -688,6 +688,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                    .Blend(color, entity.GetBlendMode())
                                    .Premultiply();
       render_target.SetColorAttachment(attachment, 0u);
+      return;
     }
   }
 
