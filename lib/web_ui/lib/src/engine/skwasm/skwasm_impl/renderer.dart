@@ -330,19 +330,42 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) {
+
+    if (targetWidth != null) {
+      assert(allowUpscaling || targetWidth <= width);
+    }
+    if (targetHeight != null) {
+      assert(allowUpscaling || targetHeight <= height);
+    }
+    // Skia can copy these pixels into a JS clamped array a lot faster with
+    // ffi than js_interop ideally we could skip a temporary heap allocation,
+    // but until there is a fast Uint8Array copy path, this is much faster.
     final SkwasmImage pixelImage = SkwasmImage.fromPixels(
       pixels,
       width,
       height,
       format
     );
-    final ui.Image scaledImage = scaleImageIfNeeded(
-      pixelImage,
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
-      allowUpscaling: allowUpscaling,
-    );
-    callback(scaledImage);
+
+    try {
+      (() async {
+        final JSAny imageData = ImageData((await pixelImage.toUint8ClampedList()).toJSAnyShallow, width, height.toJS,
+              <String,dynamic>{ 'colorSpace' : 'srgb' }.toJSAnyShallow).toJSAnyShallow;
+
+        final BitmapSize? size = scaledImageSize(width, height, targetWidth, targetHeight);
+
+        final DomImageBitmap bitmap = await createImageBitmap(imageData);
+        final FutureOr<ui.Image> image = createImageFromTextureSource(
+          bitmap.toJSAnyShallow,
+          width: size?.width ?? width,
+          height: size?.height ?? height,
+          transferOwnership: true);
+
+        callback(await image);
+      })();
+    } finally {
+      pixelImage.dispose();
+    }
   }
 
   @override

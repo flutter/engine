@@ -269,12 +269,46 @@ class CanvasKitRenderer implements Renderer {
           {int? rowBytes,
           int? targetWidth,
           int? targetHeight,
-          bool allowUpscaling = true}) =>
-      skiaDecodeImageFromPixels(pixels, width, height, format, callback,
-          rowBytes: rowBytes,
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-          allowUpscaling: allowUpscaling);
+          bool allowUpscaling = true}) {
+
+    if (targetWidth != null) {
+      assert(allowUpscaling || targetWidth <= width);
+    }
+    if (targetHeight != null) {
+      assert(allowUpscaling || targetHeight <= height);
+    }
+
+    late final Uint8ClampedList convertedPixels;
+    if(format == ui.PixelFormat.bgra8888) {
+      convertedPixels = Uint8ClampedList(width * height * 4);
+      var offset = 0;
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          convertedPixels[offset] = pixels[offset + 2]; // r
+          convertedPixels[offset + 1] = pixels[offset + 1]; // g
+          convertedPixels[offset + 2] = pixels[offset]; // b
+          convertedPixels[offset + 3] = pixels[offset + 3]; // a
+          offset+=4;
+        }
+      }
+    } else {
+      convertedPixels = Uint8ClampedList.view(pixels.buffer);
+    }
+
+    final BitmapSize? size = scaledImageSize(width, height, targetWidth, targetHeight);
+
+    final FutureOr<ui.Image> image = createImageFromTextureSource(
+        ImageData(convertedPixels.toJS, width, height.toJS,
+            <String,dynamic>{ 'colorSpace' : 'srgb' }.toJSAnyShallow ).toJSAnyShallow,
+        width: size?.width ?? width,
+        height: size?.height ?? height,
+        transferOwnership: true);
+
+    (() async {
+      callback(await image);
+    })();
+
+  }
 
   @override
   ui.ImageShader createImageShader(
