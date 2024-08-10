@@ -109,8 +109,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
                          disable_partial_repaint = disable_partial_repaint_,  //
                          aiks_context = aiks_context_,                        //
                          drawable,                                            //
-                         last_texture                                         //
+                         last_texture,                                        //
+                         mtl_layer                                            //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
+        mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
+
         if (!aiks_context) {
           return false;
         }
@@ -151,8 +154,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         if (!surface) {
           return false;
         }
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
 
         if (clip_rect && clip_rect->IsEmpty()) {
+          if (!surface->PreparePresent()) {
+            return false;
+          }
           surface_frame.set_user_data(std::move(surface));
           return true;
         }
@@ -164,7 +171,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
         surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
 
-        surface_frame.set_user_data(std::move(surface));
 #if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
@@ -181,12 +187,23 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         if (reset_host_buffer) {
           aiks_context->GetContentContext().GetTransientsBuffer().Reset();
         }
+
+        if (!surface->PreparePresent()) {
+          return false;
+        }
+        surface_frame.set_user_data(std::move(surface));
         return true;
 #else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
-        return aiks_context->Render(picture, render_target, reset_host_buffer);
+        auto result = aiks_context->Render(picture, render_target, reset_host_buffer);
+
+        if (!surface->PreparePresent()) {
+          return false;
+        }
+        surface_frame.set_user_data(std::move(surface));
+        return result;
 #endif
       });
 
@@ -274,7 +291,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         auto surface = impeller::SurfaceMTL::MakeFromTexture(aiks_context->GetContext(),
                                                              mtl_texture, clip_rect);
 
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
+
         if (clip_rect && clip_rect->IsEmpty()) {
+          if (!surface->PreparePresent()) {
+            return false;
+          }
           return surface->Present();
         }
 
@@ -293,6 +315,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         impeller_dispatcher.FinishRecording();
         aiks_context->GetContentContext().GetTransientsBuffer().Reset();
         aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+        if (!surface->PreparePresent()) {
+          return false;
+        }
         bool render_result = true;
 #else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
@@ -307,8 +332,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
           FML_LOG(ERROR) << "Failed to render Impeller frame";
           return false;
         }
-
-        return true;
+        return surface->PreparePresent();
       });
 
   SurfaceFrame::SubmitCallback submit_callback =

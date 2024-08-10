@@ -246,9 +246,6 @@ ContentContext::ContentContext(
       lazy_glyph_atlas_(
           std::make_shared<LazyGlyphAtlas>(std::move(typographer_context))),
       tessellator_(std::make_shared<Tessellator>()),
-#if IMPELLER_ENABLE_3D
-      scene_context_(std::make_shared<scene::SceneContext>(context_)),
-#endif  // IMPELLER_ENABLE_3D
       render_target_cache_(render_target_allocator == nullptr
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
@@ -292,7 +289,15 @@ ContentContext::ContentContext(
   const auto supports_decal = static_cast<Scalar>(
       context_->GetCapabilities()->SupportsDecalSamplerAddressMode());
 
+  // Futures for the following pipelines may block in case the first frame is
+  // rendered without the pipelines being ready. Put pipelines that are more
+  // likely to be used first.
   {
+    glyph_atlas_pipelines_.CreateDefault(
+        *context_, options,
+        {static_cast<Scalar>(
+            GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
+            PixelFormat::kA8UNormInt)});
     solid_fill_pipelines_.CreateDefault(*context_, options);
     texture_pipelines_.CreateDefault(*context_, options);
     fast_gradient_pipelines_.CreateDefault(*context_, options);
@@ -310,7 +315,6 @@ ContentContext::ContentContext(
     }
 
     /// Setup default clip pipeline.
-
     auto clip_pipeline_descriptor =
         ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
     if (!clip_pipeline_descriptor.has_value()) {
@@ -332,6 +336,20 @@ ContentContext::ContentContext(
     clip_pipelines_.SetDefault(
         options,
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
+    texture_downsample_pipelines_.CreateDefault(*context_,
+                                                options_trianglestrip);
+    rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
+    texture_strict_src_pipelines_.CreateDefault(*context_, options);
+    tiled_texture_pipelines_.CreateDefault(*context_, options,
+                                           {supports_decal});
+    gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                           {supports_decal});
+    border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
+    color_matrix_color_filter_pipelines_.CreateDefault(*context_,
+                                                       options_trianglestrip);
+    porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                               {supports_decal});
+    vertices_uber_shader_.CreateDefault(*context_, options, {supports_decal});
   }
 
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
@@ -428,30 +446,14 @@ ContentContext::ContentContext(
         {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
   }
 
-  texture_downsample_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  texture_strict_src_pipelines_.CreateDefault(*context_, options);
-  tiled_texture_pipelines_.CreateDefault(*context_, options, {supports_decal});
-  gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
-                                         {supports_decal});
-  border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
-  color_matrix_color_filter_pipelines_.CreateDefault(*context_,
-                                                     options_trianglestrip);
   linear_to_srgb_filter_pipelines_.CreateDefault(*context_,
                                                  options_trianglestrip);
   srgb_to_linear_filter_pipelines_.CreateDefault(*context_,
                                                  options_trianglestrip);
-  glyph_atlas_pipelines_.CreateDefault(
-      *context_, options,
-      {static_cast<Scalar>(
-          GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
-          PixelFormat::kA8UNormInt)});
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
-                                             {supports_decal});
-  vertices_uber_shader_.CreateDefault(*context_, options, {supports_decal});
+
   // GLES only shader that is unsupported on macOS.
 #if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
@@ -540,12 +542,6 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
 
   return subpass_target;
 }
-
-#if IMPELLER_ENABLE_3D
-std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
-  return scene_context_;
-}
-#endif  // IMPELLER_ENABLE_3D
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
