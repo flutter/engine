@@ -731,5 +731,3 @@ class LazyImageSource extends ImageSource {
   @override
   DomCanvasImageSource get canvasImageSource => imageData;
 }
-
-
