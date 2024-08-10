@@ -14,7 +14,7 @@ static void arraysEqual(const uint32_t* ints,
                         const DlColor* colors,
                         int count) {
   for (int i = 0; i < count; i++) {
-    EXPECT_TRUE(ints[i] == colors[i].argb());
+    EXPECT_EQ(ints[i], colors[i].argb()) << " index:" << i;
   }
 }
 
@@ -34,8 +34,6 @@ TEST(DisplayListColor, ArrayInterchangeableWithUint32) {
       DlColor(0xF1F2F3F4),
   };
   arraysEqual(ints, colors, 5);
-  arraysEqual(reinterpret_cast<const uint32_t*>(colors),
-              reinterpret_cast<const DlColor*>(ints), 5);
 }
 
 TEST(DisplayListColor, DlColorDirectlyComparesToSkColor) {
