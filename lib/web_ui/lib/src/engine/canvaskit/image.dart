@@ -538,6 +538,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
           return readPixelsFromVideoFrame(videoFrame, format);
         }
       case LazyImageSource():
+        if(imageSource!.canvasImageSource.toJSAnyShallow.instanceof(imageDataConstructor) && format == ui.ImageByteFormat.rawRgba) {
+          final DomImageData imageData = imageSource!.canvasImageSource as DomImageData;
+          return Future<ByteData>.value(ByteData.view(imageData.data.buffer));
+        }
         return Future<ByteData>.value(_readPixelsFromImageViaSurface(format));
       case null:
     }

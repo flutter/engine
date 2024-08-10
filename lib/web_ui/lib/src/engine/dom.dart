@@ -1509,6 +1509,9 @@ class DomImageData {
   external factory DomImageData._empty(JSNumber sw, JSNumber sh);
 }
 
+@JS('ImageData')
+external JSFunction get imageDataConstructor;
+
 DomImageData createDomImageData(Object data, int sw, int sh) =>
     DomImageData._(data.toJSAnyShallow, sw.toJS, sh.toJS);
 DomImageData createBlankDomImageData(int sw, int sh) =>
