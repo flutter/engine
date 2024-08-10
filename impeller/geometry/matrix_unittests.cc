@@ -171,8 +171,9 @@ TEST(MatrixTest, GetMaxBasisXYWithLargeAndSmallScalingFactor) {
 }
 
 TEST(MatrixTest, GetMaxBasisXYWithLargeAndSmallScalingFactorNonScaleTranslate) {
-  Matrix m = Matrix::MakeScale({2.625e+20, 2.625e+20, 1}) *
-             Matrix::MakeRotationX(Radians(kPi / 2));
+  Matrix m = Matrix::MakeScale({2.625e+20, 2.625e+20, 1});
+  m.e[0][1] = 2;
+
   EXPECT_TRUE(std::isinf(m.GetMaxBasisLengthXY()));
 }
 
