@@ -42,7 +42,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetNextLayer() {
 void SurfacePool::CreateLayer(
     GrDirectContext* gr_context,
     const AndroidContext& android_context,
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata> overlay_metadata,
     const std::shared_ptr<AndroidSurfaceFactory>& surface_factory) {
   std::unique_ptr<AndroidSurface> android_surface =
       surface_factory->CreateSurface();
@@ -50,18 +50,14 @@ void SurfacePool::CreateLayer(
   FML_CHECK(android_surface && android_surface->IsValid())
       << "Could not create an OpenGL, Vulkan or Software surface to set up "
          "rendering.";
-
-  std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata> java_metadata =
-      jni_facade->FlutterViewCreateOverlaySurface();
-
-  FML_CHECK(java_metadata->window);
-  android_surface->SetNativeWindow(java_metadata->window);
+  FML_CHECK(overlay_metadata->window);
+  android_surface->SetNativeWindow(overlay_metadata->window);
 
   std::unique_ptr<Surface> surface =
       android_surface->CreateGPUSurface(gr_context);
 
   std::shared_ptr<OverlayLayer> layer =
-      std::make_shared<OverlayLayer>(java_metadata->id,           //
+      std::make_shared<OverlayLayer>(overlay_metadata->id,        //
                                      std::move(android_surface),  //
                                      std::move(surface)           //
       );
@@ -72,12 +68,10 @@ void SurfacePool::RecycleLayers() {
   available_layer_index_ = 0;
 }
 
-void SurfacePool::DestroyLayers(
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
+void SurfacePool::DestroyLayers() {
   if (layers_.empty()) {
     return;
   }
-  jni_facade->FlutterViewDestroyOverlaySurfaces();
   layers_.clear();
   available_layer_index_ = 0;
 }

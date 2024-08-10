@@ -81,7 +81,7 @@ TEST(AndroidShellHolder, CreateWithMergedPlatformAndUIThread) {
 TEST(AndroidShellHolder, CreateWithUnMergedPlatformAndUIThread) {
   Settings settings;
   settings.merged_platform_ui_thread = false;
-  auto jni = std::make_shared<JNIMOck>();
+  auto jni = std::make_shared<JNIMock>();
   auto holder = std::make_unique<AndroidShellHolder>(settings, jni);
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(
       nullptr, /*is_fake_window=*/true);

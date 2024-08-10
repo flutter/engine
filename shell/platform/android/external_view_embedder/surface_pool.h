@@ -53,11 +53,11 @@ class SurfacePool {
 
   /// @brief Create a new overlay layer.
   ///
-  /// This method can only be called on the Platform thread.
+  /// This method can only be called on the Raster thread.
   void CreateLayer(
       GrDirectContext* gr_context,
       const AndroidContext& android_context,
-      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata> overlay_metadata,
       const std::shared_ptr<AndroidSurfaceFactory>& surface_factory);
 
   /// @brief Removes unused layers from the pool. Returns the unused layers.
@@ -69,8 +69,11 @@ class SurfacePool {
   /// @brief The count of layers currently in the pool.
   size_t size() const;
 
-  /// @brief Destroys all the layers in the pool.
-  void DestroyLayers(const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
+  /// @brief Clears the state of the surface pool.
+  ///
+  /// Requires that the JNI method FlutterViewDestroyOverlaySurfaces is called
+  /// separately
+  void DestroyLayers();
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning
