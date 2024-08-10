@@ -309,7 +309,8 @@ void ExperimentalCanvas::SaveLayer(
     bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
-  // TODO(jonahwilliams): understand why we sometimes get empty bounds instead of nullopt bounds.
+  // TODO(jonahwilliams): understand why we sometimes get empty bounds instead
+  // of nullopt bounds.
   if (bounds.has_value() && bounds->IsEmpty()) {
     bounds = std::nullopt;
   }
