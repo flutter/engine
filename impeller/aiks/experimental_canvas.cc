@@ -865,6 +865,7 @@ bool ExperimentalCanvas::BlitToOnscreen() {
 
 void ExperimentalCanvas::EndReplay() {
   FML_DCHECK(render_passes_.size() == 1u);
+  render_passes_.back().inline_pass_context->GetRenderPass(0);
   render_passes_.back().inline_pass_context->EndPass();
 
   // If requires_readback_ was true, then we rendered to an offscreen texture
