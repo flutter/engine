@@ -12,7 +12,7 @@ import os
 import sys
 
 from create_xcframework import create_xcframework  # pylint: disable=import-error
-from utils import (  # pylint: disable=import-error
+from sky_utils import (  # pylint: disable=import-error
     assert_directory, assert_file, buildroot_relative_path, copy_binary, copy_tree, create_zip,
     extract_dsym, lipo, strip_binary, write_codesign_config
 )
