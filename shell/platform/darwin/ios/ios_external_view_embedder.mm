@@ -92,7 +92,8 @@ void IOSExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::EndFrame");
-  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger, ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
+  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger,
+                                       ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
 }
 
 // |ExternalViewEmbedder|
