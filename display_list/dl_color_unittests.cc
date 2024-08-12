@@ -46,13 +46,17 @@ TEST(DisplayListColor, DlColorDirectlyComparesToSkColor) {
 TEST(DisplayListColor, DlColorFloatConstructor) {
   EXPECT_EQ(DlColor::ARGB(1.0f, 1.0f, 1.0f, 1.0f), DlColor(0xFFFFFFFF));
   EXPECT_EQ(DlColor::ARGB(0.0f, 0.0f, 0.0f, 0.0f), DlColor(0x00000000));
-  EXPECT_EQ(DlColor::ARGB(0.5f, 0.5f, 0.5f, 0.5f), DlColor(0x80808080));
-  EXPECT_EQ(DlColor::ARGB(1.0f, 0.0f, 0.5f, 1.0f), DlColor(0xFF0080FF));
+  EXPECT_TRUE(
+      DlColor::ARGB(0.5f, 0.5f, 0.5f, 0.5f).isClose(DlColor(0x80808080)));
+  EXPECT_TRUE(
+      DlColor::ARGB(1.0f, 0.0f, 0.5f, 1.0f).isClose(DlColor(0xFF0080FF)));
 
   EXPECT_EQ(DlColor::RGBA(1.0f, 1.0f, 1.0f, 1.0f), DlColor(0xFFFFFFFF));
   EXPECT_EQ(DlColor::RGBA(0.0f, 0.0f, 0.0f, 0.0f), DlColor(0x00000000));
-  EXPECT_EQ(DlColor::RGBA(0.5f, 0.5f, 0.5f, 0.5f), DlColor(0x80808080));
-  EXPECT_EQ(DlColor::RGBA(1.0f, 0.0f, 0.5f, 1.0f), DlColor(0xFFFF0080));
+  EXPECT_TRUE(
+      DlColor::RGBA(0.5f, 0.5f, 0.5f, 0.5f).isClose(DlColor(0x80808080)));
+  EXPECT_TRUE(
+      DlColor::RGBA(1.0f, 0.0f, 0.5f, 1.0f).isClose(DlColor(0xFFFF0080)));
 }
 
 TEST(DisplayListColor, DlColorComponentGetters) {
@@ -235,6 +239,13 @@ TEST(DisplayListColor, EqualityWithColorspace) {
               DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB));
 }
 
+TEST(DisplayListColor, EqualityWithExtendedSRGB) {
+  EXPECT_TRUE(DlColor(1.0, 1.1, -0.2, 0.1, DlColorSpace::kExtendedSRGB) ==
+              DlColor(1.0, 1.1, -0.2, 0.1, DlColorSpace::kExtendedSRGB));
+  EXPECT_FALSE(DlColor(1.0, 1.1, -0.2, 0.1, DlColorSpace::kExtendedSRGB) ==
+               DlColor(1.0, 1.0, 0.0, 0.0, DlColorSpace::kExtendedSRGB));
+}
+
 TEST(DisplayListColor, ColorSpaceSRGBtoSRGB) {
   DlColor srgb(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB);
   EXPECT_EQ(srgb, srgb.withColorSpace(DlColorSpace::kSRGB));
@@ -256,6 +267,14 @@ TEST(DisplayListColor, ColorSpaceP3ToP3) {
   DlColor p3(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3);
   EXPECT_EQ(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3),
             p3.withColorSpace(DlColorSpace::kDisplayP3));
+}
+
+TEST(DisplayListColor, isClose) {
+  EXPECT_TRUE(DlColor(0xffaabbcc).isClose(DlColor(0xffaabbcc)));
+}
+
+TEST(DisplayListColor, isNotClose) {
+  EXPECT_FALSE(DlColor(0xffaabbcc).isClose(DlColor(0xffaabbcd)));
 }
 
 }  // namespace testing

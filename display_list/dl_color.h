@@ -142,24 +142,33 @@ struct DlColor {
            toC(blue_) << 0;
   }
 
+  bool isClose(DlColor const& other, DlScalar delta = 1.0f / 256.0f) {
+    return color_space_ == other.color_space_ &&
+           std::abs(alpha_ - other.alpha_) < delta &&
+           std::abs(red_ - other.red_) < delta &&
+           std::abs(green_ - other.green_) < delta &&
+           std::abs(blue_ - other.blue_) < delta;
+  }
   bool operator==(DlColor const& other) const {
-    return argb() == other.argb() && color_space_ == other.color_space_;
+    return alpha_ == other.alpha_ && red_ == other.red_ &&
+           green_ == other.green_ && blue_ == other.blue_ &&
+           color_space_ == other.color_space_;
   }
   bool operator!=(DlColor const& other) const {
-    return argb() != other.argb() || color_space_ != other.color_space_;
+    return !this->operator==(other);
   }
   bool operator==(uint32_t const& other) const {
     return argb() == other && color_space_ == DlColorSpace::kSRGB;
   }
   bool operator!=(uint32_t const& other) const {
-    return argb() != other || color_space_ != DlColorSpace::kSRGB;
+    return !this->operator==(other);
   }
 
  private:
-  float alpha_;
-  float red_;
-  float green_;
-  float blue_;
+  DlScalar alpha_;
+  DlScalar red_;
+  DlScalar green_;
+  DlScalar blue_;
   DlColorSpace color_space_;
 
   static constexpr DlScalar toF(uint8_t comp) { return comp * (1.0f / 255); }
