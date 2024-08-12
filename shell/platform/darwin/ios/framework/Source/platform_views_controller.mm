@@ -296,7 +296,7 @@ PostPrerollResult PlatformViewsController::PostPrerollAction(
   const bool merge_threads = true;
 #else
   const bool merge_threads = !impeller_enabled;
-#endif  //
+#endif  // FML_OS_IOS_SIMULATOR
 
   if (merge_threads) {
     if (composition_order_.empty()) {
