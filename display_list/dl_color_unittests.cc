@@ -178,11 +178,10 @@ TEST(DisplayListColor, DlColorComponentGetters) {
     EXPECT_EQ(test.getGreen(), round(0.3f * 255));
     EXPECT_EQ(test.getBlue(), round(0.4f * 255));
 
-    // Unfortunately conversion from float to 8-bit back to float is lossy
-    EXPECT_EQ(test.getAlphaF(), round(0.1f * 255) * (1.0f / 255.0f));
-    EXPECT_EQ(test.getRedF(), round(0.2f * 255) * (1.0f / 255.0f));
-    EXPECT_EQ(test.getGreenF(), round(0.3f * 255) * (1.0f / 255.0f));
-    EXPECT_EQ(test.getBlueF(), round(0.4f * 255) * (1.0f / 255.0f));
+    EXPECT_EQ(test.getAlphaF(), 0.1f);
+    EXPECT_EQ(test.getRedF(), 0.2f);
+    EXPECT_EQ(test.getGreenF(), 0.3f);
+    EXPECT_EQ(test.getBlueF(), 0.4f);
   }
 }
 
