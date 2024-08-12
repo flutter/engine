@@ -73,7 +73,7 @@ TEST_F(ShellTest, ColorTests) {
   std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(shell->IsSetup());
 
-  auto finished = [&message_latch](Dart_NativeArguments args) {
+  auto finished = [message_latch](Dart_NativeArguments args) {
     message_latch->Signal();
   };
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finished));
