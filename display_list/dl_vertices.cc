@@ -267,6 +267,15 @@ void DlVertices::Builder::store_colors(const DlColor colors[]) {
   needs_colors_ = false;
 }
 
+void DlVertices::Builder::store_colors(const uint32_t colors[]) {
+  std::vector<DlColor> dlcolors;
+  dlcolors.reserve(vertices_->vertex_count_);
+  for (int i = 0; i < vertices_->vertex_count_; ++i) {
+    dlcolors.emplace_back(DlColor(colors[i]));
+  }
+  store_colors(dlcolors.data());
+}
+
 void DlVertices::Builder::store_indices(const uint16_t indices[]) {
   FML_CHECK(is_valid());
   FML_CHECK(needs_indices_);
