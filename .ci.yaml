@@ -54,6 +54,7 @@ targets:
       config_name: local_engine
 
   - name: Linux linux_android_emulator_tests
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
@@ -95,6 +96,7 @@ targets:
       - testing/skia_gold_client/**
 
   - name: Linux linux_android_emulator_skia_tests
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
