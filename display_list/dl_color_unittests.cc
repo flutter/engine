@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/dl_color.h"
+#include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkColor.h"
@@ -267,6 +268,25 @@ TEST(DisplayListColor, ColorSpaceP3ToP3) {
   DlColor p3(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3);
   EXPECT_EQ(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3),
             p3.withColorSpace(DlColorSpace::kDisplayP3));
+}
+
+TEST(DisplayListColor, ColorSpaceP3ToExtendedSRGB) {
+  DlColor red(0.9, 1.0, 0.0, 0.0, DlColorSpace::kDisplayP3);
+  EXPECT_TRUE(
+      DlColor(0.9, 1.0931, -0.2268, -0.1501, DlColorSpace::kExtendedSRGB)
+          .isClose(red.withColorSpace(DlColorSpace::kExtendedSRGB)))
+      << red.withColorSpace(DlColorSpace::kExtendedSRGB);
+
+  DlColor green(0.9, 0.0, 1.0, 0.0, DlColorSpace::kDisplayP3);
+  EXPECT_TRUE(
+      DlColor(0.9, -0.5116, 1.0183, -0.3106, DlColorSpace::kExtendedSRGB)
+          .isClose(green.withColorSpace(DlColorSpace::kExtendedSRGB)))
+      << green.withColorSpace(DlColorSpace::kExtendedSRGB);
+
+  DlColor blue(0.9, 0.0, 0.0, 1.0, DlColorSpace::kDisplayP3);
+  EXPECT_TRUE(DlColor(0.9, -0.0004, 0.0003, 1.0420, DlColorSpace::kExtendedSRGB)
+                  .isClose(blue.withColorSpace(DlColorSpace::kExtendedSRGB)))
+      << blue.withColorSpace(DlColorSpace::kExtendedSRGB);
 }
 
 TEST(DisplayListColor, isClose) {
