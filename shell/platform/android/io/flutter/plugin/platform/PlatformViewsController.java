@@ -1108,14 +1108,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     testing.
    */
   @VisibleForTesting
-  void initializePlatformViewIfNeeded(int viewId) {
+  boolean initializePlatformViewIfNeeded(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
-      throw new IllegalStateException(
-          "Platform view hasn't been initialized from the platform view channel.");
+      return false;
     }
     if (platformViewParent.get(viewId) != null) {
-      return;
+      return true;
     }
     final View embeddedView = platformView.getView();
     if (embeddedView == null) {
@@ -1161,6 +1160,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     scvh.setView(parentView, flutterView.getWidth(), flutterView.getHeight());
     viewHosts.put(viewId, scvh);
     flutterView.addPlatformView(scvh.getSurfacePackage());
+
+    return true;
   }
 
   public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer) {
@@ -1190,7 +1191,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int viewWidth,
       int viewHeight,
       @NonNull FlutterMutatorsStack mutatorsStack) {
-    initializePlatformViewIfNeeded(viewId);
+    if (!initializePlatformViewIfNeeded(viewId)) {
+      return;
+    }
 
     SurfaceControlViewHost scvh = viewHosts.get(viewId);
 

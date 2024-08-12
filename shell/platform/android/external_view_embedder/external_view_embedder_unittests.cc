@@ -273,12 +273,14 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
         auto surface_frame_2 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -315,6 +317,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
+        [](const SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
 
     embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
@@ -385,6 +388,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
+        [](const SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
 
     embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
@@ -453,6 +457,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
+        [](const SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
     embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
                                 std::move(surface_frame));
@@ -486,6 +491,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -562,6 +568,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
+      [](const SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
@@ -587,6 +594,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -668,6 +676,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
+      [](const SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
@@ -693,6 +702,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -739,6 +749,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
+      [](const SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
@@ -784,6 +795,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -844,6 +856,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
+        [](const SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
     embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
                                 std::move(surface_frame));
@@ -875,6 +888,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -934,6 +948,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
+        [](const SurfaceFrame& surface_frame) { return true; },
         /*frame_size=*/SkISize::Make(800, 600));
     embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
                                 std::move(surface_frame));
@@ -1004,6 +1019,7 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
+            [](const SurfaceFrame& surface_frame) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
 
         auto surface_mock = std::make_unique<SurfaceMock>();
@@ -1048,6 +1064,7 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
   auto surface_frame = std::make_unique<SurfaceFrame>(
       SkSurfaces::Null(1000, 1000), framebuffer_info,
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },
+      [](const SurfaceFrame& surface_frame) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   embedder->SubmitFlutterView(kImplicitViewId, gr_context.get(), nullptr,
                               std::move(surface_frame));

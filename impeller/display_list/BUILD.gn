@@ -54,10 +54,13 @@ template("display_list_unittests_component") {
   predefined_sources = [
     "aiks_dl_atlas_unittests.cc",
     "aiks_dl_basic_unittests.cc",
+    "aiks_dl_blend_unittests.cc",
     "aiks_dl_clip_unittests.cc",
     "aiks_dl_gradient_unittests.cc",
     "aiks_dl_opacity_unittests.cc",
     "aiks_dl_path_unittests.cc",
+    "aiks_dl_runtime_effect_unittests.cc",
+    "aiks_dl_text_unittests.cc",
     "aiks_dl_unittests.cc",
     "aiks_dl_vertices_unittests.cc",
     "dl_golden_blur_unittests.cc",
