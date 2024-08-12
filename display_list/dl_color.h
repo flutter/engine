@@ -58,6 +58,9 @@ struct DlColor {
   static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFF6495ED);};
   static constexpr DlColor kCrimson()            {return DlColor(0xFFFF5733);};
   static constexpr DlColor kAqua()               {return DlColor(0xFF00FFFF);};
+  static constexpr DlColor kOrange()             {return DlColor(0xFFFFA500);};
+  static constexpr DlColor kPurple()             {return DlColor(0xFF800080);};
+  static constexpr DlColor kLimeGreen()          {return DlColor(0xFF32CD32);};
   // clang-format on
 
   constexpr bool isOpaque() const { return getAlpha() == 0xFF; }
