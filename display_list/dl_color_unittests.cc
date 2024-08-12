@@ -224,5 +224,39 @@ TEST(DisplayListColor, DlColorOpaqueTransparent) {
   }
 }
 
+TEST(DisplayListColor, EqualityWithColorspace) {
+  EXPECT_TRUE(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB) ==
+              DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB));
+  EXPECT_FALSE(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB) ==
+               DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB));
+  EXPECT_FALSE(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB) !=
+               DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB));
+  EXPECT_TRUE(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB) !=
+              DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB));
+}
+
+TEST(DisplayListColor, ColorSpaceSRGBtoSRGB) {
+  DlColor srgb(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB);
+  EXPECT_EQ(srgb, srgb.withColorSpace(DlColorSpace::kSRGB));
+}
+
+TEST(DisplayListColor, ColorSpaceSRGBtoExtendedSRGB) {
+  DlColor srgb(0.9, 0.8, 0.7, 0.6, DlColorSpace::kSRGB);
+  EXPECT_EQ(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB),
+            srgb.withColorSpace(DlColorSpace::kExtendedSRGB));
+}
+
+TEST(DisplayListColor, ColorSpaceExtendedSRGBtoExtendedSRGB) {
+  DlColor xsrgb(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB);
+  EXPECT_EQ(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kExtendedSRGB),
+            xsrgb.withColorSpace(DlColorSpace::kExtendedSRGB));
+}
+
+TEST(DisplayListColor, ColorSpaceP3ToP3) {
+  DlColor p3(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3);
+  EXPECT_EQ(DlColor(0.9, 0.8, 0.7, 0.6, DlColorSpace::kDisplayP3),
+            p3.withColorSpace(DlColorSpace::kDisplayP3));
+}
+
 }  // namespace testing
 }  // namespace flutter

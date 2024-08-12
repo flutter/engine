@@ -127,6 +127,7 @@ struct DlColor {
   constexpr DlColor withBlueF(float blue) const {  //
     return DlColor(alpha_, red_, green_, blue, color_space_);
   }
+  DlColor withColorSpace(DlColorSpace color_space) const;
 
   constexpr DlColor modulateOpacity(DlScalar opacity) const {
     return opacity <= 0   ? withAlpha(0)
@@ -141,10 +142,18 @@ struct DlColor {
            toC(blue_) << 0;
   }
 
-  bool operator==(DlColor const& other) const { return argb() == other.argb(); }
-  bool operator!=(DlColor const& other) const { return argb() != other.argb(); }
-  bool operator==(uint32_t const& other) const { return argb() == other; }
-  bool operator!=(uint32_t const& other) const { return argb() != other; }
+  bool operator==(DlColor const& other) const {
+    return argb() == other.argb() && color_space_ == other.color_space_;
+  }
+  bool operator!=(DlColor const& other) const {
+    return argb() != other.argb() || color_space_ != other.color_space_;
+  }
+  bool operator==(uint32_t const& other) const {
+    return argb() == other && color_space_ == DlColorSpace::kSRGB;
+  }
+  bool operator!=(uint32_t const& other) const {
+    return argb() != other || color_space_ != DlColorSpace::kSRGB;
+  }
 
  private:
   float alpha_;
