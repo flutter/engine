@@ -312,6 +312,8 @@ class Color {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Color? lerp(Color? a, Color? b, double t) {
+    assert(a?.colorSpace != ColorSpace.extendedSRGB);
+    assert(b?.colorSpace != ColorSpace.extendedSRGB);
     if (b == null) {
       if (a == null) {
         return null;
@@ -322,6 +324,7 @@ class Color {
       if (a == null) {
         return _scaleAlpha(b, t);
       } else {
+        assert(a.colorSpace == b.colorSpace);
         return Color.from(
           alpha: _lerpComponent(a.a, b.a, t),
           red: _lerpComponent(a.r, b.r, t),

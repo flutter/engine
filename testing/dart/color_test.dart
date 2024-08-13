@@ -81,16 +81,22 @@ void main() {
   });
 
   test('Color.lerp different colorspaces', () {
-    expect(
+    bool didThrow = false;
+    try {
       Color.lerp(
           const Color.from(
-              alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3),
+              alpha: 1,
+              red: 1,
+              green: 0,
+              blue: 0,
+              colorSpace: ColorSpace.displayP3),
           const Color.from(
-              alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.sRGB),
-          0.0),
-      const Color.from(
-          alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.sRGB),
-    );
+              alpha: 1, red: 1, green: 0, blue: 0),
+          0.0);
+    } catch (ex) {
+      didThrow = true;
+    }
+    expect(didThrow, isTrue);
   });
 
   test('Color.alphaBlend', () {
