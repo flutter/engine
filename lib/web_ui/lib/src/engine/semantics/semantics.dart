@@ -1753,7 +1753,7 @@ class SemanticsObject {
 
   bool get isSelectable =>
       hasFlag(ui.SemanticsFlag.isSelected);
-  
+
   /// Role-specific adjustment of the vertical position of the child container.
   ///
   /// This is used, for example, by the [SemanticScrollable] to compensate for the
