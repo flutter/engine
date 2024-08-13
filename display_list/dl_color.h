@@ -55,7 +55,7 @@ struct DlColor {
   static constexpr DlColor kFuchsia()            {return DlColor(0xFFFF00FF);};
   static constexpr DlColor kMaroon()             {return DlColor(0xFF800000);};
   static constexpr DlColor kSkyBlue()            {return DlColor(0xFF87CEEB);};
-  static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFFFF5733);};
+  static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFF6495ED);};
   static constexpr DlColor kCrimson()            {return DlColor(0xFFFF5733);};
   static constexpr DlColor kAqua()               {return DlColor(0xFF00FFFF);};
   static constexpr DlColor kOrange()             {return DlColor(0xFFFFA500);};
