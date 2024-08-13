@@ -3788,8 +3788,8 @@ abstract class ImageFilter {
   /// ```
   ///
   /// This API is only supported when using the Impeller rendering engine. On
-  /// other backends a [UnsupportedError] will be thrown. This error can be
-  /// caught and used for feature detection.
+  /// other backends a [UnsupportedError] will be thrown. To check at runtime
+  /// whether this API is suppored use [isShaderFilterSupported].
   factory ImageFilter.shader(FragmentShader shader) {
     if (!_impellerEnabled) {
       throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
@@ -3801,6 +3801,9 @@ abstract class ImageFilter {
     }
     return _FragmentShaderImageFilter(shader);
   }
+
+  /// Whether [ImageFilter.shader] is supported on the current backend.
+  static bool get isShaderFilterSupported => _impellerEnabled;
 
   // Converts this to a native DlImageFilter. See the comments of this method in
   // subclasses for the exact type of DlImageFilter this method converts to.

@@ -453,6 +453,8 @@ class ImageFilter {
   factory ImageFilter.shader(FragmentShader shader) {
     throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
   }
+
+  static bool get isShaderFilterSupported => false;
 }
 
 enum ColorSpace {
