@@ -805,7 +805,7 @@ TEST_P(AiksTest, GaussianBlurScaledAndClipped) {
   Rect dest = bounds.Shift(-image_center);
   SkRect sk_dst = SkRect::MakeLTRB(dest.GetLeft(), dest.GetTop(),
                                    dest.GetRight(), dest.GetBottom());
-  builder.DrawImageRect(DlImageImpeller::Make(boston), /*source=*/sk_bounds,
+  builder.DrawImageRect(DlImageImpeller::Make(boston), /*src=*/sk_bounds,
                         /*dst=*/sk_dst, DlImageSampling::kNearestNeighbor,
                         &paint);
 
@@ -858,7 +858,7 @@ TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
     Rect dest = bounds.Shift(-image_center);
     SkRect sk_dst = SkRect::MakeLTRB(dest.GetLeft(), dest.GetTop(),
                                      dest.GetRight(), dest.GetBottom());
-    builder.DrawImageRect(DlImageImpeller::Make(boston), /*source=*/sk_bounds,
+    builder.DrawImageRect(DlImageImpeller::Make(boston), /*src=*/sk_bounds,
                           /*dst=*/sk_dst, DlImageSampling::kNearestNeighbor,
                           &paint);
     return builder.Build();
