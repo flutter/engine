@@ -7,12 +7,15 @@
 #include "display_list/dl_builder.h"
 #include "display_list/dl_color.h"
 #include "display_list/dl_paint.h"
+#include "display_list/dl_sampling_options.h"
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_filter.h"
+#include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
 #include "display_list/effects/dl_mask_filter.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
+#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/playground/widgets.h"
 #include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
@@ -47,8 +50,10 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
 
   DlPaint paint;
   paint.setColor(DlColor::kWhite());
+
+  Sigma sigma = Radius(20);
   paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, Sigma(Radius(20)).sigma));
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -64,9 +69,12 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
   builder.ClipRect(SkRect::MakeXYWH(100, 150, 400, 400));
 
   DlPaint paint;
-  paint.setColor(DlColor::kLightGrey());
+  paint.setColor(
+      DlColor::RGBA(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f));
+
+  Sigma sigma = Radius(20);
   paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, Sigma(Radius(20)).sigma));
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   builder.DrawCircle({400, 400}, 200, paint);
   builder.Restore();
 
@@ -84,19 +92,13 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     paint.setColor(DlColor::kCornflowerBlue());
     builder.DrawCircle({100, 100}, 50, paint);
 
-    paint.setColor(
-        DlColor::RGBA(Color::GreenYellow().red, Color::GreenYellow().green,
-                      Color::GreenYellow().blue, Color::GreenYellow().alpha));
+    paint.setColor(DlColor::kGreenYellow());
     builder.DrawCircle({300, 200}, 100, paint);
 
-    paint.setColor(
-        DlColor::RGBA(Color::DarkMagenta().red, Color::DarkMagenta().green,
-                      Color::DarkMagenta().blue, Color::DarkMagenta().alpha));
+    paint.setColor(DlColor::kDarkMagenta());
     builder.DrawCircle({140, 170}, 75, paint);
 
-    paint.setColor(
-        DlColor::RGBA(Color::OrangeRed().red, Color::OrangeRed().green,
-                      Color::OrangeRed().blue, Color::OrangeRed().alpha));
+    paint.setColor(DlColor::kOrangeRed());
     builder.DrawCircle({180, 120}, 100, paint);
 
     SkRRect rrect =
@@ -123,19 +125,13 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   paint.setColor(DlColor::kCornflowerBlue());
   builder.DrawCircle({100, 100}, 50, paint);
 
-  paint.setColor(
-      DlColor::RGBA(Color::GreenYellow().red, Color::GreenYellow().green,
-                    Color::GreenYellow().blue, Color::GreenYellow().alpha));
+  paint.setColor(DlColor::kGreenYellow());
   builder.DrawCircle({300, 200}, 100, paint);
 
-  paint.setColor(
-      DlColor::RGBA(Color::DarkMagenta().red, Color::DarkMagenta().green,
-                    Color::DarkMagenta().blue, Color::DarkMagenta().alpha));
+  paint.setColor(DlColor::kDarkMagenta());
   builder.DrawCircle({140, 170}, 75, paint);
 
-  paint.setColor(DlColor::RGBA(Color::OrangeRed().red, Color::OrangeRed().green,
-                               Color::OrangeRed().blue,
-                               Color::OrangeRed().alpha));
+  paint.setColor(DlColor::kOrangeRed());
   builder.DrawCircle({180, 120}, 100, paint);
 
   SkRRect rrect =
@@ -193,8 +189,9 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
     builder.Translate(location.x, location.y);
 
     DlPaint paint;
-    paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal,
-                                               Sigma(Radius(120 * 3)).sigma));
+    Sigma sigma = Radius(120 * 3);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
     paint.setColor(DlColor::kRed());
 
     SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
@@ -208,8 +205,9 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
   DisplayListBuilder builder;
   builder.Translate(0, -400);
   DlPaint paint;
-  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal,
-                                             Sigma(Radius(120 * 3)).sigma));
+  Sigma sigma = Radius(120 * 3);
+  paint.setMaskFilter(
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColor(DlColor::kRed());
 
   SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
@@ -420,6 +418,151 @@ MASK_BLUR_VARIANT_TEST(OuterTranslucent)
 MASK_BLUR_VARIANT_TEST(OuterOpaqueWithBlurImageFilter)
 
 #undef MASK_BLUR_VARIANT_TEST
+
+TEST_P(AiksTest, GaussianBlurStyleInner) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1));
+  builder.DrawPaint(paint);
+
+  paint.setColor(DlColor::kGreen());
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kInner, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleOuter) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+  builder.DrawPaint(paint);
+
+  paint.setColor(DlColor::kGreen());
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kOuter, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleSolid) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+  builder.DrawPaint(paint);
+
+  paint.setColor(DlColor::kGreen());
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kSolid, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, MaskBlurTexture) {
+  Scalar sigma = 30;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 500);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    DlPaint paint;
+    paint.setColor(DlColor::kGreen());
+    paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+
+    builder.DrawImage(
+        DlImageImpeller::Make(CreateTextureForFixture("boston.jpg")),
+        {200, 200}, DlImageSampling::kNearestNeighbor, &paint);
+
+    DlPaint red;
+    red.setColor(DlColor::kRed());
+    builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, MaskBlurDoesntStretchContents) {
+  Scalar sigma = 70;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 500);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    DlPaint paint;
+    paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+    builder.DrawPaint(paint);
+
+    std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+
+    builder.Transform(SkMatrix::Translate(100, 100) *
+                      SkMatrix::Scale(0.5, 0.5));
+
+    paint.setColorSource(std::make_shared<DlImageColorSource>(
+        DlImageImpeller::Make(boston), DlTileMode::kRepeat,
+        DlTileMode::kRepeat));
+    paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+
+    builder.DrawRect(SkRect::MakeXYWH(0, 0, boston->GetSize().width,
+                                      boston->GetSize().height),
+                     paint);
+
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
 
 }  // namespace testing
 }  // namespace impeller

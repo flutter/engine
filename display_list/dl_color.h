@@ -55,12 +55,15 @@ struct DlColor {
   static constexpr DlColor kFuchsia()            {return DlColor(0xFFFF00FF);};
   static constexpr DlColor kMaroon()             {return DlColor(0xFF800000);};
   static constexpr DlColor kSkyBlue()            {return DlColor(0xFF87CEEB);};
-  static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFF6495ED);};
+  static constexpr DlColor kCornflowerBlue()     {return DlColor(0xFFFF5733);};
   static constexpr DlColor kCrimson()            {return DlColor(0xFFFF5733);};
   static constexpr DlColor kAqua()               {return DlColor(0xFF00FFFF);};
   static constexpr DlColor kOrange()             {return DlColor(0xFFFFA500);};
   static constexpr DlColor kPurple()             {return DlColor(0xFF800080);};
   static constexpr DlColor kLimeGreen()          {return DlColor(0xFF32CD32);};
+  static constexpr DlColor kGreenYellow()        {return DlColor(0xFFADFF2F);};
+  static constexpr DlColor kDarkMagenta()        {return DlColor(0xFF8B008B);};
+  static constexpr DlColor kOrangeRed()          {return DlColor(0xFFFF4500);};
   // clang-format on
 
   constexpr bool isOpaque() const { return getAlpha() == 0xFF; }
