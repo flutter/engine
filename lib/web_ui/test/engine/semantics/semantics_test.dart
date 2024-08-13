@@ -75,6 +75,9 @@ void runSemanticsTests() {
   group('text field', () {
     _testTextField();
   });
+  group('selectables', () {
+    _testSelectables();
+  });
   group('checkboxes, radio buttons and switches', () {
     _testCheckables();
   });
@@ -1920,6 +1923,66 @@ void _testTextField() {
       node.semanticRole!.debugSemanticBehaviorTypes,
       isNot(contains(Focusable)),
     );
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+void _testSelectables() {
+  test('renders a selected element', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      actions: 0 | ui.SemanticsAction.tap.index,
+      label: 'test label',
+      flags: 0 |
+          ui.SemanticsFlag.isEnabled.index |
+          ui.SemanticsFlag.hasEnabledState.index |
+          ui.SemanticsFlag.isSelected.index |
+          ui.SemanticsFlag.isFocusable.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem aria-label="test label" flt-tappable aria-selected="true"></sem>
+''');
+
+    final SemanticsObject node = owner().debugSemanticsTree![0]!;
+    expect(node.semanticRole?.kind, SemanticRoleKind.selectable);
+    expect(
+      reason: 'Selectables use generic semantic behaviors',
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
+    );
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('renders a disabled non-selected element', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      actions: 0 | ui.SemanticsAction.tap.index,
+      flags: 0 |
+          ui.SemanticsFlag.hasEnabledState.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem aria-disabled="true" aria-selected="false"></sem>
+''');
 
     semantics().semanticsEnabled = false;
   });

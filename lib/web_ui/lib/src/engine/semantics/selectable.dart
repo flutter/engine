@@ -29,7 +29,8 @@ class SemanticSelectable extends SemanticRole {
 
       setAttribute(
         'aria-selected',
-        (semanticsObject.hasFlag(ui.SemanticsFlag.isSelected))
+        (semanticsObject.hasFlag(ui.SemanticsFlag.isSelected) &&
+        semanticsObject.hasFlag(ui.SemanticsFlag.isFocusable))
             ? 'true'
             : 'false',
       );
