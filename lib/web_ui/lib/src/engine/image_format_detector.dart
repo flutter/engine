@@ -236,7 +236,7 @@ class _WebpHeaderReader {
   bool _readWebpHeader() {
     final String riffBytes = _readFourCC();
 
-    // Skip reading file size byte.
+    // Skip reading file size bytes.
     _position += 4;
 
     final String webpBytes = _readFourCC();
