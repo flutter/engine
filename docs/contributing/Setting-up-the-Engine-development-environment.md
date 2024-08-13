@@ -26,7 +26,6 @@ Make sure you have the following dependencies available:
  * On macOS:
    - Install the latest Xcode.
    - On Apple Silicon arm64 Macs, install the Rosetta translation environment by running `softwareupdate --install-rosetta`.
-   - Install Oracle's Java JDK, version 1.8 or later.
 
 You do not need to install [Dart](https://www.dartlang.org/downloads/linux.html).
 A Dart toolchain is automatically downloaded as part of the "Getting the source"
@@ -168,6 +167,12 @@ To set up:
     to your VSCode's settings.json for your user or for your workspace.
 
 1. If you previously had a `shell/platform/android/.classpath`, delete it.
+
+### Using Android Studio as an IDE for the Android Embedding [Java]
+
+Alternatively, Android Studio can be used as an IDE for the Android Embedding Java code. See docs
+at https://github.com/flutter/engine/blob/main/shell/platform/android/README.md#editing-java-code for
+instructions.
 
 ## VSCode Additional Useful Configuration
 

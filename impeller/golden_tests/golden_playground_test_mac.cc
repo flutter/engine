@@ -44,16 +44,16 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
     static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
         vulkan_validation_playground(
             MakeVulkanPlayground(/*enable_validations=*/true));
-    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
-    // removed when the thread local storage is removed.
+    // TODO(142237): This can be removed when the thread local storage is
+    // removed.
     static fml::ScopedCleanupClosure context_cleanup(
         [&] { (*vulkan_validation_playground)->GetContext()->Shutdown(); });
     return *vulkan_validation_playground;
   } else {
     static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
         vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
-    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
-    // removed when the thread local storage is removed.
+    // TODO(142237): This can be removed when the thread local storage is
+    // removed.
     static fml::ScopedCleanupClosure context_cleanup(
         [&] { (*vulkan_playground)->GetContext()->Shutdown(); });
     return *vulkan_playground;
@@ -140,17 +140,20 @@ std::string GetTestName() {
   return result;
 }
 
-std::string GetGoldenFilename() {
-  return GetTestName() + ".png";
+std::string GetGoldenFilename(const std::string& postfix) {
+  return GetTestName() + postfix + ".png";
 }
+}  // namespace
 
-bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
+bool GoldenPlaygroundTest::SaveScreenshot(
+    std::unique_ptr<testing::Screenshot> screenshot,
+    const std::string& postfix) {
   if (!screenshot || !screenshot->GetBytes()) {
     FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
     return false;
   }
   std::string test_name = GetTestName();
-  std::string filename = GetGoldenFilename();
+  std::string filename = GetGoldenFilename(postfix);
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   if (!screenshot->WriteToPNG(
@@ -160,8 +163,6 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   }
   return true;
 }
-
-}  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
@@ -394,6 +395,21 @@ void GoldenPlaygroundTest::GoldenPlaygroundTest::SetWindowSize(ISize size) {
 fml::Status GoldenPlaygroundTest::SetCapabilities(
     const std::shared_ptr<Capabilities>& capabilities) {
   return pimpl_->screenshotter->GetPlayground().SetCapabilities(capabilities);
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+
+  std::unique_ptr<testing::Screenshot> screenshot =
+      pimpl_->screenshotter->MakeScreenshot(renderer, picture,
+                                            pimpl_->window_size);
+
+  return screenshot;
 }
 
 }  // namespace impeller

@@ -226,6 +226,15 @@ def setup_rbe(args):
   # care of starting and stopping the compiler proxy.
   running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
 
+  # The default is 'racing', which eagerly attempts to use the local machine
+  # to run build actions. This is not a performance improvement in CI where the
+  # 'local machine' is nearly always a VM anyway, and is not any more powerful
+  # than the 'remote' RBE workers. Only  attempt a 'local' build if the remote
+  # worker times-out or otherwise fails. See also docs on RbeExecStrategy in the
+  # engine_build_config package under tools/pkg.
+  if running_on_luci:
+    rbe_gn_args['rbe_exec_strategy'] = 'remote_local_fallback'
+
   if args.rbe_server_address:
     rbe_gn_args['rbe_server_address'] = args.rbe_server_address
   if args.rbe_exec_strategy:
@@ -492,11 +501,6 @@ def to_gn_args(args):
       ('cygwin', 'win')) and args.target_os == 'android' and gn_args['target_cpu'] == 'arm':
     gn_args['host_cpu'] = 'x86'
     gn_args['current_cpu'] = 'x86'
-
-  # TODO(cbracken):
-  # https://github.com/flutter/flutter/issues/103386
-  if get_host_os() == 'mac' and not args.force_mac_arm64:
-    gn_args['host_cpu'] = 'x64'
 
   if gn_args['target_os'] == 'ios' or get_host_os() == 'mac':
     if gn_args['target_os'] == 'ios':
@@ -913,13 +917,6 @@ def parse_args(args):
   parser.add_argument('--ios', dest='target_os', action='store_const', const='ios')
   parser.add_argument('--mac', dest='target_os', action='store_const', const='mac')
   parser.add_argument('--mac-cpu', type=str, choices=['x64', 'arm64'], default='x64')
-  parser.add_argument(
-      '--force-mac-arm64',
-      action='store_true',
-      default=False,
-      help='Force use of the clang_arm64 toolchain on an arm64 mac host when '
-      'building host binaries.'
-  )
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument('--linux', dest='target_os', action='store_const', const='linux')
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')

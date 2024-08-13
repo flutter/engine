@@ -304,6 +304,9 @@ typedef enum {
   /// Specifies an OpenGL frame-buffer target type. Framebuffers are specified
   /// using the FlutterOpenGLFramebuffer struct.
   kFlutterOpenGLTargetTypeFramebuffer,
+  /// Specifies an OpenGL on-screen surface target type. Surfaces are specified
+  /// using the FlutterOpenGLSurface struct.
+  kFlutterOpenGLTargetTypeSurface,
 } FlutterOpenGLTargetType;
 
 /// A pixel format to be used for software rendering.
@@ -407,6 +410,55 @@ typedef struct {
   /// collect the framebuffer.
   VoidCallback destruction_callback;
 } FlutterOpenGLFramebuffer;
+
+typedef bool (*FlutterOpenGLSurfaceCallback)(void* /* user data */,
+                                             bool* /* opengl state changed */);
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterOpenGLSurface).
+  size_t struct_size;
+
+  /// User data to be passed to the make_current, clear_current and
+  /// destruction callbacks.
+  void* user_data;
+
+  /// Callback invoked (on an engine-managed thread) that asks the embedder to
+  /// make the surface current.
+  ///
+  /// Should return true if the operation succeeded, false if the surface could
+  /// not be made current and rendering should be cancelled.
+  ///
+  /// The second parameter 'opengl state changed' should be set to true if
+  /// any OpenGL API state is different than before this callback was called.
+  /// In that case, Flutter will invalidate the internal OpenGL API state cache,
+  /// which is a somewhat expensive operation.
+  ///
+  /// @attention required. (non-null)
+  FlutterOpenGLSurfaceCallback make_current_callback;
+
+  /// Callback invoked (on an engine-managed thread) when the current surface
+  /// can be cleared.
+  ///
+  /// Should return true if the operation succeeded, false if an error ocurred.
+  /// That error will be logged but otherwise not handled by the engine.
+  ///
+  /// The second parameter 'opengl state changed' is the same as with the
+  /// @ref make_current_callback.
+  ///
+  /// The embedder might clear the surface here after it was previously made
+  /// current. That's not required however, it's also possible to clear it in
+  /// the destruction callback. There's no way to signal OpenGL state
+  /// changes in the destruction callback though.
+  ///
+  /// @attention required. (non-null)
+  FlutterOpenGLSurfaceCallback clear_current_callback;
+
+  /// Callback invoked (on an engine-managed thread) that asks the embedder to
+  /// collect the surface.
+  ///
+  /// @attention required. (non-null)
+  VoidCallback destruction_callback;
+} FlutterOpenGLSurface;
 
 typedef bool (*BoolCallback)(void* /* user data */);
 typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
@@ -1538,7 +1590,7 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
 
 /// An update to whether a message channel has a listener set or not.
 typedef struct {
-  // The size of the struct. Must be sizeof(FlutterChannelUpdate).
+  /// The size of the struct. Must be sizeof(FlutterChannelUpdate).
   size_t struct_size;
   /// The name of the channel.
   const char* channel;
@@ -1619,6 +1671,9 @@ typedef struct {
     /// A framebuffer for Flutter to render into. The embedder must ensure that
     /// the framebuffer is complete.
     FlutterOpenGLFramebuffer framebuffer;
+    /// A surface for Flutter to render into. Basically a wrapper around
+    /// a closure that'll be called when the surface should be made current.
+    FlutterOpenGLSurface surface;
   };
 } FlutterOpenGLBackingStore;
 
@@ -1640,6 +1695,7 @@ typedef struct {
 } FlutterSoftwareBackingStore;
 
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSoftwareBackingStore2).
   size_t struct_size;
   /// A pointer to the raw bytes of the allocation described by this software
   /// backing store.
@@ -1813,6 +1869,7 @@ typedef struct {
 /// Contains additional information about the backing store provided
 /// during presentation to the embedder.
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterBackingStorePresentInfo).
   size_t struct_size;
 
   /// The area of the backing store that contains Flutter contents. Pixels
@@ -1974,7 +2031,7 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     size_t /* Number of locales*/);
 
 typedef struct {
-  /// This size of this struct. Must be sizeof(FlutterDisplay).
+  /// The size of this struct. Must be sizeof(FlutterEngineDisplay).
   size_t struct_size;
 
   FlutterEngineDisplayId display_id;

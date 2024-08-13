@@ -476,7 +476,12 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 }
 
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
-  if (rect.IsSquare()) {
+  // TODO(jonahwilliams): This additional condition avoids an assert in the
+  // stroke circle geometry generator. I need to verify the condition that this
+  // assert prevents.
+  if (rect.IsSquare() && (paint.style == Paint::Style::kFill ||
+                          (paint.style == Paint::Style::kStroke &&
+                           paint.stroke_width < rect.GetWidth()))) {
     // Circles have slightly less overhead and can do stroking
     DrawCircle(rect.GetCenter(), rect.GetWidth() * 0.5f, paint);
     return;
@@ -810,7 +815,8 @@ void Canvas::SaveLayer(const Paint& paint,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity) {
   if (can_distribute_opacity && !backdrop_filter &&
-      Paint::CanApplyOpacityPeephole(paint)) {
+      Paint::CanApplyOpacityPeephole(paint) &&
+      bounds_promise != ContentBoundsPromise::kMayClipContents) {
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;

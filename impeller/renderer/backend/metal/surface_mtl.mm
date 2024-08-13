@@ -222,8 +222,7 @@ IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
 
-// |Surface|
-bool SurfaceMTL::Present() const {
+bool SurfaceMTL::PreparePresent() const {
   auto context = context_.lock();
   if (!context) {
     return false;
@@ -231,6 +230,9 @@ bool SurfaceMTL::Present() const {
 
 #ifdef IMPELLER_DEBUG
   context->GetResourceAllocator()->DebugTraceMemoryStatistics();
+  if (frame_boundary_) {
+    ContextMTL::Cast(context.get())->GetCaptureManager()->FinishCapture();
+  }
 #endif  // IMPELLER_DEBUG
 
   if (requires_blit_) {
@@ -257,6 +259,19 @@ bool SurfaceMTL::Present() const {
 #ifdef IMPELLER_DEBUG
   ContextMTL::Cast(context.get())->GetGPUTracer()->MarkFrameEnd();
 #endif  // IMPELLER_DEBUG
+  prepared_ = true;
+  return true;
+}
+
+// |Surface|
+bool SurfaceMTL::Present() const {
+  if (!prepared_) {
+    PreparePresent();
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
 
   if (drawable_) {
     id<MTLCommandBuffer> command_buffer =
@@ -283,7 +298,7 @@ bool SurfaceMTL::Present() const {
     // If the threads have been merged, or there is a pending frame capture,
     // then block on cmd buffer scheduling to ensure that the
     // transaction/capture work correctly.
-    if ([[NSThread currentThread] isMainThread] ||
+    if (present_with_transaction_ || [[NSThread currentThread] isMainThread] ||
         [[MTLCaptureManager sharedCaptureManager] isCapturing] ||
         alwaysWaitForScheduling) {
       TRACE_EVENT0("flutter", "waitUntilScheduled");
