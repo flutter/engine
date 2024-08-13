@@ -200,7 +200,7 @@ class MatrixImageFilter : public ImageFilter {
   std::shared_ptr<ImageFilter> Clone() const override;
 
   // |ImageFilter|
-  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+  void Visit(ImageFilterVisitor& visitor) override;
 
   const Matrix& GetMatrix() const { return matrix_; }
 
@@ -227,7 +227,7 @@ class ComposeImageFilter : public ImageFilter {
   std::shared_ptr<ImageFilter> Clone() const override;
 
   // |ImageFilter|
-  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+  void Visit(ImageFilterVisitor& visitor) override;
 
  private:
   std::shared_ptr<ImageFilter> inner_;
@@ -252,7 +252,7 @@ class ColorImageFilter : public ImageFilter {
   std::shared_ptr<ImageFilter> Clone() const override;
 
   // |ImageFilter|
-  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+  void Visit(ImageFilterVisitor& visitor) override;
 
  private:
   std::shared_ptr<ColorFilter> color_filter_;
@@ -277,7 +277,7 @@ class LocalMatrixImageFilter : public ImageFilter {
   std::shared_ptr<ImageFilter> Clone() const override;
 
   // |ImageFilter|
-  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+  void Visit(ImageFilterVisitor& visitor) override;
 
  private:
   Matrix matrix_;
@@ -295,7 +295,7 @@ class RuntimeEffectImageFilter : public ImageFilter {
       std::shared_ptr<std::vector<uint8_t>> uniforms,
       std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
-  ~RuntimeEffectImageFilter() = default;
+  ~RuntimeEffectImageFilter();
 
   // |ImageFilter|
   std::shared_ptr<FilterContents> WrapInput(
@@ -305,7 +305,7 @@ class RuntimeEffectImageFilter : public ImageFilter {
   std::shared_ptr<ImageFilter> Clone() const override;
 
   // |ImageFilter|
-  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+  void Visit(ImageFilterVisitor& visitor) override;
 
  private:
   std::shared_ptr<RuntimeStage> runtime_stage_;

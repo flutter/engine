@@ -87,9 +87,6 @@ TEST_P(AiksTest, DrawPaintTransformsBounds) {
 }
 
 TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP() << "Not currently supported on OpenGLES backend.";
-  }
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
 
