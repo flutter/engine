@@ -874,8 +874,13 @@ public class FlutterJNI {
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
+      setSemanticsEnabledInNative(enabled);
     }
+  }
+
+  @VisibleForTesting
+  public void setSemanticsEnabledInNative(boolean enabled) {
+    nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
   }
 
   private native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
@@ -886,8 +891,13 @@ public class FlutterJNI {
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
+      setAccessibilityFeaturesInNative(flags);
     }
+  }
+
+  @VisibleForTesting
+  public void setAccessibilityFeaturesInNative(int flags) {
+    nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
   }
 
   private native void nativeSetAccessibilityFeatures(long nativeShellHolderId, int flags);
