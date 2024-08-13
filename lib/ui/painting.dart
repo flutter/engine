@@ -48,8 +48,8 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+Color _scaleAlpha(Color color, double factor) {
+  return color.change(alpha: clampDouble(color.a * factor, 0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
