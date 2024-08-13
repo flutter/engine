@@ -99,7 +99,7 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   std::vector<std::shared_ptr<DlColorSource>> sampler_inputs = {
-    nullptr,
+      nullptr,
   };
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(sizeof(Vector2));
