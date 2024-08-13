@@ -160,6 +160,10 @@ class Color {
   final double b;
   final ColorSpace colorSpace;
 
+  int _floatToInt8(double x) {
+    return (x * 255.0).round();
+  }
+
   /// A 32 bit value representing this color.
   ///
   /// The bits are assigned as follows:
@@ -170,17 +174,17 @@ class Color {
   /// * Bits 0-7 are the blue value.
   @Deprecated('Use component accessors like .r or .g.')
   int get value =>
-      ((a * 255.0).round() << 24) |
-      ((r * 255.0).round() << 16) |
-      ((g * 255.0).round() << 8) |
-      ((b * 255.0).round() << 0);
+      (_floatToInt8(a) << 24) |
+      (_floatToInt8(r) << 16) |
+      (_floatToInt8(g) << 8) |
+      (_floatToInt8(b) << 0);
 
   /// The alpha channel of this color in an 8 bit value.
   ///
   /// A value of 0 means this color is fully transparent. A value of 255 means
   /// this color is fully opaque.
   @Deprecated('Use .a.')
-  int get alpha => (a * 255.0).round();
+  int get alpha => _floatToInt8(a);
 
   /// The alpha channel of this color as a double.
   ///
@@ -191,15 +195,15 @@ class Color {
 
   /// The red channel of this color in an 8 bit value.
   @Deprecated('Use .r.')
-  int get red => (r * 255.0).round();
+  int get red => _floatToInt8(r);
 
   /// The green channel of this color in an 8 bit value.
   @Deprecated('Use .g.')
-  int get green => (g * 255.0).round();
+  int get green => _floatToInt8(g);
 
   /// The blue channel of this color in an 8 bit value.
   @Deprecated('Use .b.')
-  int get blue => (b * 255.0).round();
+  int get blue => _floatToInt8(b);
 
   Color change(
       {double? alpha,
@@ -328,16 +332,15 @@ class Color {
     }
   }
 
+  /// This bends a linear curve down slightly at 0.5. This is used to duplicate
+  /// legacy behavior in lerp where lerp(0, 255, 0.5) would return 127. The
+  /// behavior elsewhere is that 0.5 would be rounded up, so the value would
+  /// be 128 without this.
+  static double _bend(double x) =>
+    (2.0 * x * x + 253.0 * x) / 255.0;
+
   static double _lerpComponent(double x, double y, double t) =>
-      // This uses rounding to 255.0 to duplicate the results from 8 bit
-      // integers.
-      clampDouble(
-          _lerpDouble(
-                  (x * 255.0).roundToDouble(), (y * 255.0).roundToDouble(), t)
-              .floorToDouble(),
-          0.0,
-          255.0) /
-      255.0;
+      _bend(clampDouble(_lerpDouble(x, y, t), 0.0, 1.0));
 
   /// Combine the foreground color as a transparent color over top
   /// of a background color, and return the resulting combined color.
