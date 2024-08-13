@@ -52,9 +52,9 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
   DlPaint paint;
   paint.setColor(DlColor::kWhite());
 
-  Sigma sigma = Radius(20);
+  Scalar sigma = 1 + (20) / 2;
   paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -73,9 +73,9 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
   paint.setColor(
       DlColor::RGBA(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f));
 
-  Sigma sigma = Radius(20);
+  Scalar sigma = 1 + 20 / 2;
   paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -192,9 +192,9 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
     builder.Translate(location.x, location.y);
 
     DlPaint paint;
-    Sigma sigma = Radius(120 * 3);
+    Scalar sigma = 1 + (120 * 3) / 2;
     paint.setMaskFilter(
-        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
     paint.setColor(DlColor::kRed());
 
     SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
@@ -208,9 +208,9 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
   DisplayListBuilder builder;
   builder.Translate(0, -400);
   DlPaint paint;
-  Sigma sigma = Radius(120 * 3);
+  Scalar sigma = 1 + (120 * 3) / 2;
   paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColor(DlColor::kRed());
 
   SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
@@ -954,7 +954,7 @@ TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
     DlPaint paint;
     paint.setColor(DlColor::kGreen());
     paint.setImageFilter(
-        DlBlurImageFilter::Make(50, 50, tile_modes[selected_tile_mode]));
+        DlBlurImageFilter::Make(50, 0, tile_modes[selected_tile_mode]));
 
     Vector2 center = Vector2(1024, 768) / 2;
     builder.Scale(GetContentScale().x, GetContentScale().y);
