@@ -322,11 +322,12 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
-  auto clip_coverage_back = clip_coverage_stack_.CurrentClipCoverage();
-  if (!clip_coverage_back.has_value()) {
+  auto maybe_current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+  if (!maybe_current_clip_coverage.has_value()) {
     Save(total_content_depth);
     return;
   }
+  auto current_clip_coverage = maybe_current_clip_coverage.value();
 
   // The maximum coverage of the subpass. Subpasses textures should never
   // extend outside the parent pass texture or the current clip coverage.
@@ -335,7 +336,7 @@ void ExperimentalCanvas::SaveLayer(
                            Size(render_passes_.back()
                                     .inline_pass_context->GetTexture()
                                     ->GetSize()))
-          .Intersection(clip_coverage_back.value());
+          .Intersection(current_clip_coverage);
 
   if (!maybe_coverage_limit.has_value()) {
     Save(total_content_depth);
@@ -362,11 +363,8 @@ void ExperimentalCanvas::SaveLayer(
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
-    auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-    if (current_clip_coverage.has_value()) {
-      local_position =
-          current_clip_coverage->GetOrigin() - GetGlobalPassPosition();
-    }
+    local_position =
+        current_clip_coverage.GetOrigin() - GetGlobalPassPosition();
     EntityPass::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
@@ -405,13 +403,12 @@ void ExperimentalCanvas::SaveLayer(
   if (backdrop_filter_contents ||
       Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
     FML_CHECK(clip_coverage_stack_.HasCoverage());
-    // We should never hit this case as we check the intersection above.
-    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     subpass_coverage =
-        coverage_limit
-            .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
-            .value();
-    // NOLINTEND(bugprone-unchecked-optional-access)
+        coverage_limit.Intersection(current_clip_coverage).value();
+    // Clip tight bounds, even if clip is flooded.
+    if (bounds.has_value()) {
+      subpass_coverage = coverage_limit.Intersection(bounds.value()).value();
+    }
   } else {
     subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   }
