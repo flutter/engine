@@ -144,11 +144,20 @@ def create_framework(  # pylint: disable=too-many-arguments
     print('Cannot find iOS simulator dylib at %s' % simulator_x64_dylib)
     return 1
 
+  # Compute dsym output paths, if enabled.
+  framework_dsym = None
+  simulator_dsym = None
+  if args.dsym:
+    framework_dsym = framework + '.dSYM'
+    simulator_dsym = simulator_framework + '.dSYM'
+
+  # Emit the framework for physical devices.
   shutil.rmtree(framework, True)
   shutil.copytree(arm64_framework, framework)
   framework_binary = os.path.join(framework, 'Flutter')
-  process_framework(args, dst, framework, framework_binary)
+  process_framework(args, dst, framework_binary, framework_dsym)
 
+  # Emit the framework for simulators.
   if args.simulator_arm64_out_dir is not None:
     shutil.rmtree(simulator_framework, True)
     shutil.copytree(simulator_arm64_framework, simulator_framework)
@@ -160,7 +169,7 @@ def create_framework(  # pylint: disable=too-many-arguments
         'lipo', simulator_x64_dylib, simulator_arm64_dylib, '-create', '-output',
         simulator_framework_binary
     ])
-    process_framework(args, dst, simulator_framework, simulator_framework_binary)
+    process_framework(args, dst, simulator_framework_binary, simulator_dsym)
   else:
     simulator_framework = simulator_x64_framework
 
@@ -168,14 +177,15 @@ def create_framework(  # pylint: disable=too-many-arguments
   # simulator frameworks, or just the x64 simulator framework if only that one
   # exists.
   xcframeworks = [simulator_framework, framework]
-  create_xcframework(location=dst, name='Flutter', frameworks=xcframeworks)
+  dsyms = [simulator_dsym, framework_dsym] if args.dsym else None
+  create_xcframework(location=dst, name='Flutter', frameworks=xcframeworks, dsyms=dsyms)
 
-  # Add the x64 simulator into the fat framework
+  # Add the x64 simulator into the fat framework.
   subprocess.check_call([
       'lipo', arm64_dylib, simulator_x64_dylib, '-create', '-output', framework_binary
   ])
 
-  process_framework(args, dst, framework, framework_binary)
+  process_framework(args, dst, framework_binary, framework_dsym)
   return 0
 
 
@@ -209,23 +219,36 @@ def zip_archive(dst):
       'extension_safe/Flutter.xcframework',
   ],
                         cwd=dst)
-  if os.path.exists(os.path.join(dst, 'Flutter.dSYM')):
+
+  # Generate Flutter.dSYM.zip for manual symbolification.
+  #
+  # Historically, the framework dSYM was named Flutter.dSYM, so in order to
+  # remain backward-compatible with existing instructions in docs/Crashes.md
+  # and existing tooling such as dart-lang/dart_ci, we rename back to that name
+  #
+  # TODO(cbracken): remove these archives and the upload steps once we bundle
+  # dSYMs in app archives. https://github.com/flutter/flutter/issues/116493
+  framework_dsym = os.path.join(dst, 'Flutter.framework.dSYM')
+  if os.path.exists(framework_dsym):
+    renamed_dsym = framework_dsym.replace('Flutter.framework.dSYM', 'Flutter.dSYM')
+    os.rename(framework_dsym, renamed_dsym)
     subprocess.check_call(['zip', '-r', 'Flutter.dSYM.zip', 'Flutter.dSYM'], cwd=dst)
 
-  if os.path.exists(os.path.join(dst, 'extension_safe', 'Flutter.dSYM')):
+  extension_safe_dsym = os.path.join(dst, 'extension_safe', 'Flutter.framework.dSYM')
+  if os.path.exists(extension_safe_dsym):
+    renamed_dsym = extension_safe_dsym.replace('Flutter.framework.dSYM', 'Flutter.dSYM')
+    os.rename(extension_safe_dsym, renamed_dsym)
     subprocess.check_call(['zip', '-r', 'extension_safe_Flutter.dSYM.zip', 'Flutter.dSYM'], cwd=dst)
 
 
-def process_framework(args, dst, framework, framework_binary):
-  if args.dsym:
-    dsym_out = os.path.splitext(framework)[0] + '.dSYM'
-    subprocess.check_call([DSYMUTIL, '-o', dsym_out, framework_binary])
+def process_framework(args, dst, framework_binary, dsym):
+  if dsym:
+    subprocess.check_call([DSYMUTIL, '-o', dsym, framework_binary])
 
   if args.strip:
     # copy unstripped
     unstripped_out = os.path.join(dst, 'Flutter.unstripped')
     shutil.copyfile(framework_binary, unstripped_out)
-
     subprocess.check_call(['strip', '-x', '-S', framework_binary])
 
 
