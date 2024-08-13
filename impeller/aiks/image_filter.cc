@@ -155,7 +155,9 @@ std::shared_ptr<ImageFilter> MatrixImageFilter::Clone() const {
   return std::make_shared<MatrixImageFilter>(*this);
 }
 
-void MatrixImageFilter::Visit(ImageFilterVisitor& visitor) { visitor.Visit(*this); }
+void MatrixImageFilter::Visit(ImageFilterVisitor& visitor) {
+  visitor.Visit(*this);
+}
 
 /*******************************************************************************
  ******* ComposeImageFilter
@@ -176,8 +178,9 @@ std::shared_ptr<ImageFilter> ComposeImageFilter::Clone() const {
   return std::make_shared<ComposeImageFilter>(*this);
 }
 
-void ComposeImageFilter::Visit(ImageFilterVisitor& visitor) { visitor.Visit(*this); }
-
+void ComposeImageFilter::Visit(ImageFilterVisitor& visitor) {
+  visitor.Visit(*this);
+}
 
 /*******************************************************************************
  ******* ColorImageFilter
@@ -198,7 +201,9 @@ std::shared_ptr<ImageFilter> ColorImageFilter::Clone() const {
   return std::make_shared<ColorImageFilter>(*this);
 }
 
-void ColorImageFilter::Visit(ImageFilterVisitor& visitor) { visitor.Visit(*this); }
+void ColorImageFilter::Visit(ImageFilterVisitor& visitor) {
+  visitor.Visit(*this);
+}
 
 /*******************************************************************************
  ******* LocalMatrixImageFilter
@@ -221,7 +226,9 @@ std::shared_ptr<ImageFilter> LocalMatrixImageFilter::Clone() const {
   return std::make_shared<LocalMatrixImageFilter>(*this);
 }
 
-void LocalMatrixImageFilter::Visit(ImageFilterVisitor& visitor) { visitor.Visit(*this); }
+void LocalMatrixImageFilter::Visit(ImageFilterVisitor& visitor) {
+  visitor.Visit(*this);
+}
 
 /*******************************************************************************
  ******* RuntimeEffectImageFilter
@@ -249,6 +256,8 @@ std::shared_ptr<ImageFilter> RuntimeEffectImageFilter::Clone() const {
   return std::make_shared<RuntimeEffectImageFilter>(*this);
 }
 
-void RuntimeEffectImageFilter::Visit(ImageFilterVisitor& visitor) { visitor.Visit(*this); }
+void RuntimeEffectImageFilter::Visit(ImageFilterVisitor& visitor) {
+  visitor.Visit(*this);
+}
 
 }  // namespace impeller

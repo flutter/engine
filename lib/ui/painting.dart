@@ -3992,7 +3992,7 @@ class _FragmentShaderImageFilter implements ImageFilter {
   String get _shortDescription => 'shader';
 
   @override
-  String toString() => 'ImageFilter.shader()';
+  String toString() => 'ImageFilter.shader(Shader#${shader.hashCode})';
 
   @override
   bool operator ==(Object other) {
