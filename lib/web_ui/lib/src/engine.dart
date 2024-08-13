@@ -155,6 +155,7 @@ export 'engine/semantics/live_region.dart';
 export 'engine/semantics/platform_view.dart';
 export 'engine/semantics/route.dart';
 export 'engine/semantics/scrollable.dart';
+export 'engine/semantics/selectable.dart';
 export 'engine/semantics/semantics.dart';
 export 'engine/semantics/semantics_helper.dart';
 export 'engine/semantics/tappable.dart';
