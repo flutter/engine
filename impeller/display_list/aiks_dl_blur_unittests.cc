@@ -564,5 +564,217 @@ TEST_P(AiksTest, MaskBlurDoesntStretchContents) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(AiksTest, GaussianBlurAtPeripheryVertical) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  paint.setColor(DlColor::kLimeGreen());
+  SkRRect rrect = SkRRect::MakeRectXY(
+      SkRect::MakeLTRB(0, 0, GetWindowSize().width, 100), 10, 10);
+  builder.DrawRRect(rrect, paint);
+
+  paint.setColor(DlColor::kMagenta());
+  rrect = SkRRect::MakeRectXY(
+      SkRect::MakeLTRB(0, 110, GetWindowSize().width, 210), 10, 10);
+  builder.DrawRRect(rrect, paint);
+  builder.ClipRect(SkRect::MakeLTRB(100, 0, 200, GetWindowSize().height));
+
+  DlPaint save_paint;
+  save_paint.setBlendMode(DlBlendMode::kSrc);
+  save_paint.setImageFilter(
+      DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp));
+  builder.SaveLayer(nullptr, &save_paint);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
+  DisplayListBuilder builder;
+
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  builder.DrawImageRect(
+      DlImageImpeller::Make(boston),
+      SkRect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height),
+      SkRect::MakeLTRB(0, 0, GetWindowSize().width, 100),
+      DlImageSampling::kNearestNeighbor);
+
+  DlPaint paint;
+  paint.setColor(DlColor::kMagenta());
+
+  SkRRect rrect = SkRRect::MakeRectXY(
+      SkRect::MakeLTRB(0, 110, GetWindowSize().width, 210), 10, 10);
+  builder.DrawRRect(rrect, paint);
+  builder.ClipRect(SkRect::MakeLTRB(0, 50, GetWindowSize().width, 150));
+
+  DlPaint save_paint;
+  save_paint.setBlendMode(DlBlendMode::kSrc);
+  save_paint.setImageFilter(
+      DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp));
+  builder.SaveLayer(nullptr, &save_paint);
+
+  builder.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
+  // This test is for checking out how stable rendering is when content is
+  // translated underneath a blur.  Animating under a blur can cause
+  // *shimmering* to happen as a result of pixel alignment.
+  // See also: https://github.com/flutter/flutter/issues/140193
+  auto boston =
+      CreateTextureForFixture("boston.jpg", /*enable_mipmapping=*/true);
+  ASSERT_TRUE(boston);
+  int64_t count = 0;
+  Scalar sigma = 20.0;
+  Scalar freq = 0.1;
+  Scalar amp = 50.0;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 200);
+      ImGui::SliderFloat("Frequency", &freq, 0.01, 2.0);
+      ImGui::SliderFloat("Amplitude", &amp, 1, 100);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+    Scalar y = amp * sin(freq * 2.0 * M_PI * count / 60);
+    builder.DrawImage(
+        DlImageImpeller::Make(boston),
+        SkPoint::Make(1024 / 2 - boston->GetSize().width / 2,
+                      (768 / 2 - boston->GetSize().height / 2) + y),
+        DlImageSampling::kMipmapLinear);
+    static PlaygroundPoint point_a(Point(100, 100), 20, Color::Red());
+    static PlaygroundPoint point_b(Point(900, 700), 20, Color::Red());
+    auto [handle_a, handle_b] = DrawPlaygroundLine(point_a, point_b);
+
+    builder.ClipRect(
+        SkRect::MakeLTRB(handle_a.x, handle_a.y, handle_b.x, handle_b.y));
+    builder.ClipRect(SkRect::MakeLTRB(100, 100, 900, 700));
+
+    DlPaint paint;
+    paint.setBlendMode(DlBlendMode::kSrc);
+    paint.setImageFilter(
+        DlBlurImageFilter::Make(sigma, sigma, DlTileMode::kClamp));
+    builder.SaveLayer(nullptr, &paint);
+    count += 1;
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
+  DisplayListBuilder builder;
+
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+  builder.DrawPaint(paint);
+
+  std::vector<DlColor> colors = {DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0),
+                                 DlColor::RGBA(0.7568, 0.2627, 0.2118, 1.0)};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint = DlPaint{};
+  paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},
+      /*end_point=*/{200, 200},
+      /*stop_count=*/colors.size(),
+      /*colors=*/colors.data(),
+      /*stops=*/stops.data(),
+      /*tile_mode=*/DlTileMode::kMirror));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kInner, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+  builder.DrawPaint(paint);
+
+  std::vector<DlColor> colors = {DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0),
+                                 DlColor::RGBA(0.7568, 0.2627, 0.2118, 1.0)};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint = DlPaint{};
+  paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},
+      /*end_point=*/{200, 200},
+      /*stop_count=*/colors.size(),
+      /*colors=*/colors.data(),
+      /*stops=*/stops.data(),
+      /*tile_mode=*/DlTileMode::kMirror));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kSolid, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+}
+
+TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 1.0));
+  builder.DrawPaint(paint);
+
+  std::vector<DlColor> colors = {DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0),
+                                 DlColor::RGBA(0.7568, 0.2627, 0.2118, 1.0)};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint = DlPaint{};
+  paint.setColorSource(DlColorSource::MakeLinear(
+      /*start_point=*/{0, 0},
+      /*end_point=*/{200, 200},
+      /*stop_count=*/colors.size(),
+      /*colors=*/colors.data(),
+      /*stops=*/stops.data(),
+      /*tile_mode=*/DlTileMode::kMirror));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kOuter, 30));
+
+  SkPath path;
+  path.moveTo(200, 200);
+  path.lineTo(300, 400);
+  path.lineTo(100, 400);
+  path.close();
+  builder.DrawPath(path, paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  DlPaint red;
+  red.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+}
+
 }  // namespace testing
 }  // namespace impeller
