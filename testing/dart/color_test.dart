@@ -10,6 +10,10 @@ class NotAColor extends Color {
   const NotAColor(super.value);
 }
 
+Matcher approxEquals(dynamic o) => (v) {
+  Expect.approxEquals(o as num, v as num);
+};
+
 void main() {
   test('color accessors should work', () {
     const Color foo = Color(0x12345678);
@@ -133,5 +137,91 @@ void main() {
     // 0.7152 * ((0.23137254902 +0.055) / 1.055) ^ 2.4 +
     // 0.0722 * ((0.18823529411 + 0.055) / 1.055) ^ 2.4
     expect(brightRed.computeLuminance(), equals(0.24601329637099723));
+  });
+
+  test('from and accessors', () {
+    const Color color = Color.from(alpha: 0.1, red: 0.2, green: 0.3, blue: 0.4);
+    expect(color.a, equals(0.1));
+    expect(color.r, equals(0.2));
+    expect(color.g, equals(0.3));
+    expect(color.b, equals(0.4));
+    expect(color.colorSpace, equals(ColorSpace.sRGB));
+
+    expect(color.alpha, equals(26));
+    expect(color.red, equals(51));
+    expect(color.green, equals(77));
+    expect(color.blue, equals(102));
+
+    expect(color.value, equals(0x1a334d66));
+  });
+
+  test('fromARGB and accessors', () {
+    const Color color = Color.fromARGB(10, 20, 35, 47);
+    expect(color.alpha, equals(10));
+    expect(color.red, equals(20));
+    expect(color.green, equals(35));
+    expect(color.blue, equals(47));
+  });
+
+  test('constructor and accessors', () {
+    const Color color = Color(0xffeeddcc);
+    expect(color.alpha, equals(0xff));
+    expect(color.red, equals(0xee));
+    expect(color.green, equals(0xdd));
+    expect(color.blue, equals(0xcc));
+  });
+
+  test('p3 to extended srgb', () {
+    const Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    final Color srgb = p3.change(colorSpace: ColorSpace.extendedSRGB);
+    expect(srgb.a, equals(1.0));
+    expect(srgb.r, approxEquals(1.0931));
+    expect(srgb.g, approxEquals(-0.22684034705162098));
+    expect(srgb.b, approxEquals(-0.15007957816123998));
+    expect(srgb.colorSpace, equals(ColorSpace.extendedSRGB));
+  });
+
+  test('p3 to srgb', () {
+    const Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    final Color srgb = p3.change(colorSpace: ColorSpace.sRGB);
+    expect(srgb.a, equals(1.0));
+    expect(srgb.r, approxEquals(1));
+    expect(srgb.g, approxEquals(0));
+    expect(srgb.b, approxEquals(0));
+    expect(srgb.colorSpace, equals(ColorSpace.sRGB));
+  });
+
+  test('extended srgb to p3', () {
+    const Color srgb = Color.from(
+        alpha: 1,
+        red: 1.0931,
+        green: -0.2268,
+        blue: -0.1501,
+        colorSpace: ColorSpace.extendedSRGB);
+    final Color p3 = srgb.change(colorSpace: ColorSpace.displayP3);
+    expect(p3.a, equals(1.0));
+    expect(p3.r, approxEquals(1));
+    expect(p3.g, approxEquals(0));
+    expect(p3.b, approxEquals(0));
+    expect(p3.colorSpace, equals(ColorSpace.displayP3));
+  });
+
+  test('extended srgb to p3 clamped', () {
+    const Color srgb = Color.from(
+        alpha: 1,
+        red: 2,
+        green: 0,
+        blue: 0,
+        colorSpace: ColorSpace.extendedSRGB);
+    final Color p3 = srgb.change(colorSpace: ColorSpace.displayP3);
+    expect(srgb.a, equals(1.0));
+    expect(p3.r <= 1.0, isTrue);
+    expect(p3.g <= 1.0, isTrue);
+    expect(p3.b <= 1.0, isTrue);
+    expect(p3.r >= 0.0, isTrue);
+    expect(p3.g >= 0.0, isTrue);
+    expect(p3.b >= 0.0, isTrue);
   });
 }
