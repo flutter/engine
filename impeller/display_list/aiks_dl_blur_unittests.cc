@@ -18,6 +18,7 @@
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/playground/widgets.h"
 #include "include/core/SkRRect.h"
+#include "include/core/SkRect.h"
 #include "third_party/imgui/imgui.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -739,6 +740,7 @@ TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
   DlPaint red;
   red.setColor(DlColor::kRed());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
@@ -774,6 +776,95 @@ TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
   DlPaint red;
   red.setColor(DlColor::kRed());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurScaledAndClipped) {
+  DisplayListBuilder builder;
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  Rect bounds =
+      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+  Vector2 image_center = Vector2(bounds.GetSize() / 2);
+
+  DlPaint paint;
+  paint.setImageFilter(DlBlurImageFilter::Make(20, 20, DlTileMode::kDecal));
+
+  Vector2 clip_size = {150, 75};
+  Vector2 center = Vector2(1024, 768) / 2;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  auto rect =
+      Rect::MakeLTRB(center.x, center.y, center.x, center.y).Expand(clip_size);
+  builder.ClipRect(SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(),
+                                    rect.GetRight(), rect.GetBottom()));
+  builder.Translate(center.x, center.y);
+  builder.Scale(0.6, 0.6);
+
+  SkRect sk_bounds = SkRect::MakeLTRB(bounds.GetLeft(), bounds.GetTop(),
+                                      bounds.GetRight(), bounds.GetBottom());
+  Rect dest = bounds.Shift(-image_center);
+  SkRect sk_dst = SkRect::MakeLTRB(dest.GetLeft(), dest.GetTop(),
+                                   dest.GetRight(), dest.GetBottom());
+  builder.DrawImageRect(DlImageImpeller::Make(boston), /*source=*/sk_bounds,
+                        /*dst=*/sk_dst, DlImageSampling::kNearestNeighbor,
+                        &paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const DlTileMode tile_modes[] = {DlTileMode::kClamp, DlTileMode::kRepeat,
+                                     DlTileMode::kMirror, DlTileMode::kDecal};
+
+    static float rotation = 0;
+    static float scale = 0.6;
+    static int selected_tile_mode = 3;
+
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Rotation (degrees)", &rotation, -180, 180);
+      ImGui::SliderFloat("Scale", &scale, 0, 2.0);
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    Rect bounds =
+        Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+    Vector2 image_center = Vector2(bounds.GetSize() / 2);
+    DlPaint paint;
+    paint.setImageFilter(
+        DlBlurImageFilter::Make(20, 20, tile_modes[selected_tile_mode]));
+
+    static PlaygroundPoint point_a(Point(362, 309), 20, Color::Red());
+    static PlaygroundPoint point_b(Point(662, 459), 20, Color::Red());
+    auto [handle_a, handle_b] = DrawPlaygroundLine(point_a, point_b);
+    Vector2 center = Vector2(1024, 768) / 2;
+
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+    builder.ClipRect(
+        SkRect::MakeLTRB(handle_a.x, handle_a.y, handle_b.x, handle_b.y));
+    builder.Translate(center.x, center.y);
+    builder.Scale(scale, scale);
+    builder.Rotate(rotation);
+
+    SkRect sk_bounds = SkRect::MakeLTRB(bounds.GetLeft(), bounds.GetTop(),
+                                        bounds.GetRight(), bounds.GetBottom());
+    Rect dest = bounds.Shift(-image_center);
+    SkRect sk_dst = SkRect::MakeLTRB(dest.GetLeft(), dest.GetTop(),
+                                     dest.GetRight(), dest.GetBottom());
+    builder.DrawImageRect(DlImageImpeller::Make(boston), /*source=*/sk_bounds,
+                          /*dst=*/sk_dst, DlImageSampling::kNearestNeighbor,
+                          &paint);
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing
