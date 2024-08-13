@@ -120,6 +120,7 @@ def regenerate_symlinks(fat_framework_bundle):
   """
   if os.path.islink(os.path.join(fat_framework_bundle, 'FlutterMacOS')):
     return
+  raise Exception("WE ACTUALLY NEED THIS CODE!")
   os.remove(os.path.join(fat_framework_bundle, 'FlutterMacOS'))
   shutil.rmtree(os.path.join(fat_framework_bundle, 'Headers'), True)
   shutil.rmtree(os.path.join(fat_framework_bundle, 'Modules'), True)
