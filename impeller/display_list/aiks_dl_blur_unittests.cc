@@ -871,5 +871,105 @@ TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(AiksTest, GaussianBlurOneDimension) {
+  DisplayListBuilder builder;
+
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+  builder.Scale(0.5, 0.5);
+
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  builder.DrawImage(DlImageImpeller::Make(boston), {100, 100}, {});
+
+  DlPaint paint;
+  paint.setBlendMode(DlBlendMode::kSrc);
+
+  auto backdrop_filter = DlBlurImageFilter::Make(50, 0, DlTileMode::kClamp);
+  builder.SaveLayer(nullptr, &paint, backdrop_filter.get());
+  builder.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Smoketest to catch issues with the coverage hint.
+// Draws a rotated blurred image within a rectangle clip. The center of the clip
+// rectangle is the center of the rotated image. The entire area of the clip
+// rectangle should be filled with opaque colors output by the blur.
+TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
+  DisplayListBuilder builder;
+
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  Rect bounds =
+      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+
+  DlPaint paint;
+  paint.setImageFilter(DlBlurImageFilter::Make(20, 20, DlTileMode::kDecal));
+
+  Vector2 image_center = Vector2(bounds.GetSize() / 2);
+  Vector2 clip_size = {150, 75};
+  Vector2 center = Vector2(1024, 768) / 2;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  auto clip_bounds =
+      Rect::MakeLTRB(center.x, center.y, center.x, center.y).Expand(clip_size);
+  builder.ClipRect(SkRect::MakeLTRB(clip_bounds.GetLeft(), clip_bounds.GetTop(),
+                                    clip_bounds.GetRight(),
+                                    clip_bounds.GetBottom()));
+  builder.Translate(center.x, center.y);
+  builder.Scale(0.6, 0.6);
+  builder.Rotate(25);
+
+  auto dst_rect = bounds.Shift(-image_center);
+  builder.DrawImageRect(
+      DlImageImpeller::Make(boston), /*src=*/
+      SkRect::MakeLTRB(bounds.GetLeft(), bounds.GetTop(), bounds.GetRight(),
+                       bounds.GetBottom()),
+      /*dst=*/
+      SkRect::MakeLTRB(dst_rect.GetLeft(), dst_rect.GetTop(),
+                       dst_rect.GetRight(), dst_rect.GetBottom()),
+      DlImageSampling::kMipmapLinear, &paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const DlTileMode tile_modes[] = {DlTileMode::kClamp, DlTileMode::kRepeat,
+                                     DlTileMode::kMirror, DlTileMode::kDecal};
+
+    static float rotation = 45;
+    static float scale = 0.6;
+    static int selected_tile_mode = 3;
+
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Rotation (degrees)", &rotation, -180, 180);
+      ImGui::SliderFloat("Scale", &scale, 0, 2.0);
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+
+    DlPaint paint;
+    paint.setColor(DlColor::kGreen());
+    paint.setImageFilter(
+        DlBlurImageFilter::Make(50, 50, tile_modes[selected_tile_mode]));
+
+    Vector2 center = Vector2(1024, 768) / 2;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+    builder.Translate(center.x, center.y);
+    builder.Scale(scale, scale);
+    builder.Rotate(rotation);
+
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(-100, -100, 200, 200), 10, 10);
+    builder.DrawRRect(rrect, paint);
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 }  // namespace testing
 }  // namespace impeller
