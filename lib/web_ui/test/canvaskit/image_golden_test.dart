@@ -316,7 +316,7 @@ void _testCkAnimatedImage() {
 
     // The precise PNG encoding is browser-specific, but we can check the file
     // signature.
-    expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
+    expect(detectImageType(png!.buffer.asUint8List()), ImageType.png);
   });
 
   test('CkAnimatedImage toByteData(RGBA)', () async {
