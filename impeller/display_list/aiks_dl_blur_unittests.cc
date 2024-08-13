@@ -76,7 +76,8 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
   Sigma sigma = Radius(20);
   paint.setMaskFilter(
       DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
-  paint.setColorFilter(DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
+  paint.setColorFilter(
+      DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
   builder.DrawCircle({400, 400}, 200, paint);
   builder.Restore();
 
