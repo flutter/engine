@@ -158,7 +158,7 @@ public class FlutterJNITest {
     // --- Test Setup ---
     FlutterJNITester flutterJNI = new FlutterJNITester(true);
     int expectedFlag = 100;
-    
+
     flutterJNI.setAccessibilityFeatures(expectedFlag);
     assertEquals(flutterJNI.flags, expectedFlag);
 
@@ -171,7 +171,7 @@ public class FlutterJNITest {
     // --- Test Setup ---
     FlutterJNITester flutterJNI = new FlutterJNITester(false);
     int flags = 100;
-    
+
     flutterJNI.setAccessibilityFeatures(flags);
     assertEquals(flutterJNI.flags, 0);
 
@@ -289,6 +289,7 @@ public class FlutterJNITest {
     FlutterJNITester(boolean attached) {
       this.isAttached = attached;
     }
+
     final boolean isAttached;
     boolean semanticsEnabled = false;
     int flags = 0;
@@ -305,7 +306,7 @@ public class FlutterJNITest {
 
     @Override
     public void setAccessibilityFeaturesInNative(int flags) {
-      this.flags = flags; 
+      this.flags = flags;
     }
   }
 }
