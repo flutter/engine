@@ -6,6 +6,7 @@
 
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
+#include "display_list/effects/dl_runtime_effect.h"
 #include "display_list/image/dl_image.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
@@ -97,19 +98,18 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
-  std::vector<RuntimeEffectContents::TextureInput> texture_inputs = {
-      RuntimeEffectContents::TextureInput{
-          .sampler_descriptor = SamplerDescriptor{},
-          .texture = nullptr,
-      }};
-
+  std::vector<std::shared_ptr<DlColorSource>> sampler_inputs = {
+    nullptr,
+  };
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(sizeof(Vector2));
 
   DlPaint paint;
   paint.setColor(DlColor::kAqua());
   paint.setImageFilter(std::make_shared<DlRuntimeEffectImageFilter>(
-      runtime_stage, uniform_data, texture_inputs));
+      DlColorSource::MakeRuntimeEffect(
+          DlRuntimeEffect::MakeImpeller(runtime_stage), sampler_inputs,
+          uniform_data)));
 
   DisplayListBuilder builder;
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 400, 400), paint);
