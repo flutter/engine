@@ -318,15 +318,26 @@ class Color {
       if (a == null) {
         return _scaleAlpha(b, t);
       } else {
-        return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        return Color.from(
+          alpha: _lerpComponent(a.a, b.a, t),
+          red: _lerpComponent(a.r, b.r, t),
+          green: _lerpComponent(a.g, b.g, t),
+          blue: _lerpComponent(a.b, b.b, t),
         );
       }
     }
   }
+
+  static double _lerpComponent(double x, double y, double t) =>
+      // This uses rounding to 255.0 to duplicate the results from 8 bit
+      // integers.
+      clampDouble(
+          _lerpDouble(
+                  (x * 255.0).roundToDouble(), (y * 255.0).roundToDouble(), t)
+              .floorToDouble(),
+          0.0,
+          255.0) /
+      255.0;
 
   /// Combine the foreground color as a transparent color over top
   /// of a background color, and return the resulting combined color.

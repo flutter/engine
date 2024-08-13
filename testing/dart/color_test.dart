@@ -80,6 +80,19 @@ void main() {
     );
   });
 
+  test('Color.lerp different colorspaces', () {
+    expect(
+      Color.lerp(
+          const Color.from(
+              alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3),
+          const Color.from(
+              alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.sRGB),
+          0.0),
+      const Color.from(
+          alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.sRGB),
+    );
+  });
+
   test('Color.alphaBlend', () {
     expect(
       Color.alphaBlend(const Color(0x00000000), const Color(0x00000000)),
