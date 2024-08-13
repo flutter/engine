@@ -554,8 +554,8 @@ TEST_P(AiksTest, MaskBlurDoesntStretchContents) {
                       SkMatrix::Scale(0.5, 0.5));
 
     paint.setColorSource(std::make_shared<DlImageColorSource>(
-        DlImageImpeller::Make(boston), DlTileMode::kRepeat,
-        DlTileMode::kRepeat));
+        DlImageImpeller::Make(boston), DlTileMode::kRepeat, DlTileMode::kRepeat,
+        DlImageSampling::kMipmapLinear));
     paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
 
     builder.DrawRect(SkRect::MakeXYWH(0, 0, boston->GetSize().width,
@@ -586,9 +586,10 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryVertical) {
 
   DlPaint save_paint;
   save_paint.setBlendMode(DlBlendMode::kSrc);
-  save_paint.setImageFilter(
-      DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp));
-  builder.SaveLayer(nullptr, &save_paint);
+
+  auto backdrop_filter = DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp);
+
+  builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get());
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -615,9 +616,9 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
 
   DlPaint save_paint;
   save_paint.setBlendMode(DlBlendMode::kSrc);
-  save_paint.setImageFilter(
-      DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp));
-  builder.SaveLayer(nullptr, &save_paint);
+
+  auto backdrop_filter = DlBlurImageFilter::Make(20, 20, DlTileMode::kClamp);
+  builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get());
 
   builder.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -662,9 +663,10 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
 
     DlPaint paint;
     paint.setBlendMode(DlBlendMode::kSrc);
-    paint.setImageFilter(
-        DlBlurImageFilter::Make(sigma, sigma, DlTileMode::kClamp));
-    builder.SaveLayer(nullptr, &paint);
+
+    auto backdrop_filter =
+        DlBlurImageFilter::Make(sigma, sigma, DlTileMode::kClamp);
+    builder.SaveLayer(nullptr, &paint, backdrop_filter.get());
     count += 1;
     return builder.Build();
   };
