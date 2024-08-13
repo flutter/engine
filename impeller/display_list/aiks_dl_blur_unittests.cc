@@ -53,8 +53,7 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
   paint.setColor(DlColor::kWhite());
 
   Scalar sigma = 1 + (20) / 2;
-  paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -74,8 +73,7 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
       DlColor::RGBA(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f));
 
   Scalar sigma = 1 + 20 / 2;
-  paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -193,8 +191,7 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
 
     DlPaint paint;
     Scalar sigma = 1 + (120 * 3) / 2;
-    paint.setMaskFilter(
-        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+    paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
     paint.setColor(DlColor::kRed());
 
     SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
@@ -209,8 +206,7 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
   builder.Translate(0, -400);
   DlPaint paint;
   Scalar sigma = 1 + (120 * 3) / 2;
-  paint.setMaskFilter(
-      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   paint.setColor(DlColor::kRed());
 
   SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
