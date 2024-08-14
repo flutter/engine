@@ -354,6 +354,8 @@ class Color {
   /// operations for two things that are solid colors with the same shape, but
   /// overlay each other: instead, just paint one with the combined color.
   static Color alphaBlend(Color foreground, Color background) {
+    assert(foreground.colorSpace == background.colorSpace);
+    assert(foreground.colorSpace != ColorSpace.extendedSRGB);
     // TODO(gaaclarke): Update math to use floats. This was already attempted
     //                  but it leads to subtle changes that change test results.
     final int alpha = foreground.alpha;
