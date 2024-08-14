@@ -334,8 +334,6 @@ class Color {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Color? lerp(Color? a, Color? b, double t) {
-    // TODO(gaaclarke): Update math to use floats. This was already attempted
-    //                  but it leads to subtle changes that change test results.
     assert(a?.colorSpace != ColorSpace.extendedSRGB);
     assert(b?.colorSpace != ColorSpace.extendedSRGB);
     if (b == null) {
@@ -349,15 +347,27 @@ class Color {
         return _scaleAlpha(b, t);
       } else {
         assert(a.colorSpace == b.colorSpace);
-        return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        return Color.from(
+          alpha: _lerpComponent(a.a, b.a, t),
+          red: _lerpComponent(a.r, b.r, t),
+          green: _lerpComponent(a.g, b.g, t),
+          blue: _lerpComponent(a.b, b.b, t),
+          colorSpace: a.colorSpace,
         );
       }
     }
   }
+
+  static double _lerpComponent(double x, double y, double t) =>
+      // TODO(gaaclarke): This clamps the math to 1/255 boundaries to match old
+      //                  behavior. Make use of the full range of values.
+      clampDouble(
+          _lerpDouble(
+                  (x * 255.0).roundToDouble(), (y * 255.0).roundToDouble(), t)
+              .floorToDouble(),
+          0.0,
+          255.0) /
+      255.0;
 
   /// Combine the foreground color as a transparent color over top
   /// of a background color, and return the resulting combined color.
