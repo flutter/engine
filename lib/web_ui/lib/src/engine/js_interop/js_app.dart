@@ -67,7 +67,6 @@ abstract class FlutterApp {
     required RemoveFlutterViewFn removeView,
   }) =>
       FlutterApp._(
-        // addView: ((JsFlutterViewOptions options) => addView(options).toJS).toJS,
         addView: addView.toJS,
         removeView: ((JSNumber id) => removeView(id.toDartInt)).toJS,
       );

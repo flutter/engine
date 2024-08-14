@@ -26,8 +26,7 @@ Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
 }
 
 /// Convenience getter for the implicit view.
-EngineFlutterWindow get implicitView =>
-    EnginePlatformDispatcher.instance.implicitView!;
+FlutterView get implicitView => EnginePlatformDispatcher.instance.implicitView!;
 
 /// Returns [true] if this test is running in the CanvasKit renderer.
 bool get isCanvasKit => renderer is CanvasKitRenderer;
