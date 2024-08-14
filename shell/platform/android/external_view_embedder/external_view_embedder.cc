@@ -93,6 +93,7 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
 
   frame->Submit();
 
+  size_t count = 0;
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
     const EmbeddedViewParams& params = view_params_.at(view_id);
@@ -108,9 +109,10 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
         params.sizePoints().height() * device_pixel_ratio_,
         params.mutatorsStack()  //
     );
+    count++;
     std::unordered_map<int64_t, SkRect>::const_iterator overlay =
         overlay_layers.find(view_id);
-    if (overlay == overlay_layers.end()) {
+    if (overlay == overlay_layers.end() || count != composition_order_.size()) {
       continue;
     }
     std::unique_ptr<SurfaceFrame> frame =

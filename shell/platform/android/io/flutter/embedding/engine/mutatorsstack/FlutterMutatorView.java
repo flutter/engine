@@ -1,16 +1,19 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine.mutatorsstack;
 
 import static android.view.View.OnFocusChangeListener;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
@@ -48,7 +51,7 @@ public class FlutterMutatorView extends FrameLayout {
 
   /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
-    this(context, 1, /* androidTouchProcessor=*/ null);
+    this(context, 1, /* androidTouchProcessor= */ null);
   }
 
   @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
@@ -97,9 +100,9 @@ public class FlutterMutatorView extends FrameLayout {
     this.mutatorsStack = mutatorsStack;
     this.left = left;
     this.top = top;
-    WindowManager.LayoutParams layoutParams =
-        new WindowManager.LayoutParams(width, height, left, top, 0, 0, PixelFormat.RGBA_8888);
-
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
+    layoutParams.leftMargin = left;
+    layoutParams.topMargin = top;
     setLayoutParams(layoutParams);
     setWillNotDraw(false);
   }
@@ -112,9 +115,9 @@ public class FlutterMutatorView extends FrameLayout {
       // Reverse the current offset.
       //
       // The frame of this view includes the final offset of the bounding rect.
-      // We need to apply all the mutators to the view, which includes the mutation that leads to
-      // the final offset. We should reverse this final offset, both as a translate mutation and
-      // to all the clipping paths
+      // We need to apply all the mutators to the view, which includes the mutation
+      // that leads to  the final offset. We should reverse this final offset, both as a translate
+      // mutation and to  all the clipping paths
       Path pathCopy = new Path(path);
       pathCopy.offset(-left, -top);
       canvas.clipPath(pathCopy);
@@ -140,17 +143,17 @@ public class FlutterMutatorView extends FrameLayout {
     //
     // The Android frame is set based on the logical resolution instead of physical.
     // (https://developer.android.com/training/multiscreen/screendensities).
-    // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
-    // 500 points in Android. And until this point, we did all the calculation based on the flow
-    // resolution. So we need to scale down to match Android's logical resolution.
+    // However, flow is based on the physical resolution. For example, 1000 pixels
+    // in flow equals 500 points in Android. And until this point, we did all the calculation based
+    // on the flow resolution. So we need to scale down to match Android's logical resolution.
     finalMatrix.preScale(1 / screenDensity, 1 / screenDensity);
 
     // Reverse the current offset.
     //
     // The frame of this view includes the final offset of the bounding rect.
-    // We need to apply all the mutators to the view, which includes the mutation that leads to
-    // the final offset. We should reverse this final offset, both as a translate mutation and to
-    // all the clipping paths
+    // We need to apply all the mutators to the view, which includes the mutation
+    // that leads to  the final offset. We should reverse this final offset, both as a translate
+    // mutation and to  all the clipping paths
     finalMatrix.postTranslate(-left, -top);
 
     return finalMatrix;
@@ -159,7 +162,7 @@ public class FlutterMutatorView extends FrameLayout {
   /** Intercept the events here and do not propagate them to the child platform views. */
   @Override
   public boolean onInterceptTouchEvent(MotionEvent event) {
-    return false;
+    return true;
   }
 
   @Override
@@ -170,40 +173,39 @@ public class FlutterMutatorView extends FrameLayout {
             == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
       return false;
     }
-    // Forward the request only if the embedded view is in the Flutter accessibility tree.
-    // The embedded view may be ignored when the framework doesn't populate a SemanticNode
-    // for the current platform view.
-    // See AccessibilityBridge for more.
+    // Forward the request only if the embedded view is in the Flutter accessibility
+    // tree. The embedded view may be ignored when the framework doesn't populate a
+    // SemanticNode for the current platform view. See AccessibilityBridge for more.
     return super.requestSendAccessibilityEvent(child, event);
   }
 
-  // @Override
-  // @SuppressLint("ClickableViewAccessibility")
-  // public boolean onTouchEvent(MotionEvent event) {
-  //   if (androidTouchProcessor == null) {
-  //     return super.onTouchEvent(event);
-  //   }
+  @Override
+  @SuppressLint("ClickableViewAccessibility")
+  public boolean onTouchEvent(MotionEvent event) {
+    if (androidTouchProcessor == null) {
+      return super.onTouchEvent(event);
+    }
 
-  //   final Matrix screenMatrix = new Matrix();
+    final Matrix screenMatrix = new Matrix();
 
-  //   switch (event.getAction()) {
-  //     case MotionEvent.ACTION_DOWN:
-  //       prevLeft = left;
-  //       prevTop = top;
-  //       screenMatrix.postTranslate(left, top);
-  //       break;
-  //     case MotionEvent.ACTION_MOVE:
-  //       // While the view is dragged, use the left and top positions as
-  //       // they were at the moment the touch event fired.
-  //       screenMatrix.postTranslate(prevLeft, prevTop);
-  //       prevLeft = left;
-  //       prevTop = top;
-  //       break;
-  //     case MotionEvent.ACTION_UP:
-  //     default:
-  //       screenMatrix.postTranslate(left, top);
-  //       break;
-  //   }
-  //   return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-  // }
+    switch (event.getAction()) {
+      case MotionEvent.ACTION_DOWN:
+        prevLeft = left;
+        prevTop = top;
+        screenMatrix.postTranslate(left, top);
+        break;
+      case MotionEvent.ACTION_MOVE:
+        // While the view is dragged, use the left and top positions as
+        // they were at the moment the touch event fired.
+        screenMatrix.postTranslate(prevLeft, prevTop);
+        prevLeft = left;
+        prevTop = top;
+        break;
+      case MotionEvent.ACTION_UP:
+      default:
+        screenMatrix.postTranslate(left, top);
+        break;
+    }
+    return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+  }
 }

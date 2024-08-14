@@ -6,10 +6,13 @@ package io.flutter.plugin.platform;
 
 import static io.flutter.Build.API_LEVELS;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
+import android.graphics.Matrix;
+import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.SparseArray;
@@ -22,6 +25,8 @@ import android.view.SurfaceControlViewHost;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import android.window.SurfaceSyncGroup;
 import androidx.annotation.NonNull;
@@ -56,16 +61,81 @@ import java.util.List;
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
 
-  // These view types allow out-of-band drawing commands that don't notify the Android view
+  /**
+   * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack}
+   * to its children.
+   */
+  public class FlutterPlatformHostView extends FrameLayout {
+    private final AndroidTouchProcessor androidTouchProcessor;
+    private float screenDensity;
+
+    public FlutterPlatformHostView(
+        @NonNull Context context,
+        AndroidTouchProcessor androidTouchProcessor,
+        float screenDensity) {
+      super(context, null);
+      this.androidTouchProcessor = androidTouchProcessor;
+      this.screenDensity = screenDensity;
+    }
+
+    /**
+     * Pass the necessary parameters to the view so it can apply correct mutations to its children.
+     */
+    public void readyToDisplay(int width, int height) {
+      WindowManager.LayoutParams layoutParams =
+          new WindowManager.LayoutParams(width, height, 0, 0, 0, 0, PixelFormat.RGBA_8888);
+
+      setLayoutParams(layoutParams);
+      setWillNotDraw(false);
+    }
+
+    /** Intercept the events here and do not propagate them to the child platform views. */
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent event) {
+      return true;
+    }
+
+    @Override
+    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+      final View embeddedView = getChildAt(0);
+      if (embeddedView != null
+          && embeddedView.getImportantForAccessibility()
+              == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
+        return false;
+      }
+      // Forward the request only if the embedded view is in the Flutter accessibility
+      // tree. The embedded view may be ignored when the framework doesn't populate a
+      // SemanticNode for the current platform view. See AccessibilityBridge for more.
+      return super.requestSendAccessibilityEvent(child, event);
+    }
+
+    @Override
+    @SuppressLint("ClickableViewAccessibility")
+    public boolean onTouchEvent(MotionEvent event) {
+      if (androidTouchProcessor == null) {
+        return super.onTouchEvent(event);
+      }
+
+      final Matrix screenMatrix = new Matrix();
+      return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+    }
+  }
+
+  // These view types allow out-of-band drawing commands that don't notify the
+  // Android view
   // hierarchy.
   // To support these cases, Flutter hosts the embedded view in a VirtualDisplay,
-  // and binds the VirtualDisplay to a GL texture that is then composed by the engine.
-  // However, there are a few issues with Virtual Displays. For example, they don't fully support
+  // and binds the VirtualDisplay to a GL texture that is then composed by the
+  // engine.
+  // However, there are a few issues with Virtual Displays. For example, they
+  // don't fully support
   // accessibility due to https://github.com/flutter/flutter/issues/29717,
   // and keyboard interactions may have non-deterministic behavior.
-  // Views that issue out-of-band drawing commands that aren't included in this array are
+  // Views that issue out-of-band drawing commands that aren't included in this
+  // array are
   // required to call `View#invalidate()` to notify Flutter about the update.
-  // This isn't ideal, but given all the other limitations it's a reasonable tradeoff.
+  // This isn't ideal, but given all the other limitations it's a reasonable
+  // tradeoff.
   // Related issue: https://github.com/flutter/flutter/issues/103630
   private static Class[] VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY = {SurfaceView.class};
 
@@ -73,34 +143,46 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private AndroidTouchProcessor androidTouchProcessor;
   private SurfaceSyncGroup currentSyncGroup = null;
+  private FlutterPlatformHostView platformViewHost = null;
+  private SurfaceControlViewHost scvh = null;
 
-  // The context of the Activity or Fragment hosting the render target for the Flutter engine.
+  // The context of the Activity or Fragment hosting the render target for the
+  // Flutter engine.
   private Context context;
 
-  // The View currently rendering the Flutter UI associated with these platform views.
+  // The View currently rendering the Flutter UI associated with these platform
+  // views.
   private FlutterView flutterView;
 
-  // The texture registry maintaining the textures into which the embedded views will be rendered.
+  // The texture registry maintaining the textures into which the embedded views
+  // will be rendered.
   @Nullable private TextureRegistry textureRegistry;
 
   @Nullable private TextInputPlugin textInputPlugin;
 
-  // The system channel used to communicate with the framework about platform views.
+  // The system channel used to communicate with the framework about platform
+  // views.
   private PlatformViewsChannel platformViewsChannel;
 
-  // The accessibility bridge to which accessibility events form the platform views will be
+  // The accessibility bridge to which accessibility events form the platform
+  // views will be
   // dispatched.
   private final AccessibilityEventsDelegate accessibilityEventsDelegate;
 
-  // TODO(mattcarroll): Refactor overall platform views to facilitate testing and then make
-  // this private. This is visible as a hack to facilitate testing. This was deemed the least
+  // TODO(mattcarroll): Refactor overall platform views to facilitate testing and
+  // then make
+  // this private. This is visible as a hack to facilitate testing. This was
+  // deemed the least
   // bad option at the time of writing.
   @VisibleForTesting /* package */ final HashMap<Integer, VirtualDisplayController> vdControllers;
 
-  // Maps a virtual display's context to the embedded view hosted in this virtual display.
-  // Since each virtual display has it's unique context this allows associating any view with the
+  // Maps a virtual display's context to the embedded view hosted in this virtual
+  // display.
+  // Since each virtual display has it's unique context this allows associating
+  // any view with the
   // platform view that
-  // it is associated with(e.g if a platform view creates other views in the same virtual display.
+  // it is associated with(e.g if a platform view creates other views in the same
+  // virtual display.
   @VisibleForTesting /* package */ final HashMap<Context, View> contextToEmbeddedView;
 
   // The platform views.
@@ -108,17 +190,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // The platform view wrappers that are appended to FlutterView.
   //
-  // These platform views use a PlatformViewLayer in the framework. This is different than
+  // These platform views use a PlatformViewLayer in the framework. This is
+  // different than
   // the platform views that use a TextureLayer.
   //
-  // This distinction is necessary because a PlatformViewLayer allows to embed Android's
-  // SurfaceViews in a Flutter app whereas the texture layer is unable to support such native views.
+  // This distinction is necessary because a PlatformViewLayer allows to embed
+  // Android's
+  // SurfaceViews in a Flutter app whereas the texture layer is unable to support
+  // such native views.
   //
-  // If an entry in `platformViews` doesn't have an entry in this array, the platform view isn't
+  // If an entry in `platformViews` doesn't have an entry in this array, the
+  // platform view isn't
   // in the view hierarchy.
   //
-  // This view provides a wrapper that applies scene builder operations to the platform view.
-  // For example, a transform matrix, or setting opacity on the platform view layer.
+  // This view provides a wrapper that applies scene builder operations to the
+  // platform view.
+  // For example, a transform matrix, or setting opacity on the platform view
+  // layer.
   private final SparseArray<FlutterMutatorView> platformViewParent;
 
   // Map of unique IDs to views that render overlay layers.
@@ -126,13 +214,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // The platform view wrappers that are appended to FlutterView.
   //
-  // These platform views use a TextureLayer in the framework. This is different than
+  // These platform views use a TextureLayer in the framework. This is different
+  // than
   // the platform views that use a PlatformViewLayer.
   //
   // This is the default mode, and recommended for better performance.
   private final SparseArray<PlatformViewWrapper> viewWrappers;
 
-  private final SparseArray<SurfaceControlViewHost> viewHosts;
   private final ArrayList<SurfaceControl.Transaction> transactions;
 
   // Next available unique ID for use in overlayLayerViews.
@@ -170,7 +258,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final PlatformView platformView = createPlatformView(request, false);
 
           configureForHybridComposition(platformView, request);
-          // New code should be added to configureForHybridComposition, not here, unless it is
+          // New code should be added to configureForHybridComposition, not here, unless
+          // it is
           // not applicable to fallback from TLHC to HC.
         }
 
@@ -205,18 +294,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + " parent view.");
           }
 
-          // The newer Texture Layer Hybrid Composition mode isn't suppported if any of the
+          // The newer Texture Layer Hybrid Composition mode isn't suppported if any of
+          // the
           // following are true:
-          // - The embedded view contains any of the VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY view types.
-          //   These views allow out-of-band graphics operations that aren't notified to the Android
-          //   view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
+          // - The embedded view contains any of the VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY
+          // view types.
+          // These views allow out-of-band graphics operations that aren't notified to the
+          // Android
+          // view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
           // - The API level is <23, due to TLHC implementation API requirements.
           final boolean supportsTextureLayerMode =
               Build.VERSION.SDK_INT >= API_LEVELS.API_23
                   && !ViewUtils.hasChildViewOfType(
                       embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
 
-          // Fall back to Hybrid Composition or Virtual Display when necessary, depending on which
+          // Fall back to Hybrid Composition or Virtual Display when necessary, depending
+          // on which
           // fallback mode is requested.
           if (!supportsTextureLayerMode) {
             if (request.displayMode
@@ -227,8 +320,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             } else if (!usesSoftwareRendering) { // Virtual Display doesn't support software mode.
               return configureForVirtualDisplay(platformView, request);
             }
-            // TODO(stuartmorgan): Consider throwing a specific exception here as a breaking change.
-            // For now, preserve the 3.0 behavior of falling through to Texture Layer mode even
+            // TODO(stuartmorgan): Consider throwing a specific exception here as a breaking
+            // change.
+            // For now, preserve the 3.0 behavior of falling through to Texture Layer mode
+            // even
             // though it won't work correctly.
           }
           return configureForTextureLayerComposition(platformView, request);
@@ -267,7 +362,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             vdControllers.remove(viewId);
             return;
           }
-          // The platform view is displayed using a TextureLayer and is inserted in the view
+          // The platform view is displayed using a TextureLayer and is inserted in the
+          // view
           // hierarchy.
           final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
           if (viewWrapper != null) {
@@ -287,10 +383,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (parentView != null) {
             parentView.removeAllViews();
             parentView.unsetOnDescendantFocusChangeListener();
-
-            SurfaceControlViewHost viewHost = viewHosts.get(viewId);
-            viewHosts.remove(viewId);
-            viewHost.release();
             platformViewParent.remove(viewId);
           }
         }
@@ -303,10 +395,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           // For platform views that use TextureView and are in the view hierarchy, set
           // an offset to the wrapper view.
-          // This ensures that the accessibility highlights are drawn in the expected position on
+          // This ensures that the accessibility highlights are drawn in the expected
+          // position on
           // screen.
-          // This offset doesn't affect the position of the embeded view by itself since the GL
-          // texture is positioned by the Flutter engine, which knows where to position different
+          // This offset doesn't affect the position of the embeded view by itself since
+          // the GL
+          // texture is positioned by the Flutter engine, which knows where to position
+          // different
           // types of layers.
           final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
           if (viewWrapper == null) {
@@ -334,8 +429,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             final float originalDisplayDensity = getDisplayDensity();
             final VirtualDisplayController vdController = vdControllers.get(viewId);
             // Resizing involved moving the platform view to a new virtual display. Doing so
-            // potentially results in losing an active input connection. To make sure we preserve
-            // the input connection when resizing we lock it here and unlock after the resize is
+            // potentially results in losing an active input connection. To make sure we
+            // preserve
+            // the input connection when resizing we lock it here and unlock after the
+            // resize is
             // complete.
             lockInputConnection(vdController);
             vdController.resize(
@@ -362,11 +459,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             Log.e(TAG, "Resizing unknown platform view with id: " + viewId);
             return;
           }
-          // Resize the buffer only when the current buffer size is smaller than the new size.
+          // Resize the buffer only when the current buffer size is smaller than the new
+          // size.
           // This is required to prevent a situation when smooth keyboard animation
-          // resizes the texture too often, such that the GPU and the platform thread don't agree on
+          // resizes the texture too often, such that the GPU and the platform thread
+          // don't agree on
           // the timing of the new size.
-          // Resizing the texture causes pixel stretching since the size of the GL texture used in
+          // Resizing the texture causes pixel stretching since the size of the GL texture
+          // used in
           // the engine is set by the framework, but the texture buffer size is set by the
           // platform down below.
           if (physicalWidth > viewWrapper.getRenderTargetWidth()
@@ -498,7 +598,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
-  // Creates a platform view based on `request`, performs configuration that's common to
+  // Creates a platform view based on `request`, performs configuration that's
+  // common to
   // all display modes, and adds it to `platformViews`.
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public PlatformView createPlatformView(
@@ -515,7 +616,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
 
     // In some display modes, the context needs to be modified during display.
-    // TODO(stuartmorgan): Make this wrapping unconditional if possible; for context see
+    // TODO(stuartmorgan): Make this wrapping unconditional if possible; for context
+    // see
     // https://github.com/flutter/flutter/issues/113449
     final Context mutableContext = wrapContext ? new MutableContextWrapper(context) : context;
     final PlatformView platformView =
@@ -541,11 +643,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     Log.i(TAG, "Using hybrid composition for platform view: " + request.viewId);
   }
 
-  // Configures the view for Virtual Display mode, returning the associated texture ID.
+  // Configures the view for Virtual Display mode, returning the associated
+  // texture ID.
   private long configureForVirtualDisplay(
       @NonNull PlatformView platformView,
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
-    // This mode adds the view to a virtual display, which is wired up to a GL texture that
+    // This mode adds the view to a virtual display, which is wired up to a GL
+    // texture that
     // is composed by the Flutter engine.
 
     // API level 20 is required to use VirtualDisplay#setSurface.
@@ -580,7 +684,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               + request.viewId);
     }
 
-    // The embedded view doesn't need to be sized in Virtual Display mode because the
+    // The embedded view doesn't need to be sized in Virtual Display mode because
+    // the
     // virtual display itself is sized.
 
     vdControllers.put(request.viewId, vdController);
@@ -590,14 +695,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return renderTarget.getId();
   }
 
-  // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
+  // Configures the view for Texture Layer Hybrid Composition mode, returning the
+  // associated
   // texture ID.
   @TargetApi(API_LEVELS.API_23)
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public long configureForTextureLayerComposition(
       @NonNull PlatformView platformView,
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
-    // This mode attaches the view to the Android view hierarchy and record its drawing
+    // This mode attaches the view to the Android view hierarchy and record its
+    // drawing
     // operations, so they can be forwarded to a GL texture that is composed by the
     // Flutter engine.
 
@@ -634,19 +741,25 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     final View embeddedView = platformView.getView();
     embeddedView.setLayoutParams(new FrameLayout.LayoutParams(physicalWidth, physicalHeight));
 
-    // Accessibility in the embedded view is initially disabled because if a Flutter app
-    // disabled accessibility in the first frame, the embedding won't receive an update to
-    // disable accessibility since the embedding never received an update to enable it.
-    // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas
+    // Accessibility in the embedded view is initially disabled because if a Flutter
+    // app
+    // disabled accessibility in the first frame, the embedding won't receive an
+    // update to
+    // disable accessibility since the embedding never received an update to enable
+    // it.
+    // The AccessibilityBridge keeps track of the accessibility nodes, and handles
+    // the deltas
     // when the framework sends a new a11y tree to the embedding.
-    // To prevent races, the framework populate the SemanticsNode after the platform view has
+    // To prevent races, the framework populate the SemanticsNode after the platform
+    // view has
     // been created.
     embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
 
     // Add the embedded view to the wrapper.
     viewWrapper.addView(embeddedView);
 
-    // Listen for focus changed in any subview, so the framework is notified when the platform
+    // Listen for focus changed in any subview, so the framework is notified when
+    // the platform
     // view is focused.
     viewWrapper.setOnDescendantFocusChangeListener(
         (v, hasFocus) -> {
@@ -693,21 +806,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     // Pointer coordinates in the tracked events are global to FlutterView
     // The framework converts them to be local to a widget, given that
-    // motion events operate on local coords, we need to replace these in the tracked
+    // motion events operate on local coords, we need to replace these in the
+    // tracked
     // event with their local counterparts.
-    // Compute this early so it can be used as input to translateNonVirtualDisplayMotionEvent.
+    // Compute this early so it can be used as input to
+    // translateNonVirtualDisplayMotionEvent.
     PointerCoords[] pointerCoords =
         parsePointerCoordsList(touch.rawPointerCoords, density)
             .toArray(new PointerCoords[touch.pointerCount]);
 
     if (!usingVirtualDiplay && trackedEvent != null) {
-      // We have the original event, deliver it after offsetting as it will pass the verifiable
+      // We have the original event, deliver it after offsetting as it will pass the
+      // verifiable
       // input check.
       translateMotionEvent(trackedEvent, pointerCoords);
       return trackedEvent;
     }
-    // We are in virtual display mode or don't have a reference to the original MotionEvent.
-    // In this case we manually recreate a MotionEvent to be delivered. This MotionEvent
+    // We are in virtual display mode or don't have a reference to the original
+    // MotionEvent.
+    // In this case we manually recreate a MotionEvent to be delivered. This
+    // MotionEvent
     // will fail the verifiable input check.
     PointerProperties[] pointerProperties =
         parsePointerPropertiesList(touch.rawPointerPropertiesList)
@@ -743,7 +861,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     viewWrappers = new SparseArray<>();
     platformViews = new SparseArray<>();
     platformViewParent = new SparseArray<>();
-    viewHosts = new SparseArray<>();
     transactions = new ArrayList<>();
 
     motionEventTracker = MotionEventTracker.getInstance();
@@ -846,7 +963,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final PlatformViewWrapper view = viewWrappers.valueAt(index);
       flutterView.removeView(view);
     }
-    // Remove wrapper for platform views that are composed at the view hierarchy level.
+    // Remove wrapper for platform views that are composed at the view hierarchy
+    // level.
     for (int index = 0; index < platformViewParent.size(); index++) {
       final FlutterMutatorView view = platformViewParent.valueAt(index);
       flutterView.removeView(view);
@@ -1109,6 +1227,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @VisibleForTesting
   boolean initializePlatformViewIfNeeded(int viewId) {
+    if (platformViewHost == null) {
+      platformViewHost =
+          new FlutterPlatformHostView(
+              context, androidTouchProcessor, context.getResources().getDisplayMetrics().density);
+
+      DisplayManager displayManager =
+          (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+      Display[] displays = displayManager.getDisplays();
+
+      scvh = new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
+      scvh.setView(platformViewHost, flutterView.getWidth(), flutterView.getHeight());
+      platformViewHost.readyToDisplay(flutterView.getWidth(), flutterView.getHeight());
+      flutterView.addPlatformView(scvh.getSurfacePackage());
+    }
+
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
       return false;
@@ -1141,32 +1274,25 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     platformViewParent.put(viewId, parentView);
 
-    // Accessibility in the embedded view is initially disabled because if a Flutter app disabled
-    // accessibility in the first frame, the embedding won't receive an update to disable
-    // accessibility since the embedding never received an update to enable it.
-    // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas when
-    // the framework sends a new a11y tree to the embedding.
-    // To prevent races, the framework populate the SemanticsNode after the platform view has been
-    // created.
+    // Accessibility in the embedded view is initially disabled because if a Flutter
+    // app disabled  accessibility in the first frame, the embedding won't receive an update to
+    // disable  accessibility since the embedding never received an update to enable it.
+    // The AccessibilityBridge keeps track of the accessibility nodes, and handles
+    // the deltas when  the framework sends a new a11y tree to the embedding.
+    // To prevent races, the framework populate the SemanticsNode after the platform
+    // view has been created.
     embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
     parentView.addView(embeddedView);
 
-    DisplayManager displayManager =
-        (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-    Display[] displays = displayManager.getDisplays();
-
-    SurfaceControlViewHost scvh =
-        new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
-    scvh.setView(parentView, flutterView.getWidth(), flutterView.getHeight());
-    viewHosts.put(viewId, scvh);
-    flutterView.addPlatformView(scvh.getSurfacePackage());
+    platformViewHost.addView(parentView);
 
     return true;
   }
 
   public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer) {
     this.flutterRenderer = flutterRenderer;
-    androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
+    androidTouchProcessor =
+        new AndroidTouchProcessor(flutterRenderer, /* trackMotionEvents= */ true);
   }
 
   /**
@@ -1195,27 +1321,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return;
     }
 
-    SurfaceControlViewHost scvh = viewHosts.get(viewId);
-
-    SurfaceControl control = scvh.getSurfacePackage().getSurfaceControl();
-
-    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
-    tx.setPosition(control, x, y);
-    currentSyncGroup.addTransaction(tx);
-
     final FlutterMutatorView parentView = platformViewParent.get(viewId);
     parentView.readyToDisplay(mutatorsStack, x, y, width, height);
     parentView.setVisibility(View.VISIBLE);
     parentView.bringToFront();
     parentView.invalidate();
-
-    // currentSyncGroup.add(
-    //     scvh.getSurfacePackage(),
-    //     new Runnable() {
-    //       public void run() {
-    //           // What do I do here?
-    //       }
-    //     });
 
     currentFrameUsedPlatformViewIds.add(viewId);
   }
@@ -1261,6 +1371,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     for (int i = 0; i < transactions.size(); i++) {
       currentSyncGroup.addTransaction(transactions.get(i));
     }
+    flutterView.invalidate();
     currentSyncGroup.markSyncReady();
     transactions.clear();
   }
@@ -1283,28 +1394,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This method is used only internally by {@code FlutterJNI}.
    */
-  public void destroyOverlaySurfaces() {
-    // for (int viewId = 0; viewId < overlayLayerViews.size(); viewId++) {
-    //   final PlatformOverlayView overlayView = overlayLayerViews.valueAt(viewId);
-    //   overlayView.detachFromRenderer();
-    //   overlayView.closeImageReader();
-    //   // Don't remove overlayView from the view hierarchy since this method can
-    //   // be called while the Android framework is iterating over the array of views.
-    //   // See ViewGroup#dispatchDetachedFromWindow(), and
-    //   // https://github.com/flutter/flutter/issues/97679.
-    // }
-  }
+  public void destroyOverlaySurfaces() {}
 
-  private void removeOverlaySurfaces() {
-    // if (flutterView == null) {
-    //   Log.e(TAG, "removeOverlaySurfaces called while flutter view is null");
-    //   return;
-    // }
-    // for (int viewId = 0; viewId < overlayLayerViews.size(); viewId++) {
-    //   flutterView.removeView(overlayLayerViews.valueAt(viewId));
-    // }
-    // overlayLayerViews.clear();
-  }
+  private void removeOverlaySurfaces() {}
 
   @VisibleForTesting
   public SparseArray<PlatformOverlayView> getOverlayLayerViews() {
