@@ -3680,7 +3680,7 @@ class _MatrixColorTransform implements _ColorTransform {
 
 _ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
   // The transforms were calculated with the following octave script from known
-  // conversions.
+  // conversions. These transforms have a white point that matches Apple's.
   //
   // p3Colors = [
   //   1, 0, 0, 0.25;
