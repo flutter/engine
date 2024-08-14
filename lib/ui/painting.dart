@@ -131,18 +131,18 @@ class Color {
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int alpha, int red, int green, int blue)
-      : a = alpha / 255.0,
-        r = red / 255.0,
-        g = green / 255.0,
-        b = blue / 255.0,
+      : a = (alpha & 0xff) / 255,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255,
         colorSpace = ColorSpace.sRGB;
 
   const Color._fromARGBC(
       int alpha, int red, int green, int blue, this.colorSpace)
-      : a = alpha / 255.0,
-        r = red / 255.0,
-        g = green / 255.0,
-        b = blue / 255.0;
+      : a = (alpha & 0xff) / 255,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255;
 
   /// Create an sRGB color from red, green, blue, and opacity, similar to
   /// `rgba()` in CSS.
@@ -156,12 +156,12 @@ class Color {
   /// Out of range values are brought into range using modulo 255.
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
-  const Color.fromRGBO(int red, int green, int blue, double opacity) :
-    a = opacity,
-    r = red / 255.0,
-    g = green / 255.0,
-    b = blue / 255.0,
-    colorSpace = ColorSpace.sRGB;
+  const Color.fromRGBO(int red, int green, int blue, double opacity)
+      : a = opacity,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255,
+        colorSpace = ColorSpace.sRGB;
 
   /// The alpha channel of this color.
   ///
