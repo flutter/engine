@@ -309,10 +309,14 @@ void ExperimentalCanvas::SaveLayer(
     bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
-  // TODO(jonahwilliams): understand why we sometimes get empty bounds instead
-  // of nullopt bounds.
+  // Empty bounds on a save layer that contains a BDF should be treated as
+  // unbounded.
   if (bounds.has_value() && bounds->IsEmpty()) {
-    bounds = std::nullopt;
+    if (backdrop_filter != nullptr) {
+      bounds = std::nullopt;
+    } else {
+      Save(total_content_depth);
+    }
   }
 
   if (!clip_coverage_stack_.HasCoverage()) {
@@ -403,11 +407,11 @@ void ExperimentalCanvas::SaveLayer(
   if (backdrop_filter_contents ||
       Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
     FML_CHECK(clip_coverage_stack_.HasCoverage());
-    subpass_coverage =
-        coverage_limit.Intersection(current_clip_coverage).value();
+    subpass_coverage = coverage_limit;
     // Clip tight bounds, even if clip is flooded.
     if (bounds.has_value()) {
-      subpass_coverage = coverage_limit.Intersection(bounds.value()).value();
+      subpass_coverage =
+          coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
     }
   } else {
     subpass_coverage = bounds->TransformBounds(GetCurrentTransform());

@@ -1102,6 +1102,7 @@ void DlDispatcherBase::drawTextBlob(const sk_sp<SkTextBlob> blob,
   UNIMPLEMENTED;
 }
 
+// |flutter::DlOpReceiver|
 void DlDispatcherBase::drawTextFrame(
     const std::shared_ptr<TextFrame>& text_frame,
     SkScalar x,
@@ -1319,8 +1320,11 @@ void TextFrameDispatcher::drawDisplayList(
     SkScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
   save();
+  Paint old_paint = paint_;
+  paint_ = Paint{};
   display_list->Dispatch(*this);
   restore();
+  paint_ = old_paint;
   FML_DCHECK(stack_depth == stack_.size());
 }
 
