@@ -230,18 +230,21 @@ class Color {
       double? green,
       double? blue,
       ColorSpace? colorSpace}) {
-    final Color tweaked = Color.from(
+    Color? tweaked;
+    if (alpha != null || red != null || green != null || blue != null) {
+      tweaked = Color.from(
           alpha: alpha ?? a,
           red: red ?? r,
           green: green ?? g,
           blue: blue ?? b,
           colorSpace: this.colorSpace);
+    }
     if (colorSpace != null && colorSpace != this.colorSpace) {
       final _ColorTransform transform =
           _getColorTransform(this.colorSpace, colorSpace);
-      return transform.transform(tweaked, colorSpace);
+      return transform.transform(tweaked ?? this, colorSpace);
     } else {
-      return tweaked;
+      return tweaked ?? this;
     }
   }
 
