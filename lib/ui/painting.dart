@@ -3641,27 +3641,16 @@ class _IdentityColorTransform implements _ColorTransform {
   Color transform(Color color, ColorSpace resultColorSpace) => color;
 }
 
-double _doubleClamp(double x, double min, double max) {
-  assert(min < max);
-  if (x < min) {
-    return min;
-  } else if (x > max) {
-    return max;
-  } else {
-    return x;
-  }
-}
-
 class _ClampTransform implements _ColorTransform {
   const _ClampTransform(this.child);
   final _ColorTransform child;
   @override
   Color transform(Color color, ColorSpace resultColorSpace) {
     return Color.from(
-      alpha: _doubleClamp(color.a, 0, 1),
-      red: _doubleClamp(color.r, 0, 1),
-      green: _doubleClamp(color.g, 0, 1),
-      blue: _doubleClamp(color.b, 0, 1),
+      alpha: clampDouble(color.a, 0, 1),
+      red: clampDouble(color.r, 0, 1),
+      green: clampDouble(color.g, 0, 1),
+      blue: clampDouble(color.b, 0, 1),
       colorSpace: resultColorSpace);
   }
 }
