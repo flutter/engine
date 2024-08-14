@@ -242,7 +242,7 @@ void main() {
   test('p3 to extended srgb', () {
     const Color p3 = Color.from(
         alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
-    final Color srgb = p3.change(colorSpace: ColorSpace.extendedSRGB);
+    final Color srgb = p3.withValues(colorSpace: ColorSpace.extendedSRGB);
     expect(srgb.a, equals(1.0));
     expect(srgb.r, approxEquals(1.0931));
     expect(srgb.g, approxEquals(-0.22684034705162098));
@@ -253,7 +253,7 @@ void main() {
   test('p3 to srgb', () {
     const Color p3 = Color.from(
         alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
-    final Color srgb = p3.change(colorSpace: ColorSpace.sRGB);
+    final Color srgb = p3.withValues(colorSpace: ColorSpace.sRGB);
     expect(srgb.a, equals(1.0));
     expect(srgb.r, approxEquals(1));
     expect(srgb.g, approxEquals(0));
@@ -268,7 +268,7 @@ void main() {
         green: -0.2268,
         blue: -0.1501,
         colorSpace: ColorSpace.extendedSRGB);
-    final Color p3 = srgb.change(colorSpace: ColorSpace.displayP3);
+    final Color p3 = srgb.withValues(colorSpace: ColorSpace.displayP3);
     expect(p3.a, equals(1.0));
     expect(p3.r, approxEquals(1));
     expect(p3.g, approxEquals(0));
@@ -283,7 +283,7 @@ void main() {
         green: 0,
         blue: 0,
         colorSpace: ColorSpace.extendedSRGB);
-    final Color p3 = srgb.change(colorSpace: ColorSpace.displayP3);
+    final Color p3 = srgb.withValues(colorSpace: ColorSpace.displayP3);
     expect(srgb.a, equals(1.0));
     expect(p3.r <= 1.0, isTrue);
     expect(p3.g <= 1.0, isTrue);

@@ -49,7 +49,7 @@ bool _radiusIsValid(Radius radius) {
 }
 
 Color _scaleAlpha(Color color, double factor) {
-  return color.change(alpha: clampDouble(color.a * factor, 0, 1));
+  return color.withValues(alpha: clampDouble(color.a * factor, 0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -235,7 +235,7 @@ class Color {
   ///
   /// Changes to color components will be applied before applying changes to the
   /// color space.
-  Color change(
+  Color withValues(
       {double? alpha,
       double? red,
       double? green,
