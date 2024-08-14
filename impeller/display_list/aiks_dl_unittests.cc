@@ -748,6 +748,12 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
     DlPaint paint;
     paint.setColor(DlColor::kGreen().withAlpha(0.5 * 255));
     paint.setBlendMode(DlBlendMode::kPlus);
+
+    DlPaint rect_paint;
+    rect_paint.setColor(DlColor::kRed());
+    rect_paint.setStrokeWidth(4);
+    rect_paint.setDrawStyle(DlDrawStyle::kStroke);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 300, 300), rect_paint);
     builder.DrawCircle(SkPoint::Make(200, 200), 100, paint);
     // Should render a second circle, centered on the bottom-right-most edge of
     // the circle.
@@ -771,7 +777,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
   DlPaint paint;
   paint.setColor(DlColor::kBlack());
   builder.DrawPaint(paint);
-  builder.SaveLayer({}, nullptr);
+  builder.SaveLayer(nullptr, nullptr);
   {
     paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
     paint.setBlendMode(DlBlendMode::kPlus);
@@ -797,47 +803,6 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
   }
   builder.Restore();
 
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
-// Regression test for flutter/flutter#152780
-TEST_P(AiksTest, CanDrawScaledPointsSmallScaleLargeRadius) {
-  std::vector<SkPoint> point = {
-      {0, 0},  //
-  };
-
-  DlPaint paint;
-  paint.setStrokeCap(DlStrokeCap::kRound);
-  paint.setColor(DlColor::kRed());
-  paint.setStrokeWidth(100 * 1000000);
-
-  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
-  builder.Translate(200, 200);
-  builder.Scale(0.000001, 0.000001);
-
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, point.size(), point.data(),
-                     paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
-// Regression test for flutter/flutter#152780
-TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
-  std::vector<SkPoint> point = {
-      {0, 0},  //
-  };
-
-  DlPaint paint;
-  paint.setStrokeCap(DlStrokeCap::kRound);
-  paint.setColor(DlColor::kRed());
-  paint.setStrokeWidth(100 * 0.000001);
-
-  DisplayListBuilder builder(GetCullRect(GetWindowSize()));
-  builder.Translate(200, 200);
-  builder.Scale(1000000, 1000000);
-
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, point.size(), point.data(),
-                     paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
