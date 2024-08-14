@@ -137,6 +137,13 @@ class Color {
         b = blue / 255.0,
         colorSpace = ColorSpace.sRGB;
 
+  const Color._fromARGBC(
+      int alpha, int red, int green, int blue, this.colorSpace)
+      : a = alpha / 255.0,
+        r = red / 255.0,
+        g = green / 255.0,
+        b = blue / 255.0;
+
   /// Create an sRGB color from red, green, blue, and opacity, similar to
   /// `rgba()` in CSS.
   ///
@@ -389,21 +396,23 @@ class Color {
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
     if (backAlpha == 0xff) { // Opaque background case
-      return Color.fromARGB(
+      return Color._fromARGBC(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
         (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
         (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+        foreground.colorSpace,
       );
     } else { // General case
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
-      return Color.fromARGB(
+      return Color._fromARGBC(
         outAlpha,
         (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
         (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
         (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+        foreground.colorSpace,
       );
     }
   }

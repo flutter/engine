@@ -168,6 +168,29 @@ void main() {
     );
   });
 
+  test('Color.alphaBlend keeps colorspace', () {
+    expect(
+        Color.alphaBlend(
+            const Color.from(
+                alpha: 0.5,
+                red: 1,
+                green: 1,
+                blue: 1,
+                colorSpace: ColorSpace.displayP3),
+            const Color.from(
+                alpha: 1,
+                red: 0,
+                green: 0,
+                blue: 0,
+                colorSpace: ColorSpace.displayP3)),
+        const Color.from(
+            alpha: 1,
+            red: 0.5,
+            green: 0.5,
+            blue: 0.5,
+            colorSpace: ColorSpace.displayP3));
+  });
+
   test('compute gray luminance', () {
     // Each color component is at 20%.
     const Color lightGray = Color(0xFF333333);
