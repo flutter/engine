@@ -312,6 +312,8 @@ class Color {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Color? lerp(Color? a, Color? b, double t) {
+    // TODO(gaaclarke): Update math to use floats. This was already attempted
+    //                  but it leads to subtle changes that change test results.
     assert(a?.colorSpace != ColorSpace.extendedSRGB);
     assert(b?.colorSpace != ColorSpace.extendedSRGB);
     if (b == null) {
@@ -325,25 +327,15 @@ class Color {
         return _scaleAlpha(b, t);
       } else {
         assert(a.colorSpace == b.colorSpace);
-        return Color.from(
-          alpha: _lerpComponent(a.a, b.a, t),
-          red: _lerpComponent(a.r, b.r, t),
-          green: _lerpComponent(a.g, b.g, t),
-          blue: _lerpComponent(a.b, b.b, t),
+        return Color.fromARGB(
+          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
         );
       }
     }
   }
-
-  /// This bends a linear curve down slightly at 0.5. This is used to duplicate
-  /// legacy behavior in lerp where lerp(0, 255, 0.5) would return 127. The
-  /// behavior elsewhere is that 0.5 would be rounded up, so the value would
-  /// be 128 without this.
-  static double _bend(double x) =>
-    (0.25 * x * x + 254.75 * x) / 255.0;
-
-  static double _lerpComponent(double x, double y, double t) =>
-      _bend(clampDouble(_lerpDouble(x, y, t), 0.0, 1.0));
 
   /// Combine the foreground color as a transparent color over top
   /// of a background color, and return the resulting combined color.
