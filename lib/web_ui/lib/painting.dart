@@ -22,44 +22,118 @@ Color _scaleAlpha(Color a, double factor) {
 }
 
 class Color {
-  const Color(int value) : value = value & 0xFFFFFFFF;
-  const Color.fromARGB(int a, int r, int g, int b)
-      : value = (((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
-  const Color.fromRGBO(int r, int g, int b, double opacity)
-      : value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
-  final int value;
-  int get alpha => (0xff000000 & value) >> 24;
-  double get opacity => alpha / 0xFF;
-  int get red => (0x00ff0000 & value) >> 16;
-  int get green => (0x0000ff00 & value) >> 8;
-  int get blue => (0x000000ff & value) >> 0;
+  const Color(int value)
+      : a = ((0xff000000 & value) >> 24) / 255.0,
+        r = ((0x00ff0000 & value) >> 16) / 255.0,
+        g = ((0x0000ff00 & value) >> 8) / 255.0,
+        b = ((0x000000ff & value) >> 0) / 255.0,
+        colorSpace = ColorSpace.sRGB;
+
+  const Color.from(
+      {required double alpha,
+      required double red,
+      required double green,
+      required double blue,
+      this.colorSpace = ColorSpace.sRGB})
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
+
+  const Color.fromARGB(int alpha, int red, int green, int blue)
+      : a = (alpha & 0xff) / 255,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255,
+        colorSpace = ColorSpace.sRGB;
+
+  const Color._fromARGBC(
+      int alpha, int red, int green, int blue, this.colorSpace)
+      : a = (alpha & 0xff) / 255,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255;
+
+  const Color.fromRGBO(int red, int green, int blue, double opacity)
+      : a = opacity,
+        r = (red & 0xff) / 255,
+        g = (green & 0xff) / 255,
+        b = (blue & 0xff) / 255,
+        colorSpace = ColorSpace.sRGB;
+
+  final double a;
+
+  final double r;
+
+  final double g;
+
+  final double b;
+
+  final ColorSpace colorSpace;
+
+  static int _floatToInt8(double x) {
+    return (x * 255.0).round();
+  }
+
+  int get value =>
+      (_floatToInt8(a) << 24) |
+      (_floatToInt8(r) << 16) |
+      (_floatToInt8(g) << 8) |
+      (_floatToInt8(b) << 0);
+
+  int get alpha => _floatToInt8(a);
+
+  double get opacity => a;
+
+  int get red => _floatToInt8(r);
+
+  int get green => _floatToInt8(g);
+
+  int get blue => _floatToInt8(b);
+
+  Color withValues(
+      {double? alpha,
+      double? red,
+      double? green,
+      double? blue,
+      ColorSpace? colorSpace}) {
+    Color? updatedComponents;
+    if (alpha != null || red != null || green != null || blue != null) {
+      updatedComponents = Color.from(
+          alpha: alpha ?? a,
+          red: red ?? r,
+          green: green ?? g,
+          blue: blue ?? b,
+          colorSpace: this.colorSpace);
+    }
+    if (colorSpace != null && colorSpace != this.colorSpace) {
+      final _ColorTransform transform =
+          _getColorTransform(this.colorSpace, colorSpace);
+      return transform.transform(updatedComponents ?? this, colorSpace);
+    } else {
+      return updatedComponents ?? this;
+    }
+  }
+
   Color withAlpha(int a) {
-    return Color.fromARGB(a, red, green, blue);
+    return Color.from(alpha: (a & 0xff) / 255, red: r, green: g, blue: b);
   }
 
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return withAlpha((255.0 * opacity).round());
+    return Color.from(alpha: opacity, red: r, green: g, blue: b);
   }
 
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return Color.from(alpha: a, red: (r & 0xff) / 255, green: g, blue: b);
   }
 
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return Color.from(alpha: a, red: r, green: (g & 0xff) / 255, blue: b);
   }
 
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return Color.from(alpha: a, red: r, green: g, blue: (b & 0xff) / 255);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -72,13 +146,15 @@ class Color {
 
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
   static Color? lerp(Color? a, Color? b, double t) {
+    assert(a?.colorSpace != ColorSpace.extendedSRGB);
+    assert(b?.colorSpace != ColorSpace.extendedSRGB);
     if (b == null) {
       if (a == null) {
         return null;
@@ -89,42 +165,45 @@ class Color {
       if (a == null) {
         return _scaleAlpha(b, t);
       } else {
-        return Color.fromARGB(
+        assert(a.colorSpace == b.colorSpace);
+        return Color._fromARGBC(
           engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
           engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
           engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
           engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+          a.colorSpace,
         );
       }
     }
   }
 
   static Color alphaBlend(Color foreground, Color background) {
+    assert(foreground.colorSpace == background.colorSpace);
+    assert(foreground.colorSpace != ColorSpace.extendedSRGB);
     final int alpha = foreground.alpha;
     if (alpha == 0x00) {
-      // Foreground completely transparent.
       return background;
     }
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
     if (backAlpha == 0xff) {
-      // Opaque background case
-      return Color.fromARGB(
+      return Color._fromARGBC(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
         (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
         (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+        foreground.colorSpace,
       );
     } else {
-      // General case
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
-      return Color.fromARGB(
+      return Color._fromARGBC(
         outAlpha,
         (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
         (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
         (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+        foreground.colorSpace,
       );
     }
   }
@@ -141,16 +220,20 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is Color && other.value == value;
+    return other is Color &&
+        _floatToInt8(other.a) == _floatToInt8(a) &&
+        _floatToInt8(other.r) == _floatToInt8(r) &&
+        _floatToInt8(other.g) == _floatToInt8(g) &&
+        _floatToInt8(other.b) == _floatToInt8(b) &&
+        other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => value.hashCode;
+  int get hashCode => Object.hash(_floatToInt8(a), _floatToInt8(r),
+      _floatToInt8(g), _floatToInt8(b), colorSpace);
 
   @override
-  String toString() {
-    return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-  }
+  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
 }
 
 enum StrokeCap {
@@ -414,6 +497,101 @@ class MaskFilter {
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
 
+abstract class _ColorTransform {
+  Color transform(Color color, ColorSpace resultColorSpace);
+}
+
+class _IdentityColorTransform implements _ColorTransform {
+  const _IdentityColorTransform();
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) => color;
+}
+
+class _ClampTransform implements _ColorTransform {
+  const _ClampTransform(this.child);
+  final _ColorTransform child;
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+      alpha: clampDouble(color.a, 0, 1),
+      red: clampDouble(color.r, 0, 1),
+      green: clampDouble(color.g, 0, 1),
+      blue: clampDouble(color.b, 0, 1),
+      colorSpace: resultColorSpace);
+  }
+}
+
+class _MatrixColorTransform implements _ColorTransform {
+  const _MatrixColorTransform(this.values);
+
+  final List<double> values;
+
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+        alpha: color.a,
+        red: values[0] * color.r +
+            values[1] * color.g +
+            values[2] * color.b +
+            values[3],
+        green: values[4] * color.r +
+            values[5] * color.g +
+            values[6] * color.b +
+            values[7],
+        blue: values[8] * color.r +
+            values[9] * color.g +
+            values[10] * color.b +
+            values[11],
+        colorSpace: resultColorSpace);
+  }
+}
+
+_ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
+  const _MatrixColorTransform srgbToP3 = _MatrixColorTransform(<double>[
+    0.808052267214446, 0.220292047628890, -0.139648846160100,
+    0.145738111193222, //
+    0.096480880462996, 0.916386732581291, -0.086093928394828,
+    0.089490172325882, //
+    -0.127099563510240, -0.068983484963878, 0.735426667591299, 0.233655661600230
+  ]);
+  const _ColorTransform p3ToSrgb = _MatrixColorTransform(<double>[
+    1.306671048092539, -0.298061942172353, 0.213228303487995,
+    -0.213580156254466, //
+    -0.117390025596251, 1.127722006101976, 0.109727644608938,
+    -0.109450321455370, //
+    0.214813187718391, 0.054268702864647, 1.406898424029350, -0.364892765879631
+  ]);
+  switch (source) {
+    case ColorSpace.sRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return srgbToP3;
+      }
+    case ColorSpace.extendedSRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(_IdentityColorTransform());
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return const _ClampTransform(srgbToP3);
+      }
+    case ColorSpace.displayP3:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(p3ToSrgb);
+        case ColorSpace.extendedSRGB:
+          return p3ToSrgb;
+        case ColorSpace.displayP3:
+          return const _IdentityColorTransform();
+      }
+  }
+}
+
 // This needs to be kept in sync with the "_FilterQuality" enum in skwasm's canvas.cpp
 enum FilterQuality {
   none,
@@ -453,6 +631,7 @@ class ImageFilter {
 enum ColorSpace {
   sRGB,
   extendedSRGB,
+  displayP3,
 }
 
 // This must be kept in sync with the `ImageByteFormat` enum in Skwasm's surface.cpp.
