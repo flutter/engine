@@ -133,6 +133,12 @@ class Canvas {
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
+  void DrawSuperEllipse(Point center,
+                        Scalar radius,
+                        Scalar alpha,
+                        Scalar beta,
+                        const Paint& paint);
+
   void DrawImageRect(
       const std::shared_ptr<Image>& image,
       Rect source,

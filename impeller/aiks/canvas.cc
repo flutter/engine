@@ -23,6 +23,7 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rectellipse_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
@@ -844,6 +845,21 @@ void Canvas::SaveLayer(const Paint& paint,
   transform_stack_.back().distributed_opacity = 1.0;
 
   new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
+}
+
+void Canvas::DrawSuperEllipse(Point center,
+                              Scalar radius,
+                              Scalar alpha,
+                              Scalar beta,
+                              const Paint& paint) {
+  Entity entity;
+  entity.SetTransform(GetCurrentTransform());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(CreateContentsForGeometryWithFilters(
+      paint,
+      std::make_shared<RectellipseGeometry>(center, radius, alpha, beta)));
+
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
