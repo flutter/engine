@@ -260,7 +260,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return Color.from(alpha: a / 255.0, red: r, green: g, blue: b);
+    return Color.from(alpha: (a & 0xff) / 255, red: r, green: g, blue: b);
   }
 
   /// Returns a new color that matches this color with the alpha channel
@@ -277,7 +277,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.from(alpha: a, red: r / 255.0, green: g, blue: b);
+    return Color.from(alpha: a, red: (r & 0xff) / 255, green: g, blue: b);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -285,7 +285,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.from(alpha: a, red: r, green: g / 255.0, blue: b);
+    return Color.from(alpha: a, red: r, green: (g & 0xff) / 255, blue: b);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -293,7 +293,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.from(alpha: a, red: r, green: g, blue: b / 255.0);
+    return Color.from(alpha: a, red: r, green: g, blue: (b & 0xff) / 255);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
