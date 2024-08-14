@@ -107,6 +107,10 @@ class Color {
         colorSpace = ColorSpace.sRGB;
 
   /// Construct a color with normalized color components.
+  ///
+  /// Normalized color components allows arbitrary bit depths for color
+  /// components to be be supported. The values will be normalized relative to
+  /// the [ColorSpace] argument.
   const Color.from(
       {required double alpha,
       required double red,
@@ -181,7 +185,7 @@ class Color {
   /// The color space of this color.
   final ColorSpace colorSpace;
 
-  int _floatToInt8(double x) {
+  static int _floatToInt8(double x) {
     return (x * 255.0).round();
   }
 
@@ -1715,8 +1719,9 @@ enum ColorSpace {
   extendedSRGB,
   /// The Display P3 color space.
   ///
-  /// This is a wide gamut color space that has broad hardware support,
-  /// especially Apple devices.
+  /// This is a wide gamut color space that has broad hardware support. It's
+  /// supported in cases like using Impeller on iOS. When used on a platform
+  /// that doesn't support Display P3, the colors will be clamped to sRGB.
   ///
   /// See also: https://en.wikipedia.org/wiki/DCI-P3
   displayP3,
