@@ -204,6 +204,22 @@ Rendering createOptimizedRendering(
     // Find the first render canvas which comes after the last entity (picture
     // or platform view) that the next picture intersects with, and add the
     // picture to that render canvas, or create a new render canvas.
+
+    // First check if the picture intersects with any pictures in the tentative
+    // canvas, as this will be the last canvas in the rendering when it is
+    // eventually added.
+    bool addedToTentativeCanvas = false;
+    for (final CkPicture picture in tentativeCanvas.pictures) {
+      if (!picture.cullRect.intersect(pictures[i + 1].cullRect).isEmpty) {
+        tentativeCanvas.add(pictures[i + 1]);
+        addedToTentativeCanvas = true;
+        break;
+      }
+    }
+    if (addedToTentativeCanvas) {
+      continue;
+    }
+
     RenderingRenderCanvas? lastCanvasSeen;
     bool addedPictureToRendering = false;
     for (final RenderingEntity entity in result.entities.reversed) {
