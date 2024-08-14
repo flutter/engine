@@ -106,7 +106,7 @@ class Color {
         b = ((0x000000ff & value) >> 0) / 255.0,
         colorSpace = ColorSpace.sRGB;
 
-  /// Construct a color in a specified color space.
+  /// Construct a color with normalized color components.
   const Color.from(
       {required double alpha,
       required double red,
