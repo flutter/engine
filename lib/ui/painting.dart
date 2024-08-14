@@ -408,8 +408,10 @@ class Color {
         other.colorSpace == colorSpace;
   }
 
+  // TODO(gaaclarke): Calculate this from float values.
   @override
-  int get hashCode => value.hashCode;
+  int get hashCode => Object.hash(_floatToInt8(a), _floatToInt8(r),
+      _floatToInt8(g), _floatToInt8(b), colorSpace);
 
   // TODO(gaaclarke): Make toString() print out float values.
   @override

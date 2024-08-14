@@ -243,4 +243,12 @@ void main() {
     expect(p3.g >= 0.0, isTrue);
     expect(p3.b >= 0.0, isTrue);
   });
+
+  test('hash considers colorspace', () {
+    const Color srgb = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.sRGB);
+    const Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    expect(srgb.hashCode, notEquals(p3.hashCode));
+  });
 }
