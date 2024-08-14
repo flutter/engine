@@ -340,7 +340,7 @@ class Color {
   /// behavior elsewhere is that 0.5 would be rounded up, so the value would
   /// be 128 without this.
   static double _bend(double x) =>
-    (2.0 * x * x + 253.0 * x) / 255.0;
+    (0.25 * x * x + 254.75 * x) / 255.0;
 
   static double _lerpComponent(double x, double y, double t) =>
       _bend(clampDouble(_lerpDouble(x, y, t), 0.0, 1.0));
@@ -395,17 +395,19 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
+    // TODO(gaaclarke): Make equality more fine grain than 1/256.
     return other is Color &&
-        other.a == a &&
-        other.r == r &&
-        other.g == g &&
-        other.b == b &&
+        _floatToInt8(other.a) == _floatToInt8(a) &&
+        _floatToInt8(other.r) == _floatToInt8(r) &&
+        _floatToInt8(other.g) == _floatToInt8(g) &&
+        _floatToInt8(other.b) == _floatToInt8(b) &&
         other.colorSpace == colorSpace;
   }
 
   @override
   int get hashCode => value.hashCode;
 
+  // TODO(gaaclarke): Make toString() print out float values.
   @override
   String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
 }
