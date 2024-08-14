@@ -38,19 +38,20 @@ def copy_binary(source_path, destination_path):
 
 
 def copy_tree(source_path, destination_path, symlinks=False):
-  """Performs a recursive copy of a directory.
-  If the destination path is present, it is deleted first."""
+  """Performs a recursive copy of a directory. If the destination path is
+  present, it is deleted first."""
   assert_directory(source_path, 'directory to copy')
   shutil.rmtree(destination_path, True)
   shutil.copytree(source_path, destination_path, symlinks=symlinks)
 
 
-def create_zip(cwd, zip_filename, paths, symlinks=False):
-  """Creates a zip archive in cwd, containing a set of cwd-relative files."""
-  options = ['-r']
-  if symlinks:
-    options.append('-y')
-  subprocess.check_call(['zip'] + options + [zip_filename] + paths, cwd=cwd)
+def create_zip(cwd, zip_filename, paths):
+  """Creates a zip archive in cwd, containing a set of cwd-relative files.
+
+  In order to preserve the correct internal structure of macOS frameworks,
+  symlinks are preserved.
+  """
+  subprocess.check_call(['zip', '-r', '-y', zip_filename] + paths, cwd=cwd)
 
 
 def _dsymutil_path():

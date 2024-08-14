@@ -134,7 +134,7 @@ def process_framework(dst, args, fat_framework_bundle, fat_framework_binary):
     sky_utils.extract_dsym(fat_framework_binary, dsym_out)
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'], symlinks=True)
+      sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'])
       # Double zip to make it consistent with legacy artifacts.
       # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
       sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
@@ -159,7 +159,7 @@ def zip_framework(dst):
           'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
       ]
   )
-  sky_utils.create_zip(framework_dst, 'FlutterMacOS.framework.zip', ['.'], symlinks=True)
+  sky_utils.create_zip(framework_dst, 'FlutterMacOS.framework.zip', ['.'])
 
   # Double zip to make it consistent with legacy artifacts.
   # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
@@ -171,8 +171,7 @@ def zip_framework(dst):
           # TODO(cbracken): Move these files to inner zip before removing the outer zip.
           'entitlements.txt',
           'without_entitlements.txt',
-      ],
-      symlinks=True
+      ]
   )
 
   # Overwrite the FlutterMacOS.framework.zip with the double-zipped archive.
@@ -194,11 +193,13 @@ def zip_xcframework_archive(dst):
   )
 
   sky_utils.create_zip(
-      dst, 'framework.zip', [
+      dst,
+      'framework.zip',
+      [
           'FlutterMacOS.xcframework',
           'entitlements.txt',
           'without_entitlements.txt',
-      ]
+      ],
   )
 
 
