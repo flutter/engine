@@ -1713,6 +1713,12 @@ enum ColorSpace {
   /// see the extended values an [ImageByteFormat] like
   /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
+  /// The Display P3 color space.
+  ///
+  /// This is a wide gamut color space that has broad hardware support,
+  /// especially Apple devices.
+  ///
+  /// See also: https://en.wikipedia.org/wiki/DCI-P3
   displayP3,
 }
 
