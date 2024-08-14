@@ -83,7 +83,7 @@ Color _scaleAlpha(Color color, double factor) {
 ///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
 ///    defines the colors found in the Material Design specification.
 class Color {
-  /// Construct a color from the lower 32 bits of an [int].
+  /// Construct an sRGB color from the lower 32 bits of an [int].
   ///
   /// The bits are interpreted as follows:
   ///
@@ -106,6 +106,7 @@ class Color {
         b = ((0x000000ff & value) >> 0) / 255.0,
         colorSpace = ColorSpace.sRGB;
 
+  /// Construct a color in a specified color space.
   const Color.from(
       {required double alpha,
       required double red,
@@ -117,7 +118,7 @@ class Color {
         g = green,
         b = blue;
 
-  /// Construct a color from the lower 8 bits of four integers.
+  /// Construct an sRGB color from the lower 8 bits of four integers.
   ///
   /// * `a` is the alpha value, with 0 being transparent and 255 being fully
   ///   opaque.
@@ -136,7 +137,8 @@ class Color {
         b = blue / 255.0,
         colorSpace = ColorSpace.sRGB;
 
-  /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
+  /// Create an sRGB color from red, green, blue, and opacity, similar to
+  /// `rgba()` in CSS.
   ///
   /// * `r` is [red], from 0 to 255.
   /// * `g` is [green], from 0 to 255.
@@ -154,10 +156,22 @@ class Color {
     b = blue / 255.0,
     colorSpace = ColorSpace.sRGB;
 
+  /// The alpha channel of this color.
+  ///
+  /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
+  /// this color is fully opaque.
   final double a;
+
+  /// The red channel of this color.
   final double r;
+
+  /// The green channel of this color.
   final double g;
+
+  /// The blue channel of this color.
   final double b;
+
+  /// The color space of this color.
   final ColorSpace colorSpace;
 
   int _floatToInt8(double x) {
@@ -205,6 +219,11 @@ class Color {
   @Deprecated('Use .b.')
   int get blue => _floatToInt8(b);
 
+  /// Returns a new color that matches this color with the passed in components
+  /// changed.
+  ///
+  /// Changes to color components will be applied before applying changes to the
+  /// color space.
   Color change(
       {double? alpha,
       double? red,
