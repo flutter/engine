@@ -282,13 +282,17 @@ sk_sp<SkMaskFilter> ToSk(const DlMaskFilter* filter) {
 
 sk_sp<SkVertices> ToSk(const std::shared_ptr<DlVertices>& vertices) {
   std::vector<SkColor> sk_colors;
-  sk_colors.reserve(vertices->vertex_count());
-  for (int i = 0; i < vertices->vertex_count(); ++i) {
-    sk_colors.push_back(vertices->colors()[i].argb());
+  const SkColor* sk_colors_ptr = nullptr;
+  if (vertices->colors()) {
+    sk_colors.reserve(vertices->vertex_count());
+    for (int i = 0; i < vertices->vertex_count(); ++i) {
+      sk_colors.push_back(vertices->colors()[i].argb());
+    }
+    sk_colors_ptr = sk_colors.data();
   }
   return SkVertices::MakeCopy(ToSk(vertices->mode()), vertices->vertex_count(),
                               vertices->vertices(),
-                              vertices->texture_coordinates(), sk_colors.data(),
+                              vertices->texture_coordinates(), sk_colors_ptr,
                               vertices->index_count(), vertices->indices());
 }
 
