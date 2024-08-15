@@ -251,7 +251,7 @@ vars = {
   # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
   # will be used altogether with fuchsia-sdk to setup the build / test
   # environment.
-  'fuchsia_test_scripts_version': 'J1EXQ2ozMIQEa6F7H3XxV-sn9NzJqlFpWjXsyHs0HxEC',
+  'fuchsia_test_scripts_version': '-XDS8eBA0Le-zCEfWFgQWJQunl4ka-c4hboPGKa2qQQC',
 
   # The version / instance id of the cipd:chromium/fuchsia/gn-sdk which will be
   # used altogether with fuchsia-sdk to generate gn based build rules.
@@ -969,7 +969,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'MeV5i7xXXFPHF5sBKYFaLczLFAP_t9wp4YIFSvOyajkC'
+        'version': 'qpfC-GAVZvOwAQU5fSbzWmOQevK_0p1ZCV0-Pw9O9LcC'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
