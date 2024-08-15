@@ -12,7 +12,7 @@ namespace impeller {
 
 SuperellipseGeometry::SuperellipseGeometry(const Point& center,
                                            Scalar radius,
-                                           int degree,
+                                           Scalar degree,
                                            Scalar alpha,
                                            Scalar beta)
     : center_(center),
