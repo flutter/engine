@@ -164,7 +164,6 @@ bool Entity::IsBlendModeDestructive(BlendMode blend_mode) {
     case BlendMode::kDestinationATop:
     case BlendMode::kXor:
     case BlendMode::kModulate:
-    case BlendMode::kDestinationOver:
       return true;
     default:
       return false;
