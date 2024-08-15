@@ -157,7 +157,7 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
 ///
 /// [paramsForViews] is required to compute the bounds of the platform views.
 // TODO(harryterkelsen): Extend this to work for any sequence of platform views
-// and pictures.
+// and pictures, https://github.com/flutter/flutter/issues/149863.
 Rendering createOptimizedRendering(
   List<CkPicture> pictures,
   List<int> platformViews,
