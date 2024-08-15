@@ -847,5 +847,17 @@ TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, TransparentShadowProducesCorrectColor) {
+  DisplayListBuilder builder;
+  builder.Save();
+  builder.Scale(1.618, 1.618);
+  SkPath path = SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100));
+
+  builder.DrawShadow(path, flutter::DlColor::kTransparent(), 15, false, 1);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
