@@ -24,7 +24,7 @@ class SuperellipseGeometry final : public Geometry {
  public:
   explicit SuperellipseGeometry(const Point& center,
                                 Scalar radius,
-                                int degree,
+                                Scalar degree,
                                 Scalar alpha,
                                 Scalar beta);
 
@@ -47,7 +47,7 @@ class SuperellipseGeometry final : public Geometry {
 
   Point center_;
   // 4 is a rectellipse
-  int degree_;
+  Scalar degree_;
   Scalar radius_;
   Scalar alpha_;
   Scalar beta_;
