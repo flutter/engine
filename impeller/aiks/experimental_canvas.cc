@@ -402,13 +402,12 @@ void ExperimentalCanvas::SaveLayer(
   Rect subpass_coverage;
   if (backdrop_filter_contents ||
       Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
-    FML_CHECK(clip_coverage_stack_.HasCoverage());
     subpass_coverage = coverage_limit;
-    // Clip tight bounds, even if clip is flooded.
-    if (bounds.has_value() && bounds_from_caller) {
-      subpass_coverage =
-          coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
-    }
+    // TODO(jonahwilliams): if we have tight bounds we should be able to reduce
+    // this size here. if (bounds.has_value() && bounds_from_caller) {
+    //   subpass_coverage =
+    //       coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
+    // }
   } else {
     subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   }
