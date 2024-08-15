@@ -753,19 +753,25 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
 class DlRuntimeEffectImageFilter final : public DlImageFilter {
  public:
   explicit DlRuntimeEffectImageFilter(
-      std::shared_ptr<DlColorSource> runtime_effect)
-      : runtime_effect_(std::move(runtime_effect)) {
-    FML_DCHECK(!!runtime_effect_->asRuntimeEffect());
-  }
+      sk_sp<DlRuntimeEffect> runtime_effect,
+      std::vector<std::shared_ptr<DlColorSource>> samplers,
+      std::shared_ptr<std::vector<uint8_t>> uniform_data)
+      : runtime_effect_(std::move(runtime_effect)),
+        samplers_(std::move(samplers)),
+        uniform_data_(std::move(uniform_data)) {}
 
   std::shared_ptr<DlImageFilter> shared() const override {
-    return std::make_shared<DlRuntimeEffectImageFilter>(this->runtime_effect_);
+    return std::make_shared<DlRuntimeEffectImageFilter>(
+        this->runtime_effect_, this->samplers_, this->uniform_data_);
   }
 
-  static std::shared_ptr<const DlImageFilter> Make(
-      std::shared_ptr<DlColorSource> runtime_effect) {
+  static std::shared_ptr<DlImageFilter> Make(
+      sk_sp<DlRuntimeEffect> runtime_effect,
+      std::vector<std::shared_ptr<DlColorSource>> samplers,
+      std::shared_ptr<std::vector<uint8_t>> uniform_data) {
     return std::make_shared<DlRuntimeEffectImageFilter>(
-        std::move(runtime_effect));
+        std::move(runtime_effect), std::move(samplers),
+        std::move(uniform_data));
   }
 
   DlImageFilterType type() const override {
@@ -774,10 +780,6 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
   size_t size() const override { return sizeof(*this); }
 
   bool modifies_transparent_black() const override { return false; }
-
-  const std::shared_ptr<DlColorSource>& GetRuntimeEffect() const {
-    return runtime_effect_;
-  }
 
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
@@ -803,11 +805,25 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
     return this;
   }
 
+  const sk_sp<DlRuntimeEffect> runtime_effect() const {
+    return runtime_effect_;
+  }
+
+  const std::vector<std::shared_ptr<DlColorSource>>& samplers() const {
+    return samplers_;
+  }
+
+  const std::shared_ptr<std::vector<uint8_t>>& uniform_data() const {
+    return uniform_data_;
+  }
+
  protected:
   bool equals_(const DlImageFilter& other) const override { return false; }
 
  private:
-  std::shared_ptr<DlColorSource> runtime_effect_;
+  sk_sp<DlRuntimeEffect> runtime_effect_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
+  std::shared_ptr<std::vector<uint8_t>> uniform_data_;
 };
 
 }  // namespace flutter

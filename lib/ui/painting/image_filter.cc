@@ -90,8 +90,7 @@ void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
 
 void ImageFilter::initShader(ReusableFragmentShader* shader) {
   FML_DCHECK(shader);
-  filter_ = DlRuntimeEffectImageFilter::Make(
-      shader->shader(DlImageSampling::kNearestNeighbor));
+  filter_ = shader->as_image_filter();
 }
 
 }  // namespace flutter

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "display_list/dl_sampling_options.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/aiks/color_filter.h"
@@ -603,12 +604,11 @@ static std::shared_ptr<ImageFilter> ToImageFilter(
     case flutter::DlImageFilterType::kRuntimeEffect:
       auto fragment_program_filter = filter->asRuntimeEffectFilter();
       FML_DCHECK(fragment_program_filter);
-      const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
-          fragment_program_filter->GetRuntimeEffect()->asRuntimeEffect();
-      auto runtime_stage =
-          runtime_effect_color_source->runtime_effect()->runtime_stage();
-      auto uniform_data = runtime_effect_color_source->uniform_data();
-      auto samplers = runtime_effect_color_source->samplers();
+      const flutter::DlRuntimeEffectImageFilter* runtime_filter =
+          fragment_program_filter->asRuntimeEffectFilter();
+      auto runtime_stage = runtime_filter->runtime_effect()->runtime_stage();
+      const auto& uniform_data = runtime_filter->uniform_data();
+      const auto& samplers = runtime_filter->samplers();
 
       std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
       size_t index = 0;

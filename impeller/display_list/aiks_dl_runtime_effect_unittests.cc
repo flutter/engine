@@ -104,9 +104,8 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   DlPaint paint;
   paint.setColor(DlColor::kAqua());
   paint.setImageFilter(std::make_shared<DlRuntimeEffectImageFilter>(
-      DlColorSource::MakeRuntimeEffect(
-          DlRuntimeEffect::MakeImpeller(runtime_stage), sampler_inputs,
-          uniform_data)));
+      DlRuntimeEffect::MakeImpeller(runtime_stage), sampler_inputs,
+      uniform_data));
 
   DisplayListBuilder builder;
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 400, 400), paint);
