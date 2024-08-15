@@ -300,4 +300,22 @@ void main() {
         alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
     expect(srgb.hashCode, notEquals(p3.hashCode));
   });
+
+  // Regression test for https://github.com/flutter/flutter/issues/41257
+  // CupertinoDynamicColor was overriding base class and calling super(0).
+  test('subclass of Color can override value', () {
+    const DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
+    expect(color.value, 0xF0E0D0C0);
+    // Call base class member, make sure it uses overridden value.
+    expect(color.red, 0xE0);
+  });
+}
+
+class DynamicColorClass extends Color {
+  const DynamicColorClass(int newValue) : _newValue = newValue, super(0);
+
+  final int _newValue;
+
+  @override
+  int get value => _newValue;
 }
