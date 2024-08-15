@@ -309,14 +309,9 @@ void ExperimentalCanvas::SaveLayer(
     bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
-  // Empty bounds on a save layer that contains a BDF should be treated as
-  // unbounded.
   if (bounds.has_value() && bounds->IsEmpty()) {
-    if (backdrop_filter != nullptr) {
-      bounds = std::nullopt;
-    } else {
-      Save(total_content_depth);
-    }
+    Save(total_content_depth);
+    return;
   }
 
   if (!clip_coverage_stack_.HasCoverage()) {

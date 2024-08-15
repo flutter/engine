@@ -604,6 +604,14 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
     impeller_bounds = skia_conversions::ToRect(bounds);
   }
 
+  // Empty bounds on a save layer that contains a BDF or destructive blend
+  // should be treated as unbounded. All other empty bounds can be skipped.
+  if (impeller_bounds.has_value() && impeller_bounds->IsEmpty() &&
+      (backdrop != nullptr ||
+       Entity::IsBlendModeDestructive(paint.blend_mode))) {
+    impeller_bounds = std::nullopt;
+  }
+
   GetCanvas().SaveLayer(paint, impeller_bounds, ToImageFilter(backdrop),
                         promise, total_content_depth,
                         options.can_distribute_opacity());
