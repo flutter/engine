@@ -36,25 +36,21 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
   // Generate the points for the top left quadrant, and then mirror to the other
   // quadrants.
   std::vector<Point> points;
-  for (Scalar t = 0; t < (kPi / 2) - step; t += step) {
+  points.reserve(40);
+  for (int i = 0; i < 40; i++) {
+    Scalar t = i * step;
     Scalar x = a * pow(abs(cos(t)), 2 / n);
     Scalar y = b * pow(abs(sin(t)), 2 / n);
     points.emplace_back(x, y);
   }
-  Scalar x = a * pow(abs(cos(kPi / 2)), 2 / n);
-  Scalar y = b * pow(abs(sin(kPi / 2)), 2 / n);
-  points.emplace_back(x, y);
 
-  std::vector<Point> geometry;
   static constexpr Point reflection[4] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
-
-  if (points.empty()) {
-    return {};
-  }
 
   // Reflect into the 4 quadrants and generate the tessellated mesh. The
   // iteration order is reversed so that the trianges are continuous from
   // quadrant to quadrant.
+  std::vector<Point> geometry;
+  geometry.reserve(1 + 4 * points.size());
   geometry.push_back(center_);
   for (auto i = 0u; i < points.size(); i++) {
     geometry.push_back(center_ + ((reflection[0] * points[i]) * radius_));
@@ -72,6 +68,7 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
   }
 
   std::vector<uint16_t> indices;
+  indices.reserve(geometry.size() * 3);
   for (auto i = 2u; i < geometry.size(); i++) {
     indices.push_back(0);
     indices.push_back(i - 1);
