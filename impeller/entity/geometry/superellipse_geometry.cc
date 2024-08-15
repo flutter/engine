@@ -36,8 +36,8 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
   // Generate the points for the top left quadrant, and then mirror to the other
   // quadrants.
   std::vector<Point> points;
-  points.reserve(40);
-  for (int i = 0; i < 40; i++) {
+  points.reserve(41);
+  for (int i = 0; i < 41; i++) {
     Scalar t = i * step;
     Scalar x = a * pow(abs(cos(t)), 2 / n);
     Scalar y = b * pow(abs(sin(t)), 2 / n);
