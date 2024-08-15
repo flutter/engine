@@ -847,22 +847,6 @@ void Canvas::SaveLayer(const Paint& paint,
   new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
 }
 
-void Canvas::DrawSuperellipse(Point center,
-                              Scalar radius,
-                              int degree,
-                              Scalar alpha,
-                              Scalar beta,
-                              const Paint& paint) {
-  Entity entity;
-  entity.SetTransform(GetCurrentTransform());
-  entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateContentsForGeometryWithFilters(
-      paint, std::make_shared<SuperellipseGeometry>(center, radius, degree,
-                                                    alpha, beta)));
-
-  AddRenderEntityToCurrentPass(std::move(entity));
-}
-
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {

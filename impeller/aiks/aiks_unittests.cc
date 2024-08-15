@@ -486,39 +486,6 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   }
 }
 
-TEST_P(AiksTest, DrawSuperEllipse) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    // UI state.
-    static float alpha = 10;
-    static float beta = 10;
-    static float radius = 40;
-    static int degree = 4;
-    static Color color = Color::Red();
-
-    if (AiksTest::ImGuiBegin("Controls", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      ImGui::SliderFloat("Alpha", &alpha, 0, 100);
-      ImGui::SliderFloat("Beta", &beta, 0, 100);
-      ImGui::SliderInt("Degreee", &degree, 1, 20);
-      ImGui::SliderFloat("Radius", &radius, 0, 400);
-      ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
-      ImGui::End();
-    }
-
-    Canvas canvas;
-    canvas.DrawSuperellipse(
-        /*center=*/{400, 400},
-        /*radius=*/radius,
-        /*degree=*/degree,
-        /*alpha=*/alpha,
-        /*beta=*/beta,
-        /*paint=*/{.color = color});
-    return canvas.EndRecordingAsPicture();
-  };
-
-  OpenPlaygroundHere(callback);
-}
-
 }  // namespace testing
 }  // namespace impeller
 
