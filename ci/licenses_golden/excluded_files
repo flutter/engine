@@ -440,6 +440,7 @@
 ../../../flutter/sky/tools/create_xcframework.py
 ../../../flutter/sky/tools/dist_dart_pkg.py
 ../../../flutter/sky/tools/install_framework_headers.py
+../../../flutter/sky/tools/sky_utils.py
 ../../../flutter/testing
 ../../../flutter/third_party/.clang-tidy
 ../../../flutter/third_party/.gitignore
@@ -3354,7 +3355,10 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdio/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sharedmemory/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.spiimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.usb.phy/meta.json
