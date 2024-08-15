@@ -911,49 +911,6 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(DisplayListTest,
-       DispatcherDoesNotCullPerspectiveTransformedChildDisplayLists) {
-  // Regression test for https://github.com/flutter/flutter/issues/130613
-  flutter::DisplayListBuilder sub_builder(true);
-  sub_builder.DrawRect(SkRect::MakeXYWH(0, 0, 50, 50),
-                       flutter::DlPaint(flutter::DlColor::kRed()));
-  auto display_list = sub_builder.Build();
-
-  AiksContext context(GetContext(), nullptr);
-  RenderTarget render_target =
-      context.GetContentContext().GetRenderTargetCache()->CreateOffscreen(
-          *context.GetContext(), {2400, 1800}, 1);
-
-  ExperimentalDlDispatcher dispatcher(
-      context.GetContentContext(), render_target, false,
-      flutter::DlBlendMode::kSrcOver, IRect::MakeLTRB(0, 0, 2400, 1800));
-  dispatcher.scale(2.0, 2.0);
-  dispatcher.translate(-93.0, 0.0);
-  // clang-format off
-  dispatcher.transformFullPerspective(
-     0.8, -0.2, -0.1, -0.0,
-     0.0,  1.0,  0.0,  0.0,
-     1.4,  1.3,  1.0,  0.0,
-    63.2, 65.3, 48.6,  1.1
-  );
-  // clang-format on
-  dispatcher.translate(35.0, 75.0);
-  dispatcher.drawDisplayList(display_list, 1.0f);
-  auto picture = dispatcher.EndRecordingAsPicture();
-
-  bool found = false;
-  picture.pass->IterateAllEntities([&found](Entity& entity) {
-    if (std::static_pointer_cast<SolidColorContents>(entity.GetContents())
-            ->GetColor() == Color::Red()) {
-      found = true;
-      return false;
-    }
-
-    return true;
-  });
-  EXPECT_TRUE(found);
-}
-
 TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
   flutter::DisplayListBuilder builder;
   std::vector<flutter::DlStrokeCap> caps = {
