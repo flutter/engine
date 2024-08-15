@@ -41,7 +41,7 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
     Scalar t = i * step;
     Scalar x = a * pow(abs(cos(t)), 2 / n);
     Scalar y = b * pow(abs(sin(t)), 2 / n);
-    points.emplace_back(x, y);
+    points.emplace_back(x * radius_, y * radius_);
   }
 
   static constexpr Point reflection[4] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
@@ -53,18 +53,18 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
   geometry.reserve(1 + 4 * points.size());
   geometry.push_back(center_);
   for (auto i = 0u; i < points.size(); i++) {
-    geometry.push_back(center_ + ((reflection[0] * points[i]) * radius_));
+    geometry.push_back(center_ + (reflection[0] * points[i]));
   }
   for (auto i = 0u; i < points.size(); i++) {
-    geometry.push_back(
-        center_ + ((reflection[1] * points[points.size() - i - 1]) * radius_));
+    geometry.push_back(center_ +
+                       (reflection[1] * points[points.size() - i - 1]));
   }
   for (auto i = 0u; i < points.size(); i++) {
-    geometry.push_back(center_ + ((reflection[2] * points[i]) * radius_));
+    geometry.push_back(center_ + (reflection[2] * points[i]));
   }
   for (auto i = 0u; i < points.size(); i++) {
-    geometry.push_back(
-        center_ + ((reflection[3] * points[points.size() - i - 1]) * radius_));
+    geometry.push_back(center_ +
+                       (reflection[3] * points[points.size() - i - 1]));
   }
 
   std::vector<uint16_t> indices;
