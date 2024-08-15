@@ -9,7 +9,17 @@
 
 namespace impeller {
 
-// Geometry class that can generate vertices for a super ellipse.
+/// Geometry class that can generate vertices for a superellipse.
+///
+/// A Superellipse is an ellipse-like shape that is defined by the parameters N,
+/// alpha, and beta:
+///
+///  1 = |x / b| ^n + |y / a| ^n
+///
+/// The radius and center apply a uniform scaling and offset that is separate
+/// from alpha or beta. When n = 4, the shape is referred to as a rectellipse.
+///
+/// See also: https://en.wikipedia.org/wiki/Superellipse
 class SuperellipseGeometry final : public Geometry {
  public:
   explicit SuperellipseGeometry(const Point& center,
