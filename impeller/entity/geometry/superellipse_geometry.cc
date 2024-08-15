@@ -4,27 +4,31 @@
 
 #include <vector>
 
-#include "flutter/impeller/entity/geometry/rectellipse_geometry.h"
+#include "flutter/impeller/entity/geometry/superellipse_geometry.h"
 
 #include "impeller/geometry/constants.h"
 
 namespace impeller {
 
-RectellipseGeometry::RectellipseGeometry(const Point& center,
-                                         Scalar radius,
-                                         Scalar alpha,
-                                         Scalar beta,
-                                         Scalar n)
-    : center_(center), radius_(radius), alpha_(alpha), beta_(beta), n_(n) {}
+SuperellipseGeometry::SuperellipseGeometry(const Point& center,
+                                           Scalar radius,
+                                           int degree,
+                                           Scalar alpha,
+                                           Scalar beta)
+    : center_(center),
+      degree_(degree),
+      radius_(radius),
+      alpha_(alpha),
+      beta_(beta) {}
 
-GeometryResult RectellipseGeometry::GetPositionBuffer(
+GeometryResult SuperellipseGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
   // https://math.stackexchange.com/questions/2573746/superellipse-parametric-equation
   Scalar a = alpha_;
   Scalar b = beta_;
-  Scalar n = 4;
+  Scalar n = degree_;
 
   // TODO(jonahwilliams): determine parameter values based on scaling factor.
   Scalar step = kPi / 80;
@@ -41,15 +45,30 @@ GeometryResult RectellipseGeometry::GetPositionBuffer(
   Scalar y = b * pow(abs(sin(kPi / 2)), 2 / n);
   points.emplace_back(x, y);
 
-  // Reflect into the other 3 quadrants and generate the tessellated mesh.
   std::vector<Point> geometry;
   static constexpr Point reflection[4] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 
+  if (points.empty()) {
+    return {};
+  }
+
+  // Reflect into the 4 quadrants and generate the tessellated mesh. The
+  // iteration order is reversed so that the trianges are continuous from
+  // quadrant to quadrant.
   geometry.push_back(center_);
-  for (auto sc : reflection) {
-    for (auto pt : points) {
-      geometry.push_back(center_ + ((sc * pt) * radius_));
-    }
+  for (auto i = 0u; i < points.size(); i++) {
+    geometry.push_back(center_ + ((reflection[0] * points[i]) * radius_));
+  }
+  for (auto i = 0u; i < points.size(); i++) {
+    geometry.push_back(
+        center_ + ((reflection[1] * points[points.size() - i - 1]) * radius_));
+  }
+  for (auto i = 0u; i < points.size(); i++) {
+    geometry.push_back(center_ + ((reflection[2] * points[i]) * radius_));
+  }
+  for (auto i = 0u; i < points.size(); i++) {
+    geometry.push_back(
+        center_ + ((reflection[3] * points[points.size() - i - 1]) * radius_));
   }
 
   std::vector<uint16_t> indices;
@@ -77,17 +96,18 @@ GeometryResult RectellipseGeometry::GetPositionBuffer(
   };
 }
 
-std::optional<Rect> RectellipseGeometry::GetCoverage(
+std::optional<Rect> SuperellipseGeometry::GetCoverage(
     const Matrix& transform) const {
-  return Rect::MakeMaximum();
+  return Rect::MakeOriginSize(center_ - Point(radius_, radius_),
+                              Size(radius_ * 2, radius_ * 2));
 }
 
-bool RectellipseGeometry::CoversArea(const Matrix& transform,
-                                     const Rect& rect) const {
+bool SuperellipseGeometry::CoversArea(const Matrix& transform,
+                                      const Rect& rect) const {
   return false;
 }
 
-bool RectellipseGeometry::IsAxisAlignedRect() const {
+bool SuperellipseGeometry::IsAxisAlignedRect() const {
   return false;
 }
 

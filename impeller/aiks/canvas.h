@@ -133,8 +133,9 @@ class Canvas {
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
-  void DrawSuperEllipse(Point center,
+  void DrawSuperellipse(Point center,
                         Scalar radius,
+                        int degree,
                         Scalar alpha,
                         Scalar beta,
                         const Paint& paint);
