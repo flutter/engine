@@ -16,12 +16,15 @@ namespace testing {
 
 std::unique_ptr<ExperimentalCanvas> CreateTestCanvas(
     ContentContext& context,
-    Rect cull_rect = Rect::MakeMaximum()) {
+    std::optional<Rect> cull_rect = std::nullopt) {
   RenderTarget render_target = context.GetRenderTargetCache()->CreateOffscreen(
       *context.GetContext(), {1, 1}, 1);
 
-  return std::make_unique<ExperimentalCanvas>(context, render_target, false,
-                                              cull_rect);
+  if (cull_rect.has_value()) {
+    return std::make_unique<ExperimentalCanvas>(context, render_target, false,
+                                                cull_rect.value());
+  }
+  return std::make_unique<ExperimentalCanvas>(context, render_target, false);
 }
 
 TEST_P(AiksTest, EmptyCullRect) {
