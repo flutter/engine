@@ -52,12 +52,12 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
   DlPaint paint;
   paint.setColor(DlColor::kWhite());
 
-  Scalar sigma = 1 + (20) / 2;
-  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  Sigma sigma = Radius(20);
+  paint.setMaskFilter(
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
   builder.DrawCircle({400, 400}, 200, paint);
-  builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -72,8 +72,9 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
   paint.setColor(
       DlColor::RGBA(128.0f / 255.0f, 128.0f / 255.0f, 128.0f / 255.0f, 1.0f));
 
-  Scalar sigma = 1 + 20 / 2;
-  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  Sigma sigma = Radius(20);
+  paint.setMaskFilter(
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
   builder.DrawCircle({400, 400}, 200, paint);
@@ -190,11 +191,13 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
     builder.Translate(location.x, location.y);
 
     DlPaint paint;
-    Scalar sigma = 1 + (120 * 3) / 2;
-    paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+    Sigma sigma = Radius{120 * 3};
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
     paint.setColor(DlColor::kRed());
 
     SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
+    path.addCircle(0, 0, 0.5);
     builder.DrawPath(path, paint);
     return builder.Build();
   };
@@ -205,11 +208,14 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
   DisplayListBuilder builder;
   builder.Translate(0, -400);
   DlPaint paint;
-  Scalar sigma = 1 + (120 * 3) / 2;
-  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+
+  Sigma sigma = Radius{120 * 3};
+  paint.setMaskFilter(
+      DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColor(DlColor::kRed());
 
   SkPath path = SkPath::Rect(SkRect::MakeLTRB(0, 0, 800, 800));
+  path.addCircle(0, 0, 0.5);
   builder.DrawPath(path, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
