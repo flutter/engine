@@ -197,9 +197,13 @@ def zip_archive(dst):
   ios_file_with_entitlements = ['gen_snapshot_arm64']
   ios_file_without_entitlements = [
       'Flutter.xcframework/ios-arm64/Flutter.framework/Flutter',
+      'Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
       'Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter',
+      'Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',  # pylint: disable=line-too-long
       'extension_safe/Flutter.xcframework/ios-arm64/Flutter.framework/Flutter',
-      'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter'
+      'extension_safe/Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',  # pylint: disable=line-too-long
+      'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter',
+      'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter'  # pylint: disable=line-too-long
   ]
   embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), ios_file_with_entitlements)
 
