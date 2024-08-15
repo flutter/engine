@@ -614,7 +614,8 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
 
   GetCanvas().SaveLayer(paint, impeller_bounds, ToImageFilter(backdrop),
                         promise, total_content_depth,
-                        options.can_distribute_opacity());
+                        options.can_distribute_opacity(),
+                        options.bounds_from_caller());
 }
 
 // |flutter::DlOpReceiver|

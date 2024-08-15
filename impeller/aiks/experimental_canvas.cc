@@ -306,7 +306,8 @@ void ExperimentalCanvas::SaveLayer(
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
-    bool can_distribute_opacity) {
+    bool can_distribute_opacity,
+    bool bounds_from_caller) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
   if (bounds.has_value() && bounds->IsEmpty()) {
@@ -404,7 +405,7 @@ void ExperimentalCanvas::SaveLayer(
     FML_CHECK(clip_coverage_stack_.HasCoverage());
     subpass_coverage = coverage_limit;
     // Clip tight bounds, even if clip is flooded.
-    if (bounds.has_value()) {
+    if (bounds.has_value() && bounds_from_caller) {
       subpass_coverage =
           coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
     }
