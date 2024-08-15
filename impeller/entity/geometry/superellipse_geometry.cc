@@ -37,7 +37,7 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
   // quadrants.
   std::vector<Point> points;
   points.reserve(41);
-  for (int i = 0; i < 41; i++) {
+  for (int i = 0; i <= 40; i++) {
     Scalar t = i * step;
     Scalar x = a * pow(abs(cos(t)), 2 / n);
     Scalar y = b * pow(abs(sin(t)), 2 / n);
