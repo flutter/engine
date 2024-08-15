@@ -307,36 +307,36 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
   Scalar alpha = config.alpha * 255;
 
   Scalar y = 50;
-  paint.setColor(DlColor::kCrimson().withAlpha(alpha));
+  paint.setColor(DlColor::kCrimson().withAlpha(255 * alpha));
   builder.DrawRect(SkRect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
                                     radius, 60.0f - radius),
                    paint);
 
   y += y_spacing;
-  paint.setColor(DlColor::kBlue().withAlpha(alpha));
+  paint.setColor(DlColor::kBlue().withAlpha(255 * alpha));
   builder.DrawCircle({x + 25, y + 25}, radius, paint);
 
   y += y_spacing;
-  paint.setColor(DlColor::kGreen().withAlpha(alpha));
+  paint.setColor(DlColor::kGreen().withAlpha(255 * alpha));
   builder.DrawOval(SkRect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
                                     radius, 60.0f - radius),
                    paint);
 
   y += y_spacing;
-  paint.setColor(DlColor::kPurple().withAlpha(alpha));
+  paint.setColor(DlColor::kPurple().withAlpha(255 * alpha));
   SkRRect rrect =
       SkRRect::MakeRectXY(SkRect::MakeXYWH(x, y, 60.0f, 60.0f), radius, radius);
   builder.DrawRRect(rrect, paint);
 
   y += y_spacing;
-  paint.setColor(DlColor::kOrange().withAlpha(alpha));
+  paint.setColor(DlColor::kOrange().withAlpha(255 * alpha));
 
   rrect =
       SkRRect::MakeRectXY(SkRect::MakeXYWH(x, y, 60.0f, 60.0f), radius, 5.0);
   builder.DrawRRect(rrect, paint);
 
   y += y_spacing;
-  paint.setColor(DlColor::kMaroon().withAlpha(alpha));
+  paint.setColor(DlColor::kMaroon().withAlpha(255 * alpha));
 
   {
     SkPath path;
