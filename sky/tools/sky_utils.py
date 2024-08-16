@@ -31,15 +31,15 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
   either entitlements or without_entitlements."""
   if _contains_duplicates(entitlements):
     log_error('ERROR: duplicate value(s) found in entitlements.txt')
-    sys.exit(1)
+    sys.exit(os.EX_DATAERR)
 
   if _contains_duplicates(without_entitlements):
     log_error('ERROR: duplicate value(s) found in without_entitlements.txt')
-    sys.exit(1)
+    sys.exit(os.EX_DATAERR)
 
   if _contains_duplicates(entitlements + without_entitlements):
     log_error('ERROR: value(s) found in both entitlements and without_entitlements.txt')
-    sys.exit(1)
+    sys.exit(os.EX_DATAERR)
 
   binaries = set()
   for zip_content_path in zip_contents:
@@ -74,7 +74,7 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
       log_error('Binaries listed in entitlements.txt/without_entitlements.txt but NOT FOUND:')
       for file in not_found:
         log_error('    ' + file)
-    sys.exit(1)
+    sys.exit(os.EX_NOINPUT)
 
 
 def _contains_duplicates(strings):
