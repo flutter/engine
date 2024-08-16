@@ -80,9 +80,17 @@ struct DlColor {
   constexpr bool isOpaque() const { return alpha_ >= 1.f; }
   constexpr bool isTransparent() const { return alpha_ <= 0.f; }
 
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr int getAlpha() const { return toC(alpha_); }
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr int getRed() const { return toC(red_); }
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr int getGreen() const { return toC(green_); }
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr int getBlue() const { return toC(blue_); }
 
   constexpr DlScalar getAlphaF() const { return alpha_; }
