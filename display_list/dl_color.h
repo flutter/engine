@@ -100,6 +100,8 @@ struct DlColor {
 
   constexpr DlColorSpace getColorSpace() const { return color_space_; }
 
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr uint32_t premultipliedArgb() const {
     if (isOpaque()) {
       return argb();
