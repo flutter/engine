@@ -1452,7 +1452,7 @@ public class FlutterView extends FrameLayout
   private FlutterViewDelegate delegate = new FlutterViewDelegate();
 
   @VisibleForTesting
-  public void setDelegate(FlutterViewDelegate delegate) {
+  public void setDelegate(@NonNull FlutterViewDelegate delegate) {
     this.delegate = delegate;
   }
 

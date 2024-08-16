@@ -17,7 +17,11 @@ import io.flutter.util.ViewUtils;
 import java.util.Collections;
 import java.util.List;
 
-/** A delegate class that performs the task of retrieving the bounding rect values. */
+/**
+ * A delegate class that performs the task of retrieving the bounding rect values. Logic that is
+ * independent of the engine, or that tests must access in the absence of an engine, shall reside
+ * within this class.
+ */
 public class FlutterViewDelegate {
   /**
    * Return the WindowInsets object for the provided Context. Returns null if there is no associated
@@ -39,7 +43,6 @@ public class FlutterViewDelegate {
   }
 
   @RequiresApi(api = Build.API_LEVELS.API_35)
-  @VisibleForTesting
   public List<Rect> getCaptionBarInsets(Context context) {
     WindowInsets insets = getWindowInsets(context);
     if (insets == null) {
