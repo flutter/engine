@@ -690,9 +690,7 @@ skia_component("skia") {
       ]
     }
   } else {
-    sources += [
-      "$_skia_root/src/ports/SkOSFile_posix.cpp",
-    ]
+    sources += [ "$_skia_root/src/ports/SkOSFile_posix.cpp" ]
     libs += [ "dl" ]
   }
 
