@@ -186,7 +186,7 @@ class Color {
   final ColorSpace colorSpace;
 
   static int _floatToInt8(double x) {
-    return (x * 255.0).round();
+    return ((x * 255.0).round()) & 0xff;
   }
 
   /// A 32 bit value representing this color.
