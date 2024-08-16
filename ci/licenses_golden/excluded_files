@@ -2731,6 +2731,7 @@
 ../../../flutter/third_party/skia/include/utils/BUILD.bazel
 ../../../flutter/third_party/skia/include/utils/mac/BUILD.bazel
 ../../../flutter/third_party/skia/infra
+../../../flutter/third_party/skia/modules/audioplayer/BUILD.bazel
 ../../../flutter/third_party/skia/modules/bentleyottmann/BUILD.bazel
 ../../../flutter/third_party/skia/modules/bentleyottmann/include/BUILD.bazel
 ../../../flutter/third_party/skia/modules/bentleyottmann/src/BUILD.bazel
