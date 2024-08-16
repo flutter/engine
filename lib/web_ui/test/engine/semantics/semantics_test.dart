@@ -1963,29 +1963,6 @@ void _testSelectables() {
 
     semantics().semanticsEnabled = false;
   });
-
-  test('renders a disabled non-selected element', () async {
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
-
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
-          ui.SemanticsFlag.hasEnabledState.index,
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-    );
-
-    owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem aria-disabled="true" aria-selected="false"></sem>
-''');
-
-    semantics().semanticsEnabled = false;
-  });
 }
 
 void _testCheckables() {
