@@ -20,16 +20,16 @@ struct DlColor {
         blue_(0.f),
         color_space_(DlColorSpace::kSRGB) {}
   constexpr explicit DlColor(uint32_t argb)
-      : alpha_(((argb >> 24) & 0xff) / 255.f),
-        red_(((argb >> 16) & 0xff) / 255.f),
-        green_(((argb >> 8) & 0xff) / 255.f),
-        blue_(((argb >> 0) & 0xff) / 255.f),
+      : alpha_(toF((argb >> 24) & 0xff)),
+        red_(toF((argb >> 16) & 0xff)),
+        green_(toF((argb >> 8) & 0xff)),
+        blue_(toF((argb >> 0) & 0xff)),
         color_space_(DlColorSpace::kSRGB) {}
-  constexpr explicit DlColor(float alpha,
-                             float red,
-                             float green,
-                             float blue,
-                             DlColorSpace colorspace)
+  constexpr DlColor(DlScalar alpha,
+                    DlScalar red,
+                    DlScalar green,
+                    DlScalar blue,
+                    DlColorSpace colorspace)
       : alpha_(alpha),
         red_(red),
         green_(green),
