@@ -1950,7 +1950,7 @@ void _testSelectables() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem aria-label="test label" flt-tappable aria-selected="true"></sem>
+<sem aria-label="test label" flt-tappable role="tab" aria-selected="true"></sem>
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;

@@ -23,6 +23,8 @@ class SemanticSelectable extends SemanticRole {
     super.update();
 
     if (semanticsObject.isFlagsDirty) {
+      setAriaRole('tab');
+
       /// Adding disabled and aria-disabled attribute to notify the assistive
       /// technologies of disabled elements.
       _updateDisabledAttribute();
