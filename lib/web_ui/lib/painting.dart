@@ -81,15 +81,15 @@ class Color {
       (_floatToInt8(g) << 8) |
       (_floatToInt8(b) << 0);
 
-  int get alpha => _floatToInt8(a);
+  int get alpha => (0xff000000 & value) >> 24;
 
   double get opacity => a;
 
-  int get red => _floatToInt8(r);
+  int get red => (0x00ff0000 & value) >> 16;
 
-  int get green => _floatToInt8(g);
+  int get green => (0x0000ff00 & value) >> 8;
 
-  int get blue => _floatToInt8(b);
+  int get blue => (0x000000ff & value) >> 0;
 
   Color withValues(
       {double? alpha,
