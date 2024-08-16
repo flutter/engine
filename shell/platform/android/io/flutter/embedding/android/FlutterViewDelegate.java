@@ -49,7 +49,8 @@ public class FlutterViewDelegate {
   }
 
   @RequiresApi(api = Build.API_LEVELS.API_35)
-  public void growViewportMetricsToCaptionBar(Context context, FlutterRenderer.ViewportMetrics viewportMetrics) {
+  public void growViewportMetricsToCaptionBar(
+      Context context, FlutterRenderer.ViewportMetrics viewportMetrics) {
     List<Rect> boundingRects = getCaptionBarInsets(context);
     if (boundingRects.size() != 1) {
       return;
@@ -58,6 +59,7 @@ public class FlutterViewDelegate {
     // When assigning the new value of viewPaddingTop, the maximum is taken with its old value
     // to ensure that any previous top padding that is greater than that from the caption bar
     // is not destroyed by this operation.
-    viewportMetrics.viewPaddingTop = Math.max(viewportMetrics.viewPaddingTop, boundingRects.get(0).bottom);
+    viewportMetrics.viewPaddingTop =
+        Math.max(viewportMetrics.viewPaddingTop, boundingRects.get(0).bottom);
   }
 }
