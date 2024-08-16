@@ -38,31 +38,28 @@ def main():
       if os.path.isabs(args.x64_out_dir) else sky_utils.buildroot_relative_path(args.x64_out_dir)
   )
 
-  fat_framework_bundle = os.path.join(dst, 'FlutterMacOS.framework')
   arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
-  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
-
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
-
   if not os.path.isdir(arm64_framework):
     print('Cannot find macOS arm64 Framework at %s' % arm64_framework)
     return 1
 
+  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
   if not os.path.isdir(x64_framework):
     print('Cannot find macOS x64 Framework at %s' % x64_framework)
     return 1
 
+  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
   if not os.path.isfile(arm64_dylib):
     print('Cannot find macOS arm64 dylib at %s' % arm64_dylib)
     return 1
 
+  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
   if not os.path.isfile(x64_dylib):
     print('Cannot find macOS x64 dylib at %s' % x64_dylib)
     return 1
 
+  fat_framework_bundle = os.path.join(dst, 'FlutterMacOS.framework')
   sky_utils.copy_tree(arm64_framework, fat_framework_bundle, symlinks=True)
-
   regenerate_symlinks(fat_framework_bundle)
 
   fat_framework_binary = os.path.join(fat_framework_bundle, 'Versions', 'A', 'FlutterMacOS')
