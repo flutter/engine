@@ -91,7 +91,7 @@ def main():
     gen_snapshot = os.path.join(x64_out_dir, 'gen_snapshot_x64')
     sky_utils.copy_binary(gen_snapshot, os.path.join(dst, 'gen_snapshot_x64'))
 
-  zip_archive(dst)
+  zip_archive(dst, args)
   return 0
 
 
@@ -163,7 +163,7 @@ def create_framework(  # pylint: disable=too-many-arguments
   return 0
 
 
-def zip_archive(dst):
+def zip_archive(dst, args):
   # pylint: disable=line-too-long
   with_entitlements = ['gen_snapshot_arm64']
   with_entitlements_file = os.path.join(dst, 'entitlements.txt')
@@ -171,14 +171,18 @@ def zip_archive(dst):
 
   without_entitlements = [
       'Flutter.xcframework/ios-arm64/Flutter.framework/Flutter',
-      'Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
       'Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter',
-      'Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
       'extension_safe/Flutter.xcframework/ios-arm64/Flutter.framework/Flutter',
-      'extension_safe/Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
       'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/Flutter.framework/Flutter',
-      'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
   ]
+  if args.dsym:
+    without_entitlements.extend([
+        'Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
+        'Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
+        'extension_safe/Flutter.xcframework/ios-arm64/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
+        'extension_safe/Flutter.xcframework/ios-arm64_x86_64-simulator/dSYMs/Flutter.framework.dSYM/Contents/Resources/DWARF/Flutter',
+    ])
+
   without_entitlements_file = os.path.join(dst, 'without_entitlements.txt')
   sky_utils.write_codesign_config(without_entitlements_file, without_entitlements)
   # pylint: enable=line-too-long
