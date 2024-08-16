@@ -89,12 +89,12 @@ def _is_macho_binary(filename):
 
   with open(filename, 'rb') as file:
     chunk = file.read(4)
-    return (
-        chunk == b'\xca\xfe\xba\xbe' or  # Mach-O Universal Big Endian
-        chunk == b'\xce\xfa\xed\xfe' or  # Mach-O Little Endian (32-bit)
-        chunk == b'\xcf\xfa\xed\xfe' or  # Mach-O Little Endian (64-bit)
-        chunk == b'\xfe\xed\xfa\xce' or  # Mach-O Big Endian (32-bit)
-        chunk == b'\xfe\xed\xfa\xcf'  # Mach-O Big Endian (64-bit)
+    return chunk in (
+        b'\xca\xfe\xba\xbe',  # Mach-O Universal Big Endian
+        b'\xce\xfa\xed\xfe',  # Mach-O Little Endian (32-bit)
+        b'\xcf\xfa\xed\xfe',  # Mach-O Little Endian (64-bit)
+        b'\xfe\xed\xfa\xce',  # Mach-O Big Endian (32-bit)
+        b'\xfe\xed\xfa\xcf',  # Mach-O Big Endian (64-bit)
     )
 
 
