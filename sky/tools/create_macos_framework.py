@@ -58,20 +58,20 @@ def main():
     print('Cannot find macOS x64 dylib at %s' % x64_dylib)
     return 1
 
-  fat_framework_bundle = os.path.join(dst, 'FlutterMacOS.framework')
-  sky_utils.copy_tree(arm64_framework, fat_framework_bundle, symlinks=True)
-  regenerate_symlinks(fat_framework_bundle)
+  fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
+  sky_utils.copy_tree(arm64_framework, fat_framework, symlinks=True)
+  regenerate_symlinks(fat_framework)
 
-  fat_framework_binary = os.path.join(fat_framework_bundle, 'Versions', 'A', 'FlutterMacOS')
+  fat_framework_binary = os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
 
   # Create the arm64/x64 fat framework.
   sky_utils.lipo([arm64_dylib, x64_dylib], fat_framework_binary)
 
   # Make the framework readable and executable: u=rwx,go=rx.
-  subprocess.check_call(['chmod', '755', fat_framework_bundle])
+  subprocess.check_call(['chmod', '755', fat_framework])
 
   # Add group and other readability to all files.
-  versions_path = os.path.join(fat_framework_bundle, 'Versions')
+  versions_path = os.path.join(fat_framework, 'Versions')
   subprocess.check_call(['chmod', '-R', 'og+r', versions_path])
   # Find all the files below the target dir with owner execute permission
   find_subprocess = subprocess.Popen(['find', versions_path, '-perm', '-100', '-print0'],
@@ -82,10 +82,10 @@ def main():
   find_subprocess.wait()
   xargs_subprocess.wait()
 
-  process_framework(dst, args, fat_framework_bundle, fat_framework_binary)
+  process_framework(dst, args, fat_framework, fat_framework_binary)
 
   # Create XCFramework from the arm64 and x64 fat framework.
-  xcframeworks = [fat_framework_bundle]
+  xcframeworks = [fat_framework]
   create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks)
 
   if args.zip:
@@ -94,40 +94,40 @@ def main():
   return 0
 
 
-def regenerate_symlinks(fat_framework_bundle):
+def regenerate_symlinks(fat_framework):
   """Regenerates the symlinks structure.
 
   Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
   This logic regenerates the symlinks in the expected structure.
   """
-  if os.path.islink(os.path.join(fat_framework_bundle, 'FlutterMacOS')):
+  if os.path.islink(os.path.join(fat_framework, 'FlutterMacOS')):
     return
-  os.remove(os.path.join(fat_framework_bundle, 'FlutterMacOS'))
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Headers'), True)
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Modules'), True)
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Resources'), True)
-  current_version_path = os.path.join(fat_framework_bundle, 'Versions', 'Current')
+  os.remove(os.path.join(fat_framework, 'FlutterMacOS'))
+  shutil.rmtree(os.path.join(fat_framework, 'Headers'), True)
+  shutil.rmtree(os.path.join(fat_framework, 'Modules'), True)
+  shutil.rmtree(os.path.join(fat_framework, 'Resources'), True)
+  current_version_path = os.path.join(fat_framework, 'Versions', 'Current')
   shutil.rmtree(current_version_path, True)
   os.symlink('A', current_version_path)
   os.symlink(
       os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(fat_framework_bundle, 'FlutterMacOS')
+      os.path.join(fat_framework, 'FlutterMacOS')
   )
   os.symlink(
-      os.path.join('Versions', 'Current', 'Headers'), os.path.join(fat_framework_bundle, 'Headers')
+      os.path.join('Versions', 'Current', 'Headers'), os.path.join(fat_framework, 'Headers')
   )
   os.symlink(
-      os.path.join('Versions', 'Current', 'Modules'), os.path.join(fat_framework_bundle, 'Modules')
+      os.path.join('Versions', 'Current', 'Modules'), os.path.join(fat_framework, 'Modules')
   )
   os.symlink(
       os.path.join('Versions', 'Current', 'Resources'),
-      os.path.join(fat_framework_bundle, 'Resources')
+      os.path.join(fat_framework, 'Resources')
   )
 
 
-def process_framework(dst, args, fat_framework_bundle, fat_framework_binary):
+def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
-    dsym_out = os.path.splitext(fat_framework_bundle)[0] + '.dSYM'
+    dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     sky_utils.extract_dsym(fat_framework_binary, dsym_out)
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
