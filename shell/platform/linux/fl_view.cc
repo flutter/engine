@@ -46,6 +46,9 @@ struct _FlView {
   // Rendering output.
   FlRendererGdk* renderer;
 
+  // Background color.
+  GdkRGBA* background_color;
+
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
 
@@ -607,7 +610,7 @@ static gboolean render_cb(FlView* self, GdkGLContext* context) {
   int height = gtk_widget_get_allocated_height(GTK_WIDGET(self->gl_area));
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self->gl_area));
   fl_renderer_render(FL_RENDERER(self->renderer), width * scale_factor,
-                     height * scale_factor);
+                     height * scale_factor, self->background_color);
 
   return TRUE;
 }
@@ -654,6 +657,7 @@ static void fl_view_dispose(GObject* object) {
 
   g_clear_object(&self->engine);
   g_clear_object(&self->renderer);
+  g_clear_pointer(&self->background_color, gdk_rgba_free);
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->keyboard_handler);
@@ -783,6 +787,13 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
 G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* self) {
   g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
   return self->engine;
+}
+
+G_MODULE_EXPORT void fl_view_set_background_color(FlView* self,
+                                                  const GdkRGBA* color) {
+  g_return_if_fail(FL_IS_VIEW(self));
+  gdk_rgba_free(self->background_color);
+  self->background_color = gdk_rgba_copy(color);
 }
 
 void fl_view_redraw(FlView* self) {
