@@ -150,15 +150,10 @@ def _regenerate_symlinks(framework_dir):
       os.path.join('Versions', 'Current', 'FlutterMacOS'),
       os.path.join(framework_dir, 'FlutterMacOS')
   )
+  os.symlink(os.path.join('Versions', 'Current', 'Headers'), os.path.join(framework_dir, 'Headers'))
+  os.symlink(os.path.join('Versions', 'Current', 'Modules'), os.path.join(framework_dir, 'Modules'))
   os.symlink(
-      os.path.join('Versions', 'Current', 'Headers'), os.path.join(framework_dir, 'Headers')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Modules'), os.path.join(framework_dir, 'Modules')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Resources'),
-      os.path.join(framework_dir, 'Resources')
+      os.path.join('Versions', 'Current', 'Resources'), os.path.join(framework_dir, 'Resources')
   )
 
 
