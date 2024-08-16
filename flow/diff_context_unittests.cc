@@ -32,5 +32,35 @@ TEST_F(DiffContextTest, ClipAlignment) {
   EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(16, 16, 64, 64));
 }
 
+#ifdef NOT_WORKING_YET
+
+TEST_F(DiffContextTest, DisjointDamage) {
+  MockLayerTree t1(SkISize::Make(90, 90));
+  t1.root()->Add(CreateDisplayListLayer(
+      CreateDisplayList(SkRect::MakeLTRB(30, 30, 50, 50))));
+
+  auto damage = DiffLayerTree(t1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 50, 50));
+  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 50, 50));
+
+  MockLayerTree t2(SkISize::Make(90, 90));
+  t2.root()->Add(CreateDisplayListLayer(
+      CreateDisplayList(SkRect::MakeLTRB(40, 40, 60, 60))));
+  damage = DiffLayerTree(t2, t1, SkIRect::MakeEmpty(), 0, 0);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+
+  MockLayerTree t3(SkISize::Make(90, 90));
+  t3.root()->Add(CreateDisplayListLayer(
+      CreateDisplayList(SkRect::MakeLTRB(30, 30, 50, 50))));
+  t3.root()->Add(CreateDisplayListLayer(
+      CreateDisplayList(SkRect::MakeLTRB(100, 100, 120, 120))));
+  damage = DiffLayerTree(t3, t1, SkIRect::MakeEmpty(), 0, 0);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+}
+
+#endif  // NOT_WORKING_YET
+
 }  // namespace testing
 }  // namespace flutter
