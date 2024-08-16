@@ -135,6 +135,8 @@ struct DlColor {
                           : withAlpha(round(getAlpha() * opacity));
   }
 
+  ///\deprecated Use floating point accessors to avoid data loss when using wide
+  /// gamut colors.
   constexpr uint32_t argb() const {
     return toC(alpha_) << 24 |  //
            toC(red_) << 16 |    //
