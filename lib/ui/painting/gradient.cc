@@ -46,8 +46,8 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   SkPoint p0 = SkPoint::Make(end_points[0], end_points[1]);
   SkPoint p1 = SkPoint::Make(end_points[2], end_points[3]);
   std::vector<DlColor> dl_colors;
-  dl_colors.reserve(color_stops.num_elements());
-  for (int i = 0; i < color_stops.num_elements(); ++i) {
+  dl_colors.reserve(colors.num_elements());
+  for (int i = 0; i < colors.num_elements(); ++i) {
     dl_colors.emplace_back(DlColor(colors[i]));
   }
 
@@ -78,8 +78,8 @@ void CanvasGradient::initRadial(double center_x,
   }
 
   std::vector<DlColor> dl_colors;
-  dl_colors.reserve(color_stops.num_elements());
-  for (int i = 0; i < color_stops.num_elements(); ++i) {
+  dl_colors.reserve(colors.num_elements());
+  for (int i = 0; i < colors.num_elements(); ++i) {
     dl_colors.emplace_back(DlColor(colors[i]));
   }
 
@@ -112,8 +112,8 @@ void CanvasGradient::initSweep(double center_x,
   }
 
   std::vector<DlColor> dl_colors;
-  dl_colors.reserve(color_stops.num_elements());
-  for (int i = 0; i < color_stops.num_elements(); ++i) {
+  dl_colors.reserve(colors.num_elements());
+  for (int i = 0; i < colors.num_elements(); ++i) {
     dl_colors.emplace_back(DlColor(colors[i]));
   }
 
@@ -150,8 +150,8 @@ void CanvasGradient::initTwoPointConical(double start_x,
   }
 
   std::vector<DlColor> dl_colors;
-  dl_colors.reserve(color_stops.num_elements());
-  for (int i = 0; i < color_stops.num_elements(); ++i) {
+  dl_colors.reserve(colors.num_elements());
+  for (int i = 0; i < colors.num_elements(); ++i) {
     dl_colors.emplace_back(DlColor(colors[i]));
   }
 
