@@ -29,6 +29,18 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
   """Exits with exit code 1 if the codesign configuration contents are incorrect.
   All Mach-O binaries found within zip_contents exactly must be listed in
   either entitlements or without_entitlements."""
+  if _contains_duplicates(entitlements):
+    log_error('ERROR: duplicate value(s) found in entitlements.txt')
+    sys.exit(1)
+
+  if _contains_duplicates(without_entitlements):
+    log_error('ERROR: duplicate value(s) found in without_entitlements.txt')
+    sys.exit(1)
+
+  if _contains_duplicates(entitlements + without_entitlements):
+    log_error('ERROR: value(s) found in both entitlements and without_entitlements.txt')
+    sys.exit(1)
+
   binaries = set()
   for zip_content_path in zip_contents:
     # If file, check if Mach-O binary.
@@ -63,6 +75,11 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
       for file in not_found:
         log_error('    ' + file)
     sys.exit(1)
+
+
+def _contains_duplicates(strings):
+  """Returns true if the list of strings contains a duplicate value."""
+  return len(strings) != len(set(strings))
 
 
 def _is_macho_binary(filename):
