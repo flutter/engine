@@ -461,6 +461,7 @@ void fl_renderer_render(FlRenderer* self,
     glClearColor(background_color->red, background_color->green,
                  background_color->blue, background_color->alpha);
   } else {
+    // Set default view background color to black.
     glClearColor(0.0, 0.0, 0.0, 1.0);
   }
   glClear(GL_COLOR_BUFFER_BIT);
