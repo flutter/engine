@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
+#include "include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
 namespace impeller {
@@ -41,6 +42,7 @@ struct DecompressResult {
   std::shared_ptr<impeller::DeviceBuffer> device_buffer;
   std::shared_ptr<SkBitmap> sk_bitmap;
   SkImageInfo image_info;
+  std::optional<SkImageInfo> resize_info = std::nullopt;
   std::string decode_error;
 };
 
@@ -81,6 +83,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const std::shared_ptr<impeller::DeviceBuffer>& buffer,
       const SkImageInfo& image_info,
       const std::shared_ptr<SkBitmap>& bitmap,
+      const std::optional<SkImageInfo>& resize_info,
       const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   /// @brief Create a host visible texture from the provided bitmap.
