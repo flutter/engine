@@ -12,33 +12,7 @@
 
 #include <epoxy/egl.h>
 
-TEST(FlRendererTest, DefaultBackgroundColor) {
-  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
-
-  ON_CALL(epoxy, glGetString(GL_VENDOR))
-      .WillByDefault(
-          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
-  EXPECT_CALL(epoxy, glClearColor(0.0, 0.0, 0.0, 1.0));
-
-  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
-  FlutterBackingStoreConfig config = {
-      .struct_size = sizeof(FlutterBackingStoreConfig),
-      .size = {.width = 1024, .height = 1024}};
-  FlutterBackingStore backing_store;
-  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
-                                   &backing_store);
-  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
-                               .type = kFlutterLayerContentTypeBackingStore,
-                               .backing_store = &backing_store,
-                               .size = {.width = 1024, .height = 1024}};
-  const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
-  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, nullptr);
-}
-
-TEST(FlRendererTest, CustomBackgroundColor) {
+TEST(FlRendererTest, BackgroundColor) {
   ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
 
   ON_CALL(epoxy, glGetString(GL_VENDOR))
@@ -98,7 +72,9 @@ TEST(FlRendererTest, RestoresGLState) {
 
   fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers.data(),
                              layers.size());
-  fl_renderer_render(FL_RENDERER(renderer), kWidth, kHeight, nullptr);
+  GdkRGBA background_color = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  fl_renderer_render(FL_RENDERER(renderer), kWidth, kHeight, &background_color);
 
   GLuint texture_2d_binding;
   glGetIntegerv(GL_TEXTURE_BINDING_2D,
@@ -151,7 +127,9 @@ TEST(FlRendererTest, BlitFramebuffer) {
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
   fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
-  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, nullptr);
+  GdkRGBA background_color = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, BlitFramebufferExtension) {
@@ -184,7 +162,9 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
   fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
-  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, nullptr);
+  GdkRGBA background_color = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, NoBlitFramebuffer) {
@@ -212,7 +192,9 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
   fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
-  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, nullptr);
+  GdkRGBA background_color = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, BlitFramebufferNvidia) {
@@ -241,5 +223,7 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
   fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
-  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, nullptr);
+  GdkRGBA background_color = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  fl_renderer_render(FL_RENDERER(renderer), 1024, 1024, &background_color);
 }

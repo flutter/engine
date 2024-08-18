@@ -451,19 +451,14 @@ void fl_renderer_setup(FlRenderer* self) {
 void fl_renderer_render(FlRenderer* self,
                         int width,
                         int height,
-                        GdkRGBA* background_color) {
+                        const GdkRGBA* background_color) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 
   g_return_if_fail(FL_IS_RENDERER(self));
 
-  if (background_color != nullptr) {
-    glClearColor(background_color->red, background_color->green,
-                 background_color->blue, background_color->alpha);
-  } else {
-    // Set default view background color to black.
-    glClearColor(0.0, 0.0, 0.0, 1.0);
-  }
+  glClearColor(background_color->red, background_color->green,
+               background_color->blue, background_color->alpha);
   glClear(GL_COLOR_BUFFER_BIT);
 
   if (priv->has_gl_framebuffer_blit) {

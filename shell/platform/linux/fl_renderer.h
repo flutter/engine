@@ -216,7 +216,7 @@ void fl_renderer_setup(FlRenderer* renderer);
 void fl_renderer_render(FlRenderer* renderer,
                         int width,
                         int height,
-                        GdkRGBA* background_color);
+                        const GdkRGBA* background_color);
 
 /**
  * fl_renderer_cleanup:

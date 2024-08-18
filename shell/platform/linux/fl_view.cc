@@ -710,6 +710,10 @@ static void fl_view_init(FlView* self) {
   // https://github.com/flutter/flutter/issues/138178
   self->view_id = flutter::kFlutterImplicitViewId;
 
+  GdkRGBA default_background = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  self->background_color = gdk_rgba_copy(&default_background);
+
   self->event_box = gtk_event_box_new();
   gtk_widget_set_hexpand(self->event_box, TRUE);
   gtk_widget_set_vexpand(self->event_box, TRUE);
