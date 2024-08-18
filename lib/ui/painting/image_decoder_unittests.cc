@@ -337,7 +337,8 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
   auto result = ImageDecoderImpeller::UploadTextureToPrivate(
-      no_gpu_access_context, buffer, info, bitmap, gpu_disabled_switch);
+      no_gpu_access_context, buffer, info, bitmap, std::nullopt,
+      gpu_disabled_switch);
   ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   ASSERT_EQ(result.second, "");
 
