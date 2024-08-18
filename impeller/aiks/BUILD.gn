@@ -114,7 +114,10 @@ template("aiks_unittests_component") {
 }
 
 aiks_unittests_component("aiks_unittests") {
-  sources = [ "canvas_unittests.cc" ]
+  sources = [
+    "canvas_unittests.cc",
+    "save_layer_utils_unittests.cc",
+  ]
 }
 
 aiks_unittests_component("aiks_unittests_golden") {

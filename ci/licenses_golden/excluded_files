@@ -133,6 +133,7 @@
 ../../../flutter/impeller/aiks/aiks_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.h
 ../../../flutter/impeller/aiks/canvas_unittests.cc
+../../../flutter/impeller/aiks/save_layer_utils_unittests.cc
 ../../../flutter/impeller/aiks/testing
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/allocation_size_unittests.cc
