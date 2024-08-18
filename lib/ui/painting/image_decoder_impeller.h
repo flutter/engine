@@ -71,14 +71,16 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const std::shared_ptr<impeller::Allocator>& allocator);
 
   /// @brief Create a device private texture from the provided host buffer.
-  ///        This method is only suported on the metal backend.
+  ///
+  /// @param result     The image result closure that accepts the DlImage and any
+  ///                   encoding error messages.
   /// @param context    The Impeller graphics context.
   /// @param buffer     A host buffer containing the image to be uploaded.
   /// @param image_info Format information about the particular image.
   /// @param bitmap      A bitmap containg the image to be uploaded.
   /// @param gpu_disabled_switch Whether the GPU is available command encoding.
-  /// @return           A DlImage.
-  static std::pair<sk_sp<DlImage>, std::string> UploadTextureToPrivate(
+  static void UploadTextureToPrivate(
+      ImageResult result,
       const std::shared_ptr<impeller::Context>& context,
       const std::shared_ptr<impeller::DeviceBuffer>& buffer,
       const SkImageInfo& image_info,

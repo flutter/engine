@@ -26,7 +26,6 @@
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
@@ -334,8 +333,8 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
       std::string());
 }
 
-std::pair<sk_sp<DlImage>, std::string>
-ImageDecoderImpeller::UploadTextureToPrivate(
+void ImageDecoderImpeller::UploadTextureToPrivate(
+    ImageResult result,
     const std::shared_ptr<impeller::Context>& context,
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info,
@@ -344,27 +343,43 @@ ImageDecoderImpeller::UploadTextureToPrivate(
     const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context) {
-    return std::make_pair(nullptr, "No Impeller context is available");
+    result(nullptr, "No Impeller context is available");
+    return;
   }
   if (!buffer) {
-    return std::make_pair(nullptr, "No Impeller device buffer is available");
+    result(nullptr, "No Impeller device buffer is available");
+    return;
   }
 
-  std::pair<sk_sp<DlImage>, std::string> result;
   gpu_disabled_switch->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfFalse([&result, context, buffer, image_info, resize_info] {
-            result = UnsafeUploadTextureToPrivate(context, buffer, image_info,
-                                                  resize_info);
+            sk_sp<DlImage> image;
+            std::string decode_error;
+            std::tie(image, decode_error) = std::tie(image, decode_error) =
+                UnsafeUploadTextureToPrivate(context, buffer, image_info,
+                                             resize_info);
+            result(image, decode_error);
           })
-          .SetIfTrue([&result, context, bitmap, gpu_disabled_switch] {
-            // create_mips is false because we already know the GPU is disabled.
-            result =
-                UploadTextureToStorage(context, bitmap, gpu_disabled_switch,
-                                       impeller::StorageMode::kHostVisible,
-                                       /*create_mips=*/false);
+          .SetIfTrue([&result, context, buffer, image_info, resize_info] {
+            // The `result` function must be copied in the capture list for each
+            // closure or the stack allocated callback will be cleared by the
+            // time to closure is executed later.
+            context->StoreTaskForGPU(
+                [result, context, buffer, image_info, resize_info]() {
+                  sk_sp<DlImage> image;
+                  std::string decode_error;
+                  std::tie(image, decode_error) =
+                      std::tie(image, decode_error) =
+                          UnsafeUploadTextureToPrivate(context, buffer,
+                                                       image_info, resize_info);
+                  result(image, decode_error);
+                },
+                [result]() {
+                  result(nullptr,
+                         "Image upload failed due to loss of GPU access.");
+                });
           }));
-  return result;
 }
 
 std::pair<sk_sp<DlImage>, std::string>
@@ -507,19 +522,21 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
 
         auto upload_texture_and_invoke_result = [result, context, bitmap_result,
                                                  gpu_disabled_switch]() {
-          sk_sp<DlImage> image;
-          std::string decode_error;
-          std::tie(image, decode_error) =
-              UploadTextureToPrivate(context,                      //
-                                     bitmap_result.device_buffer,  //
-                                     bitmap_result.image_info,     //
-                                     bitmap_result.sk_bitmap,      //
-                                     bitmap_result.resize_info,    //
-                                     gpu_disabled_switch           //
-              );
-          result(image, decode_error);
+          UploadTextureToPrivate(result, context,              //
+                                 bitmap_result.device_buffer,  //
+                                 bitmap_result.image_info,     //
+                                 bitmap_result.sk_bitmap,      //
+                                 bitmap_result.resize_info,    //
+                                 gpu_disabled_switch           //
+          );
         };
-        io_runner->PostTask(upload_texture_and_invoke_result);
+        // The I/O image uploads are not threadsafe on GLES.
+        if (context->GetBackendType() ==
+            impeller::Context::BackendType::kOpenGLES) {
+          io_runner->PostTask(upload_texture_and_invoke_result);
+        } else {
+          upload_texture_and_invoke_result();
+        }
       });
 }
 

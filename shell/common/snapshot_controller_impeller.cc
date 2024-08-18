@@ -140,7 +140,8 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
                    picture_size, callback = std::move(callback)] {
                     callback(DoMakeRasterSnapshot(display_list, picture_size,
                                                   sync_switch, context));
-                  });
+                  },
+                  [callback]() { callback(nullptr); });
             } else {
               callback(nullptr);
             }

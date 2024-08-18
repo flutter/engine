@@ -136,7 +136,8 @@ class ContextMTL final : public Context,
 #endif  // IMPELLER_DEBUG
 
   // |Context|
-  void StoreTaskForGPU(const std::function<void()>& task) override;
+  void StoreTaskForGPU(const std::function<void()>& task,
+                       const std::function<void()>& failure) override;
 
  private:
   class SyncSwitchObserver : public fml::SyncSwitch::Observer {
@@ -149,6 +150,11 @@ class ContextMTL final : public Context,
     ContextMTL& parent_;
   };
 
+  struct PendingTasks {
+    std::function<void()> task;
+    std::function<void()> failure;
+  };
+
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
@@ -157,7 +163,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
-  std::deque<std::function<void()>> tasks_awaiting_gpu_;
+  std::deque<PendingTasks> tasks_awaiting_gpu_;
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
   std::shared_ptr<CommandQueue> command_queue_ip_;
 #ifdef IMPELLER_DEBUG

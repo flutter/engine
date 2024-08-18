@@ -375,7 +375,7 @@ TEST_F(ShellTest, EncodeImageFailsWithoutGPUImpeller) {
       // This will cause the stored tasks to overflow and start throwing them
       // away.
       for (int i = 0; i < impeller::Context::kMaxTasksAwaitingGPU; ++i) {
-        impeller_context->StoreTaskForGPU([] {});
+        impeller_context->StoreTaskForGPU([] {}, [] {});
       }
     });
   };
