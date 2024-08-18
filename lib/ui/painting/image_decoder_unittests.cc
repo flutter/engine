@@ -336,17 +336,31 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   desc.size = bitmap->computeByteSize();
   auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
-  auto result = ImageDecoderImpeller::UploadTextureToPrivate(
-      no_gpu_access_context, buffer, info, bitmap, std::nullopt,
-      gpu_disabled_switch);
-  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  ASSERT_EQ(result.second, "");
+  std::string error_message;
+  sk_sp<DlImage> result_image;
 
-  result = ImageDecoderImpeller::UploadTextureToStorage(
-      no_gpu_access_context, bitmap, gpu_disabled_switch,
+  auto cb = [&result_image, &error_message](sk_sp<DlImage> image,
+                                            std::string message) {
+    result_image = image;
+    error_message = message;
+  };
+
+  ImageDecoderImpeller::UploadTextureToPrivate(
+      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
+      gpu_disabled_switch);
+
+  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  EXPECT_EQ(error_message, "");
+
+  result_image = nullptr;
+  error_message = "";
+
+  ImageDecoderImpeller::UploadTextureToStorage(
+      cb, no_gpu_access_context, bitmap, gpu_disabled_switch,
       impeller::StorageMode::kHostVisible, true);
-  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  ASSERT_EQ(result.second, "");
+
+  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  EXPECT_EQ(result.second, "");
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
