@@ -7,9 +7,6 @@
 #include "impeller/aiks/save_layer_utils.h"
 #include "impeller/geometry/color.h"
 
-// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
-// NOLINTBEGIN(bugprone-unchecked-optional-access)
-
 namespace impeller {
 namespace testing {
 
