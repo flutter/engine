@@ -72,8 +72,8 @@ class ImageDecoderImpeller final : public ImageDecoder {
 
   /// @brief Create a device private texture from the provided host buffer.
   ///
-  /// @param result     The image result closure that accepts the DlImage and any
-  ///                   encoding error messages.
+  /// @param result     The image result closure that accepts the DlImage and
+  ///                   any encoding error messages.
   /// @param context    The Impeller graphics context.
   /// @param buffer     A host buffer containing the image to be uploaded.
   /// @param image_info Format information about the particular image.
