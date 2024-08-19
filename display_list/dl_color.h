@@ -151,6 +151,10 @@ struct DlColor {
            toC(blue_) << 0;
   }
 
+  /// Checks that no difference in color components exceeds the delta.
+  ///
+  /// This doesn't check against the actual distance between the colors in some
+  /// space.
   bool isClose(DlColor const& other, DlScalar delta = 1.0f / 256.0f) {
     return color_space_ == other.color_space_ &&
            std::abs(alpha_ - other.alpha_) < delta &&
