@@ -805,11 +805,13 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   EXPECT_EQ(result_1.sk_bitmap->width(), 75);
   EXPECT_EQ(result_1.sk_bitmap->height(), 25);
 
+  // Impeller still performs a CPU resize if the src size is larger than the
+  // max texture size.
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  EXPECT_EQ(result_2.sk_bitmap->width(), 75);
-  EXPECT_EQ(result_2.sk_bitmap->height(), 25);
+  EXPECT_EQ(result_2.sk_bitmap->width(), 10);
+  EXPECT_EQ(result_2.sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 

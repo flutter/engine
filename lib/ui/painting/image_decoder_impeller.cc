@@ -235,6 +235,44 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
       bitmap->dimensions() == target_size
           ? std::nullopt
           : std::optional<SkImageInfo>(image_info.makeDimensions(target_size));
+
+  if (source_size.width() > max_texture_size.width ||
+      source_size.height() > max_texture_size.height) {
+    //----------------------------------------------------------------------------
+    /// 2. If the decoded image isn't the requested target size and the src size
+    ///    exceeds the device max texture size, perform a slow CPU reisze.
+    ///
+    TRACE_EVENT0("impeller", "SlowCPUDecodeScale");
+    const auto scaled_image_info = image_info.makeDimensions(target_size);
+
+    auto scaled_bitmap = std::make_shared<SkBitmap>();
+    auto scaled_allocator = std::make_shared<ImpellerAllocator>(allocator);
+    scaled_bitmap->setInfo(scaled_image_info);
+    if (!scaled_bitmap->tryAllocPixels(scaled_allocator.get())) {
+      std::string decode_error(
+          "Could not allocate scaled bitmap for image decompression.");
+      FML_DLOG(ERROR) << decode_error;
+      return DecompressResult{.decode_error = decode_error};
+    }
+    if (!bitmap->pixmap().scalePixels(
+            scaled_bitmap->pixmap(),
+            SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone))) {
+      FML_LOG(ERROR) << "Could not scale decoded bitmap data.";
+    }
+    scaled_bitmap->setImmutable();
+
+    std::shared_ptr<impeller::DeviceBuffer> buffer =
+        scaled_allocator->GetDeviceBuffer();
+    if (!buffer) {
+      return DecompressResult{.decode_error = "Unable to get device buffer"};
+    }
+    buffer->Flush();
+
+    return DecompressResult{.device_buffer = std::move(buffer),
+                            .sk_bitmap = scaled_bitmap,
+                            .image_info = scaled_bitmap->info()};
+  }
+
   return DecompressResult{.device_buffer = std::move(buffer),
                           .sk_bitmap = bitmap,
                           .image_info = bitmap->info(),
