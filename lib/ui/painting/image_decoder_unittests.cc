@@ -807,21 +807,19 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
   // Bitmap sizes reflect the scaled size if the source size is larger than
   // max texture size even if destination size isn't max texture size.
-  std::shared_ptr<impeller::Allocator> allocator =
-      std::make_shared<impeller::TestImpellerAllocator>();
-  auto result_1 = ImageDecoderImpeller::DecompressTexture(
+  auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  EXPECT_EQ(result_1.sk_bitmap->width(), 6);
-  EXPECT_EQ(result_1.sk_bitmap->height(), 2);
+  EXPECT_EQ(result_2.sk_bitmap->width(), 6);
+  EXPECT_EQ(result_2.sk_bitmap->height(), 2);
 
   // If the destination size is larger than the max texture size the image
   // is scaled down.
-  auto result_2 = ImageDecoderImpeller::DecompressTexture(
+  auto result_3 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  EXPECT_EQ(result_2.sk_bitmap->width(), 10);
-  EXPECT_EQ(result_2.sk_bitmap->height(), 10);
+  EXPECT_EQ(result_3.sk_bitmap->width(), 10);
+  EXPECT_EQ(result_3.sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
