@@ -382,6 +382,18 @@ TEST_F(ImageDecoderFixtureTest,
   GTEST_SKIP() << "Impeller only test.";
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
+  auto no_gpu_access_context =
+      std::make_shared<impeller::TestImpellerContext>();
+  auto gpu_disabled_switch = std::make_shared<fml::SyncSwitch>(true);
+
+  auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
+                                SkAlphaType::kPremul_SkAlphaType);
+  auto bitmap = std::make_shared<SkBitmap>();
+  bitmap->allocPixels(info, 10 * 4);
+  impeller::DeviceBufferDescriptor desc;
+  desc.size = bitmap->computeByteSize();
+  auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
+
   sk_sp<DlImage> image;
   std::string message;
   bool invoked = false;
@@ -411,6 +423,18 @@ TEST_F(ImageDecoderFixtureTest,
 #if !IMPELLER_SUPPORTS_RENDERING
   GTEST_SKIP() << "Impeller only test.";
 #endif  // IMPELLER_SUPPORTS_RENDERING
+
+  auto no_gpu_access_context =
+      std::make_shared<impeller::TestImpellerContext>();
+  auto gpu_disabled_switch = std::make_shared<fml::SyncSwitch>(true);
+
+  auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
+                                SkAlphaType::kPremul_SkAlphaType);
+  auto bitmap = std::make_shared<SkBitmap>();
+  bitmap->allocPixels(info, 10 * 4);
+  impeller::DeviceBufferDescriptor desc;
+  desc.size = bitmap->computeByteSize();
+  auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
   sk_sp<DlImage> image;
   std::string message;
