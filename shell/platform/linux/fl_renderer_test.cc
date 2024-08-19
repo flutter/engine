@@ -16,6 +16,7 @@ TEST(FlRendererTest, BackgroundColor) {
   ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
 
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
   ON_CALL(epoxy, glGetString(GL_VENDOR))
       .WillByDefault(
           ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
