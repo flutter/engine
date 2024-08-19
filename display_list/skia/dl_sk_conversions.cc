@@ -102,8 +102,9 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       FML_DCHECK(linear_source != nullptr);
       SkPoint pts[] = {linear_source->start_point(),
                        linear_source->end_point()};
+      std::vector<SkColor> skcolors = ToSkColors(linear_source);
       return SkGradientShader::MakeLinear(
-          pts, ToSkColors(linear_source).data(), linear_source->stops(),
+          pts, skcolors.data(), linear_source->stops(),
           linear_source->stop_count(), ToSk(linear_source->tile_mode()), 0,
           linear_source->matrix_ptr());
     }
