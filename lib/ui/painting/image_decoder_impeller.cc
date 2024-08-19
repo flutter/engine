@@ -414,7 +414,7 @@ ImageDecoderImpeller::UploadTextureToStorage(
   }
 
   impeller::TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = 1;
