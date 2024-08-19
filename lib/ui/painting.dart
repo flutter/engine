@@ -264,16 +264,17 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return Color.from(alpha: (a & 0xff) / 255, red: r, green: g, blue: b);
+    return Color.fromARGB(a, red, green, blue);
   }
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
   ///
   /// Out of range values will have unexpected effects.
+  @Deprecated('Use .withValues() to avoid precision loss.')
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return Color.from(alpha: opacity, red: r, green: g, blue: b);
+    return withAlpha((255.0 * opacity).round());
   }
 
   /// Returns a new color that matches this color with the red channel replaced
@@ -281,7 +282,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.from(alpha: a, red: (r & 0xff) / 255, green: g, blue: b);
+    return Color.fromARGB(alpha, r, green, blue);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -289,7 +290,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.from(alpha: a, red: r, green: (g & 0xff) / 255, blue: b);
+    return Color.fromARGB(alpha, red, g, blue);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -297,7 +298,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.from(alpha: a, red: r, green: g, blue: (b & 0xff) / 255);
+    return Color.fromARGB(alpha, red, green, b);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
