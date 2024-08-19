@@ -157,20 +157,16 @@ const int kHorizontalMiterDiamondPointCount =
      sizeof(kHorizontalMiterDiamondPoints[0]));
 
 namespace {
-constexpr DlScalar toF(uint8_t comp) {
-  return comp * (1.0f / 255);
-}
-
 constexpr uint8_t toC(DlScalar fComp) {
   return round(fComp * 255);
 }
 
 constexpr uint32_t PremultipliedArgb(const DlColor& color) {
-  if (icolor.sOpaque()) {
+  if (color.isOpaque()) {
     return color.argb();
   }
   DlScalar f = color.getAlphaF();
-  return (argb() & 0xFF000000) |            //
+  return (color.argb() & 0xFF000000) |      //
          toC(color.getRedF() * f) << 16 |   //
          toC(color.getGreenF() * f) << 8 |  //
          toC(color.getBlueF() * f);
