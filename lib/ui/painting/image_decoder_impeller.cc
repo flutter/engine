@@ -15,6 +15,7 @@
 #include "flutter/impeller/renderer/context.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/geometry/size.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
@@ -389,6 +390,58 @@ void ImageDecoderImpeller::UploadTextureToPrivate(
                          "Image upload failed due to loss of GPU access.");
                 });
           }));
+}
+
+std::pair<sk_sp<DlImage>, std::string>
+ImageDecoderImpeller::UploadTextureToStorage(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<SkBitmap> bitmap) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!context) {
+    return std::make_pair(nullptr, "No Impeller context is available");
+  }
+  if (!bitmap) {
+    return std::make_pair(nullptr, "No texture bitmap is available");
+  }
+  const auto image_info = bitmap->info();
+  const auto pixel_format =
+      impeller::skia_conversions::ToPixelFormat(image_info.colorType());
+  if (!pixel_format) {
+    std::string decode_error(impeller::SPrintF(
+        "Unsupported pixel format (SkColorType=%d)", image_info.colorType()));
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
+  texture_descriptor.format = pixel_format.value();
+  texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count = 1;
+
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
+  if (!texture) {
+    std::string decode_error("Could not create Impeller texture.");
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
+      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
+  );
+
+  if (!texture->SetContents(mapping)) {
+    std::string decode_error("Could not copy contents into Impeller texture.");
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+  return std::make_pair(impeller::DlImageImpeller::Make(std::move(texture)),
+                        std::string());
 }
 
 // |ImageDecoder|

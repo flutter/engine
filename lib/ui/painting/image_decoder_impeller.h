@@ -89,6 +89,14 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
       bool create_mips = true);
 
+  /// @brief Create a texture from the provided bitmap.
+  /// @param context     The Impeller graphics context.
+  /// @param bitmap      A bitmap containg the image to be uploaded.
+  /// @return            A DlImage.
+  static std::pair<sk_sp<DlImage>, std::string> UploadTextureToStorage(
+      const std::shared_ptr<impeller::Context>& context,
+      std::shared_ptr<SkBitmap> bitmap);
+
   /// Only call this method if the GPU is available.
   static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
       const std::shared_ptr<impeller::Context>& context,

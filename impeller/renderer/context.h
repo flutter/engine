@@ -184,7 +184,7 @@ class Context {
   /// `task` will be executed on the platform thread.
   virtual void StoreTaskForGPU(const std::function<void()>& task,
                                const std::function<void()>& failure) {
-    // nop
+    FML_CHECK(false && "not supported in this context");
   }
 
   /// Run backend specific additional setup and create common shader variants.

@@ -76,11 +76,32 @@ class TestImpellerContext : public impeller::Context {
     return nullptr;
   }
 
+  void StoreTaskForGPU(const std::function<void()>& task,
+                       const std::function<void()>& failure) override {
+    tasks_.push_back(PendingTask{task, failure});
+  }
+
+  void FlushTasks(bool fail = false) {
+    for (auto& task : tasks_) {
+      if (fail) {
+        task.task();
+      } else {
+        task.failure();
+      }
+    }
+    tasks_.clear();
+  }
+
   void Shutdown() override {}
 
   mutable size_t command_buffer_count_ = 0;
 
  private:
+  struct PendingTask {
+    std::function<void()> task;
+    std::function<void()> failure;
+  };
+  std::vector<PendingTask> tasks_;
   std::shared_ptr<const Capabilities> capabilities_;
 };
 
@@ -336,13 +357,9 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   desc.size = bitmap->computeByteSize();
   auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
-  std::string error_message;
-  sk_sp<DlImage> result_image;
-
-  auto cb = [&result_image, &error_message](sk_sp<DlImage> image,
-                                            std::string message) {
-    result_image = std::move(image);
-    error_message = std::move(message);
+  bool invoked = false;
+  auto cb = [&invoked](sk_sp<DlImage> image, std::string message) {
+    invoked = true;
   };
 
   ImageDecoderImpeller::UploadTextureToPrivate(
@@ -350,10 +367,73 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
       gpu_disabled_switch);
 
   EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  EXPECT_EQ(error_message, "");
+  EXPECT_FALSE(invoked);
 
-  result_image = nullptr;
-  error_message = "";
+  auto result = ImageDecoderImpeller::UploadTextureToStorage(
+      no_gpu_access_context, bitmap);
+
+  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  ASSERT_EQ(result.second, "");
+}
+
+TEST_F(ImageDecoderFixtureTest,
+       ImpellerUploadToSharedNoGpuTaskFlushingSuccess) {
+#if !IMPELLER_SUPPORTS_RENDERING
+  GTEST_SKIP() << "Impeller only test.";
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
+  sk_sp<DlImage> image;
+  std::string message;
+  bool invoked = false;
+  auto cb = [&invoked, &image, &message](sk_sp<DlImage> p_image,
+                                         std::string p_message) {
+    invoked = true;
+    image = p_image;
+    message = p_message;
+  };
+
+  ImageDecoderImpeller::UploadTextureToPrivate(
+      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
+      gpu_disabled_switch);
+
+  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  EXPECT_FALSE(invoked);
+
+  no_gpu_access_context->FlushTasks();
+
+  EXPECT_TRUE(invoked);
+  EXPECT_EQ(message, "");
+  EXPECT_NE(image, nullptr);
+}
+
+TEST_F(ImageDecoderFixtureTest,
+       ImpellerUploadToSharedNoGpuTaskFlushingFailure) {
+#if !IMPELLER_SUPPORTS_RENDERING
+  GTEST_SKIP() << "Impeller only test.";
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
+  sk_sp<DlImage> image;
+  std::string message;
+  bool invoked = false;
+  auto cb = [&invoked, &image, &message](sk_sp<DlImage> p_image,
+                                         std::string p_message) {
+    invoked = true;
+    image = p_image;
+    message = p_message;
+  };
+
+  ImageDecoderImpeller::UploadTextureToPrivate(
+      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
+      gpu_disabled_switch);
+
+  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
+  EXPECT_FALSE(invoked);
+
+  no_gpu_access_context->FlushTasks(/*fail*/ = true);
+
+  EXPECT_TRUE(invoked);
+  EXPECT_EQ(message, "");
+  EXPECT_NE(image, nullptr);
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
