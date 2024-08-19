@@ -461,7 +461,7 @@ class ClangFormatChecker extends FormatChecker {
   }
 }
 
-/// Checks the format of Java files uing the Google Java format checker.
+/// Checks the format of Java files using the Google Java format checker.
 class JavaFormatChecker extends FormatChecker {
   JavaFormatChecker({
     super.processManager,
@@ -475,6 +475,7 @@ class JavaFormatChecker extends FormatChecker {
       path.absolute(
         path.join(
           srcDir.absolute.path,
+          'flutter',
           'third_party',
           'android_tools',
           'google-java-format',
@@ -482,13 +483,39 @@ class JavaFormatChecker extends FormatChecker {
         ),
       ),
     );
+    // Use java from the checkout to avoid contributors needing to install java.
+    final File hermetic = hermeticJava(srcDir);
+    // If for some reason the hermetic java doesn't exist, fall back to the system java.
+    javaExe = hermetic.existsSync() ? hermetic.path : 'java';
   }
 
+  /// Returns the path to the java executable in the flutter repository.
+  static File hermeticJava(Directory srcDir) {
+    final List<String> javaPath = <String>[
+      srcDir.absolute.path,
+      'flutter',
+      'third_party',
+      'java',
+      'openjdk',
+    ];
+    if (Platform.isMacOS) {
+      javaPath.add('Contents');
+      javaPath.add('Home');
+    }
+    javaPath.add('bin');
+    javaPath.add(Platform.isWindows ? 'java.exe' : 'java');
+    return File(path.joinAll(javaPath));
+  }
+
+  late final String javaExe;
   late final File googleJavaFormatJar;
+
+  // String to return if java formatting cant check java code for any reson.
+  static const String _javaFormatErrorString = 'Java Formatting Error';
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
-        .runProcess(<String>['java', '-jar', googleJavaFormatJar.path, '--version']);
+        .runProcess(<String>[javaExe, '-jar', googleJavaFormatJar.path, '--version']);
     return result.stderr.trim();
   }
 
@@ -506,12 +533,18 @@ class JavaFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return applyPatch(failures);
+    if (failures.length == 1 && failures.first == _javaFormatErrorString) {
+      // _javaFormatErrorString is a string that indicates java formatting failed
+      // without creating a patch that can be applied.
+      return false;
+    } else {
+      return applyPatch(failures);
+    }
   }
 
   Future<String> _getJavaVersion() async {
     final ProcessRunnerResult result =
-        await _processRunner.runProcess(<String>['java', '-version']);
+        await _processRunner.runProcess(<String>[javaExe, '-version']);
     return result.stderr.trim().split('\n')[0];
   }
 
@@ -528,14 +561,19 @@ class JavaFormatChecker extends FormatChecker {
     try {
       javaVersion = await _getJavaVersion();
     } on ProcessRunnerException {
-      error('Cannot run Java, skipping Java file formatting!');
-      return const <String>[];
+      if (!_processRunner.processManager.canRun(javaExe)) {
+        error('Cannot find Java ($javaExe). '
+        'Skipping Java format check.');
+        return const <String>[_javaFormatErrorString];
+      }
+      error('Cannot run Java ($javaExe), skipping Java file formatting!');
+      return const <String>[_javaFormatErrorString];
     }
     try {
       javaFormatVersion = await _getGoogleJavaFormatVersion();
     } on ProcessRunnerException {
       error('Cannot find google-java-format, skipping Java format check.');
-      return const <String>[];
+      return const <String>[_javaFormatErrorString];
     }
     if (verbose) {
       message('Using $javaFormatVersion with Java $javaVersion');
@@ -546,7 +584,7 @@ class JavaFormatChecker extends FormatChecker {
       }
       formatJobs.add(
         WorkerJob(
-          <String>['java', '-jar', googleJavaFormatJar.path, file.trim()],
+          <String>[javaExe, '-jar', googleJavaFormatJar.path, file.trim()],
         ),
       );
     }
@@ -592,7 +630,7 @@ class JavaFormatChecker extends FormatChecker {
     if (failed.isNotEmpty) {
       final bool plural = failed.length > 1;
       if (fixing) {
-        error('Fixing ${failed.length} Java file${plural ? 's' : ''}'
+        message('Fixing ${failed.length} Java file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
       } else {
         error('Found ${failed.length} Java file${plural ? 's' : ''}'

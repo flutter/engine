@@ -290,7 +290,7 @@ public class PlatformViewsChannel {
      * The ID returned by {@code createForTextureLayer} to indicate that the requested texture mode
      * was not available and the view creation fell back to {@code PlatformViewLayer} mode.
      *
-     * This can only be returned if the {@link PlatformViewCreationRequest} sets
+     * This can only be returned if the {@code PlatformViewCreationRequest} sets
      * {@code TEXTURE_WITH_HYBRID_FALLBACK} as the requested display mode.
      */
     static final long NON_TEXTURE_FALLBACK = -2;
@@ -502,11 +502,11 @@ public class PlatformViewsChannel {
     /** The number of pointers (e.g, fingers) involved in the touch event. */
     public final int pointerCount;
     /**
-     * Properties for each pointer, encoded in a raw format.
-     * Expected to be formatted as a List[List[Integer]], where each inner list has two items:
-     * - An id, at index 0, corresponding to {@link android.view.MotionEvent.PointerProperties#id}
-     * - A tool type, at index 1, corresponding to {@link android.view.MotionEvent.PointerProperties#toolType}.
-     * */
+     * Properties for each pointer, encoded in a raw format. Expected to be formatted as a
+     * List[List[Integer]], where each inner list has two items: - An id, at index 0, corresponding
+     * to {@link android.view.MotionEvent.PointerProperties#id} - A tool type, at index 1,
+     * corresponding to {@link android.view.MotionEvent.PointerProperties#toolType}.
+     */
     @NonNull public final Object rawPointerPropertiesList;
     /** Coordinates for each pointer, encoded in a raw format. */
     @NonNull public final Object rawPointerCoords;

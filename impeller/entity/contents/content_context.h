@@ -28,6 +28,8 @@
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/fast_gradient.frag.h"
+#include "impeller/entity/fast_gradient.vert.h"
 #include "impeller/entity/filter_position.vert.h"
 #include "impeller/entity/filter_position_uv.vert.h"
 #include "impeller/entity/gaussian.frag.h"
@@ -46,6 +48,7 @@
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
+#include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/texture_fill_strict_src.frag.h"
@@ -76,6 +79,8 @@
 
 namespace impeller {
 
+using FastGradientPipeline =
+    RenderPipelineHandle<FastGradientVertexShader, FastGradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientFillFragmentShader>;
@@ -106,6 +111,9 @@ using RRectBlurPipeline =
     RenderPipelineHandle<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using TexturePipeline =
     RenderPipelineHandle<TextureFillVertexShader, TextureFillFragmentShader>;
+using TextureDownsamplePipeline =
+    RenderPipelineHandle<TextureFillVertexShader,
+                         TextureDownsampleFragmentShader>;
 using TextureStrictSrcPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
                          TextureFillStrictSrcFragmentShader>;
@@ -376,6 +384,11 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(fast_gradient_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
@@ -579,6 +592,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendSoftLightPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetDownsamplePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(texture_downsample_pipelines_, opts);
   }
 
   // Framebuffer Advanced Blends
@@ -856,6 +874,7 @@ class ContentContext {
   // map.
 
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<FastGradientPipeline> fast_gradient_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<ConicalGradientFillPipeline>
@@ -871,6 +890,7 @@ class ContentContext {
       sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TextureDownsamplePipeline> texture_downsample_pipelines_;
   mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTextureExternalPipeline>

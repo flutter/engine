@@ -5,15 +5,20 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
-#include "display_list/utils/dl_receiver_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
+
+using DlScalar = flutter::DlScalar;
+using DlPoint = flutter::DlPoint;
 
 class DlDispatcherBase : public flutter::DlOpReceiver {
  public:
@@ -54,9 +59,6 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void setBlendMode(flutter::DlBlendMode mode) override;
-
-  // |flutter::DlOpReceiver|
-  void setPathEffect(const flutter::DlPathEffect* effect) override;
 
   // |flutter::DlOpReceiver|
   void setMaskFilter(const flutter::DlMaskFilter* filter) override;
@@ -122,6 +124,9 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
+
+  // |flutter::DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
@@ -140,6 +145,12 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+
+  // |flutter::DlOpReceiver|
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
 
   // |flutter::DlOpReceiver|
   void drawRect(const SkRect& rect) override;
@@ -174,7 +185,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                   const SkPoint points[]) override;
 
   // |flutter::DlOpReceiver|
-  void drawVertices(const flutter::DlVertices* vertices,
+  void drawVertices(const std::shared_ptr<flutter::DlVertices>& vertices,
                     flutter::DlBlendMode dl_mode) override;
 
   // |flutter::DlOpReceiver|
@@ -291,7 +302,8 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
  public:
   ExperimentalDlDispatcher(ContentContext& renderer,
                            RenderTarget& render_target,
-                           bool requires_readback,
+                           bool has_root_backdrop_filter,
+                           flutter::DlBlendMode max_root_blend_mode,
                            IRect cull_rect);
 
   ~ExperimentalDlDispatcher() = default;
@@ -366,10 +378,29 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
                        SkScalar opacity) override;
 
+  // |flutter::DlOpReceiver|
+  void setDrawStyle(flutter::DlDrawStyle style) override;
+
+  // |flutter::DlOpReceiver|
+  void setColor(flutter::DlColor color) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeWidth(SkScalar width) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeMiter(SkScalar limit) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeCap(flutter::DlStrokeCap cap) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeJoin(flutter::DlStrokeJoin join) override;
+
  private:
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  Paint paint_;
 };
 
 }  // namespace impeller

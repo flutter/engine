@@ -371,28 +371,21 @@ public class PlatformViewsControllerTest {
     // Construct a PlatformViewTouch.rawPointerPropertiesList by doing the inverse of
     // PlatformViewsController.parsePointerPropertiesList.
     List<List<Integer>> pointerProperties =
-            Arrays.asList(
-                    Arrays.asList(
-                            original.getPointerId(0),
-                            original.getToolType(0)
-                    )
-            );
+        Arrays.asList(Arrays.asList(original.getPointerId(0), original.getToolType(0)));
     // Construct a PlatformViewTouch.rawPointerCoords by doing the inverse of
     // PlatformViewsController.parsePointerCoordsList.
     List<List<Double>> pointerCoordinates =
+        Arrays.asList(
             Arrays.asList(
-                    Arrays.asList(
-                            (double) original.getOrientation(),
-                            (double) original.getPressure(),
-                            (double) original.getSize(),
-                            (double) original.getToolMajor(),
-                            (double) original.getToolMinor(),
-                            (double) original.getTouchMajor(),
-                            (double) original.getTouchMinor(),
-                            (double) original.getX(),
-                            (double) original.getY()
-                    )
-            );
+                (double) original.getOrientation(),
+                (double) original.getPressure(),
+                (double) original.getSize(),
+                (double) original.getToolMajor(),
+                (double) original.getToolMinor(),
+                (double) original.getTouchMajor(),
+                (double) original.getTouchMinor(),
+                (double) original.getX(),
+                (double) original.getY()));
     // Make a platform view touch from the motion event.
     PlatformViewTouch frameWorkTouchNonVd =
         new PlatformViewTouch(
@@ -468,7 +461,7 @@ public class PlatformViewsControllerTest {
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
 
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     View resultAndroidView = platformViewsController.getPlatformViewById(platformViewId);
     assertNotNull(resultAndroidView);
@@ -654,11 +647,7 @@ public class PlatformViewsControllerTest {
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-        });
+    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
   }
 
   @Test
@@ -682,11 +671,7 @@ public class PlatformViewsControllerTest {
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-        });
+    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
   }
 
   @Test
@@ -908,7 +893,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
     assertTrue(androidView.getParent() instanceof FlutterMutatorView);
@@ -919,7 +904,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
     assertTrue(androidView.getParent() instanceof FlutterMutatorView);
@@ -948,7 +933,7 @@ public class PlatformViewsControllerTest {
     // Simulate create call from the framework.
     createPlatformView(
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     when(platformView.getView()).thenReturn(null);
 
@@ -1087,7 +1072,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
     assertEquals(flutterView.getChildCount(), 2);
 
     // Simulate first frame from the framework.
@@ -1589,13 +1574,16 @@ public class PlatformViewsControllerTest {
         new TextureRegistry() {
           public void TextureRegistry() {}
 
+          @NonNull
           @Override
           public SurfaceTextureEntry createSurfaceTexture() {
             return registerSurfaceTexture(mock(SurfaceTexture.class));
           }
 
+          @NonNull
           @Override
-          public SurfaceTextureEntry registerSurfaceTexture(SurfaceTexture surfaceTexture) {
+          public SurfaceTextureEntry registerSurfaceTexture(
+              @NonNull SurfaceTexture surfaceTexture) {
             return new SurfaceTextureEntry() {
               @NonNull
               @Override
@@ -1613,6 +1601,7 @@ public class PlatformViewsControllerTest {
             };
           }
 
+          @NonNull
           @Override
           public ImageTextureEntry createImageTexture() {
             return new ImageTextureEntry() {
@@ -1629,9 +1618,13 @@ public class PlatformViewsControllerTest {
             };
           }
 
+          @NonNull
           @Override
           public SurfaceProducer createSurfaceProducer() {
             return new SurfaceProducer() {
+              @Override
+              public void setCallback(SurfaceProducer.Callback cb) {}
+
               @Override
               public long id() {
                 return 0;

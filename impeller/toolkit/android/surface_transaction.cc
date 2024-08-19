@@ -58,13 +58,7 @@ bool SurfaceTransaction::SetContents(const SurfaceControl* control,
     VALIDATION_LOG << "Invalid control or buffer.";
     return false;
   }
-
-  const auto& proc_table = GetProcTable();
-
-  proc_table.ASurfaceTransaction_setEnableBackPressure(
-      transaction_.get(), control->GetHandle(), true);
-
-  proc_table.ASurfaceTransaction_setBuffer(
+  GetProcTable().ASurfaceTransaction_setBuffer(
       transaction_.get(),                                      //
       control->GetHandle(),                                    //
       buffer->GetHandle(),                                     //

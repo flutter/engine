@@ -220,6 +220,9 @@ class SemanticsAction {
   /// must immediately become editable, opening a virtual keyboard, if needed.
   /// Buttons must respond to tap/click events from the keyboard.
   ///
+  /// Widget reaction to this action must be idempotent. It is possible to
+  /// receive this action more than once, or when the widget is already focused.
+  ///
   /// Focus behavior is specific to the platform and to the assistive technology
   /// used. Typically on desktop operating systems, such as Windows, macOS, and
   /// Linux, moving accessibility focus will also move the input focus. On
@@ -281,8 +284,12 @@ class SemanticsAction {
     _kFocusIndex: focus,
   };
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static SemanticsAction? fromIndex(int index) => _kActionById[index];
 
   @override
@@ -635,8 +642,12 @@ class SemanticsFlag {
     _kIsExpandedIndex: isExpanded,
   };
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static SemanticsFlag? fromIndex(int index) => _kFlagById[index];
 
   @override
@@ -841,6 +852,21 @@ abstract class SemanticsUpdateBuilder {
   /// z-direction starting at `elevation`. Basically, in the z-direction the
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
+  ///
+  /// The `headingLevel` describes that this node is a heading and the hierarchy
+  /// level this node represents as a heading. A value of 0 indicates that this
+  /// node is not a heading. A value of 1 or greater indicates that this node is
+  /// a heading at the specified level. The valid value range is from 1 to 6,
+  /// inclusive. This attribute is only used for Web platform, and it will have
+  /// no effect on other platforms.
+  ///
+  /// The `linkUrl` describes the URI that this node links to. If the node is
+  /// not a link, this should be an empty string.
+  ///
+  /// See also:
+  ///
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
   void updateNode({
     required int id,
     required int flags,
@@ -875,6 +901,8 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int headingLevel = 0,
+    String linkUrl = '',
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -945,8 +973,14 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int headingLevel = 0,
+    String linkUrl = '',
   }) {
     assert(_matrix4IsValid(transform));
+    assert (
+      headingLevel >= 0 && headingLevel <= 6,
+      'Heading level must be between 1 and 6, or 0 to indicate that this node is not a heading.'
+    );
     _updateNode(
       id,
       flags,
@@ -984,6 +1018,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
+      headingLevel,
+      linkUrl,
     );
   }
   @Native<
@@ -1024,6 +1060,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
+          Handle,
+          Int32,
           Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
@@ -1061,7 +1099,9 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalActions);
+      Int32List additionalActions,
+      int headingLevel,
+      String linkUrl);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {

@@ -49,7 +49,6 @@ SkPaint ToSk(const DlPaint& paint) {
   }
 
   sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
-  sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
 
   return sk_paint;
 }
@@ -275,21 +274,7 @@ sk_sp<SkMaskFilter> ToSk(const DlMaskFilter* filter) {
   }
 }
 
-sk_sp<SkPathEffect> ToSk(const DlPathEffect* effect) {
-  if (!effect) {
-    return nullptr;
-  }
-  switch (effect->type()) {
-    case DlPathEffectType::kDash: {
-      const DlDashPathEffect* dash_effect = effect->asDash();
-      FML_DCHECK(dash_effect != nullptr);
-      return SkDashPathEffect::Make(dash_effect->intervals(),
-                                    dash_effect->count(), dash_effect->phase());
-    }
-  }
-}
-
-sk_sp<SkVertices> ToSk(const DlVertices* vertices) {
+sk_sp<SkVertices> ToSk(const std::shared_ptr<DlVertices>& vertices) {
   const SkColor* sk_colors =
       reinterpret_cast<const SkColor*>(vertices->colors());
   return SkVertices::MakeCopy(ToSk(vertices->mode()), vertices->vertex_count(),
