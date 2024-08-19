@@ -400,7 +400,6 @@ ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
     : parent_(parent) {}
 
 void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
-  FML_LOG(ERROR) << "Flush";
   if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }

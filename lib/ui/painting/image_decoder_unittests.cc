@@ -715,8 +715,8 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(600, image->width());
-  ASSERT_EQ(200, image->height());
+  EXPECT_EQ(600, image->width());
+  EXPECT_EQ(200, image->height());
 
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -727,24 +727,26 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
                                                          std::move(generator));
   auto compressed_image = ImageDecoderSkia::ImageFromCompressedData(
       descriptor.get(), 6, 2, fml::tracing::TraceFlow(""));
-  ASSERT_EQ(compressed_image->width(), 6);
-  ASSERT_EQ(compressed_image->height(), 2);
-  ASSERT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
+  EXPECT_EQ(compressed_image->width(), 6);
+  EXPECT_EQ(compressed_image->height(), 2);
+  EXPECT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  // Bitmap sizes reflect the original image size as resizing is done on the
+  // GPU.
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {100, 100},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_1.sk_bitmap->width(), 6);
-  ASSERT_EQ(result_1.sk_bitmap->height(), 2);
+  EXPECT_EQ(result_1.sk_bitmap->width(), 6);
+  EXPECT_EQ(result_1.sk_bitmap->height(), 2);
 
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  ASSERT_EQ(result_2.sk_bitmap->width(), 10);
-  ASSERT_EQ(result_2.sk_bitmap->height(), 10);
+  EXPECT_EQ(result_2.sk_bitmap->width(), 10);
+  EXPECT_EQ(result_2.sk_bitmap->height(), 10);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
@@ -971,8 +973,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 }
 
-TEST_F(ImageDecoderFixtureTest,
-       MultiFrameCodecProducesATextureEvenIfGPUIsDisabledOnImpeller) {
+TEST_F(ImageDecoderFixtureTest, MultiFrameCodecIsPausedWhenGPUIsUnavailable) {
   auto settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   auto vm_ref = DartVMRef::Create(settings);
@@ -1030,14 +1031,14 @@ TEST_F(ImageDecoderFixtureTest,
           Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
       if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
         isolate_latch.Signal();
-        return false;
+        return true;
       }
 
       EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
       codec->getNextFrame(closure);
       isolate_latch.Signal();
-      return true;
+      return false;
     }));
     isolate_latch.Wait();
   });
