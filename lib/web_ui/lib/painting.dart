@@ -116,24 +116,24 @@ class Color {
   }
 
   Color withAlpha(int a) {
-    return Color.from(alpha: (a & 0xff) / 255, red: r, green: g, blue: b);
+    return Color.fromARGB(a, red, green, blue);
   }
 
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return Color.from(alpha: opacity, red: r, green: g, blue: b);
+    return withAlpha((255.0 * opacity).round());
   }
 
   Color withRed(int r) {
-    return Color.from(alpha: a, red: (r & 0xff) / 255, green: g, blue: b);
+    return Color.fromARGB(alpha, r, green, blue);
   }
 
   Color withGreen(int g) {
-    return Color.from(alpha: a, red: r, green: (g & 0xff) / 255, blue: b);
+    return Color.fromARGB(alpha, red, g, blue);
   }
 
   Color withBlue(int b) {
-    return Color.from(alpha: a, red: r, green: g, blue: (b & 0xff) / 255);
+    return Color.fromARGB(alpha, red, green, b);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
