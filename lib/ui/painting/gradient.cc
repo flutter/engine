@@ -48,6 +48,7 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(colors.num_elements());
   for (int i = 0; i < colors.num_elements(); ++i) {
+    /// TODO(gaaclarke): Make this preserve wide gamut colors.
     dl_colors.emplace_back(DlColor(colors[i]));
   }
 
