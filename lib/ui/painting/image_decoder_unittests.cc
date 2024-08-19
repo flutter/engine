@@ -358,9 +358,8 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
   bool invoked = false;
-  auto cb = [&invoked](const sk_sp<DlImage>& image, const std::string& message) {
-    invoked = true;
-  };
+  auto cb = [&invoked](const sk_sp<DlImage>& image,
+                       const std::string& message) { invoked = true; };
 
   ImageDecoderImpeller::UploadTextureToPrivate(
       cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
