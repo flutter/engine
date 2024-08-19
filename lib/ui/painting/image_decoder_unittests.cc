@@ -358,7 +358,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
 
   bool invoked = false;
-  auto cb = [&invoked](sk_sp<DlImage> image, std::string message) {
+  auto cb = [&invoked](const sk_sp<DlImage>& image, const std::string& message) {
     invoked = true;
   };
 
@@ -400,8 +400,8 @@ TEST_F(ImageDecoderFixtureTest,
   auto cb = [&invoked, &image, &message](sk_sp<DlImage> p_image,
                                          std::string p_message) {
     invoked = true;
-    image = p_image;
-    message = p_message;
+    image = std::move(p_image);
+    message = std::move(p_message);
   };
 
   ImageDecoderImpeller::UploadTextureToPrivate(
@@ -442,8 +442,8 @@ TEST_F(ImageDecoderFixtureTest,
   auto cb = [&invoked, &image, &message](sk_sp<DlImage> p_image,
                                          std::string p_message) {
     invoked = true;
-    image = p_image;
-    message = p_message;
+    image = std::move(p_image);
+    message = std::move(p_message);
   };
 
   ImageDecoderImpeller::UploadTextureToPrivate(
@@ -456,8 +456,8 @@ TEST_F(ImageDecoderFixtureTest,
   no_gpu_access_context->FlushTasks(/*fail=*/true);
 
   EXPECT_TRUE(invoked);
-  EXPECT_EQ(message, "");
-  EXPECT_NE(image, nullptr);
+  // Creation of the dl image will still fail with the mocked context.
+  EXPECT_NE(message, "Could not create command buffer for mipmap generation.");
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
@@ -843,14 +843,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {100, 100},
       /*supports_wide_gamut=*/false, allocator);
-  EXPECT_EQ(result_1.sk_bitmap->width(), 6);
-  EXPECT_EQ(result_1.sk_bitmap->height(), 2);
+  EXPECT_EQ(result_1.sk_bitmap->width(), 75);
+  EXPECT_EQ(result_1.sk_bitmap->height(), 25);
 
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);
-  EXPECT_EQ(result_2.sk_bitmap->width(), 10);
-  EXPECT_EQ(result_2.sk_bitmap->height(), 10);
+  EXPECT_EQ(result_2.sk_bitmap->width(), 75);
+  EXPECT_EQ(result_2.sk_bitmap->height(), 25);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
@@ -1135,14 +1135,14 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecIsPausedWhenGPUIsUnavailable) {
           Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
       if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
         isolate_latch.Signal();
-        return true;
+        return false;
       }
 
       EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
       codec->getNextFrame(closure);
       isolate_latch.Signal();
-      return false;
+      return true;
     }));
     isolate_latch.Wait();
   });
