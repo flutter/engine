@@ -453,7 +453,7 @@ TEST_F(ImageDecoderFixtureTest,
   EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   EXPECT_FALSE(invoked);
 
-  no_gpu_access_context->FlushTasks(/*fail*/ = true);
+  no_gpu_access_context->FlushTasks(/*fail=*/true);
 
   EXPECT_TRUE(invoked);
   EXPECT_EQ(message, "");
