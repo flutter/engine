@@ -373,6 +373,8 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 
   ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   ASSERT_EQ(result.second, "");
+
+  no_gpu_access_context->FlushTasks(/*fail=*/true);
 }
 
 TEST_F(ImageDecoderFixtureTest,
