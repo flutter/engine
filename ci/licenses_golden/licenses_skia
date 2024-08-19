@@ -1,4 +1,4 @@
-Signature: b92693ead274883d50d8bda8a6a3a1bc
+Signature: 26ecd9b511f43ff87db9f1945d3319fa
 
 ====================================================================================================
 LIBRARY: etc1
@@ -398,6 +398,8 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/dawntypes.md
+FILE: ../../../flutter/third_party/skia/relnotes/dropshadowcolor.md
+FILE: ../../../flutter/third_party/skia/relnotes/fakebold.md
 FILE: ../../../flutter/third_party/skia/relnotes/ios12.md
 FILE: ../../../flutter/third_party/skia/relnotes/vktypes.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
@@ -3309,9 +3311,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp + ../../../flu
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_posix.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_win.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/shaders/SkImageShader.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/shaders/SkImageShader.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/svg/SkSVGCanvas.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -3590,9 +3589,6 @@ FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.h
-FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary.h
-FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_posix.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_win.cpp
 FILE: ../../../flutter/third_party/skia/src/shaders/SkImageShader.cpp
 FILE: ../../../flutter/third_party/skia/src/shaders/SkImageShader.h
 FILE: ../../../flutter/third_party/skia/src/svg/SkSVGCanvas.cpp

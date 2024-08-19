@@ -196,12 +196,7 @@ void DlDispatcherBase::setDrawStyle(flutter::DlDrawStyle style) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::setColor(flutter::DlColor color) {
-  paint_.color = {
-      color.getRedF(),
-      color.getGreenF(),
-      color.getBlueF(),
-      color.getAlphaF(),
-  };
+  paint_.color = skia_conversions::ToColor(color);
 }
 
 // |flutter::DlOpReceiver|
@@ -665,9 +660,18 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
     impeller_bounds = skia_conversions::ToRect(bounds);
   }
 
+  // Empty bounds on a save layer that contains a BDF or destructive blend
+  // should be treated as unbounded. All other empty bounds can be skipped.
+  if (impeller_bounds.has_value() && impeller_bounds->IsEmpty() &&
+      (backdrop != nullptr ||
+       Entity::IsBlendModeDestructive(paint.blend_mode))) {
+    impeller_bounds = std::nullopt;
+  }
+
   GetCanvas().SaveLayer(paint, impeller_bounds, ToImageFilter(backdrop),
                         promise, total_content_depth,
-                        options.can_distribute_opacity());
+                        options.can_distribute_opacity(),
+                        options.bounds_from_caller());
 }
 
 // |flutter::DlOpReceiver|
@@ -1163,6 +1167,7 @@ void DlDispatcherBase::drawTextBlob(const sk_sp<SkTextBlob> blob,
   UNIMPLEMENTED;
 }
 
+// |flutter::DlOpReceiver|
 void DlDispatcherBase::drawTextFrame(
     const std::shared_ptr<TextFrame>& text_frame,
     SkScalar x,
@@ -1248,6 +1253,7 @@ Picture DlDispatcherBase::EndRecordingAsPicture() {
 
 /// Subclasses
 
+#if !EXPERIMENTAL_CANVAS
 DlDispatcher::DlDispatcher() = default;
 
 DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
@@ -1257,6 +1263,7 @@ DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
 Canvas& DlDispatcher::GetCanvas() {
   return canvas_;
 }
+#endif  // !EXPERIMENTAL_CANVAS
 
 static bool RequiresReadbackForBlends(
     const ContentContext& renderer,
@@ -1362,7 +1369,9 @@ void TextFrameDispatcher::drawTextFrame(
     properties.stroke_width = paint_.stroke_width;
   }
   if (text_frame->HasColor()) {
-    properties.color = paint_.color;
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties.color = paint_.color.WithAlpha(1.0);
   }
   auto scale =
       (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
@@ -1378,8 +1387,11 @@ void TextFrameDispatcher::drawDisplayList(
     SkScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
   save();
+  Paint old_paint = paint_;
+  paint_ = Paint{};
   display_list->Dispatch(*this);
   restore();
+  paint_ = old_paint;
   FML_DCHECK(stack_depth == stack_.size());
 }
 
@@ -1390,12 +1402,7 @@ void TextFrameDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
 
 // |flutter::DlOpReceiver|
 void TextFrameDispatcher::setColor(flutter::DlColor color) {
-  paint_.color = {
-      color.getRedF(),
-      color.getGreenF(),
-      color.getBlueF(),
-      color.getAlphaF(),
-  };
+  paint_.color = skia_conversions::ToColor(color);
 }
 
 // |flutter::DlOpReceiver|
@@ -1436,6 +1443,53 @@ void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
       paint_.stroke_join = Join::kBevel;
       break;
   }
+}
+
+std::shared_ptr<Texture> DisplayListToTexture(
+    const sk_sp<flutter::DisplayList>& display_list,
+    ISize size,
+    AiksContext& context) {
+  // Do not use the render target cache as the lifecycle of this texture
+  // will outlive a particular frame.
+  impeller::RenderTargetAllocator render_target_allocator =
+      impeller::RenderTargetAllocator(
+          context.GetContext()->GetResourceAllocator());
+  impeller::RenderTarget target;
+  if (context.GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    target = render_target_allocator.CreateOffscreenMSAA(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/1,
+        "Picture Snapshot MSAA",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+    );
+  } else {
+    target = render_target_allocator.CreateOffscreen(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/1,
+        "Picture Snapshot",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfig  // color_attachment_config
+    );
+  }
+
+  SkIRect sk_cull_rect = SkIRect::MakeWH(size.width, size.height);
+  impeller::TextFrameDispatcher collector(context.GetContentContext(),
+                                          impeller::Matrix());
+  display_list->Dispatch(collector, sk_cull_rect);
+  impeller::ExperimentalDlDispatcher impeller_dispatcher(
+      context.GetContentContext(), target,
+      display_list->root_has_backdrop_filter(),
+      display_list->max_root_blend_mode(), impeller::IRect::MakeSize(size));
+  display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+  impeller_dispatcher.FinishRecording();
+
+  context.GetContentContext().GetTransientsBuffer().Reset();
+  context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+
+  return target.GetRenderTargetTexture();
 }
 
 }  // namespace impeller
