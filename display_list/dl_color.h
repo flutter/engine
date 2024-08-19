@@ -9,6 +9,7 @@
 
 namespace flutter {
 
+// These should match the enumerations defined in //lib/ui/painting.dart.
 enum class DlColorSpace { kSRGB = 0, kExtendedSRGB = 1, kDisplayP3 = 2 };
 
 /// A representation of a color.
