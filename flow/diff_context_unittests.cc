@@ -32,35 +32,41 @@ TEST_F(DiffContextTest, ClipAlignment) {
   EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(16, 16, 64, 64));
 }
 
-#ifdef NOT_WORKING_YET
-
 TEST_F(DiffContextTest, DisjointDamage) {
-  MockLayerTree t1(SkISize::Make(90, 90));
-  t1.root()->Add(CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(30, 30, 50, 50))));
+  SkISize frame_size = SkISize::Make(90, 90);
+  auto in_bounds_dl = CreateDisplayList(SkRect::MakeLTRB(30, 30, 50, 50));
+  auto out_bounds_dl = CreateDisplayList(SkRect::MakeLTRB(100, 100, 120, 120));
 
-  auto damage = DiffLayerTree(t1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 50, 50));
-  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 50, 50));
+  // We need both DisplayLists to be non-empty.
+  ASSERT_FALSE(in_bounds_dl->bounds().isEmpty());
+  ASSERT_FALSE(out_bounds_dl->bounds().isEmpty());
 
-  MockLayerTree t2(SkISize::Make(90, 90));
-  t2.root()->Add(CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(40, 40, 60, 60))));
-  damage = DiffLayerTree(t2, t1, SkIRect::MakeEmpty(), 0, 0);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
-  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+  // We need the in_bounds DisplayList to be inside the frame size.
+  // We need the out_bounds DisplayList to be completely outside the frame.
+  ASSERT_TRUE(SkRect::Make(frame_size).contains(in_bounds_dl->bounds()));
+  ASSERT_FALSE(SkRect::Make(frame_size).intersects(out_bounds_dl->bounds()));
 
-  MockLayerTree t3(SkISize::Make(90, 90));
-  t3.root()->Add(CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(30, 30, 50, 50))));
-  t3.root()->Add(CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(100, 100, 120, 120))));
-  damage = DiffLayerTree(t3, t1, SkIRect::MakeEmpty(), 0, 0);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
-  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeLTRB(30, 30, 60, 60));
+  MockLayerTree t1(frame_size);
+  t1.root()->Add(CreateDisplayListLayer(in_bounds_dl));
+
+  MockLayerTree t2(frame_size);
+  // Include previous
+  t2.root()->Add(CreateDisplayListLayer(in_bounds_dl));
+  // Add a new layer that is out of frame bounds
+  t2.root()->Add(CreateDisplayListLayer(out_bounds_dl));
+
+  // Cannot use DiffLayerTree because it implicitly adds a clip layer
+  // around the tree, but we want the out of bounds dl to not be pruned
+  // to test the intersection code inside layer::Diff/ComputeDamage
+  // damage = DiffLayerTree(t2, t1, SkIRect::MakeEmpty(), 0, 0);
+
+  DiffContext dc(frame_size, t2.paint_region_map(), t1.paint_region_map(), true,
+                 false);
+  t2.root()->Diff(&dc, t1.root());
+  auto damage = dc.ComputeDamage(SkIRect::MakeEmpty(), 0, 0);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeEmpty());
+  EXPECT_EQ(damage.buffer_damage, SkIRect::MakeEmpty());
 }
-
-#endif  // NOT_WORKING_YET
 
 }  // namespace testing
 }  // namespace flutter

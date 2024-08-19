@@ -139,12 +139,11 @@ Damage DiffContext::ComputeDamage(const SkIRect& accumulated_buffer_damage,
   frame_damage.roundOut(&res.frame_damage);
 
   SkIRect frame_clip = SkIRect::MakeSize(frame_size_);
-  [[maybe_unused]]
-  bool ret1 = res.buffer_damage.intersect(frame_clip);
-  [[maybe_unused]]
-  bool ret2 = res.frame_damage.intersect(frame_clip);
-  if (!ret1 || !ret2) {
-    FML_LOG(ERROR) << "intersect was not handled: " << ret1 << ", " << ret2;
+  if (!res.buffer_damage.intersect(frame_clip)) {
+    res.buffer_damage.setEmpty();
+  }
+  if (!res.frame_damage.intersect(frame_clip)) {
+    res.frame_damage.setEmpty();
   }
 
   if (horizontal_clip_alignment > 1 || vertical_clip_alignment > 1) {
