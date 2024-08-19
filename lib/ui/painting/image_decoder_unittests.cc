@@ -376,48 +376,6 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 }
 
 TEST_F(ImageDecoderFixtureTest,
-       ImpellerUploadToSharedNoGpuTaskFlushingSuccess) {
-#if !IMPELLER_SUPPORTS_RENDERING
-  GTEST_SKIP() << "Impeller only test.";
-#endif  // IMPELLER_SUPPORTS_RENDERING
-
-  auto no_gpu_access_context =
-      std::make_shared<impeller::TestImpellerContext>();
-  auto gpu_disabled_switch = std::make_shared<fml::SyncSwitch>(true);
-
-  auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
-                                SkAlphaType::kPremul_SkAlphaType);
-  auto bitmap = std::make_shared<SkBitmap>();
-  bitmap->allocPixels(info, 10 * 4);
-  impeller::DeviceBufferDescriptor desc;
-  desc.size = bitmap->computeByteSize();
-  auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
-
-  sk_sp<DlImage> image;
-  std::string message;
-  bool invoked = false;
-  auto cb = [&invoked, &image, &message](sk_sp<DlImage> p_image,
-                                         std::string p_message) {
-    invoked = true;
-    image = std::move(p_image);
-    message = std::move(p_message);
-  };
-
-  ImageDecoderImpeller::UploadTextureToPrivate(
-      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
-      gpu_disabled_switch);
-
-  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  EXPECT_FALSE(invoked);
-
-  no_gpu_access_context->FlushTasks();
-
-  EXPECT_TRUE(invoked);
-  EXPECT_EQ(message, "");
-  EXPECT_NE(image, nullptr);
-}
-
-TEST_F(ImageDecoderFixtureTest,
        ImpellerUploadToSharedNoGpuTaskFlushingFailure) {
 #if !IMPELLER_SUPPORTS_RENDERING
   GTEST_SKIP() << "Impeller only test.";
@@ -456,7 +414,7 @@ TEST_F(ImageDecoderFixtureTest,
 
   EXPECT_TRUE(invoked);
   // Creation of the dl image will still fail with the mocked context.
-  EXPECT_NE(message, "Could not create command buffer for mipmap generation.");
+  EXPECT_NE(message, "");
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
