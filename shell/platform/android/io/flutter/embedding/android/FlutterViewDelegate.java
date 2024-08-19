@@ -24,9 +24,10 @@ import java.util.List;
  */
 public class FlutterViewDelegate {
   /**
-   * Return the WindowInsets object for the provided Context. Returns null if there is no associated
-   * activity, the window of the associated activity is null, or the root window insets of the
-   * activity's window is null.
+   * Return the WindowInsets object for the provided Context. A Context will only have a window if
+   * it is an instance of Activity. If context does not have a window, or it is not an activity,
+   * this method will return null. Otherwise, this method will return the WindowInsets for the
+   * provided activity's window.
    */
   @RequiresApi(api = Build.API_LEVELS.API_23)
   @VisibleForTesting
@@ -55,6 +56,10 @@ public class FlutterViewDelegate {
   public void growViewportMetricsToCaptionBar(
       Context context, FlutterRenderer.ViewportMetrics viewportMetrics) {
     List<Rect> boundingRects = getCaptionBarInsets(context);
+    int padding = viewportMetrics.viewPaddingTop;
+    for (Rect rect : boundingRects) {
+      padding = Math.max(padding, rect.bottom);
+    }
     if (boundingRects.size() != 1) {
       return;
     }
@@ -62,7 +67,8 @@ public class FlutterViewDelegate {
     // When assigning the new value of viewPaddingTop, the maximum is taken with its old value
     // to ensure that any previous top padding that is greater than that from the caption bar
     // is not destroyed by this operation.
-    viewportMetrics.viewPaddingTop =
-        Math.max(viewportMetrics.viewPaddingTop, boundingRects.get(0).bottom);
+    // Any potential update that will allow the caption bar to be positioned somewhere other than
+    // the top of the app window will require that this method be rewritten.
+    viewportMetrics.viewPaddingTop = padding;
   }
 }
