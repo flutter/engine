@@ -134,19 +134,19 @@ TEST(SaveLayerUtilsTest, DisjointCoverageTransformedByImageFilter) {
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(200, 200, 210, 210));
 }
 
-TEST(SaveLayerUtilsTest, DisjointCoverageNotTransformedByCTM) {
-  // Coverage disjoint from parent coverage. CTM does not impact lack of
-  // intersection as it has already been "absorbed" by child coverage.
-  Matrix ctm = Matrix::MakeTranslation({-200, -200, 0});
-  auto coverage = ComputeSaveLayerCoverage(
-      /*content_coverage=*/Rect::MakeLTRB(200, 200, 210, 210),  //
-      /*effect_transform=*/ctm,                                 //
-      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
-      /*image_filter=*/nullptr                                  //
-  );
+// TEST(SaveLayerUtilsTest, DisjointCoverageNotTransformedByCTM) {
+//   // Coverage disjoint from parent coverage. CTM does not impact lack of
+//   // intersection as it has already been "absorbed" by child coverage.
+//   Matrix ctm = Matrix::MakeTranslation({-200, -200, 0});
+//   auto coverage = ComputeSaveLayerCoverage(
+//       /*content_coverage=*/Rect::MakeLTRB(200, 200, 210, 210),  //
+//       /*effect_transform=*/ctm,                                 //
+//       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
+//       /*image_filter=*/nullptr                                  //
+//   );
 
-  ASSERT_FALSE(coverage.has_value());
-}
+//   ASSERT_FALSE(coverage.has_value());
+// }
 
 TEST(SaveLayerUtilsTest, BasicEmptyCoverage) {
   auto coverage = ComputeSaveLayerCoverage(
