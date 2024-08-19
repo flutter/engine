@@ -290,6 +290,6 @@ at startup time. But it still aims to support Skia’s general 2D API and has th
 same spec. requirements. The design decisions made to support those requirements
 make offline shader compilation impossible.
 
-Right now, Flutter has no plans to use Graphite. However, we, the Flutter team,
-are in constant communication with the Skia team and freely share insights and
-ideas across Impeller and Graphite.
+As of August 2024, Flutter has no plans to use Graphite. However, we, the
+Flutter team, are in constant communication with the Skia team and freely share
+insights and ideas across Impeller and Graphite.
