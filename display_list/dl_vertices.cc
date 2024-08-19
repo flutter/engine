@@ -268,12 +268,15 @@ void DlVertices::Builder::store_colors(const DlColor colors[]) {
 }
 
 void DlVertices::Builder::store_colors(const uint32_t colors[]) {
-  std::vector<DlColor> dlcolors;
-  dlcolors.reserve(vertices_->vertex_count_);
+  FML_CHECK(is_valid());
+  FML_CHECK(needs_colors_);
+  char* pod = reinterpret_cast<char*>(vertices_.get());
+  DlColor* dlcolors_ptr =
+      reinterpret_cast<DlColor*>(pod + vertices_->colors_offset_);
   for (int i = 0; i < vertices_->vertex_count_; ++i) {
-    dlcolors.emplace_back(DlColor(colors[i]));
+    *dlcolors_ptr++ = DlColor(colors[i]);
   }
-  store_colors(dlcolors.data());
+  needs_colors_ = false;
 }
 
 void DlVertices::Builder::store_indices(const uint16_t indices[]) {
