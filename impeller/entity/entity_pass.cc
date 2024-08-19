@@ -496,7 +496,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     if (!subpass_coverage.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
-    FML_LOG(ERROR) << "subpass_coverage: " << subpass_coverage.value();
 
     auto subpass_size = ISize(subpass_coverage->GetSize());
     if (subpass_size.IsEmpty()) {
