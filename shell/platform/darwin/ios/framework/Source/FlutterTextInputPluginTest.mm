@@ -527,6 +527,21 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
 }
 
+- (void)testCanPerformActionForSelectActions {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  XCTAssertFalse([inputView canPerformAction:@selector(select:) withSender:nil]);
+  XCTAssertFalse([inputView canPerformAction:@selector(selectAll:) withSender:nil]);
+
+  [inputView insertText:@"aaaa"];
+
+  XCTAssertTrue([inputView canPerformAction:@selector(select:) withSender:nil]);
+  XCTAssertTrue([inputView canPerformAction:@selector(selectAll:) withSender:nil]);
+}
+
 - (void)testDeletingBackward {
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
