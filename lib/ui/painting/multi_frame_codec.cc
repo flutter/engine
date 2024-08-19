@@ -9,8 +9,12 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
+#include "impeller/core/device_buffer.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
+#include "impeller/renderer/context.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
@@ -144,13 +148,40 @@ MultiFrameCodec::State::GetNextFrameImage(
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
-    // This is safe regardless of whether the GPU is available or not because
-    // without mipmap creation there is no command buffer encoding done.
-    return ImageDecoderImpeller::UploadTextureToStorage(
-        impeller_context, std::make_shared<SkBitmap>(bitmap),
-        std::make_shared<fml::SyncSwitch>(),
-        impeller::StorageMode::kHostVisible,
-        /*create_mips=*/false);
+    sk_sp<DlImage> dl_image;
+    std::string decode_error;
+    gpu_disable_sync_switch->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfTrue([&decode_error] {
+              // Textures cannot be uploaded with no GPU context on iOS.
+              decode_error = "No GPU context for multi-frame codec upload";
+            })
+            .SetIfFalse([&dl_image, &bitmap, &decode_error, &impeller_context] {
+              impeller::DeviceBufferDescriptor desc;
+              desc.storage_mode = impeller::StorageMode::kHostVisible;
+              desc.size = bitmap.computeByteSize();
+              auto buffer =
+                  impeller_context->GetResourceAllocator()->CreateBuffer(desc);
+              if (!buffer) {
+                decode_error = "Failed to allocate device buffer for upload.";
+                return;
+              }
+              if (!buffer->CopyHostBuffer(
+                      static_cast<uint8_t*>(bitmap.getAddr(0, 0)),
+                      {0, desc.size})) {
+                decode_error = "Failed to copy staging buffer for upload.";
+                return;
+              }
+              std::tie(dl_image, decode_error) =
+                  ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
+                      impeller_context,              //
+                      buffer,                        //
+                      bitmap.info(),                 //
+                      /*resize_info=*/std::nullopt,  //
+                      /*create_mips=*/false          //
+                  );
+            }));
+    return std::make_pair(dl_image, decode_error);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

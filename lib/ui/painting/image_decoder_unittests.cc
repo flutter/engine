@@ -354,13 +354,6 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 
   result_image = nullptr;
   error_message = "";
-
-  ImageDecoderImpeller::UploadTextureToStorage(
-      cb, no_gpu_access_context, bitmap, gpu_disabled_switch,
-      impeller::StorageMode::kHostVisible, true);
-
-  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  EXPECT_EQ(result.second, "");
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
