@@ -484,17 +484,19 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->WithImageFilter(Rect(), subpass->transform_);
 
     auto subpass_coverage = ComputeSaveLayerCoverage(
-        subpass->bounds_limit_.value_or(Rect::MakeMaximum()),  //
-        subpass->transform_,                                   //
-        coverage_limit.value(),                                //
-        image_filter,                                          //
-        /*destructive_blend=*/subpass->flood_clip_,
-        /*has_backdrop_filter=*/!!subpass_backdrop_filter_contents,
-        /*bounds_from_caller=*/subpass->bounds_from_caller_);
+        subpass->bounds_limit_.value_or(Rect::MakeMaximum()),        //
+        subpass->transform_,                                         //
+        coverage_limit.value(),                                      //
+        image_filter,                                                //
+        /*destructive_blend=*/subpass->flood_clip_,                  //
+        /*has_backdrop_filter=*/!!subpass_backdrop_filter_contents,  //
+        /*bounds_from_caller=*/subpass->bounds_from_caller_          //
+    );
 
     if (!subpass_coverage.has_value()) {
       return EntityPass::EntityResult::Skip();
     }
+    FML_LOG(ERROR) << "subpass_coverage: " << subpass_coverage.value();
 
     auto subpass_size = ISize(subpass_coverage->GetSize());
     if (subpass_size.IsEmpty()) {

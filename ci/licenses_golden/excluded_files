@@ -133,7 +133,6 @@
 ../../../flutter/impeller/aiks/aiks_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.h
 ../../../flutter/impeller/aiks/canvas_unittests.cc
-../../../flutter/impeller/aiks/save_layer_utils_unittests.cc
 ../../../flutter/impeller/aiks/testing
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/allocation_size_unittests.cc
@@ -174,6 +173,7 @@
 ../../../flutter/impeller/entity/entity_unittests.cc
 ../../../flutter/impeller/entity/geometry/geometry_unittests.cc
 ../../../flutter/impeller/entity/render_target_cache_unittests.cc
+../../../flutter/impeller/entity/save_layer_utils_unittests.cc
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc

@@ -49,16 +49,25 @@ std::optional<Rect> ComputeSaveLayerCoverage(
       return std::nullopt;
     }
     result_bounds = input_coverage.Intersection(source_coverage_limit.value());
-  } else {
-    result_bounds = input_coverage.Intersection(coverage_limit);
+
+    // Finally, transform the resulting bounds back into the global coordinate
+    // space.
+    if (result_bounds.has_value()) {
+      return result_bounds->TransformBounds(effect_transform);
+    }
+    return std::nullopt;
   }
 
-  // Finally, transform the resulting bounds back into the global coordinate
-  // space.
-  if (result_bounds.has_value()) {
-    return result_bounds->TransformBounds(effect_transform);
+  // If the input coverage is maximum, just return the coverage limit that
+  // is already in the global coordinate space.
+  if (input_coverage.IsMaximum()) {
+    return coverage_limit;
   }
-  return std::nullopt;
+
+  // Transform the input coverage into the global coordinate space before
+  // computing the bounds limit intersection.
+  return input_coverage.TransformBounds(effect_transform)
+      .Intersection(coverage_limit);
 }
 
 }  // namespace impeller
