@@ -22,7 +22,6 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // developer, in this case we still use the content coverage even if the
   // saveLayer itself is unbounded.
   bool save_layer_is_unbounded = has_backdrop_filter || destructive_blend;
-
   // Otherwise, the save layer is bounded by either its contents or by
   // a specified coverage limit. In these cases the coverage value is used
   // and intersected with the coverage limit.
@@ -40,7 +39,6 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // into any computed bounds. That is, a canvas scaling transform of 0.5
   // changes the coverage of the contained entities directly and doesnt need to
   // be additionally incorporated into the coverage computation here.
-  std::optional<Rect> result_bounds;
   if (image_filter) {
     std::optional<Rect> source_coverage_limit =
         image_filter->GetSourceCoverage(effect_transform, coverage_limit);
@@ -48,14 +46,10 @@ std::optional<Rect> ComputeSaveLayerCoverage(
       // No intersection with parent coverage limit.
       return std::nullopt;
     }
-    result_bounds = input_coverage.Intersection(source_coverage_limit.value());
-
-    // Finally, transform the resulting bounds back into the global coordinate
-    // space.
-    if (result_bounds.has_value()) {
-      return result_bounds->TransformBounds(effect_transform);
-    }
-    return std::nullopt;
+    // Transform the input coverage into the global coordinate space before
+    // computing the bounds limit intersection.
+    return input_coverage.TransformBounds(effect_transform)
+        .Intersection(source_coverage_limit.value());
   }
 
   // If the input coverage is maximum, just return the coverage limit that

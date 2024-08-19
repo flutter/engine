@@ -620,7 +620,13 @@ void DisplayListBuilder::RestoreLayer() {
       content_bounds.intersect(layer_op->rect);
     }
   }
-  layer_op->rect = content_bounds;
+  // If the caller specified save layer bounds, preserve those
+  // instead of overwriting with content bounds. The caller
+  // bounds may clip the contents or otherwise limit the bounds
+  // of backdrop entities.
+  if (!layer_op->options.bounds_from_caller()) {
+    layer_op->rect = content_bounds;
+  }
   layer_op->max_blend_mode = current_layer().max_blend_mode;
 
   if (current_layer().contains_backdrop_filter) {
