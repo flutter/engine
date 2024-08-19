@@ -54,7 +54,7 @@ vars = {
   # dependencies of Dart are also updated to match the entries in the
   # Dart SDK's DEPS file for that revision of Dart. The DEPS file for
   # Dart is: https://github.com/dart-lang/sdk/blob/main/DEPS
-  # You can use //tools/dart/create_updated_flutter_deps.py to produce
+  # You can use `//tools/dart/create_updated_flutter_deps.py` to produce
   # updated revision list of existing dependencies.
   'dart_revision': 'c5264a1bd1d2ddff6c9a32ff7f99a2813f0ae4f9',
 
