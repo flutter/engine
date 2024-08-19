@@ -130,6 +130,10 @@ struct DlColor {
   constexpr DlColor withBlueF(float blue) const {  //
     return DlColor(alpha_, red_, green_, blue, color_space_);
   }
+  /// Performs a colorspace transformation.
+  ///
+  /// This isn't just a replacement of the color space field, the new color
+  /// components are calculated.
   DlColor withColorSpace(DlColorSpace color_space) const;
 
   constexpr DlColor modulateOpacity(DlScalar opacity) const {
