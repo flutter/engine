@@ -2,19 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/aiks/save_layer_utils.h"
-
-#include "impeller/entity/entity.h"
+#include "impeller/entity/save_layer_utils.h"
 
 namespace impeller {
 
 std::optional<Rect> ComputeSaveLayerCoverage(
-    Rect content_coverage,
-    const std::shared_ptr<ImageFilter>& backdrop_filter,
-    const Paint& paint,
+    const Rect& content_coverage,
     const Matrix& effect_transform,
     const Rect& coverage_limit,
-    bool user_provided_bounds) {
+    const std::shared_ptr<FilterContents>& image_filter,
+    bool destructive_blend,
+    bool has_backdrop_filter,
+    bool bounds_from_caller) {
   // If the saveLayer is unbounded, the coverage is the same as the
   // coverage limit. By default, the coverage limit begins as the screen
   // coverage. Either a lack of bounds, or the presence of a backdrop
@@ -22,14 +21,12 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // The o  ne special case is when the input coverage was specified by the
   // developer, in this case we still use the content coverage even if the
   // saveLayer itself is unbounded.
-  bool save_layer_is_unbounded =
-      backdrop_filter != nullptr ||
-      Entity::IsBlendModeDestructive(paint.blend_mode);
+  bool save_layer_is_unbounded = has_backdrop_filter || destructive_blend;
 
   // Otherwise, the save layer is bounded by either its contents or by
   // a specified coverage limit. In these cases the coverage value is used
   // and intersected with the coverage limit.
-  Rect input_coverage = (save_layer_is_unbounded && !user_provided_bounds)
+  Rect input_coverage = (save_layer_is_unbounded && !bounds_from_caller)
                             ? Rect::MakeMaximum()
                             : content_coverage;
 
@@ -43,19 +40,25 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // into any computed bounds. That is, a canvas scaling transform of 0.5
   // changes the coverage of the contained entities directly and doesnt need to
   // be additionally incorporated into the coverage computation here.
-  if (paint.image_filter) {
-    std::shared_ptr<FilterContents> image_filter =
-        paint.image_filter->GetFilterContents();
+  std::optional<Rect> result_bounds;
+  if (image_filter) {
     std::optional<Rect> source_coverage_limit =
         image_filter->GetSourceCoverage(effect_transform, coverage_limit);
     if (!source_coverage_limit.has_value()) {
       // No intersection with parent coverage limit.
       return std::nullopt;
     }
-    return input_coverage.Intersection(source_coverage_limit.value());
+    result_bounds = input_coverage.Intersection(source_coverage_limit.value());
+  } else {
+    result_bounds = input_coverage.Intersection(coverage_limit);
   }
 
-  return input_coverage.Intersection(coverage_limit);
+  // Finally, transform the resulting bounds back into the global coordinate
+  // space.
+  if (result_bounds.has_value()) {
+    return result_bounds->TransformBounds(effect_transform);
+  }
+  return std::nullopt;
 }
 
 }  // namespace impeller

@@ -837,7 +837,7 @@ void Canvas::SaveLayer(const Paint& paint,
 
   auto& new_layer_pass = GetCurrentPass();
   if (bounds) {
-    new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
+    new_layer_pass.SetBoundsLimit(bounds, bounds_from_caller);
   }
 
   // When applying a save layer, absorb any pending distributed opacity.

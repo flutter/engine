@@ -26,8 +26,6 @@ impeller_component("aiks") {
     "paint_pass_delegate.h",
     "picture.cc",
     "picture.h",
-    "save_layer_utils.cc",
-    "save_layer_utils.h",
   ]
 
   public_deps = [
@@ -114,10 +112,7 @@ template("aiks_unittests_component") {
 }
 
 aiks_unittests_component("aiks_unittests") {
-  sources = [
-    "canvas_unittests.cc",
-    "save_layer_utils_unittests.cc",
-  ]
+  sources = [ "canvas_unittests.cc" ]
 }
 
 aiks_unittests_component("aiks_unittests_golden") {

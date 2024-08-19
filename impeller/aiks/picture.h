@@ -17,7 +17,7 @@ namespace impeller {
 struct Picture {
   std::unique_ptr<EntityPass> pass;
 
-  std::optional<Snapshot> Snapshot(AiksContext& context);
+  // std::optional<Snapshot> Snapshot(AiksContext& context);
 
   std::shared_ptr<Image> ToImage(AiksContext& context, ISize size) const;
 

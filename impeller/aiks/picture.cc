@@ -14,19 +14,19 @@
 
 namespace impeller {
 
-std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
-  auto coverage = pass->GetElementsCoverage(std::nullopt);
-  if (!coverage.has_value() || coverage->IsEmpty()) {
-    return std::nullopt;
-  }
+// std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
+//   auto coverage = pass->GetElementsCoverage(std::nullopt);
+//   if (!coverage.has_value() || coverage->IsEmpty()) {
+//     return std::nullopt;
+//   }
 
-  const auto translate = Matrix::MakeTranslation(-coverage->GetOrigin());
-  auto texture =
-      RenderToTexture(context, ISize(coverage->GetSize()), translate);
-  return impeller::Snapshot{
-      .texture = std::move(texture),
-      .transform = Matrix::MakeTranslation(coverage->GetOrigin())};
-}
+//   const auto translate = Matrix::MakeTranslation(-coverage->GetOrigin());
+//   auto texture =
+//       RenderToTexture(context, ISize(coverage->GetSize()), translate);
+//   return impeller::Snapshot{
+//       .texture = std::move(texture),
+//       .transform = Matrix::MakeTranslation(coverage->GetOrigin())};
+// }
 
 std::shared_ptr<Image> Picture::ToImage(AiksContext& context,
                                         ISize size) const {
