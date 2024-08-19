@@ -23,6 +23,7 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
@@ -185,37 +186,6 @@ void Canvas::Save(uint32_t total_content_depth) {
   Save(false, total_content_depth);
 }
 
-namespace {
-class MipCountVisitor : public ImageFilterVisitor {
- public:
-  virtual void Visit(const BlurImageFilter& filter) {
-    required_mip_count_ = FilterContents::kBlurFilterRequiredMipCount;
-  }
-  virtual void Visit(const LocalMatrixImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const DilateImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ErodeImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const MatrixImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ComposeImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  virtual void Visit(const ColorImageFilter& filter) {
-    required_mip_count_ = 1;
-  }
-  int32_t GetRequiredMipCount() const { return required_mip_count_; }
-
- private:
-  int32_t required_mip_count_ = -1;
-};
-}  // namespace
-
 void Canvas::Save(bool create_subpass,
                   uint32_t total_content_depth,
                   BlendMode blend_mode,
@@ -240,11 +210,6 @@ void Canvas::Save(bool create_subpass,
             return filter;
           };
       subpass->SetBackdropFilter(backdrop_filter_proc);
-      MipCountVisitor mip_count_visitor;
-      backdrop_filter->Visit(mip_count_visitor);
-      current_pass_->SetRequiredMipCount(
-          std::max(current_pass_->GetRequiredMipCount(),
-                   mip_count_visitor.GetRequiredMipCount()));
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
@@ -512,7 +477,12 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 }
 
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
-  if (rect.IsSquare()) {
+  // TODO(jonahwilliams): This additional condition avoids an assert in the
+  // stroke circle geometry generator. I need to verify the condition that this
+  // assert prevents.
+  if (rect.IsSquare() && (paint.style == Paint::Style::kFill ||
+                          (paint.style == Paint::Style::kStroke &&
+                           paint.stroke_width < rect.GetWidth()))) {
     // Circles have slightly less overhead and can do stroking
     DrawCircle(rect.GetCenter(), rect.GetWidth() * 0.5f, paint);
     return;
@@ -844,9 +814,11 @@ void Canvas::SaveLayer(const Paint& paint,
                        const std::shared_ptr<ImageFilter>& backdrop_filter,
                        ContentBoundsPromise bounds_promise,
                        uint32_t total_content_depth,
-                       bool can_distribute_opacity) {
+                       bool can_distribute_opacity,
+                       bool bounds_from_caller) {
   if (can_distribute_opacity && !backdrop_filter &&
-      Paint::CanApplyOpacityPeephole(paint)) {
+      Paint::CanApplyOpacityPeephole(paint) &&
+      bounds_promise != ContentBoundsPromise::kMayClipContents) {
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;
@@ -868,11 +840,6 @@ void Canvas::SaveLayer(const Paint& paint,
     new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
   }
 
-  if (paint.image_filter) {
-    MipCountVisitor mip_count_visitor;
-    paint.image_filter->Visit(mip_count_visitor);
-    new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
-  }
   // When applying a save layer, absorb any pending distributed opacity.
   Paint paint_copy = paint;
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
@@ -1003,16 +970,23 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
-  src_contents =
-      src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+  Rect translated_coverage = Rect::MakeSize(src_coverage.GetSize());
+  src_contents = src_paint.CreateContentsForGeometry(
+      Geometry::MakeRect(translated_coverage));
 
   auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
   contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetLazyTexture([src_contents](const ContentContext& renderer) {
-    return src_contents->RenderToSnapshot(renderer, {})->texture;
-  });
+  contents->SetLazyTextureCoverage(src_coverage);
+  contents->SetLazyTexture(
+      [src_contents, translated_coverage](const ContentContext& renderer) {
+        // Applying the src coverage as the coverage limit prevents the 1px
+        // coverage pad from adding a border that is picked up by developer
+        // specified UVs.
+        return src_contents->RenderToSnapshot(renderer, {}, translated_coverage)
+            ->texture;
+      });
   entity.SetContents(paint.WithFilters(std::move(contents)));
   AddRenderEntityToCurrentPass(std::move(entity));
 }

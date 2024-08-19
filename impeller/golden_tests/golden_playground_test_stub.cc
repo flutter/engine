@@ -20,7 +20,7 @@ void GoldenPlaygroundTest::SetTypographerContext(
 void GoldenPlaygroundTest::TearDown() {}
 
 void GoldenPlaygroundTest::SetUp() {
-  GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
+  GTEST_SKIP() << "GoldenPlaygroundTest doesn't support this backend type.";
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
@@ -87,6 +87,11 @@ fml::Status GoldenPlaygroundTest::SetCapabilities(
   return fml::Status(
       fml::StatusCode::kUnimplemented,
       "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
 }
 
 }  // namespace impeller

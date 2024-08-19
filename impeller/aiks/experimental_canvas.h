@@ -18,6 +18,27 @@
 
 namespace impeller {
 
+struct LazyRenderingConfig {
+  std::unique_ptr<EntityPassTarget> entity_pass_target;
+  std::unique_ptr<InlinePassContext> inline_pass_context;
+
+  /// Whether or not the clear color texture can still be updated.
+  bool IsApplyingClearColor() const { return !inline_pass_context->IsActive(); }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> p_entity_pass_target)
+      : entity_pass_target(std::move(p_entity_pass_target)) {
+    inline_pass_context =
+        std::make_unique<InlinePassContext>(renderer, *entity_pass_target, 0);
+  }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> entity_pass_target,
+                      std::unique_ptr<InlinePassContext> inline_pass_context)
+      : entity_pass_target(std::move(entity_pass_target)),
+        inline_pass_context(std::move(inline_pass_context)) {}
+};
+
 /// This Canvas attempts to translate from display lists to draw calls directly.
 ///
 /// It's not fully implemented yet but if successful it will be replacing the
@@ -50,7 +71,8 @@ class ExperimentalCanvas : public Canvas {
                  const std::shared_ptr<ImageFilter>& backdrop_filter,
                  ContentBoundsPromise bounds_promise,
                  uint32_t total_content_depth,
-                 bool can_distribute_opacity) override;
+                 bool can_distribute_opacity,
+                 bool bounds_from_caller) override;
 
   bool Restore() override;
 
@@ -78,10 +100,8 @@ class ExperimentalCanvas : public Canvas {
   RenderTarget& render_target_;
   const bool requires_readback_;
   EntityPassClipStack clip_coverage_stack_;
-  std::vector<std::unique_ptr<InlinePassContext>> inline_pass_contexts_;
-  std::vector<std::unique_ptr<EntityPassTarget>> entity_pass_targets_;
+  std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
-  std::vector<std::shared_ptr<RenderPass>> render_passes_;
 
   void SetupRenderPass();
 

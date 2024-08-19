@@ -48,11 +48,11 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
-  group(PrimaryRoleManager, () {
-    _testPrimaryRoleManager();
+  group(SemanticRole, () {
+    _testSemanticRole();
   });
-  group('Role managers', () {
-    _testRoleManagerLifecycle();
+  group('Roles', () {
+    _testRoleLifecycle();
   });
   group('Text', () {
     _testText();
@@ -87,6 +87,9 @@ void runSemanticsTests() {
   group('header', () {
     _testHeader();
   });
+  group('heading', () {
+    _testHeading();
+  });
   group('live region', () {
     _testLiveRegion();
   });
@@ -99,8 +102,8 @@ void runSemanticsTests() {
   group('group', () {
     _testGroup();
   });
-  group('dialog', () {
-    _testDialog();
+  group('route', () {
+    _testRoute();
   });
   group('focusable', () {
     _testFocusable();
@@ -110,7 +113,7 @@ void runSemanticsTests() {
   });
 }
 
-void _testPrimaryRoleManager() {
+void _testSemanticRole() {
   test('Sets id and flt-semantics-identifier on the element', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -172,8 +175,8 @@ void _testPrimaryRoleManager() {
   });
 }
 
-void _testRoleManagerLifecycle() {
-  test('Secondary role managers are added upon node initialization', () {
+void _testRoleLifecycle() {
+  test('Semantic behaviors are added upon node initialization', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -191,10 +194,10 @@ void _testRoleManagerLifecycle() {
       tester.expectSemantics('<sem role="button"></sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.semanticRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, -1);
     }
@@ -214,10 +217,10 @@ void _testRoleManagerLifecycle() {
       tester.expectSemantics('<sem role="button">a label</sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.semanticRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, 0);
     }
@@ -658,16 +661,16 @@ void _testEngineSemanticsOwner() {
       SemanticsUpdatePhase.idle,
     );
 
-    // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager = MockRoleManager(PrimaryRole.generic, semanticsObject);
-    semanticsObject.primaryRole = mockRoleManager;
+    // Rudely replace the role with a mock, and trigger an update.
+    final MockRole mockRole = MockRole(SemanticRoleKind.generic, semanticsObject);
+    semanticsObject.semanticRole = mockRole;
 
     pumpSemantics(label: 'World');
 
     expect(
       reason: 'While updating must be in SemanticsUpdatePhase.updating phase',
-      mockRoleManager.log,
-      <MockRoleManagerLogEntry>[
+      mockRole.log,
+      <MockRoleLogEntry>[
         (method: 'update', phase: SemanticsUpdatePhase.updating),
       ],
     );
@@ -676,15 +679,15 @@ void _testEngineSemanticsOwner() {
   });
 }
 
-typedef MockRoleManagerLogEntry = ({
+typedef MockRoleLogEntry = ({
   String method,
   SemanticsUpdatePhase phase,
 });
 
-class MockRoleManager extends PrimaryRoleManager {
-  MockRoleManager(super.role, super.semanticsObject) : super.blank();
+class MockRole extends SemanticRole {
+  MockRole(super.role, super.semanticsObject) : super.blank();
 
-  final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
+  final List<MockRoleLogEntry> log = <MockRoleLogEntry>[];
 
   void _log(String method) {
     log.add((
@@ -790,7 +793,9 @@ void _testHeader() {
 
     semantics().semanticsEnabled = false;
   });
+}
 
+void _testHeading() {
   test('renders aria-level tag for headings with heading level', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -800,14 +805,13 @@ void _testHeader() {
     updateNode(
       builder,
       headingLevel: 2,
+      label: 'This is a heading',
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem aria-level="2" role="heading" style="filter: opacity(0%); color: rgba(0, 0, 0, 0)"></sem>
-''');
+    expectSemanticsTree(owner(), '<h2>This is a heading</h2>');
 
     semantics().semanticsEnabled = false;
   });
@@ -878,9 +882,9 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -911,9 +915,9 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -1397,7 +1401,7 @@ void _testVerticalScrolling() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem style="touch-action: none; overflow-y: scroll">
+<sem role="group" style="touch-action: none; overflow-y: scroll">
 <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
 </sem>''');
 
@@ -1550,7 +1554,7 @@ void _testHorizontalScrolling() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem style="touch-action: none; overflow-x: scroll">
+<sem role="group" style="touch-action: none; overflow-x: scroll">
 <flt-semantics-scroll-overflow></flt-semantics-scroll-overflow>
 </sem>''');
 
@@ -1706,11 +1710,11 @@ void _testIncrementables() {
 </sem>''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.incrementable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1840,9 +1844,22 @@ void _testIncrementables() {
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
-    ]);
+    expect(
+      reason: 'Framework requested focus. No need to circle the event back to the framework.',
+      capturedActions,
+      isEmpty,
+    );
+    capturedActions.clear();
+
+    element.blur();
+    element.focusWithoutScroll();
+    expect(
+      reason: 'Browser-initiated focus even should be communicated to the framework.',
+      capturedActions,
+      <CapturedAction>[
+        (0, ui.SemanticsAction.focus, null),
+      ],
+    );
     capturedActions.clear();
 
     pumpSemantics(isFocused: false);
@@ -1852,10 +1869,12 @@ void _testIncrementables() {
       isEmpty,
     );
 
+    // The web doesn't send didLoseAccessibilityFocus as on the web,
+    // accessibility focus is not observable, only input focus is. As of this
+    // writing, there is no SemanticsAction.unfocus action, so the test simply
+    // asserts that no actions are being sent as a result of blur.
     element.blur();
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
-    ]);
+    expect(capturedActions, isEmpty);
 
     semantics().semanticsEnabled = false;
   });
@@ -1886,61 +1905,24 @@ void _testTextField() {
 
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
+    final SemanticTextField textFieldRole = node.semanticRole! as SemanticTextField;
+    final DomHTMLInputElement inputElement = textFieldRole.editableElement as DomHTMLInputElement;
 
     // TODO(yjbanov): this used to attempt to test that value="hello" but the
     //                test was a false positive. We should revise this test and
     //                make sure it tests the right things:
     //                https://github.com/flutter/flutter/issues/147200
-    expect(
-      (node.element as DomHTMLInputElement).value,
-      isNull,
-    );
+    expect(inputElement.value, '');
 
-    expect(node.primaryRole?.role, PrimaryRole.textField);
+    expect(node.semanticRole?.kind, SemanticRoleKind.textField);
     expect(
       reason: 'Text fields use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
   });
-
-  // TODO(yjbanov): this test will need to be adjusted for Safari when we add
-  //                Safari testing.
-  test('sends a focus action when text field is activated', () async {
-    final SemanticsActionLogger logger = SemanticsActionLogger();
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
-
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      actions: 0 | ui.SemanticsAction.didGainAccessibilityFocus.index,
-      flags: 0 | ui.SemanticsFlag.isTextField.index,
-      value: 'hello',
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-    );
-
-    owner().updateSemantics(builder.build());
-
-    final DomElement textField =
-        owner().semanticsHost.querySelector('input[data-semantics-role="text-field"]')!;
-
-    expect(owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
-
-    textField.focus();
-
-    expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
-    expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first, ui.SemanticsAction.didGainAccessibilityFocus);
-
-    semantics().semanticsEnabled = false;
-  }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
-      skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.blink);
 }
 
 void _testCheckables() {
@@ -1970,11 +1952,11 @@ void _testCheckables() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.checkable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.checkable);
     expect(
-      reason: 'Checkables use generic secondary roles',
-      node.primaryRole!.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      reason: 'Checkables use generic semantic behaviors',
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
 
     semantics().semanticsEnabled = false;
@@ -2220,26 +2202,29 @@ void _testCheckables() {
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
-    ]);
+    expect(
+      reason: 'Framework requested focus. No need to circle the event back to the framework.',
+      capturedActions,
+      isEmpty,
+    );
     capturedActions.clear();
 
-    // The framework removes focus from the widget (i.e. "blurs" it). Since the
-    // blurring is initiated by the framework, there's no need to send any
-    // notifications back to the framework about it.
-    pumpSemantics(isFocused: false);
+    // The web doesn't send didLoseAccessibilityFocus as on the web,
+    // accessibility focus is not observable, only input focus is. As of this
+    // writing, there is no SemanticsAction.unfocus action, so the test simply
+    // asserts that no actions are being sent as a result of blur.
+    element.blur();
     expect(capturedActions, isEmpty);
 
-    // If the element is blurred by the browser, then we do want to notify the
-    // framework. This is because screen reader can be focused on something
-    // other than what the framework is focused on, and notifying the framework
-    // about the loss of focus on a node is information that the framework did
-    // not have before.
-    element.blur();
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
-    ]);
+    element.focusWithoutScroll();
+    expect(
+      reason: 'Browser-initiated focus even should be communicated to the framework.',
+      capturedActions,
+      <CapturedAction>[
+        (0, ui.SemanticsAction.focus, null),
+      ],
+    );
+    capturedActions.clear();
 
     semantics().semanticsEnabled = false;
   });
@@ -2268,10 +2253,10 @@ void _testTappable() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.button);
+    expect(node.semanticRole?.kind, SemanticRoleKind.button);
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      node.semanticRole?.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
@@ -2404,18 +2389,33 @@ void _testTappable() {
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
-    ]);
+    expect(
+      reason: 'Framework requested focus. No need to circle the event back to the framework.',
+      capturedActions,
+      isEmpty,
+    );
+    expect(domDocument.activeElement, element);
+    capturedActions.clear();
+
+    // The web doesn't send didLoseAccessibilityFocus as on the web,
+    // accessibility focus is not observable, only input focus is. As of this
+    // writing, there is no SemanticsAction.unfocus action, so the test simply
+    // asserts that no actions are being sent as a result of blur.
+    element.blur();
+    expect(capturedActions, isEmpty);
+
+    element.focusWithoutScroll();
+    expect(
+      reason: 'Browser-initiated focus even should be communicated to the framework.',
+      capturedActions,
+      <CapturedAction>[
+        (0, ui.SemanticsAction.focus, null),
+      ],
+    );
     capturedActions.clear();
 
     pumpSemantics(isFocused: false);
     expect(capturedActions, isEmpty);
-
-    element.blur();
-    expect(capturedActions, <CapturedAction>[
-      (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
-    ]);
 
     semantics().semanticsEnabled = false;
   });
@@ -2970,7 +2970,7 @@ void _testGroup() {
   });
 }
 
-void _testDialog() {
+void _testRoute() {
   test('renders named and labeled routes', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -2979,7 +2979,7 @@ void _testDialog() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      label: 'this is a dialog label',
+      label: 'this is a route label',
       flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
@@ -2995,12 +2995,12 @@ void _testDialog() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-      <sem role="dialog" aria-label="this is a dialog label"><sem-c><sem></sem></sem-c></sem>
+      <sem role="dialog" aria-label="this is a route label"><sem-c><sem></sem></sem-c></sem>
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
 
     semantics().semanticsEnabled = false;
@@ -3034,7 +3034,7 @@ void _testDialog() {
     expect(
       warnings,
       <String>[
-        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
+        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled route, but it is missing the label. A route should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
       ],
     );
 
@@ -3044,14 +3044,14 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
 
     semantics().semanticsEnabled = false;
   });
 
-  test('dialog can be described by a descendant', () {
+  test('route can be described by a descendant', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3090,27 +3090,27 @@ void _testDialog() {
       ''');
     }
 
-    pumpSemantics(label: 'Dialog label');
+    pumpSemantics(label: 'Route label');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.role,
-      PrimaryRole.generic,
+      owner().debugSemanticsTree![2]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
-    pumpSemantics(label: 'Updated dialog label');
+    pumpSemantics(label: 'Updated route label');
 
     semantics().semanticsEnabled = false;
   });
 
-  test('scopesRoute alone sets the dialog role with no label', () {
+  test('scopesRoute alone sets the SemanticRoute role with no label', () {
     final List<String> warnings = <String>[];
     printWarning = warnings.add;
 
@@ -3131,12 +3131,12 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.secondaryRoleManagers,
-      isNot(contains(Role.routeName)),
+      owner().debugSemanticsTree![0]!.semanticRole?.behaviors,
+      isNot(contains(RouteName)),
     );
 
     semantics().semanticsEnabled = false;
@@ -3179,18 +3179,18 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.generic,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
     semantics().semanticsEnabled = false;
   });
 
-  // Test the simple scenario of a dialog coming up and containing focusable
+  // Test the simple scenario of a route coming up and containing focusable
   // descendants that are not initially focused. The expectation is that the
   // first descendant will be auto-focused.
   test('focuses on the first unfocused Focusable', () async {
@@ -3242,19 +3242,15 @@ void _testDialog() {
     );
     tester.apply();
 
-    expect(
-      capturedActions,
-      <CapturedAction>[
-        (2, ui.SemanticsAction.didGainAccessibilityFocus, null),
-      ],
-    );
+    // Auto-focus does not notify the framework about the focused widget.
+    expect(capturedActions, isEmpty);
 
     semantics().semanticsEnabled = false;
   });
 
-  // Test the scenario of a dialog coming up and containing focusable
+  // Test the scenario of a route coming up and containing focusable
   // descendants with one of them explicitly requesting focus. The expectation
-  // is that the dialog will not attempt to auto-focus on anything and let the
+  // is that the route will not attempt to auto-focus on anything and let the
   // respective descendant take focus.
   test('does nothing if a descendant asks for focus explicitly', () async {
     semantics()
@@ -3304,17 +3300,13 @@ void _testDialog() {
     );
     tester.apply();
 
-    expect(
-      capturedActions,
-      <CapturedAction>[
-        (3, ui.SemanticsAction.didGainAccessibilityFocus, null),
-      ],
-    );
+    // Auto-focus does not notify the framework about the focused widget.
+    expect(capturedActions, isEmpty);
 
     semantics().semanticsEnabled = false;
   });
 
-  // Test the scenario of a dialog coming up and containing non-focusable
+  // Test the scenario of a route coming up and containing non-focusable
   // descendants that can have a11y focus. The expectation is that the first
   // descendant will be auto-focused, even if it's not input-focusable.
   test('focuses on the first non-focusable descedant', () async {
@@ -3386,8 +3378,8 @@ void _testDialog() {
   });
 
   // This mostly makes sure the engine doesn't crash if given a completely empty
-  // dialog trying to find something to focus on.
-  test('does nothing if nothing is focusable inside the dialog', () async {
+  // route trying to find something to focus on.
+  test('does nothing if nothing is focusable inside the route', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3456,10 +3448,7 @@ void _testFocusable() {
     manager.changeFocus(true);
     pumpSemantics(); // triggers post-update callbacks
     expect(domDocument.activeElement, element);
-    expect(capturedActions, <CapturedAction>[
-      (1, ui.SemanticsAction.didGainAccessibilityFocus, null),
-    ]);
-    capturedActions.clear();
+    expect(capturedActions, isEmpty);
 
     // Give up focus
     manager.changeFocus(false);
@@ -3470,19 +3459,17 @@ void _testFocusable() {
     // Browser blurs the element
     element.blur();
     expect(domDocument.activeElement, isNot(element));
-    expect(capturedActions, <CapturedAction>[
-      (1, ui.SemanticsAction.didLoseAccessibilityFocus, null),
-    ]);
-    capturedActions.clear();
+    // The web doesn't send didLoseAccessibilityFocus as on the web,
+    // accessibility focus is not observable, only input focus is. As of this
+    // writing, there is no SemanticsAction.unfocus action, so the test simply
+    // asserts that no actions are being sent as a result of blur.
+    expect(capturedActions, isEmpty);
 
     // Request focus again
     manager.changeFocus(true);
     pumpSemantics(); // triggers post-update callbacks
     expect(domDocument.activeElement, element);
-    expect(capturedActions, <CapturedAction>[
-      (1, ui.SemanticsAction.didGainAccessibilityFocus, null),
-    ]);
-    capturedActions.clear();
+    expect(capturedActions, isEmpty);
 
     // Double-request focus
     manager.changeFocus(true);
@@ -3491,6 +3478,16 @@ void _testFocusable() {
     expect(
       reason: 'Nothing should be sent to the framework on focus re-request.',
       capturedActions, isEmpty);
+    capturedActions.clear();
+
+    // Blur and emulate browser requesting focus
+    element.blur();
+    expect(domDocument.activeElement, isNot(element));
+    element.focusWithoutScroll();
+    expect(domDocument.activeElement, element);
+    expect(capturedActions, <CapturedAction>[
+      (1, ui.SemanticsAction.focus, null),
+    ]);
     capturedActions.clear();
 
     // Stop managing
@@ -3553,12 +3550,12 @@ void _testFocusable() {
     final SemanticsObject node = owner().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
     expect(
-      node.primaryRole?.role,
-      PrimaryRole.generic,
+      node.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      contains(Role.focusable),
+      node.semanticRole?.debugSemanticBehaviorTypes,
+      contains(Focusable),
     );
 
     final DomElement element = node.element;
@@ -3603,6 +3600,28 @@ void _testLink() {
     expect(object.element.tagName.toLowerCase(), 'a');
     expect(object.element.hasAttribute('href'), isFalse);
   });
+
+  test('link nodes with linkUrl set the href attribute', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        isLink: true,
+        linkUrl: 'https://flutter.dev',
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.element.tagName.toLowerCase(), 'a');
+    expect(object.element.getAttribute('href'), 'https://flutter.dev');
+  });
 }
 
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
@@ -3645,6 +3664,7 @@ void updateNode(
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
   int headingLevel = 0,
+  String? linkUrl,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);
@@ -3685,6 +3705,7 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
     headingLevel: headingLevel,
+    linkUrl: linkUrl,
   );
 }
 

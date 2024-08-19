@@ -3,7 +3,7 @@ publish_to: none
 
 # Keep the SDK version range in sync with pubspecs under web_sdk
 environment:
-  sdk: '>=3.2.0-0 <4.0.0'
+  sdk: '>=3.6.0-0 <4.0.0'
 
 dependencies:
   js: ^0.7.0
@@ -41,7 +41,6 @@ dev_dependencies:
   test_api: any
   test_core: any
   typed_data: any
-  uuid: 4.1.0
   watcher: 1.1.0
   web_socket_channel: any
   webdriver: 3.0.3
@@ -57,3 +56,7 @@ dev_dependencies:
 dependency_overrides:
   engine_repo_tools:
     path: ../../tools/pkg/engine_repo_tools
+  git_repo_tools:
+    path: ../../tools/pkg/git_repo_tools
+  skia_gold_client:
+    path: ../../testing/skia_gold_client

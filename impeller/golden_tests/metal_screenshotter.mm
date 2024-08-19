@@ -31,30 +31,38 @@ std::unique_ptr<Screenshot> MetalScreenshotter::MakeScreenshot(
       aiks_context,
       ISize(size.width * content_scale.x, size.height * content_scale.y));
   std::shared_ptr<Texture> texture = image->GetTexture();
-  id<MTLTexture> metal_texture =
-      std::static_pointer_cast<TextureMTL>(texture)->GetMTLTexture();
+  return MakeScreenshot(aiks_context, texture);
+}
 
-  CGColorSpaceRef color_space = CGColorSpaceCreateDeviceRGB();
-  CIImage* ciImage = [[CIImage alloc]
-      initWithMTLTexture:metal_texture
-                 options:@{kCIImageColorSpace : (__bridge id)color_space}];
-  CGColorSpaceRelease(color_space);
-  FML_CHECK(ciImage);
+std::unique_ptr<Screenshot> MetalScreenshotter::MakeScreenshot(
+    AiksContext& aiks_context,
+    const std::shared_ptr<Texture> texture) {
+  @autoreleasepool {
+    id<MTLTexture> metal_texture =
+        std::static_pointer_cast<TextureMTL>(texture)->GetMTLTexture();
 
-  std::shared_ptr<Context> context = playground_->GetContext();
-  std::shared_ptr<ContextMTL> context_mtl =
-      std::static_pointer_cast<ContextMTL>(context);
-  CIContext* cicontext =
-      [CIContext contextWithMTLDevice:context_mtl->GetMTLDevice()];
-  FML_CHECK(context);
+    CGColorSpaceRef color_space = CGColorSpaceCreateDeviceRGB();
+    CIImage* ciImage = [[CIImage alloc]
+        initWithMTLTexture:metal_texture
+                   options:@{kCIImageColorSpace : (__bridge id)color_space}];
+    CGColorSpaceRelease(color_space);
+    FML_CHECK(ciImage);
 
-  CIImage* flipped = [ciImage
-      imageByApplyingOrientation:kCGImagePropertyOrientationDownMirrored];
+    std::shared_ptr<Context> context = playground_->GetContext();
+    std::shared_ptr<ContextMTL> context_mtl =
+        std::static_pointer_cast<ContextMTL>(context);
+    CIContext* cicontext =
+        [CIContext contextWithMTLDevice:context_mtl->GetMTLDevice()];
+    FML_CHECK(context);
 
-  CGImageRef cgImage = [cicontext createCGImage:flipped
-                                       fromRect:[ciImage extent]];
+    CIImage* flipped = [ciImage
+        imageByApplyingOrientation:kCGImagePropertyOrientationDownMirrored];
 
-  return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));
+    CGImageRef cgImage = [cicontext createCGImage:flipped
+                                         fromRect:[ciImage extent]];
+
+    return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));
+  }
 }
 
 }  // namespace testing

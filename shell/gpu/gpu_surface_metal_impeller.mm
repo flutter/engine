@@ -6,6 +6,8 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+#include "flow/surface.h"
+#include "flow/surface_frame.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
@@ -17,28 +19,15 @@
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
-#define ENABLE_EXPERIMENTAL_CANVAS false
-
 namespace flutter {
-
-static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
-    std::shared_ptr<impeller::Context> context) {
-  auto renderer = std::make_shared<impeller::Renderer>(std::move(context));
-  if (!renderer->IsValid()) {
-    FML_LOG(ERROR) << "Could not create valid Impeller Renderer.";
-    return nullptr;
-  }
-  return renderer;
-}
 
 GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
                                                  const std::shared_ptr<impeller::Context>& context,
                                                  bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
-      impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
-          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr,
+          std::make_shared<impeller::AiksContext>(context,
                                                   impeller::TypographerContextSkia::Make())),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
@@ -73,7 +62,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },
+        [](const SurfaceFrame& surface_frame) { return true; }, frame_size);
   }
 
   switch (render_target_type_) {
@@ -99,8 +89,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
   auto* mtl_layer = (CAMetalLayer*)layer;
 
-  auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
-      impeller_renderer_->GetContext(), mtl_layer);
+  auto drawable =
+      impeller::SurfaceMTL::GetMetalDrawableAndValidate(aiks_context_->GetContext(), mtl_layer);
   if (!drawable) {
     return nullptr;
   }
@@ -108,15 +98,22 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
     last_texture_.reset([drawable.texture retain]);
   }
 
+#ifdef IMPELLER_DEBUG
+  impeller::ContextMTL::Cast(*aiks_context_->GetContext()).GetCaptureManager()->StartCapture();
+#endif  // IMPELLER_DEBUG
+
   id<MTLTexture> last_texture = static_cast<id<MTLTexture>>(last_texture_);
-  SurfaceFrame::SubmitCallback submit_callback =
+
+  SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([damage = damage_,
                          disable_partial_repaint = disable_partial_repaint_,  //
-                         renderer = impeller_renderer_,                       //
                          aiks_context = aiks_context_,                        //
                          drawable,                                            //
-                         last_texture                                         //
+                         last_texture,                                        //
+                         mtl_layer                                            //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
+        mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
+
         if (!aiks_context) {
           return false;
         }
@@ -149,7 +146,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
                                                 buffer_damage->width(), buffer_damage->height());
         }
 
-        auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(renderer->GetContext(),
+        auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(aiks_context->GetContext(),
                                                                         drawable, clip_rect);
 
         // The surface may be null if we failed to allocate the onscreen render target
@@ -157,43 +154,55 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         if (!surface) {
           return false;
         }
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
 
         if (clip_rect && clip_rect->IsEmpty()) {
-          return surface->Present();
+          if (!surface->PreparePresent()) {
+            return false;
+          }
+          surface_frame.set_user_data(std::move(surface));
+          return true;
         }
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 
-#if ENABLE_EXPERIMENTAL_CANVAS
+        impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
+        surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
+
+#if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
-        return renderer->Render(
-            std::move(surface),
-            fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
-                               &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
-              impeller::ExperimentalDlDispatcher impeller_dispatcher(
-                  aiks_context->GetContentContext(), render_target,
-                  display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
-                  cull_rect);
-              display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
-              impeller_dispatcher.FinishRecording();
-              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
-              aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-              return true;
-            }));
+
+        impeller::ExperimentalDlDispatcher impeller_dispatcher(
+            aiks_context->GetContentContext(), render_target,
+            display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
+            cull_rect);
+        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+        impeller_dispatcher.FinishRecording();
+        aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+        if (reset_host_buffer) {
+          aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+        }
+
+        if (!surface->PreparePresent()) {
+          return false;
+        }
+        surface_frame.set_user_data(std::move(surface));
+        return true;
 #else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
+        auto result = aiks_context->Render(picture, render_target, reset_host_buffer);
 
-        return renderer->Render(
-            std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                  impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
-            }));
+        if (!surface->PreparePresent()) {
+          return false;
+        }
+        surface_frame.set_user_data(std::move(surface));
+        return result;
 #endif
       });
 
@@ -211,12 +220,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
     framebuffer_info.supports_partial_repaint = true;
   }
 
-  return std::make_unique<SurfaceFrame>(nullptr,           // surface
-                                        framebuffer_info,  // framebuffer info
-                                        submit_callback,   // submit callback
-                                        frame_size,        // frame size
-                                        nullptr,           // context result
-                                        true               // display list fallback
+  return std::make_unique<SurfaceFrame>(
+      nullptr,           // surface
+      framebuffer_info,  // framebuffer info
+      encode_callback,   // submit callback
+      [](SurfaceFrame& surface_frame) { return surface_frame.take_user_data()->Present(); },
+      frame_size,  // frame size
+      nullptr,     // context result
+      true         // display list fallback
   );
 }
 
@@ -234,14 +245,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
     last_texture_.reset([mtl_texture retain]);
   }
 
-  SurfaceFrame::SubmitCallback submit_callback =
+#ifdef IMPELLER_DEBUG
+  impeller::ContextMTL::Cast(*aiks_context_->GetContext()).GetCaptureManager()->StartCapture();
+#endif  // IMPELLER_DEBUG
+
+  SurfaceFrame::EncodeCallback encode_callback =
       fml::MakeCopyable([disable_partial_repaint = disable_partial_repaint_,  //
                          damage = damage_,
-                         renderer = impeller_renderer_,  //
-                         aiks_context = aiks_context_,   //
-                         texture_info,                   //
-                         mtl_texture,                    //
-                         delegate = delegate_            //
+                         aiks_context = aiks_context_,  //
+                         mtl_texture                    //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
@@ -275,50 +287,57 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
                                                 buffer_damage->width(), buffer_damage->height());
         }
 
-        auto surface =
-            impeller::SurfaceMTL::MakeFromTexture(renderer->GetContext(), mtl_texture, clip_rect);
+        auto surface = impeller::SurfaceMTL::MakeFromTexture(aiks_context->GetContext(),
+                                                             mtl_texture, clip_rect);
+
+        surface->PresentWithTransaction(surface_frame.submit_info().present_with_transaction);
 
         if (clip_rect && clip_rect->IsEmpty()) {
+          if (!surface->PreparePresent()) {
+            return false;
+          }
           return surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
-        bool render_result = renderer->Render(
-            std::move(surface),
-            fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
-                               &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
-              impeller::ExperimentalDlDispatcher impeller_dispatcher(
-                  aiks_context->GetContentContext(), render_target, cull_rect);
-              display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
-              impeller_dispatcher.FinishRecording();
-              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
-              aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-              return true;
-            }));
+        impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
+        impeller::ExperimentalDlDispatcher impeller_dispatcher(
+            aiks_context->GetContentContext(), render_target,
+            display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
+            cull_rect);
+        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+        impeller_dispatcher.FinishRecording();
+        aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+        aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+        if (!surface->PreparePresent()) {
+          return false;
+        }
+        bool render_result = true;
 #else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
-        bool render_result = renderer->Render(
-            std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                  impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
-            }));
+        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
+        const impeller::RenderTarget& render_target = surface->GetTargetRenderPassDescriptor();
+        bool render_result = aiks_context->Render(picture, render_target, reset_host_buffer);
 #endif
         if (!render_result) {
           FML_LOG(ERROR) << "Failed to render Impeller frame";
           return false;
         }
-
-        return delegate->PresentTexture(texture_info);
+        return surface->PreparePresent();
       });
+
+  SurfaceFrame::SubmitCallback submit_callback =
+      [texture_info, delegate = delegate_](const SurfaceFrame& surface_frame) {
+        return delegate->PresentTexture(texture_info);
+      };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
@@ -336,10 +355,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 
   return std::make_unique<SurfaceFrame>(nullptr,           // surface
                                         framebuffer_info,  // framebuffer info
-                                        submit_callback,   // submit callback
-                                        frame_size,        // frame size
-                                        nullptr,           // context result
-                                        true               // display list fallback
+                                        encode_callback,
+                                        submit_callback,  // submit callback
+                                        frame_size,       // frame size
+                                        nullptr,          // context result
+                                        true              // display list fallback
   );
 }
 
