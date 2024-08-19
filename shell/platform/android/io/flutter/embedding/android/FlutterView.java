@@ -772,6 +772,15 @@ public class FlutterView extends FrameLayout
       viewportMetrics.viewInsetLeft = 0;
     }
 
+    // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
+    // bounding Rects instead of an Insets object, which is a newer API method, as compared to the
+    // existing Insets-based method calls above.
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
+      delegate.growViewportMetricsToCaptionBar(getContext(), viewportMetrics);
+    } else {
+      Log.w(TAG, "API level " + Build.VERSION.SDK_INT + " is too low to query bounding rects.");
+    }
+
     Log.v(
         TAG,
         "Updating window insets (onApplyWindowInsets()):\n"
@@ -1467,12 +1476,6 @@ public class FlutterView extends FrameLayout
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-
-    if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
-      delegate.growViewportMetricsToCaptionBar(getContext(), viewportMetrics);
-    } else {
-      Log.w(TAG, "API level " + Build.VERSION.SDK_INT + " is too low to query bounding rects.");
-    }
 
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }

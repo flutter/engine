@@ -56,12 +56,9 @@ public class FlutterViewDelegate {
   public void growViewportMetricsToCaptionBar(
       Context context, FlutterRenderer.ViewportMetrics viewportMetrics) {
     List<Rect> boundingRects = getCaptionBarInsets(context);
-    int padding = viewportMetrics.viewPaddingTop;
+    int viewPaddingTop = viewportMetrics.viewPaddingTop;
     for (Rect rect : boundingRects) {
-      padding = Math.max(padding, rect.bottom);
-    }
-    if (boundingRects.size() != 1) {
-      return;
+      viewPaddingTop = Math.max(viewPaddingTop, rect.bottom);
     }
     // The value getCaptionBarInset returns is only the bounding rects of the caption bar.
     // When assigning the new value of viewPaddingTop, the maximum is taken with its old value
@@ -69,6 +66,6 @@ public class FlutterViewDelegate {
     // is not destroyed by this operation.
     // Any potential update that will allow the caption bar to be positioned somewhere other than
     // the top of the app window will require that this method be rewritten.
-    viewportMetrics.viewPaddingTop = padding;
+    viewportMetrics.viewPaddingTop = viewPaddingTop;
   }
 }
