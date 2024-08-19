@@ -155,8 +155,8 @@ bool BlitPassVK::OnCopyTextureToTextureCommand(
     blit.srcOffsets[1].z = 1u;
 
     // offsets[0] is origin.
-    blit.dstOffsets[1].x = std::max<int32_t>(source->GetSize().width, 1u);
-    blit.dstOffsets[1].y = std::max<int32_t>(source->GetSize().height, 1u);
+    blit.dstOffsets[1].x = std::max<int32_t>(destination->GetSize().width, 1u);
+    blit.dstOffsets[1].y = std::max<int32_t>(destination->GetSize().height, 1u);
     blit.dstOffsets[1].z = 1u;
 
     cmd_buffer.blitImage(src.GetImage(),          //
