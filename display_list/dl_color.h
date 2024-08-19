@@ -11,6 +11,12 @@ namespace flutter {
 
 enum class DlColorSpace { kSRGB = 0, kExtendedSRGB = 1, kDisplayP3 = 2 };
 
+/// A representation of a color.
+///
+/// The color belongs to a DlColorSpace. Using deprecated integer data accessors
+/// on colors not in the kSRGB colorspace can lead to data loss. Using the
+/// floating point accessors and constructors that were added for wide-gamut
+/// support are preferred.
 struct DlColor {
  public:
   constexpr DlColor()
