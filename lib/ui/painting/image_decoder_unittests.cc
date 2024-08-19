@@ -341,8 +341,8 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 
   auto cb = [&result_image, &error_message](sk_sp<DlImage> image,
                                             std::string message) {
-    result_image = image;
-    error_message = message;
+    result_image = std::move(image);
+    error_message = std::move(message);
   };
 
   ImageDecoderImpeller::UploadTextureToPrivate(
