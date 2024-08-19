@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "fml/closure.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/capabilities.h"
@@ -182,8 +183,8 @@ class Context {
   /// Threadsafe.
   ///
   /// `task` will be executed on the platform thread.
-  virtual void StoreTaskForGPU(const std::function<void()>& task,
-                               const std::function<void()>& failure) {
+  virtual void StoreTaskForGPU(const fml::closure& task,
+                               const fml::closure& failure) {
     FML_CHECK(false && "not supported in this context");
   }
 

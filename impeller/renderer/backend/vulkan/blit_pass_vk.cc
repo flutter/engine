@@ -112,28 +112,63 @@ bool BlitPassVK::OnCopyTextureToTextureCommand(
     return false;
   }
 
-  vk::ImageCopy image_copy;
+  // If the source and destination are the same size then use copyImage,
+  // otherwise perform a blit with a linear filter.
+  if (source->GetSize() == destination->GetSize()) {
+    vk::ImageCopy image_copy;
 
-  image_copy.setSrcSubresource(
-      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
-  image_copy.setDstSubresource(
-      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+    image_copy.setSrcSubresource(
+        vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+    image_copy.setDstSubresource(
+        vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
 
-  image_copy.srcOffset =
-      vk::Offset3D(source_region.GetX(), source_region.GetY(), 0);
-  image_copy.dstOffset =
-      vk::Offset3D(destination_origin.x, destination_origin.y, 0);
-  image_copy.extent =
-      vk::Extent3D(source_region.GetWidth(), source_region.GetHeight(), 1);
+    image_copy.srcOffset =
+        vk::Offset3D(source_region.GetX(), source_region.GetY(), 0);
+    image_copy.dstOffset =
+        vk::Offset3D(destination_origin.x, destination_origin.y, 0);
+    image_copy.extent =
+        vk::Extent3D(source_region.GetWidth(), source_region.GetHeight(), 1);
 
-  // Issue the copy command now that the images are already in the right
-  // layouts.
-  cmd_buffer.copyImage(src.GetImage(),          //
-                       src_barrier.new_layout,  //
-                       dst.GetImage(),          //
-                       dst_barrier.new_layout,  //
-                       image_copy               //
-  );
+    // Issue the copy command now that the images are already in the right
+    // layouts.
+    cmd_buffer.copyImage(src.GetImage(),          //
+                         src_barrier.new_layout,  //
+                         dst.GetImage(),          //
+                         dst_barrier.new_layout,  //
+                         image_copy               //
+    );
+  } else {
+    vk::ImageBlit blit;
+    blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    blit.srcSubresource.baseArrayLayer = 0u;
+    blit.srcSubresource.layerCount = 1u;
+    blit.srcSubresource.mipLevel = 0;
+
+    blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    blit.dstSubresource.baseArrayLayer = 0u;
+    blit.dstSubresource.layerCount = 1u;
+    blit.dstSubresource.mipLevel = 0;
+
+    // offsets[0] is origin.
+    blit.srcOffsets[1].x = std::max<int32_t>(source->GetSize().width, 1u);
+    blit.srcOffsets[1].y = std::max<int32_t>(source->GetSize().height, 1u);
+    blit.srcOffsets[1].z = 1u;
+
+    // offsets[0] is origin.
+    blit.dstOffsets[1].x = std::max<int32_t>(source->GetSize().width, 1u);
+    blit.dstOffsets[1].y = std::max<int32_t>(source->GetSize().height, 1u);
+    blit.dstOffsets[1].z = 1u;
+
+    cmd_buffer.blitImage(src.GetImage(),          //
+                         src_barrier.new_layout,  //
+                         dst.GetImage(),          //
+                         dst_barrier.new_layout,  //
+                         1,                       //
+                         &blit,                   //
+                         vk::Filter::eLinear
+
+    );
+  }
 
   // If this is an onscreen texture, do not transition the layout
   // back to shader read.

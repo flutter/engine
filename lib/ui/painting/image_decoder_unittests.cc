@@ -796,17 +796,27 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
 #if IMPELLER_SUPPORTS_RENDERING
   // Bitmap sizes reflect the original image size as resizing is done on the
-  // GPU.
+  // GPU if the src size is smaller than the max texture size.
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
-      descriptor.get(), SkISize::Make(6, 2), {100, 100},
+      descriptor.get(), SkISize::Make(6, 2), {1000, 1000},
       /*supports_wide_gamut=*/false, allocator);
   EXPECT_EQ(result_1.sk_bitmap->width(), 75);
   EXPECT_EQ(result_1.sk_bitmap->height(), 25);
 
-  // Impeller still performs a CPU resize if the src size is larger than the
-  // max texture size.
+  // Bitmap sizes reflect the scaled size if the source size is larger than
+  // max texture size even if destination size isn't max texture size.
+  std::shared_ptr<impeller::Allocator> allocator =
+      std::make_shared<impeller::TestImpellerAllocator>();
+  auto result_1 = ImageDecoderImpeller::DecompressTexture(
+      descriptor.get(), SkISize::Make(6, 2), {10, 10},
+      /*supports_wide_gamut=*/false, allocator);
+  EXPECT_EQ(result_1.sk_bitmap->width(), 6);
+  EXPECT_EQ(result_1.sk_bitmap->height(), 2);
+
+  // If the destination size is larger than the max texture size the image
+  // is scaled down.
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
       /*supports_wide_gamut=*/false, allocator);

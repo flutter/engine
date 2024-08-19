@@ -285,12 +285,9 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info,
-    const std::optional<SkImageInfo>& resize_info,
-    bool create_mips) {
+    const std::optional<SkImageInfo>& resize_info) {
   const auto pixel_format =
       impeller::skia_conversions::ToPixelFormat(image_info.colorType());
-  // mips should still be created if the source image is being resized.
-  const bool should_create_mips = create_mips || resize_info.has_value();
   if (!pixel_format) {
     std::string decode_error(impeller::SPrintF(
         "Unsupported pixel format (SkColorType=%d)", image_info.colorType()));
@@ -302,8 +299,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
   texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
-  texture_descriptor.mip_count =
-      should_create_mips ? texture_descriptor.size.MipCount() : 1;
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
   texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
@@ -346,7 +342,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     resize_desc.storage_mode = impeller::StorageMode::kDevicePrivate;
     resize_desc.format = pixel_format.value();
     resize_desc.size = {resize_info->width(), resize_info->height()};
-    resize_desc.mip_count = create_mips ? resize_desc.size.MipCount() : 1;
+    resize_desc.mip_count = resize_desc.size.MipCount();
     resize_desc.compression_type = impeller::CompressionType::kLossy;
 
     auto resize_texture =
@@ -367,7 +363,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
   blit_pass->EncodeCommands(context->GetResourceAllocator());
 
   if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
-    std::string decode_error("Failed to submit image deocding command buffer.");
+    std::string decode_error("Failed to submit image decoding command buffer.");
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
   }
@@ -384,8 +380,7 @@ void ImageDecoderImpeller::UploadTextureToPrivate(
     const SkImageInfo& image_info,
     const std::shared_ptr<SkBitmap>& bitmap,
     const std::optional<SkImageInfo>& resize_info,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
-    bool create_mips) {
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context) {
     result(nullptr, "No Impeller context is available");
@@ -398,29 +393,26 @@ void ImageDecoderImpeller::UploadTextureToPrivate(
 
   gpu_disabled_switch->Execute(
       fml::SyncSwitch::Handlers()
-          .SetIfFalse(
-              [&result, context, buffer, image_info, resize_info, create_mips] {
-                sk_sp<DlImage> image;
-                std::string decode_error;
-                std::tie(image, decode_error) = std::tie(image, decode_error) =
-                    UnsafeUploadTextureToPrivate(context, buffer, image_info,
-                                                 resize_info, create_mips);
-                result(image, decode_error);
-              })
-          .SetIfTrue([&result, context, buffer, image_info, resize_info,
-                      create_mips] {
+          .SetIfFalse([&result, context, buffer, image_info, resize_info] {
+            sk_sp<DlImage> image;
+            std::string decode_error;
+            std::tie(image, decode_error) = std::tie(image, decode_error) =
+                UnsafeUploadTextureToPrivate(context, buffer, image_info,
+                                             resize_info);
+            result(image, decode_error);
+          })
+          .SetIfTrue([&result, context, buffer, image_info, resize_info] {
             // The `result` function must be copied in the capture list for each
             // closure or the stack allocated callback will be cleared by the
             // time to closure is executed later.
             context->StoreTaskForGPU(
-                [result, context, buffer, image_info, resize_info,
-                 create_mips]() {
+                [result, context, buffer, image_info, resize_info]() {
                   sk_sp<DlImage> image;
                   std::string decode_error;
-                  std::tie(image, decode_error) = std::tie(image,
-                                                           decode_error) =
-                      UnsafeUploadTextureToPrivate(context, buffer, image_info,
-                                                   resize_info, create_mips);
+                  std::tie(image, decode_error) =
+                      std::tie(image, decode_error) =
+                          UnsafeUploadTextureToPrivate(context, buffer,
+                                                       image_info, resize_info);
                   result(image, decode_error);
                 },
                 [result]() {

@@ -86,8 +86,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const SkImageInfo& image_info,
       const std::shared_ptr<SkBitmap>& bitmap,
       const std::optional<SkImageInfo>& resize_info,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
-      bool create_mips = true);
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   /// @brief Create a texture from the provided bitmap.
   /// @param context     The Impeller graphics context.
@@ -97,19 +96,18 @@ class ImageDecoderImpeller final : public ImageDecoder {
       const std::shared_ptr<impeller::Context>& context,
       std::shared_ptr<SkBitmap> bitmap);
 
-  /// Only call this method if the GPU is available.
-  static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
-      const std::shared_ptr<impeller::Context>& context,
-      const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-      const SkImageInfo& image_info,
-      const std::optional<SkImageInfo>& resize_info,
-      bool create_mips = true);
-
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
   const bool supports_wide_gamut_;
   std::shared_ptr<fml::SyncSwitch> gpu_disabled_switch_;
+
+  /// Only call this method if the GPU is available.
+  static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
+      const std::shared_ptr<impeller::Context>& context,
+      const std::shared_ptr<impeller::DeviceBuffer>& buffer,
+      const SkImageInfo& image_info,
+      const std::optional<SkImageInfo>& resize_info);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };
