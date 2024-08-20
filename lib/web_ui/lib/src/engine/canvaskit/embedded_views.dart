@@ -66,6 +66,9 @@ class HtmlViewEmbedder {
   /// Returns the most recent rendering. Only used in tests.
   Rendering get debugActiveRendering => _activeRendering;
 
+  /// If [debugOverlayOptimizationBounds] is true, this canvas will draw
+  /// semitransparent rectangles showing the computed bounds of the platform
+  /// views and pictures in the scene.
   DisplayCanvas? debugBoundsCanvas;
 
   /// The size of the frame, in physical pixels.
