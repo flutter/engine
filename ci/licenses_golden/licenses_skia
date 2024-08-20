@@ -1,4 +1,4 @@
-Signature: abb93216e3fdc894379e6f63322dd951
+Signature: 0a5482df52f93f9e8e6f0fc753701404
 
 ====================================================================================================
 LIBRARY: etc1
@@ -400,6 +400,7 @@ FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/dawntypes.md
 FILE: ../../../flutter/third_party/skia/relnotes/dropshadowcolor.md
 FILE: ../../../flutter/third_party/skia/relnotes/fakebold.md
+FILE: ../../../flutter/third_party/skia/relnotes/intersect.md
 FILE: ../../../flutter/third_party/skia/relnotes/ios12.md
 FILE: ../../../flutter/third_party/skia/relnotes/vktypes.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
