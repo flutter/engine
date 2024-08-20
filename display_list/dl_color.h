@@ -41,10 +41,7 @@ struct DlColor {
         red_(red),
         green_(green),
         blue_(blue),
-        color_space_(colorspace) {
-    FML_DCHECK(alpha >= 0.0);
-    FML_DCHECK(alpha <= 1.0);
-  }
+        color_space_(colorspace) {}
 
   /// @brief Construct a 32 bit color from floating point R, G, B, and A color
   /// channels.
