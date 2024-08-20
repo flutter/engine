@@ -158,6 +158,7 @@ def _regenerate_symlinks(framework_dir):
 
 
 def _set_framework_permissions(framework_dir):
+  """Sets framework contents to be world readable, and world executable if user-executable."""
   # Make the framework readable and executable: u=rwx,go=rx.
   subprocess.check_call(['chmod', '755', framework_dir])
 
