@@ -129,23 +129,33 @@ def create_fat_macos_framework(fat_framework, arm64_framework, x64_framework):
 
 
 def _regenerate_symlinks(framework_dir):
-  """Regenerates the symlinks structure.
+  """Regenerates the framework symlink structure.
 
-  Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
-  This logic regenerates the symlinks in the expected structure.
+  When building on the bots, the framework is produced in one shard, uploaded
+  to LUCI's content-addressable storage cache (CAS), then pulled down in
+  another shard. When that happens, symlinks are dereferenced, resulting a
+  corrupted framework. This regenerates the expected symlink farm.
   """
-  if os.path.islink(os.path.join(framework_dir, 'FlutterMacOS')):
+  # If the dylib is symlinked, assume symlinks are all fine and bail out.
+  # The shutil.rmtree calls below only work on directories, and fail on symlinks.
+  framework_name = get_framework_name(framework_dir)
+  if os.path.islink(os.path.join(framework_dir, framework_name)):
     return
-  os.remove(os.path.join(framework_dir, 'FlutterMacOS'))
+
+  # Delete any existing files/directories.
+  os.remove(os.path.join(framework_dir, framework_name))
   shutil.rmtree(os.path.join(framework_dir, 'Headers'), True)
   shutil.rmtree(os.path.join(framework_dir, 'Modules'), True)
   shutil.rmtree(os.path.join(framework_dir, 'Resources'), True)
   current_version_path = os.path.join(framework_dir, 'Versions', 'Current')
   shutil.rmtree(current_version_path, True)
+
+  # Recreate the expected framework symlinks.
   os.symlink('A', current_version_path)
+
   os.symlink(
-      os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(framework_dir, 'FlutterMacOS')
+      os.path.join('Versions', 'Current', framework_name),
+      os.path.join(framework_dir, framework_name)
   )
   os.symlink(os.path.join('Versions', 'Current', 'Headers'), os.path.join(framework_dir, 'Headers'))
   os.symlink(os.path.join('Versions', 'Current', 'Modules'), os.path.join(framework_dir, 'Modules'))
