@@ -199,6 +199,7 @@ executable("flutter_linux_unittests") {
   sources = [
     "fl_accessible_node_test.cc",
     "fl_accessible_text_field_test.cc",
+    "fl_application_test.cc",
     "fl_basic_message_channel_test.cc",
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",
@@ -240,6 +241,7 @@ executable("flutter_linux_unittests") {
     "testing/mock_binary_messenger_response_handle.cc",
     "testing/mock_engine.cc",
     "testing/mock_epoxy.cc",
+    "testing/mock_gtk.cc",
     "testing/mock_im_context.cc",
     "testing/mock_plugin_registrar.cc",
     "testing/mock_renderer.cc",
