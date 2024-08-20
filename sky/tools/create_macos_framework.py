@@ -47,12 +47,12 @@ def main():
     print('Cannot find macOS x64 Framework at %s' % x64_framework)
     return 1
 
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
+  arm64_dylib = sky_utils.get_framework_dylib_path(arm64_framework)
   if not os.path.isfile(arm64_dylib):
     print('Cannot find macOS arm64 dylib at %s' % arm64_dylib)
     return 1
 
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
+  x64_dylib = sky_utils.get_framework_dylib_path(x64_framework)
   if not os.path.isfile(x64_dylib):
     print('Cannot find macOS x64 dylib at %s' % x64_dylib)
     return 1
@@ -71,10 +71,10 @@ def main():
   return 0
 
 
-def process_framework(dst, args, fat_framework):
-  fat_framework_binary = os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
+def process_framework(dst, args, framework_path):
+  fat_framework_binary = os.path.join(framework_path, 'Versions', 'A', 'FlutterMacOS')
   if args.dsym:
-    dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
+    dsym_out = os.path.splitext(framework_path)[0] + '.dSYM'
     sky_utils.extract_dsym(fat_framework_binary, dsym_out)
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')

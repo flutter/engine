@@ -191,6 +191,16 @@ def _dsymutil_path():
   return buildroot_relative_path(dsymutil_path)
 
 
+def get_framework_name(framework_dir):
+  """Returns Foo given /path/to/Foo.framework."""
+  return os.path.splitext(os.path.basename(framework_dir))[0]
+
+
+def get_framework_dylib_path(framework_dir):
+  """Returns /path/to/Foo.framework/Versions/A/Foo given /path/to/Foo.framework."""
+  return os.path.join(framework_dir, 'Versions', 'A', get_framework_name(framework_dir))
+
+
 def extract_dsym(binary_path, dsym_out_path):
   """Extracts a dSYM bundle from the specified Mach-O binary."""
   arch_dir = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
