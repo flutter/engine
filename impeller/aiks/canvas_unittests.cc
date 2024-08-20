@@ -3,15 +3,12 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
-<<<<<<< HEAD
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/geometry/color.h"
-=======
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/aiks_unittests.h"
 #include "impeller/aiks/experimental_canvas.h"
->>>>>>> e10b07598091e4f31e02f5e02ac0d851fb6e7b83
 #include "impeller/geometry/path_builder.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701

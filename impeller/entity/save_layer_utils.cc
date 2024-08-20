@@ -30,12 +30,6 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // saveLayer paint. For example, if a saveLayer has a coverage limit of
   // 100x100, but it has a Matrix image filter that scales by one half, the
   // actual coverage limit is 200x200.
-  //
-  // If there is no image filter, then we can assume that the contents have
-  // absorbed the current transform and thus it has already been incorporated
-  // into any computed bounds. That is, a canvas scaling transform of 0.5
-  // changes the coverage of the contained entities directly and doesnt need to
-  // be additionally incorporated into the coverage computation here.
   if (image_filter) {
     std::optional<Rect> source_coverage_limit =
         image_filter->GetSourceCoverage(effect_transform, coverage_limit);

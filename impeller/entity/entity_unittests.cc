@@ -119,7 +119,7 @@ auto CreatePassWithRectPath(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
-  subpass->SetBoundsLimit(bounds_hint, false);
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
 }
 
