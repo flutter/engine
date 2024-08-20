@@ -48,8 +48,8 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color color, double factor) {
-  return color.withValues(alpha: clampDouble(color.a * factor, 0, 1));
+Color _scaleAlpha(Color a, double factor) {
+  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -100,11 +100,12 @@ class Color {
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
   const Color(int value)
-      : a = ((0xff000000 & value) >> 24) / 255.0,
-        r = ((0x00ff0000 & value) >> 16) / 255.0,
-        g = ((0x0000ff00 & value) >> 8) / 255.0,
-        b = ((0x000000ff & value) >> 0) / 255.0,
-        colorSpace = ColorSpace.sRGB;
+      : _value = value & 0xFFFFFFFF,
+        colorSpace = ColorSpace.sRGB,
+        _a = null,
+        _r = null,
+        _g = null,
+        _b = null;
 
   /// Construct a color with normalized color components.
   ///
@@ -117,10 +118,11 @@ class Color {
       required double green,
       required double blue,
       this.colorSpace = ColorSpace.sRGB})
-      : a = alpha,
-        r = red,
-        g = green,
-        b = blue;
+      : _value = 0,
+        _a = alpha,
+        _r = red,
+        _g = green,
+        _b = blue;
 
   /// Construct an sRGB color from the lower 8 bits of four integers.
   ///
@@ -134,19 +136,29 @@ class Color {
   ///
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
-  const Color.fromARGB(int alpha, int red, int green, int blue)
-      : a = (alpha & 0xff) / 255,
-        r = (red & 0xff) / 255,
-        g = (green & 0xff) / 255,
-        b = (blue & 0xff) / 255,
-        colorSpace = ColorSpace.sRGB;
+  const Color.fromARGB(int a, int r, int g, int b)
+      : _value = (((a & 0xff) << 24) |
+                ((r & 0xff) << 16) |
+                ((g & 0xff) << 8) |
+                ((b & 0xff) << 0)) &
+            0xFFFFFFFF,
+        colorSpace = ColorSpace.sRGB,
+        _a = null,
+        _r = null,
+        _g = null,
+        _b = null;
 
   const Color._fromARGBC(
       int alpha, int red, int green, int blue, this.colorSpace)
-      : a = (alpha & 0xff) / 255,
-        r = (red & 0xff) / 255,
-        g = (green & 0xff) / 255,
-        b = (blue & 0xff) / 255;
+      : _value = (((alpha & 0xff) << 24) |
+                ((red & 0xff) << 16) |
+                ((green & 0xff) << 8) |
+                ((blue & 0xff) << 0)) &
+            0xFFFFFFFF,
+        _a = null,
+        _r = null,
+        _g = null,
+        _b = null;
 
   /// Create an sRGB color from red, green, blue, and opacity, similar to
   /// `rgba()` in CSS.
@@ -160,27 +172,36 @@ class Color {
   /// Out of range values are brought into range using modulo 255.
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
-  const Color.fromRGBO(int red, int green, int blue, double opacity)
-      : a = opacity,
-        r = (red & 0xff) / 255,
-        g = (green & 0xff) / 255,
-        b = (blue & 0xff) / 255,
-        colorSpace = ColorSpace.sRGB;
+  const Color.fromRGBO(int r, int g, int b, double opacity)
+      : _value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
+                ((r & 0xff) << 16) |
+                ((g & 0xff) << 8) |
+                ((b & 0xff) << 0)) &
+            0xFFFFFFFF,
+        colorSpace = ColorSpace.sRGB,
+        _a = null,
+        _r = null,
+        _g = null,
+        _b = null;
 
   /// The alpha channel of this color.
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  final double a;
+  double get a => _a ?? (alpha / 255);
+  final double? _a;
 
   /// The red channel of this color.
-  final double r;
+  double get r => _r ?? (red / 255);
+  final double? _r;
 
   /// The green channel of this color.
-  final double g;
+  double get g => _g ?? (green / 255);
+  final double? _g;
 
   /// The blue channel of this color.
-  final double b;
+  double get b => _b ?? (blue / 255);
+  final double? _b;
 
   /// The color space of this color.
   final ColorSpace colorSpace;
@@ -198,11 +219,17 @@ class Color {
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
   @Deprecated('Use component accessors like .r or .g.')
-  int get value =>
-      (_floatToInt8(a) << 24) |
-      (_floatToInt8(r) << 16) |
-      (_floatToInt8(g) << 8) |
-      (_floatToInt8(b) << 0);
+  int get value {
+    if (_a != null && _r != null && _g != null && _b != null) {
+      return _floatToInt8(_a) << 24 |
+          _floatToInt8(_r) << 16 |
+          _floatToInt8(_g) << 8 |
+          _floatToInt8(_b) << 0;
+    } else {
+      return _value;
+    }
+  }
+  final int _value;
 
   /// The alpha channel of this color in an 8 bit value.
   ///
@@ -317,9 +344,9 @@ class Color {
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(r);
-    final double G = _linearizeColorComponent(g);
-    final double B = _linearizeColorComponent(b);
+    final double R = _linearizeColorComponent(red / 0xFF);
+    final double G = _linearizeColorComponent(green / 0xFF);
+    final double B = _linearizeColorComponent(blue / 0xFF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -428,19 +455,12 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    // TODO(gaaclarke): Make equality more fine grain than 1/256.
-    return other is Color &&
-        _floatToInt8(other.a) == _floatToInt8(a) &&
-        _floatToInt8(other.r) == _floatToInt8(r) &&
-        _floatToInt8(other.g) == _floatToInt8(g) &&
-        _floatToInt8(other.b) == _floatToInt8(b) &&
-        other.colorSpace == colorSpace;
+    return other is Color
+        && other.value == value;
   }
 
-  // TODO(gaaclarke): Calculate this from float values.
   @override
-  int get hashCode => Object.hash(_floatToInt8(a), _floatToInt8(r),
-      _floatToInt8(g), _floatToInt8(b), colorSpace);
+  int get hashCode => Object.hash(value, colorSpace);
 
   // TODO(gaaclarke): Make toString() print out float values.
   @override
