@@ -223,10 +223,17 @@ class SemanticTextField extends SemanticRole {
     return true;
   }
 
+  DomHTMLInputElement _createSingleLineField() {
+    return createDomHTMLInputElement()
+        ..type = semanticsObject.hasFlag(ui.SemanticsFlag.isObscured)
+          ? 'password'
+          : 'text';
+  }
+
   void _initializeEditableElement() {
     editableElement = semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
         ? createDomHTMLTextAreaElement()
-        : createDomHTMLInputElement();
+        : _createSingleLineField();
     _updateEnabledState();
 
     // On iOS, even though the semantic text field is transparent, the cursor
