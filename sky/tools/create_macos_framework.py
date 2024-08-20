@@ -72,9 +72,10 @@ def main():
 
 
 def process_framework(dst, args, framework_path):
-  framework_binary = os.path.join(framework_path, 'Versions', 'A', 'FlutterMacOS')
+  framework_binary = sky_utils.get_framework_dylib_path(framework_path)
+
   if args.dsym:
-    dsym_out = os.path.splitext(framework_path)[0] + '.dSYM'
+    dsym_out = os.path.join(dst, 'FlutterMacOS.dSYM')
     sky_utils.extract_dsym(framework_binary, dsym_out)
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
