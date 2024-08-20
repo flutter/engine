@@ -625,7 +625,6 @@ void DisplayListBuilder::RestoreLayer() {
       }
     }
   }
-
   layer_op->rect = content_bounds;
   layer_op->max_blend_mode = current_layer().max_blend_mode;
 

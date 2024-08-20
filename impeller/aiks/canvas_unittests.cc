@@ -5,10 +5,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/aiks_unittests.h"
-#include "impeller/aiks/canvas.h"
 #include "impeller/aiks/experimental_canvas.h"
-#include "impeller/aiks/image_filter.h"
-#include "impeller/geometry/color.h"
 #include "impeller/geometry/path_builder.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
