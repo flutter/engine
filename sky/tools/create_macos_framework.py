@@ -72,14 +72,14 @@ def main():
 
 
 def process_framework(dst, args, framework_path):
-  fat_framework_binary = os.path.join(framework_path, 'Versions', 'A', 'FlutterMacOS')
+  framework_binary = os.path.join(framework_path, 'Versions', 'A', 'FlutterMacOS')
   if args.dsym:
     dsym_out = os.path.splitext(framework_path)[0] + '.dSYM'
-    sky_utils.extract_dsym(fat_framework_binary, dsym_out)
+    sky_utils.extract_dsym(framework_binary, dsym_out)
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
       sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'])
-      # Double zip to make it consistent with legacy artifacts.
+      # Create a zip of just the contents of the dSYM, then create a zip of that zip.
       # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
       sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
 
@@ -90,7 +90,7 @@ def process_framework(dst, args, framework_path):
 
   if args.strip:
     unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
-    sky_utils.strip_binary(fat_framework_binary, unstripped_out)
+    sky_utils.strip_binary(framework_binary, unstripped_out)
 
 
 def zip_framework(dst):
