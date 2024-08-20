@@ -87,7 +87,7 @@ bool BlitPassMTL::OnCopyTextureToTextureCommand(
   auto destination_origin_mtl =
       MTLOriginMake(destination_origin.x, destination_origin.y, 0);
 
-  if (source->GetSize() == destination->GetSize()) {
+  if (source_region.GetSize() == destination->GetSize()) {
 #ifdef IMPELLER_DEBUG
     if (is_metal_trace_active_) {
       [encoder_ pushDebugGroup:@(label.c_str())];

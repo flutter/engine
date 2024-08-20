@@ -114,7 +114,7 @@ bool BlitPassVK::OnCopyTextureToTextureCommand(
 
   // If the source and destination are the same size then use copyImage,
   // otherwise perform a blit with a linear filter.
-  if (source->GetSize() == destination->GetSize()) {
+  if (source_region.GetSize() == destination->GetSize()) {
     vk::ImageCopy image_copy;
 
     image_copy.setSrcSubresource(
