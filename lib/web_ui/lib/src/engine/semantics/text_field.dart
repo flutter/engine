@@ -230,21 +230,25 @@ class SemanticTextField extends SemanticRole {
           : 'text';
   }
 
+  DomHTMLTextAreaElement _createMultiLineField() {
+    final textArea = createDomHTMLTextAreaElement();
+
+    if (semanticsObject.hasFlag(ui.SemanticsFlag.isObscured)) {
+      // -webkit-text-security is not standard, but it's the best we can do.
+      // Another option would be to create a single-line <input type="password">
+      // but that may have layout quirks, since it cannot represent multi-line
+      // text. Worst case with -webkit-text-security is the browser does not
+      // support it and it does not obscure text. However, that's not a huge
+      // problem because semantic DOM is already invisible.
+      textArea.style.setProperty('-webkit-text-security', 'circle');
+    }
+
+    return textArea;
+  }
+
   void _initializeEditableElement() {
-    // Technically, a field can be both multi-line and obscured. However, there's
-    // no standard way on the web to do it (there's a proprietary Safari method
-    // but unclear how well that works, and practice shows - remember role="text"?
-    // - that Safari can yank proprietary features suddenly).
-    //
-    // The best choice in this situation is to use a non-obscured multiline
-    // <textarea> because:
-    //   - Multiline fields need to be able to grow vertically, matching the
-    //     framework's layout, but <input type="password"> cannot do it. Its
-    //     internal text layout with go wildly out of sync.
-    //   - Obscuring semantic fields is not strictly necessary, as the entire
-    //     semantic tree is already obscured by being invisible.
     editableElement = semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
-        ? createDomHTMLTextAreaElement()
+        ? _createMultiLineField()
         : _createSingleLineField();
     _updateEnabledState();
 

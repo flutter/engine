@@ -426,6 +426,10 @@ void testMain() {
       );
 
       final textArea = strategy.domElement! as DomHTMLTextAreaElement;
+      expect(
+        textArea.style.getPropertyValue('-webkit-text-security'),
+        '',
+      );
 
       expect(owner().semanticsHost.ownerDocument?.activeElement,
           strategy.domElement);
@@ -445,6 +449,27 @@ void testMain() {
       expect(owner().semanticsHost.contains(textArea), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
+    });
+
+    test('multi-line and obscured', () {
+      strategy.enable(
+        multilineConfig,
+        onChange: (_, __) {},
+        onAction: (_) {},
+      );
+      createTextFieldSemantics(
+        value: 'hello',
+        isFocused: true,
+        isMultiline: true,
+        isObscured: true,
+      );
+
+      expectSemanticsTree(
+        owner(),
+        '<sem><textarea style="-webkit-text-security: circle"></textarea></sem>',
+      );
+
+      strategy.disable();
     });
 
     test('Does not position or size its DOM element', () {
