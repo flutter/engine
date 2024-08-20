@@ -25,6 +25,7 @@ TEST(DisplayListColor, DefaultValue) {
   EXPECT_EQ(color.getRedF(), 0.f);
   EXPECT_EQ(color.getGreenF(), 0.f);
   EXPECT_EQ(color.getBlueF(), 0.f);
+  EXPECT_EQ(color.getColorSpace(), DlColorSpace::kSRGB);
 }
 
 TEST(DisplayListColor, ArrayInterchangeableWithUint32) {
