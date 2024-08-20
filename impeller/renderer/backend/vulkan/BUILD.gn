@@ -71,6 +71,8 @@ impeller_component("vulkan") {
     "gpu_tracer_vk.cc",
     "gpu_tracer_vk.h",
     "limits_vk.h",
+    "pipeline_cache_data_vk.cc",
+    "pipeline_cache_data_vk.h",
     "pipeline_cache_vk.cc",
     "pipeline_cache_vk.h",
     "pipeline_library_vk.cc",
