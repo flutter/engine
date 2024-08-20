@@ -123,8 +123,8 @@ def create_fat_macos_framework(fat_framework, arm64_framework, x64_framework):
   # Clone the arm64 framework bundle as a starting point.
   copy_tree(arm64_framework, fat_framework, symlinks=True)
   _regenerate_symlinks(fat_framework)
-  lipo([get_framework_dylib_path(arm64_framework),
-        get_framework_dylib_path(x64_framework)], get_framework_dylib_path(fat_framework))
+  lipo([get_mac_framework_dylib_path(arm64_framework),
+        get_mac_framework_dylib_path(x64_framework)], get_mac_framework_dylib_path(fat_framework))
   _set_framework_permissions(fat_framework)
 
 
@@ -203,7 +203,7 @@ def get_framework_name(framework_dir):
   return os.path.splitext(os.path.basename(framework_dir))[0]
 
 
-def get_framework_dylib_path(framework_dir):
+def get_mac_framework_dylib_path(framework_dir):
   """Returns /path/to/Foo.framework/Versions/A/Foo given /path/to/Foo.framework."""
   return os.path.join(framework_dir, 'Versions', 'A', get_framework_name(framework_dir))
 
