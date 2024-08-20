@@ -1,4 +1,4 @@
-Signature: 15dc19e56b6f4a3ff974956ee8862fd6
+Signature: 2b792e5cfa9cc5f7a35fd60d98a49a88
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -4572,6 +4572,7 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.intl/fuchsia.intl.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.io/fuchsia.io.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.ldsvc/fuchsia.ldsvc.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.location.namedplace/fuchsia.location.namedplace.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.math/fuchsia.math.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.mem/fuchsia.mem.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.net/fuchsia.net.fidl.json
@@ -4586,6 +4587,16 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.unknown/fuchsia.unknown.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.url/fuchsia.url.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.version/fuchsia.version.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common.security/fuchsia.wlan.common.security.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common/fuchsia.wlan.common.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.device.service/fuchsia.wlan.device.service.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.ieee80211/fuchsia.wlan.ieee80211.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.internal/fuchsia.wlan.internal.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.minstrel/fuchsia.wlan.minstrel.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.mlme/fuchsia.wlan.mlme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.policy/fuchsia.wlan.policy.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.sme/fuchsia.wlan.sme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.stats/fuchsia.wlan.stats.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/zx/zx.fidl.json
 ----------------------------------------------------------------------------------------------------
 Apache License
@@ -11783,6 +11794,7 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.intl/fuchsia.intl.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.io/fuchsia.io.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.ldsvc/fuchsia.ldsvc.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.location.namedplace/fuchsia.location.namedplace.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.math/fuchsia.math.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.mem/fuchsia.mem.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.net/fuchsia.net.fidl.json
@@ -11797,6 +11809,16 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.unknown/fuchsia.unknown.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.url/fuchsia.url.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.version/fuchsia.version.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common.security/fuchsia.wlan.common.security.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common/fuchsia.wlan.common.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.device.service/fuchsia.wlan.device.service.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.ieee80211/fuchsia.wlan.ieee80211.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.internal/fuchsia.wlan.internal.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.minstrel/fuchsia.wlan.minstrel.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.mlme/fuchsia.wlan.mlme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.policy/fuchsia.wlan.policy.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.sme/fuchsia.wlan.sme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.stats/fuchsia.wlan.stats.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/zx/zx.fidl.json
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 The Fuchsia Authors.
@@ -12778,6 +12800,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/sensor.fid
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/reboot_reason.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/register-util.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdio/sdio.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/temperature.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.images2/format_modifier.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/consumer_control.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -13079,6 +13102,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/sensor.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/reboot_reason.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/register-util.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdio/sdio.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/temperature.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images2/format_modifier.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/consumer_control.fidl
@@ -13383,11 +13407,11 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_connector.fid
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/health.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/port.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/radar.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sharedmemory/sharedmemory.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.virtualkeyboard/virtual_keyboard.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keymap.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/calendar.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/time_zones.fidl + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/inotify.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/rights-abilities.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/cpu-resource.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/calibrator.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -13565,11 +13589,11 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_connector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/health.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/port.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/radar.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sharedmemory/sharedmemory.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.virtualkeyboard/virtual_keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keymap.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/calendar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/time_zones.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/inotify.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/rights-abilities.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/cpu-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lightsensor/calibrator.fidl
@@ -13841,6 +13865,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/media_buttons.fidl
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/mouse.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/registry.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/test_app.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/text.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/touch.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/controller.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14190,6 +14215,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/media_buttons.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/mouse.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/registry.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/test_app.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/text.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/touch.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/controller.fidl
@@ -14476,6 +14502,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/i2cimpl.fidl + 
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/sdmmc.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.spiimpl/spi-impl.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/trippoint.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.usb.phy/usb-phy.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.images2/math.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14516,8 +14543,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/compon
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/component/incoming/cpp/service.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/internal.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/completer.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/driver_base.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/include/lib/driver/component/cpp/driver_export.h + ../../../fuchsia/sdk/linux/LICENSE
@@ -14582,6 +14607,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/i2cimpl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/sdmmc.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.spiimpl/spi-impl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/trippoint.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.usb.phy/usb-phy.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images2/math.fidl
@@ -14622,8 +14648,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/componen
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/component/incoming/cpp/service.h
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/internal.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/completer.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/driver_base.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/include/lib/driver/component/cpp/driver_export.h
@@ -14691,6 +14715,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/availability_
 ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.regulator/fuchsia.regulator.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/codec_delay.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/l2cap.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/channel.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14731,6 +14757,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/obj/x64-api-22/sysroot/include/zircon/availab
 ORIGIN: ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/include/zircon/availability_levels.inc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/add_child.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/include/lib/driver/node/cpp/add_child.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/vulkan/offer.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/availability_levels.inc
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/availability_levels.inc
@@ -14738,6 +14765,8 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/availability_le
 FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.regulator/fuchsia.regulator.bind
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/codec_delay.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/l2cap.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/channel.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl
@@ -14778,6 +14807,7 @@ FILE: ../../../fuchsia/sdk/linux/obj/x64-api-22/sysroot/include/zircon/availabil
 FILE: ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/include/zircon/availability_levels.inc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/add_child.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/include/lib/driver/node/cpp/add_child.h
+FILE: ../../../fuchsia/sdk/linux/pkg/vulkan/offer.shard.cml
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 The Fuchsia Authors. All rights reserved.
 
@@ -19377,6 +19407,7 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.intl/fuchsia.intl.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.io/fuchsia.io.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.ldsvc/fuchsia.ldsvc.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.location.namedplace/fuchsia.location.namedplace.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.math/fuchsia.math.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.mem/fuchsia.mem.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.net/fuchsia.net.fidl.json
@@ -19391,6 +19422,16 @@ FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.unknown/fuchsia.unknown.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.url/fuchsia.url.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.version/fuchsia.version.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common.security/fuchsia.wlan.common.security.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.common/fuchsia.wlan.common.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.device.service/fuchsia.wlan.device.service.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.ieee80211/fuchsia.wlan.ieee80211.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.internal/fuchsia.wlan.internal.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.minstrel/fuchsia.wlan.minstrel.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.mlme/fuchsia.wlan.mlme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.policy/fuchsia.wlan.policy.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.sme/fuchsia.wlan.sme.fidl.json
+FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/fuchsia.wlan.stats/fuchsia.wlan.stats.fidl.json
 FILE: ../../../fuchsia/sdk/linux/python/rtc_conformance_test/unversioned/ir_root/zx/zx.fidl.json
 ----------------------------------------------------------------------------------------------------
 musl as a whole is licensed under the following standard MIT license:

@@ -27,7 +27,7 @@ void DiffContext::BeginSubtree() {
   bool had_integral_transform = state_.integral_transform;
   state_.rect_index = rects_->size();
   state_.has_filter_bounds_adjustment = false;
-  state_.has_volatile_layer = false;
+  state_.has_texture = false;
   state_.integral_transform = false;
 
   if (had_integral_transform) {
@@ -139,8 +139,12 @@ Damage DiffContext::ComputeDamage(const SkIRect& accumulated_buffer_damage,
   frame_damage.roundOut(&res.frame_damage);
 
   SkIRect frame_clip = SkIRect::MakeSize(frame_size_);
-  res.buffer_damage.intersect(frame_clip);
-  res.frame_damage.intersect(frame_clip);
+  if (!res.buffer_damage.intersect(frame_clip)) {
+    res.buffer_damage.setEmpty();
+  }
+  if (!res.frame_damage.intersect(frame_clip)) {
+    res.frame_damage.setEmpty();
+  }
 
   if (horizontal_clip_alignment > 1 || vertical_clip_alignment > 1) {
     AlignRect(res.buffer_damage, horizontal_clip_alignment,
@@ -203,20 +207,14 @@ void DiffContext::AddLayerBounds(const SkRect& rect) {
   }
 }
 
-void DiffContext::RepaintEntireFrame() {
-  auto frame_rect = SkRect::MakeIWH(frame_size_.width(), frame_size_.height());
-  rects_->push_back(frame_rect);
-  AddDamage(frame_rect);
-}
-
-void DiffContext::MarkSubtreeHasVolatileLayer() {
+void DiffContext::MarkSubtreeHasTextureLayer() {
   // Set the has_texture flag on current state and all parent states. That
   // way we'll know that we can't skip diff for retained layers because
   // they contain a TextureLayer.
   for (auto& state : state_stack_) {
-    state.has_volatile_layer = true;
+    state.has_texture = true;
   }
-  state_.has_volatile_layer = true;
+  state_.has_texture = true;
 }
 
 void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
@@ -244,7 +242,7 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
       readbacks_.begin(), readbacks_.end(),
       [&](const Readback& r) { return r.position >= state_.rect_index; });
   return PaintRegion(rects_, state_.rect_index, rects_->size(), has_readback,
-                     state_.has_volatile_layer);
+                     state_.has_texture);
 }
 
 void DiffContext::AddDamage(const PaintRegion& damage) {
