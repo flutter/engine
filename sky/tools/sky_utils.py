@@ -119,15 +119,17 @@ def copy_tree(source_path, destination_path, symlinks=False):
 
 
 def create_fat_macos_framework(fat_framework, arm64_framework, x64_framework):
+  """Creates a fat framework from two arm64 and x64 frameworks."""
+  # Clone the arm64 framework bundle as a starting point.
   copy_tree(arm64_framework, fat_framework, symlinks=True)
   _regenerate_symlinks(fat_framework)
 
-  fat_framework_binary = os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
+  fat_dylib = get_framework_dylib_path(fat_framework)
 
   # Create the arm64/x64 fat framework.
   arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
   x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
-  lipo([arm64_dylib, x64_dylib], fat_framework_binary)
+  lipo([arm64_dylib, x64_dylib], fat_dylib)
   _set_framework_permissions(fat_framework)
 
 
