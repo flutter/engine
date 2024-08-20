@@ -21,7 +21,7 @@ enum class DlColorSpace { kSRGB = 0, kExtendedSRGB = 1, kDisplayP3 = 2 };
 struct DlColor {
  public:
   constexpr DlColor()
-      : alpha_(0.f),
+      : alpha_(1.f),
         red_(0.f),
         green_(0.f),
         blue_(0.f),
