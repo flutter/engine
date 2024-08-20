@@ -173,7 +173,6 @@ TEST(SaveLayerUtilsTest, BackdropFilterEmptyCoverage) {
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2400, 1800));
 }
 
-
 }  // namespace testing
 }  // namespace impeller
 

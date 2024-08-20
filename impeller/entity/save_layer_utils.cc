@@ -22,9 +22,8 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // Otherwise, the save layer is bounded by either its contents or by
   // a specified coverage limit. In these cases the coverage value is used
   // and intersected with the coverage limit.
-  Rect input_coverage = (has_backdrop_filter)
-                            ? Rect::MakeMaximum()
-                            : content_coverage;
+  Rect input_coverage =
+      (has_backdrop_filter) ? Rect::MakeMaximum() : content_coverage;
 
   // The content coverage must be scaled by any image filters present on the
   // saveLayer paint. For example, if a saveLayer has a coverage limit of
