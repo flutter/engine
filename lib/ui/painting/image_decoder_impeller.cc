@@ -360,7 +360,8 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
       return std::make_pair(nullptr, decode_error);
     }
 
-    blit_pass->AddCopy(/*source=*/dest_texture, /*destination=*/resize_texture);
+    blit_pass->ResizeTexture(/*source=*/dest_texture,
+                             /*destination=*/resize_texture);
     if (resize_desc.mip_count > 1) {
       blit_pass->GenerateMipmap(resize_texture);
     }

@@ -87,36 +87,48 @@ bool BlitPassMTL::OnCopyTextureToTextureCommand(
   auto destination_origin_mtl =
       MTLOriginMake(destination_origin.x, destination_origin.y, 0);
 
-  if (source_region.GetSize() == destination->GetSize()) {
 #ifdef IMPELLER_DEBUG
-    if (is_metal_trace_active_) {
-      [encoder_ pushDebugGroup:@(label.c_str())];
-    }
+  if (is_metal_trace_active_) {
+    [encoder_ pushDebugGroup:@(label.c_str())];
+  }
 #endif  // IMPELLER_DEBUG
-    [encoder_ copyFromTexture:source_mtl
-                  sourceSlice:0
-                  sourceLevel:0
-                 sourceOrigin:source_origin_mtl
-                   sourceSize:source_size_mtl
-                    toTexture:destination_mtl
-             destinationSlice:0
-             destinationLevel:0
-            destinationOrigin:destination_origin_mtl];
+  [encoder_ copyFromTexture:source_mtl
+                sourceSlice:0
+                sourceLevel:0
+               sourceOrigin:source_origin_mtl
+                 sourceSize:source_size_mtl
+                  toTexture:destination_mtl
+           destinationSlice:0
+           destinationLevel:0
+          destinationOrigin:destination_origin_mtl];
 
 #ifdef IMPELLER_DEBUG
-    if (is_metal_trace_active_) {
-      [encoder_ popDebugGroup];
-    }
+  if (is_metal_trace_active_) {
+    [encoder_ popDebugGroup];
+  }
 #endif  // IMPELLER_DEBUG
-  } else {
-    [encoder_ endEncoding];
-    auto filter = [[MPSImageBilinearScale alloc] initWithDevice:device_];
-    [filter encodeToCommandBuffer:buffer_
-                    sourceTexture:source_mtl
-               destinationTexture:destination_mtl];
-    encoder_ = [buffer_ blitCommandEncoder];
+  return true;
+}
+
+// |BlitPass|
+bool BlitPassMTL::ResizeTexture(const std::shared_ptr<Texture>& source,
+                                const std::shared_ptr<Texture>& destination) {
+  auto source_mtl = TextureMTL::Cast(*source).GetMTLTexture();
+  if (!source_mtl) {
+    return false;
   }
 
+  auto destination_mtl = TextureMTL::Cast(*destination).GetMTLTexture();
+  if (!destination_mtl) {
+    return false;
+  }
+
+  [encoder_ endEncoding];
+  auto filter = [[MPSImageBilinearScale alloc] initWithDevice:device_];
+  [filter encodeToCommandBuffer:buffer_
+                  sourceTexture:source_mtl
+             destinationTexture:destination_mtl];
+  encoder_ = [buffer_ blitCommandEncoder];
   return true;
 }
 

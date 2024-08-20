@@ -166,7 +166,7 @@ TEST_P(BlitPassTest, CanResizeTextures) {
   ASSERT_TRUE(staging);
 
   EXPECT_TRUE(blit_pass->AddCopy(DeviceBuffer::AsBufferView(staging), src));
-  EXPECT_TRUE(blit_pass->AddCopy(src, dst));
+  EXPECT_TRUE(blit_pass->ResizeTexture(src, dst));
   EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
   EXPECT_TRUE(context->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok());
 }
