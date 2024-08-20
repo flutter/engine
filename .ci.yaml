@@ -75,7 +75,6 @@ targets:
       - testing/skia_gold_client/**
 
   - name: Linux linux_android_emulator_tests_34
-    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
@@ -117,7 +116,6 @@ targets:
       - testing/skia_gold_client/**
 
   - name: Linux linux_android_emulator_skia_tests_34
-    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
@@ -152,7 +150,8 @@ targets:
       gclient_variables: >-
         {
           "download_emsdk": "true",
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -170,7 +169,8 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -193,7 +193,8 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -212,6 +213,19 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_fuchsia
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
+    drone_dimensions:
+      - os=Linux
+
+  - name: Linux linux_fuchsia_tests
+    recipe: engine_v2/engine_v2
+    timeout: 90
+    properties:
+      # TODO(zanderso): Add this back when this issue is closed:
+      # https://github.com/flutter/flutter/issues/152186
+      # release_build: "true"
+      config_name: linux_fuchsia_tests
     # Do not remove(https://github.com/flutter/flutter/issues/144644)
     # Scheduler will fail to get the platform
     drone_dimensions:
