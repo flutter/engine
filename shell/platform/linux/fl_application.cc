@@ -31,9 +31,9 @@ struct FlApplicationPrivate {
   ((FlApplicationPrivate*)fl_application_get_instance_private( \
       FL_APPLICATION(app)))
 
-enum { SIGNAL_REGISTER_PLUGINS, NR_SIGNALS };
+enum { kSignalRegisterPlugins, kSignalLastSignal };
 
-static guint fl_application_signals[NR_SIGNALS];
+static guint fl_application_signals[kSignalLastSignal];
 
 G_DEFINE_TYPE_WITH_CODE(FlApplication,
                         fl_application,
@@ -91,7 +91,7 @@ static void fl_application_activate(GApplication* application) {
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
-  g_signal_emit(self, fl_application_signals[SIGNAL_REGISTER_PLUGINS], 0,
+  g_signal_emit(self, fl_application_signals[kSignalRegisterPlugins], 0,
                 FL_PLUGIN_REGISTRY(view));
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
@@ -141,7 +141,7 @@ static void fl_application_class_init(FlApplicationClass* klass) {
 
   klass->register_plugins = fl_application_register_plugins;
 
-  fl_application_signals[SIGNAL_REGISTER_PLUGINS] = g_signal_new(
+  fl_application_signals[kSignalRegisterPlugins] = g_signal_new(
       "register-plugins", fl_application_get_type(), G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET(FlApplicationClass, register_plugins), NULL, NULL,
       g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1,
