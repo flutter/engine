@@ -247,8 +247,9 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is Color
-        && other.value == value;
+    return other is Color &&
+        other.value == value &&
+        other.colorSpace == colorSpace;
   }
 
   @override

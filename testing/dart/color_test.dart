@@ -301,6 +301,14 @@ void main() {
     expect(srgb.hashCode, notEquals(p3.hashCode));
   });
 
+  test('equality considers colorspace', () {
+    const Color srgb = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0);
+    const Color p3 = Color.from(
+        alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
+    expect(srgb, notEquals(p3));
+  });
+
   // Regression test for https://github.com/flutter/flutter/issues/41257
   // CupertinoDynamicColor was overriding base class and calling super(0).
   test('subclass of Color can override value', () {
