@@ -11,21 +11,18 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     const Matrix& effect_transform,
     const Rect& coverage_limit,
     const std::shared_ptr<FilterContents>& image_filter,
-    bool destructive_blend,
-    bool has_backdrop_filter,
-    bool bounds_from_caller) {
+    bool has_backdrop_filter) {
   // If the saveLayer is unbounded, the coverage is the same as the
   // coverage limit. By default, the coverage limit begins as the screen
   // coverage. Either a lack of bounds, or the presence of a backdrop
   // effecting paint property indicates that the saveLayer is unbounded.
-  // The o  ne special case is when the input coverage was specified by the
+  // The one special case is when the input coverage was specified by the
   // developer, in this case we still use the content coverage even if the
   // saveLayer itself is unbounded.
-  bool save_layer_is_unbounded = has_backdrop_filter || destructive_blend;
   // Otherwise, the save layer is bounded by either its contents or by
   // a specified coverage limit. In these cases the coverage value is used
   // and intersected with the coverage limit.
-  Rect input_coverage = (save_layer_is_unbounded && !bounds_from_caller)
+  Rect input_coverage = (has_backdrop_filter)
                             ? Rect::MakeMaximum()
                             : content_coverage;
 

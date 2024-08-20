@@ -26,19 +26,6 @@ TEST(SaveLayerUtilsTest, SimplePaintComputedCoverage) {
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 10, 10));
 }
 
-TEST(SaveLayerUtilsTest, DestructivePaintComputedCoverage) {
-  // Destructive paint, computed coverage
-  auto coverage = ComputeSaveLayerCoverage(
-      /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),    //
-      /*effect_transform=*/{},                              //
-      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/nullptr,                             //
-      /*destructive_blend=*/true                            //
-  );
-  ASSERT_TRUE(coverage.has_value());
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2400, 1800));
-}
-
 TEST(SaveLayerUtilsTest, BackdropFiterComputedCoverage) {
   // Backdrop Filter, computed coverage
   auto coverage = ComputeSaveLayerCoverage(
@@ -46,7 +33,6 @@ TEST(SaveLayerUtilsTest, BackdropFiterComputedCoverage) {
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
       /*image_filter=*/nullptr,                             //
-      /*destructive_blend=*/false,                          //
       /*has_backdrop_filter=*/true                          //
   );
 
@@ -130,23 +116,22 @@ TEST(SaveLayerUtilsTest, DisjointCoverageTransformedByImageFilter) {
   );
 
   ASSERT_TRUE(coverage.has_value());
-  // Is this the right value? should it actually be (0, 0, 10, 10)?
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(200, 200, 210, 210));
 }
 
-// TEST(SaveLayerUtilsTest, DisjointCoverageNotTransformedByCTM) {
-//   // Coverage disjoint from parent coverage. CTM does not impact lack of
-//   // intersection as it has already been "absorbed" by child coverage.
-//   Matrix ctm = Matrix::MakeTranslation({-200, -200, 0});
-//   auto coverage = ComputeSaveLayerCoverage(
-//       /*content_coverage=*/Rect::MakeLTRB(200, 200, 210, 210),  //
-//       /*effect_transform=*/ctm,                                 //
-//       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
-//       /*image_filter=*/nullptr                                  //
-//   );
+TEST(SaveLayerUtilsTest, DisjointCoveragTransformedByCTM) {
+  // Coverage disjoint from parent coverage.
+  Matrix ctm = Matrix::MakeTranslation({-200, -200, 0});
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(200, 200, 210, 210),  //
+      /*effect_transform=*/ctm,                                 //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
+      /*image_filter=*/nullptr                                  //
+  );
 
-//   ASSERT_FALSE(coverage.has_value());
-// }
+  ASSERT_TRUE(coverage.has_value());
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 10, 10));
+}
 
 TEST(SaveLayerUtilsTest, BasicEmptyCoverage) {
   auto coverage = ComputeSaveLayerCoverage(
@@ -181,7 +166,6 @@ TEST(SaveLayerUtilsTest, BackdropFilterEmptyCoverage) {
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
       /*image_filter=*/nullptr,                             //
-      /*destructive_blend=*/false,                          //
       /*has_backdrop_filter=*/true                          //
   );
 
@@ -189,37 +173,6 @@ TEST(SaveLayerUtilsTest, BackdropFilterEmptyCoverage) {
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2400, 1800));
 }
 
-TEST(SaveLayerUtilsTest, DestructivePaintUserSpecifiedBounds) {
-  // Bounds from caller overrides clip flooding.
-  auto coverage = ComputeSaveLayerCoverage(
-      /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),    //
-      /*effect_transform=*/{},                              //
-      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/nullptr,                             //
-      /*destructive_blend=*/true,                           //
-      /*has_backdrop_filter=*/false,                        //
-      /*bounds_from_caller=*/true                           //
-  );
-
-  ASSERT_TRUE(coverage.has_value());
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 10, 10));
-}
-
-TEST(SaveLayerUtilsTest, BackdropFilterUserSpecifiedBounds) {
-  // Bounds from caller overrides bdf flooding.
-  auto coverage = ComputeSaveLayerCoverage(
-      /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),    //
-      /*effect_transform=*/{},                              //
-      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/nullptr,                             //
-      /*destructive_blend=*/false,                          //
-      /*has_backdrop_filter=*/true,                         //
-      /*bounds_from_caller=*/true                           //
-  );
-
-  ASSERT_TRUE(coverage.has_value());
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 10, 10));
-}
 
 }  // namespace testing
 }  // namespace impeller

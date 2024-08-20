@@ -56,10 +56,8 @@ void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
   delegate_ = std::move(delegate);
 }
 
-void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit,
-                                bool bounds_from_caller) {
+void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit) {
   bounds_limit_ = bounds_limit;
-  bounds_from_caller_ = bounds_from_caller;
 }
 
 std::optional<Rect> EntityPass::GetBoundsLimit() const {
@@ -488,9 +486,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->transform_,                                         //
         coverage_limit.value(),                                      //
         image_filter,                                                //
-        /*destructive_blend=*/subpass->flood_clip_,                  //
-        /*has_backdrop_filter=*/!!subpass_backdrop_filter_contents,  //
-        /*bounds_from_caller=*/subpass->bounds_from_caller_          //
+        /*has_backdrop_filter=*/!!subpass_backdrop_filter_contents  //
     );
 
     if (!subpass_coverage.has_value()) {

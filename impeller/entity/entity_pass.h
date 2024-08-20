@@ -72,8 +72,7 @@ class EntityPass {
   ///         specified in the saveLayer call and must be treated as a clip that
   ///         restricts the size of the saveLayer, even if that layer has a bdf
   ///         or flood.
-  void SetBoundsLimit(std::optional<Rect> content_bounds,
-                      bool bounds_from_caller);
+  void SetBoundsLimit(std::optional<Rect> content_bounds);
 
   /// @brief  Get the bounds limit, which is provided by the user when creating
   ///         a SaveLayer.
@@ -293,7 +292,6 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   std::optional<Rect> bounds_limit_;
-  bool bounds_from_caller_ = false;
   int32_t required_mip_count_ = 1;
 
   /// These values indicate whether something has been added to the EntityPass

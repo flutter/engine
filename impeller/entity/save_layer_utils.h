@@ -23,9 +23,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     const Matrix& effect_transform,
     const Rect& coverage_limit,
     const std::shared_ptr<FilterContents>& image_filter,
-    bool destructive_blend = false,
-    bool has_backdrop_filter = false,
-    bool bounds_from_caller = false);
+    bool has_backdrop_filter = false);
 
 }  // namespace impeller
 

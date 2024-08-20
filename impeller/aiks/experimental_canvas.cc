@@ -308,8 +308,7 @@ void ExperimentalCanvas::SaveLayer(
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
-    bool can_distribute_opacity,
-    bool bounds_from_caller) {
+    bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
   if (!clip_coverage_stack_.HasCoverage()) {
@@ -354,14 +353,13 @@ void ExperimentalCanvas::SaveLayer(
     filter_contents = paint.image_filter->GetFilterContents();
   }
 
-  std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
-      bounds.value_or(Rect::MakeMaximum()),
-      transform_stack_.back().transform,  //
-      coverage_limit,                     //
-      filter_contents,                    //
-      /*destructive_blend=*/Entity::IsBlendModeDestructive(paint.blend_mode),
-      /*has_backdrop_filter=*/!!backdrop_filter,
-      /*bounds_from_caller=*/bounds_from_caller);
+  std::optional<Rect> maybe_subpass_coverage =
+      ComputeSaveLayerCoverage(bounds.value_or(Rect::MakeMaximum()),
+                               transform_stack_.back().transform,         //
+                               coverage_limit,                            //
+                               filter_contents,                           //
+                               /*has_backdrop_filter=*/!!backdrop_filter  //
+      );
 
   if (!maybe_subpass_coverage.has_value() ||
       maybe_subpass_coverage->IsEmpty()) {
