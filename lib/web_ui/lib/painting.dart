@@ -83,7 +83,7 @@ class Color {
 
   int get alpha => (0xff000000 & value) >> 24;
 
-  double get opacity => a;
+  double get opacity => alpha / 0xFF;
 
   int get red => (0x00ff0000 & value) >> 16;
 
