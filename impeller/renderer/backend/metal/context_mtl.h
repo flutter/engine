@@ -12,6 +12,7 @@
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/synchronization/sync_switch.h"
+#include "fml/closure.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
@@ -136,8 +137,8 @@ class ContextMTL final : public Context,
 #endif  // IMPELLER_DEBUG
 
   // |Context|
-  void StoreTaskForGPU(const std::function<void()>& task,
-                       const std::function<void()>& failure) override;
+  void StoreTaskForGPU(const fml::closure& task,
+                       const fml::closure& failure) override;
 
  private:
   class SyncSwitchObserver : public fml::SyncSwitch::Observer {
@@ -151,8 +152,8 @@ class ContextMTL final : public Context,
   };
 
   struct PendingTasks {
-    std::function<void()> task;
-    std::function<void()> failure;
+    fml::closure task;
+    fml::closure failure;
   };
 
   id<MTLDevice> device_ = nullptr;

@@ -16,6 +16,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/geometry/size.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
@@ -344,6 +345,12 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     resize_desc.size = {resize_info->width(), resize_info->height()};
     resize_desc.mip_count = resize_desc.size.MipCount();
     resize_desc.compression_type = impeller::CompressionType::kLossy;
+    resize_desc.usage = impeller::TextureUsage::kShaderRead;
+    if (context->GetBackendType() == impeller::Context::BackendType::kMetal) {
+      // Resizing requires a MPS on Metal platforms.
+      resize_desc.usage |= impeller::TextureUsage::kShaderWrite;
+      resize_desc.compression_type = impeller::CompressionType::kLossless;
+    }
 
     auto resize_texture =
         context->GetResourceAllocator()->CreateTexture(resize_desc);
