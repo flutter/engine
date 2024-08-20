@@ -118,7 +118,8 @@ TEST_P(PipelineCacheDataVKPlaygroundTest, CanPersistAndRetrievePipelineCache) {
   vk::PipelineCacheHeaderVersionOne vk_cache_header;
   ASSERT_GE(mapping->GetSize(), sizeof(vk_cache_header));
   std::memcpy(&vk_cache_header, mapping->GetMapping(), sizeof(vk_cache_header));
-  vk_cache_header.headerVersion = vk::PipelineCacheHeaderVersion::eOne;
+  ASSERT_EQ(vk_cache_header.headerVersion,
+            vk::PipelineCacheHeaderVersion::eOne);
 }
 
 TEST_P(PipelineCacheDataVKPlaygroundTest,
