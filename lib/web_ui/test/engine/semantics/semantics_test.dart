@@ -48,11 +48,11 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
-  group(PrimaryRoleManager, () {
-    _testPrimaryRoleManager();
+  group(SemanticRole, () {
+    _testSemanticRole();
   });
-  group('Role managers', () {
-    _testRoleManagerLifecycle();
+  group('Roles', () {
+    _testRoleLifecycle();
   });
   group('Text', () {
     _testText();
@@ -102,8 +102,8 @@ void runSemanticsTests() {
   group('group', () {
     _testGroup();
   });
-  group('dialog', () {
-    _testDialog();
+  group('route', () {
+    _testRoute();
   });
   group('focusable', () {
     _testFocusable();
@@ -113,7 +113,7 @@ void runSemanticsTests() {
   });
 }
 
-void _testPrimaryRoleManager() {
+void _testSemanticRole() {
   test('Sets id and flt-semantics-identifier on the element', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -175,8 +175,8 @@ void _testPrimaryRoleManager() {
   });
 }
 
-void _testRoleManagerLifecycle() {
-  test('Secondary role managers are added upon node initialization', () {
+void _testRoleLifecycle() {
+  test('Semantic behaviors are added upon node initialization', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -194,10 +194,10 @@ void _testRoleManagerLifecycle() {
       tester.expectSemantics('<sem role="button"></sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.semanticRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, -1);
     }
@@ -217,10 +217,10 @@ void _testRoleManagerLifecycle() {
       tester.expectSemantics('<sem role="button">a label</sem>');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
-      expect(node.primaryRole?.role, PrimaryRole.button);
+      expect(node.semanticRole?.kind, SemanticRoleKind.button);
       expect(
-        node.primaryRole?.debugSecondaryRoles,
-        containsAll(<Role>[Role.focusable, Role.tappable, Role.labelAndValue]),
+        node.semanticRole?.debugSemanticBehaviorTypes,
+        containsAll(<Type>[Focusable, Tappable, LabelAndValue]),
       );
       expect(tester.getSemanticsObject(0).element.tabIndex, 0);
     }
@@ -661,16 +661,16 @@ void _testEngineSemanticsOwner() {
       SemanticsUpdatePhase.idle,
     );
 
-    // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager = MockRoleManager(PrimaryRole.generic, semanticsObject);
-    semanticsObject.primaryRole = mockRoleManager;
+    // Rudely replace the role with a mock, and trigger an update.
+    final MockRole mockRole = MockRole(SemanticRoleKind.generic, semanticsObject);
+    semanticsObject.semanticRole = mockRole;
 
     pumpSemantics(label: 'World');
 
     expect(
       reason: 'While updating must be in SemanticsUpdatePhase.updating phase',
-      mockRoleManager.log,
-      <MockRoleManagerLogEntry>[
+      mockRole.log,
+      <MockRoleLogEntry>[
         (method: 'update', phase: SemanticsUpdatePhase.updating),
       ],
     );
@@ -679,15 +679,15 @@ void _testEngineSemanticsOwner() {
   });
 }
 
-typedef MockRoleManagerLogEntry = ({
+typedef MockRoleLogEntry = ({
   String method,
   SemanticsUpdatePhase phase,
 });
 
-class MockRoleManager extends PrimaryRoleManager {
-  MockRoleManager(super.role, super.semanticsObject) : super.blank();
+class MockRole extends SemanticRole {
+  MockRole(super.role, super.semanticsObject) : super.blank();
 
-  final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
+  final List<MockRoleLogEntry> log = <MockRoleLogEntry>[];
 
   void _log(String method) {
     log.add((
@@ -882,9 +882,9 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -915,9 +915,9 @@ void _testText() {
     );
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.generic);
+    expect(node.semanticRole?.kind, SemanticRoleKind.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.semanticRole!.behaviors!.map((m) => m.runtimeType).toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -1710,11 +1710,11 @@ void _testIncrementables() {
 </sem>''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.incrementable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.incrementable);
     expect(
       reason: 'Incrementables use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1905,7 +1905,7 @@ void _testTextField() {
 
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    final TextField textFieldRole = node.primaryRole! as TextField;
+    final SemanticTextField textFieldRole = node.semanticRole! as SemanticTextField;
     final DomHTMLInputElement inputElement = textFieldRole.editableElement as DomHTMLInputElement;
 
     // TODO(yjbanov): this used to attempt to test that value="hello" but the
@@ -1914,11 +1914,11 @@ void _testTextField() {
     //                https://github.com/flutter/flutter/issues/147200
     expect(inputElement.value, '');
 
-    expect(node.primaryRole?.role, PrimaryRole.textField);
+    expect(node.semanticRole?.kind, SemanticRoleKind.textField);
     expect(
       reason: 'Text fields use custom focus management',
-      node.primaryRole!.debugSecondaryRoles,
-      isNot(contains(Role.focusable)),
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Focusable)),
     );
 
     semantics().semanticsEnabled = false;
@@ -1952,11 +1952,11 @@ void _testCheckables() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.checkable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.checkable);
     expect(
-      reason: 'Checkables use generic secondary roles',
-      node.primaryRole!.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      reason: 'Checkables use generic semantic behaviors',
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
 
     semantics().semanticsEnabled = false;
@@ -2253,10 +2253,10 @@ void _testTappable() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.primaryRole?.role, PrimaryRole.button);
+    expect(node.semanticRole?.kind, SemanticRoleKind.button);
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      containsAll(<Role>[Role.focusable, Role.tappable]),
+      node.semanticRole?.debugSemanticBehaviorTypes,
+      containsAll(<Type>[Focusable, Tappable]),
     );
     expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
@@ -2970,7 +2970,7 @@ void _testGroup() {
   });
 }
 
-void _testDialog() {
+void _testRoute() {
   test('renders named and labeled routes', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -2979,7 +2979,7 @@ void _testDialog() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      label: 'this is a dialog label',
+      label: 'this is a route label',
       flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
@@ -2995,12 +2995,12 @@ void _testDialog() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-      <sem role="dialog" aria-label="this is a dialog label"><sem-c><sem></sem></sem-c></sem>
+      <sem role="dialog" aria-label="this is a route label"><sem-c><sem></sem></sem-c></sem>
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
 
     semantics().semanticsEnabled = false;
@@ -3034,7 +3034,7 @@ void _testDialog() {
     expect(
       warnings,
       <String>[
-        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
+        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled route, but it is missing the label. A route should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
       ],
     );
 
@@ -3044,14 +3044,14 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
 
     semantics().semanticsEnabled = false;
   });
 
-  test('dialog can be described by a descendant', () {
+  test('route can be described by a descendant', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3090,27 +3090,27 @@ void _testDialog() {
       ''');
     }
 
-    pumpSemantics(label: 'Dialog label');
+    pumpSemantics(label: 'Route label');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.role,
-      PrimaryRole.generic,
+      owner().debugSemanticsTree![2]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
-    pumpSemantics(label: 'Updated dialog label');
+    pumpSemantics(label: 'Updated route label');
 
     semantics().semanticsEnabled = false;
   });
 
-  test('scopesRoute alone sets the dialog role with no label', () {
+  test('scopesRoute alone sets the SemanticRoute role with no label', () {
     final List<String> warnings = <String>[];
     printWarning = warnings.add;
 
@@ -3131,12 +3131,12 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.dialog,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.route,
     );
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.secondaryRoleManagers,
-      isNot(contains(Role.routeName)),
+      owner().debugSemanticsTree![0]!.semanticRole?.behaviors,
+      isNot(contains(RouteName)),
     );
 
     semantics().semanticsEnabled = false;
@@ -3179,18 +3179,18 @@ void _testDialog() {
     ''');
 
     expect(
-      owner().debugSemanticsTree![0]!.primaryRole?.role,
-      PrimaryRole.generic,
+      owner().debugSemanticsTree![0]!.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      owner().debugSemanticsTree![2]!.primaryRole?.debugSecondaryRoles,
-      contains(Role.routeName),
+      owner().debugSemanticsTree![2]!.semanticRole?.debugSemanticBehaviorTypes,
+      contains(RouteName),
     );
 
     semantics().semanticsEnabled = false;
   });
 
-  // Test the simple scenario of a dialog coming up and containing focusable
+  // Test the simple scenario of a route coming up and containing focusable
   // descendants that are not initially focused. The expectation is that the
   // first descendant will be auto-focused.
   test('focuses on the first unfocused Focusable', () async {
@@ -3248,9 +3248,9 @@ void _testDialog() {
     semantics().semanticsEnabled = false;
   });
 
-  // Test the scenario of a dialog coming up and containing focusable
+  // Test the scenario of a route coming up and containing focusable
   // descendants with one of them explicitly requesting focus. The expectation
-  // is that the dialog will not attempt to auto-focus on anything and let the
+  // is that the route will not attempt to auto-focus on anything and let the
   // respective descendant take focus.
   test('does nothing if a descendant asks for focus explicitly', () async {
     semantics()
@@ -3306,7 +3306,7 @@ void _testDialog() {
     semantics().semanticsEnabled = false;
   });
 
-  // Test the scenario of a dialog coming up and containing non-focusable
+  // Test the scenario of a route coming up and containing non-focusable
   // descendants that can have a11y focus. The expectation is that the first
   // descendant will be auto-focused, even if it's not input-focusable.
   test('focuses on the first non-focusable descedant', () async {
@@ -3378,8 +3378,8 @@ void _testDialog() {
   });
 
   // This mostly makes sure the engine doesn't crash if given a completely empty
-  // dialog trying to find something to focus on.
-  test('does nothing if nothing is focusable inside the dialog', () async {
+  // route trying to find something to focus on.
+  test('does nothing if nothing is focusable inside the route', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3550,12 +3550,12 @@ void _testFocusable() {
     final SemanticsObject node = owner().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
     expect(
-      node.primaryRole?.role,
-      PrimaryRole.generic,
+      node.semanticRole?.kind,
+      SemanticRoleKind.generic,
     );
     expect(
-      node.primaryRole?.debugSecondaryRoles,
-      contains(Role.focusable),
+      node.semanticRole?.debugSemanticBehaviorTypes,
+      contains(Focusable),
     );
 
     final DomElement element = node.element;

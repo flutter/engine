@@ -8,6 +8,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "gn": [
@@ -15,7 +16,6 @@
                 "debug",
                 "--prebuilt-dart-sdk",
                 "--no-lto",
-                "--force-mac-arm64",
                 "--target-dir",
                 "ci/host_debug_clang_tidy",
                 "--rbe",
@@ -36,6 +36,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "gn": [
@@ -44,7 +45,6 @@
                 "debug",
                 "--simulator",
                 "--no-lto",
-                "--force-mac-arm64",
                 "--target-dir",
                 "ci/ios_debug_sim_clang_tidy",
                 "--rbe",
@@ -69,6 +69,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -87,7 +88,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -119,6 +119,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -137,7 +138,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -169,6 +169,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -187,7 +188,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -219,6 +219,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -237,7 +238,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -269,6 +269,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -288,7 +289,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -306,7 +306,6 @@
                         "debug",
                         "--simulator",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/ios_debug_sim_clang_tidy",
                         "--rbe",

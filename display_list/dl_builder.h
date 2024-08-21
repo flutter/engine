@@ -510,7 +510,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // Most rendering ops will use 1 depth value, but some attributes may
   // require an additional depth value (due to implicit saveLayers)
   uint32_t render_op_depth_cost_ = 1u;
-  int op_index_ = 0;
+  DlIndex op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
@@ -554,6 +554,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool opacity_incompatible_op_detected = false;
     bool affects_transparent_layer = false;
     bool contains_backdrop_filter = false;
+    bool is_unbounded = false;
 
     bool is_group_opacity_compatible() const {
       return !opacity_incompatible_op_detected &&
@@ -804,7 +805,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // kAnyColor is a non-opaque and non-transparent color that will not
   // trigger any short-circuit tests about the results of a blend.
-  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlpha(0x80);
+  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlphaF(0.5f);
   static_assert(!kAnyColor.isOpaque());
   static_assert(!kAnyColor.isTransparent());
   static DlColor GetEffectiveColor(const DlPaint& paint,

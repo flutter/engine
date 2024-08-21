@@ -298,6 +298,13 @@ struct Matrix {
   Scalar GetMaxBasisLength() const;
 
   constexpr Scalar GetMaxBasisLengthXY() const {
+    // The full basis computation requires computing the squared scaling factor
+    // for translate/scale only matrices. This substantially limits the range of
+    // precision for small and large scales. Instead, check for the common cases
+    // and directly return the max scaling factor.
+    if (e[0][1] == 0 && e[1][0] == 0) {
+      return std::max(std::abs(e[0][0]), std::abs(e[1][1]));
+    }
     return std::sqrt(std::max(e[0][0] * e[0][0] + e[0][1] * e[0][1],
                               e[1][0] * e[1][0] + e[1][1] * e[1][1]));
   }
@@ -309,13 +316,13 @@ struct Matrix {
   constexpr Vector3 GetBasisZ() const { return Vector3(m[8], m[9], m[10]); }
 
   constexpr Vector3 GetScale() const {
-    return Vector3(GetBasisX().Length(), GetBasisY().Length(),
-                   GetBasisZ().Length());
+    return Vector3(GetBasisX().GetLength(), GetBasisY().GetLength(),
+                   GetBasisZ().GetLength());
   }
 
   constexpr Scalar GetDirectionScale(Vector3 direction) const {
-    return 1.0f / (this->Basis().Invert() * direction.Normalize()).Length() *
-           direction.Length();
+    return 1.0f / (this->Basis().Invert() * direction.Normalize()).GetLength() *
+           direction.GetLength();
   }
 
   constexpr bool IsAffine() const {

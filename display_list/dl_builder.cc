@@ -78,6 +78,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   bool is_safe = is_ui_thread_safe_;
   bool affects_transparency = current_layer().affects_transparent_layer;
   bool root_has_backdrop_filter = current_layer().contains_backdrop_filter;
+  bool root_is_unbounded = current_layer().is_unbounded;
   DlBlendMode max_root_blend_mode = current_layer().max_blend_mode;
 
   sk_sp<DlRTree> rtree;
@@ -111,7 +112,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   return sk_sp<DisplayList>(new DisplayList(
       std::move(storage_), bytes, count, nested_bytes, nested_count,
       total_depth, bounds, opacity_compatible, is_safe, affects_transparency,
-      max_root_blend_mode, root_has_backdrop_filter, std::move(rtree)));
+      max_root_blend_mode, root_has_backdrop_filter, root_is_unbounded,
+      std::move(rtree)));
 }
 
 static constexpr DlRect kEmpty = DlRect();
@@ -615,7 +617,12 @@ void DisplayListBuilder::RestoreLayer() {
   if (layer_op->options.bounds_from_caller()) {
     if (!content_bounds.isEmpty() && !layer_op->rect.contains(content_bounds)) {
       layer_op->options = layer_op->options.with_content_is_clipped();
-      content_bounds.intersect(layer_op->rect);
+      if (!content_bounds.intersect(layer_op->rect)) {
+        // Should never happen because we prune ops that don't intersect the
+        // supplied bounds so content_bounds would already be empty and we
+        // wouldn't come into this control block due to the empty test above.
+        content_bounds.setEmpty();
+      }
     }
   }
   layer_op->rect = content_bounds;
@@ -627,6 +634,10 @@ void DisplayListBuilder::RestoreLayer() {
 
   if (current_layer().is_group_opacity_compatible()) {
     layer_op->options = layer_op->options.with_can_distribute_opacity();
+  }
+
+  if (current_layer().is_unbounded) {
+    layer_op->options = layer_op->options.with_content_is_unbounded();
   }
 
   // Ensure that the bounds transferred in the following call will be
@@ -999,7 +1010,11 @@ void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
                                    ClipOp clip_op,
                                    bool is_aa) {
   if (rrect.isRect()) {
-    clipRect(rrect.rect(), clip_op, is_aa);
+    ClipRect(rrect.rect(), clip_op, is_aa);
+    return;
+  }
+  if (rrect.isOval()) {
+    ClipOval(rrect.rect(), clip_op, is_aa);
     return;
   }
   if (current_info().is_nop) {
@@ -1037,17 +1052,16 @@ void DisplayListBuilder::ClipPath(const SkPath& path,
   if (!path.isInverseFillType()) {
     SkRect rect;
     if (path.isRect(&rect)) {
-      this->clipRect(rect, clip_op, is_aa);
+      ClipRect(rect, clip_op, is_aa);
+      return;
+    }
+    if (path.isOval(&rect)) {
+      ClipOval(rect, clip_op, is_aa);
       return;
     }
     SkRRect rrect;
-    if (path.isOval(&rect)) {
-      rrect.setOval(rect);
-      this->clipRRect(rrect, clip_op, is_aa);
-      return;
-    }
     if (path.isRRect(&rrect)) {
-      this->clipRRect(rrect, clip_op, is_aa);
+      ClipRRect(rrect, clip_op, is_aa);
       return;
     }
   }
@@ -1575,7 +1589,9 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   const SkRect bounds = display_list->bounds();
   bool accumulated;
   sk_sp<const DlRTree> rtree;
-  if (!rtree_data_.has_value() || !(rtree = display_list->rtree())) {
+  if (display_list->root_is_unbounded()) {
+    accumulated = AccumulateUnbounded();
+  } else if (!rtree_data_.has_value() || !(rtree = display_list->rtree())) {
     accumulated = AccumulateOpBounds(bounds, kDrawDisplayListFlags);
   } else {
     std::list<SkRect> rects =
@@ -1788,6 +1804,9 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 }
 
 bool DisplayListBuilder::AccumulateUnbounded(const SaveInfo& save) {
+  if (!save.has_valid_clip) {
+    save.layer_info->is_unbounded = true;
+  }
   SkRect global_clip = save.global_state.device_cull_rect();
   SkRect layer_clip = save.global_state.local_cull_rect();
   if (global_clip.isEmpty() || !save.layer_state.mapAndClipRect(&layer_clip)) {

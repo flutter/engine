@@ -382,6 +382,10 @@ GLuint _glCreateProgram() {
 
 void _glCompileShader(GLuint shader) {}
 
+void _glClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+  mock->glClearColor(r, g, b, a);
+}
+
 GLuint _glCreateShader(GLenum shaderType) {
   return 0;
 }
@@ -437,6 +441,10 @@ static void _glGetShaderInfoLog(GLuint shader,
                                 GLsizei maxLength,
                                 GLsizei* length,
                                 GLchar* infoLog) {}
+
+static const GLubyte* _glGetString(GLenum pname) {
+  return mock->glGetString(pname);
+}
 
 static void _glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
 
@@ -590,6 +598,7 @@ static void library_init() {
   epoxy_glBindTexture = _glBindTexture;
   epoxy_glBlitFramebuffer = _glBlitFramebuffer;
   epoxy_glCompileShader = _glCompileShader;
+  epoxy_glClearColor = _glClearColor;
   epoxy_glCreateProgram = _glCreateProgram;
   epoxy_glCreateShader = _glCreateShader;
   epoxy_glDeleteFramebuffers = _glDeleteFramebuffers;
@@ -603,6 +612,7 @@ static void library_init() {
   epoxy_glGetProgramInfoLog = _glGetProgramInfoLog;
   epoxy_glGetShaderiv = _glGetShaderiv;
   epoxy_glGetShaderInfoLog = _glGetShaderInfoLog;
+  epoxy_glGetString = _glGetString;
   epoxy_glLinkProgram = _glLinkProgram;
   epoxy_glShaderSource = _glShaderSource;
   epoxy_glTexParameterf = _glTexParameterf;

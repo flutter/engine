@@ -742,8 +742,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaint the whole frame
     // for accurate performance metrics.
-    if (frame->framebuffer_info().supports_partial_repaint &&
-        !layer_tree.is_leaf_layer_tracing_enabled()) {
+    if (frame->framebuffer_info().supports_partial_repaint) {
       // Disable partial repaint if external_view_embedder_ SubmitFlutterView is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
@@ -764,8 +763,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     bool ignore_raster_cache = true;
-    if (surface_->EnableRasterCache() &&
-        !layer_tree.is_leaf_layer_tracing_enabled()) {
+    if (surface_->EnableRasterCache()) {
       ignore_raster_cache = false;
     }
 
@@ -927,13 +925,22 @@ ScreenshotLayerTreeAsImageImpeller(
   RenderFrameForScreenshot(compositor_context, &builder, tree, nullptr,
                            aiks_context);
 
+  std::shared_ptr<impeller::Texture> texture;
+#if EXPERIMENTAL_CANVAS
+  texture = impeller::DisplayListToTexture(
+      builder.Build(),
+      impeller::ISize(tree->frame_size().fWidth, tree->frame_size().fHeight),
+      *aiks_context);
+#else
   impeller::DlDispatcher dispatcher;
   builder.Build()->Dispatch(dispatcher);
   const auto& picture = dispatcher.EndRecordingAsPicture();
   const auto& image = picture.ToImage(
       *aiks_context,
       impeller::ISize(tree->frame_size().fWidth, tree->frame_size().fHeight));
-  const auto& texture = image->GetTexture();
+  texture = image->GetTexture();
+#endif  // EXPERIMENTAL_CANVAS
+
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
   buffer_desc.size =
