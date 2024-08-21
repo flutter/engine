@@ -4,6 +4,9 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
+#include <memory>
+
+#import "flutter/shell/platform/darwin/ios/ios_surface_noop.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_impeller.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
@@ -39,6 +42,9 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
           );
       }
     }
+  }
+  if (context->GetBackend() == IOSRenderingBackend::kImpeller) {
+    return std::make_unique<IOSSurfaceNoop>(layer, std::move(context));
   }
 
   return std::make_unique<IOSSurfaceSoftware>(layer,              // layer
