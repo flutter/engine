@@ -482,11 +482,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->WithImageFilter(Rect(), subpass->transform_);
 
     auto subpass_coverage = ComputeSaveLayerCoverage(
-        subpass->bounds_limit_.value_or(Rect::MakeMaximum()),       //
-        subpass->transform_,                                        //
-        coverage_limit.value(),                                     //
-        image_filter,                                               //
-        /*flood_clip=*/!!subpass_backdrop_filter_contents  //
+        subpass->bounds_limit_.value_or(Rect::MakeMaximum()),  //
+        subpass->transform_,                                   //
+        coverage_limit.value(),                                //
+        image_filter,                                          //
+        /*flood_clip=*/!!subpass_backdrop_filter_contents      //
     );
 
     if (!subpass_coverage.has_value()) {
