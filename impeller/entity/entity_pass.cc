@@ -780,8 +780,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     // applied.
     auto& replay_entities = clip_coverage_stack.GetReplayEntities();
     for (const auto& replay : replay_entities) {
-      SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
-                     global_pass_position);
+      SetClipScissor(replay.clip_coverage, *result.pass, global_pass_position);
       if (!replay.entity.Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
