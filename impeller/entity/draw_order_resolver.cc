@@ -27,9 +27,8 @@ void DrawOrderResolver::PushClip(size_t element_index) {
 void DrawOrderResolver::PopClip() {
   if (draw_order_layers_.size() == 1u) {
     // This is likely recoverable, so don't assert.
-    VALIDATION_LOG
-        << "Attemped to pop the first draw order clip layer. This is a bug in "
-           "`EntityPass`.";
+    VALIDATION_LOG << "Attemped to pop the first draw order clip layer. This "
+                      "may be a bug in `EntityPass`.";
     return;
   }
 
