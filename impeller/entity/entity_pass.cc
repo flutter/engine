@@ -486,7 +486,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->transform_,                                        //
         coverage_limit.value(),                                     //
         image_filter,                                               //
-        /*has_backdrop_filter=*/!!subpass_backdrop_filter_contents  //
+        /*flood_clip=*/!!subpass_backdrop_filter_contents  //
     );
 
     if (!subpass_coverage.has_value()) {
