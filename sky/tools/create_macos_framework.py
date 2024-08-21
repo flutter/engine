@@ -28,10 +28,12 @@ def main():
   args = parser.parse_args()
 
   dst = args.dst if os.path.isabs(args.dst) else sky_utils.buildroot_relative_path(args.dst)
+
   arm64_out_dir = (
       args.arm64_out_dir if os.path.isabs(args.arm64_out_dir) else
       sky_utils.buildroot_relative_path(args.arm64_out_dir)
   )
+
   x64_out_dir = (
       args.x64_out_dir
       if os.path.isabs(args.x64_out_dir) else sky_utils.buildroot_relative_path(args.x64_out_dir)
@@ -59,7 +61,7 @@ def main():
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
   sky_utils.create_fat_macos_framework(fat_framework, arm64_framework, x64_framework)
-  process_framework(dst, args, fat_framework)
+  process_framework(args, dst, fat_framework)
 
   # Create XCFramework from the arm64 and x64 fat framework.
   xcframeworks = [fat_framework]
@@ -71,7 +73,7 @@ def main():
   return 0
 
 
-def process_framework(dst, args, framework_path):
+def process_framework(args, dst, framework_path):
   framework_binary = sky_utils.get_mac_framework_dylib_path(framework_path)
 
   if args.dsym:
