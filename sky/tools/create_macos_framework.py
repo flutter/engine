@@ -78,17 +78,6 @@ def process_framework(args, dst, framework_binary):
   if args.dsym:
     dsym_out = os.path.join(dst, 'FlutterMacOS.dSYM')
     sky_utils.extract_dsym(framework_binary, dsym_out)
-    if args.zip:
-      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'])
-      # Create a zip of just the contents of the dSYM, then create a zip of that zip.
-      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-      sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
-
-      # Overwrite the FlutterMacOS.dSYM.zip with the double-zipped archive.
-      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
-      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
-      shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
   if args.strip:
     unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
@@ -126,6 +115,18 @@ def zip_framework(dst):
   shutil.move(final_src_path, final_dst_path)
 
   zip_xcframework_archive(dst)
+
+  dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
+  if os.path.exists(dsym_dst):
+    # Create a zip of just the contents of the dSYM, then create a zip of that zip.
+    # TODO(cbracken): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
+    sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'])
+    sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
+
+    # Move the double-zipped FlutterMacOS.dSYM.zip to dst.
+    dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
+    dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
+    shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
 
 def zip_xcframework_archive(dst):
