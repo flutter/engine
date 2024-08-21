@@ -308,7 +308,8 @@ void ExperimentalCanvas::SaveLayer(
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
-    bool can_distribute_opacity) {
+    bool can_distribute_opacity,
+    bool flood_clip) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
   if (!clip_coverage_stack_.HasCoverage()) {
@@ -358,7 +359,7 @@ void ExperimentalCanvas::SaveLayer(
                                transform_stack_.back().transform,         //
                                coverage_limit,                            //
                                filter_contents,                           //
-                               /*has_backdrop_filter=*/!!backdrop_filter  //
+                               /*flood_clip=*/flood_clip || !!backdrop_filter  //
       );
 
   if (!maybe_subpass_coverage.has_value() ||

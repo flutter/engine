@@ -71,7 +71,8 @@ class ExperimentalCanvas : public Canvas {
                  const std::shared_ptr<ImageFilter>& backdrop_filter,
                  ContentBoundsPromise bounds_promise,
                  uint32_t total_content_depth,
-                 bool can_distribute_opacity) override;
+                 bool can_distribute_opacity,
+                 bool flood_clip) override;
 
   bool Restore() override;
 

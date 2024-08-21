@@ -24,8 +24,8 @@ namespace impeller {
 /// @param coverage_limit   The current clip coverage. This is used to bound the
 ///                         subpass size.
 /// @param image_filter     A subpass image filter, or nullptr.
-/// @param has_backdrop_filter Whether the save layer has a backdrop filter on
-///                            it.
+/// @param flood_clip       Whether to ignore the content coverage and flood to
+///                         the clip size.
 ///
 /// The coverage computation expects `content_coverage` to be in the child
 /// coordinate space. `effect_transform` is used to transform this back into the
@@ -37,7 +37,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     const Matrix& effect_transform,
     const Rect& coverage_limit,
     const std::shared_ptr<FilterContents>& image_filter,
-    bool has_backdrop_filter = false);
+    bool flood_clip = false);
 
 }  // namespace impeller
 
