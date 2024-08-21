@@ -148,6 +148,7 @@ TEST_P(BlitPassTest, CanResizeTextures) {
   src_format.storage_mode = StorageMode::kDevicePrivate;
   src_format.format = PixelFormat::kR8G8B8A8UNormInt;
   src_format.size = {100, 100};
+  src_format.usage = TextureUsage::kShaderRead | TextureUsage::kShaderWrite;
   auto src = context->GetResourceAllocator()->CreateTexture(src_format);
 
   std::vector<uint8_t> bytes(src_format.GetByteSizeOfBaseMipLevel());
