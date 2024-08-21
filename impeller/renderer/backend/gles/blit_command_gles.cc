@@ -74,7 +74,7 @@ bool BlitCopyTextureToTextureCommandGLES::Encode(
   // emulate the blit when it's not available in the driver.
   if (!gl.BlitFramebuffer.IsAvailable()) {
     // TODO(135818): Emulate the blit using a raster draw call here.
-    FML_LOG(ERROR) << "Texture blit fallback not implemented yet for GLES2.";
+    VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
     return false;
   }
 
@@ -370,7 +370,7 @@ bool BlitResizeTextureCommandGLES::Encode(const ReactorGLES& reactor) const {
   // emulate the blit when it's not available in the driver.
   if (!gl.BlitFramebuffer.IsAvailable()) {
     // TODO(135818): Emulate the blit using a raster draw call here.
-    FML_LOG(ERROR) << "Texture blit fallback not implemented yet for GLES2.";
+    VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
     return false;
   }
 
