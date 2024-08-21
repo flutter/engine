@@ -17,51 +17,51 @@ TEST(PipelineCacheDataVKTest, CanTestHeaderCompatibility) {
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
-    ASSERT_EQ(a.abi, sizeof(void*));
+    EXPECT_EQ(a.abi, sizeof(void*));
 #ifdef FML_ARCH_CPU_64_BITS
-    ASSERT_EQ(a.abi, 8u);
+    EXPECT_EQ(a.abi, 8u);
 #elif FML_ARCH_CPU_32_BITS
-    ASSERT_EQ(a.abi, 4u);
+    EXPECT_EQ(a.abi, 4u);
 #endif
-    ASSERT_TRUE(a.IsCompatibleWith(b));
+    EXPECT_TRUE(a.IsCompatibleWith(b));
   }
   // Different data sizes don't matter.
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     a.data_size = b.data_size + 100u;
-    ASSERT_TRUE(a.IsCompatibleWith(b));
+    EXPECT_TRUE(a.IsCompatibleWith(b));
   }
   // Magic, Driver, vendor, ABI, and UUID matter.
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     b.magic = 100;
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     b.driver_version = 100;
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     b.vendor_id = 100;
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     b.device_id = 100;
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
   {
     PipelineCacheHeaderVK a;
     PipelineCacheHeaderVK b;
     b.abi = a.abi / 2u;
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
   {
     PipelineCacheHeaderVK a;
@@ -69,7 +69,7 @@ TEST(PipelineCacheDataVKTest, CanTestHeaderCompatibility) {
     for (size_t i = 0; i < VK_UUID_SIZE; i++) {
       b.uuid[i] = a.uuid[i] + 1;
     }
-    ASSERT_FALSE(a.IsCompatibleWith(b));
+    EXPECT_FALSE(a.IsCompatibleWith(b));
   }
 }
 
@@ -83,12 +83,12 @@ TEST(PipelineCacheDataVKTest, CanCreateFromDeviceProperties) {
   props.vendorID = 11;
   props.driverVersion = 12;
   PipelineCacheHeaderVK header(props, 99);
-  ASSERT_EQ(uuid.size(), std::size(header.uuid));
-  ASSERT_EQ(props.deviceID, header.device_id);
-  ASSERT_EQ(props.vendorID, header.vendor_id);
-  ASSERT_EQ(props.driverVersion, header.driver_version);
+  EXPECT_EQ(uuid.size(), std::size(header.uuid));
+  EXPECT_EQ(props.deviceID, header.device_id);
+  EXPECT_EQ(props.vendorID, header.vendor_id);
+  EXPECT_EQ(props.driverVersion, header.driver_version);
   for (size_t i = 0; i < uuid.size(); i++) {
-    ASSERT_EQ(header.uuid[i], uuid.at(i));
+    EXPECT_EQ(header.uuid[i], uuid.at(i));
   }
 }
 
