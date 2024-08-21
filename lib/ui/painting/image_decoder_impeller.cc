@@ -302,6 +302,12 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
   texture_descriptor.compression_type = impeller::CompressionType::kLossy;
+  if (context->GetBackendType() == impeller::Context::BackendType::kMetal &&
+      resize_info.has_value()) {
+    // The MPS used to resize images on iOS does not require mip generation.
+    // Remove mip count if we are resizing the image on the GPU.
+    texture_descriptor.mip_count = 1;
+  }
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
