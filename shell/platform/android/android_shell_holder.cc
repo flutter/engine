@@ -94,6 +94,12 @@ AndroidShellHolder::AndroidShellHolder(
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
+  if (!settings.merged_platform_ui_thread) {
+    host_config.ui_config = fml::Thread::ThreadConfig(
+        flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+            flutter::ThreadHost::Type::kUi, thread_label),
+        fml::Thread::ThreadPriority::kDisplay);
+  }
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
           flutter::ThreadHost::Type::kRaster, thread_label),
@@ -128,11 +134,18 @@ AndroidShellHolder::AndroidShellHolder(
   // message loop is initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   fml::RefPtr<fml::TaskRunner> raster_runner;
+  fml::RefPtr<fml::TaskRunner> ui_runner;
   fml::RefPtr<fml::TaskRunner> io_runner;
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
-  fml::RefPtr<fml::TaskRunner> ui_runner = platform_runner;
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
+  if (settings.merged_platform_ui_thread) {
+    FML_LOG(IMPORTANT)
+        << "Warning: Using highly experimental merged thread mode.";
+    ui_runner = platform_runner;
+  } else {
+    ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  }
   io_runner = thread_host_->io_thread->GetTaskRunner();
 
   flutter::TaskRunners task_runners(thread_label,     // label
