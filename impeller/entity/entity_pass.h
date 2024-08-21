@@ -65,17 +65,10 @@ class EntityPass {
   void SetDelegate(std::shared_ptr<EntityPassDelegate> delgate);
 
   /// @brief  Set the computed content bounds, or std::nullopt if the contents
-  /// are
-  ///         unbounded.
-  ///
-  ///         `bounds_from_caller` specifies that the content bounds were
-  ///         specified in the saveLayer call and must be treated as a clip that
-  ///         restricts the size of the saveLayer, even if that layer has a bdf
-  ///         or flood.
+  ///         are unbounded.
   void SetBoundsLimit(std::optional<Rect> content_bounds);
 
-  /// @brief  Get the bounds limit, which is provided by the user when creating
-  ///         a SaveLayer.
+  /// @brief  Get the bounds limit.
   std::optional<Rect> GetBoundsLimit() const;
 
   size_t GetSubpassesDepth() const;
