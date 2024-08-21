@@ -836,7 +836,7 @@ void Canvas::SaveLayer(const Paint& paint,
   }
 
   auto& new_layer_pass = GetCurrentPass();
-  if (bounds) {
+  if (bounds && !flood_clip) {
     new_layer_pass.SetBoundsLimit(bounds);
   }
 
