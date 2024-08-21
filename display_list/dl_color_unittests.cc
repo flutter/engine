@@ -19,6 +19,15 @@ static void arraysEqual(const uint32_t* ints,
   }
 }
 
+TEST(DisplayListColor, DefaultValue) {
+  DlColor color;
+  EXPECT_EQ(color.getAlphaF(), 1.f);
+  EXPECT_EQ(color.getRedF(), 0.f);
+  EXPECT_EQ(color.getGreenF(), 0.f);
+  EXPECT_EQ(color.getBlueF(), 0.f);
+  EXPECT_EQ(color.getColorSpace(), DlColorSpace::kSRGB);
+}
+
 TEST(DisplayListColor, ArrayInterchangeableWithUint32) {
   uint32_t ints[5] = {
       0xFF000000,  //

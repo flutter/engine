@@ -1,4 +1,4 @@
-Signature: 26ecd9b511f43ff87db9f1945d3319fa
+Signature: 7698c4e04e85eb6fa6926b8c3ed159c7
 
 ====================================================================================================
 LIBRARY: etc1
@@ -397,11 +397,6 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
-FILE: ../../../flutter/third_party/skia/relnotes/dawntypes.md
-FILE: ../../../flutter/third_party/skia/relnotes/dropshadowcolor.md
-FILE: ../../../flutter/third_party/skia/relnotes/fakebold.md
-FILE: ../../../flutter/third_party/skia/relnotes/ios12.md
-FILE: ../../../flutter/third_party/skia/relnotes/vktypes.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -3906,7 +3901,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/geometry/GrStyledShape.
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLBuffer.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLBuffer.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLOpsRenderPass.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/glfw/GrGLMakeNativeInterface_glfw.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/glsl/GrGLSLColorSpaceXformHelper.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/glsl/GrGLSLProgramDataManager.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/ops/GrPathStencilSettings.h + ../../../flutter/third_party/skia/LICENSE
@@ -4207,7 +4201,6 @@ FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/geometry/GrStyledShape.h
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLBuffer.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLBuffer.h
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/GrGLOpsRenderPass.h
-FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/gl/glfw/GrGLMakeNativeInterface_glfw.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/glsl/GrGLSLColorSpaceXformHelper.h
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/glsl/GrGLSLProgramDataManager.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/ops/GrPathStencilSettings.h
@@ -9500,6 +9493,7 @@ LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/fuzz/oss_fuzz/FuzzParsePath.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/gm/emptyshader.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/gm/imagedither.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/gm/luminosity.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/gm/pathopsblend.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/gm/rendertomipmappedyuvimageplanes.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/core/SkArc.h + ../../../flutter/third_party/skia/LICENSE
@@ -9613,6 +9607,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/fuzz/oss_fuzz/FuzzParsePath.cpp
 FILE: ../../../flutter/third_party/skia/gm/emptyshader.cpp
 FILE: ../../../flutter/third_party/skia/gm/imagedither.cpp
+FILE: ../../../flutter/third_party/skia/gm/luminosity.cpp
 FILE: ../../../flutter/third_party/skia/gm/pathopsblend.cpp
 FILE: ../../../flutter/third_party/skia/gm/rendertomipmappedyuvimageplanes.cpp
 FILE: ../../../flutter/third_party/skia/include/core/SkArc.h
