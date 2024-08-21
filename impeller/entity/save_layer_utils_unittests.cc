@@ -33,7 +33,7 @@ TEST(SaveLayerUtilsTest, BackdropFiterComputedCoverage) {
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
       /*image_filter=*/nullptr,                             //
-      /*flood_clip=*/true                          //
+      /*flood_clip=*/true                                   //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -166,7 +166,7 @@ TEST(SaveLayerUtilsTest, BackdropFilterEmptyCoverage) {
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
       /*image_filter=*/nullptr,                             //
-      /*flood_clip=*/true                          //
+      /*flood_clip=*/true                                   //
   );
 
   ASSERT_TRUE(coverage.has_value());

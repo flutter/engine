@@ -354,13 +354,13 @@ void ExperimentalCanvas::SaveLayer(
     filter_contents = paint.image_filter->GetFilterContents();
   }
 
-  std::optional<Rect> maybe_subpass_coverage =
-      ComputeSaveLayerCoverage(bounds.value_or(Rect::MakeMaximum()),
-                               transform_stack_.back().transform,         //
-                               coverage_limit,                            //
-                               filter_contents,                           //
-                               /*flood_clip=*/flood_clip || !!backdrop_filter  //
-      );
+  std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
+      bounds.value_or(Rect::MakeMaximum()),
+      transform_stack_.back().transform,              //
+      coverage_limit,                                 //
+      filter_contents,                                //
+      /*flood_clip=*/flood_clip || !!backdrop_filter  //
+  );
 
   if (!maybe_subpass_coverage.has_value() ||
       maybe_subpass_coverage->IsEmpty()) {
