@@ -127,7 +127,12 @@ def create_fat_macos_framework(args, dst, fat_framework, arm64_framework, x64_fr
   lipo([get_mac_framework_dylib_path(arm64_framework),
         get_mac_framework_dylib_path(x64_framework)], framework_dylib)
   _set_framework_permissions(fat_framework)
-  framework_dsym = os.path.join(dst, get_framework_name(fat_framework) + '.dSYM')
+
+  # Compute dsym output path, if enabled.
+  framework_dsym = None
+  if args.dsym:
+    framework_dsym = os.path.join(dst, get_framework_name(fat_framework) + '.dSYM')
+
   _process_macos_framework(args, dst, framework_dylib, framework_dsym)
 
 
