@@ -9,7 +9,6 @@
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 
 namespace flutter {

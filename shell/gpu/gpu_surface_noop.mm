@@ -6,16 +6,14 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+
 #include "flow/surface.h"
 #include "flow/surface_frame.h"
-
 #include "flutter/common/settings.h"
-#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
-#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
