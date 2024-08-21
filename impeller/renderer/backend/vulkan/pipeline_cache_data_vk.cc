@@ -29,7 +29,8 @@ bool PipelineCacheDataPersist(const fml::UniqueFD& cache_directory,
     return true;
   }
   auto allocation = std::make_shared<Allocation>();
-  if (!allocation->Truncate(Bytes{sizeof(PipelineCacheHeaderVK) + data_size})) {
+  if (!allocation->Truncate(Bytes{sizeof(PipelineCacheHeaderVK) + data_size},
+                            false)) {
     VALIDATION_LOG << "Could not allocate pipeline cache data staging buffer.";
     return false;
   }
