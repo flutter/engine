@@ -786,6 +786,7 @@ static void fl_view_init(FlView* self) {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
   self->background_color = gdk_rgba_copy(&default_background);
 
+#if !GTK_CHECK_VERSION(4, 0, 0)
   self->event_box = gtk_event_box_new();
   gtk_widget_set_hexpand(self->event_box, TRUE);
   gtk_widget_set_vexpand(self->event_box, TRUE);
@@ -824,8 +825,10 @@ static void fl_view_init(FlView* self) {
 #endif
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
+#if !GTK_CHECK_VERSION(4, 0, 0)
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
   gtk_widget_show(GTK_WIDGET(self->gl_area));
+#endif
 #if GTK_CHECK_VERSION(4, 0, 0)
   gtk_box_append(GTK_BOX(self), GTK_WIDGET(self->gl_area));
 #else
