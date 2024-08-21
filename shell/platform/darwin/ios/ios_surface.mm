@@ -6,9 +6,9 @@
 
 #include <memory>
 
-#import "flutter/shell/platform/darwin/ios/ios_surface_noop.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_impeller.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_noop.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 

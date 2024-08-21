@@ -18,8 +18,7 @@ namespace flutter {
 
 class IOSSurfaceNoop final : public IOSSurface {
  public:
-  IOSSurfaceNoop(const fml::scoped_nsobject<CALayer>& layer,
-                     std::shared_ptr<IOSContext> context);
+  IOSSurfaceNoop(const fml::scoped_nsobject<CALayer>& layer, std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceNoop() override;
 

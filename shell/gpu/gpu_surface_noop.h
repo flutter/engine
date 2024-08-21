@@ -24,11 +24,10 @@ class GPUSurfaceNoop : public Surface {
   // |Surface|
   bool IsValid() override;
 
- // |Surface|
+  // |Surface|
   Surface::SurfaceData GetSurfaceData() const override;
 
  private:
-
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(
       const SkISize& frame_size) override;

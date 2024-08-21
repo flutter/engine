@@ -21,7 +21,7 @@ FLUTTER_ASSERT_ARC
 namespace flutter {
 
 IOSSurfaceNoop::IOSSurfaceNoop(const fml::scoped_nsobject<CALayer>& layer,
-                                       std::shared_ptr<IOSContext> context)
+                               std::shared_ptr<IOSContext> context)
     : IOSSurface(std::move(context)), layer_(layer) {}
 
 IOSSurfaceNoop::~IOSSurfaceNoop() = default;
@@ -30,7 +30,7 @@ bool IOSSurfaceNoop::IsValid() const {
   return layer_;
 }
 
-void IOSSurfaceNoop::UpdateStorageSizeIfNecessary() { }
+void IOSSurfaceNoop::UpdateStorageSizeIfNecessary() {}
 
 std::unique_ptr<Surface> IOSSurfaceNoop::CreateGPUSurface(GrDirectContext* gr_context) {
   if (!IsValid()) {
@@ -45,6 +45,5 @@ std::unique_ptr<Surface> IOSSurfaceNoop::CreateGPUSurface(GrDirectContext* gr_co
 
   return surface;
 }
-
 
 }  // namespace flutter
