@@ -156,7 +156,7 @@ void DisplayList::RTreeResultsToIndexVector(
 
       case DisplayListOpCategory::kSave:
       case DisplayListOpCategory::kSaveLayer: {
-        bool needed = (index < next_restore_index);
+        bool needed = (next_render_index < next_restore_index);
         save_infos.emplace_back(next_restore_index, needed);
         switch (op->type) {
           case DisplayListOpType::kSave:
