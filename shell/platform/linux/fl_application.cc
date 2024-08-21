@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_application.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include <gtk/gtk.h>
-
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 struct FlApplicationPrivate {
   // Default window title to use.
