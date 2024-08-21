@@ -64,15 +64,16 @@ def main():
 
   # Create XCFramework from the arm64 and x64 fat framework.
   xcframeworks = [fat_framework]
-  create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks)
+  dsyms = [fat_framework + '.dSYM'] if args.dsym else None
+  create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks, dsyms=dsyms)
 
   if args.zip:
-    zip_framework(dst)
+    zip_framework(dst, args)
 
   return 0
 
 
-def zip_framework(dst):
+def zip_framework(dst, args):
   framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
   sky_utils.write_codesign_config(os.path.join(framework_dst, 'entitlements.txt'), [])
   sky_utils.write_codesign_config(
@@ -102,40 +103,57 @@ def zip_framework(dst):
   final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
   shutil.move(final_src_path, final_dst_path)
 
-  zip_xcframework_archive(dst)
+  zip_xcframework_archive(dst, args)
 
-  dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-  if os.path.exists(dsym_dst):
+  # Generate Flutter.dSYM.zip for manual symbolification.
+  #
+  # Historically, the framework dSYM was named Flutter.dSYM, so in order to
+  # remain backward-compatible with existing instructions in docs/Crashes.md
+  # and existing tooling such as dart-lang/dart_ci, we rename back to that name
+  #
+  # TODO(cbracken): remove these archives and the upload steps once we bundle
+  # dSYMs in app archives. https://github.com/flutter/flutter/issues/153879
+  framework_dsym = framework_dst + '.dSYM'
+  if os.path.exists(framework_dsym):
+    renamed_dsym = framework_dsym.replace('FlutterMacOS.framework.dSYM', 'FlutterMacOS.dSYM')
+    os.rename(framework_dsym, renamed_dsym)
+
     # Create a zip of just the contents of the dSYM, then create a zip of that zip.
     # TODO(cbracken): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-    sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM.zip', ['.'])
-    sky_utils.create_zip(dsym_dst, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
+    sky_utils.create_zip(renamed_dsym, 'FlutterMacOS.dSYM.zip', ['.'])
+    sky_utils.create_zip(renamed_dsym, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
 
     # Move the double-zipped FlutterMacOS.dSYM.zip to dst.
-    dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
+    dsym_final_src_path = os.path.join(renamed_dsym, 'FlutterMacOS.dSYM_.zip')
     dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
     shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
 
-def zip_xcframework_archive(dst):
-  sky_utils.write_codesign_config(os.path.join(dst, 'entitlements.txt'), [])
+def zip_xcframework_archive(dst, args):
+  # pylint: disable=line-too-long
+  with_entitlements = []
+  with_entitlements_file = os.path.join(dst, 'entitlements.txt')
+  sky_utils.write_codesign_config(with_entitlements_file, with_entitlements)
 
-  sky_utils.write_codesign_config(
-      os.path.join(dst, 'without_entitlements.txt'), [
-          'FlutterMacOS.xcframework/macos-arm64_x86_64/'
-          'FlutterMacOS.framework/Versions/A/FlutterMacOS'
-      ]
-  )
+  without_entitlements = [
+      'FlutterMacOS.xcframework/macos-arm64_x86_64/FlutterMacOS.framework/Versions/A/FlutterMacOS',
+  ]
+  if args.dsym:
+    without_entitlements.extend([
+        'FlutterMacOS.xcframework/macos-arm64_x86_64/dSYMs/FlutterMacOS.framework.dSYM/Contents/Resources/DWARF/FlutterMacOS',
+    ])
 
-  sky_utils.create_zip(
-      dst,
-      'framework.zip',
-      [
-          'FlutterMacOS.xcframework',
-          'entitlements.txt',
-          'without_entitlements.txt',
-      ],
-  )
+  without_entitlements_file = os.path.join(dst, 'without_entitlements.txt')
+  sky_utils.write_codesign_config(without_entitlements_file, without_entitlements)
+  # pylint: enable=line-too-long
+
+  zip_contents = [
+      'FlutterMacOS.xcframework',
+      'entitlements.txt',
+      'without_entitlements.txt',
+  ]
+  sky_utils.assert_valid_codesign_config(dst, zip_contents, with_entitlements, without_entitlements)
+  sky_utils.create_zip(dst, 'framework.zip', zip_contents)
 
 
 if __name__ == '__main__':
