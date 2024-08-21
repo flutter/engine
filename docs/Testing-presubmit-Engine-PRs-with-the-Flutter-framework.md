@@ -13,17 +13,20 @@ This documentation describes how to run flutter/flutter presubmit checks on flut
 ## 1. Create your engine pull request with the `test: all` label.
 
 When creating your PR, add the `test: all` label *before* submitting the PR to
-presubmit. This will ensure that all builds required for framework testing are
+CI. This will ensure that all builds required for framework testing are
 triggered.
 
-If you sent out your PR without adding the `test: all` label, add it, then
-re-push your branch to re-trigger presubmits.
+If you sent out your PR without adding the `test: all` label, you can add it,
+then re-push your branch to re-trigger presubmits.
 
-By default, not all builds and tests are run in engine presubmits. When our CI
-is able to determine that certain shards are unaffected by a change, via a
-`runIf` clause in our `.ci.yaml`, for example, it will be skipped. Many
-framework tests, however, assume all build products are present and will trigger
-a `flutter precache`, which will fail with a 404 on missing build artifacts.
+By default, [not all builds and tests are run][engine_presubmits] in engine
+presubmits. When our CI is able to determine that certain shards are unaffected
+by a change, via a `runIf` clause in our `.ci.yaml`, for example, it will be
+skipped. Many framework tests, however, assume all build products are present
+and will trigger a `flutter precache`, which will fail with a 404 on missing
+build artifacts.
+
+[engine_presubmits]: ci/Engine-pre-submits-and-post-submits.md#running-post-submits-eagerly
 
 ## 2. Wait
 
