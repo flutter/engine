@@ -60,9 +60,7 @@ def main():
     return 1
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
-  sky_utils.create_fat_macos_framework(fat_framework, arm64_framework, x64_framework)
-  framework_binary = sky_utils.get_mac_framework_dylib_path(fat_framework)
-  process_framework(args, dst, framework_binary)
+  sky_utils.create_fat_macos_framework(args, dst, fat_framework, arm64_framework, x64_framework)
 
   # Create XCFramework from the arm64 and x64 fat framework.
   xcframeworks = [fat_framework]
@@ -72,16 +70,6 @@ def main():
     zip_framework(dst)
 
   return 0
-
-
-def process_framework(args, dst, framework_binary):
-  if args.dsym:
-    dsym_out = os.path.join(dst, 'FlutterMacOS.dSYM')
-    sky_utils.extract_dsym(framework_binary, dsym_out)
-
-  if args.strip:
-    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
-    sky_utils.strip_binary(framework_binary, unstripped_out)
 
 
 def zip_framework(dst):
