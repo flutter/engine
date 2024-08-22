@@ -772,6 +772,13 @@ public class FlutterView extends FrameLayout
       viewportMetrics.viewInsetLeft = 0;
     }
 
+    // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
+    // bounding Rects instead of an Insets object, which is a newer API method, as compared to the
+    // existing Insets-based method calls above.
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_35) {
+      delegate.growViewportMetricsToCaptionBar(getContext(), viewportMetrics);
+    }
+
     Log.v(
         TAG,
         "Updating window insets (onApplyWindowInsets()):\n"
@@ -1449,6 +1456,13 @@ public class FlutterView extends FrameLayout
         .send();
   }
 
+  private FlutterViewDelegate delegate = new FlutterViewDelegate();
+
+  @VisibleForTesting
+  public void setDelegate(@NonNull FlutterViewDelegate delegate) {
+    this.delegate = delegate;
+  }
+
   private void sendViewportMetricsToFlutter() {
     if (!isAttachedToFlutterEngine()) {
       Log.w(
@@ -1460,6 +1474,7 @@ public class FlutterView extends FrameLayout
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 
@@ -1483,6 +1498,15 @@ public class FlutterView extends FrameLayout
     if (renderSurface instanceof FlutterSurfaceView) {
       ((FlutterSurfaceView) renderSurface).setVisibility(visibility);
     }
+  }
+
+  /**
+   * Allow access to the viewport metrics so that tests can set them to be valid with nonzero
+   * dimensions.
+   */
+  @VisibleForTesting
+  public FlutterRenderer.ViewportMetrics getViewportMetrics() {
+    return viewportMetrics;
   }
 
   /**

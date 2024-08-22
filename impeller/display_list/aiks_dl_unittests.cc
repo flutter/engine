@@ -748,6 +748,12 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
     DlPaint paint;
     paint.setColor(DlColor::kGreen().withAlpha(0.5 * 255));
     paint.setBlendMode(DlBlendMode::kPlus);
+
+    DlPaint rect_paint;
+    rect_paint.setColor(DlColor::kRed());
+    rect_paint.setStrokeWidth(4);
+    rect_paint.setDrawStyle(DlDrawStyle::kStroke);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 300, 300), rect_paint);
     builder.DrawCircle(SkPoint::Make(200, 200), 100, paint);
     // Should render a second circle, centered on the bottom-right-most edge of
     // the circle.
@@ -771,7 +777,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
   DlPaint paint;
   paint.setColor(DlColor::kBlack());
   builder.DrawPaint(paint);
-  builder.SaveLayer({}, nullptr);
+  builder.SaveLayer(nullptr, nullptr);
   {
     paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
     paint.setBlendMode(DlBlendMode::kPlus);
@@ -838,6 +844,49 @@ TEST_P(AiksTest, CanDrawScaledPointsLargeScaleSmallRadius) {
 
   builder.DrawPoints(DlCanvas::PointMode::kPoints, point.size(), point.data(),
                      paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, TransparentShadowProducesCorrectColor) {
+  DisplayListBuilder builder;
+  builder.Save();
+  builder.Scale(1.618, 1.618);
+  SkPath path = SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100));
+
+  builder.DrawShadow(path, flutter::DlColor::kTransparent(), 15, false, 1);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/130613
+TEST_P(AiksTest, DispatcherDoesNotCullPerspectiveTransformedChildDisplayLists) {
+  flutter::DisplayListBuilder sub_builder(true);
+  sub_builder.DrawRect(SkRect::MakeXYWH(0, 0, 50, 50),
+                       flutter::DlPaint(flutter::DlColor::kRed()));
+  auto display_list = sub_builder.Build();
+
+  AiksContext context(GetContext(), nullptr);
+  RenderTarget render_target =
+      context.GetContentContext().GetRenderTargetCache()->CreateOffscreen(
+          *context.GetContext(), {2400, 1800}, 1);
+
+  DisplayListBuilder builder;
+
+  builder.Scale(2.0, 2.0);
+  builder.Translate(-93.0, 0.0);
+
+  // clang-format off
+  builder.TransformFullPerspective(
+     0.8, -0.2, -0.1, -0.0,
+     0.0,  1.0,  0.0,  0.0,
+     1.4,  1.3,  1.0,  0.0,
+    63.2, 65.3, 48.6,  1.1
+  );
+  // clang-format on
+  builder.Translate(35.0, 75.0);
+  builder.DrawDisplayList(display_list, 1.0f);
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
