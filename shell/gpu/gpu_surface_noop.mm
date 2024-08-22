@@ -12,8 +12,6 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
-#include "impeller/display_list/dl_dispatcher.h"
-#include "impeller/renderer/backend/metal/surface_mtl.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
