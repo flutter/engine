@@ -145,6 +145,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private SurfaceSyncGroup currentSyncGroup = null;
   private FlutterPlatformHostView platformViewHost = null;
   private SurfaceControlViewHost scvh = null;
+  private SurfaceControlViewHost.SurfacePackage surfacePackage = null;
 
   // The context of the Activity or Fragment hosting the render target for the
   // Flutter engine.
@@ -1239,7 +1240,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       scvh = new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
       scvh.setView(platformViewHost, flutterView.getWidth(), flutterView.getHeight());
       platformViewHost.readyToDisplay(flutterView.getWidth(), flutterView.getHeight());
-      flutterView.addPlatformView(scvh.getSurfacePackage());
+      surfacePackage = scvh.getSurfacePackage();
+      flutterView.addPlatformView(surfacePackage);
     }
 
     final PlatformView platformView = platformViews.get(viewId);
@@ -1321,10 +1323,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return;
     }
 
-    final FlutterMutatorView parentView = platformViewParent.get(viewId);
-    parentView.readyToDisplay(mutatorsStack, x, y, width, height);
-    parentView.setVisibility(View.VISIBLE);
-    parentView.bringToFront();
+    currentSyncGroup.add(surfacePackage, new Runnable() {
+      @Override
+      public void run() {
+        final FlutterMutatorView parentView = platformViewParent.get(viewId);
+        parentView.readyToDisplay(mutatorsStack, x, y, width, height);
+        parentView.setVisibility(View.VISIBLE);
+        parentView.bringToFront();
+        parentView.invalidate();
+      }
+    });
 
     currentFrameUsedPlatformViewIds.add(viewId);
   }
@@ -1348,12 +1356,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public boolean hasCurrentSyncGroup() {
-    return true;
+    return currentSyncGroup != null;
   }
 
   public void onBeginFrame() {
     currentFrameUsedOverlayLayerIds.clear();
     currentFrameUsedPlatformViewIds.clear();
+    currentSyncGroup = new SurfaceSyncGroup("Flutter Sync Group");
   }
 
   /**
@@ -1370,8 +1379,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     for (int i = 0; i < transactions.size(); i++) {
       tx = tx.merge(transactions.get(i));
     }
-    flutterView.getRootSurfaceControl().applyTransactionOnDraw(tx);
-    flutterView.invalidate();
+    currentSyncGroup.addTransaction(tx);
+    currentSyncGroup.markSyncReady();
     transactions.clear();
   }
 
