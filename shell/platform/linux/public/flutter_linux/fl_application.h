@@ -67,7 +67,7 @@ FlApplication* fl_application_new(const gchar* application_id,
  * @application: an #FlApplication.
  * @window_title: window title text.
  *
- * Sets the title to apply to Flutter windows.
+ * Sets the title to apply to the window.
  */
 void fl_application_set_default_window_title(FlApplication* application,
                                              const gchar* window_title);
