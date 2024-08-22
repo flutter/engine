@@ -25,6 +25,8 @@ class ClipContents final : public Contents {
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
+  bool CanSkip(ISize render_pass_size, const Matrix& ctm) const;
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 

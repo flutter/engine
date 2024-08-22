@@ -10,6 +10,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/entity.h"
@@ -431,6 +432,14 @@ void ExperimentalCanvas::SaveLayer(
   entry.rendering_mode = Entity::RenderingMode::kSubpassAppendSnapshotTransform;
   transform_stack_.emplace_back(entry);
 
+  // The DisplayList bounds/rtree doesn't account for filters applied to parent
+  // layers, and so sub-DisplayLists are getting culled as if no filters are
+  // applied.
+  // See also: https://github.com/flutter/flutter/issues/139294
+  if (paint.image_filter) {
+    transform_stack_.back().cull_rect = std::nullopt;
+  }
+
   // Start non-collapsed subpasses with a fresh clip coverage stack limited by
   // the subpass coverage. This is important because image filters applied to
   // save layers may transform the subpass texture after it's rendered,
@@ -772,6 +781,16 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
     // to check clip coverage in the same space.
     current_clip_coverage =
         current_clip_coverage->Shift(-GetGlobalPassPosition());
+  }
+
+  // Skip rendering the clip if it is fully contained by the current render
+  // target.
+  const std::shared_ptr<ClipContents>& clip_contents =
+      std::static_pointer_cast<ClipContents>(entity.GetContents());
+  if (clip_contents->CanSkip(
+          render_passes_.back().inline_pass_context->GetTexture()->GetSize(),
+          entity.GetTransform())) {
+    return;
   }
 
   auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
