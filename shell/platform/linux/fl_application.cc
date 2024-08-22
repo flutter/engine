@@ -25,6 +25,9 @@ struct FlApplicationPrivate {
 
   // Default height of a Flutter window in pixels.
   int window_height;
+
+  // The main window.
+  GtkApplicationWindow* window;
 };
 
 #define FL_APPLICATION_GET_PRIVATE(app)                        \
@@ -40,6 +43,14 @@ G_DEFINE_TYPE_WITH_CODE(FlApplication,
                         GTK_TYPE_APPLICATION,
                         G_ADD_PRIVATE(FlApplication))
 
+// Called when the first frame is received.
+static void first_frame_cb(FlApplication* self) {
+  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
+
+  // Show the main window.
+  gtk_window_present(GTK_WINDOW(priv->window));
+}
+
 // Default implementation of FlApplication::register_plugins
 static void fl_application_register_plugins(FlApplication* self,
                                             FlPluginRegistry* registry) {}
@@ -49,7 +60,7 @@ static void fl_application_activate(GApplication* application) {
   FlApplication* self = FL_APPLICATION(application);
   FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
 
-  GtkApplicationWindow* window =
+  priv->window =
       GTK_APPLICATION_WINDOW(gtk_application_window_new(GTK_APPLICATION(self)));
 
   // Use a header bar when running in GNOME as this is the common style used
@@ -61,7 +72,7 @@ static void fl_application_activate(GApplication* application) {
   // if future cases occur).
   gboolean use_header_bar = TRUE;
 #ifdef GDK_WINDOWING_X11
-  GdkScreen* screen = gtk_window_get_screen(GTK_WINDOW(window));
+  GdkScreen* screen = gtk_window_get_screen(GTK_WINDOW(priv->window));
   if (GDK_IS_X11_SCREEN(screen)) {
     const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
     if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
@@ -74,27 +85,30 @@ static void fl_application_activate(GApplication* application) {
     gtk_widget_show(GTK_WIDGET(header_bar));
     gtk_header_bar_set_title(header_bar, priv->window_title);
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
-    gtk_window_set_titlebar(GTK_WINDOW(window), GTK_WIDGET(header_bar));
+    gtk_window_set_titlebar(GTK_WINDOW(priv->window), GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(GTK_WINDOW(window), priv->window_title);
+    gtk_window_set_title(GTK_WINDOW(priv->window), priv->window_title);
   }
 
-  gtk_window_set_default_size(GTK_WINDOW(window), priv->window_width,
+  gtk_window_set_default_size(GTK_WINDOW(priv->window), priv->window_width,
                               priv->window_height);
-  gtk_widget_show(GTK_WIDGET(window));
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
       project, priv->dart_entrypoint_arguments);
 
   FlView* view = fl_view_new(project);
+  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
+                           self);
   gtk_widget_show(GTK_WIDGET(view));
-  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+  gtk_container_add(GTK_CONTAINER(priv->window), GTK_WIDGET(view));
+
+  // Make the resources for the view so rendering can start.
+  // We'll show the view when we have the first frame.
+  gtk_widget_realize(GTK_WIDGET(view));
 
   g_signal_emit(self, fl_application_signals[kSignalRegisterPlugins], 0,
                 FL_PLUGIN_REGISTRY(view));
-
-  gtk_widget_grab_focus(GTK_WIDGET(view));
 }
 
 // Implements GApplication::local_command_line.
