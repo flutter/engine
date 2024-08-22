@@ -74,6 +74,11 @@ def main():
 
 
 def zip_framework(dst, args):
+  # When updating with_entitlements and without_entitlements,
+  # `binariesWithoutEntitlements` and `signedXcframeworks` should be updated in
+  # the framework's `verifyCodeSignedTestRunner`.
+  #
+  # See: https://github.com/flutter/flutter/blob/62382c7b83a16b3f48dc06c19a47f6b8667005a5/dev/bots/suite_runners/run_verify_binaries_codesigned_tests.dart#L82-L130
   framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
   sky_utils.write_codesign_config(os.path.join(framework_dst, 'entitlements.txt'), [])
   sky_utils.write_codesign_config(
@@ -107,8 +112,8 @@ def zip_framework(dst, args):
 
   # Generate Flutter.dSYM.zip for manual symbolification.
   #
-  # Historically, the framework dSYM was named Flutter.dSYM, so in order to
-  # remain backward-compatible with existing instructions in docs/Crashes.md
+  # Historically, the framework dSYM was named FlutterMacOS.dSYM, so in order
+  # to remain backward-compatible with existing instructions in docs/Crashes.md
   # and existing tooling such as dart-lang/dart_ci, we rename back to that name
   #
   # TODO(cbracken): remove these archives and the upload steps once we bundle
@@ -131,6 +136,12 @@ def zip_framework(dst, args):
 
 def zip_xcframework_archive(dst, args):
   # pylint: disable=line-too-long
+
+  # When updating with_entitlements and without_entitlements,
+  # `binariesWithoutEntitlements` and `signedXcframeworks` should be updated in
+  # the framework's `verifyCodeSignedTestRunner`.
+  #
+  # See: https://github.com/flutter/flutter/blob/62382c7b83a16b3f48dc06c19a47f6b8667005a5/dev/bots/suite_runners/run_verify_binaries_codesigned_tests.dart#L82-L130
   with_entitlements = []
   with_entitlements_file = os.path.join(dst, 'entitlements.txt')
   sky_utils.write_codesign_config(with_entitlements_file, with_entitlements)
