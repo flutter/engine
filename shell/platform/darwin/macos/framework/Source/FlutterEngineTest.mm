@@ -223,8 +223,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   stderr_capture.Stop();
 
   // Verify hello world was written to stdout.
-  EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
-  EXPECT_EQ(stdout_capture.GetOutput(), "Hello logging");
+  // Check equality to ensure no unexpected stray logging.
+  EXPECT_EQ(stdout_capture.GetOutput(), "flutter: Hello logging\n");
   EXPECT_TRUE(stderr_capture.GetOutput().empty());
 }
 
