@@ -74,6 +74,7 @@ def main():
 
 
 def zip_framework(dst, args):
+  # pylint: disable=line-too-long
   # When updating with_entitlements and without_entitlements,
   # `binariesWithoutEntitlements` and `signedXcframeworks` should be updated in
   # the framework's `verifyCodeSignedTestRunner`.
@@ -89,6 +90,7 @@ def zip_framework(dst, args):
       ]
   )
   sky_utils.create_zip(framework_dst, 'FlutterMacOS.framework.zip', ['.'])
+  # pylint: enable=line-too-long
 
   # Double zip to make it consistent with legacy artifacts.
   # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
