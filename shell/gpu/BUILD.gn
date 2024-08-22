@@ -95,7 +95,10 @@ if (is_mac) {
   impeller_component("gpu_surface_metal_unittests") {
     testonly = true
     target_type = "executable"
-    sources = [ "gpu_surface_metal_impeller_unittests.mm" ]
+    sources = [
+      "gpu_surface_metal_impeller_unittests.mm",
+      "gpu_surface_noop_unittests.mm",
+    ]
 
     frameworks = [
       "AppKit.framework",

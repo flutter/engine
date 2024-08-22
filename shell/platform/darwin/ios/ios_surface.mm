@@ -44,7 +44,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
     }
   }
   if (context->GetBackend() == IOSRenderingBackend::kImpeller) {
-    return std::make_unique<IOSSurfaceNoop>(layer, std::move(context));
+    return std::make_unique<IOSSurfaceNoop>(std::move(context));
   }
 
   return std::make_unique<IOSSurfaceSoftware>(layer,              // layer

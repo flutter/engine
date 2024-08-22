@@ -8,10 +8,14 @@
 #include <Metal/Metal.h>
 
 #include "flutter/flow/surface.h"
-#include "flutter/fml/macros.h"
 
 namespace flutter {
 
+/// @brief A rendering surface that accepts rendering intent but does not render
+///        anything.
+///
+/// This is useful for running on platforms that need an engine instance and
+/// don't have the required drivers.
 class GPUSurfaceNoop : public Surface {
  public:
   explicit GPUSurfaceNoop();
@@ -54,7 +58,9 @@ class GPUSurfaceNoop : public Surface {
   // |Surface|
   std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceNoop);
+  GPUSurfaceNoop(const GPUSurfaceNoop&) = delete;
+
+  GPUSurfaceNoop& operator=(const GPUSurfaceNoop&) = delete;
 };
 
 }  // namespace flutter
