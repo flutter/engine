@@ -1752,7 +1752,8 @@ class SemanticsObject {
       hasFlag(ui.SemanticsFlag.hasToggledState);
 
   bool get isSelectable =>
-      hasFlag(ui.SemanticsFlag.isSelected);
+      hasFlag(ui.SemanticsFlag.isSelected) ||
+      hasFlag(ui.SemanticsFlag.hasSelectedState);
 
   /// Role-specific adjustment of the vertical position of the child container.
   ///
