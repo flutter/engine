@@ -250,7 +250,7 @@ class ClickDebouncer {
         // because the sequence of pointerdown-pointerup could indicate a
         // long-press, and the debounce timer is not long enough to capture it.
         // If a "click" is observed after a long-press it should be
-        // debounced.
+        // discarded.
         _lastSentPointerUpTimeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       }
       _sendToFramework(event, data);
