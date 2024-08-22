@@ -4119,6 +4119,32 @@ TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleClippedRect) {
   EXPECT_TRUE(expector.all_bounds_checked());
 }
 
+TEST_F(DisplayListTest, DisjointSaveLayerBoundsProduceEmptySuppliedBounds) {
+  // This test was added when we fixed the Builder code to check the
+  // return value of the SkRect::intersect method, but it turns out
+  // that the indicated case never happens in practice due to the
+  // internal culling during the recording process. It actually passes
+  // both before and after the fix, but is here to ensure the right
+  // behavior does not regress.
+
+  SkRect layer_bounds = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = SkRect::MakeLTRB(50.0f, 50.0f, 100.0f, 100.0f);
+  ASSERT_FALSE(layer_bounds.intersects(draw_rect));
+  ASSERT_FALSE(layer_bounds.isEmpty());
+  ASSERT_FALSE(draw_rect.isEmpty());
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(&layer_bounds, nullptr);
+  builder.DrawRect(draw_rect, DlPaint());
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addSuppliedExpectation(SkRect::MakeEmpty(), false);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
 class DepthExpector : public virtual DlOpReceiver,
                       virtual IgnoreAttributeDispatchHelper,
                       virtual IgnoreTransformDispatchHelper,
@@ -5814,6 +5840,83 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
         builder.Restore();
       },
       1);
+}
+
+TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
+  SkRect frame_bounds = SkRect::MakeWH(100.0f, 100.0f);
+  SkRect frame_clip = frame_bounds.makeInset(0.5f, 0.5f);
+
+  SkRect clip_rect = SkRect::MakeLTRB(40.0f, 40.0f, 60.0f, 60.0f);
+  SkRect draw_rect1 = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect2 = SkRect::MakeLTRB(45.0f, 20.0f, 55.0f, 55.0f);
+  SkRect cull_rect = SkRect::MakeLTRB(1.0f, 1.0f, 99.0f, 30.0f);
+  auto bdf_filter = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kClamp);
+
+  ASSERT_TRUE(frame_bounds.contains(clip_rect));
+  ASSERT_TRUE(frame_bounds.contains(draw_rect1));
+  ASSERT_TRUE(frame_bounds.contains(draw_rect2));
+  ASSERT_TRUE(frame_bounds.contains(cull_rect));
+
+  ASSERT_TRUE(frame_clip.contains(clip_rect));
+  ASSERT_TRUE(frame_clip.contains(draw_rect1));
+  ASSERT_TRUE(frame_clip.contains(draw_rect2));
+  ASSERT_TRUE(frame_clip.contains(cull_rect));
+
+  ASSERT_FALSE(clip_rect.intersects(draw_rect1));
+  ASSERT_TRUE(clip_rect.intersects(draw_rect2));
+
+  ASSERT_FALSE(cull_rect.intersects(clip_rect));
+  ASSERT_TRUE(cull_rect.intersects(draw_rect1));
+  ASSERT_TRUE(cull_rect.intersects(draw_rect2));
+
+  DisplayListBuilder builder(frame_bounds, true);
+  builder.Save();
+  {
+    builder.Translate(0.1f, 0.1f);
+    builder.ClipRect(frame_clip);
+    builder.DrawRect(draw_rect1, DlPaint());
+    // Should all be culled below
+    builder.ClipRect(clip_rect);
+    builder.Translate(0.1f, 0.1f);
+    builder.SaveLayer(nullptr, nullptr, bdf_filter.get());
+    {  //
+      builder.DrawRect(clip_rect, DlPaint());
+    }
+    builder.Restore();
+    // End of culling
+  }
+  builder.Restore();
+  builder.DrawRect(draw_rect2, DlPaint());
+  auto display_list = builder.Build();
+
+  {
+    DisplayListBuilder unculled(frame_bounds);
+    display_list->Dispatch(ToReceiver(unculled), frame_bounds);
+    auto unculled_dl = unculled.Build();
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(display_list, unculled_dl));
+  }
+
+  {
+    DisplayListBuilder culled(frame_bounds);
+    display_list->Dispatch(ToReceiver(culled), cull_rect);
+    auto culled_dl = culled.Build();
+
+    EXPECT_TRUE(DisplayListsNE_Verbose(display_list, culled_dl));
+
+    DisplayListBuilder expected(frame_bounds);
+    expected.Save();
+    {
+      expected.Translate(0.1f, 0.1f);
+      expected.ClipRect(frame_clip);
+      expected.DrawRect(draw_rect1, DlPaint());
+    }
+    expected.Restore();
+    expected.DrawRect(draw_rect2, DlPaint());
+    auto expected_dl = expected.Build();
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culled_dl, expected_dl));
+  }
 }
 
 }  // namespace testing

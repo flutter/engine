@@ -194,6 +194,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/driver_info_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_data_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
@@ -1641,6 +1642,7 @@
 ../../../flutter/third_party/dart/utils/OWNERS
 ../../../flutter/third_party/dart/utils/compiler/.gitignore
 ../../../flutter/third_party/dart/utils/dartanalyzer/.gitignore
+../../../flutter/third_party/dart/utils/dynamic_module_runner/dynamic_interface.yaml
 ../../../flutter/third_party/depot_tools
 ../../../flutter/third_party/expat/.git
 ../../../flutter/third_party/expat/.github
@@ -2636,7 +2638,6 @@
 ../../../flutter/third_party/skia/bazel
 ../../../flutter/third_party/skia/bench
 ../../../flutter/third_party/skia/codereview.settings
-../../../flutter/third_party/skia/defines.bzl
 ../../../flutter/third_party/skia/demos.skia.org
 ../../../flutter/third_party/skia/docker/Makefile
 ../../../flutter/third_party/skia/docker/README.md
@@ -2705,9 +2706,6 @@
 ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/gl/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/gl/egl/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/gl/epoxy/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/gl/glx/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/vk/BUILD.bazel
