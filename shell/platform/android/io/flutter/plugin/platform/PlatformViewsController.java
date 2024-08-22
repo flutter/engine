@@ -1323,16 +1323,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return;
     }
 
-    currentSyncGroup.add(surfacePackage, new Runnable() {
-      @Override
-      public void run() {
-        final FlutterMutatorView parentView = platformViewParent.get(viewId);
-        parentView.readyToDisplay(mutatorsStack, x, y, width, height);
-        parentView.setVisibility(View.VISIBLE);
-        parentView.bringToFront();
-        parentView.invalidate();
-      }
-    });
+    currentSyncGroup.add(
+        surfacePackage,
+        new Runnable() {
+          @Override
+          public void run() {
+            final FlutterMutatorView parentView = platformViewParent.get(viewId);
+            parentView.readyToDisplay(mutatorsStack, x, y, width, height);
+            parentView.setVisibility(View.VISIBLE);
+            parentView.bringToFront();
+            parentView.invalidate();
+          }
+        });
 
     currentFrameUsedPlatformViewIds.add(viewId);
   }
