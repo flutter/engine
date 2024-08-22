@@ -35,7 +35,7 @@
       },
       "properties": {
           "$flutter/osx_sdk": {
-              "sdk_version": "16a5221g"
+              "sdk_version": "16a5230g"
           }
       },
       "tests": [
