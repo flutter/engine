@@ -181,7 +181,8 @@ def ReadTargetAPILevel():
   filename = os.path.join(os.path.dirname(__file__), 'gn-sdk/src/gn_configs.gni')
   with open(filename) as f:
     for line in f:
-      if line.startswith('fuchsia_target_api_level'):
+      line = line.strip()
+      if line.startswith('fuchsia_target_api_level='):
         return line.split('=')[-1].strip()
   assert False, 'No fuchsia_target_api_level found in ' + filename
 
