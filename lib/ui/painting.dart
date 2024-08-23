@@ -4605,17 +4605,15 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
 
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      final Float32List colorsBuffer = _encodeWideColorList(colors);
       _constructor();
       _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
     } else {
-      final Int32List colorsBuffer = _encodeColorList(colors);
       assert(center != Offset.zero || focal != Offset.zero); // will result in exception(s) in Skia side
       _constructor();
       _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
@@ -4696,7 +4694,7 @@ base class Gradient extends Shader {
       double endX,
       double endY,
       double endRadius,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       Float64List? matrix4);

@@ -49,7 +49,7 @@ class CanvasGradient : public Shader {
                            double end_x,
                            double end_y,
                            double end_radius,
-                           const tonic::Int32List& colors,
+                           const tonic::Float32List& colors,
                            const tonic::Float32List& color_stops,
                            DlTileMode tile_mode,
                            const tonic::Float64List& matrix4);

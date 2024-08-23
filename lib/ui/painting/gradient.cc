@@ -141,11 +141,11 @@ void CanvasGradient::initTwoPointConical(double start_x,
                                          double end_x,
                                          double end_y,
                                          double end_radius,
-                                         const tonic::Int32List& colors,
+                                         const tonic::Float32List& colors,
                                          const tonic::Float32List& color_stops,
                                          DlTileMode tile_mode,
                                          const tonic::Float64List& matrix4) {
-  FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
+  FML_DCHECK(colors.num_elements() == (color_stops.num_elements() * 4) ||
              color_stops.data() == nullptr);
 
   static_assert(sizeof(SkColor) == sizeof(int32_t),
@@ -159,15 +159,19 @@ void CanvasGradient::initTwoPointConical(double start_x,
 
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(colors.num_elements());
-  for (int i = 0; i < colors.num_elements(); ++i) {
-    dl_colors.emplace_back(DlColor(colors[i]));
+  for (int i = 0; i < colors.num_elements(); i += 4) {
+    DlScalar a = colors[i + 0];
+    DlScalar r = colors[i + 1];
+    DlScalar g = colors[i + 2];
+    DlScalar b = colors[i + 3];
+    dl_colors.emplace_back(DlColor(a, r, g, b, DlColorSpace::kExtendedSRGB));
   }
 
   dl_shader_ = DlColorSource::MakeConical(
       SkPoint::Make(SafeNarrow(start_x), SafeNarrow(start_y)),
       SafeNarrow(start_radius),
       SkPoint::Make(SafeNarrow(end_x), SafeNarrow(end_y)),
-      SafeNarrow(end_radius), colors.num_elements(), dl_colors.data(),
+      SafeNarrow(end_radius), color_stops.num_elements(), dl_colors.data(),
       color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
