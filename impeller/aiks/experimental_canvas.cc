@@ -57,6 +57,7 @@ static void ApplyFramebufferBlend(Entity& entity) {
 static std::shared_ptr<Texture> FlipBackdrop(
     std::vector<LazyRenderingConfig>& render_passes,
     Point global_pass_position,
+    size_t current_clip_depth,
     EntityPassClipStack& clip_coverage_stack,
     ContentContext& renderer) {
   auto rendering_config = std::move(render_passes.back());
@@ -132,16 +133,21 @@ static std::shared_ptr<Texture> FlipBackdrop(
 
   // Restore any clips that were recorded before the backdrop filter was
   // applied.
-  auto& replay_entities = clip_coverage_stack.GetReplayEntities();
-  for (const auto& replay : replay_entities) {
+  clip_coverage_stack.ActivateClipReplay();
+
+  // If there are any pending clips to replay, render any that may affect
+  // the entity we're about to render.
+  while (const EntityPassClipStack::ReplayResult* next_replay_clip =
+             clip_coverage_stack.GetNextReplayResult(current_clip_depth)) {
+    auto& replay_entity = next_replay_clip->entity;
     SetClipScissor(
-        clip_coverage_stack.CurrentClipCoverage(),
+        next_replay_clip->clip_coverage,
         *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
         global_pass_position);
-    if (!replay.entity.Render(
+    if (!replay_entity.Render(
             renderer,
             *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
-      VALIDATION_LOG << "Failed to render entity for clip restore.";
+      VALIDATION_LOG << "Failed to render entity for clip replay.";
     }
   }
 
@@ -375,8 +381,9 @@ void ExperimentalCanvas::SaveLayer(
           return filter;
         };
 
-    auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                                      clip_coverage_stack_, renderer_);
+    auto input_texture =
+        FlipBackdrop(render_passes_, GetGlobalPassPosition(), current_depth_,
+                     clip_coverage_stack_, renderer_);
     if (!input_texture) {
       // Validation failures are logged in FlipBackdrop.
       return;
@@ -532,9 +539,9 @@ bool ExperimentalCanvas::Restore() {
         // to the render target texture so far need to execute before it's bound
         // for blending (otherwise the blend pass will end up executing before
         // all the previous commands in the active pass).
-        auto input_texture =
-            FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                         clip_coverage_stack_, renderer_);
+        auto input_texture = FlipBackdrop(
+            render_passes_, GetGlobalPassPosition(),
+            element_entity.GetClipDepth(), clip_coverage_stack_, renderer_);
         if (!input_texture) {
           return false;
         }
@@ -712,8 +719,9 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       // to the render target texture so far need to execute before it's bound
       // for blending (otherwise the blend pass will end up executing before
       // all the previous commands in the active pass).
-      auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                                        clip_coverage_stack_, renderer_);
+      auto input_texture =
+          FlipBackdrop(render_passes_, GetGlobalPassPosition(),
+                       entity.GetClipDepth(), clip_coverage_stack_, renderer_);
       if (!input_texture) {
         return;
       }
