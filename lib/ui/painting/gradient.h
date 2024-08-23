@@ -29,7 +29,7 @@ class CanvasGradient : public Shader {
   void initRadial(double center_x,
                   double center_y,
                   double radius,
-                  const tonic::Int32List& colors,
+                  const tonic::Float32List& colors,
                   const tonic::Float32List& color_stops,
                   DlTileMode tile_mode,
                   const tonic::Float64List& matrix4);

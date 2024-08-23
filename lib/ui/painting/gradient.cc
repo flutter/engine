@@ -52,7 +52,6 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
     DlScalar r = colors[i + 1];
     DlScalar g = colors[i + 2];
     DlScalar b = colors[i + 3];
-    FML_LOG(ERROR) << a << " " << r << " " << g << " " << b;
     dl_colors.emplace_back(DlColor(a, r, g, b, DlColorSpace::kExtendedSRGB));
   }
 
@@ -66,11 +65,11 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
 void CanvasGradient::initRadial(double center_x,
                                 double center_y,
                                 double radius,
-                                const tonic::Int32List& colors,
+                                const tonic::Float32List& colors,
                                 const tonic::Float32List& color_stops,
                                 DlTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
-  FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
+  FML_DCHECK(colors.num_elements() == (color_stops.num_elements() * 4) ||
              color_stops.data() == nullptr);
 
   static_assert(sizeof(SkColor) == sizeof(int32_t),
@@ -84,13 +83,17 @@ void CanvasGradient::initRadial(double center_x,
 
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(colors.num_elements());
-  for (int i = 0; i < colors.num_elements(); ++i) {
-    dl_colors.emplace_back(DlColor(colors[i]));
+  for (int i = 0; i < colors.num_elements(); i += 4) {
+    DlScalar a = colors[i + 0];
+    DlScalar r = colors[i + 1];
+    DlScalar g = colors[i + 2];
+    DlScalar b = colors[i + 3];
+    dl_colors.emplace_back(DlColor(a, r, g, b, DlColorSpace::kExtendedSRGB));
   }
 
   dl_shader_ = DlColorSource::MakeRadial(
       SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
-      SafeNarrow(radius), colors.num_elements(), dl_colors.data(),
+      SafeNarrow(radius), color_stops.num_elements(), dl_colors.data(),
       color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
