@@ -1187,7 +1187,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   } else if (action == @selector(copy:) || action == @selector(cut:) ||
              action == @selector(delete:)) {
     return [self textInRange:_selectedTextRange].length > 0;
-  } else if (action == @selector(select:) || action == @selector(selectAll:)) {
+  } else if (action == @selector(selectAll:)) {
     return self.hasText;
   }
   return [super canPerformAction:action withSender:sender];

@@ -476,10 +476,8 @@ static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 
   [[self textInputSurrogate] paste:sender];
 }
 
-- (void)select:(id)sender {
-  [[self textInputSurrogate] select:sender];
-}
-
+// TODO(hellohuanlin): should also support `select:`, which is not implemented by the surrogate yet.
+// See: https://github.com/flutter/flutter/issues/107578.
 - (void)selectAll:(id)sender {
   [[self textInputSurrogate] selectAll:sender];
 }
