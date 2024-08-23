@@ -21,7 +21,7 @@ class CanvasGradient : public Shader {
   static void Create(Dart_Handle wrapper);
 
   void initLinear(const tonic::Float32List& end_points,
-                  const tonic::Int32List& colors,
+                  const tonic::Float32List& colors,
                   const tonic::Float32List& color_stops,
                   DlTileMode tile_mode,
                   const tonic::Float64List& matrix4);

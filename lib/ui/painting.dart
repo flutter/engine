@@ -4452,6 +4452,21 @@ enum TileMode {
   decal,
 }
 
+Float32List _encodeWideColorList(List<Color> colors) {
+  final int colorCount = colors.length;
+  final Float32List result = Float32List(colorCount * 4);
+  for (int i = 0; i < colorCount; ++i) {
+    final Color colorXr =
+        colors[i].withValues(colorSpace: ColorSpace.extendedSRGB);
+    result[i*4+0] = colorXr.a;
+    result[i*4+1] = colorXr.r;
+    result[i*4+2] = colorXr.g;
+    result[i*4+3] = colorXr.b;
+  }
+  return result;
+}
+
+
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
@@ -4533,11 +4548,13 @@ base class Gradient extends Shader {
        assert(_offsetIsValid(to)),
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
+    print("gradient.linear1");
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
+    print("gradient.linear2");
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
 
@@ -4657,7 +4674,7 @@ base class Gradient extends Shader {
   external void _constructor();
 
   @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initLinear')
-  external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
+  external void _initLinear(Float32List endPoints, Float32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initRadial')
   external void _initRadial(

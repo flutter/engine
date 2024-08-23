@@ -24,12 +24,12 @@ void CanvasGradient::Create(Dart_Handle wrapper) {
 }
 
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,
-                                const tonic::Int32List& colors,
+                                const tonic::Float32List& colors,
                                 const tonic::Float32List& color_stops,
                                 DlTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
   FML_DCHECK(end_points.num_elements() == 4);
-  FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
+  FML_DCHECK(colors.num_elements() == (color_stops.num_elements() * 4) ||
              color_stops.data() == nullptr);
 
   static_assert(sizeof(SkPoint) == sizeof(float) * 2,
@@ -46,14 +46,19 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   SkPoint p0 = SkPoint::Make(end_points[0], end_points[1]);
   SkPoint p1 = SkPoint::Make(end_points[2], end_points[3]);
   std::vector<DlColor> dl_colors;
-  dl_colors.reserve(colors.num_elements());
-  for (int i = 0; i < colors.num_elements(); ++i) {
+  dl_colors.reserve(color_stops.num_elements());
+  for (int i = 0; i < colors.num_elements(); i += 4) {
     /// TODO(gaaclarke): Make this preserve wide gamut colors.
-    dl_colors.emplace_back(DlColor(colors[i]));
+    DlScalar a = colors[i + 0];
+    DlScalar r = colors[i + 1];
+    DlScalar g = colors[i + 2];
+    DlScalar b = colors[i + 3];
+    FML_LOG(ERROR) << a << " " << r << " " << g << " " << b;
+    dl_colors.emplace_back(DlColor(a, r, g, b, DlColorSpace::kExtendedSRGB));
   }
 
   dl_shader_ = DlColorSource::MakeLinear(
-      p0, p1, colors.num_elements(), dl_colors.data(), color_stops.data(),
+      p0, p1, color_stops.num_elements(), dl_colors.data(), color_stops.data(),
       tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
