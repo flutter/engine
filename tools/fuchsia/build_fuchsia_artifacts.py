@@ -182,7 +182,7 @@ def ReadTargetAPILevel():
   with open(filename) as f:
     for line in f:
       line = line.strip()
-      if line.startswith('fuchsia_target_api_level='):
+      if line.startswith('fuchsia_target_api_level'):
         return line.split('=')[-1].strip()
   assert False, 'No fuchsia_target_api_level found in ' + filename
 
