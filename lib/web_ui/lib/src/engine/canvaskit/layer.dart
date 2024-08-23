@@ -463,6 +463,12 @@ class ShaderMaskEngineLayer extends ContainerLayer
   final ui.FilterQuality filterQuality;
 
   @override
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    paintBounds = prerollChildren(prerollContext, matrix);
+    prerollContext.viewEmbedder?.prerollShaderMask();
+  }
+
+  @override
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
@@ -505,6 +511,7 @@ class PictureLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = picture.cullRect.shift(offset);
+    prerollContext.viewEmbedder?.prerollPicture();
   }
 
   @override

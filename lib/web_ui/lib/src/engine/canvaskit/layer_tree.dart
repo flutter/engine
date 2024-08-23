@@ -46,7 +46,7 @@ class LayerTree {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
     final Iterable<CkCanvas> overlayCanvases =
-        frame.viewEmbedder!.getOverlayCanvases();
+        frame.viewEmbedder!.getPictureCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
     final PaintContext context = PaintContext(
       internalNodesCanvas,

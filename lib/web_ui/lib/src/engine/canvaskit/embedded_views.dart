@@ -78,27 +78,16 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  /// Returns a list of canvases which will be overlaid on top of the "base"
-  /// canvas after a platform view is composited into the scene.
-  ///
-  /// The engine asks for the overlay canvases immediately before the paint
-  /// phase, after the preroll phase. In the preroll phase we must be
-  /// conservative and assume that every platform view which is prerolled is
-  /// also composited, and therefore requires an overlay canvas. However, not
-  /// every platform view which is prerolled ends up being composited (it may be
-  /// clipped out and not actually drawn). This means that we may end up
-  /// overallocating canvases. This isn't a problem in practice, however, as
-  /// unused recording canvases are simply deleted at the end of the frame.
-  Iterable<CkCanvas> getOverlayCanvases() {
+  /// Returns a list of recording canvases which the pictures in the upcoming
+  /// paint step will be drawn into. These recording canvases are combined into
+  /// an N-way canvas for the rasterizer to record clip and transform operations
+  /// during the paint step.
+  Iterable<CkCanvas> getPictureCanvases() {
     return _context.pictureRecordersCreatedDuringPreroll
         .map((CkPictureRecorder r) => r.recordingCanvas!);
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
-
     // Do nothing if the params didn't change.
     if (_currentCompositionParams[viewId] == params) {
       // If the view was prerolled but not composited, then it needs to be
@@ -110,6 +99,18 @@ class HtmlViewEmbedder {
     }
     _currentCompositionParams[viewId] = params;
     _viewsToRecomposite.add(viewId);
+  }
+
+  void prerollPicture() {
+    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
+    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+  }
+
+  void prerollShaderMask() {
+    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
+    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
   }
 
   /// Prepares to composite [viewId].
