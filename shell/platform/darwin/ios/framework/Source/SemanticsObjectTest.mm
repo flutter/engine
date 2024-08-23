@@ -1122,8 +1122,6 @@ const float kFloatCompareEpsilon = 0.001;
       [self expectationWithDescription:@"Surrogate's cut method is called."];
   XCTestExpectation* pasteExpectation =
       [self expectationWithDescription:@"Surrogate's paste method is called."];
-  XCTestExpectation* selectExpectation =
-      [self expectationWithDescription:@"Surrogate's select method is called."];
   XCTestExpectation* selectAllExpectation =
       [self expectationWithDescription:@"Surrogate's selectAll method is called."];
   XCTestExpectation* deleteExpectation =
@@ -1138,9 +1136,6 @@ const float kFloatCompareEpsilon = 0.001;
   OCMStub([textInputSurrogate paste:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
     [pasteExpectation fulfill];
   });
-  OCMStub([textInputSurrogate select:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
-    [selectExpectation fulfill];
-  });
   OCMStub([textInputSurrogate selectAll:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
     [selectAllExpectation fulfill];
   });
@@ -1151,7 +1146,6 @@ const float kFloatCompareEpsilon = 0.001;
   [partialSemanticsObject copy:nil];
   [partialSemanticsObject cut:nil];
   [partialSemanticsObject paste:nil];
-  [partialSemanticsObject select:nil];
   [partialSemanticsObject selectAll:nil];
   [partialSemanticsObject delete:nil];
 
