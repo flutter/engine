@@ -1532,6 +1532,35 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
   }
 }
 
+TEST_P(EntityTest, ClipContentsCanSkip) {
+  // Intersect Clips can be skipped if the render target coverage is fully
+  // inside of them.
+
+  auto clip = std::make_shared<ClipContents>();
+  clip->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 100, 100)));
+  clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+
+  // Fully Contained
+  EXPECT_TRUE(clip->CanSkip(ISize::MakeWH(50, 50), {}));
+
+  // Not Intersect
+  clip->SetClipOperation(Entity::ClipOperation::kDifference);
+  EXPECT_FALSE(clip->CanSkip(ISize::MakeWH(50, 50), {}));
+
+  // Not Contained
+  clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+  EXPECT_FALSE(clip->CanSkip(ISize::MakeWH(200, 200), {}));
+
+  // Not Scale Translate
+  clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+  EXPECT_FALSE(
+      clip->CanSkip(ISize::MakeWH(50, 50), Matrix::MakeRotationX(Radians(2))));
+
+  // Not Axis Aligned Rectangle.
+  clip->SetGeometry(Geometry::MakeOval(Rect::MakeLTRB(0, 0, 50, 50)));
+  EXPECT_FALSE(clip->CanSkip(ISize::MakeWH(50, 50), {}));
+}
+
 TEST_P(EntityTest, ClipContentsGetClipCoverageIsCorrect) {
   // Intersection: No stencil coverage, no geometry.
   {

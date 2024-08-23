@@ -785,9 +785,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
 
   // Skip rendering the clip if it is fully contained by the current render
   // target.
-  const std::shared_ptr<ClipContents>& clip_contents =
-      std::static_pointer_cast<ClipContents>(entity.GetContents());
-  if (clip_contents->CanSkip(
+  if (entity.GetContents()->CanSkip(
           render_passes_.back().inline_pass_context->GetTexture()->GetSize(),
           entity.GetTransform())) {
     return;
