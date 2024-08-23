@@ -32,8 +32,9 @@ TEST(SaveLayerUtilsTest, BackdropFiterComputedCoverage) {
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),    //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/nullptr,                             //
-      /*flood_clip=*/true                                   //
+      /*image_filter=*/nullptr,
+      /*flood_output_coverage=*/false,  //
+      /*flood_input_coverage=*/true     //
   );
 
   ASSERT_TRUE(coverage.has_value());
