@@ -36,7 +36,7 @@ class CanvasGradient : public Shader {
 
   void initSweep(double center_x,
                  double center_y,
-                 const tonic::Int32List& colors,
+                 const tonic::Float32List& colors,
                  const tonic::Float32List& color_stops,
                  DlTileMode tile_mode,
                  double start_angle,

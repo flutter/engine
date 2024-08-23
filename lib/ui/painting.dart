@@ -4664,7 +4664,7 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
@@ -4703,7 +4703,7 @@ base class Gradient extends Shader {
   external void _initSweep(
       double centerX,
       double centerY,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       double startAngle,
