@@ -16,13 +16,12 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // coverage limit. By default, the coverage limit begins as the screen
   // coverage. Either a lack of bounds, or the presence of a backdrop
   // effecting paint property indicates that the saveLayer is unbounded.
-  // The one special case is when the input coverage was specified by the
-  // developer, in this case we still use the content coverage even if the
-  // saveLayer itself is unbounded.
   // Otherwise, the save layer is bounded by either its contents or by
   // a specified coverage limit. In these cases the coverage value is used
   // and intersected with the coverage limit.
-  Rect input_coverage = flood_clip ? Rect::MakeMaximum() : content_coverage;
+  if (flood_clip) {
+    return coverage_limit;
+  }
 
   // The content coverage must be scaled by any image filters present on the
   // saveLayer paint. For example, if a saveLayer has a coverage limit of
@@ -37,19 +36,19 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     }
     // Transform the input coverage into the global coordinate space before
     // computing the bounds limit intersection.
-    return input_coverage.TransformBounds(effect_transform)
+    return content_coverage.TransformBounds(effect_transform)
         .Intersection(source_coverage_limit.value());
   }
 
   // If the input coverage is maximum, just return the coverage limit that
   // is already in the global coordinate space.
-  if (input_coverage.IsMaximum()) {
+  if (content_coverage.IsMaximum()) {
     return coverage_limit;
   }
 
   // Transform the input coverage into the global coordinate space before
   // computing the bounds limit intersection.
-  return input_coverage.TransformBounds(effect_transform)
+  return content_coverage.TransformBounds(effect_transform)
       .Intersection(coverage_limit);
 }
 
