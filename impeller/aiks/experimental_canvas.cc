@@ -358,8 +358,9 @@ void ExperimentalCanvas::SaveLayer(
       transform_stack_.back().transform,  //
       coverage_limit,                     //
       filter_contents,                    //
-      /*flood_clip=*/Entity::IsBlendModeDestructive(paint.blend_mode) ||
-          !!backdrop_filter  //
+      /*flood_output_coverage=*/
+      Entity::IsBlendModeDestructive(paint.blend_mode),  //
+      /*flood_input_coverage=*/!!backdrop_filter         //
   );
 
   if (!maybe_subpass_coverage.has_value() ||

@@ -11,15 +11,34 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     const Matrix& effect_transform,
     const Rect& coverage_limit,
     const std::shared_ptr<FilterContents>& image_filter,
-    bool flood_clip) {
-  // If the saveLayer is unbounded, the coverage is the same as the
-  // coverage limit. By default, the coverage limit begins as the screen
-  // coverage. Either a lack of bounds, or the presence of a backdrop
-  // effecting paint property indicates that the saveLayer is unbounded.
-  // Otherwise, the save layer is bounded by either its contents or by
-  // a specified coverage limit. In these cases the coverage value is used
-  // and intersected with the coverage limit.
-  if (flood_clip) {
+    bool flood_output_coverage,
+    bool flood_input_coverage) {
+  Rect coverage = content_coverage;
+  // There are two conditions that currently trigger flood_input_coverage, the
+  // first is the presence of a backdrop filter and the second is the presence
+  // of a color filter that effects transparent black.
+  //
+  // Backdrop filters apply before the saveLayer is restored. The presence of
+  // a backdrop filter causes the content coverage of the saveLayer to be
+  // unbounded.
+  //
+  // If there is a color filter that needs to flood its output. The color filter
+  // is applied before any image filters, so this floods input coverage and not
+  // the output coverage. Technically, we only need to flood the output of the
+  // color filter and could allocate a render target sized just to the content,
+  // but we don't currenty have the means to do so. Flooding the coverage is a
+  // non-optimal but technically correct way to render this.
+  if (flood_input_coverage) {
+    coverage = Rect::MakeMaximum();
+  }
+
+  // If flood_output_coverage is true, then the restore is applied with a
+  // destructive blend mode that requires flooding to the coverage limit.
+  // Technically we could only allocated a render target as big as the input
+  // coverage and then use a decal sampling mode to perform the flood. Returning
+  // the coverage limit is a correct but non optimal means of ensuring correct
+  // rendering.
+  if (flood_output_coverage) {
     return coverage_limit;
   }
 
@@ -34,21 +53,22 @@ std::optional<Rect> ComputeSaveLayerCoverage(
       // No intersection with parent coverage limit.
       return std::nullopt;
     }
+
     // Transform the input coverage into the global coordinate space before
     // computing the bounds limit intersection.
-    return content_coverage.TransformBounds(effect_transform)
+    return coverage.TransformBounds(effect_transform)
         .Intersection(source_coverage_limit.value());
   }
 
   // If the input coverage is maximum, just return the coverage limit that
   // is already in the global coordinate space.
-  if (content_coverage.IsMaximum()) {
+  if (coverage.IsMaximum()) {
     return coverage_limit;
   }
 
   // Transform the input coverage into the global coordinate space before
   // computing the bounds limit intersection.
-  return content_coverage.TransformBounds(effect_transform)
+  return coverage.TransformBounds(effect_transform)
       .Intersection(coverage_limit);
 }
 

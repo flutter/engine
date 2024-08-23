@@ -166,11 +166,61 @@ TEST(SaveLayerUtilsTest, BackdropFilterEmptyCoverage) {
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
       /*image_filter=*/nullptr,                             //
-      /*flood_clip=*/true                                   //
+      /*flood_output_coverage=*/true                        //
   );
 
   ASSERT_TRUE(coverage.has_value());
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2400, 1800));
+}
+
+TEST(SaveLayerUtilsTest, FloodInputCoverage) {
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
+      /*image_filter=*/nullptr,                             //
+      /*flood_output_coverage=*/false,                      //
+      /*flood_input_coverage=*/true                         //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2400, 1800));
+}
+
+TEST(SaveLayerUtilsTest, FloodInputCoverageWithImageFilter) {
+  auto image_filter = FilterContents::MakeMatrixFilter(
+      FilterInput::Make(Rect()), Matrix::MakeScale({0.5, 0.5, 1}), {});
+
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
+      /*image_filter=*/image_filter,                        //
+      /*flood_output_coverage=*/false,                      //
+      /*flood_input_coverage=*/true                         //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 4800, 3600));
+}
+
+TEST(SaveLayerUtilsTest,
+     FloodInputCoverageWithImageFilterWithNoCoverageProducesNoCoverage) {
+  // Even if we flood the input coverage due to a bdf, we can still cull out the
+  // layer if the image filter results in no coverage.
+  auto image_filter = FilterContents::MakeMatrixFilter(
+      FilterInput::Make(Rect()), Matrix::MakeScale({1, 1, 0}), {});
+
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
+      /*image_filter=*/image_filter,                        //
+      /*flood_output_coverage=*/false,                      //
+      /*flood_input_coverage=*/true                         //
+  );
+
+  ASSERT_FALSE(coverage.has_value());
 }
 
 }  // namespace testing
