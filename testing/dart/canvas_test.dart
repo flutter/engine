@@ -1302,8 +1302,8 @@ void main() async {
       fail('Expected non-null byte data');
       return;
     }
-    final Color resultColor = Color(data.buffer.asInt32List()[0]);
-    expect(resultColor, const Color.fromARGB(255, 255, 0, 0));
+    final int rgba = data.buffer.asInt32List()[0];
+    expect(rgba, 0xFF0000FF);
   });
 }
 
