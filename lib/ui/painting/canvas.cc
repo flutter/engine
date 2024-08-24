@@ -597,7 +597,8 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     tonic::Float32List cull_rect(cull_rect_handle);
 
     std::vector<DlColor> dl_color(colors.num_elements());
-    for (auto i = 0u; i < colors.num_elements(); i++) {
+    size_t count = colors.num_elements();
+    for (size_t i = 0; i < count; i++) {
       dl_color[i] = DlColor(colors[i]);
     }
 
