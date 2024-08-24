@@ -1302,7 +1302,7 @@ void main() async {
       fail('Expected non-null byte data');
       return;
     }
-    final int rgba = data.buffer.asInt32List()[0];
+    final int rgba = data.buffer.asUint32List()[0];
     expect(rgba, 0xFF0000FF);
   });
 }
