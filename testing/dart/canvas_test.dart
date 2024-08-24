@@ -1303,7 +1303,7 @@ void main() async {
       return;
     }
     final Color resultColor = Color(data.buffer.asInt32List()[0]);
-    expect(resultColor, const Color.fromARGB(255, 255, 0 0));
+    expect(resultColor, const Color.fromARGB(255, 255, 0, 0));
   });
 }
 
