@@ -46,8 +46,7 @@ TEST_P(AiksTest, BlurredRectangleWithShader) {
     }
   }
   Picture picture = recorder_canvas.EndRecordingAsPicture();
-  std::shared_ptr<Texture> texture =
-      picture.ToImage(renderer, ISize{100, 100})->GetTexture();
+  std::shared_ptr<Texture> texture = picture.ToImage(renderer, ISize{100, 100});
 
   ColorSource image_source = ColorSource::MakeImage(
       texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {}, {});
@@ -107,7 +106,7 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultGlyphAtlasFormat);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
-  auto texture = std::make_shared<Image>(CreateTextureForFixture("boston.jpg"));
+  auto texture = CreateTextureForFixture("boston.jpg");
   Canvas canvas;
   canvas.Scale(GetContentScale() * 0.5);
   canvas.DrawPaint({.color = Color::Black()});
@@ -143,7 +142,7 @@ TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
         std::make_shared<RenderTargetCache>(
             GetContext()->GetResourceAllocator());
     AiksContext aiks_context(GetContext(), nullptr, cache);
-    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    std::shared_ptr<Texture> image = picture.ToImage(aiks_context, {1024, 768});
     EXPECT_TRUE(image) << " length " << i;
   }
 }
@@ -172,7 +171,7 @@ TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
         std::make_shared<RenderTargetCache>(
             GetContext()->GetResourceAllocator());
     AiksContext aiks_context(GetContext(), nullptr, cache);
-    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    std::shared_ptr<Texture> image = picture.ToImage(aiks_context, {1024, 768});
     EXPECT_TRUE(image) << " clip rect " << i;
   }
 }
