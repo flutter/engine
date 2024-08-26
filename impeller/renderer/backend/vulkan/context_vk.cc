@@ -626,4 +626,16 @@ const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
   return driver_info_;
 }
 
+bool ContextVK::SupportsAHBSwapchain() const {
+  const CapabilitiesVK& caps = CapabilitiesVK::Cast(*device_capabilities_);
+  return caps.HasExtension(
+             OptionalAndroidDeviceExtensionVK::kKHRExternalFence) &&
+         caps.HasExtension(
+             OptionalAndroidDeviceExtensionVK::kKHRExternalFenceFd) &&
+         caps.HasExtension(
+             OptionalAndroidDeviceExtensionVK::kKHRExternalSemaphore) &&
+         caps.HasExtension(
+             OptionalAndroidDeviceExtensionVK::kKHRExternalSemaphoreFd);
+}
+
 }  // namespace impeller

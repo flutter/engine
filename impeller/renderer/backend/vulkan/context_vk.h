@@ -102,6 +102,10 @@ class ContextVK final : public Context,
   // |Context|
   void Shutdown() override;
 
+  /// @brief Whether the Vulkan context has sufficient capabilities to support
+  ///        Android Hardware Buffer swapchains.
+  bool SupportsAHBSwapchain() const;
+
   void SetOffscreenFormat(PixelFormat pixel_format);
 
   template <typename T>

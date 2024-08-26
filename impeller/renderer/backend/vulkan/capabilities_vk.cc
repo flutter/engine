@@ -167,6 +167,22 @@ static const char* GetExtensionName(RequiredCommonDeviceExtensionVK ext) {
   FML_UNREACHABLE();
 }
 
+static const char* GetExtensionName(OptionalAndroidDeviceExtensionVK ext) {
+  switch (ext) {
+    case OptionalAndroidDeviceExtensionVK::kKHRExternalFenceFd:
+      return VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
+    case OptionalAndroidDeviceExtensionVK::kKHRExternalFence:
+      return VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME;
+    case OptionalAndroidDeviceExtensionVK::kKHRExternalSemaphoreFd:
+      return VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    case OptionalAndroidDeviceExtensionVK::kKHRExternalSemaphore:
+      return VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME;
+    case OptionalAndroidDeviceExtensionVK::kLast:
+      return "Unknown";
+  }
+  FML_UNREACHABLE();
+}
+
 static const char* GetExtensionName(RequiredAndroidDeviceExtensionVK ext) {
   switch (ext) {
     case RequiredAndroidDeviceExtensionVK::
@@ -180,14 +196,6 @@ static const char* GetExtensionName(RequiredAndroidDeviceExtensionVK ext) {
       return VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kKHRDedicatedAllocation:
       return VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRExternalFenceFd:
-      return VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRExternalFence:
-      return VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphoreFd:
-      return VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphore:
-      return VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -278,12 +286,26 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
     return true;
   };
 
+  auto for_each_optional_android_extension =
+      [&](OptionalAndroidDeviceExtensionVK ext) {
+#ifdef FML_OS_ANDROID
+        auto name = GetExtensionName(ext);
+        if (exts->find(name) != exts->end()) {
+          enabled.push_back(name);
+        }
+#endif  //  FML_OS_ANDROID
+        return true;
+      };
+
   const auto iterate_extensions =
       IterateExtensions<RequiredCommonDeviceExtensionVK>(
           for_each_common_extension) &&
       IterateExtensions<RequiredAndroidDeviceExtensionVK>(
           for_each_android_extension) &&
-      IterateExtensions<OptionalDeviceExtensionVK>(for_each_optional_extension);
+      IterateExtensions<OptionalDeviceExtensionVK>(
+          for_each_optional_extension) &&
+      IterateExtensions<OptionalAndroidDeviceExtensionVK>(
+          for_each_optional_android_extension);
 
   if (!iterate_extensions) {
     VALIDATION_LOG << "Device not suitable since required extensions are not "
@@ -549,6 +571,13 @@ bool CapabilitiesVK::SetPhysicalDevice(
       }
       return true;
     });
+    IterateExtensions<OptionalAndroidDeviceExtensionVK>([&](auto ext) -> bool {
+      auto ext_name = GetExtensionName(ext);
+      if (exts->find(ext_name) != exts->end()) {
+        optional_android_device_extensions_.insert(ext);
+      }
+      return true;
+    });
   }
 
   supports_texture_fixed_rate_compression_ =
@@ -649,6 +678,11 @@ bool CapabilitiesVK::HasExtension(RequiredAndroidDeviceExtensionVK ext) const {
 bool CapabilitiesVK::HasExtension(OptionalDeviceExtensionVK ext) const {
   return optional_device_extensions_.find(ext) !=
          optional_device_extensions_.end();
+}
+
+bool CapabilitiesVK::HasExtension(OptionalAndroidDeviceExtensionVK ext) const {
+  return optional_android_device_extensions_.find(ext) !=
+         optional_android_device_extensions_.end();
 }
 
 bool CapabilitiesVK::SupportsTextureFixedRateCompression() const {
