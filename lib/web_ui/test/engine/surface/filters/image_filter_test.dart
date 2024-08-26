@@ -9,11 +9,15 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../../../canvaskit/common.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
+  setUpCanvasKitTest();
+
   group('ImageFilter constructors', () {
     test('matrix is copied', () {
       final Matrix4 matrix = Matrix4.identity();
