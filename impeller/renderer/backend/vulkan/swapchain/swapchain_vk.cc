@@ -55,8 +55,11 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     return nullptr;
   }
 
+  // TODO(147533): AHB swapchains on emulators are not functional.
+  const auto emulator = ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
+
   // Try AHB swapchains first.
-  if (ContextVK::Cast(*context).SupportsAHBSwapchain() &&
+  if (!emulator && ContextVK::Cast(*context).SupportsAHBSwapchain() &&
       AHBSwapchainVK::IsAvailableOnPlatform()) {
     auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
         context,             //
