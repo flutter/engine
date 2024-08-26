@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:async_helper/async_minitest.dart';
 import 'package:expect/expect.dart';
+import 'async_minitest.dart';
 
 /// The epsilon of tolerable double precision error.
 ///
@@ -85,6 +85,11 @@ void isNonZero(dynamic d) {
 /// A [Matcher] that matches functions that throw a [RangeError] when invoked.
 void throwsRangeError(dynamic d) {
   Expect.throwsRangeError(d as void Function());
+}
+
+/// A [Matcher] that matches functions that throw a [RangeError] when invoked.
+void throwsFormatException(dynamic d) {
+  Expect.throwsFormatException(d as void Function());
 }
 
 /// Gives a [Matcher] that asserts that the value being matched is a [String]

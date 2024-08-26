@@ -3,15 +3,18 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
+#include "fml/task_runner.h"
 
 #include "flutter/common/constants.h"
+
+FLUTTER_ASSERT_ARC
 
 namespace flutter {
 
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
-    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    std::shared_ptr<IOSContext> context)
-    : platform_views_controller_(platform_views_controller), ios_context_(std::move(context)) {
+    const std::shared_ptr<PlatformViewsController>& platform_views_controller,
+    const std::shared_ptr<IOSContext>& context)
+    : platform_views_controller_(platform_views_controller), ios_context_(context) {
   FML_CHECK(ios_context_);
 }
 
@@ -37,12 +40,7 @@ void IOSExternalViewEmbedder::BeginFrame(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
-void IOSExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
-                                                 SkISize frame_size,
-                                                 double device_pixel_ratio) {
-  // TODO(dkwingsmt): This class only supports rendering into the implicit view.
-  // Properly support multi-view in the future.
-  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
+void IOSExternalViewEmbedder::PrepareFlutterView(SkISize frame_size, double device_pixel_ratio) {
   FML_CHECK(platform_views_controller_);
   platform_views_controller_->BeginFrame(frame_size);
 }
@@ -61,7 +59,8 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PostPrerollAction");
   FML_CHECK(platform_views_controller_);
-  PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  PostPrerollResult result = platform_views_controller_->PostPrerollAction(
+      raster_thread_merger, ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
   return result;
 }
 
@@ -74,10 +73,15 @@ DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::SubmitFlutterView(
+    int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFlutterView");
+
+  // TODO(dkwingsmt): This class only supports rendering into the implicit view.
+  // Properly support multi-view in the future.
+  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   FML_CHECK(platform_views_controller_);
   platform_views_controller_->SubmitFrame(context, ios_context_, std::move(frame));
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");
@@ -88,12 +92,18 @@ void IOSExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::EndFrame");
-  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
+  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger,
+                                       ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
 }
 
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
+// TODO(jonahwilliams): remove this once Software backend is removed for iOS Sim.
+#if FML_OS_IOS_SIMULATOR
   return true;
+#else
+  return ios_context_->GetBackend() == IOSRenderingBackend::kSkia;
+#endif  // FML_OS_IOS_SIMULATOR
 }
 
 // |ExternalViewEmbedder|

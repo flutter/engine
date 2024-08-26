@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 
 #include "flutter/display_list/skia/dl_sk_conversions.h"
@@ -9,6 +11,7 @@
 #include "flutter/fml/trace_event.h"
 
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrRecordingContext.h"
 
@@ -150,6 +153,12 @@ void DlSkCanvasAdapter::ClipRect(const SkRect& rect,
   delegate_->clipRect(rect, ToSk(clip_op), is_aa);
 }
 
+void DlSkCanvasAdapter::ClipOval(const SkRect& bounds,
+                                 ClipOp clip_op,
+                                 bool is_aa) {
+  delegate_->clipRRect(SkRRect::MakeOval(bounds), ToSk(clip_op), is_aa);
+}
+
 void DlSkCanvasAdapter::ClipRRect(const SkRRect& rrect,
                                   ClipOp clip_op,
                                   bool is_aa) {
@@ -197,6 +206,17 @@ void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
   delegate_->drawLine(p0, p1, ToStrokedSk(paint));
 }
 
+void DlSkCanvasAdapter::DrawDashedLine(const DlPoint& p0,
+                                       const DlPoint& p1,
+                                       DlScalar on_length,
+                                       DlScalar off_length,
+                                       const DlPaint& paint) {
+  SkPaint dashed_paint = ToStrokedSk(paint);
+  SkScalar intervals[2] = {on_length, off_length};
+  dashed_paint.setPathEffect(SkDashPathEffect::Make(intervals, 2, 0.0f));
+  delegate_->drawLine(ToSkPoint(p0), ToSkPoint(p1), dashed_paint);
+}
+
 void DlSkCanvasAdapter::DrawRect(const SkRect& rect, const DlPaint& paint) {
   delegate_->drawRect(rect, ToSk(paint));
 }
@@ -240,9 +260,10 @@ void DlSkCanvasAdapter::DrawPoints(PointMode mode,
   delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawVertices(const DlVertices* vertices,
-                                     DlBlendMode mode,
-                                     const DlPaint& paint) {
+void DlSkCanvasAdapter::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   delegate_->drawVertices(ToSk(vertices), ToSk(mode), ToSk(paint));
 }
 
@@ -290,9 +311,13 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
                                   const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = atlas->skia_image();
-  const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
-  delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors, count, ToSk(mode),
-                       ToSk(sampling), cullRect, sk_paint());
+  std::vector<SkColor> sk_colors;
+  sk_colors.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    sk_colors.push_back(colors[i].argb());
+  }
+  delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors.data(), count,
+                       ToSk(mode), ToSk(sampling), cullRect, sk_paint());
 }
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
@@ -352,3 +377,5 @@ void DlSkCanvasAdapter::Flush() {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

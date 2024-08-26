@@ -7,8 +7,6 @@
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
-#include "impeller/renderer/backend/metal/blit_command_mtl.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
@@ -21,12 +19,17 @@ class BlitPassMTL final : public BlitPass {
  private:
   friend class CommandBufferMTL;
 
-  std::vector<std::unique_ptr<BlitEncodeMTL>> commands_;
+  id<MTLBlitCommandEncoder> encoder_ = nil;
   id<MTLCommandBuffer> buffer_ = nil;
-  std::string label_;
+  id<MTLDevice> device_ = nil;
   bool is_valid_ = false;
+  bool is_metal_trace_active_ = false;
+  // Many parts of the codebase will start writing to a render pass but
+  // never submit them. This boolean is used to track if a submit happened
+  // so that in the dtor we can always ensure the render pass is finished.
+  mutable bool did_finish_encoding_ = false;
 
-  explicit BlitPassMTL(id<MTLCommandBuffer> buffer);
+  explicit BlitPassMTL(id<MTLCommandBuffer> buffer, id<MTLDevice> device);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -38,7 +41,9 @@ class BlitPassMTL final : public BlitPass {
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
-  bool EncodeCommands(id<MTLBlitCommandEncoder> pass) const;
+  // |BlitPass|
+  bool ResizeTexture(const std::shared_ptr<Texture>& source,
+                     const std::shared_ptr<Texture>& destination) override;
 
   // |BlitPass|
   bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
@@ -56,8 +61,10 @@ class BlitPassMTL final : public BlitPass {
   // |BlitPass|
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
-                                    IPoint destination_origin,
-                                    std::string label) override;
+                                    IRect destination_region,
+                                    std::string label,
+                                    uint32_t slice,
+                                    bool convert_to_read) override;
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,

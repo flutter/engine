@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_CACHE_VK_H_
 
 #include "flutter/fml/file.h"
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 
@@ -40,8 +39,6 @@ class PipelineCacheVK {
   const fml::UniqueFD cache_directory_;
   vk::UniquePipelineCache cache_;
   bool is_valid_ = false;
-
-  std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;
 
   PipelineCacheVK(const PipelineCacheVK&) = delete;
 

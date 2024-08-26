@@ -8,6 +8,7 @@
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/dl_vertices.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/image/dl_image.h"
 
 #include "third_party/skia/include/core/SkM44.h"
@@ -104,6 +105,9 @@ class DlCanvas {
   virtual void ClipRect(const SkRect& rect,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
+  virtual void ClipOval(const SkRect& bounds,
+                        ClipOp clip_op = ClipOp::kIntersect,
+                        bool is_aa = false) = 0;
   virtual void ClipRRect(const SkRRect& rrect,
                          ClipOp clip_op = ClipOp::kIntersect,
                          bool is_aa = false) = 0;
@@ -132,6 +136,11 @@ class DlCanvas {
   virtual void DrawLine(const SkPoint& p0,
                         const SkPoint& p1,
                         const DlPaint& paint) = 0;
+  virtual void DrawDashedLine(const DlPoint& p0,
+                              const DlPoint& p1,
+                              DlScalar on_length,
+                              DlScalar off_length,
+                              const DlPaint& paint) = 0;
   virtual void DrawRect(const SkRect& rect, const DlPaint& paint) = 0;
   virtual void DrawOval(const SkRect& bounds, const DlPaint& paint) = 0;
   virtual void DrawCircle(const SkPoint& center,
@@ -151,14 +160,9 @@ class DlCanvas {
                           uint32_t count,
                           const SkPoint pts[],
                           const DlPaint& paint) = 0;
-  virtual void DrawVertices(const DlVertices* vertices,
+  virtual void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                             DlBlendMode mode,
                             const DlPaint& paint) = 0;
-  void DrawVertices(const std::shared_ptr<const DlVertices>& vertices,
-                    DlBlendMode mode,
-                    const DlPaint& paint) {
-    DrawVertices(vertices.get(), mode, paint);
-  }
   virtual void DrawImage(const sk_sp<DlImage>& image,
                          const SkPoint point,
                          DlImageSampling sampling,

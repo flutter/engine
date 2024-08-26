@@ -4,22 +4,27 @@
 
 import 'package:meta/meta.dart';
 
-import '../platform_dispatcher.dart';
 import 'accessibility.dart';
 import 'label_and_value.dart';
 import 'semantics.dart';
 
 /// Manages semantics configurations that represent live regions.
 ///
-/// Assistive technologies treat "aria-live" attribute differently. To keep
-/// the behavior consistent, [AccessibilityAnnouncements.announce] is used.
+/// A live region is a region whose changes will be announced by the screen
+/// reader without the user moving focus onto the node.
+///
+/// Examples of live regions include snackbars and text field errors. Once
+/// identified with this role, they will be able to get the assistive
+/// technology's attention right away.
+///
+/// Different assistive technologies treat "aria-live" attribute differently. To
+/// keep the behavior consistent, [AccessibilityAnnouncements.announce] is used.
 ///
 /// When there is an update to [LiveRegion], assistive technologies read the
 /// label of the element. See [LabelAndValue]. If there is no label provided
 /// no content will be read.
-class LiveRegion extends RoleManager {
-  LiveRegion(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : super(Role.liveRegion, semanticsObject, owner);
+class LiveRegion extends SemanticBehavior {
+  LiveRegion(super.semanticsObject, super.owner);
 
   String? _lastAnnouncement;
 
@@ -32,7 +37,7 @@ class LiveRegion extends RoleManager {
 
   AccessibilityAnnouncements get _accessibilityAnnouncements =>
       _accessibilityAnnouncementsOverride ??
-      EnginePlatformDispatcher.instance.implicitView!.accessibilityAnnouncements;
+      EngineSemantics.instance.accessibilityAnnouncements;
 
   @override
   void update() {

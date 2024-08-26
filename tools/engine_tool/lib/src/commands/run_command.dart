@@ -8,6 +8,7 @@ import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:process_runner/process_runner.dart';
 
 import '../build_utils.dart';
+import '../label.dart';
 import '../run_utils.dart';
 import 'command.dart';
 import 'flags.dart';
@@ -18,30 +19,27 @@ final class RunCommand extends CommandBase {
   RunCommand({
     required super.environment,
     required Map<String, BuilderConfig> configs,
+    super.help = false,
+    super.usageLineLength,
   }) {
-    builds = runnableBuilds(environment, configs);
+    // When printing the help/usage for this command, only list all builds
+    // when the --verbose flag is supplied.
+    final bool includeCiBuilds = environment.verbose || !help;
+    builds = runnableBuilds(environment, configs, includeCiBuilds);
     debugCheckBuilds(builds);
-
-    argParser.addOption(
-      configFlag,
-      abbr: 'c',
+    // We default to nothing in order to automatically detect attached devices
+    // and select an appropriate target from them.
+    addConfigOption(
+      environment,
+      argParser,
+      builds,
       defaultsTo: '',
-      help:
-          'Specify the build config to use for the target build (usually auto detected)',
-      allowed: <String>[
-        for (final Build build in runnableBuilds(environment, configs))
-          build.name,
-      ],
-      allowedHelp: <String, String>{
-        for (final Build build in runnableBuilds(environment, configs))
-          build.name: build.gn.join(' '),
-      },
     );
+    addConcurrencyOption(argParser);
     argParser.addFlag(
       rbeFlag,
-      defaultsTo: true,
-      help: 'RBE is enabled by default when available. Use --no-rbe to '
-            'disable it.',
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
     );
   }
 
@@ -52,33 +50,39 @@ final class RunCommand extends CommandBase {
   String get name => 'run';
 
   @override
-  String get description => 'Run a Flutter app with a local engine build. '
-      'All arguments after -- are forwarded to flutter run, e.g.: '
-      'et run -- --profile '
-      'et run -- -d macos '
-      'See `flutter run --help` for a listing';
+  String get description => '''
+Run a Flutter app with a local engine build.
+  All arguments after -- are forwarded to flutter run, e.g.:
+  et run -- --profile
+  et run -- -d macos
+See `flutter run --help` for a listing
+''';
 
   Build? _lookup(String configName) {
-    return builds.where((Build build) => build.name == configName).firstOrNull;
+    final String demangledName = demangleConfigName(environment, configName);
+    return builds
+        .where((Build build) => build.name == demangledName)
+        .firstOrNull;
   }
 
   Build? _findHostBuild(Build? targetBuild) {
     if (targetBuild == null) {
       return null;
     }
-
-    final String name = targetBuild.name;
-    if (name.startsWith('host_')) {
+    final String mangledName = mangleConfigName(environment, targetBuild.name);
+    if (mangledName.contains('host_')) {
       return targetBuild;
     }
     // TODO(johnmccutchan): This is brittle, it would be better if we encoded
     // the host config name in the target config.
-    if (name.contains('_debug')) {
-      return _lookup('host_debug');
-    } else if (name.contains('_profile')) {
-      return _lookup('host_profile');
-    } else if (name.contains('_release')) {
-      return _lookup('host_release');
+    final String ci =
+        mangledName.startsWith('ci') ? mangledName.substring(0, 3) : '';
+    if (mangledName.contains('_debug')) {
+      return _lookup('${ci}host_debug');
+    } else if (mangledName.contains('_profile')) {
+      return _lookup('${ci}host_profile');
+    } else if (mangledName.contains('_release')) {
+      return _lookup('${ci}host_release');
     }
     return null;
   }
@@ -110,16 +114,17 @@ final class RunCommand extends CommandBase {
     return mode;
   }
 
+  late final Future<RunTarget?> _runTarget =
+      detectAndSelectRunTarget(environment, _getDeviceId());
+
   Future<String?> _selectTargetConfig() async {
     final String configName = argResults![configFlag] as String;
     if (configName.isNotEmpty) {
-      return configName;
+      return demangleConfigName(environment, configName);
     }
-    final String deviceId = _getDeviceId();
-    final RunTarget? target =
-        await detectAndSelectRunTarget(environment, deviceId);
+    final RunTarget? target = await _runTarget;
     if (target == null) {
-      return 'host_debug';
+      return demangleConfigName(environment, 'host_debug');
     }
     environment.logger.status(
         'Building to run on "${target.name}" running ${target.targetPlatform}');
@@ -149,39 +154,73 @@ final class RunCommand extends CommandBase {
     }
 
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final List<String> extraGnArgs = <String>[
       if (!useRbe) '--no-rbe',
     ];
+    final RunTarget? target = await _runTarget;
+    final List<Label> buildTargetsForShell =
+        target?.buildTargetsForShell() ?? <Label>[];
+
+    final String dashJ = argResults![concurrencyFlag] as String;
+    final int? concurrency = int.tryParse(dashJ);
+    if (concurrency == null || concurrency < 0) {
+      environment.logger.error('-j must specify a positive integer.');
+      return 1;
+    }
 
     // First build the host.
-    int r = await runBuild(environment, hostBuild, extraGnArgs: extraGnArgs);
+    int r = await runBuild(
+      environment,
+      hostBuild,
+      concurrency: concurrency,
+      extraGnArgs: extraGnArgs,
+      enableRbe: useRbe,
+    );
     if (r != 0) {
       return r;
     }
 
     // Now build the target if it isn't the same.
     if (hostBuild.name != build.name) {
-      r = await runBuild(environment, build, extraGnArgs: extraGnArgs);
+      r = await runBuild(
+        environment,
+        build,
+        concurrency: concurrency,
+        extraGnArgs: extraGnArgs,
+        enableRbe: useRbe,
+        targets: buildTargetsForShell,
+      );
       if (r != 0) {
         return r;
       }
     }
 
+    final String mangledBuildName = mangleConfigName(environment, build.name);
+
+    final String mangledHostBuildName =
+        mangleConfigName(environment, hostBuild.name);
+
+    final List<String> command = <String>[
+      'flutter',
+      'run',
+      '--local-engine-src-path',
+      environment.engine.srcDir.path,
+      '--local-engine',
+      mangledBuildName,
+      '--local-engine-host',
+      mangledHostBuildName,
+      ...argResults!.rest
+    ];
+
     // TODO(johnmccutchan): Be smart and if the user requested a profile
     // config, add the '--profile' flag when invoking flutter run.
     final ProcessRunnerResult result =
         await environment.processRunner.runProcess(
-      <String>[
-        'flutter',
-        'run',
-        '--local-engine-src-path',
-        environment.engine.srcDir.path,
-        '--local-engine',
-        build.name,
-        '--local-engine-host',
-        hostBuild.name,
-        ...argResults!.rest,
-      ],
+      command,
       runInShell: true,
       startMode: ProcessStartMode.inheritStdio,
     );

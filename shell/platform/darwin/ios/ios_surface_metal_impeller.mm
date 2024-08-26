@@ -8,6 +8,8 @@
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
 IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
@@ -56,15 +58,7 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   // backdrop filters. Flutter plugins that create platform views may also read from the layer.
   layer.framebufferOnly = NO;
 
-  // When there are platform views in the scene, the drawable needs to be presented in the same
-  // transaction as the one created for platform views. When the drawable are being presented from
-  // the raster thread, we may not be able to use a transaction as it will dirty the UIViews being
-  // presented. If there is a non-Flutter UIView active, such as in add2app or a
-  // presentViewController page transition, then this will cause CoreAnimation assertion errors and
-  // exit the app.
-  layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
-
-  return layer;
+  return (__bridge GPUCAMetalLayerHandle)layer;
 }
 
 // |GPUSurfaceMetalDelegate|

@@ -13,9 +13,12 @@
 // Keep this list alphabetized.
 const String allFlag = 'all';
 const String builderFlag = 'builder';
+const String concurrencyFlag = 'concurrency';
 const String configFlag = 'config';
 const String dryRunFlag = 'dry-run';
+const String ltoFlag = 'lto';
 const String quietFlag = 'quiet';
 const String rbeFlag = 'rbe';
 const String runTestsFlag = 'run-tests';
 const String verboseFlag = 'verbose';
+const String testOnlyFlag = 'testonly';

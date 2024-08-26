@@ -1075,6 +1075,14 @@ class PlatformDispatcher {
   bool get nativeSpellCheckServiceDefined => _nativeSpellCheckServiceDefined;
   bool _nativeSpellCheckServiceDefined = false;
 
+  /// Whether showing system context menu is supported on the current platform.
+  ///
+  /// This option is used by [AdaptiveTextSelectionToolbar] to decide whether
+  /// to show system context menu, or to fallback to the default Flutter context
+  /// menu.
+  bool get supportsShowingSystemContextMenu => _supportsShowingSystemContextMenu;
+  bool _supportsShowingSystemContextMenu = false;
+
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
   ///
@@ -1142,6 +1150,14 @@ class PlatformDispatcher {
     } else {
       _nativeSpellCheckServiceDefined = false;
     }
+
+    final bool? supportsShowingSystemContextMenu = data['supportsShowingSystemContextMenu'] as bool?;
+    if (supportsShowingSystemContextMenu != null) {
+      _supportsShowingSystemContextMenu = supportsShowingSystemContextMenu;
+    } else {
+      _supportsShowingSystemContextMenu = false;
+    }
+
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
     if (brieflyShowPassword != null) {
@@ -1867,7 +1883,7 @@ class FrameTiming {
 ///   provides state transition callbacks.
 /// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
 ///   from the widgets layer.
-/// * iOS's [IOKit activity
+/// * iOS's [UIKit activity
 ///   lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc)
 ///   documentation.
 /// * Android's [activity
@@ -2179,6 +2195,8 @@ class ViewConstraints {
 /// [DisplayFeatureState.postureHalfOpened]. For [DisplayFeatureType.cutout],
 /// the state is not used and has the [DisplayFeatureState.unknown] value.
 class DisplayFeature {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   const DisplayFeature({
     required this.bounds,
     required this.type,

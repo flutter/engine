@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
 
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
+
+FLUTTER_ASSERT_ARC
 
 @protocol FlutterMetalDrawable <MTLDrawable>
 - (void)flutterPrepareForPresent:(nonnull id<MTLCommandBuffer>)commandBuffer;
@@ -14,8 +18,9 @@
 
 namespace flutter {
 
-static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>& context) {
-  return reinterpret_cast<IOSContextMetalSkia*>(context.get());
+static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>& context)
+    __attribute__((cf_audited_transfer)) {
+  return (IOSContextMetalSkia*)context.get();
 }
 
 IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
@@ -46,9 +51,8 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,                               // delegate
-                                               sk_ref_sp(context),                 // context
-                                               GetContext()->GetMsaaSampleCount()  // sample count
+  return std::make_unique<GPUSurfaceMetalSkia>(this,               // delegate
+                                               sk_ref_sp(context)  // context
   );
 }
 
@@ -72,7 +76,19 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
   // the raster thread, there is no such transaction.
   layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
 
-  return layer;
+  return (__bridge GPUCAMetalLayerHandle)layer;
+}
+
+// |GPUSurfaceMetalDelegate|
+bool IOSSurfaceMetalSkia::PreparePresent(GrMTLHandle drawable) const {
+  id<MTLCommandBuffer> command_buffer = [command_queue_ commandBuffer];
+  id<CAMetalDrawable> metal_drawable = (__bridge id<CAMetalDrawable>)drawable;
+  if ([metal_drawable conformsToProtocol:@protocol(FlutterMetalDrawable)]) {
+    [(id<FlutterMetalDrawable>)metal_drawable flutterPrepareForPresent:command_buffer];
+  }
+  [command_buffer commit];
+  [command_buffer waitUntilScheduled];
+  return true;
 }
 
 // |GPUSurfaceMetalDelegate|
@@ -82,17 +98,7 @@ bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
     return false;
   }
 
-  auto command_buffer =
-      fml::scoped_nsprotocol<id<MTLCommandBuffer>>([[command_queue_ commandBuffer] retain]);
-
-  id<CAMetalDrawable> metal_drawable = reinterpret_cast<id<CAMetalDrawable>>(drawable);
-  if ([metal_drawable conformsToProtocol:@protocol(FlutterMetalDrawable)]) {
-    [(id<FlutterMetalDrawable>)metal_drawable flutterPrepareForPresent:command_buffer.get()];
-  }
-
-  [command_buffer.get() commit];
-  [command_buffer.get() waitUntilScheduled];
-
+  id<CAMetalDrawable> metal_drawable = (__bridge id<CAMetalDrawable>)drawable;
   [metal_drawable present];
   return true;
 }
@@ -115,3 +121,5 @@ bool IOSSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

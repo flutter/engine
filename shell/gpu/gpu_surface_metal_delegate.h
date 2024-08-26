@@ -10,7 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
@@ -76,6 +76,8 @@ class GPUSurfaceMetalDelegate {
   /// @see |GPUSurfaceMetalDelegate::GetCAMetalLayer|
   ///
   virtual bool PresentDrawable(GrMTLHandle drawable) const = 0;
+
+  virtual bool PreparePresent(GrMTLHandle drawable) const { return true; }
 
   //------------------------------------------------------------------------------
   /// @brief Returns the handle to the MTLTexture to render to. This is only

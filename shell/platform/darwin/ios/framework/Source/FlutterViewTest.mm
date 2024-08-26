@@ -4,8 +4,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 FLUTTER_ASSERT_ARC
@@ -16,12 +14,12 @@ FLUTTER_ASSERT_ARC
 @end
 
 @implementation FakeDelegate {
-  std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
 }
 
 - (instancetype)init {
   _callbackCalled = NO;
-  _platformViewsController = std::shared_ptr<flutter::FlutterPlatformViewsController>(nullptr);
+  _platformViewsController = std::shared_ptr<flutter::PlatformViewsController>(nullptr);
   return self;
 }
 
@@ -30,7 +28,7 @@ FLUTTER_ASSERT_ARC
   return {};
 }
 
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
 

@@ -23,7 +23,10 @@ namespace flutter {
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
-    : client_(p_client), vm_(nullptr), context_(task_runners) {}
+    : client_(p_client),
+      vm_(nullptr),
+      context_(task_runners),
+      pointer_data_packet_converter_(*this) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -43,7 +46,8 @@ RuntimeController::RuntimeController(
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
       persistent_isolate_data_(std::move(p_persistent_isolate_data)),
-      context_(p_context) {}
+      context_(p_context),
+      pointer_data_packet_converter_(*this) {}
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
@@ -121,12 +125,30 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
   FML_DCHECK(!has_flushed_runtime_state_)
       << "FlushRuntimeStateToIsolate is called more than once somehow.";
   has_flushed_runtime_state_ = true;
+
+  auto platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    return false;
+  }
+
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
-    if (!AddView(view_id, viewport_metrics)) {
-      return false;
+    bool added = platform_configuration->AddView(view_id, viewport_metrics);
+
+    // Callbacks will have been already invoked if the engine was restarted.
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](added);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    if (!added) {
+      FML_LOG(ERROR) << "Failed to flush view #" << view_id
+                     << ". The Dart isolate may be in an inconsistent state.";
     }
   }
+
+  FML_DCHECK(pending_add_view_callbacks_.empty());
   return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -136,25 +158,61 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id,
-                                const ViewportMetrics& view_metrics) {
-  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
+void RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics,
+                                AddViewCallback callback) {
+  // If the Dart isolate is not running, |FlushRuntimeStateToIsolate| will
+  // add the view and invoke the callback when the isolate is started.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
 
-    return true;
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      FML_LOG(ERROR) << "View #" << view_id << " is already pending creation.";
+      callback(false);
+      return;
+    }
+
+    platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
+    pending_add_view_callbacks_[view_id] = std::move(callback);
+    return;
   }
 
-  return false;
+  FML_DCHECK(has_flushed_runtime_state_ || pending_add_view_callbacks_.empty());
+
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
+  bool added = platform_configuration->AddView(view_id, view_metrics);
+  if (added) {
+    ScheduleFrame();
+  }
+
+  callback(added);
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
   platform_data_.viewport_metrics_for_views.erase(view_id);
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    return platform_configuration->RemoveView(view_id);
+
+  // If the Dart isolate has not been launched yet, the pending
+  // add view operation's callback is stored by the runtime controller.
+  // Notify this callback of the cancellation.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](false);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    return false;
   }
 
-  return false;
+  return platform_configuration->RemoveView(view_id);
+}
+
+bool RuntimeController::ViewExists(int64_t view_id) const {
+  return platform_data_.viewport_metrics_for_views.count(view_id) != 0;
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
@@ -308,7 +366,11 @@ bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
-    platform_configuration->DispatchPointerDataPacket(packet);
+    std::unique_ptr<PointerDataPacket> converted_packet =
+        pointer_data_packet_converter_.Convert(packet);
+    if (converted_packet->GetLength() != 0) {
+      platform_configuration->DispatchPointerDataPacket(*converted_packet);
+    }
     return true;
   }
 

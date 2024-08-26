@@ -9,9 +9,10 @@ import 'dart:math' as math;
 import 'package:meta/meta.dart';
 import 'package:ui/src/engine/keyboard_binding.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart' show registerHotRestartListener;
-import 'browser_detection.dart';
+import 'browser_detection.dart' show isIosSafari;
 import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding/event_position_helper.dart';
@@ -204,12 +205,13 @@ class ClickDebouncer {
   @visibleForTesting
   DebounceState? get debugState => _state;
 
-  // The timestamp of the last "pointerup" DOM event that was flushed.
+  // The timestamp of the last "pointerup" DOM event that was sent to the
+  // framework.
   //
   // Not to be confused with the time when it was flushed. The two may be far
   // apart because the flushing can happen after a delay due to timer, or events
   // that happen after the said "pointerup".
-  Duration? _lastFlushedPointerUpTimeStamp;
+  Duration? _lastSentPointerUpTimeStamp;
 
   /// Returns true if the debouncer has a non-empty queue of pointer events that
   /// were withheld from the framework.
@@ -243,6 +245,14 @@ class ClickDebouncer {
     } else if (event.type == 'pointerdown') {
       _startDebouncing(event, data);
     } else {
+      if (event.type == 'pointerup') {
+        // Record the last pointerup event even if not debouncing. This is
+        // because the sequence of pointerdown-pointerup could indicate a
+        // long-press, and the debounce timer is not long enough to capture it.
+        // If a "click" is observed after a long-press it should be
+        // discarded.
+        _lastSentPointerUpTimeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
+      }
       _sendToFramework(event, data);
     }
   }
@@ -294,6 +304,7 @@ class ClickDebouncer {
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
         semanticsNodeId, ui.SemanticsAction.tap, null);
+    reset();
   }
 
   void _startDebouncing(DomEvent event, List<ui.PointerData> data) {
@@ -350,10 +361,7 @@ class ClickDebouncer {
     // It's only interesting to debounce clicks when both `pointerdown` and
     // `pointerup` land on the same element.
     if (event.type == 'pointerup') {
-      // TODO(yjbanov): this is a bit mouthful, but see https://github.com/dart-lang/sdk/issues/53070
-      final DomEventTarget? eventTarget = event.target;
-      final DomElement stateTarget = state.target;
-      final bool targetChanged = eventTarget != stateTarget;
+      final bool targetChanged = event.target != state.target;
       if (targetChanged) {
         _flush();
       }
@@ -371,15 +379,15 @@ class ClickDebouncer {
   // already flushed to the framework, the click event is dropped to avoid
   // double click.
   bool _shouldSendClickEventToFramework(DomEvent click) {
-    final Duration? lastFlushedPointerUpTimeStamp = _lastFlushedPointerUpTimeStamp;
+    final Duration? lastSentPointerUpTimeStamp = _lastSentPointerUpTimeStamp;
 
-    if (lastFlushedPointerUpTimeStamp == null) {
+    if (lastSentPointerUpTimeStamp == null) {
       // We haven't seen a pointerup. It's standalone click event. Let it through.
       return true;
     }
 
     final Duration clickTimeStamp = _BaseAdapter._eventTimeStampToDuration(click.timeStamp!);
-    final Duration delta = clickTimeStamp - lastFlushedPointerUpTimeStamp;
+    final Duration delta = clickTimeStamp - lastSentPointerUpTimeStamp;
     return delta >= const Duration(milliseconds: 50);
   }
 
@@ -392,7 +400,7 @@ class ClickDebouncer {
     final List<ui.PointerData> aggregateData = <ui.PointerData>[];
     for (final QueuedEvent queuedEvent in state.queue) {
       if (queuedEvent.event.type == 'pointerup') {
-        _lastFlushedPointerUpTimeStamp = queuedEvent.timeStamp;
+        _lastSentPointerUpTimeStamp = queuedEvent.timeStamp;
       }
       aggregateData.addAll(queuedEvent.data);
     }
@@ -418,7 +426,7 @@ class ClickDebouncer {
   void reset() {
     _state?.timer.cancel();
     _state = null;
-    _lastFlushedPointerUpTimeStamp = null;
+    _lastSentPointerUpTimeStamp = null;
   }
 }
 
@@ -431,8 +439,10 @@ class PointerSupportDetector {
   String toString() => 'pointers:$hasPointerEvents';
 }
 
-class _Listener {
-  _Listener._({
+/// Encapsulates a DomEvent registration so it can be easily unregistered later.
+@visibleForTesting
+class Listener {
+  Listener._({
     required this.event,
     required this.target,
     required this.handler,
@@ -447,7 +457,7 @@ class _Listener {
   /// associated with this event. If `passive` is false, the browser will wait
   /// for the handler to finish execution before performing the respective
   /// action.
-  factory _Listener.register({
+  factory Listener.register({
     required String event,
     required DomEventTarget target,
     required DartDomEventListener handler,
@@ -464,12 +474,12 @@ class _Listener {
       target.addEventListenerWithOptions(event, jsHandler, eventOptions);
     }
 
-    final _Listener listener = _Listener._(
+    final Listener listener = Listener._(
       event: event,
       target: target,
       handler: jsHandler,
     );
-    target.addEventListener(event, jsHandler);
+
     return listener;
   }
 
@@ -495,11 +505,12 @@ abstract class _BaseAdapter {
   PointerDataConverter get _pointerDataConverter => _owner._pointerDataConverter;
   KeyboardConverter? get _keyboardConverter => _owner._keyboardConverter;
 
-  final List<_Listener> _listeners = <_Listener>[];
+  final List<Listener> _listeners = <Listener>[];
   DomWheelEvent? _lastWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
+  bool _lastWheelEventAllowedDefault = false;
 
-  DomEventTarget get _viewTarget => _view.dom.rootElement;
+  DomElement get _viewTarget => _view.dom.rootElement;
   DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
 
   /// Each subclass is expected to override this method to attach its own event
@@ -508,7 +519,7 @@ abstract class _BaseAdapter {
 
   /// Cleans up all event listeners attached by this adapter.
   void dispose() {
-    for (final _Listener listener in _listeners) {
+    for (final Listener listener in _listeners) {
       listener.unregister();
     }
     _listeners.clear();
@@ -544,7 +555,7 @@ abstract class _BaseAdapter {
         handler(event);
       }
     }
-    _listeners.add(_Listener.register(
+    _listeners.add(Listener.register(
       event: eventName,
       target: target,
       handler: loggedHandler,
@@ -588,7 +599,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/platform/mac/PlatformEventFactoryMac.mm
     // https://searchfox.org/mozilla-central/source/dom/events/WheelEvent.h
     // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
-    if (browserEngine == BrowserEngine.firefox) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
       // Firefox has restricted the wheelDelta properties, they do not provide
       // enough information to accurately disambiguate trackpad events from mouse
       // wheel events.
@@ -656,7 +667,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         deltaX *= _view.physicalSize.width;
         deltaY *= _view.physicalSize.height;
       case domDeltaPixel:
-        if (operatingSystem == OperatingSystem.macOs) {
+        if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
           // Safari and Firefox seem to report delta in logical pixels while
           // Chrome uses physical pixels.
           deltaX *= _view.devicePixelRatio;
@@ -669,7 +680,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     final List<ui.PointerData> data = <ui.PointerData>[];
     final ui.Offset offset = computeEventOffsetToTarget(event, _view);
     bool ignoreCtrlKey = false;
-    if (operatingSystem == OperatingSystem.macOs) {
+    if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
       ignoreCtrlKey = (_keyboardConverter?.keyIsPressed(kPhysicalControlLeft) ?? false) ||
                       (_keyboardConverter?.keyIsPressed(kPhysicalControlRight) ?? false);
     }
@@ -705,6 +716,10 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
+        onRespond: ({bool allowPlatformDefault = false}) {
+          // Once `allowPlatformDefault` is `true`, never go back to `false`!
+          _lastWheelEventAllowedDefault |= allowPlatformDefault;
+        },
       );
     }
     _lastWheelEvent = event;
@@ -713,7 +728,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(DartDomEventListener handler) {
-    _listeners.add(_Listener.register(
+    _listeners.add(Listener.register(
       event: 'wheel',
       target: _viewTarget,
       handler: handler,
@@ -721,17 +736,21 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     ));
   }
 
-  void _handleWheelEvent(DomEvent e) {
-    assert(domInstanceOfString(e, 'WheelEvent'));
-    final DomWheelEvent event = e as DomWheelEvent;
+  void _handleWheelEvent(DomEvent event) {
+    assert(domInstanceOfString(event, 'WheelEvent'));
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(e, _convertWheelEventToPointerData(event));
-    // Prevent default so mouse wheel event doesn't get converted to
-    // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
+    _lastWheelEventAllowedDefault = false;
+    // [ui.PointerData] can set the `_lastWheelEventAllowedDefault` variable
+    // to true, when the framework says so. See the implementation of `respond`
+    // when creating the PointerData object above.
+    _callback(event, _convertWheelEventToPointerData(event as DomWheelEvent));
+    // This works because the `_callback` is handled synchronously in the
+    // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
+    if (!_lastWheelEventAllowedDefault) {
+      event.preventDefault();
+    }
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox
@@ -972,6 +991,22 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
+
+      if (event.target == _viewTarget) {
+        // Ensure smooth focus transitions between text fields within the Flutter view.
+        // Without preventing the default and this delay, the engine may not have fully
+        // rendered the next input element, leading to the focus incorrectly returning to
+        // the main Flutter view instead.
+        // A zero-length timer is sufficient in all tested browsers to achieve this.
+        event.preventDefault();
+        Timer(Duration.zero, () {
+          EnginePlatformDispatcher.instance.requestViewFocusChange(
+            viewId: _view.viewId,
+            state: ui.ViewFocusState.focused,
+            direction: ui.ViewFocusDirection.undefined,
+          );
+        });
+      }
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp

@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dir_contents_diff/dir_contents_diff.dart' show dirContentsDiff;
 import 'package:engine_repo_tools/engine_repo_tools.dart';
@@ -61,11 +60,22 @@ void main(List<String> args) async {
 
   // Capture CTRL-C.
   late final StreamSubscription<void> onSigint;
+
+  // Capture requested termination. The goal is to catch timeouts.
+  late final StreamSubscription<void> onSigterm;
+  void cancelSignalHandlers() {
+    onSigint.cancel();
+    onSigterm.cancel();
+  }
   runZonedGuarded(
     () async {
       onSigint = ProcessSignal.sigint.watch().listen((_) {
-        onSigint.cancel();
+        cancelSignalHandlers();
         panic(<String>['Received SIGINT']);
+      });
+      onSigterm = ProcessSignal.sigterm.watch().listen((_) {
+        cancelSignalHandlers();
+        panic(<String>['Received SIGTERM']);
       });
       await _run(
         verbose: options.verbose,
@@ -80,6 +90,7 @@ void main(List<String> args) async {
         ndkStack: options.ndkStack,
         forceSurfaceProducerSurfaceTexture: options.forceSurfaceProducerSurfaceTexture,
         prefixLogsPerRun: options.prefixLogsPerRun,
+        recordScreen: options.recordScreen,
       );
       onSigint.cancel();
       exit(0);
@@ -124,6 +135,7 @@ Future<void> _run({
   required String ndkStack,
   required bool forceSurfaceProducerSurfaceTexture,
   required bool prefixLogsPerRun,
+  required bool recordScreen,
 }) async {
   const ProcessManager pm = LocalProcessManager();
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
@@ -178,19 +190,32 @@ Future<void> _run({
         stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
       }
       pendingConnections.add(client);
-      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
+      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) async {
         final String fileName = screenshot.filename;
-        final Uint8List fileContent = screenshot.fileContent;
-        if (verbose) {
-          log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
+        final String filePath = join(screenshotPath, fileName);
+        {
+          const String remotePath = '/data/local/tmp/flutter_screenshot.png';
+          ProcessResult result = await pm.run(<String>['adb', 'shell', 'screencap', '-p', remotePath]);
+          if (result.exitCode != 0) {
+            panic(<String>['Failed to capture screenshot']);
+          }
+          result = await pm.run(
+            <String>['adb', 'pull', remotePath, filePath],
+          );
+          if (result.exitCode != 0) {
+            panic(<String>['Failed to pull screenshot']);
+          }
+          result = await pm.run(<String>['adb', 'shell', 'rm', remotePath]);
+          if (result.exitCode != 0) {
+            stderr.writeln('Warning: failed to delete old screenshot on device.');
+          }
         }
+        // Write a single byte into the socket as a signal to ScreenshotUtil.java
+        // that the screenshot was taken.
+        client.write(0x8);
+
         assert(skiaGoldClient != null, 'expected Skia Gold client');
-        late File goldenFile;
-        try {
-          goldenFile = File(join(screenshotPath, fileName))..writeAsBytesSync(fileContent, flush: true);
-        } on FileSystemException catch (err) {
-          panic(<String>['failed to create screenshot $fileName: $err']);
-        }
+        final File goldenFile = File(filePath);
         if (verbose) {
           log('wrote ${goldenFile.absolute.path}');
         }
@@ -219,6 +244,7 @@ Future<void> _run({
   late Process logcatProcess;
   late Future<int> logcatProcessExitCode;
   _ImpellerBackend? actualImpellerBackend;
+  Process? screenRecordProcess;
 
   final IOSink logcat = File(logcatPath).openWrite();
   try {
@@ -350,6 +376,36 @@ Future<void> _run({
       }
     });
 
+    if (recordScreen) {
+      await step('Recording screen...', () async {
+        // Create a /tmp directory on the device to store the screen recording.
+        final int exitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'shell',
+          'mkdir',
+          '-p',
+          join(_emulatorStoragePath, 'tmp'),
+        ]);
+        if (exitCode != 0) {
+          panic(<String>['could not create /tmp directory on device']);
+        }
+        final String screenRecordingPath = join(
+          _emulatorStoragePath,
+          'tmp',
+          'screen.mp4',
+        );
+        screenRecordProcess = await pm.start(<String>[
+          adb.path,
+          'shell',
+          'screenrecord',
+          '--time-limit=0',
+          '--bugreport',
+          screenRecordingPath,
+        ]);
+        log('writing screen recording to $screenRecordingPath');
+      });
+    }
+
     await step('Running instrumented tests...', () async {
       final (int exitCode, StringBuffer out) = await pm.runAndCapture(<String>[
         adb.path,
@@ -357,11 +413,13 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-	'--no-window-animation',
+        '--no-window-animation',
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         if (enableImpeller)
-          '-e enable-impeller true',
+          '-e enable-impeller true'
+        else
+          '-e enable-impeller false',
         if (impellerBackend != null)
           '-e impeller-backend ${impellerBackend.name}',
         if (forceSurfaceProducerSurfaceTexture)
@@ -381,7 +439,49 @@ Future<void> _run({
         panic(<String>['$comparisonsFailed Skia Gold comparisons failed']);
       }
     });
+
+
+    if (enableImpeller) {
+      await step('Validating Impeller...', () async {
+        final _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
+        if (actualImpellerBackend != expectedImpellerBackend) {
+          panic(<String>[
+            '--enable-impeller was specified and expected to find "${expectedImpellerBackend.name}", which did not match "${actualImpellerBackend?.name ?? '<impeller disabled>'}".',
+          ]);
+        }
+      });
+    }
+
+    await step('Wait for pending Skia gold comparisons...', () async {
+      await Future.wait(pendingComparisons);
+    });
+
+    final bool allTestsRun = smokeTestFullPath == null;
+    final bool checkGoldens = contentsGolden != null;
+    if (allTestsRun && checkGoldens) {
+      // Check the output here.
+      await step('Check output files...', () async {
+        // TODO(matanlurey): Resolve this in a better way. On CI this file always exists.
+        File(join(screenshotPath, 'noop.txt')).writeAsStringSync('');
+        // TODO(gaaclarke): We should move this into dir_contents_diff.
+        final String diffScreenhotPath = absolute(screenshotPath);
+        _withTemporaryCwd(absolute(dirname(contentsGolden)), () {
+          final int exitCode = dirContentsDiff(basename(contentsGolden), diffScreenhotPath);
+          if (exitCode != 0) {
+            panic(<String>['Output contents incorrect.']);
+          }
+        });
+      });
+    }
   } finally {
+    // The finally clause is entered if:
+    // - The tests have completed successfully.
+    // - Any step has failed.
+    //
+    // Do *NOT* throw exceptions or errors in this block, as these are cleanup
+    // steps and the program is about to exit. Instead, just log the error and
+    // continue with the cleanup.
+
     await server.close();
     for (final Socket client in pendingConnections.toList()) {
       client.close();
@@ -390,9 +490,50 @@ Future<void> _run({
     await step('Killing test app and test runner...', () async {
       final int exitCode = await pm.runAndForward(<String>[adb.path, 'shell', 'am', 'force-stop', 'dev.flutter.scenarios']);
       if (exitCode != 0) {
-        panic(<String>['could not kill test app']);
+        logError('could not kill test app');
       }
     });
+
+    if (screenRecordProcess != null) {
+      await step('Killing screen recording process...', () async {
+        // Kill the screen recording process.
+        screenRecordProcess!.kill(ProcessSignal.sigkill);
+        await screenRecordProcess!.exitCode;
+
+        // Pull the screen recording from the device.
+        final String screenRecordingPath = join(
+          _emulatorStoragePath,
+          'tmp',
+          'screen.mp4',
+        );
+        final String screenRecordingLocalPath = join(
+          logsDir.path,
+          'screen.mp4',
+        );
+        final int exitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'pull',
+          screenRecordingPath,
+          screenRecordingLocalPath,
+        ]);
+        if (exitCode != 0) {
+          logError('could not pull screen recording from device');
+        }
+
+        log('wrote screen recording to $screenRecordingLocalPath');
+
+        // Remove the screen recording from the device.
+        final int removeExitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'shell',
+          'rm',
+          screenRecordingPath,
+        ]);
+        if (removeExitCode != 0) {
+          logError('could not remove screen recording from device');
+        }
+      });
+    }
 
     await step('Killing logcat process...', () async {
       final bool delivered = logcatProcess.kill(ProcessSignal.sigkill);
@@ -432,17 +573,6 @@ Future<void> _run({
       );
     });
 
-    if (enableImpeller) {
-      await step('Validating Impeller...', () async {
-        final _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
-        if (actualImpellerBackend != expectedImpellerBackend) {
-          panic(<String>[
-            '--enable-impeller was specified and expected to find "${expectedImpellerBackend.name}", which did not match "${actualImpellerBackend?.name ?? '<impeller disabled>'}".',
-          ]);
-        }
-      });
-    }
-
     await step('Symbolize stack traces', () async {
       final ProcessResult result = await pm.run(
         <String>[
@@ -466,49 +596,35 @@ Future<void> _run({
         'tcp:3000',
       ]);
       if (exitCode != 0) {
-        panic(<String>['could not unforward port']);
+        logError('could not unforward port');
       }
     });
 
     await step('Uninstalling app APK...', () async {
-      final int exitCode = await pm.runAndForward(
-          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
+      final int exitCode = await pm.runAndForward(<String>[
+        adb.path,
+        'uninstall',
+        'dev.flutter.scenarios',
+      ]);
       if (exitCode != 0) {
-        panic(<String>['could not uninstall app apk']);
+        logError('could not uninstall app apk');
       }
     });
 
     await step('Uninstalling test APK...', () async {
-      final int exitCode = await pm.runAndForward(
-          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
+      final int exitCode = await pm.runAndForward(<String>[
+        adb.path,
+        'uninstall',
+        'dev.flutter.scenarios.test',
+      ]);
       if (exitCode != 0) {
-        panic(<String>['could not uninstall app apk']);
+        logError('could not uninstall app apk');
       }
     });
-
-    await step('Wait for Skia gold comparisons...', () async {
-      await Future.wait(pendingComparisons);
-    });
-
-    final bool allTestsRun = smokeTestFullPath == null;
-    final bool checkGoldens = contentsGolden != null;
-    if (allTestsRun && checkGoldens) {
-      // Check the output here.
-      await step('Check output files...', () async {
-        // TODO(matanlurey): Resolve this in a better way. On CI this file always exists.
-        File(join(screenshotPath, 'noop.txt')).writeAsStringSync('');
-        // TODO(gaaclarke): We should move this into dir_contents_diff.
-        final String diffScreenhotPath = absolute(screenshotPath);
-        _withTemporaryCwd(absolute(dirname(contentsGolden)), () {
-          final int exitCode = dirContentsDiff(basename(contentsGolden), diffScreenhotPath);
-          if (exitCode != 0) {
-            panic(<String>['Output contents incorrect.']);
-          }
-        });
-      });
-    }
   }
 }
+
+const String _emulatorStoragePath = '/storage/emulated/0/Download';
 
 void _withTemporaryCwd(String path, void Function() callback) {
   final String originalCwd = Directory.current.path;

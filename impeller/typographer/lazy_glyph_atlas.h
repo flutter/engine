@@ -5,9 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
 
-#include <unordered_map>
-
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -22,12 +19,16 @@ class LazyGlyphAtlas {
 
   ~LazyGlyphAtlas();
 
-  void AddTextFrame(const TextFrame& frame, Scalar scale);
+  void AddTextFrame(const TextFrame& frame,
+                    Scalar scale,
+                    Point offset,
+                    const GlyphProperties& properties);
 
   void ResetTextFrames();
 
   const std::shared_ptr<GlyphAtlas>& CreateOrGetGlyphAtlas(
       Context& context,
+      HostBuffer& host_buffer,
       GlyphAtlas::Type type) const;
 
  private:

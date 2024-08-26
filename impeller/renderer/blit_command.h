@@ -22,6 +22,11 @@ struct BlitCopyTextureToTextureCommand : public BlitCommand {
   IPoint destination_origin;
 };
 
+struct BlitResizeTextureCommand : public BlitCommand {
+  std::shared_ptr<Texture> source;
+  std::shared_ptr<Texture> destination;
+};
+
 struct BlitCopyTextureToBufferCommand : public BlitCommand {
   std::shared_ptr<Texture> source;
   std::shared_ptr<DeviceBuffer> destination;
@@ -32,7 +37,8 @@ struct BlitCopyTextureToBufferCommand : public BlitCommand {
 struct BlitCopyBufferToTextureCommand : public BlitCommand {
   BufferView source;
   std::shared_ptr<Texture> destination;
-  IPoint destination_origin;
+  IRect destination_region;
+  uint32_t slice = 0;
 };
 
 struct BlitGenerateMipmapCommand : public BlitCommand {

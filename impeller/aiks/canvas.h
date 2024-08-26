@@ -11,7 +11,6 @@
 #include <optional>
 #include <vector>
 
-#include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
@@ -32,9 +31,11 @@ struct CanvasStackEntry {
   Matrix transform;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
-  size_t clip_depth = 0u;
+  uint32_t clip_depth = 0u;
+  size_t clip_height = 0u;
   // The number of clips tracked for this canvas stack entry.
   size_t num_clips = 0u;
+  Scalar distributed_opacity = 1.0f;
   Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
 };
 
@@ -57,13 +58,7 @@ enum class SourceRectConstraint {
 
 class Canvas {
  public:
-  struct DebugOptions {
-    /// When enabled, layers that are rendered to an offscreen texture
-    /// internally get a translucent checkerboard pattern painted over them.
-    ///
-    /// Requires the `IMPELLER_DEBUG` preprocessor flag.
-    bool offscreen_texture_checkerboard = false;
-  } debug_options;
+  static constexpr uint32_t kMaxDepth = 1 << 24;
 
   Canvas();
 
@@ -71,17 +66,20 @@ class Canvas {
 
   explicit Canvas(IRect cull_rect);
 
-  ~Canvas();
+  virtual ~Canvas();
 
-  void Save();
+  virtual void Save(uint32_t total_content_depth = kMaxDepth);
 
-  void SaveLayer(
+  virtual void SaveLayer(
       const Paint& paint,
       std::optional<Rect> bounds = std::nullopt,
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
-      ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown);
+      ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
+      uint32_t total_content_depth = kMaxDepth,
+      bool can_distribute_opacity = false,
+      bool bounds_from_caller = false);
 
-  bool Restore();
+  virtual bool Restore();
 
   size_t GetSaveCount() const;
 
@@ -130,13 +128,13 @@ class Canvas {
                   const Paint& paint,
                   PointStyle point_style);
 
-  void DrawImage(const std::shared_ptr<Image>& image,
+  void DrawImage(const std::shared_ptr<Texture>& image,
                  Point offset,
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
   void DrawImageRect(
-      const std::shared_ptr<Image>& image,
+      const std::shared_ptr<Texture>& image,
       Rect source,
       Rect dest,
       const Paint& paint,
@@ -160,15 +158,15 @@ class Canvas {
       const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                     Point position,
-                     const Paint& paint);
+  virtual void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                             Point position,
+                             const Paint& paint);
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
                     const Paint& paint);
 
-  void DrawAtlas(const std::shared_ptr<Image>& atlas,
+  void DrawAtlas(const std::shared_ptr<Texture>& atlas,
                  std::vector<Matrix> transforms,
                  std::vector<Rect> texture_coordinates,
                  std::vector<Color> colors,
@@ -179,22 +177,26 @@ class Canvas {
 
   Picture EndRecordingAsPicture();
 
- private:
-  std::unique_ptr<EntityPass> base_pass_;
-  EntityPass* current_pass_ = nullptr;
-  uint64_t current_depth_ = 0u;
+ protected:
   std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
+  uint64_t current_depth_ = 0u;
+
+  size_t GetClipHeight() const;
 
   void Initialize(std::optional<Rect> cull_rect);
 
   void Reset();
 
+ private:
+  std::unique_ptr<EntityPass> base_pass_;
+  EntityPass* current_pass_ = nullptr;
+
   EntityPass& GetCurrentPass();
 
-  size_t GetClipDepth() const;
-
-  void AddEntityToCurrentPass(Entity entity);
+  virtual void AddRenderEntityToCurrentPass(Entity entity,
+                                            bool reuse_depth = false);
+  virtual void AddClipEntityToCurrentPass(Entity entity);
 
   void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
@@ -202,9 +204,11 @@ class Canvas {
   void IntersectCulling(Rect clip_bounds);
   void SubtractCulling(Rect clip_bounds);
 
-  void Save(bool create_subpass,
-            BlendMode = BlendMode::kSourceOver,
-            const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
+  virtual void Save(
+      bool create_subpass,
+      uint32_t total_content_depth,
+      BlendMode = BlendMode::kSourceOver,
+      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 

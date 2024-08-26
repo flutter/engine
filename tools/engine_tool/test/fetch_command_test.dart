@@ -33,7 +33,8 @@ void main() {
         engine: engine,
         platform: FakePlatform(
             operatingSystem: Platform.linux,
-            resolvedExecutable: io.Platform.resolvedExecutable),
+            resolvedExecutable: io.Platform.resolvedExecutable,
+            pathSeparator: '/'),
         processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {
             runHistory.add(command);
@@ -50,7 +51,7 @@ void main() {
   }
 
   test('fetch command invokes gclient sync -D', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,
@@ -66,7 +67,7 @@ void main() {
   });
 
   test('fetch command has sync alias', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,

@@ -14,16 +14,19 @@
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
-#include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
+#include "flutter/shell/platform/android/android_context_vk_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
-#include "flutter/shell/platform/android/image_external_texture_gl.h"
-#include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
+#include "flutter/shell/platform/android/image_external_texture_gl_impeller.h"
+#include "flutter/shell/platform/android/image_external_texture_gl_skia.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_gl_impeller.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_gl_skia.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_vk_impeller.h"
 #include "fml/logging.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
-#include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
-#include "flutter/shell/platform/android/image_external_texture_vk.h"
+#include "flutter/shell/platform/android/android_surface_vk_impeller.h"
+#include "flutter/shell/platform/android/image_external_texture_vk_impeller.h"
 #endif
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
@@ -53,9 +56,8 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
       return std::make_unique<AndroidSurfaceGLSkia>(
           std::static_pointer_cast<AndroidContextGLSkia>(android_context_));
     case AndroidRenderingAPI::kImpellerVulkan:
-      return std::make_unique<AndroidSurfaceVulkanImpeller>(
-          std::static_pointer_cast<AndroidContextVulkanImpeller>(
-              android_context_));
+      return std::make_unique<AndroidSurfaceVKImpeller>(
+          std::static_pointer_cast<AndroidContextVKImpeller>(android_context_));
   }
   FML_UNREACHABLE();
 }
@@ -63,7 +65,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
-    uint8_t msaa_samples,
     AndroidRenderingAPI android_rendering_api,
     bool enable_vulkan_validation,
     bool enable_opengl_gpu_tracing,
@@ -76,13 +77,12 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
           std::make_unique<impeller::egl::Display>(),
           enable_opengl_gpu_tracing);
     case AndroidRenderingAPI::kImpellerVulkan:
-      return std::make_unique<AndroidContextVulkanImpeller>(
+      return std::make_unique<AndroidContextVKImpeller>(
           enable_vulkan_validation, enable_vulkan_gpu_tracing);
     case AndroidRenderingAPI::kSkiaOpenGLES:
       return std::make_unique<AndroidContextGLSkia>(
           fml::MakeRefCounted<AndroidEnvironmentGL>(),  //
-          task_runners,                                 //
-          msaa_samples                                  //
+          task_runners                                  //
       );
   }
   FML_UNREACHABLE();
@@ -92,8 +92,7 @@ PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-    bool use_software_rendering,
-    uint8_t msaa_samples)
+    bool use_software_rendering)
     : PlatformViewAndroid(
           delegate,
           task_runners,
@@ -101,7 +100,6 @@ PlatformViewAndroid::PlatformViewAndroid(
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
-              msaa_samples,
               delegate.OnPlatformViewGetSettings().android_rendering_api,
               delegate.OnPlatformViewGetSettings().enable_vulkan_validation,
               delegate.OnPlatformViewGetSettings().enable_opengl_gpu_tracing,
@@ -280,22 +278,38 @@ void PlatformViewAndroid::RegisterExternalTexture(
   switch (android_context_->RenderingApi()) {
     case AndroidRenderingAPI::kImpellerOpenGLES:
       // Impeller GLES.
-      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureImpellerGL>(
+      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGLImpeller>(
           std::static_pointer_cast<impeller::ContextGLES>(
-              android_context_->GetImpellerContext()),
-          texture_id, surface_texture, jni_facade_));
+              android_context_->GetImpellerContext()),  //
+          texture_id,                                   //
+          surface_texture,                              //
+          jni_facade_                                   //
+          ));
       break;
     case AndroidRenderingAPI::kSkiaOpenGLES:
       // Legacy GL.
-      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGL>(
-          texture_id, surface_texture, jni_facade_));
+      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGLSkia>(
+          texture_id,       //
+          surface_texture,  //
+          jni_facade_       //
+          ));
       break;
     case AndroidRenderingAPI::kSoftware:
-    case AndroidRenderingAPI::kImpellerVulkan:
-      FML_LOG(INFO)
-          << "Attempted to use a SurfaceTextureExternalTexture with an "
-             "unsupported rendering API.";
+      FML_LOG(INFO) << "Software rendering does not support external textures.";
       break;
+    case AndroidRenderingAPI::kImpellerVulkan:
+      FML_LOG(IMPORTANT)
+          << "Flutter recommends migrating plugins that create and "
+             "register surface textures to the new surface producer "
+             "API. See https://docs.flutter.dev/release/breaking-changes/"
+             "android-surface-plugins";
+      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureVKImpeller>(
+          std::static_pointer_cast<impeller::ContextVK>(
+              android_context_->GetImpellerContext()),  //
+          texture_id,                                   //
+          surface_texture,                              //
+          jni_facade_                                   //
+          ));
   }
 }
 
@@ -317,15 +331,13 @@ void PlatformViewAndroid::RegisterImageTexture(
           texture_id, image_texture_entry, jni_facade_));
       break;
     case AndroidRenderingAPI::kImpellerVulkan:
-      RegisterTexture(std::make_shared<ImageExternalTextureVK>(
+      RegisterTexture(std::make_shared<ImageExternalTextureVKImpeller>(
           std::static_pointer_cast<impeller::ContextVK>(
               android_context_->GetImpellerContext()),
           texture_id, image_texture_entry, jni_facade_));
       break;
     case AndroidRenderingAPI::kSoftware:
-      FML_LOG(INFO)
-          << "Attempted to use a SurfaceTextureExternalTexture with an "
-             "unsupported rendering API.";
+      FML_LOG(INFO) << "Software rendering does not support external textures.";
       break;
   }
 }

@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flow/surface_frame.h"
+#if !SLIMPELLER
+
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 
 #import <Metal/Metal.h>
@@ -27,6 +30,8 @@
 #include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
@@ -37,7 +42,6 @@ namespace {
 sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
                                                id<MTLTexture> texture,
                                                GrSurfaceOrigin origin,
-                                               MsaaSampleCount sample_cnt,
                                                SkColorType color_type,
                                                sk_sp<SkColorSpace> color_space,
                                                const SkSurfaceProps* props,
@@ -45,21 +49,20 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
                                                SkSurface::ReleaseContext release_context) {
   GrMtlTextureInfo info;
   info.fTexture.reset([texture retain]);
-  GrBackendTexture backend_texture(texture.width, texture.height, skgpu::Mipmapped::kNo, info);
-  return SkSurfaces::WrapBackendTexture(
-      context, backend_texture, origin, static_cast<int>(sample_cnt), color_type,
-      std::move(color_space), props, release_proc, release_context);
+  GrBackendTexture backend_texture =
+      GrBackendTextures::MakeMtl(texture.width, texture.height, skgpu::Mipmapped::kNo, info);
+  return SkSurfaces::WrapBackendTexture(context, backend_texture, origin, 1, color_type,
+                                        std::move(color_space), props, release_proc,
+                                        release_context);
 }
 }  // namespace
 
 GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                                          sk_sp<GrDirectContext> context,
-                                         MsaaSampleCount msaa_samples,
                                          bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
-      msaa_samples_(msaa_samples),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
@@ -100,8 +103,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
 
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        nullptr,                                                                   //
+        SurfaceFrame::FramebufferInfo(),                                           //
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },  //
+        [](const SurfaceFrame& surface_frame) { return true; },                    //
+        frame_size                                                                 //
+    );
   }
 
   PrecompileKnownSkSLsIfNecessary();
@@ -138,7 +145,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
 
   auto surface = CreateSurfaceFromMetalTexture(context_.get(), drawable.get().texture,
                                                kTopLeft_GrSurfaceOrigin,  // origin
-                                               msaa_samples_,             // sample count
                                                kBGRA_8888_SkColorType,    // color type
                                                nullptr,                   // colorspace
                                                nullptr,                   // surface properties
@@ -151,9 +157,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     return nullptr;
   }
 
-  auto submit_callback = [this, drawable](const SurfaceFrame& surface_frame,
-                                          DlCanvas* canvas) -> bool {
-    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+  SurfaceFrame::EncodeCallback encode_callback =
+      [this, drawable, mtl_layer](const SurfaceFrame& surface_frame, DlCanvas* canvas) -> bool {
+    mtl_layer.presentsWithTransaction = surface_frame.submit_info().present_with_transaction;
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -178,6 +184,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
       damage_[texture] = SkIRect::MakeEmpty();
     }
 
+    return true;
+  };
+
+  SurfaceFrame::SubmitCallback submit_callback =
+      [this, drawable](const SurfaceFrame& surface_frame) -> bool {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
     return delegate_->PresentDrawable(drawable);
   };
 
@@ -195,8 +207,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     framebuffer_info.supports_partial_repaint = true;
   }
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, encode_callback,
+                                        submit_callback, frame_info);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
@@ -210,8 +222,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
   }
 
   sk_sp<SkSurface> surface = CreateSurfaceFromMetalTexture(
-      context_.get(), mtl_texture, kTopLeft_GrSurfaceOrigin, msaa_samples_, kBGRA_8888_SkColorType,
-      nullptr, nullptr, static_cast<SkSurfaces::TextureReleaseProc>(texture.destruction_callback),
+      context_.get(), mtl_texture, kTopLeft_GrSurfaceOrigin, kBGRA_8888_SkColorType, nullptr,
+      nullptr, static_cast<SkSurfaces::TextureReleaseProc>(texture.destruction_callback),
       texture.destruction_context);
 
   if (!surface) {
@@ -219,9 +231,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     return nullptr;
   }
 
-  auto submit_callback = [texture = texture, delegate = delegate_](
-                             const SurfaceFrame& surface_frame, DlCanvas* canvas) -> bool {
-    TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
+  auto encode_callback = [](const SurfaceFrame& surface_frame, DlCanvas* canvas) -> bool {
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -232,14 +242,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
       canvas->Flush();
     }
 
+    return true;
+  };
+  auto submit_callback = [texture = texture,
+                          delegate = delegate_](const SurfaceFrame& surface_frame) {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
     return delegate->PresentTexture(texture);
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, encode_callback,
+                                        submit_callback, frame_info);
 }
 
 // |Surface|
@@ -269,3 +284,5 @@ bool GPUSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

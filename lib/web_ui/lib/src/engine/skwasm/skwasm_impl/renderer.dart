@@ -14,7 +14,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
   late SkwasmSurface surface;
-  EngineSceneView? _sceneView;
+  final Map<EngineFlutterView, EngineSceneView> _sceneViews = <EngineFlutterView, EngineSceneView>{};
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -357,12 +357,12 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) async {
-    final String? contentType = detectContentType(list);
+    final ImageType? contentType = detectImageType(list);
     if (contentType == null) {
       throw Exception('Could not determine content type of image from data');
     }
     final SkwasmImageDecoder baseDecoder = SkwasmImageDecoder(
-      contentType: contentType,
+      contentType: contentType.mimeType,
       dataSource: list.toJS,
       debugSource: 'encoded image bytes',
     );
@@ -397,27 +397,21 @@ class SkwasmRenderer implements Renderer {
     return decoder;
   }
 
-  // TODO(harryterkelsen): Add multiview support,
-  // https://github.com/flutter/flutter/issues/137073.
   @override
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
+  Future<void> renderScene(ui.Scene scene, EngineFlutterView view) {
     final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
 
-    view as EngineFlutterView;
-    assert(view is EngineFlutterWindow, 'Skwasm does not support multi-view mode yet');
     final EngineSceneView sceneView = _getSceneViewForView(view);
     return sceneView.renderScene(scene as EngineScene, recorder);
   }
 
   EngineSceneView _getSceneViewForView(EngineFlutterView view) {
-    // TODO(mdebbar): Support multi-view mode.
-    if (_sceneView == null) {
-      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface), view);
-      final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-      implicitView.dom.setScene(_sceneView!.sceneElement);
-    }
-    return _sceneView!;
+    return _sceneViews.putIfAbsent(view, () {
+      final EngineSceneView sceneView = EngineSceneView(SkwasmPictureRenderer(surface), view);
+      view.dom.setScene(sceneView.sceneElement);
+      return sceneView;
+    });
   }
 
   @override
@@ -469,6 +463,19 @@ class SkwasmRenderer implements Renderer {
       imageSource as JSObject,
       imageSource.width.toDartInt,
       imageSource.height.toDartInt,
+      surface.handle,
+    ));
+  }
+
+  @override
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny textureSource, { required int width, required int height, required bool transferOwnership }) async {
+    if (!transferOwnership) {
+      textureSource = (await createImageBitmap(textureSource, (x: 0, y: 0, width: width, height: height))).toJSAnyShallow;
+    }
+    return SkwasmImage(imageCreateFromTextureSource(
+      textureSource as JSObject,
+      width,
+      height,
       surface.handle,
     ));
   }

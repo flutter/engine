@@ -4,15 +4,12 @@
 
 package io.flutter.embedding.engine.loader;
 
-import static io.flutter.Build.API_LEVELS;
-
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -50,6 +47,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableOpenGLGPUTracing";
   private static final String IMPELLER_VULKAN_GPU_TRACING_DATA_KEY =
       "io.flutter.embedding.android.EnableVulkanGPUTracing";
+  private static final String ENABLED_MERGED_PLATFORM_UI_THREAD_KEY =
+      "io.flutter.embedding.android.EnableMergedPlatformUIThread";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -182,7 +181,43 @@ public class FlutterLoader {
               try (TraceSection e = TraceSection.scoped("FlutterLoader initTask")) {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
-                flutterJNI.loadLibrary();
+                try {
+                  flutterJNI.loadLibrary();
+                } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
+                  String couldntFindVersion = "couldn't find \"libflutter.so\"";
+                  String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
+
+                  if (unsatisfiedLinkError.toString().contains(couldntFindVersion)
+                      || unsatisfiedLinkError.toString().contains(notFoundVersion)) {
+                    // To gather more information for
+                    // https://github.com/flutter/flutter/issues/144291,
+                    // log the contents of the native libraries directory as well as the
+                    // cpu architecture.
+
+                    String cpuArch = System.getProperty("os.arch");
+                    File nativeLibsDir = new File(flutterApplicationInfo.nativeLibraryDir);
+                    String[] nativeLibsContents = nativeLibsDir.list();
+
+                    throw new UnsupportedOperationException(
+                        "Could not load libflutter.so this is possibly because the application"
+                            + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                            + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                            + " for more detail.\n"
+                            + "App is using cpu architecture: "
+                            + cpuArch
+                            + ", and the native libraries directory (with path "
+                            + nativeLibsDir.getAbsolutePath()
+                            + ") "
+                            + (nativeLibsDir.exists()
+                                ? "contains the following files: "
+                                    + Arrays.toString(nativeLibsContents)
+                                : "does not exist."),
+                        unsatisfiedLinkError);
+                  }
+
+                  throw unsatisfiedLinkError;
+                }
+
                 flutterJNI.updateRefreshRate();
 
                 // Prefetch the default font manager as soon as possible on a background thread.
@@ -202,13 +237,6 @@ public class FlutterLoader {
           };
       initResultFuture = executorService.submit(initTask);
     }
-  }
-
-  private static boolean areValidationLayersOnByDefault() {
-    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
-      return Build.SUPPORTED_ABIS[0].equals("arm64-v8a");
-    }
-    return false;
   }
 
   /**
@@ -317,11 +345,14 @@ public class FlutterLoader {
       shellArgs.add("--prefetched-default-font-manager");
 
       if (metaData != null) {
-        if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
-          shellArgs.add("--enable-impeller");
+        if (metaData.containsKey(ENABLE_IMPELLER_META_DATA_KEY)) {
+          if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY)) {
+            shellArgs.add("--enable-impeller=true");
+          } else {
+            shellArgs.add("--enable-impeller=false");
+          }
         }
-        if (metaData.getBoolean(
-            ENABLE_VULKAN_VALIDATION_META_DATA_KEY, areValidationLayersOnByDefault())) {
+        if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-validation");
         }
         if (metaData.getBoolean(IMPELLER_OPENGL_GPU_TRACING_DATA_KEY, false)) {
@@ -329,6 +360,9 @@ public class FlutterLoader {
         }
         if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-gpu-tracing");
+        }
+        if (metaData.getBoolean(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY, false)) {
+          shellArgs.add("--enable-merged-platform-ui-thread");
         }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {

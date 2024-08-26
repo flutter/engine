@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -26,14 +27,13 @@ void setUpCanvasKitTest({bool withImplicitView = false}) {
     setUpTestViewDimensions: false,
   );
 
-  setUp(() => renderer.fontCollection.fontFallbackManager!.downloadQueue
-      .fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/');
-  tearDown(() => renderer.fontCollection.fontFallbackManager!.downloadQueue
-      .fallbackFontUrlPrefixOverride = null);
+  setUp(() => debugOverrideJsConfiguration(<String, Object?>{
+        'fontFallbackBaseUrl': 'assets/fallback_fonts/',
+      }.jsify() as JsFlutterConfiguration?));
 }
 
 /// Convenience getter for the implicit view.
-ui.FlutterView get implicitView =>
+EngineFlutterWindow get implicitView =>
     EnginePlatformDispatcher.instance.implicitView!;
 
 /// Utility function for CanvasKit tests to draw pictures without

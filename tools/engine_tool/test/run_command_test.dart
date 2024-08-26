@@ -10,6 +10,7 @@ import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/environment.dart';
+import 'package:engine_tool/src/label.dart';
 import 'package:engine_tool/src/logger.dart';
 import 'package:engine_tool/src/run_utils.dart';
 import 'package:litetest/litetest.dart';
@@ -31,19 +32,19 @@ void main() {
 
   final BuilderConfig linuxTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/linux_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Linux'))
+    map: convert.jsonDecode(fixtures.testConfig('Linux', Platform.linux))
         as Map<String, Object?>,
   );
 
   final BuilderConfig macTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/mac_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Mac-12'))
+    map: convert.jsonDecode(fixtures.testConfig('Mac-12', Platform.macOS))
         as Map<String, Object?>,
   );
 
   final BuilderConfig winTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/win_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Windows-11'))
+    map: convert.jsonDecode(fixtures.testConfig('Windows-11', Platform.windows))
         as Map<String, Object?>,
   );
 
@@ -62,7 +63,10 @@ void main() {
         engine: engine,
         platform: FakePlatform(
             operatingSystem: Platform.linux,
-            resolvedExecutable: io.Platform.resolvedExecutable),
+            resolvedExecutable: io.Platform.resolvedExecutable,
+            pathSeparator: '/',
+            numberOfProcessors: 32,
+        ),
         processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {
             runHistory.add(command);
@@ -85,7 +89,7 @@ void main() {
   }
 
   test('run command invokes flutter run', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,
@@ -100,7 +104,7 @@ void main() {
   });
 
   test('parse devices list', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = linuxEnv(logger);
     final List<RunTarget> targets =
         parseDevices(env, fixtures.attachedDevices());
@@ -110,8 +114,21 @@ void main() {
     expect(android.buildConfigFor('debug'), equals('android_debug_arm64'));
   });
 
+  test('target specific shell build', () async {
+    final Logger logger = Logger.test((_) {});
+    final (Environment env, _) = linuxEnv(logger);
+    final List<RunTarget> targets =
+        parseDevices(env, fixtures.attachedDevices());
+    final RunTarget android = targets[0];
+    expect(android.name, contains('gphone64'));
+    final List<Label> shellLabels = <Label>[
+      Label.parseGn('//flutter/shell/platform/android:android_jar')
+    ];
+    expect(android.buildTargetsForShell(), equals(shellLabels));
+  });
+
   test('default device', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = linuxEnv(logger);
     final List<RunTarget> targets =
         parseDevices(env, fixtures.attachedDevices());
@@ -124,7 +141,7 @@ void main() {
   });
 
   test('device select', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = linuxEnv(logger);
     RunTarget target = selectRunTarget(env, fixtures.attachedDevices())!;
     expect(target.name, contains('gphone64'));
@@ -133,7 +150,7 @@ void main() {
   });
 
   test('flutter run device select', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,

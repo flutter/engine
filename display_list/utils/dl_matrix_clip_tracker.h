@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/fml/logging.h"
 
 #include "third_party/skia/include/core/SkM44.h"
@@ -19,13 +20,19 @@
 
 namespace flutter {
 
-class DisplayListMatrixClipTracker {
+class DisplayListMatrixClipState {
  private:
   using ClipOp = DlCanvas::ClipOp;
 
  public:
-  DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkMatrix& matrix);
-  DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkM44& matrix);
+  explicit DisplayListMatrixClipState(const DlRect& cull_rect,
+                                      const DlMatrix& matrix = DlMatrix());
+  explicit DisplayListMatrixClipState(const SkRect& cull_rect);
+  DisplayListMatrixClipState(const SkRect& cull_rect, const SkMatrix& matrix);
+  DisplayListMatrixClipState(const SkRect& cull_rect, const SkM44& matrix);
+  DisplayListMatrixClipState(const DisplayListMatrixClipState& other) = default;
+
+  static bool is_3x3(const SkM44& m44);
 
   // This method should almost never be used as it breaks the encapsulation
   // of the enclosing clips. However it is needed for practical purposes in
@@ -36,114 +43,125 @@ class DisplayListMatrixClipTracker {
   // layer into the enclosing clipped area.
   // Omitting the |cull_rect| argument, or passing nullptr, will restore the
   // cull rect to the initial value it had when the tracker was constructed.
-  void resetCullRect(const SkRect* cull_rect = nullptr) {
-    current_->resetBounds(cull_rect ? *cull_rect : original_cull_rect_);
+  void resetDeviceCullRect(const DlRect& cull_rect);
+  void resetDeviceCullRect(const SkRect& cull_rect) {
+    resetDeviceCullRect(ToDlRect(cull_rect));
+  }
+  void resetLocalCullRect(const DlRect& cull_rect);
+  void resetLocalCullRect(const SkRect& cull_rect) {
+    resetLocalCullRect(ToDlRect(cull_rect));
   }
 
-  static bool is_3x3(const SkM44& m44);
+  bool using_4x4_matrix() const { return !matrix_.IsAffine(); }
+  bool is_matrix_invertable() const { return matrix_.GetDeterminant() != 0.0f; }
+  bool has_perspective() const { return matrix_.HasPerspective(); }
 
-  SkRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
+  const DlMatrix& matrix() const { return matrix_; }
+  SkM44 matrix_4x4() const { return SkM44::ColMajor(matrix_.m); }
+  SkMatrix matrix_3x3() const { return ToSkMatrix(matrix_); }
 
-  bool using_4x4_matrix() const { return current_->is_4x4(); }
+  SkRect local_cull_rect() const;
+  SkRect device_cull_rect() const { return ToSkRect(cull_rect_); }
 
-  SkM44 matrix_4x4() const { return current_->matrix_4x4(); }
-  SkMatrix matrix_3x3() const { return current_->matrix_3x3(); }
-  SkRect local_cull_rect() const { return current_->local_cull_rect(); }
-  SkRect device_cull_rect() const { return current_->device_cull_rect(); }
+  bool rect_covers_cull(const DlRect& content) const;
+  bool rect_covers_cull(const SkRect& content) const {
+    return rect_covers_cull(ToDlRect(content));
+  }
+  bool oval_covers_cull(const DlRect& content_bounds) const;
+  bool oval_covers_cull(const SkRect& content_bounds) const {
+    return oval_covers_cull(ToDlRect(content_bounds));
+  }
+  bool rrect_covers_cull(const SkRRect& content) const;
+
+  bool content_culled(const DlRect& content_bounds) const;
   bool content_culled(const SkRect& content_bounds) const {
-    return current_->content_culled(content_bounds);
+    return content_culled(ToDlRect(content_bounds));
   }
-  bool is_cull_rect_empty() const { return current_->is_cull_rect_empty(); }
+  bool is_cull_rect_empty() const { return cull_rect_.IsEmpty(); }
 
-  void save();
-  void restore();
-  void reset();
-  int getSaveCount() {
-    // saved_[0] is always the untouched initial conditions
-    // saved_[1] is the first editable stack entry
-    return saved_.size() - 1;
+  void translate(SkScalar tx, SkScalar ty) {
+    matrix_ = matrix_.Translate({tx, ty});
   }
-  void restoreToCount(int restore_count);
-
-  void translate(SkScalar tx, SkScalar ty) { current_->translate(tx, ty); }
-  void scale(SkScalar sx, SkScalar sy) { current_->scale(sx, sy); }
-  void skew(SkScalar skx, SkScalar sky) { current_->skew(skx, sky); }
-  void rotate(SkScalar degrees) { current_->rotate(degrees); }
-  void transform(const SkM44& m44);
-  void transform(const SkMatrix& matrix) { current_->transform(matrix); }
+  void scale(SkScalar sx, SkScalar sy) {
+    matrix_ = matrix_.Scale({sx, sy, 1.0f});
+  }
+  void skew(SkScalar skx, SkScalar sky) {
+    matrix_ = matrix_ * DlMatrix::MakeSkew(skx, sky);
+  }
+  void rotate(SkScalar degrees) {
+    matrix_ = matrix_ * DlMatrix::MakeRotationZ(DlDegrees(degrees));
+  }
+  void transform(const DlMatrix& matrix) { matrix_ = matrix_ * matrix; }
+  void transform(const SkM44& m44) { transform(ToDlMatrix(m44)); }
+  void transform(const SkMatrix& matrix) { transform(ToDlMatrix(matrix)); }
   // clang-format off
   void transform2DAffine(
       SkScalar mxx, SkScalar mxy, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myt);
+      SkScalar myx, SkScalar myy, SkScalar myt) {
+    matrix_ = matrix_ * DlMatrix::MakeColumn(
+         mxx,  myx, 0.0f, 0.0f,
+         mxy,  myy, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+         mxt,  myt, 0.0f, 1.0f
+    );
+  }
   void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt);
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+    matrix_ = matrix_ * DlMatrix::MakeColumn(
+        mxx, myx, mzx, mwx,
+        mxy, myy, mzy, mwy,
+        mxz, myz, mzz, mwz,
+        mxt, myt, mzt, mwt
+    );
+  }
   // clang-format on
-  void setTransform(const SkMatrix& matrix) { current_->setTransform(matrix); }
-  void setTransform(const SkM44& m44);
-  void setIdentity() { current_->setIdentity(); }
+  void setTransform(const DlMatrix& matrix) { matrix_ = matrix; }
+  void setTransform(const SkMatrix& matrix) { matrix_ = ToDlMatrix(matrix); }
+  void setTransform(const SkM44& m44) { matrix_ = ToDlMatrix(m44); }
+  void setIdentity() { matrix_ = DlMatrix(); }
   // If the matrix in |other_tracker| is invertible then transform this
   // tracker by the inverse of its matrix and return true. Otherwise,
   // return false and leave this tracker unmodified.
-  bool inverseTransform(const DisplayListMatrixClipTracker& other_tracker);
+  bool inverseTransform(const DisplayListMatrixClipState& other_tracker);
 
-  bool mapRect(SkRect* rect) const { return current_->mapRect(*rect, rect); }
-  bool mapRect(const SkRect& src, SkRect* mapped) {
-    return current_->mapRect(src, mapped);
+  bool mapRect(DlRect* rect) const { return mapRect(*rect, rect); }
+  bool mapRect(const DlRect& src, DlRect* mapped) const {
+    *mapped = src.TransformAndClipBounds(matrix_);
+    return matrix_.IsAligned2D();
+  }
+  bool mapRect(SkRect* rect) const { return mapRect(*rect, rect); }
+  bool mapRect(const SkRect& src, SkRect* mapped) const {
+    *mapped = ToSkRect(ToDlRect(src).TransformAndClipBounds(matrix_));
+    return matrix_.IsAligned2D();
   }
 
+  /// @brief  Maps the rect by the current matrix and then clips it against
+  ///         the current cull rect, returning true if the result is non-empty.
+  bool mapAndClipRect(SkRect* rect) const {
+    return mapAndClipRect(*rect, rect);
+  }
+  bool mapAndClipRect(const SkRect& src, SkRect* mapped) const;
+
+  void clipRect(const DlRect& rect, ClipOp op, bool is_aa);
   void clipRect(const SkRect& rect, ClipOp op, bool is_aa) {
-    current_->clipBounds(rect, op, is_aa);
+    clipRect(ToDlRect(rect), op, is_aa);
+  }
+  void clipOval(const DlRect& bounds, ClipOp op, bool is_aa);
+  void clipOval(const SkRect& bounds, ClipOp op, bool is_aa) {
+    clipRect(ToDlRect(bounds), op, is_aa);
   }
   void clipRRect(const SkRRect& rrect, ClipOp op, bool is_aa);
   void clipPath(const SkPath& path, ClipOp op, bool is_aa);
 
  private:
-  class Data {
-   public:
-    virtual ~Data() = default;
+  DlRect cull_rect_;
+  DlMatrix matrix_;
 
-    virtual bool is_4x4() const = 0;
-
-    virtual SkMatrix matrix_3x3() const = 0;
-    virtual SkM44 matrix_4x4() const = 0;
-
-    SkRect device_cull_rect() const { return cull_rect_; }
-    virtual SkRect local_cull_rect() const = 0;
-    virtual bool content_culled(const SkRect& content_bounds) const;
-    bool is_cull_rect_empty() const { return cull_rect_.isEmpty(); }
-
-    virtual void translate(SkScalar tx, SkScalar ty) = 0;
-    virtual void scale(SkScalar sx, SkScalar sy) = 0;
-    virtual void skew(SkScalar skx, SkScalar sky) = 0;
-    virtual void rotate(SkScalar degrees) = 0;
-    virtual void transform(const SkMatrix& matrix) = 0;
-    virtual void transform(const SkM44& m44) = 0;
-    virtual void setTransform(const SkMatrix& matrix) = 0;
-    virtual void setTransform(const SkM44& m44) = 0;
-    virtual void setIdentity() = 0;
-    virtual bool mapRect(const SkRect& rect, SkRect* mapped) const = 0;
-    virtual bool canBeInverted() const = 0;
-
-    virtual void clipBounds(const SkRect& clip, ClipOp op, bool is_aa);
-
-    virtual void resetBounds(const SkRect& cull_rect);
-
-   protected:
-    explicit Data(const SkRect& rect) : cull_rect_(rect) {}
-
-    virtual bool has_perspective() const = 0;
-
-    SkRect cull_rect_;
-  };
-  friend class Data3x3;
-  friend class Data4x4;
-
-  SkRect original_cull_rect_;
-  Data* current_;
-  std::vector<std::unique_ptr<Data>> saved_;
+  bool getLocalCullCorners(DlPoint corners[4]) const;
+  void adjustCullRect(const DlRect& clip, ClipOp op, bool is_aa);
 };
 
 }  // namespace flutter

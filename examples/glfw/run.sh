@@ -25,6 +25,7 @@ if [ ! -d myapp ]; then
 fi
 
 cd myapp
+flutter pub add flutter_gpu --sdk=flutter
 cp ../../main.dart lib/main.dart
 flutter build bundle \
         --local-engine-src-path ../../../../../ \
@@ -35,4 +36,4 @@ cd -
 #################################################################
 # Run the Flutter Engine Embedder
 #################################################################
-./flutter_glfw ./myapp ../../../../third_party/icu/common/icudtl.dat
+./flutter_glfw ./myapp ../../../third_party/icu/common/icudtl.dat

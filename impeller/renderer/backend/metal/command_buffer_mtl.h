@@ -7,7 +7,6 @@
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/allocator.h"
 #include "impeller/renderer/command_buffer.h"
 
@@ -21,9 +20,11 @@ class CommandBufferMTL final : public CommandBuffer {
  private:
   friend class ContextMTL;
 
-  id<MTLCommandBuffer> buffer_ = nullptr;
+  id<MTLCommandBuffer> buffer_ = nil;
+  id<MTLDevice> device_ = nil;
 
   CommandBufferMTL(const std::weak_ptr<const Context>& context,
+                   id<MTLDevice> device,
                    id<MTLCommandQueue> queue);
 
   // |CommandBuffer|

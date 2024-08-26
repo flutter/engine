@@ -11,24 +11,61 @@
 namespace impeller {
 
 PlaygroundTest::PlaygroundTest()
-    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {}
+    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {
+  ImpellerValidationErrorsSetCallback(
+      [](const char* message, const char* file, int line) -> bool {
+        // GTEST_MESSAGE_AT_ can only be used in a function that returns void.
+        // Hence the goofy lambda. The failure message and location will still
+        // be correct however.
+        //
+        // https://google.github.io/googletest/advanced.html#assertion-placement
+        [message, file, line]() -> void {
+          GTEST_MESSAGE_AT_(file, line, "Impeller Validation Error",
+                            ::testing::TestPartResult::kFatalFailure)
+              << message;
+        }();
+        return true;
+      });
+}
 
-PlaygroundTest::~PlaygroundTest() = default;
+PlaygroundTest::~PlaygroundTest() {
+  ImpellerValidationErrorsSetCallback(nullptr);
+}
+
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
 
 void PlaygroundTest::SetUp() {
   if (!Playground::SupportsBackend(GetParam())) {
-    GTEST_SKIP_("Playground doesn't support this backend type.");
+    GTEST_SKIP() << "Playground doesn't support this backend type.";
     return;
   }
 
   if (!Playground::ShouldOpenNewPlaygrounds()) {
-    GTEST_SKIP_("Skipping due to user action.");
+    GTEST_SKIP() << "Skipping due to user action.";
     return;
   }
 
-  ImpellerValidationErrorsSetFatal(true);
+  // Test names that end with "WideGamut" will render with wide gamut support.
+  std::string test_name = flutter::testing::GetCurrentTestName();
+  PlaygroundSwitches switches = switches_;
+  switches.enable_wide_gamut =
+      test_name.find("WideGamut/") != std::string::npos;
 
-  SetupContext(GetParam());
+  if (switches.enable_wide_gamut && (GetParam() != PlaygroundBackend::kMetal ||
+                                     !DoesSupportWideGamutTests())) {
+    GTEST_SKIP() << "This backend doesn't yet support wide gamut.";
+    return;
+  }
+
+  SetupContext(GetParam(), switches);
   SetupWindow();
 }
 

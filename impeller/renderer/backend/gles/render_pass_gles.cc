@@ -170,19 +170,22 @@ struct RenderPassData {
     }
   });
 
-  const auto is_default_fbo =
-      TextureGLES::Cast(*pass_data.color_attachment).IsWrapped();
+  TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
+  const bool is_default_fbo = color_gles.IsWrapped();
 
-  if (!is_default_fbo) {
+  if (is_default_fbo) {
+    if (color_gles.GetFBO().has_value()) {
+      // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+      gl.BindFramebuffer(GL_FRAMEBUFFER, *color_gles.GetFBO());
+    }
+  } else {
     // Create and bind an offscreen FBO.
     gl.GenFramebuffers(1u, &fbo);
     gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
-      if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-        return false;
-      }
+    if (!color_gles.SetAsFramebufferAttachment(
+            GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
+      return false;
     }
 
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
@@ -238,6 +241,7 @@ struct RenderPassData {
   gl.Disable(GL_STENCIL_TEST);
   gl.Disable(GL_CULL_FACE);
   gl.Disable(GL_BLEND);
+  gl.Disable(GL_DITHER);
   gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
   gl.DepthMask(GL_TRUE);
   gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
@@ -472,9 +476,9 @@ struct RenderPassData {
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
-    // TODO(jonahwilliams): discarding stencil or depth on the default fbo
-    // causes Angle to discard the entire render target. Until we know the
-    // reason, default to storing.
+    // TODO(130048): discarding stencil or depth on the default fbo causes Angle
+    // to discard the entire render target. Until we know the reason, default to
+    // storing.
     bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
 
     if (pass_data.discard_color_attachment) {

@@ -231,7 +231,10 @@ void sendSemanticsUpdate() {
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
-    additionalActions: additionalActions);
+    additionalActions: additionalActions,
+    headingLevel: 0,
+    linkUrl: '',
+  );
   _semanticsUpdate(builder.build());
 }
 
@@ -386,6 +389,28 @@ Future<void> toByteDataRetries() async {
   try {
     ByteData? byteData = await image.toByteData();
     _validateNotNull(byteData);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toImageRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    final Image image = await picture.toImage(100, 100);
+    _validateNotNull(image);
   } catch (error) {
     _validateNotNull(null);
   }

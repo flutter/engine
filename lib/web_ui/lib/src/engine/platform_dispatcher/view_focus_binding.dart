@@ -3,12 +3,20 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 /// Tracks the [FlutterView]s focus changes.
 final class ViewFocusBinding {
   ViewFocusBinding(this._viewManager, this._onViewFocusChange);
+
+
+  /// Wether [FlutterView] focus changes will be reported and performed.
+  ///
+  /// DO NOT rely on this bit as it will go away soon. You're warned :)!
+  @visibleForTesting
+  static bool isEnabled = false;
 
   final FlutterViewManager _viewManager;
   final ui.ViewFocusChangeCallback _onViewFocusChange;
@@ -35,12 +43,15 @@ final class ViewFocusBinding {
   }
 
   void changeViewFocus(int viewId, ui.ViewFocusState state) {
+    if (!isEnabled) {
+      return;
+    }
     final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
 
     if (state == ui.ViewFocusState.focused) {
       // Only move the focus to the flutter view if nothing inside it is focused already.
       if (viewId != _viewId(domDocument.activeElement)) {
-        viewElement?.focus();
+        viewElement?.focusWithoutScroll();
       }
     } else {
       viewElement?.blur();
@@ -58,8 +69,10 @@ final class ViewFocusBinding {
   });
 
   late final DomEventListener _handleKeyDown = createDomEventListener((DomEvent event) {
-    event as DomKeyboardEvent;
-    if (event.shiftKey) {
+    // The right event type needs to be checked because Chrome seems to be firing
+    // `Event` events instead of `KeyboardEvent` events when autofilling is used.
+    // See https://github.com/flutter/flutter/issues/149968 for more info.
+    if (event is DomKeyboardEvent && (event.shiftKey ?? false)) {
       _viewFocusDirection = ui.ViewFocusDirection.backward;
     }
   });
@@ -69,6 +82,10 @@ final class ViewFocusBinding {
   });
 
   void _handleFocusChange(DomElement? focusedElement) {
+    if (!isEnabled) {
+      return;
+    }
+
     final int? viewId = _viewId(focusedElement);
     if (viewId == _lastViewId) {
       return;
@@ -95,11 +112,8 @@ final class ViewFocusBinding {
   }
 
   int? _viewId(DomElement? element) {
-    final DomElement? rootElement = element?.closest(DomManager.flutterViewTagName);
-    if (rootElement == null) {
-      return null;
-    }
-    return _viewManager.viewIdForRootElement(rootElement);
+    final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+    return viewManager.findViewForElement(element)?.viewId;
   }
 
   void _handleViewCreated(int viewId) {

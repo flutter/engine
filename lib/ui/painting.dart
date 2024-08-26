@@ -766,7 +766,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_saturation.png)
   ///
   /// See also:
   ///
@@ -1091,6 +1091,22 @@ final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   Paint();
+
+  /// Constructs a new [Paint] object with the same fields as [other].
+  ///
+  /// Any changes made to the object returned will not affect [other], and
+  /// changes to [other] will not affect the object returned.
+  ///
+  /// Backends (for example web versus native) may have different performance
+  /// characteristics. If the code is performance-sensitive, consider profiling
+  /// and falling back to reusing a single [Paint] object if necessary.
+  Paint.from(Paint other) {
+    // Every field on Paint is deeply immutable, so to create a copy of a Paint
+    // object, we copy the underlying data buffer and the list of objects (which
+    // are also deeply immutable).
+    _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
+    _objects = other._objects?.toList();
+  }
 
   // Paint objects are encoded in two buffers:
   //
@@ -2582,6 +2598,8 @@ base class _NativeEngineLayer extends NativeFieldWrapperClass1 implements Engine
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
 abstract class Path {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   factory Path() = _NativePath;
 
   /// Creates a copy of another [Path].
@@ -3724,7 +3742,7 @@ abstract class ImageFilter {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   factory ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality = FilterQuality.low }) {
+                     { FilterQuality filterQuality = FilterQuality.medium }) {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
@@ -4746,17 +4764,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
@@ -4833,17 +4854,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] * 2 >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] * 2 >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
@@ -4948,6 +4972,18 @@ enum ClipOp {
 ///
 /// The current transform and clip can be saved and restored using the stack
 /// managed by the [save], [saveLayer], and [restore] methods.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [Canvas] objects ([RendererBinding.createCanvas]) that allows tests to hook
+/// into the scene creation logic. When creating a [Canvas] that will be used
+/// with a [PictureLayer] as part of the [Scene] in the context of the Flutter
+/// framework, consider calling [RendererBinding.createCanvas] instead of
+/// calling the [Canvas.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class Canvas {
   /// Creates a canvas for recording graphical operations into the
   /// given picture recorder.
@@ -6399,6 +6435,19 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
 ///
 /// To begin recording, construct a [Canvas] to record the commands.
 /// To end recording, use the [PictureRecorder.endRecording] method.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [PictureRecorder] objects ([RendererBinding.createPictureRecorder]) that
+/// allows tests to hook into the scene creation logic. When creating a
+/// [PictureRecorder] and [Canvas] that will be used with a [PictureLayer] as
+/// part of the [Scene] in the context of the Flutter framework, consider
+/// calling [RendererBinding.createPictureRecorder] instead of calling the
+/// [PictureRecorder.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class PictureRecorder {
   /// Creates a new idle PictureRecorder. To associate it with a
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the

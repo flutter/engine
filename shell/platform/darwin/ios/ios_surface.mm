@@ -4,14 +4,15 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#include <memory>
 
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
-
-#if SHELL_ENABLE_METAL
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_impeller.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
-#endif  // SHELL_ENABLE_METAL
+#import "flutter/shell/platform/darwin/ios/ios_surface_noop.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+
+FLUTTER_ASSERT_ARC
 
 namespace flutter {
 
@@ -20,27 +21,31 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
   FML_DCHECK(layer);
   FML_DCHECK(context);
 
-#if SHELL_ENABLE_METAL
   if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
       switch (context->GetBackend()) {
         case IOSRenderingBackend::kSkia:
+#if !SLIMPELLER
           return std::make_unique<IOSSurfaceMetalSkia>(
-              fml::scoped_nsobject<CAMetalLayer>(
-                  reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
-              std::move(context)                                           // context
+              fml::scoped_nsobject<CAMetalLayer>((CAMetalLayer*)layer.get()),  // Metal layer
+              std::move(context)                                               // context
           );
+#else   //  !SLIMPELLER
+          FML_LOG(FATAL) << "Impeller opt-out unavailable.";
+          return nullptr;
+#endif  //  !SLIMPELLER
           break;
         case IOSRenderingBackend::kImpeller:
           return std::make_unique<IOSSurfaceMetalImpeller>(
-              fml::scoped_nsobject<CAMetalLayer>(
-                  reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
-              std::move(context)                                           // context
+              fml::scoped_nsobject<CAMetalLayer>((CAMetalLayer*)layer.get()),  // Metal layer
+              std::move(context)                                               // context
           );
       }
     }
   }
-#endif  // SHELL_ENABLE_METAL
+  if (context->GetBackend() == IOSRenderingBackend::kImpeller) {
+    return std::make_unique<IOSSurfaceNoop>(std::move(context));
+  }
 
   return std::make_unique<IOSSurfaceSoftware>(layer,              // layer
                                               std::move(context)  // context

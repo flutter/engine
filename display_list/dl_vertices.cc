@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/dl_vertices.h"
 
-#include "flutter/display_list/utils/dl_bounds_accumulator.h"
+#include "flutter/display_list/utils/dl_accumulation_rect.h"
 #include "flutter/fml/logging.h"
 
 namespace flutter {
@@ -86,7 +86,7 @@ size_t DlVertices::size() const {
 }
 
 static SkRect compute_bounds(const SkPoint* points, int count) {
-  RectBoundsAccumulator accumulator;
+  AccumulationRect accumulator;
   for (int i = 0; i < count; i++) {
     accumulator.accumulate(points[i]);
   }
@@ -264,6 +264,18 @@ void DlVertices::Builder::store_colors(const DlColor colors[]) {
   char* pod = reinterpret_cast<char*>(vertices_.get());
   size_t bytes = vertices_->vertex_count_ * sizeof(colors[0]);
   memcpy(pod + vertices_->colors_offset_, colors, bytes);
+  needs_colors_ = false;
+}
+
+void DlVertices::Builder::store_colors(const uint32_t colors[]) {
+  FML_CHECK(is_valid());
+  FML_CHECK(needs_colors_);
+  char* pod = reinterpret_cast<char*>(vertices_.get());
+  DlColor* dlcolors_ptr =
+      reinterpret_cast<DlColor*>(pod + vertices_->colors_offset_);
+  for (int i = 0; i < vertices_->vertex_count_; ++i) {
+    *dlcolors_ptr++ = DlColor(colors[i]);
+  }
   needs_colors_ = false;
 }
 

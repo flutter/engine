@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -121,8 +122,13 @@ class FlutterWindowsEngine {
   virtual bool Stop();
 
   // Create a view that can display this engine's content.
+  //
+  // Returns null on failure.
   std::unique_ptr<FlutterWindowsView> CreateView(
       std::unique_ptr<WindowBindingHandler> window);
+
+  // Remove a view. The engine will no longer render into it.
+  virtual void RemoveView(FlutterViewId view_id);
 
   // Get a view that displays this engine's content.
   //
@@ -341,6 +347,11 @@ class FlutterWindowsEngine {
   // Send the currently enabled accessibility features to the engine.
   void SendAccessibilityFeatures();
 
+  // Present content to a view. Returns true if the content was presented.
+  //
+  // This is invoked on the raster thread.
+  bool Present(const FlutterPresentViewInfo* info);
+
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
 
@@ -351,8 +362,29 @@ class FlutterWindowsEngine {
   // AOT data, if any.
   UniqueAotDataPtr aot_data_;
 
+  // The ID that the next view will have.
+  FlutterViewId next_view_id_ = kImplicitViewId;
+
   // The views displaying the content running in this engine, if any.
+  //
+  // This is read and mutated by the platform thread. This is read by the raster
+  // thread to present content to a view.
+  //
+  // Reads to this object on non-platform threads must be protected
+  // by acquiring a shared lock on |views_mutex_|.
+  //
+  // Writes to this object must only happen on the platform thread
+  // and must be protected by acquiring an exclusive lock on |views_mutex_|.
   std::unordered_map<FlutterViewId, FlutterWindowsView*> views_;
+
+  // The mutex that protects the |views_| map.
+  //
+  // The raster thread acquires a shared lock to present to a view.
+  //
+  // The platform thread acquires a shared lock to access the view.
+  // The platform thread acquires an exclusive lock before adding
+  // a view to the engine or after removing a view from the engine.
+  mutable std::shared_mutex views_mutex_;
 
   // Task runner for tasks posted from the engine.
   std::unique_ptr<TaskRunner> task_runner_;

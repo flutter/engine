@@ -35,6 +35,31 @@ bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b) {
   return true;
 }
 
+}  // namespace testing
+}  // namespace flutter
+
+namespace std {
+
+using DisplayList = flutter::DisplayList;
+using DlColor = flutter::DlColor;
+using DlPaint = flutter::DlPaint;
+using DlCanvas = flutter::DlCanvas;
+using DlImage = flutter::DlImage;
+using DlDrawStyle = flutter::DlDrawStyle;
+using DlBlendMode = flutter::DlBlendMode;
+using DlStrokeCap = flutter::DlStrokeCap;
+using DlStrokeJoin = flutter::DlStrokeJoin;
+using DlBlurStyle = flutter::DlBlurStyle;
+using DlFilterMode = flutter::DlFilterMode;
+using DlVertexMode = flutter::DlVertexMode;
+using DlTileMode = flutter::DlTileMode;
+using DlImageSampling = flutter::DlImageSampling;
+using SaveLayerOptions = flutter::SaveLayerOptions;
+using DisplayListOpType = flutter::DisplayListOpType;
+using DisplayListOpCategory = flutter::DisplayListOpCategory;
+
+using DisplayListStreamDispatcher = flutter::testing::DisplayListStreamDispatcher;
+
 std::ostream& operator<<(std::ostream& os,
                          const DisplayList& display_list) {
   DisplayListStreamDispatcher dispatcher(os);
@@ -76,49 +101,93 @@ std::ostream& operator<<(std::ostream& os, const DlPaint& paint) {
   return os << ")";
 }
 
+#define DLT_OSTREAM_CASE(enum_name, value_name) \
+  case enum_name::k##value_name: return os << #enum_name "::k" #value_name
+
 std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode) {
   switch (mode) {
-    case DlBlendMode::kClear:      return os << "BlendMode::kClear";
-    case DlBlendMode::kSrc:        return os << "BlendMode::kSrc";
-    case DlBlendMode::kDst:        return os << "BlendMode::kDst";
-    case DlBlendMode::kSrcOver:    return os << "BlendMode::kSrcOver";
-    case DlBlendMode::kDstOver:    return os << "BlendMode::kDstOver";
-    case DlBlendMode::kSrcIn:      return os << "BlendMode::kSrcIn";
-    case DlBlendMode::kDstIn:      return os << "BlendMode::kDstIn";
-    case DlBlendMode::kSrcOut:     return os << "BlendMode::kSrcOut";
-    case DlBlendMode::kDstOut:     return os << "BlendMode::kDstOut";
-    case DlBlendMode::kSrcATop:    return os << "BlendMode::kSrcATop";
-    case DlBlendMode::kDstATop:    return os << "BlendMode::kDstATop";
-    case DlBlendMode::kXor:        return os << "BlendMode::kXor";
-    case DlBlendMode::kPlus:       return os << "BlendMode::kPlus";
-    case DlBlendMode::kModulate:   return os << "BlendMode::kModulate";
-    case DlBlendMode::kScreen:     return os << "BlendMode::kScreen";
+    DLT_OSTREAM_CASE(DlBlendMode, Clear);
+    DLT_OSTREAM_CASE(DlBlendMode, Src);
+    DLT_OSTREAM_CASE(DlBlendMode, Dst);
+    DLT_OSTREAM_CASE(DlBlendMode, SrcOver);
+    DLT_OSTREAM_CASE(DlBlendMode, DstOver);
+    DLT_OSTREAM_CASE(DlBlendMode, SrcIn);
+    DLT_OSTREAM_CASE(DlBlendMode, DstIn);
+    DLT_OSTREAM_CASE(DlBlendMode, SrcOut);
+    DLT_OSTREAM_CASE(DlBlendMode, DstOut);
+    DLT_OSTREAM_CASE(DlBlendMode, SrcATop);
+    DLT_OSTREAM_CASE(DlBlendMode, DstATop);
+    DLT_OSTREAM_CASE(DlBlendMode, Xor);
+    DLT_OSTREAM_CASE(DlBlendMode, Plus);
+    DLT_OSTREAM_CASE(DlBlendMode, Modulate);
+    DLT_OSTREAM_CASE(DlBlendMode, Screen);
 
-    case DlBlendMode::kOverlay:    return os << "BlendMode::kOverlay";
-    case DlBlendMode::kDarken:     return os << "BlendMode::kDarken";
-    case DlBlendMode::kLighten:    return os << "BlendMode::kLighten";
-    case DlBlendMode::kColorDodge: return os << "BlendMode::kColorDodge";
-    case DlBlendMode::kColorBurn:  return os << "BlendMode::kColorBurn";
-    case DlBlendMode::kHardLight:  return os << "BlendMode::kHardLight";
-    case DlBlendMode::kSoftLight:  return os << "BlendMode::kSoftLight";
-    case DlBlendMode::kDifference: return os << "BlendMode::kDifference";
-    case DlBlendMode::kExclusion:  return os << "BlendMode::kExclusion";
-    case DlBlendMode::kMultiply:   return os << "BlendMode::kMultiply";
+    DLT_OSTREAM_CASE(DlBlendMode, Overlay);
+    DLT_OSTREAM_CASE(DlBlendMode, Darken);
+    DLT_OSTREAM_CASE(DlBlendMode, Lighten);
+    DLT_OSTREAM_CASE(DlBlendMode, ColorDodge);
+    DLT_OSTREAM_CASE(DlBlendMode, ColorBurn);
+    DLT_OSTREAM_CASE(DlBlendMode, HardLight);
+    DLT_OSTREAM_CASE(DlBlendMode, SoftLight);
+    DLT_OSTREAM_CASE(DlBlendMode, Difference);
+    DLT_OSTREAM_CASE(DlBlendMode, Exclusion);
+    DLT_OSTREAM_CASE(DlBlendMode, Multiply);
 
-    case DlBlendMode::kHue:        return os << "BlendMode::kHue";
-    case DlBlendMode::kSaturation: return os << "BlendMode::kSaturation";
-    case DlBlendMode::kColor:      return os << "BlendMode::kColor";
-    case DlBlendMode::kLuminosity: return os << "BlendMode::kLuminosity";
-
-    default: return os << "BlendMode::????";
+    DLT_OSTREAM_CASE(DlBlendMode, Hue);
+    DLT_OSTREAM_CASE(DlBlendMode, Saturation);
+    DLT_OSTREAM_CASE(DlBlendMode, Color);
+    DLT_OSTREAM_CASE(DlBlendMode, Luminosity);
   }
+  // Not a valid enum, should never happen, but in case we encounter bad data.
+  return os << "DlBlendMode::????";
 }
+
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DisplayListOpType& type) {
+  switch (type) {
+#define DLT_OP_TYPE_CASE(V) DLT_OSTREAM_CASE(DisplayListOpType, V);
+    FOR_EACH_DISPLAY_LIST_OP(DLT_OP_TYPE_CASE)
+    DLT_OP_TYPE_CASE(InvalidOp)
+
+#ifdef IMPELLER_ENABLE_3D
+    DLT_OP_TYPE_CASE(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
+
+
+#undef DLT_OP_TYPE_CASE
+  }
+  // Not a valid enum, should never happen, but in case we encounter bad data.
+  return os << "DisplayListOpType::???";
+}
+
+extern std::ostream& operator<<(
+    std::ostream& os, const flutter::DisplayListOpCategory& category) {
+  switch (category) {
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Attribute);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Transform);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Clip);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Save);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, SaveLayer);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Restore);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, Rendering);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, SubDisplayList);
+    DLT_OSTREAM_CASE(DisplayListOpCategory, InvalidCategory);
+  }
+  // Not a valid enum, should never happen, but in case we encounter bad data.
+  return os << "DisplayListOpCategory::???";
+}
+
+#undef DLT_OSTREAM_CASE
 
 std::ostream& operator<<(std::ostream& os, const SaveLayerOptions& options) {
   return os << "SaveLayerOptions("
+            << "renders_with_attributes: " << options.renders_with_attributes()
+            << ", "
             << "can_distribute_opacity: " << options.can_distribute_opacity()
             << ", "
-            << "renders_with_attributes: " << options.renders_with_attributes()
+            << "contains_backdrop: " << options.contains_backdrop_filter()
+            << ", "
+            << "is_unbounded: " << options.content_is_unbounded()
             << ")";
 }
 
@@ -257,7 +326,24 @@ std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode) {
 }
 
 std::ostream& operator<<(std::ostream& os, const DlColor& color) {
-  return os << "DlColor(" << std::hex << color.argb() << std::dec << ")";
+  const char* color_space;
+  switch(color.getColorSpace()) {
+    case flutter::DlColorSpace::kSRGB:
+      color_space = "srgb";
+      break;
+    case flutter::DlColorSpace::kExtendedSRGB:
+      color_space = "srgb_xr";
+      break;
+    case flutter::DlColorSpace::kDisplayP3:
+      color_space = "p3";
+      break;
+  }
+  return os << "DlColor(" << //
+    color.getAlphaF() << ", " << //
+    color.getRedF() << ", " << //
+    color.getGreenF() << ", " << //
+    color.getBlueF() << ", " << //
+    color_space << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, DlImageSampling sampling) {
@@ -329,6 +415,11 @@ std::ostream& operator<<(std::ostream& os, const DlImage* image) {
   }
   return os << "isTextureBacked: " << image->isTextureBacked() << ")";
 }
+
+}  // namespace std
+
+namespace flutter {
+namespace testing {
 
 std::ostream& DisplayListStreamDispatcher::startl() {
   for (int i = 0; i < cur_indent_; i++) {
@@ -448,6 +539,12 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
                                  << sweep_src->tile_mode() << ", " << sweep_src->matrix_ptr() << ")";
       break;
     }
+#ifdef IMPELLER_ENABLE_3D
+    case DlColorSourceType::kScene: {
+      os_ << "DlSceneColorSource()";
+      break;
+    }
+#endif  // IMPELLER_ENABLE_3D
     default:
       os_ << "?DlUnknownColorSource?()";
       break;
@@ -513,9 +610,6 @@ void DisplayListStreamDispatcher::setInvertColors(bool invert) {
 }
 void DisplayListStreamDispatcher::setBlendMode(DlBlendMode mode) {
   startl() << "setBlendMode(" << mode << ");" << std::endl;
-}
-void DisplayListStreamDispatcher::setPathEffect(const DlPathEffect* effect) {
-  startl() << "setPathEffect(" << effect << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
@@ -715,6 +809,14 @@ void DisplayListStreamDispatcher::clipRect(const SkRect& rect, ClipOp clip_op,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
+void DisplayListStreamDispatcher::clipOval(const SkRect& bounds, ClipOp clip_op,
+                                           bool is_aa) {
+  startl() << "clipOval("
+           << bounds << ", "
+           << clip_op << ", "
+           << "isaa: " << is_aa
+           << ");" << std::endl;
+}
 void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
                          ClipOp clip_op,
                          bool is_aa) {
@@ -745,6 +847,17 @@ void DisplayListStreamDispatcher::drawPaint() {
 void DisplayListStreamDispatcher::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
   startl() << "drawLine(" << p0 << ", " << p1 << ");" << std::endl;
+}
+void DisplayListStreamDispatcher::drawDashedLine(const DlPoint& p0,
+                                                 const DlPoint& p1,
+                                                 DlScalar on_length,
+                                                 DlScalar off_length) {
+  startl() << "drawDashedLine("
+           << p0 << ", "
+           << p1 << ", "
+           << on_length << ", "
+           << off_length
+           << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawRect(const SkRect& rect) {
   startl() << "drawRect(" << rect << ");" << std::endl;
@@ -785,7 +898,7 @@ void DisplayListStreamDispatcher::drawPoints(PointMode mode,
                           out_array("points", count, points)
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
+void DisplayListStreamDispatcher::drawVertices(const std::shared_ptr<DlVertices>& vertices,
                                                DlBlendMode mode) {
   startl() << "drawVertices("
                << "DlVertices("

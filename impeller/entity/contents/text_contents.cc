@@ -8,10 +8,13 @@
 #include <optional>
 #include <utility>
 
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
+#include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
@@ -35,7 +38,13 @@ Color TextContents::GetColor() const {
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  return !frame_->MaybeHasOverlapping();
+  // Computing whether or not opacity can be inherited requires determining if
+  // any glyphs can overlap exactly. While this was previously implemented
+  // via TextFrame::MaybeHasOverlapping, this code relied on scaling up text
+  // bounds for a size specified at 1.0 DPR, which was not accurate at
+  // higher or lower DPRs. Rather than re-implement the checks to compute exact
+  // glyph bounds, for now this optimization has been disabled for Text.
+  return false;
 }
 
 void TextContents::SetInheritedOpacity(Scalar opacity) {
@@ -57,8 +66,28 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale);
+  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_, properties_);
   scale_ = scale;
+}
+
+void TextContents::SetTextProperties(Color color,
+                                     bool stroke,
+                                     Scalar stroke_width,
+                                     Cap stroke_cap,
+                                     Join stroke_join,
+                                     Scalar stroke_miter) {
+  if (frame_->HasColor()) {
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties_.color = color.WithAlpha(1.0);
+  }
+  if (stroke) {
+    properties_.stroke = true;
+    properties_.stroke_width = stroke_width;
+    properties_.stroke_cap = stroke_cap;
+    properties_.stroke_join = stroke_join;
+    properties_.stroke_miter = stroke_miter;
+  }
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -72,7 +101,7 @@ bool TextContents::Render(const ContentContext& renderer,
   auto type = frame_->GetAtlasType();
   const std::shared_ptr<GlyphAtlas>& atlas =
       renderer.GetLazyGlyphAtlas()->CreateOrGetGlyphAtlas(
-          *renderer.GetContext(), type);
+          *renderer.GetContext(), renderer.GetTransientsBuffer(), type);
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -83,42 +112,33 @@ bool TextContents::Render(const ContentContext& renderer,
   pass.SetCommandLabel("TextFrame");
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
-  if (type == GlyphAtlas::Type::kAlphaBitmap) {
-    pass.SetPipeline(renderer.GetGlyphAtlasPipeline(opts));
-  } else {
-    pass.SetPipeline(renderer.GetGlyphAtlasColorPipeline(opts));
-  }
-  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetPipeline(renderer.GetGlyphAtlasPipeline(opts));
 
   using VS = GlyphAtlasPipeline::VertexShader;
   using FS = GlyphAtlasPipeline::FragmentShader;
 
   // Common vertex uniforms for all glyphs.
   VS::FrameInfo frame_info;
-  frame_info.depth = entity.GetShaderClipDepth();
-  frame_info.mvp = pass.GetOrthographicTransform();
-  frame_info.atlas_size =
-      Vector2{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
-              static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
-  frame_info.offset = offset_;
-  frame_info.is_translation_scale =
-      entity.GetTransform().IsTranslationScaleOnly();
-  frame_info.entity_transform = entity.GetTransform();
-  frame_info.text_color = ToVector(color.Premultiply());
+  frame_info.mvp =
+      Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass, Matrix());
+  ISize atlas_size = atlas->GetTexture()->GetSize();
+  bool is_translation_scale = entity.GetTransform().IsTranslationScaleOnly();
+  Matrix entity_transform = entity.GetTransform();
+  Matrix basis_transform = entity_transform.Basis();
 
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (type == GlyphAtlas::Type::kColorBitmap) {
-    using FSS = GlyphAtlasColorPipeline::FragmentShader;
-    FSS::FragInfo frag_info;
-    frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
-    FSS::BindFragInfo(pass,
-                      renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
-  }
+  FS::FragInfo frag_info;
+  frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
+  frag_info.text_color = ToVector(color.Premultiply());
+  frag_info.is_color_glyph = type == GlyphAtlas::Type::kColorBitmap;
+
+  FS::BindFragInfo(pass,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   SamplerDescriptor sampler_desc;
-  if (frame_info.is_translation_scale) {
+  if (is_translation_scale) {
     sampler_desc.min_filter = MinMagFilter::kNearest;
     sampler_desc.mag_filter = MinMagFilter::kNearest;
   } else {
@@ -130,7 +150,9 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
-  sampler_desc.mip_filter = MipFilter::kNearest;
+
+  // No mipmaps for glyph atlas (glyphs are generated at exact scales).
+  sampler_desc.mip_filter = MipFilter::kBase;
 
   FS::BindGlyphAtlasSampler(
       pass,                 // command
@@ -157,12 +179,13 @@ bool TextContents::Render(const ContentContext& renderer,
   }
   vertex_count *= 6;
 
-  auto buffer_view = host_buffer.Emplace(
+  BufferView buffer_view = host_buffer.Emplace(
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
         VS::PerVertexData* vtx_contents =
             reinterpret_cast<VS::PerVertexData*>(contents);
+        size_t i = 0u;
         for (const TextRun& run : frame_->GetRuns()) {
           const Font& font = run.GetFont();
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
@@ -174,22 +197,74 @@ bool TextContents::Render(const ContentContext& renderer,
             continue;
           }
 
+          // Adjust glyph position based on the subpixel rounding
+          // used by the font.
+          Point subpixel_adjustment(0.5, 0.5);
+          switch (font.GetAxisAlignment()) {
+            case AxisAlignment::kNone:
+              break;
+            case AxisAlignment::kX:
+              subpixel_adjustment.x = 0.125;
+              break;
+            case AxisAlignment::kY:
+              subpixel_adjustment.y = 0.125;
+              break;
+            case AxisAlignment::kAll:
+              subpixel_adjustment.x = 0.125;
+              subpixel_adjustment.y = 0.125;
+              break;
+          }
+
+          Point screen_offset = (entity_transform * Point(0, 0));
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
-            std::optional<Rect> maybe_atlas_glyph_bounds =
-                font_atlas->FindGlyphBounds(glyph_position.glyph);
+            // Note: uses unrounded scale for more accurate subpixel position.
+            Point subpixel = TextFrame::ComputeSubpixelPosition(
+                glyph_position, font.GetAxisAlignment(), offset_, scale_);
+            std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
+                font_atlas->FindGlyphBounds(
+                    SubpixelGlyph{glyph_position.glyph, subpixel, properties_});
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
             }
-            const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
-            vtx.atlas_glyph_bounds = Vector4(atlas_glyph_bounds.GetXYWH());
-            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.GetXYWH());
-            vtx.glyph_position = glyph_position.position;
+            const Rect& atlas_glyph_bounds =
+                maybe_atlas_glyph_bounds.value().first;
+            Rect glyph_bounds = maybe_atlas_glyph_bounds.value().second;
+            Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
+            // For each glyph, we compute two rectangles. One for the vertex
+            // positions and one for the texture coordinates (UVs). The atlas
+            // glyph bounds are used to compute UVs in cases where the
+            // destination and source sizes may differ due to clamping the sizes
+            // of large glyphs.
+            Point uv_origin =
+                (atlas_glyph_bounds.GetLeftTop() - Point(0.5, 0.5)) /
+                atlas_size;
+            Point uv_size =
+                (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
+
+            Point unrounded_glyph_position =
+                basis_transform *
+                (glyph_position.position + scaled_bounds.GetLeftTop());
+
+            Point screen_glyph_position =
+                (screen_offset + unrounded_glyph_position + subpixel_adjustment)
+                    .Floor();
 
             for (const Point& point : unit_points) {
-              vtx.unit_position = point;
-              std::memcpy(vtx_contents++, &vtx, sizeof(VS::PerVertexData));
+              Point position;
+              if (is_translation_scale) {
+                position = (screen_glyph_position +
+                            (basis_transform * point * scaled_bounds.GetSize()))
+                               .Round();
+              } else {
+                position = entity_transform * (glyph_position.position +
+                                               scaled_bounds.GetLeftTop() +
+                                               point * scaled_bounds.GetSize());
+              }
+              vtx.uv = uv_origin + (uv_size * point);
+              vtx.position = position;
+              vtx_contents[i++] = vtx;
             }
           }
         }

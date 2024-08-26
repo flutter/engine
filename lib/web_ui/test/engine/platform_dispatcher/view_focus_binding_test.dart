@@ -17,12 +17,16 @@ void testMain() {
     late EnginePlatformDispatcher dispatcher;
 
     setUp(() {
-      domDocument.activeElement?.blur();
-      EngineSemantics.instance.semanticsEnabled = false;
+      ViewFocusBinding.isEnabled = true;
 
       dispatcher = EnginePlatformDispatcher.instance;
       dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
       dispatcher.onViewFocusChange = dispatchedViewFocusEvents.add;
+    });
+
+    tearDown(() {
+      ViewFocusBinding.isEnabled = false;
+      EngineSemantics.instance.semanticsEnabled = false;
     });
 
     test('The view is focusable and reachable by keyboard when registered', () async {
@@ -37,7 +41,7 @@ void testMain() {
     test('The view is focusable but not reachable by keyboard when focused', () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
-      view.dom.rootElement.focus();
+      view.dom.rootElement.focusWithoutScroll();
 
       // The root element should have a tabindex="-1" to make the flutter view
       // focusable but not reachable by the keyboard.
@@ -51,11 +55,11 @@ void testMain() {
       expect(view1.dom.rootElement.getAttribute('tabindex'), '0');
       expect(view2.dom.rootElement.getAttribute('tabindex'), '0');
 
-      view1.dom.rootElement.focus();
+      view1.dom.rootElement.focusWithoutScroll();
       expect(view1.dom.rootElement.getAttribute('tabindex'), '-1');
       expect(view2.dom.rootElement.getAttribute('tabindex'), '0');
 
-      view2.dom.rootElement.focus();
+      view2.dom.rootElement.focusWithoutScroll();
       expect(view1.dom.rootElement.getAttribute('tabindex'), '0');
       expect(view2.dom.rootElement.getAttribute('tabindex'), '-1');
 
@@ -73,11 +77,11 @@ void testMain() {
       expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
       expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
 
-      view1.dom.rootElement.focus();
+      view1.dom.rootElement.focusWithoutScroll();
       expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
       expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
 
-      view2.dom.rootElement.focus();
+      view2.dom.rootElement.focusWithoutScroll();
       expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
       expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
 
@@ -89,7 +93,7 @@ void testMain() {
     test('fires a focus event - a view was focused', () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
-      view.dom.rootElement.focus();
+      view.dom.rootElement.focusWithoutScroll();
 
       expect(dispatchedViewFocusEvents, hasLength(1));
 
@@ -101,7 +105,7 @@ void testMain() {
     test('fires a focus event - a view was unfocused', () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
-      view.dom.rootElement.focus();
+      view.dom.rootElement.focusWithoutScroll();
       view.dom.rootElement.blur();
 
       expect(dispatchedViewFocusEvents, hasLength(2));
@@ -119,12 +123,12 @@ void testMain() {
       final EngineFlutterView view1 = createAndRegisterView(dispatcher);
       final EngineFlutterView view2 = createAndRegisterView(dispatcher);
 
-      view1.dom.rootElement.focus();
-      view2.dom.rootElement.focus();
+      view1.dom.rootElement.focusWithoutScroll();
+      view2.dom.rootElement.focusWithoutScroll();
       // The statements simulate the user pressing shift + tab in the keyboard.
       // Synthetic keyboard events do not trigger focus changes.
       domDocument.body!.pressTabKey(shift: true);
-      view1.dom.rootElement.focus();
+      view1.dom.rootElement.focusWithoutScroll();
       domDocument.body!.releaseTabKey();
 
       expect(dispatchedViewFocusEvents, hasLength(3));
@@ -146,8 +150,8 @@ void testMain() {
       final EngineFlutterView view1 = createAndRegisterView(dispatcher);
       final EngineFlutterView view2 = createAndRegisterView(dispatcher);
 
-      view1.dom.rootElement.focus();
-      view2.dom.rootElement.focus();
+      view1.dom.rootElement.focusWithoutScroll();
+      view2.dom.rootElement.focusWithoutScroll();
       view2.dom.rootElement.blur();
 
       expect(dispatchedViewFocusEvents, hasLength(3));
@@ -250,7 +254,7 @@ void testMain() {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.append(input);
-      input.focus();
+      input.focusWithoutScroll();
 
       dispatcher.requestViewFocusChange(
         viewId: view.viewId,

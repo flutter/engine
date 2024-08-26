@@ -62,8 +62,12 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   void GLPopulateExistingDamage(const intptr_t id,
                                 FlutterDamage* existing_damage);
 
+  void* GLGetProcAddress(const char* name);
+
  protected:
   virtual void SetupCompositor() override;
+
+  void SetupCompositorUsingGLSurfaces();
 
  private:
   // This allows the builder to access the hooks.
@@ -87,8 +91,6 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
 
   bool GLMakeResourceCurrent();
-
-  void* GLGetProcAddress(const char* name);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContextGL);
 };

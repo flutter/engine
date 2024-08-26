@@ -5,9 +5,8 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BLIT_PASS_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BLIT_PASS_VK_H_
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/base/config.h"
-#include "impeller/renderer/backend/vulkan/blit_command_vk.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
@@ -23,11 +22,10 @@ class BlitPassVK final : public BlitPass {
  private:
   friend class CommandBufferVK;
 
-  std::weak_ptr<CommandBufferVK> command_buffer_;
-  std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
+  std::shared_ptr<CommandBufferVK> command_buffer_;
   std::string label_;
 
-  explicit BlitPassVK(std::weak_ptr<CommandBufferVK> command_buffer);
+  explicit BlitPassVK(std::shared_ptr<CommandBufferVK> command_buffer);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -38,6 +36,14 @@ class BlitPassVK final : public BlitPass {
   // |BlitPass|
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
+
+  // |BlitPass|
+  bool ResizeTexture(const std::shared_ptr<Texture>& source,
+                     const std::shared_ptr<Texture>& destination) override;
+
+  // |BlitPass|
+  bool ConvertTextureToShaderRead(
+      const std::shared_ptr<Texture>& texture) override;
 
   // |BlitPass|
   bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
@@ -56,8 +62,10 @@ class BlitPassVK final : public BlitPass {
   // |BlitPass|
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
-                                    IPoint destination_origin,
-                                    std::string label) override;
+                                    IRect destination_region,
+                                    std::string label,
+                                    uint32_t slice,
+                                    bool convert_to_read) override;
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;

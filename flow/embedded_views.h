@@ -400,6 +400,15 @@ class ExternalViewEmbedder {
 
   virtual ~ExternalViewEmbedder() = default;
 
+  // Deallocate the resources for displaying a view.
+  //
+  // This method must be called when a view is removed from the engine.
+  //
+  // When the ExternalViewEmbedder is requested to draw an unrecognized view, it
+  // implicitly allocates necessary resources. These resources must be
+  // explicitly deallocated.
+  virtual void CollectView(int64_t view_id);
+
   // Usually, the root canvas is not owned by the view embedder. However, if
   // the view embedder wants to provide a canvas to the rasterizer, it may
   // return one here. This canvas takes priority over the canvas materialized
@@ -435,16 +444,19 @@ class ExternalViewEmbedder {
   virtual DlCanvas* CompositeEmbeddedView(int64_t platform_view_id) = 0;
 
   // Prepare for a view to be drawn.
-  virtual void PrepareFlutterView(int64_t flutter_view_id,
-                                  SkISize frame_size,
+  virtual void PrepareFlutterView(SkISize frame_size,
                                   double device_pixel_ratio) = 0;
 
+  // Submits the content stored since |PrepareFlutterView| to the specified
+  // Flutter view.
+  //
   // Implementers must submit the frame by calling frame.Submit().
   //
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
   virtual void SubmitFlutterView(
+      int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<SurfaceFrame> frame);

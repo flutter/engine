@@ -8,34 +8,14 @@
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
+FLUTTER_ASSERT_ARC
+
 static constexpr int kMaxPointsInVerb = 4;
-static constexpr NSUInteger kFlutterClippingMaskViewPoolCapacity = 5;
 
-namespace flutter {
-
-FlutterPlatformViewLayer::FlutterPlatformViewLayer(
-    const fml::scoped_nsobject<UIView>& overlay_view,
-    const fml::scoped_nsobject<UIView>& overlay_view_wrapper,
-    std::unique_ptr<IOSSurface> ios_surface,
-    std::unique_ptr<Surface> surface)
-    : overlay_view(overlay_view),
-      overlay_view_wrapper(overlay_view_wrapper),
-      ios_surface(std::move(ios_surface)),
-      surface(std::move(surface)){};
-
-FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
-
-FlutterPlatformViewsController::FlutterPlatformViewsController()
-    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
-      weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)) {
-  mask_view_pool_.reset(
-      [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
-};
-
-FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
-
-fml::WeakPtr<flutter::FlutterPlatformViewsController> FlutterPlatformViewsController::GetWeakPtr() {
-  return weak_factory_->GetWeakPtr();
+namespace {
+CGRect GetCGRectFromSkRect(const SkRect& clipSkRect) {
+  return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
+                    clipSkRect.fBottom - clipSkRect.fTop);
 }
 
 CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
@@ -52,30 +32,13 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   transform.m24 = matrix.getPerspY();
   return transform;
 }
-
-void ResetAnchor(CALayer* layer) {
-  // Flow uses (0, 0) to apply transform matrix so we need to match that in Quartz.
-  layer.anchorPoint = CGPointZero;
-  layer.position = CGPointZero;
-}
-
-CGRect GetCGRectFromSkRect(const SkRect& clipSkRect) {
-  return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
-                    clipSkRect.fBottom - clipSkRect.fTop);
-}
-
-BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
-  const CGFloat epsilon = 0.01;
-  return radius1 - radius2 < epsilon;
-}
-
-}  // namespace flutter
+}  // namespace
 
 @interface PlatformViewFilter ()
 
 // `YES` if the backdropFilterView has been configured at least once.
 @property(nonatomic) BOOL backdropFilterViewConfigured;
-@property(nonatomic, retain) UIVisualEffectView* backdropFilterView;
+@property(nonatomic) UIVisualEffectView* backdropFilterView;
 
 // Updates the `visualEffectView` with the current filter parameters.
 // Also sets `self.backdropFilterView` to the updated visualEffectView.
@@ -102,10 +65,9 @@ static BOOL _preparedOnce = NO;
     if (![PlatformViewFilter isUIVisualEffectViewImplementationValid]) {
       FML_DLOG(ERROR) << "Apple's API for UIVisualEffectView changed. Update the implementation to "
                          "access the gaussianBlur CAFilter.";
-      [self release];
       return nil;
     }
-    _backdropFilterView = [visualEffectView retain];
+    _backdropFilterView = visualEffectView;
     _backdropFilterViewConfigured = NO;
   }
   return self;
@@ -113,7 +75,6 @@ static BOOL _preparedOnce = NO;
 
 + (void)resetPreparation {
   _preparedOnce = NO;
-  [_gaussianBlurFilter release];
   _gaussianBlurFilter = nil;
   _indexOfBackdropView = -1;
   _indexOfVisualEffectSubview = -1;
@@ -130,7 +91,7 @@ static BOOL _preparedOnce = NO;
       for (NSObject* filter in view.layer.filters) {
         if ([[filter valueForKey:@"name"] isEqual:@"gaussianBlur"] &&
             [[filter valueForKey:@"inputRadius"] isKindOfClass:[NSNumber class]]) {
-          _gaussianBlurFilter = [filter retain];
+          _gaussianBlurFilter = filter;
           break;
         }
       }
@@ -145,13 +106,6 @@ static BOOL _preparedOnce = NO;
   return _indexOfBackdropView > -1 && _indexOfVisualEffectSubview > -1 && _gaussianBlurFilter;
 }
 
-- (void)dealloc {
-  [_backdropFilterView release];
-  _backdropFilterView = nil;
-
-  [super dealloc];
-}
-
 - (UIVisualEffectView*)backdropFilterView {
   FML_DCHECK(_backdropFilterView);
   if (!self.backdropFilterViewConfigured) {
@@ -162,7 +116,7 @@ static BOOL _preparedOnce = NO;
 }
 
 - (void)updateVisualEffectView:(UIVisualEffectView*)visualEffectView {
-  NSObject* gaussianBlurFilter = [[_gaussianBlurFilter copy] autorelease];
+  NSObject* gaussianBlurFilter = [_gaussianBlurFilter copy];
   FML_DCHECK(gaussianBlurFilter);
   UIView* backdropView = visualEffectView.subviews[_indexOfBackdropView];
   [gaussianBlurFilter setValue:@(_blurRadius) forKey:@"inputRadius"];
@@ -172,17 +126,15 @@ static BOOL _preparedOnce = NO;
   visualEffectSubview.layer.backgroundColor = UIColor.clearColor.CGColor;
   visualEffectView.frame = _frame;
 
-  if (_backdropFilterView != visualEffectView) {
-    _backdropFilterView = [visualEffectView retain];
-  }
+  self.backdropFilterView = visualEffectView;
 }
 
 @end
 
 @interface ChildClippingView ()
 
-@property(retain, nonatomic) NSArray<PlatformViewFilter*>* filters;
-@property(retain, nonatomic) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
+@property(nonatomic, copy) NSArray<PlatformViewFilter*>* filters;
+@property(nonatomic) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
 
 @end
 
@@ -224,16 +176,6 @@ static BOOL _preparedOnce = NO;
   }
 }
 
-- (void)dealloc {
-  [_filters release];
-  _filters = nil;
-
-  [_backdropFilterSubviews release];
-  _backdropFilterSubviews = nil;
-
-  [super dealloc];
-}
-
 - (NSMutableArray*)backdropFilterSubviews {
   if (!_backdropFilterSubviews) {
     _backdropFilterSubviews = [[NSMutableArray alloc] init];
@@ -255,12 +197,12 @@ static BOOL _preparedOnce = NO;
 // information about screen scale.
 @property(nonatomic) CATransform3D reverseScreenScale;
 
-- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
+- (void)addTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
 
 @end
 
 @implementation FlutterClippingMaskView {
-  std::vector<fml::CFRef<CGPathRef>> paths_;
+  CGMutablePathRef pathSoFar_;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -271,13 +213,28 @@ static BOOL _preparedOnce = NO;
   if (self = [super initWithFrame:frame]) {
     self.backgroundColor = UIColor.clearColor;
     _reverseScreenScale = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
+    pathSoFar_ = CGPathCreateMutable();
   }
   return self;
 }
 
++ (Class)layerClass {
+  return [CAShapeLayer class];
+}
+
+- (CAShapeLayer*)shapeLayer {
+  return (CAShapeLayer*)self.layer;
+}
+
 - (void)reset {
-  paths_.clear();
+  CGPathRelease(pathSoFar_);
+  pathSoFar_ = CGPathCreateMutable();
+  [self shapeLayer].path = nil;
   [self setNeedsDisplay];
+}
+
+- (void)dealloc {
+  CGPathRelease(pathSoFar_);
 }
 
 // In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
@@ -289,28 +246,13 @@ static BOOL _preparedOnce = NO;
   return NO;
 }
 
-- (void)drawRect:(CGRect)rect {
-  CGContextRef context = UIGraphicsGetCurrentContext();
-  CGContextSaveGState(context);
-
-  // For mask view, only the alpha channel is used.
-  CGContextSetAlpha(context, 1);
-
-  for (size_t i = 0; i < paths_.size(); i++) {
-    CGContextAddPath(context, paths_.at(i));
-    CGContextClip(context);
-  }
-  CGContextFillRect(context, rect);
-  CGContextRestoreGState(context);
-}
-
 - (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix {
-  CGRect clipRect = flutter::GetCGRectFromSkRect(clipSkRect);
+  CGRect clipRect = GetCGRectFromSkRect(clipSkRect);
   CGPathRef path = CGPathCreateWithRect(clipRect, nil);
   // The `matrix` is based on the physical pixels, convert it to UIKit points.
   CATransform3D matrixInPoints =
-      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
-  paths_.push_back([self getTransformedPath:path matrix:matrixInPoints]);
+      CATransform3DConcat(GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
+  [self addTransformedPath:path matrix:matrixInPoints];
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const SkMatrix&)matrix {
@@ -325,7 +267,7 @@ static BOOL _preparedOnce = NO;
     }
     case SkRRect::kOval_Type:
     case SkRRect::kSimple_Type: {
-      CGRect clipRect = flutter::GetCGRectFromSkRect(clipSkRRect.rect());
+      CGRect clipRect = GetCGRectFromSkRect(clipSkRRect.rect());
       pathRef = CGPathCreateWithRoundedRect(clipRect, clipSkRRect.getSimpleRadii().x(),
                                             clipSkRRect.getSimpleRadii().y(), nil);
       break;
@@ -375,11 +317,11 @@ static BOOL _preparedOnce = NO;
   }
   // The `matrix` is based on the physical pixels, convert it to UIKit points.
   CATransform3D matrixInPoints =
-      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
+      CATransform3DConcat(GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
+  [self addTransformedPath:pathRef matrix:matrixInPoints];
 }
 
 - (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix {
@@ -443,16 +385,16 @@ static BOOL _preparedOnce = NO;
   }
   // The `matrix` is based on the physical pixels, convert it to UIKit points.
   CATransform3D matrixInPoints =
-      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
+      CATransform3DConcat(GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
+  [self addTransformedPath:pathRef matrix:matrixInPoints];
 }
 
-- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
+- (void)addTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
   CGAffineTransform affine =
       CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
-  CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &affine);
+  CGPathAddPath(pathSoFar_, &affine, path);
+  [self shapeLayer].path = pathSoFar_;
   CGPathRelease(path);
-  return fml::CFRef<CGPathRef>(transformedPath);
 }
 
 @end
@@ -461,11 +403,11 @@ static BOOL _preparedOnce = NO;
 
 // The maximum number of `FlutterClippingMaskView` the pool can contain.
 // This prevents the pool to grow infinately and limits the maximum memory a pool can use.
-@property(assign, nonatomic) NSUInteger capacity;
+@property(nonatomic) NSUInteger capacity;
 
 // The pool contains the views that are available to use.
 // The number of items in the pool must not excceds `capacity`.
-@property(retain, nonatomic) NSMutableSet<FlutterClippingMaskView*>* pool;
+@property(nonatomic) NSMutableSet<FlutterClippingMaskView*>* pool;
 
 @end
 
@@ -485,11 +427,10 @@ static BOOL _preparedOnce = NO;
   FML_DCHECK(self.pool.count <= self.capacity);
   if (self.pool.count == 0) {
     // The pool is empty, alloc a new one.
-    return
-        [[[FlutterClippingMaskView alloc] initWithFrame:frame
-                                            screenScale:[UIScreen mainScreen].scale] autorelease];
+    return [[FlutterClippingMaskView alloc] initWithFrame:frame
+                                              screenScale:UIScreen.mainScreen.scale];
   }
-  FlutterClippingMaskView* maskView = [[[self.pool anyObject] retain] autorelease];
+  FlutterClippingMaskView* maskView = [self.pool anyObject];
   maskView.frame = frame;
   [maskView reset];
   [self.pool removeObject:maskView];
@@ -505,10 +446,273 @@ static BOOL _preparedOnce = NO;
   [self.pool addObject:maskView];
 }
 
-- (void)dealloc {
-  [_pool release];
+@end
 
-  [super dealloc];
+@implementation UIView (FirstResponder)
+- (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
+  if (self.isFirstResponder) {
+    return YES;
+  }
+  for (UIView* subview in self.subviews) {
+    if (subview.flt_hasFirstResponderInViewHierarchySubtree) {
+      return YES;
+    }
+  }
+  return NO;
+}
+@end
+
+// This recognizer delays touch events from being dispatched to the responder chain until it failed
+// recognizing a gesture.
+//
+// We only fail this recognizer when asked to do so by the Flutter framework (which does so by
+// invoking an acceptGesture method on the platform_views channel). And this is how we allow the
+// Flutter framework to delay or prevent the embedded view from getting a touch sequence.
+@interface FlutterDelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+
+// Indicates that if the `FlutterDelayingGestureRecognizer`'s state should be set to
+// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
+@property(nonatomic) BOOL shouldEndInNextTouchesEnded;
+
+// Indicates that the `FlutterDelayingGestureRecognizer`'s `touchesEnded` has been invoked without
+// setting the state to `UIGestureRecognizerStateEnded`.
+@property(nonatomic) BOOL touchedEndedWithoutBlocking;
+
+@property(nonatomic, readonly) UIGestureRecognizer* forwardingRecognizer;
+
+- (instancetype)initWithTarget:(id)target
+                        action:(SEL)action
+          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
+@end
+
+// While the FlutterDelayingGestureRecognizer is preventing touches from hitting the responder chain
+// the touch events are not arriving to the FlutterView (and thus not arriving to the Flutter
+// framework). We use this gesture recognizer to dispatch the events directly to the FlutterView
+// while during this phase.
+//
+// If the Flutter framework decides to dispatch events to the embedded view, we fail the
+// FlutterDelayingGestureRecognizer which sends the events up the responder chain. But since the
+// events are handled by the embedded view they are not delivered to the Flutter framework in this
+// phase as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
+// directly to the FlutterView.
+@interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+- (instancetype)initWithTarget:(id)target
+       platformViewsController:
+           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
+@end
+
+@interface FlutterTouchInterceptingView ()
+@property(nonatomic, weak, readonly) UIView* embeddedView;
+@property(nonatomic, readonly) FlutterDelayingGestureRecognizer* delayingRecognizer;
+@property(nonatomic, readonly) FlutterPlatformViewGestureRecognizersBlockingPolicy blockingPolicy;
+@end
+
+@implementation FlutterTouchInterceptingView
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+             platformViewsController:
+                 (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
+  self = [super initWithFrame:embeddedView.frame];
+  if (self) {
+    self.multipleTouchEnabled = YES;
+    _embeddedView = embeddedView;
+    embeddedView.autoresizingMask =
+        (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+
+    [self addSubview:embeddedView];
+
+    ForwardingGestureRecognizer* forwardingRecognizer =
+        [[ForwardingGestureRecognizer alloc] initWithTarget:self
+                                    platformViewsController:platformViewsController];
+
+    _delayingRecognizer =
+        [[FlutterDelayingGestureRecognizer alloc] initWithTarget:self
+                                                          action:nil
+                                            forwardingRecognizer:forwardingRecognizer];
+    _blockingPolicy = blockingPolicy;
+
+    [self addGestureRecognizer:_delayingRecognizer];
+    [self addGestureRecognizer:forwardingRecognizer];
+  }
+  return self;
 }
 
+- (void)releaseGesture {
+  self.delayingRecognizer.state = UIGestureRecognizerStateFailed;
+}
+
+- (void)blockGesture {
+  switch (_blockingPolicy) {
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
+      // We block all other gesture recognizers immediately in this policy.
+      self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+      break;
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
+      if (self.delayingRecognizer.touchedEndedWithoutBlocking) {
+        // If touchesEnded of the `DelayingGesureRecognizer` has been already invoked,
+        // we want to set the state of the `DelayingGesureRecognizer` to
+        // `UIGestureRecognizerStateEnded` as soon as possible.
+        self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+      } else {
+        // If touchesEnded of the `DelayingGesureRecognizer` has not been invoked,
+        // We will set a flag to notify the `DelayingGesureRecognizer` to set the state to
+        // `UIGestureRecognizerStateEnded` when touchesEnded is called.
+        self.delayingRecognizer.shouldEndInNextTouchesEnded = YES;
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+// We want the intercepting view to consume the touches and not pass the touches up to the parent
+// view. Make the touch event method not call super will not pass the touches up to the parent view.
+// Hence we overide the touch event methods and do nothing.
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+}
+
+- (id)accessibilityContainer {
+  return self.flutterAccessibilityContainer;
+}
+
+@end
+
+@implementation FlutterDelayingGestureRecognizer
+
+- (instancetype)initWithTarget:(id)target
+                        action:(SEL)action
+          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer {
+  self = [super initWithTarget:target action:action];
+  if (self) {
+    self.delaysTouchesBegan = YES;
+    self.delaysTouchesEnded = YES;
+    self.delegate = self;
+    _shouldEndInNextTouchesEnded = NO;
+    _touchedEndedWithoutBlocking = NO;
+    _forwardingRecognizer = forwardingRecognizer;
+  }
+  return self;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer {
+  // The forwarding gesture recognizer should always get all touch events, so it should not be
+  // required to fail by any other gesture recognizer.
+  return otherGestureRecognizer != _forwardingRecognizer && otherGestureRecognizer != self;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer {
+  return otherGestureRecognizer == self;
+}
+
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  self.touchedEndedWithoutBlocking = NO;
+  [super touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  if (self.shouldEndInNextTouchesEnded) {
+    self.state = UIGestureRecognizerStateEnded;
+    self.shouldEndInNextTouchesEnded = NO;
+  } else {
+    self.touchedEndedWithoutBlocking = YES;
+  }
+  [super touchesEnded:touches withEvent:event];
+}
+
+- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+  self.state = UIGestureRecognizerStateFailed;
+}
+@end
+
+@implementation ForwardingGestureRecognizer {
+  // Weak reference to PlatformViewsController. The PlatformViewsController has
+  // a reference to the FlutterViewController, where we can dispatch pointer events to.
+  //
+  // The lifecycle of PlatformViewsController is bind to FlutterEngine, which should always
+  // outlives the FlutterViewController. And ForwardingGestureRecognizer is owned by a subview of
+  // FlutterView, so the ForwardingGestureRecognizer never out lives FlutterViewController.
+  // Therefore, `_platformViewsController` should never be nullptr.
+  fml::WeakPtr<flutter::PlatformViewsController> _platformViewsController;
+  // Counting the pointers that has started in one touch sequence.
+  NSInteger _currentTouchPointersCount;
+  // We can't dispatch events to the framework without this back pointer.
+  // This gesture recognizer retains the `FlutterViewController` until the
+  // end of a gesture sequence, that is all the touches in touchesBegan are concluded
+  // with |touchesCancelled| or |touchesEnded|.
+  fml::scoped_nsobject<UIViewController<FlutterViewResponder>> _flutterViewController;
+}
+
+- (instancetype)initWithTarget:(id)target
+       platformViewsController:
+           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController {
+  self = [super initWithTarget:target action:nil];
+  if (self) {
+    self.delegate = self;
+    FML_DCHECK(platformViewsController.get() != nullptr);
+    _platformViewsController = std::move(platformViewsController);
+    _currentTouchPointersCount = 0;
+  }
+  return self;
+}
+
+- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+  FML_DCHECK(_currentTouchPointersCount >= 0);
+  if (_currentTouchPointersCount == 0) {
+    // At the start of each gesture sequence, we reset the `_flutterViewController`,
+    // so that all the touch events in the same sequence are forwarded to the same
+    // `_flutterViewController`.
+    _flutterViewController.reset(_platformViewsController->GetFlutterViewController());
+  }
+  [_flutterViewController.get() touchesBegan:touches withEvent:event];
+  _currentTouchPointersCount += touches.count;
+}
+
+- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
+  [_flutterViewController.get() touchesMoved:touches withEvent:event];
+}
+
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+  [_flutterViewController.get() touchesEnded:touches withEvent:event];
+  _currentTouchPointersCount -= touches.count;
+  // Touches in one touch sequence are sent to the touchesEnded method separately if different
+  // fingers stop touching the screen at different time. So one touchesEnded method triggering does
+  // not necessarially mean the touch sequence has ended. We Only set the state to
+  // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
+  if (_currentTouchPointersCount == 0) {
+    self.state = UIGestureRecognizerStateFailed;
+    _flutterViewController.reset(nil);
+  }
+}
+
+- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+  // In the event of platform view is removed, iOS generates a "stationary" change type instead of
+  // "cancelled" change type.
+  // Flutter needs all the cancelled touches to be "cancelled" change types in order to correctly
+  // handle gesture sequence.
+  // We always override the change type to "cancelled".
+  [_flutterViewController.get() forceTouchesCancelled:touches];
+  _currentTouchPointersCount -= touches.count;
+  if (_currentTouchPointersCount == 0) {
+    self.state = UIGestureRecognizerStateFailed;
+    _flutterViewController.reset(nil);
+  }
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:
+        (UIGestureRecognizer*)otherGestureRecognizer {
+  return YES;
+}
 @end

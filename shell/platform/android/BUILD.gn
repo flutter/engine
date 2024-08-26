@@ -64,7 +64,8 @@ shared_library("flutter_shell_native") {
   inputs = [ "android_exports.lst" ]
   output_name = "flutter"
   deps = [ ":flutter_shell_native_src" ]
-  ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
+  ldflags = [ "-Wl,--version-script=" +
+              rebase_path("android_exports.lst", root_build_dir) ]
 }
 
 bin_to_assembly("icudtl_asm") {
@@ -83,8 +84,8 @@ source_set("flutter_shell_native_src") {
     "android_context_gl_impeller.h",
     "android_context_gl_skia.cc",
     "android_context_gl_skia.h",
-    "android_context_vulkan_impeller.cc",
-    "android_context_vulkan_impeller.h",
+    "android_context_vk_impeller.cc",
+    "android_context_vk_impeller.h",
     "android_display.cc",
     "android_display.h",
     "android_egl_surface.cc",
@@ -99,8 +100,8 @@ source_set("flutter_shell_native_src") {
     "android_surface_gl_skia.h",
     "android_surface_software.cc",
     "android_surface_software.h",
-    "android_surface_vulkan_impeller.cc",
-    "android_surface_vulkan_impeller.h",
+    "android_surface_vk_impeller.cc",
+    "android_surface_vk_impeller.h",
     "apk_asset_provider.cc",
     "apk_asset_provider.h",
     "flutter_main.cc",
@@ -109,8 +110,12 @@ source_set("flutter_shell_native_src") {
     "image_external_texture.h",
     "image_external_texture_gl.cc",
     "image_external_texture_gl.h",
-    "image_external_texture_vk.cc",
-    "image_external_texture_vk.h",
+    "image_external_texture_gl_impeller.cc",
+    "image_external_texture_gl_impeller.h",
+    "image_external_texture_gl_skia.cc",
+    "image_external_texture_gl_skia.h",
+    "image_external_texture_vk_impeller.cc",
+    "image_external_texture_vk_impeller.h",
     "image_lru.cc",
     "image_lru.h",
     "library_loader.cc",
@@ -124,8 +129,12 @@ source_set("flutter_shell_native_src") {
     "platform_view_android_jni_impl.h",
     "surface_texture_external_texture.cc",
     "surface_texture_external_texture.h",
-    "surface_texture_external_texture_gl.cc",
-    "surface_texture_external_texture_gl.h",
+    "surface_texture_external_texture_gl_impeller.cc",
+    "surface_texture_external_texture_gl_impeller.h",
+    "surface_texture_external_texture_gl_skia.cc",
+    "surface_texture_external_texture_gl_skia.h",
+    "surface_texture_external_texture_vk_impeller.cc",
+    "surface_texture_external_texture_vk_impeller.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
@@ -145,6 +154,7 @@ source_set("flutter_shell_native_src") {
     "//flutter/impeller/toolkit/android",
     "//flutter/impeller/toolkit/egl",
     "//flutter/impeller/toolkit/gles",
+    "//flutter/impeller/toolkit/glvk",
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
@@ -218,6 +228,7 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
   "io/flutter/embedding/android/FlutterView.java",
+  "io/flutter/embedding/android/FlutterViewDelegate.java",
   "io/flutter/embedding/android/KeyChannelResponder.java",
   "io/flutter/embedding/android/KeyData.java",
   "io/flutter/embedding/android/KeyEmbedderResponder.java",
@@ -271,6 +282,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/renderer/SurfaceTextureSurfaceProducer.java",
   "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java",
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
+  "io/flutter/embedding/engine/systemchannels/BackGestureChannel.java",
   "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
   "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
   "io/flutter/embedding/engine/systemchannels/KeyboardChannel.java",
@@ -351,36 +363,37 @@ android_java_sources = [
 ]
 
 embedding_dependencies_jars = [
-  "//third_party/android_embedding_dependencies/lib/activity-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/annotation-1.2.0.jar",
-  "//third_party/android_embedding_dependencies/lib/annotation-experimental-1.1.0.jar",
-  "//third_party/android_embedding_dependencies/lib/annotations-13.0.jar",
-  "//third_party/android_embedding_dependencies/lib/collection-1.1.0.jar",
-  "//third_party/android_embedding_dependencies/lib/core-1.6.0.jar",
-  "//third_party/android_embedding_dependencies/lib/core-1.8.0.jar",
-  "//third_party/android_embedding_dependencies/lib/core-common-2.1.0.jar",
-  "//third_party/android_embedding_dependencies/lib/core-runtime-2.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/customview-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/fragment-1.1.0.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlin-stdlib-1.5.31.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlin-stdlib-common-1.5.31.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlin-stdlib-jdk7-1.5.30.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlin-stdlib-jdk8-1.5.30.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlinx-coroutines-android-1.5.2.jar",
-  "//third_party/android_embedding_dependencies/lib/kotlinx-coroutines-core-jvm-1.5.2.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-common-2.2.0.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-common-java8-2.2.0.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-livedata-2.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-livedata-core-2.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-runtime-2.2.0.jar",
-  "//third_party/android_embedding_dependencies/lib/lifecycle-viewmodel-2.1.0.jar",
-  "//third_party/android_embedding_dependencies/lib/loader-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/savedstate-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/tracing-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/versionedparcelable-1.1.1.jar",
-  "//third_party/android_embedding_dependencies/lib/viewpager-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/window-1.0.0-beta04.jar",
-  "//third_party/android_embedding_dependencies/lib/window-java-1.0.0-beta04.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/activity-1.8.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/annotation-jvm-1.8.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/annotation-experimental-1.4.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/annotations-23.0.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/collection-1.1.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/core-1.13.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/core-1.10.3.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/core-common-2.2.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/core-runtime-2.2.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/customview-1.0.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/fragment-1.7.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlin-stdlib-1.8.22.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlin-stdlib-common-1.8.22.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlin-stdlib-jdk7-1.8.20.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlin-stdlib-jdk8-1.8.20.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlinx-coroutines-android-1.7.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/kotlinx-coroutines-core-jvm-1.7.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-common-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-common-java8-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-livedata-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-livedata-core-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-process-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-runtime-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/lifecycle-viewmodel-2.7.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/loader-1.0.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/savedstate-1.2.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/tracing-1.2.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/versionedparcelable-1.1.1.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/viewpager-1.0.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/window-1.2.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/window-java-1.2.0.jar",
 ]
 
 action("check_imports") {
@@ -438,15 +451,16 @@ action("flutter_shell_java") {
       ] + rebase_path(embedding_dependencies_jars, root_build_dir)
 
   if (host_os == "mac") {
-    _javacbin =
-        rebase_path("//third_party/java/openjdk/Contents/Home/bin/javac")
-    _jarbin = rebase_path("//third_party/java/openjdk/Contents/Home/bin/jar")
+    _javacbin = rebase_path(
+            "//flutter/third_party/java/openjdk/Contents/Home/bin/javac")
+    _jarbin =
+        rebase_path("//flutter/third_party/java/openjdk/Contents/Home/bin/jar")
   } else if (host_os == "win") {
-    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac.exe")
-    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar.exe")
+    _javacbin = rebase_path("//flutter/third_party/java/openjdk/bin/javac.exe")
+    _jarbin = rebase_path("//flutter/third_party/java/openjdk/bin/jar.exe")
   } else {
-    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac")
-    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar")
+    _javacbin = rebase_path("//flutter/third_party/java/openjdk/bin/javac")
+    _jarbin = rebase_path("//flutter/third_party/java/openjdk/bin/jar")
   }
 
   args = [
@@ -523,12 +537,19 @@ action("android_jar") {
     apilevel26_toolchain = "//build/toolchain/android:clang_arm64_apilevel26"
     validation_layer_target =
         "//third_party/vulkan_validation_layers($apilevel26_toolchain)"
-    validation_layer_out_dir =
-        get_label_info(validation_layer_target, "root_out_dir")
     deps += [ validation_layer_target ]
+    if (stripped_symbols) {
+      validation_library = "lib.stripped/libVkLayer_khronos_validation.so"
+    } else {
+      validation_layer_out_dir =
+          get_label_info(validation_layer_target, "root_out_dir")
+      validation_library = rebase_path(
+              "$validation_layer_out_dir/libVkLayer_khronos_validation.so")
+    }
+
     args += [
       "--native_lib",
-      rebase_path("$validation_layer_out_dir/libVkLayer_khronos_validation.so"),
+      validation_library,
     ]
     if (current_cpu != "arm64") {
       # This may not be necessarily required anymore. It was kept to maintain
@@ -637,8 +658,8 @@ action("gen_android_javadoc") {
     rebase_path("."),
     "--build-config-path",
     rebase_path(target_gen_dir),
-    "--third-party",
-    rebase_path("//third_party"),
+    "--src-dir",
+    rebase_path("//"),
     "--quiet",
   ]
 

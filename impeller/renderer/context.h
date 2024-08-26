@@ -8,8 +8,8 @@
 #include <memory>
 #include <string>
 
+#include "fml/closure.h"
 #include "impeller/core/allocator.h"
-#include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_queue.h"
@@ -171,18 +171,20 @@ class Context {
   ///
   virtual void Shutdown() = 0;
 
-  CaptureContext capture;
-
   /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
   ///
   /// The task will be executed in the event that the GPU access has changed to
   /// being available or that the task has been canceled. The task should
   /// operate with the `SyncSwitch` to make sure the GPU is accessible.
   ///
+  /// If the queue of pending tasks is cleared without GPU access, then the
+  /// failure callback will be invoked and the primary task function will not
+  ///
   /// Threadsafe.
   ///
   /// `task` will be executed on the platform thread.
-  virtual void StoreTaskForGPU(const std::function<void()>& task) {
+  virtual void StoreTaskForGPU(const fml::closure& task,
+                               const fml::closure& failure) {
     FML_CHECK(false && "not supported in this context");
   }
 

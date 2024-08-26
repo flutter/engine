@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
@@ -44,7 +43,7 @@ class AiksContext {
   ContentContext& GetContentContext() const;
 
   bool Render(const Picture& picture,
-              RenderTarget& render_target,
+              const RenderTarget& render_target,
               bool reset_host_buffer);
 
  private:

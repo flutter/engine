@@ -11,15 +11,14 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/common/macros.h"
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/stopwatch.h"
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
@@ -52,7 +51,7 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 enum Clip { kNone, kHardEdge, kAntiAlias, kAntiAliasWithSaveLayer };
 
 struct PrerollContext {
-  RasterCache* raster_cache;
+  NOT_SLIMPELLER(RasterCache* raster_cache);
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   LayerStateStack& state_stack;
@@ -111,12 +110,8 @@ struct PaintContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-  const RasterCache* raster_cache;
+  NOT_SLIMPELLER(const RasterCache* raster_cache);
 
-  // Snapshot store to collect leaf layer snapshots. The store is non-null
-  // only when leaf layer tracing is enabled.
-  LayerSnapshotStore* layer_snapshot_store = nullptr;
-  bool enable_leaf_layer_tracing = false;
   bool impeller_enabled = false;
   impeller::AiksContext* aiks_context;
 };
@@ -249,9 +244,11 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
+#if !SLIMPELLER
   virtual RasterCacheKeyID caching_key_id() const {
     return RasterCacheKeyID(unique_id_, RasterCacheKeyType::kLayer);
   }
+#endif  //  !SLIMPELLER
   virtual const ContainerLayer* as_container_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;

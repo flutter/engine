@@ -8,6 +8,8 @@
 #include <utility>
 
 #include "impeller/core/buffer_view.h"
+#include "impeller/entity/contents/content_context.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
@@ -138,70 +140,25 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
               .index_type =
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
-GeometryResult VerticesGeometry::GetPositionColorBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) {
-  using VS = GeometryColorPipeline::VertexShader;
-
-  auto index_count = indices_.size();
-  auto vertex_count = vertices_.size();
-  size_t total_vtx_bytes = vertex_count * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = index_count * sizeof(uint16_t);
-
-  auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
-        VS::PerVertexData* vtx_contents =
-            reinterpret_cast<VS::PerVertexData*>(data);
-        for (auto i = 0u; i < vertices_.size(); i++) {
-          VS::PerVertexData vertex_data = {
-              .position = vertices_[i],
-              .color = colors_[i],
-          };
-          std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
-        }
-      });
-
-  BufferView index_buffer = {};
-  if (index_count > 0) {
-    index_buffer = renderer.GetTransientsBuffer().Emplace(
-        indices_.data(), total_idx_bytes, alignof(uint16_t));
-  }
-
-  return GeometryResult{
-      .type = GetPrimitiveType(),
-      .vertex_buffer =
-          {
-              .vertex_buffer = vertex_buffer,
-              .index_buffer = index_buffer,
-              .vertex_count = index_count > 0 ? index_count : vertex_count,
-              .index_type =
-                  index_count > 0 ? IndexType::k16bit : IndexType::kNone,
-          },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-  };
-}
-
-GeometryResult VerticesGeometry::GetPositionUVBuffer(
+GeometryResult VerticesGeometry::GetPositionUVColorBuffer(
     Rect texture_coverage,
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  using VS = TexturePipeline::VertexShader;
+  using VS = PorterDuffBlendPipeline::VertexShader;
 
-  auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   auto has_texture_coordinates = HasTextureCoordinates();
+  auto has_colors = HasVertexColors();
 
   size_t total_vtx_bytes = vertices_.size() * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = index_count * sizeof(uint16_t);
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
       total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
         VS::PerVertexData* vtx_contents =
@@ -211,19 +168,18 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
           auto texture_coord =
               has_texture_coordinates ? texture_coordinates_[i] : vertices_[i];
           auto uv = uv_transform * texture_coord;
-          // From experimentation we need to clamp these values to < 1.0 or else
-          // there can be flickering.
           VS::PerVertexData vertex_data = {
-              .position = vertex,
-              .texture_coords =
-                  Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
-                        std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
+              .vertices = vertex,
+              .texture_coords = uv,
+              .color = has_colors ? colors_[i] : Color::BlackTransparent(),
           };
           std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
         }
       });
 
   BufferView index_buffer = {};
+  auto index_count = indices_.size();
+  size_t total_idx_bytes = index_count * sizeof(uint16_t);
   if (index_count > 0) {
     index_buffer = renderer.GetTransientsBuffer().Emplace(
         indices_.data(), total_idx_bytes, alignof(uint16_t));
@@ -239,19 +195,8 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
               .index_type =
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+      .transform = entity.GetShaderTransform(pass),
   };
-}
-
-GeometryVertexType VerticesGeometry::GetVertexType() const {
-  if (HasVertexColors()) {
-    return GeometryVertexType::kColor;
-  }
-  if (HasTextureCoordinates()) {
-    return GeometryVertexType::kUV;
-  }
-
-  return GeometryVertexType::kPosition;
 }
 
 std::optional<Rect> VerticesGeometry::GetCoverage(

@@ -18,12 +18,11 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/paths_android.h"
-#include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
-#include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
+#include "flutter/shell/platform/android/android_context_vk_impeller.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "impeller/base/validation.h"
 #include "impeller/toolkit/android/proc_table.h"
@@ -150,6 +149,8 @@ void FlutterMain::Init(JNIEnv* env,
                         static_cast<int>(message.size()), message.c_str());
   };
 
+  settings.enable_platform_isolates = true;
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
@@ -225,7 +226,7 @@ bool FlutterMain::Register(JNIEnv* env) {
     return false;
   }
 
-  return env->RegisterNatives(clazz, methods, fml::size(methods)) == 0;
+  return env->RegisterNatives(clazz, methods, std::size(methods)) == 0;
 }
 
 // static
@@ -243,7 +244,7 @@ AndroidRenderingAPI FlutterMain::SelectedRenderingAPI(
   // Debug/Profile only functionality for testing a specific
   // backend configuration.
 #ifndef FLUTTER_RELEASE
-  if (settings.requested_rendering_backend == "opengles" &
+  if (settings.requested_rendering_backend == "opengles" &&
       settings.enable_impeller) {
     return AndroidRenderingAPI::kImpellerOpenGLES;
   }
@@ -267,7 +268,7 @@ AndroidRenderingAPI FlutterMain::SelectedRenderingAPI(
     // Determine if Vulkan is supported by creating a Vulkan context and
     // checking if it is valid.
     impeller::ScopedValidationDisable disable_validation;
-    auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+    auto vulkan_backend = std::make_unique<AndroidContextVKImpeller>(
         /*enable_vulkan_validation=*/false,
         /*enable_vulkan_gpu_tracing=*/false,
         /*quiet=*/true);

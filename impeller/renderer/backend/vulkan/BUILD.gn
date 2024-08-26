@@ -9,13 +9,14 @@ impeller_component("vulkan_unittests") {
   testonly = true
   sources = [
     "allocator_vk_unittests.cc",
-    "blit_command_vk_unittests.cc",
     "command_encoder_vk_unittests.cc",
     "command_pool_vk_unittests.cc",
     "context_vk_unittests.cc",
     "descriptor_pool_vk_unittests.cc",
     "driver_info_vk_unittests.cc",
     "fence_waiter_vk_unittests.cc",
+    "pipeline_cache_data_vk_unittests.cc",
+    "render_pass_builder_vk_unittests.cc",
     "render_pass_cache_unittests.cc",
     "resource_manager_vk_unittests.cc",
     "test/gpu_tracer_unittests.cc",
@@ -37,8 +38,6 @@ impeller_component("vulkan") {
     "allocator_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
-    "blit_command_vk.cc",
-    "blit_command_vk.h",
     "blit_pass_vk.cc",
     "blit_pass_vk.h",
     "capabilities_vk.cc",
@@ -73,6 +72,8 @@ impeller_component("vulkan") {
     "gpu_tracer_vk.cc",
     "gpu_tracer_vk.h",
     "limits_vk.h",
+    "pipeline_cache_data_vk.cc",
+    "pipeline_cache_data_vk.h",
     "pipeline_cache_vk.cc",
     "pipeline_cache_vk.h",
     "pipeline_library_vk.cc",
@@ -99,14 +100,18 @@ impeller_component("vulkan") {
     "shared_object_vk.h",
     "surface_context_vk.cc",
     "surface_context_vk.h",
-    "swapchain/khr/khr_surface_vk.cc",
-    "swapchain/khr/khr_surface_vk.h",
     "swapchain/khr/khr_swapchain_image_vk.cc",
     "swapchain/khr/khr_swapchain_image_vk.h",
     "swapchain/khr/khr_swapchain_impl_vk.cc",
     "swapchain/khr/khr_swapchain_impl_vk.h",
     "swapchain/khr/khr_swapchain_vk.cc",
     "swapchain/khr/khr_swapchain_vk.h",
+    "swapchain/surface_vk.cc",
+    "swapchain/surface_vk.h",
+    "swapchain/swapchain_transients_vk.cc",
+    "swapchain/swapchain_transients_vk.h",
+    "swapchain/swapchain_vk.cc",
+    "swapchain/swapchain_vk.h",
     "texture_source_vk.cc",
     "texture_source_vk.h",
     "texture_vk.cc",
@@ -128,6 +133,15 @@ impeller_component("vulkan") {
     sources += [
       "android/ahb_texture_source_vk.cc",
       "android/ahb_texture_source_vk.h",
+      "swapchain/ahb/ahb_formats.h",
+      "swapchain/ahb/ahb_swapchain_impl_vk.cc",
+      "swapchain/ahb/ahb_swapchain_impl_vk.h",
+      "swapchain/ahb/ahb_swapchain_vk.cc",
+      "swapchain/ahb/ahb_swapchain_vk.h",
+      "swapchain/ahb/ahb_texture_pool_vk.cc",
+      "swapchain/ahb/ahb_texture_pool_vk.h",
+      "swapchain/ahb/external_fence_vk.cc",
+      "swapchain/ahb/external_fence_vk.h",
     ]
   }
 
@@ -139,4 +153,8 @@ impeller_component("vulkan") {
     "//flutter/third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//flutter/third_party/vulkan_memory_allocator",
   ]
+
+  if (is_android) {
+    public_deps += [ "../../../toolkit/android" ]
+  }
 }

@@ -485,7 +485,7 @@ class BrowserPlatform extends PlatformPlugin {
         request.url.path,
       ));
 
-      if (!fileInDirectory.existsSync()) {
+      if (request.url.path.contains('//') || !fileInDirectory.existsSync()) {
         return shelf.Response.notFound('File not found: ${request.url.path}');
       }
 
@@ -562,6 +562,7 @@ class BrowserPlatform extends PlatformPlugin {
 </script>
 <script>
   _flutter.buildConfig = {
+    useLocalCanvaskit: true,
     builds: [
       $buildConfigsString
     ]
@@ -571,10 +572,10 @@ class BrowserPlatform extends PlatformPlugin {
 <script>
   _flutter.loader.load({
     config: {
-      canvasKitBaseUrl: "/canvaskit/",
       // Some of our tests rely on color emoji
       useColorEmoji: true,
       canvasKitVariant: "${getCanvasKitVariant()}",
+      canvasKitBaseUrl: "/canvaskit",
     },
   });
 </script>
@@ -1103,7 +1104,6 @@ class BrowserManager {
       default:
         // Unreachable.
         assert(false);
-        break;
     }
   }
 

@@ -49,13 +49,20 @@ template("flutter_frontend_server") {
   }
 
   packages_args = []
+  package_config = ""
   if (defined(invoker.package_config)) {
-    packages_args += [
-      "--packages",
-      rebase_path(invoker.package_config, root_build_dir),
-    ]
+    package_config = rebase_path(invoker.package_config, root_build_dir)
+  } else {
+    # Use the root engine package config by default.
+    # As we move towards a single pub workspace for the engine, this will be
+    # the correct package config to use, as we will no longer have a per-package
+    # .dart_tool/package_config.json.
+    package_config = rebase_path("//flutter/.dart_tool/package_config.json")
   }
-
+  packages_args += [
+    "--packages",
+    package_config,
+  ]
   snapshot_depfile = "$kernel_output.d"
 
   common_vm_args = [ "--disable-dart-dev" ]
@@ -84,7 +91,7 @@ template("flutter_frontend_server") {
                              ],
                              [ "pool" ])
       deps = common_deps
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/toolchain:toolchain_pool"
       script = "//build/gn_run_binary.py"
       inputs = [ invoker.main_dart ]
       outputs = [ invoker.kernel_output ]
@@ -94,9 +101,10 @@ template("flutter_frontend_server") {
       if (is_win) {
         ext = ".exe"
       }
-      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
+      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dartaotruntime$ext",
+                         root_out_dir)
       frontend_server =
-          rebase_path("$root_gen_dir/frontend_server.dart.snapshot")
+          rebase_path("$root_gen_dir/frontend_server_aot.dart.snapshot")
 
       args = [ dart ] + common_vm_args + [ frontend_server ] + common_args
     }
@@ -109,7 +117,7 @@ template("flutter_frontend_server") {
                              ],
                              [ "pool" ])
       deps = common_deps
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/toolchain:toolchain_pool"
       script = "$dart_src/pkg/frontend_server/bin/frontend_server_starter.dart"
       inputs = [ invoker.main_dart ]
       outputs = [ invoker.kernel_output ]
@@ -124,7 +132,8 @@ template("flutter_frontend_server") {
 # as the app-jit, aot-elf, or aot-assembly snapshot for targeting Flutter on
 # Android or iOS.
 #
-# Invoker must supply dart_main and package_config. Invoker may optionally
+# Invoker must supply dart_main. Invoker may optionally supply package_config,
+# which otherwise defaults to the repo-wide pacakge_config, and optionally
 # supply aot as a boolean and product as a boolean.
 #
 # On Android, the invoker may provide output_aot_lib as a string to override
@@ -132,8 +141,6 @@ template("flutter_frontend_server") {
 template("flutter_snapshot") {
   assert(!is_fuchsia)
   assert(defined(invoker.main_dart), "main_dart is a required parameter.")
-  assert(defined(invoker.package_config),
-         "package_config is a required parameter.")
 
   kernel_target = "_${target_name}_kernel"
   snapshot_target = "_${target_name}_snapshot"
@@ -169,11 +176,19 @@ template("flutter_snapshot") {
     }
   }
 
-  flutter_frontend_server(kernel_target) {
-    main_dart = invoker.main_dart
-    package_config = invoker.package_config
-    kernel_output = kernel_output
-    extra_args = extra_frontend_server_args
+  if (defined(invoker.package_config)) {
+    flutter_frontend_server(kernel_target) {
+      main_dart = invoker.main_dart
+      package_config = invoker.package_config
+      kernel_output = kernel_output
+      extra_args = extra_frontend_server_args
+    }
+  } else {
+    flutter_frontend_server(kernel_target) {
+      main_dart = invoker.main_dart
+      kernel_output = kernel_output
+      extra_args = extra_frontend_server_args
+    }
   }
 
   compiled_action(snapshot_target) {
@@ -288,12 +303,21 @@ template("flutter_snapshot") {
 template("application_snapshot") {
   assert(defined(invoker.main_dart), "Must specify 'main_dart'")
   assert(defined(invoker.training_args), "Must specify 'training_args'")
-  assert(defined(invoker.package_config), "Must specify 'package_config'")
 
   main_dart = invoker.main_dart
   training_args = invoker.training_args
-  package_config = rebase_path(invoker.package_config)
   name = target_name
+
+  package_config = ""
+  if (defined(invoker.package_config)) {
+    package_config = rebase_path(invoker.package_config, root_build_dir)
+  } else {
+    # Use the root engine package config by default.
+    # As we move towards a single pub workspace for the engine, this will be
+    # the correct package config to use, as we will no longer have a per-package
+    # .dart_tool/package_config.json.
+    package_config = rebase_path("//flutter/.dart_tool/package_config.json")
+  }
 
   extra_deps = []
   if (defined(invoker.deps)) {
@@ -358,7 +382,7 @@ template("application_snapshot") {
       inputs = extra_inputs
       outputs = [ output ]
       depfile = depfile
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/toolchain:toolchain_pool"
 
       ext = ""
       if (is_win) {
@@ -379,7 +403,7 @@ template("application_snapshot") {
                                "visibility",
                              ])
       script = main_dart
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/toolchain:toolchain_pool"
       deps = extra_deps
       inputs = extra_inputs
       outputs = [ output ]

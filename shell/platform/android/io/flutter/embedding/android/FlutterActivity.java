@@ -18,10 +18,11 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DA
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_ENABLE_STATE_RESTORATION;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
-import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.deepLinkEnabled;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -35,10 +36,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.BackEvent;
+import android.window.OnBackAnimationCallback;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -678,18 +682,43 @@ public class FlutterActivity extends Activity
   }
 
   private final OnBackInvokedCallback onBackInvokedCallback =
-      Build.VERSION.SDK_INT >= API_LEVELS.API_33
-          ? new OnBackInvokedCallback() {
-            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
-            // a google3 bug where the linter is not properly running against API 33, causing
-            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
-            @SuppressWarnings("Override")
-            @Override
-            public void onBackInvoked() {
-              onBackPressed();
-            }
-          }
-          : null;
+      Build.VERSION.SDK_INT < API_LEVELS.API_33 ? null : createOnBackInvokedCallback();
+
+  @VisibleForTesting
+  protected OnBackInvokedCallback getOnBackInvokedCallback() {
+    return onBackInvokedCallback;
+  }
+
+  @NonNull
+  @TargetApi(API_LEVELS.API_33)
+  @RequiresApi(API_LEVELS.API_33)
+  private OnBackInvokedCallback createOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      return new OnBackAnimationCallback() {
+        @Override
+        public void onBackInvoked() {
+          commitBackGesture();
+        }
+
+        @Override
+        public void onBackCancelled() {
+          cancelBackGesture();
+        }
+
+        @Override
+        public void onBackProgressed(@NonNull BackEvent backEvent) {
+          updateBackGestureProgress(backEvent);
+        }
+
+        @Override
+        public void onBackStarted(@NonNull BackEvent backEvent) {
+          startBackGesture(backEvent);
+        }
+      };
+    }
+
+    return this::onBackPressed;
+  }
 
   @Override
   public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
@@ -896,6 +925,38 @@ public class FlutterActivity extends Activity
   public void onBackPressed() {
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void startBackGesture(@NonNull BackEvent backEvent) {
+    if (stillAttachedForEvent("startBackGesture")) {
+      delegate.startBackGesture(backEvent);
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void updateBackGestureProgress(@NonNull BackEvent backEvent) {
+    if (stillAttachedForEvent("updateBackGestureProgress")) {
+      delegate.updateBackGestureProgress(backEvent);
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void commitBackGesture() {
+    if (stillAttachedForEvent("commitBackGesture")) {
+      delegate.commitBackGesture();
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void cancelBackGesture() {
+    if (stillAttachedForEvent("cancelBackGesture")) {
+      delegate.cancelBackGesture();
     }
   }
 
@@ -1343,9 +1404,7 @@ public class FlutterActivity extends Activity
   public boolean shouldHandleDeeplinking() {
     try {
       Bundle metaData = getMetaData();
-      boolean shouldHandleDeeplinking =
-          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
-      return shouldHandleDeeplinking;
+      return deepLinkEnabled(metaData);
     } catch (PackageManager.NameNotFoundException e) {
       return false;
     }

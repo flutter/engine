@@ -8,8 +8,6 @@
 #include <cstdint>
 #include <ostream>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -224,6 +222,7 @@ constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
   switch (filter) {
+    case MipFilter::kBase:
     case MipFilter::kNearest:
       return vk::SamplerMipmapMode::eNearest;
     case MipFilter::kLinear:
@@ -311,18 +310,39 @@ constexpr vk::AttachmentLoadOp ToVKAttachmentLoadOp(LoadAction load_action) {
   FML_UNREACHABLE();
 }
 
-constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
-    StoreAction store_action) {
+constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(StoreAction store_action,
+                                                      bool is_resolve_texture) {
   switch (store_action) {
     case StoreAction::kStore:
+      // Both MSAA and resolve textures need to be stored. A resolve is NOT
+      // performed.
       return vk::AttachmentStoreOp::eStore;
     case StoreAction::kDontCare:
+      // Both MSAA and resolve textures can be discarded. A resolve is NOT
+      // performed.
       return vk::AttachmentStoreOp::eDontCare;
     case StoreAction::kMultisampleResolve:
+      // The resolve texture is stored but the MSAA texture can be discarded. A
+      // resolve IS performed.
+      return is_resolve_texture ? vk::AttachmentStoreOp::eStore
+                                : vk::AttachmentStoreOp::eDontCare;
     case StoreAction::kStoreAndMultisampleResolve:
-      return vk::AttachmentStoreOp::eDontCare;
+      // Both MSAA and resolve textures need to be stored. A resolve IS
+      // performed.
+      return vk::AttachmentStoreOp::eStore;
   }
+  FML_UNREACHABLE();
+}
 
+constexpr bool StoreActionPerformsResolve(StoreAction store_action) {
+  switch (store_action) {
+    case StoreAction::kDontCare:
+    case StoreAction::kStore:
+      return false;
+    case StoreAction::kMultisampleResolve:
+    case StoreAction::kStoreAndMultisampleResolve:
+      return true;
+  }
   FML_UNREACHABLE();
 }
 

@@ -42,7 +42,6 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace impeller {
 
-// TODO(csg): Fix this after caps are reworked.
 static bool gHasValidationLayers = false;
 
 bool HasValidationLayers() {
@@ -168,8 +167,8 @@ void ContextVK::Setup(Settings settings) {
   enable_validation = true;
 #endif
 
-  auto caps =
-      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
+  auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(
+      enable_validation, settings.fatal_missing_validations));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -287,7 +286,6 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
   if (!transfer_queue.has_value()) {
-    FML_LOG(INFO) << "Dedicated transfer queue not avialable.";
     transfer_queue = graphics_queue.value();
   }
   if (!compute_queue.has_value()) {
@@ -339,7 +337,8 @@ void ContextVK::Setup(Settings settings) {
     device_holder->device = std::move(device_result.value);
   }
 
-  if (!caps->SetPhysicalDevice(device_holder->physical_device)) {
+  if (!caps->SetPhysicalDevice(device_holder->physical_device,
+                               *enabled_features)) {
     VALIDATION_LOG << "Capabilities could not be updated.";
     return;
   }

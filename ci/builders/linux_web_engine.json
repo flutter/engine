@@ -11,6 +11,7 @@
       ],
       "gclient_variables": {
         "download_android_deps": false,
+        "download_jdk": false,
         "download_emsdk": true
       },
       "gn": [
@@ -342,7 +343,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -355,7 +357,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -378,7 +380,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -391,7 +394,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -414,7 +417,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -427,7 +431,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -450,7 +454,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -463,7 +468,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -486,7 +491,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -499,7 +505,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -522,7 +528,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -535,7 +542,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -558,7 +565,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -571,7 +579,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -594,7 +602,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -630,7 +639,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -666,7 +676,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -702,7 +713,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -738,7 +750,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -774,7 +787,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -787,7 +801,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -810,7 +824,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -823,7 +838,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -846,7 +861,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -859,7 +875,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -882,7 +898,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -895,7 +912,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -918,7 +935,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -931,7 +949,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -954,7 +972,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -967,7 +986,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -990,7 +1009,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1003,7 +1023,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1026,7 +1046,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1039,7 +1060,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1062,7 +1083,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1075,7 +1097,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1098,7 +1120,8 @@
         "os=Linux"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1135,7 +1158,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1168,7 +1192,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1201,7 +1226,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1234,7 +1260,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1267,7 +1294,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1300,7 +1328,8 @@
         "cpu=arm64"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1332,7 +1361,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1345,7 +1375,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1368,7 +1398,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1381,7 +1412,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1404,7 +1435,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1417,7 +1449,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1440,7 +1472,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1453,7 +1486,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1476,7 +1509,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1489,7 +1523,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1512,7 +1546,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1525,7 +1560,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1548,7 +1583,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1561,7 +1597,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1584,7 +1620,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1597,7 +1634,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1620,7 +1657,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1633,7 +1671,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1656,7 +1694,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1669,7 +1708,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1692,7 +1731,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1705,7 +1745,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1728,7 +1768,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1741,7 +1782,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1764,7 +1805,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1777,7 +1819,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1800,7 +1842,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1813,7 +1856,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1836,7 +1879,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1849,7 +1893,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [
@@ -1872,7 +1916,8 @@
         "os=Windows"
       ],
       "gclient_variables": {
-        "download_android_deps": false
+        "download_android_deps": false,
+        "download_jdk": false
       },
       "dependencies": [
         "web_tests/artifacts",
@@ -1885,7 +1930,7 @@
         },
         {
           "dependency": "chrome_and_driver",
-          "version": "119.0.6045.9"
+          "version": "125.0.6422.141"
         }
       ],
       "tasks": [

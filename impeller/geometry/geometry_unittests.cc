@@ -6,6 +6,7 @@
 #include "impeller/geometry/geometry_asserts.h"
 
 #include <limits>
+#include <map>
 #include <sstream>
 #include <type_traits>
 
@@ -18,6 +19,7 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/separated_vector.h"
 #include "impeller/geometry/size.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -65,10 +67,12 @@ TEST(GeometryTest, MakeRow) {
 
 TEST(GeometryTest, RotationMatrix) {
   auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
-  auto expect = Matrix{0.707,  0.707, 0, 0,  //
-                       -0.707, 0.707, 0, 0,  //
-                       0,      0,     1, 0,  //
-                       0,      0,     0, 1};
+  // clang-format off
+  auto expect = Matrix{k1OverSqrt2,  k1OverSqrt2, 0, 0,
+                       -k1OverSqrt2, k1OverSqrt2, 0, 0,
+                       0,            0,           1, 0,
+                       0,            0,           0, 1};
+  // clang-format on
   ASSERT_MATRIX_NEAR(rotation, expect);
 }
 
@@ -76,10 +80,12 @@ TEST(GeometryTest, InvertMultMatrix) {
   {
     auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
-    auto expect = Matrix{0.707, -0.707, 0, 0,  //
-                         0.707, 0.707,  0, 0,  //
-                         0,     0,      1, 0,  //
-                         0,     0,      0, 1};
+    // clang-format off
+    auto expect = Matrix{k1OverSqrt2, -k1OverSqrt2, 0, 0,
+                         k1OverSqrt2, k1OverSqrt2,  0, 0,
+                         0,           0,            1, 0,
+                         0,           0,            0, 1};
+    // clang-format on
     ASSERT_MATRIX_NEAR(invert, expect);
   }
   {
@@ -352,6 +358,18 @@ TEST(GeometryTest, MatrixGetMaxBasisLengthXY) {
     auto m = Matrix::MakeScale({-3, 4, 7});
     ASSERT_EQ(m.GetMaxBasisLengthXY(), 4);
   }
+
+  {
+    // clang-format off
+    auto m = Matrix::MakeColumn(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        4.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    );
+    // clang-format on
+    ASSERT_EQ(m.GetMaxBasisLengthXY(), 1.0f);
+  }
 }
 
 TEST(GeometryTest, MatrixMakeOrthographic) {
@@ -446,20 +464,6 @@ TEST(GeometryTest, MatrixGetDirectionScale) {
              Matrix::MakeScale(Vector3(3, 4, 5));
     Scalar result = m.GetDirectionScale(Vector3{2, 0, 0});
     ASSERT_FLOAT_EQ(result, 8);
-  }
-}
-
-TEST(GeometryTest, MatrixIsAligned) {
-  {
-    auto m = Matrix::MakeTranslation({1, 2, 3});
-    bool result = m.IsAligned();
-    ASSERT_TRUE(result);
-  }
-
-  {
-    auto m = Matrix::MakeRotationZ(Degrees{123});
-    bool result = m.IsAligned();
-    ASSERT_FALSE(result);
   }
 }
 
@@ -953,6 +957,36 @@ TEST(GeometryTest, PointAbs) {
   ASSERT_POINT_NEAR(a_abs, expected);
 }
 
+TEST(GeometryTest, PointRotate) {
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPiOver2});
+    auto expected = Point(0, 1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{-kPiOver2});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi});
+    auto expected = Point(-1, 0);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi * 1.5});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+}
+
 TEST(GeometryTest, PointAngleTo) {
   // Negative result in the CCW (with up = -Y) direction.
   {
@@ -1106,6 +1140,56 @@ TEST(GeometryTest, Vector4Lerp) {
   Vector4 result = p.Lerp({5, 10, 15, 20}, 0.75);
   Vector4 expected(4, 8, 12, 16);
   ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, SeparatedVector2NormalizesWithConstructor) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.direction, Vector2(1, 0));
+  ASSERT_NEAR(v.magnitude, 10, kEhCloseEnough);
+}
+
+TEST(GeometryTest, SeparatedVector2GetVector) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.GetVector(), Vector2(10, 0));
+}
+
+TEST(GeometryTest, SeparatedVector2GetAlignment) {
+  // Parallel
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(5, 0)));
+    ASSERT_NEAR(actual, 1, kEhCloseEnough);
+  }
+
+  // Perpendicular
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, 5)));
+    ASSERT_NEAR(actual, 0, kEhCloseEnough);
+  }
+
+  // Opposite parallel
+  {
+    SeparatedVector2 v(Vector2(0, 10));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, -5)));
+    ASSERT_NEAR(actual, -1, kEhCloseEnough);
+  }
+}
+
+TEST(GeometryTest, SeparatedVector2AngleTo) {
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(5, 0)));
+    Radians expected = Radians{0};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
+
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(0, -5)));
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
 }
 
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
@@ -1438,107 +1522,109 @@ struct ColorBlendTestData {
                                             Color::LimeGreen().WithAlpha(0.75),
                                             Color::Black().WithAlpha(0.75)};
 
-  // THIS RESULT TABLE IS GENERATED!
-  //
-  // Uncomment the `GenerateColorBlendResults` test below to print a new table
-  // after making changes to `Color::Blend`.
-  static constexpr Color kExpectedResults
-      [sizeof(kSourceColors)]
-      [static_cast<std::underlying_type_t<BlendMode>>(BlendMode::kLast) + 1] = {
-          {
-              {0, 0, 0, 0},                            // Clear
-              {1, 1, 1, 0.75},                         // Source
-              {0.392157, 0.584314, 0.929412, 0.75},    // Destination
-              {0.878431, 0.916863, 0.985882, 0.9375},  // SourceOver
-              {0.513726, 0.667451, 0.943529, 0.9375},  // DestinationOver
-              {1, 1, 1, 0.5625},                       // SourceIn
-              {0.392157, 0.584314, 0.929412, 0.5625},  // DestinationIn
-              {1, 1, 1, 0.1875},                       // SourceOut
-              {0.392157, 0.584314, 0.929412, 0.1875},  // DestinationOut
-              {0.848039, 0.896078, 0.982353, 0.75},    // SourceATop
-              {0.544118, 0.688235, 0.947059, 0.75},    // DestinationATop
-              {0.696078, 0.792157, 0.964706, 0.375},   // Xor
-              {1, 1, 1, 1},                            // Plus
-              {0.392157, 0.584314, 0.929412, 0.5625},  // Modulate
-              {0.878431, 0.916863, 0.985882, 0.9375},  // Screen
-              {0.74902, 0.916863, 0.985882, 0.9375},   // Overlay
-              {0.513726, 0.667451, 0.943529, 0.9375},  // Darken
-              {0.878431, 0.916863, 0.985882, 0.9375},  // Lighten
-              {0.878431, 0.916863, 0.985882, 0.9375},  // ColorDodge
-              {0.513725, 0.667451, 0.943529, 0.9375},  // ColorBurn
-              {0.878431, 0.916863, 0.985882, 0.9375},  // HardLight
-              {0.654166, 0.775505, 0.964318, 0.9375},  // SoftLight
-              {0.643137, 0.566275, 0.428235, 0.9375},  // Difference
-              {0.643137, 0.566275, 0.428235, 0.9375},  // Exclusion
-              {0.513726, 0.667451, 0.943529, 0.9375},  // Multiply
-              {0.617208, 0.655639, 0.724659, 0.9375},  // Hue
-              {0.617208, 0.655639, 0.724659, 0.9375},  // Saturation
-              {0.617208, 0.655639, 0.724659, 0.9375},  // Color
-              {0.878431, 0.916863, 0.985882, 0.9375},  // Luminosity
-          },
-          {
-              {0, 0, 0, 0},                             // Clear
-              {0.196078, 0.803922, 0.196078, 0.75},     // Source
-              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
-              {0.235294, 0.76, 0.342745, 0.9375},       // SourceOver
-              {0.352941, 0.628235, 0.782745, 0.9375},   // DestinationOver
-              {0.196078, 0.803922, 0.196078, 0.5625},   // SourceIn
-              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
-              {0.196078, 0.803922, 0.196078, 0.1875},   // SourceOut
-              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
-              {0.245098, 0.74902, 0.379412, 0.75},      // SourceATop
-              {0.343137, 0.639216, 0.746078, 0.75},     // DestinationATop
-              {0.294118, 0.694118, 0.562745, 0.375},    // Xor
-              {0.441176, 1, 0.844118, 1},               // Plus
-              {0.0768935, 0.469742, 0.182238, 0.5625},  // Modulate
-              {0.424452, 0.828743, 0.79105, 0.9375},    // Screen
-              {0.209919, 0.779839, 0.757001, 0.9375},   // Overlay
-              {0.235294, 0.628235, 0.342745, 0.9375},   // Darken
-              {0.352941, 0.76, 0.782745, 0.9375},       // Lighten
-              {0.41033, 0.877647, 0.825098, 0.9375},    // ColorDodge
-              {0.117647, 0.567403, 0.609098, 0.9375},   // ColorBurn
-              {0.209919, 0.779839, 0.443783, 0.9375},   // HardLight
-              {0.266006, 0.693915, 0.758818, 0.9375},   // SoftLight
-              {0.235294, 0.409412, 0.665098, 0.9375},   // Difference
-              {0.378316, 0.546897, 0.681707, 0.9375},   // Exclusion
-              {0.163783, 0.559493, 0.334441, 0.9375},   // Multiply
-              {0.266235, 0.748588, 0.373686, 0.9375},   // Hue
-              {0.339345, 0.629787, 0.811502, 0.9375},   // Saturation
-              {0.241247, 0.765953, 0.348698, 0.9375},   // Color
-              {0.346988, 0.622282, 0.776792, 0.9375},   // Luminosity
-          },
-          {
-              {0, 0, 0, 0},                             // Clear
-              {0, 0, 0, 0.75},                          // Source
-              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // SourceOver
-              {0.313726, 0.467451, 0.743529, 0.9375},   // DestinationOver
-              {0, 0, 0, 0.5625},                        // SourceIn
-              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
-              {0, 0, 0, 0.1875},                        // SourceOut
-              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
-              {0.0980392, 0.146078, 0.232353, 0.75},    // SourceATop
-              {0.294118, 0.438235, 0.697059, 0.75},     // DestinationATop
-              {0.196078, 0.292157, 0.464706, 0.375},    // Xor
-              {0.294118, 0.438235, 0.697059, 1},        // Plus
-              {0, 0, 0, 0.5625},                        // Modulate
-              {0.313726, 0.467451, 0.743529, 0.9375},   // Screen
-              {0.0784314, 0.218039, 0.701176, 0.9375},  // Overlay
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // Darken
-              {0.313726, 0.467451, 0.743529, 0.9375},   // Lighten
-              {0.313726, 0.467451, 0.743529, 0.9375},   // ColorDodge
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // ColorBurn
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // HardLight
-              {0.170704, 0.321716, 0.704166, 0.9375},   // SoftLight
-              {0.313726, 0.467451, 0.743529, 0.9375},   // Difference
-              {0.313726, 0.467451, 0.743529, 0.9375},   // Exclusion
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // Multiply
-              {0.417208, 0.455639, 0.524659, 0.9375},   // Hue
-              {0.417208, 0.455639, 0.524659, 0.9375},   // Saturation
-              {0.417208, 0.455639, 0.524659, 0.9375},   // Color
-              {0.0784314, 0.116863, 0.185882, 0.9375},  // Luminosity
-          },
-  };
+  static const std::map<BlendMode, Color>
+      kExpectedResults[sizeof(kSourceColors)];
+};
+
+// THIS RESULT TABLE IS GENERATED!
+//
+// Uncomment the `GenerateColorBlendResults` test below to print a new table
+// after making changes to `Color::Blend`.
+const std::map<BlendMode, Color> ColorBlendTestData::kExpectedResults[sizeof(
+    ColorBlendTestData::kSourceColors)] = {
+    {
+        {BlendMode::kClear, {0, 0, 0, 0}},
+        {BlendMode::kSource, {1, 1, 1, 0.75}},
+        {BlendMode::kDestination, {0.392157, 0.584314, 0.929412, 0.75}},
+        {BlendMode::kSourceOver, {0.878431, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kDestinationOver, {0.513726, 0.667451, 0.943529, 0.9375}},
+        {BlendMode::kSourceIn, {1, 1, 1, 0.5625}},
+        {BlendMode::kDestinationIn, {0.392157, 0.584314, 0.929412, 0.5625}},
+        {BlendMode::kSourceOut, {1, 1, 1, 0.1875}},
+        {BlendMode::kDestinationOut, {0.392157, 0.584314, 0.929412, 0.1875}},
+        {BlendMode::kSourceATop, {0.848039, 0.896078, 0.982353, 0.75}},
+        {BlendMode::kDestinationATop, {0.544118, 0.688235, 0.947059, 0.75}},
+        {BlendMode::kXor, {0.696078, 0.792157, 0.964706, 0.375}},
+        {BlendMode::kPlus, {1, 1, 1, 1}},
+        {BlendMode::kModulate, {0.392157, 0.584314, 0.929412, 0.5625}},
+        {BlendMode::kScreen, {0.878431, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kOverlay, {0.74902, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kDarken, {0.513726, 0.667451, 0.943529, 0.9375}},
+        {BlendMode::kLighten, {0.878431, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kColorDodge, {0.878431, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kColorBurn, {0.513725, 0.667451, 0.943529, 0.9375}},
+        {BlendMode::kHardLight, {0.878431, 0.916863, 0.985882, 0.9375}},
+        {BlendMode::kSoftLight, {0.654166, 0.775505, 0.964318, 0.9375}},
+        {BlendMode::kDifference, {0.643137, 0.566275, 0.428235, 0.9375}},
+        {BlendMode::kExclusion, {0.643137, 0.566275, 0.428235, 0.9375}},
+        {BlendMode::kMultiply, {0.513726, 0.667451, 0.943529, 0.9375}},
+        {BlendMode::kHue, {0.617208, 0.655639, 0.724659, 0.9375}},
+        {BlendMode::kSaturation, {0.617208, 0.655639, 0.724659, 0.9375}},
+        {BlendMode::kColor, {0.617208, 0.655639, 0.724659, 0.9375}},
+        {BlendMode::kLuminosity, {0.878431, 0.916863, 0.985882, 0.9375}},
+    },
+    {
+        {BlendMode::kClear, {0, 0, 0, 0}},
+        {BlendMode::kSource, {0.196078, 0.803922, 0.196078, 0.75}},
+        {BlendMode::kDestination, {0.392157, 0.584314, 0.929412, 0.75}},
+        {BlendMode::kSourceOver, {0.235294, 0.76, 0.342745, 0.9375}},
+        {BlendMode::kDestinationOver, {0.352941, 0.628235, 0.782745, 0.9375}},
+        {BlendMode::kSourceIn, {0.196078, 0.803922, 0.196078, 0.5625}},
+        {BlendMode::kDestinationIn, {0.392157, 0.584314, 0.929412, 0.5625}},
+        {BlendMode::kSourceOut, {0.196078, 0.803922, 0.196078, 0.1875}},
+        {BlendMode::kDestinationOut, {0.392157, 0.584314, 0.929412, 0.1875}},
+        {BlendMode::kSourceATop, {0.245098, 0.74902, 0.379412, 0.75}},
+        {BlendMode::kDestinationATop, {0.343137, 0.639216, 0.746078, 0.75}},
+        {BlendMode::kXor, {0.294118, 0.694118, 0.562745, 0.375}},
+        {BlendMode::kPlus, {0.441176, 1, 0.844118, 1}},
+        {BlendMode::kModulate, {0.0768935, 0.469742, 0.182238, 0.5625}},
+        {BlendMode::kScreen, {0.424452, 0.828743, 0.79105, 0.9375}},
+        {BlendMode::kOverlay, {0.209919, 0.779839, 0.757001, 0.9375}},
+        {BlendMode::kDarken, {0.235294, 0.628235, 0.342745, 0.9375}},
+        {BlendMode::kLighten, {0.352941, 0.76, 0.782745, 0.9375}},
+        {BlendMode::kColorDodge, {0.41033, 0.877647, 0.825098, 0.9375}},
+        {BlendMode::kColorBurn, {0.117647, 0.567403, 0.609098, 0.9375}},
+        {BlendMode::kHardLight, {0.209919, 0.779839, 0.443783, 0.9375}},
+        {BlendMode::kSoftLight, {0.266006, 0.693915, 0.758818, 0.9375}},
+        {BlendMode::kDifference, {0.235294, 0.409412, 0.665098, 0.9375}},
+        {BlendMode::kExclusion, {0.378316, 0.546897, 0.681707, 0.9375}},
+        {BlendMode::kMultiply, {0.163783, 0.559493, 0.334441, 0.9375}},
+        {BlendMode::kHue, {0.266235, 0.748588, 0.373686, 0.9375}},
+        {BlendMode::kSaturation, {0.339345, 0.629787, 0.811502, 0.9375}},
+        {BlendMode::kColor, {0.241247, 0.765953, 0.348698, 0.9375}},
+        {BlendMode::kLuminosity, {0.346988, 0.622282, 0.776792, 0.9375}},
+    },
+    {
+        {BlendMode::kClear, {0, 0, 0, 0}},
+        {BlendMode::kSource, {0, 0, 0, 0.75}},
+        {BlendMode::kDestination, {0.392157, 0.584314, 0.929412, 0.75}},
+        {BlendMode::kSourceOver, {0.0784314, 0.116863, 0.185882, 0.9375}},
+        {BlendMode::kDestinationOver, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kSourceIn, {0, 0, 0, 0.5625}},
+        {BlendMode::kDestinationIn, {0.392157, 0.584314, 0.929412, 0.5625}},
+        {BlendMode::kSourceOut, {0, 0, 0, 0.1875}},
+        {BlendMode::kDestinationOut, {0.392157, 0.584314, 0.929412, 0.1875}},
+        {BlendMode::kSourceATop, {0.0980392, 0.146078, 0.232353, 0.75}},
+        {BlendMode::kDestinationATop, {0.294118, 0.438235, 0.697059, 0.75}},
+        {BlendMode::kXor, {0.196078, 0.292157, 0.464706, 0.375}},
+        {BlendMode::kPlus, {0.294118, 0.438235, 0.697059, 1}},
+        {BlendMode::kModulate, {0, 0, 0, 0.5625}},
+        {BlendMode::kScreen, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kOverlay, {0.0784314, 0.218039, 0.701176, 0.9375}},
+        {BlendMode::kDarken, {0.0784314, 0.116863, 0.185882, 0.9375}},
+        {BlendMode::kLighten, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kColorDodge, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kColorBurn, {0.0784314, 0.116863, 0.185882, 0.9375}},
+        {BlendMode::kHardLight, {0.0784314, 0.116863, 0.185882, 0.9375}},
+        {BlendMode::kSoftLight, {0.170704, 0.321716, 0.704166, 0.9375}},
+        {BlendMode::kDifference, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kExclusion, {0.313726, 0.467451, 0.743529, 0.9375}},
+        {BlendMode::kMultiply, {0.0784314, 0.116863, 0.185882, 0.9375}},
+        {BlendMode::kHue, {0.417208, 0.455639, 0.524659, 0.9375}},
+        {BlendMode::kSaturation, {0.417208, 0.455639, 0.524659, 0.9375}},
+        {BlendMode::kColor, {0.417208, 0.455639, 0.524659, 0.9375}},
+        {BlendMode::kLuminosity, {0.0784314, 0.116863, 0.185882, 0.9375}},
+    },
 };
 
 /// To print a new ColorBlendTestData::kExpectedResults table, uncomment this
@@ -1555,8 +1641,10 @@ TEST(GeometryTest, GenerateColorBlendResults) {
          blend_i < static_cast<BlendT>(BlendMode::kLast) + 1; blend_i++) {
       auto blend = static_cast<BlendMode>(blend_i);
       Color c = ColorBlendTestData::kDestinationColor.Blend(source, blend);
+      o << "{ BlendMode::k" << BlendModeToString(blend) << ", ";
       o << "{" << c.red << "," << c.green << "," << c.blue << "," << c.alpha
-        << "}, // " << BlendModeToString(blend) << std::endl;
+        << "}";
+      o << "}," << std::endl;
     }
     o << "},";
   }
@@ -1564,20 +1652,19 @@ TEST(GeometryTest, GenerateColorBlendResults) {
 }
 */
 
-#define _BLEND_MODE_RESULT_CHECK(blend_mode)                          \
-  blend_i = static_cast<BlendT>(BlendMode::k##blend_mode);            \
-  expected = ColorBlendTestData::kExpectedResults[source_i][blend_i]; \
+#define _BLEND_MODE_RESULT_CHECK(blend_mode)                \
+  expected = ColorBlendTestData::kExpectedResults[source_i] \
+                 .find(BlendMode::k##blend_mode)            \
+                 ->second;                                  \
   EXPECT_COLOR_NEAR(dst.Blend(src, BlendMode::k##blend_mode), expected);
 
 TEST(GeometryTest, ColorBlendReturnsExpectedResults) {
-  using BlendT = std::underlying_type_t<BlendMode>;
   Color dst = ColorBlendTestData::kDestinationColor;
   for (size_t source_i = 0;
        source_i < sizeof(ColorBlendTestData::kSourceColors) / sizeof(Color);
        source_i++) {
     Color src = ColorBlendTestData::kSourceColors[source_i];
 
-    size_t blend_i;
     Color expected;
     IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_RESULT_CHECK)
   }

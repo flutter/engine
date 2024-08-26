@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_TARGET_H_
 #define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_TARGET_H_
 
-#include "fml/macros.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
@@ -27,7 +26,7 @@ class EntityPassTarget {
   ///         method).
   std::shared_ptr<Texture> Flip(Allocator& allocator);
 
-  const RenderTarget& GetRenderTarget() const;
+  RenderTarget& GetRenderTarget();
 
   bool IsValid() const;
 

@@ -7,10 +7,13 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
-#endif                                            // IMPELLER_SUPPORTS_RENDERING
+#define ENABLE_EXPERIMENTAL_CANVAS false
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -87,6 +90,27 @@ const EmbeddedViewParams* EmbedderExternalView::GetEmbeddedViewParams() const {
   return embedded_view_params_.get();
 }
 
+// TODO(https://github.com/flutter/flutter/issues/151670): Implement this for
+//  Impeller as well.
+#if !SLIMPELLER
+static void InvalidateApiState(SkSurface& skia_surface) {
+  auto recording_context = skia_surface.recordingContext();
+
+  // Should never happen.
+  FML_DCHECK(recording_context) << "Recording context was null.";
+
+  auto direct_context = recording_context->asDirectContext();
+  if (direct_context == nullptr) {
+    // Can happen when using software rendering.
+    // Print an error but otherwise continue in that case.
+    FML_LOG(ERROR) << "Embedder asked to invalidate cached graphics API state "
+                      "but Flutter is not using a graphics API.";
+  } else {
+    direct_context->resetContext(kAll_GrBackendState);
+  }
+}
+#endif
+
 bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
                                   bool clear_surface) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
@@ -103,18 +127,66 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     auto dl_builder = DisplayListBuilder();
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
+    auto display_list = dl_builder.Build();
 
+#if EXPERIMENTAL_CANVAS
+    auto cull_rect =
+        impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
+    SkIRect sk_cull_rect =
+        SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+
+    impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
+                                            impeller::Matrix());
+
+    impeller::ExperimentalDlDispatcher impeller_dispatcher(
+        aiks_context->GetContentContext(), *impeller_target,
+        display_list->root_has_backdrop_filter(),
+        display_list->max_root_blend_mode(), cull_rect);
+    display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+    impeller_dispatcher.FinishRecording();
+    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+    aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+
+    return true;
+#else
     auto dispatcher = impeller::DlDispatcher();
-    dispatcher.drawDisplayList(dl_builder.Build(), 1);
+    dispatcher.drawDisplayList(display_list, 1);
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
                                 *impeller_target, /*reset_host_buffer=*/true);
+#endif
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
+#if SLIMPELLER
+  FML_LOG(FATAL) << "Impeller opt-out unavailable.";
+  return false;
+#else   // SLIMPELLER
   auto skia_surface = render_target.GetSkiaSurface();
   if (!skia_surface) {
     return false;
   }
+
+  auto [ok, invalidate_api_state] = render_target.MaybeMakeCurrent();
+
+  if (invalidate_api_state) {
+    InvalidateApiState(*skia_surface);
+  }
+  if (!ok) {
+    FML_LOG(ERROR) << "Could not make the surface current.";
+    return false;
+  }
+
+  // Clear the current render target (most likely EGLSurface) at the
+  // end of this scope.
+  fml::ScopedCleanupClosure clear_current_surface([&]() {
+    auto [ok, invalidate_api_state] = render_target.MaybeClearCurrent();
+    if (invalidate_api_state) {
+      InvalidateApiState(*skia_surface);
+    }
+    if (!ok) {
+      FML_LOG(ERROR) << "Could not clear the current surface.";
+    }
+  });
 
   FML_DCHECK(render_target.GetRenderTargetSize() == render_surface_size_);
 
@@ -131,6 +203,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
   slice_->render_into(&dl_canvas);
   dl_canvas.RestoreToCount(restore_count);
   dl_canvas.Flush();
+#endif  //  !SLIMPELLER
 
   return true;
 }

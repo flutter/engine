@@ -31,6 +31,8 @@ impeller_component("geometry") {
     "rect.h",
     "saturated_math.h",
     "scalar.h",
+    "separated_vector.cc",
+    "separated_vector.h",
     "shear.cc",
     "shear.h",
     "sigma.cc",
@@ -43,6 +45,8 @@ impeller_component("geometry") {
     "type_traits.h",
     "vector.cc",
     "vector.h",
+    "wangs_formula.cc",
+    "wangs_formula.h",
   ]
 
   deps = [
@@ -85,7 +89,7 @@ executable("geometry_benchmarks") {
   deps = [
     ":geometry",
     "../entity",
-    "../tessellator",
+    "../tessellator:tessellator_libtess",
     "//flutter/benchmarking",
   ]
 }

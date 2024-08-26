@@ -7,11 +7,13 @@
 #include <dwmapi.h>
 
 #include <filesystem>
+#include <shared_mutex>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
@@ -393,7 +395,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     // constructors: https://github.com/flutter/flutter/issues/143375
     compositor_ = std::make_unique<CompositorOpenGL>(this, resolver);
   } else {
-    compositor_ = std::make_unique<CompositorSoftware>(this);
+    compositor_ = std::make_unique<CompositorSoftware>();
   }
 
   FlutterCompositor compositor = {};
@@ -418,8 +420,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       [](const FlutterPresentViewInfo* info) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(info->user_data);
 
-    return host->compositor_->Present(info->view_id, info->layers,
-                                      info->layers_count);
+    return host->Present(info);
   };
   args.compositor = &compositor;
 
@@ -473,6 +474,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
 
+  InitializeKeyboard();
+
   return true;
 }
 
@@ -491,15 +494,135 @@ bool FlutterWindowsEngine::Stop() {
 
 std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
     std::unique_ptr<WindowBindingHandler> window) {
-  // TODO(loicsharma): Remove implicit view assumption.
-  // https://github.com/flutter/flutter/issues/142845
+  auto view_id = next_view_id_;
   auto view = std::make_unique<FlutterWindowsView>(
-      kImplicitViewId, this, std::move(window), windows_proc_table_);
+      view_id, this, std::move(window), windows_proc_table_);
 
-  views_[kImplicitViewId] = view.get();
-  InitializeKeyboard();
+  view->CreateRenderSurface();
+
+  next_view_id_++;
+
+  {
+    // Add the view to the embedder. This must happen before the engine
+    // is notified the view exists and starts presenting to it.
+    std::unique_lock write_lock(views_mutex_);
+    FML_DCHECK(views_.find(view_id) == views_.end());
+    views_[view_id] = view.get();
+  }
+
+  if (!view->IsImplicitView()) {
+    FML_DCHECK(running());
+
+    struct Captures {
+      fml::AutoResetWaitableEvent latch;
+      bool added;
+    };
+    Captures captures = {};
+
+    FlutterWindowMetricsEvent metrics = view->CreateWindowMetricsEvent();
+
+    FlutterAddViewInfo info = {};
+    info.struct_size = sizeof(FlutterAddViewInfo);
+    info.view_id = view_id;
+    info.view_metrics = &metrics;
+    info.user_data = &captures;
+    info.add_view_callback = [](const FlutterAddViewResult* result) {
+      Captures* captures = reinterpret_cast<Captures*>(result->user_data);
+      captures->added = result->added;
+      captures->latch.Signal();
+    };
+
+    FlutterEngineResult result = embedder_api_.AddView(engine_, &info);
+    if (result != kSuccess) {
+      FML_LOG(ERROR)
+          << "Starting the add view operation failed. FlutterEngineAddView "
+             "returned an unexpected result: "
+          << result << ". This indicates a bug in the Windows embedder.";
+      FML_DCHECK(false);
+      return nullptr;
+    }
+
+    // Block the platform thread until the engine has added the view.
+    // TODO(loicsharma): This blocks the platform thread eagerly and can
+    // cause unnecessary delay in input processing. Instead, this should block
+    // lazily only when the app does an operation which needs the view.
+    // https://github.com/flutter/flutter/issues/146248
+    captures.latch.Wait();
+
+    if (!captures.added) {
+      // Adding the view failed. Update the embedder's state to match the
+      // engine's state. This is unexpected and indicates a bug in the Windows
+      // embedder.
+      FML_LOG(ERROR) << "FlutterEngineAddView failed to add view";
+      std::unique_lock write_lock(views_mutex_);
+      views_.erase(view_id);
+      return nullptr;
+    }
+  }
 
   return std::move(view);
+}
+
+void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
+  FML_DCHECK(running());
+
+  // Notify the engine to stop rendering to the view if it isn't the implicit
+  // view. The engine and framework assume the implicit view always exists and
+  // can continue presenting.
+  if (view_id != kImplicitViewId) {
+    struct Captures {
+      fml::AutoResetWaitableEvent latch;
+      bool removed;
+    };
+    Captures captures = {};
+
+    FlutterRemoveViewInfo info = {};
+    info.struct_size = sizeof(FlutterRemoveViewInfo);
+    info.view_id = view_id;
+    info.user_data = &captures;
+    info.remove_view_callback = [](const FlutterRemoveViewResult* result) {
+      // This is invoked on an engine thread. If
+      // |FlutterRemoveViewResult.removed| is `true`, the engine guarantees the
+      // view won't be presented.
+      Captures* captures = reinterpret_cast<Captures*>(result->user_data);
+      captures->removed = result->removed;
+      captures->latch.Signal();
+    };
+
+    FlutterEngineResult result = embedder_api_.RemoveView(engine_, &info);
+    if (result != kSuccess) {
+      FML_LOG(ERROR) << "Starting the remove view operation failed. "
+                        "FlutterEngineRemoveView "
+                        "returned an unexpected result: "
+                     << result
+                     << ". This indicates a bug in the Windows embedder.";
+      FML_DCHECK(false);
+      return;
+    }
+
+    // Block the platform thread until the engine has removed the view.
+    // TODO(loicsharma): This blocks the platform thread eagerly and can
+    // cause unnecessary delay in input processing. Instead, this should block
+    // lazily only when an operation needs the view.
+    // https://github.com/flutter/flutter/issues/146248
+    captures.latch.Wait();
+
+    if (!captures.removed) {
+      // Removing the view failed. This is unexpected and indicates a bug in the
+      // Windows embedder.
+      FML_LOG(ERROR) << "FlutterEngineRemoveView failed to remove view";
+      return;
+    }
+  }
+
+  {
+    // The engine no longer presents to the view. Remove the view from the
+    // embedder.
+    std::unique_lock write_lock(views_mutex_);
+
+    FML_DCHECK(views_.find(view_id) != views_.end());
+    views_.erase(view_id);
+  }
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -531,6 +654,8 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
 }
 
 FlutterWindowsView* FlutterWindowsEngine::view(FlutterViewId view_id) const {
+  std::shared_lock read_lock(views_mutex_);
+
   auto iterator = views_.find(view_id);
   if (iterator == views_.end()) {
     return nullptr;
@@ -675,10 +800,6 @@ void FlutterWindowsEngine::SendSystemLocales() {
 }
 
 void FlutterWindowsEngine::InitializeKeyboard() {
-  if (views_.empty()) {
-    FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
-  }
-
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
@@ -763,6 +884,8 @@ bool FlutterWindowsEngine::DispatchSemanticsAction(
 
 void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   if (engine_ && semantics_enabled_ != enabled) {
+    std::shared_lock read_lock(views_mutex_);
+
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
     for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
@@ -773,9 +896,7 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
   // Reset the keyboard's state on hot restart.
-  if (!views_.empty()) {
-    InitializeKeyboard();
-  }
+  InitializeKeyboard();
 }
 
 std::string FlutterWindowsEngine::GetExecutableName() const {
@@ -830,6 +951,8 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
 }
 
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
+  std::shared_lock read_lock(views_mutex_);
+
   for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
     iterator->second->OnDwmCompositionChanged();
   }
@@ -858,6 +981,22 @@ void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
   } else if (name == "flutter/lifecycle" && listening) {
     lifecycle_manager_->BeginProcessingLifecycle();
   }
+}
+
+bool FlutterWindowsEngine::Present(const FlutterPresentViewInfo* info) {
+  // This runs on the raster thread. Lock the views map for the entirety of the
+  // present operation to block the platform thread from destroying the
+  // view during the present.
+  std::shared_lock read_lock(views_mutex_);
+
+  auto iterator = views_.find(info->view_id);
+  if (iterator == views_.end()) {
+    return false;
+  }
+
+  FlutterWindowsView* view = iterator->second;
+
+  return compositor_->Present(view, info->layers, info->layers_count);
 }
 
 }  // namespace flutter

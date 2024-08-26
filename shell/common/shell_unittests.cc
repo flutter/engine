@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <strstream>
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
@@ -10,6 +9,7 @@
 #include <ctime>
 #include <future>
 #include <memory>
+#include <strstream>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -77,6 +77,18 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD(void, OnPlatformViewDestroyed, (), (override));
 
   MOCK_METHOD(void, OnPlatformViewScheduleFrame, (), (override));
+
+  MOCK_METHOD(void,
+              OnPlatformViewAddView,
+              (int64_t view_id,
+               const ViewportMetrics& viewport_metrics,
+               AddViewCallback callback),
+              (override));
+
+  MOCK_METHOD(void,
+              OnPlatformViewRemoveView,
+              (int64_t view_id, RemoveViewCallback callback),
+              (override));
 
   MOCK_METHOD(void,
               OnPlatformViewSetNextFrameCallback,
@@ -2438,7 +2450,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
-        sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
+        sk_sp<DlImage> image = delegate->MakeRasterSnapshotSync(
             MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
         EXPECT_NE(image, nullptr);
 
@@ -2553,158 +2565,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
   DestroyShell(std::move(shell));
 }
-
-// ktz
-TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
-  auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings);
-
-  // Create the surface needed by rasterizer
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("scene_with_red_box");
-
-  RunEngine(shell.get(), std::move(configuration));
-  // Set a non-zero viewport metrics, otherwise the scene would be discarded.
-  PostSync(shell->GetTaskRunners().GetUITaskRunner(),
-           [engine = shell->GetEngine()]() {
-             engine->SetViewportMetrics(kImplicitViewId,
-                                        ViewportMetrics{1, 1, 1, 22, 0});
-           });
-  PumpOneFrame(shell.get(), ViewContent::NoViews());
-
-  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
-  rapidjson::Document document;
-  OnServiceProtocol(
-      shell.get(), ServiceProtocolEnum::kRenderFrameWithRasterStats,
-      shell->GetTaskRunners().GetRasterTaskRunner(), empty_params, &document);
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  document.Accept(writer);
-
-  // It would be better to parse out the json and check for the validity of
-  // fields. Below checks approximate what needs to be checked, this can not be
-  // an exact check since duration will not exactly match.
-#ifdef SHELL_ENABLE_METAL
-  std::string expected_json =
-      "\"snapshot\":[137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,3,32,0,"
-      "0,2,88,8,6,0,0,0,154,118,130,112,0,0,0,1,115,82,71,66,0,174,206,28,233,"
-      "0,0,0,4,115,66,73,84,8,8,8,8,124,8,100,136,0,0,7,103,73,68,65,84,120,"
-      "156,237,206,65,13,192,48,0,3,177,211,248,115,78,73,172,234,199,70,224,"
-      "86,91,45,0,0,128,203,190,215,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
-      "0,224,47,7,195,182,3,255,101,111,186,90,0,0,0,0,73,69,78,68,174,66,96,"
-      "130]";
-#else
-  std::string expected_json =
-      "\"snapshot\":[137,80,78,71,13,10,26,10,0,"
-      "0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,1,115,"
-      "82,71,66,0,174,206,28,233,0,0,0,4,115,66,73,84,8,8,8,8,124,8,100,136,0,"
-      "0,0,13,73,68,65,84,8,153,99,248,207,192,240,31,0,5,0,1,255,171,206,54,"
-      "137,0,0,0,0,73,69,78,68,174,66,96,130]";
-#endif
-  std::string actual_json = buffer.GetString();
-
-  EXPECT_THAT(actual_json, ::testing::HasSubstr(expected_json));
-  EXPECT_THAT(actual_json,
-              ::testing::HasSubstr("{\"type\":\"RenderFrameWithRasterStats\""));
-  EXPECT_THAT(actual_json, ::testing::HasSubstr("\"duration_micros\""));
-
-  PlatformViewNotifyDestroyed(shell.get());
-  DestroyShell(std::move(shell));
-}
-
-#if defined(FML_OS_MACOSX)
-TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsDisableImpeller) {
-  auto settings = CreateSettingsForFixture();
-  settings.enable_impeller = true;
-  std::unique_ptr<Shell> shell = CreateShell({
-      .settings = settings,
-      .platform_view_create_callback = ShellTestPlatformViewBuilder({
-          .rendering_backend =
-              ShellTestPlatformView::BackendType::kMetalBackend,
-      }),
-  });
-
-  // Create the surface needed by rasterizer
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("scene_with_red_box");
-
-  RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), ViewContent::NoViews());
-
-  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
-  rapidjson::Document document;
-  OnServiceProtocol(
-      shell.get(), ServiceProtocolEnum::kRenderFrameWithRasterStats,
-      shell->GetTaskRunners().GetRasterTaskRunner(), empty_params, &document);
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  document.Accept(writer);
-  std::string actual_json = buffer.GetString();
-  std::string expected_json =
-      "{\"code\":-32000,\"message\":\"Raster status not supported on Impeller "
-      "backend.\"}";
-
-  ASSERT_EQ(actual_json, expected_json);
-
-  PlatformViewNotifyDestroyed(shell.get());
-  DestroyShell(std::move(shell));
-}
-#endif  // FML_OS_MACOSX
 
 // TODO(https://github.com/flutter/flutter/issues/100273): Disabled due to
 // flakiness.
@@ -4504,27 +4364,148 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(2, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->GetPlatformView()->AddView(2, ViewportMetrics{},
+                                      [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
   ASSERT_EQ(viewIds[1], 2ll);
 
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
-    shell->RemoveView(2, [](bool removed) { ASSERT_TRUE(removed); });
+    shell->GetPlatformView()->RemoveView(
+        2, [](bool removed) { ASSERT_TRUE(removed); });
   });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(4, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->GetPlatformView()->AddView(4, ViewportMetrics{},
+                                      [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
   ASSERT_EQ(viewIds[1], 4ll);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// Test that add view fails if the view ID already exists.
+TEST_F(ShellTest, ShellCannotAddDuplicateViewId) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool has_implicit_view;
+  std::vector<int64_t> view_ids;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      ParseViewIdsCallback(args, &has_implicit_view, &view_ids);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  ASSERT_TRUE(has_implicit_view);
+  ASSERT_EQ(view_ids.size(), 1u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+
+  // Add view 123.
+  fml::AutoResetWaitableEvent add_latch;
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell,
+                                                             &add_latch] {
+    shell->GetPlatformView()->AddView(123, ViewportMetrics{}, [&](bool added) {
+      EXPECT_TRUE(added);
+      add_latch.Signal();
+    });
+  });
+
+  add_latch.Wait();
+
+  report_latch.Wait();
+  ASSERT_EQ(view_ids.size(), 2u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+  ASSERT_EQ(view_ids[1], 123);
+
+  // Attempt to add duplicate view ID 123. This should fail.
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell,
+                                                             &add_latch] {
+    shell->GetPlatformView()->AddView(123, ViewportMetrics{}, [&](bool added) {
+      EXPECT_FALSE(added);
+      add_latch.Signal();
+    });
+  });
+
+  add_latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// Test that remove view fails if the view ID does not exist.
+TEST_F(ShellTest, ShellCannotRemoveNonexistentId) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool has_implicit_view;
+  std::vector<int64_t> view_ids;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      ParseViewIdsCallback(args, &has_implicit_view, &view_ids);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  ASSERT_TRUE(has_implicit_view);
+  ASSERT_EQ(view_ids.size(), 1u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+
+  // Remove view 123. This should fail as this view doesn't exist.
+  fml::AutoResetWaitableEvent remove_latch;
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&shell, &remove_latch] {
+             shell->GetPlatformView()->RemoveView(123, [&](bool removed) {
+               EXPECT_FALSE(removed);
+               remove_latch.Signal();
+             });
+           });
+
+  remove_latch.Wait();
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
@@ -4570,7 +4551,8 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     // The construtor for ViewportMetrics{_, width, _, _, _} (only the 2nd
     // argument matters in this test).
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 10, 1, 0, 0});
-    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0});
+    shell->GetPlatformView()->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
+                                      [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
   });
 
@@ -4596,6 +4578,113 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
   EXPECT_EQ(viewWidths.size(), 2u);
   EXPECT_EQ(viewWidths[0], 20ll);
   EXPECT_EQ(viewWidths[1], 30ll);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// A view can be added and removed before the Dart isolate is launched.
+TEST_F(ShellTest, CanRemoveViewBeforeLaunchingIsolate) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    auto platform_view = shell->GetPlatformView();
+
+    // A view can be added and removed all before the isolate launches.
+    // The pending add view operation is cancelled, the view is never
+    // added to the Dart isolate.
+    shell->GetPlatformView()->AddView(123, ViewportMetrics{1, 30, 1, 0, 0},
+                                      [](bool added) { ASSERT_FALSE(added); });
+    shell->GetPlatformView()->RemoveView(
+        123, [](bool removed) { ASSERT_FALSE(removed); });
+  });
+
+  bool first_report = true;
+  std::map<int64_t, int64_t> view_widths;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewWidthsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_TRUE(first_report);
+                      first_report = false;
+                      ParseViewWidthsCallback(args, &view_widths);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewWidths");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  EXPECT_EQ(view_widths.size(), 1u);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// Ensure pending "add views" failures are properly flushed when the Dart
+// isolate is launched.
+TEST_F(ShellTest, IgnoresBadAddViewsBeforeLaunchingIsolate) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    auto platform_view = shell->GetPlatformView();
+
+    // Add the same view twice. The second time should fail.
+    shell->GetPlatformView()->AddView(123, ViewportMetrics{1, 100, 1, 0, 0},
+                                      [](bool added) { ASSERT_TRUE(added); });
+
+    shell->GetPlatformView()->AddView(123, ViewportMetrics{1, 200, 1, 0, 0},
+                                      [](bool added) { ASSERT_FALSE(added); });
+
+    // Add another view. Previous failures should not affect this.
+    shell->GetPlatformView()->AddView(456, ViewportMetrics{1, 300, 1, 0, 0},
+                                      [](bool added) { ASSERT_TRUE(added); });
+  });
+
+  bool first_report = true;
+  std::map<int64_t, int64_t> view_widths;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewWidthsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_TRUE(first_report);
+                      first_report = false;
+                      ParseViewWidthsCallback(args, &view_widths);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewWidths");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  EXPECT_EQ(view_widths.size(), 3u);
+  EXPECT_EQ(view_widths[0], 0);
+  EXPECT_EQ(view_widths[123], 100);
+  EXPECT_EQ(view_widths[456], 300);
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
@@ -4688,6 +4777,28 @@ TEST_F(ShellTest, RuntimeStageBackendWithImpeller) {
   DestroyShell(std::move(shell), task_runners);
 }
 #endif  // IMPELLER_SUPPORTS_RENDERING
+
+TEST_F(ShellTest, WillLogWarningWhenImpellerIsOptedOut) {
+#if !IMPELLER_SUPPORTS_RENDERING
+  GTEST_SKIP() << "This platform doesn't support Impeller.";
+#endif
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_impeller = false;
+  settings.warn_on_impeller_opt_out = true;
+  // Log captures are thread specific. Just put the shell in single threaded
+  // configuration.
+  const auto& runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  TaskRunners task_runners("test", runner, runner, runner, runner);
+  std::ostringstream stream;
+  fml::LogMessage::CaptureNextLog(&stream);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(stream.str().find(
+                  "[Action Required] The application opted out of Impeller") !=
+              std::string::npos);
+  ASSERT_TRUE(shell);
+  DestroyShell(std::move(shell), task_runners);
+}
 
 }  // namespace testing
 }  // namespace flutter

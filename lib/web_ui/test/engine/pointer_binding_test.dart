@@ -4,10 +4,12 @@
 
 import 'dart:js_util' as js_util;
 
+import 'package:meta/meta.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'keyboard_converter_test.dart';
 
@@ -46,7 +48,7 @@ void testMain() {
     return KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    }, OperatingSystem.linux);
+    }, ui_web.OperatingSystem.linux);
   }
 
   setUp(() {
@@ -303,6 +305,18 @@ void testMain() {
       child.remove();
     },
   );
+
+  test('allows default on touchstart events', () async {
+    final event = createDomEvent('Event', 'touchstart');
+
+    rootElement.dispatchEvent(event);
+
+    expect(
+      event.defaultPrevented,
+      isFalse,
+      reason: 'touchstart events should NOT be prevented. That breaks semantic taps!',
+    );
+  });
 
   test(
     'can receive pointer events on the app root',
@@ -699,6 +713,74 @@ void testMain() {
     },
   );
 
+  test('wheel event - preventDefault called', () {
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+    // Check that the engine called `preventDefault` on the event.
+    expect(event.defaultPrevented, isTrue);
+  });
+
+  test('wheel event - framework can stop preventDefault (allowPlatformDefault)', () {
+    // The framework calls `data.respond(allowPlatformDefault: true)`
+    ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+      packet.data.where(
+        (ui.PointerData datum) => datum.signalKind == ui.PointerSignalKind.scroll
+      ).forEach(
+        (ui.PointerData datum) {
+          datum.respond(allowPlatformDefault: true);
+        }
+      );
+    };
+
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+
+    // Check that the engine did NOT call `preventDefault` on the event.
+    expect(event.defaultPrevented, isFalse);
+  });
+
+  test('wheel event - once allowPlatformDefault is set to true, it cannot be rolled back', () {
+    // The framework calls `data.respond(allowPlatformDefault: true)`
+    ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+      packet.data.where(
+        (ui.PointerData datum) => datum.signalKind == ui.PointerSignalKind.scroll
+      ).forEach(
+        (ui.PointerData datum) {
+          datum.respond(allowPlatformDefault: false);
+          datum.respond(allowPlatformDefault: true);
+          datum.respond(allowPlatformDefault: false);
+        }
+      );
+    };
+
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+
+    // Check that the engine did NOT call `preventDefault` on the event.
+    expect(event.defaultPrevented, isFalse);
+  });
+
   test(
     'does synthesize add or hover or move for scroll',
     () {
@@ -820,7 +902,7 @@ void testMain() {
       final _ButtonedEventMixin context = _PointerEventContext();
 
       const double dpi = 2.5;
-      debugOperatingSystemOverride = OperatingSystem.macOs;
+      ui_web.browser.debugOperatingSystemOverride = ui_web.OperatingSystem.macOs;
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpi);
 
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -853,7 +935,7 @@ void testMain() {
       expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
 
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
-      debugBrowserEngineOverride = null;
+      ui_web.browser.debugBrowserEngineOverride = null;
     },
   );
 
@@ -1108,7 +1190,7 @@ void testMain() {
         packets.add(packet);
       };
 
-      debugOperatingSystemOverride = OperatingSystem.macOs;
+      ui_web.browser.debugOperatingSystemOverride = ui_web.OperatingSystem.macOs;
 
       rootElement.dispatchEvent(context.wheel(
         buttons: 0,
@@ -1197,7 +1279,7 @@ void testMain() {
       expect(packets[2].data[0].scrollDeltaX, equals(0.0));
       expect(packets[2].data[0].scrollDeltaY, equals(240.0));
 
-      debugOperatingSystemOverride = null;
+      ui_web.browser.debugOperatingSystemOverride = null;
     },
   );
 
@@ -2601,6 +2683,60 @@ void testMain() {
     );
   });
 
+  group('Listener', () {
+    late DomElement eventTarget;
+    late DomEvent expected;
+    late bool handled;
+
+    setUp(() {
+      eventTarget = createDomElement('div');
+      expected = createDomEvent('Event', 'custom-event');
+      handled = false;
+    });
+
+    test('listeners can be registered', () {
+      Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          expect(event, expected);
+          handled = true;
+        },
+      );
+
+      // Trigger the event...
+      eventTarget.dispatchEvent(expected);
+      expect(handled, isTrue);
+    });
+
+    test('listeners can be unregistered', () {
+      final Listener listener = Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          handled = true;
+        },
+      );
+      listener.unregister();
+
+      eventTarget.dispatchEvent(expected);
+      expect(handled, isFalse);
+    });
+
+    test('listeners are registered only once', () {
+      int timesHandled = 0;
+      Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          timesHandled++;
+        },
+      );
+      eventTarget.dispatchEvent(expected);
+      expect(timesHandled, 1, reason: 'The handler ran multiple times for a single event.');
+    });
+  });
+
   group('ClickDebouncer', () {
     _testClickDebouncer(getBinding: () => instance);
   });
@@ -2622,6 +2758,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
     String description,
     Future<void> Function() body, {
     Object? skip,
+    @doNotSubmit bool solo = false,
   }) {
     test(
       description,
@@ -2633,6 +2770,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
         EngineSemantics.instance.semanticsEnabled = false;
       },
       skip: skip,
+      solo: solo, // ignore: invalid_use_of_do_not_submit_member
     );
   }
 
@@ -2916,7 +3054,68 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
       isEmpty,
     );
     // TODO(yjbanov): https://github.com/flutter/flutter/issues/142991.
-  }, skip: operatingSystem == OperatingSystem.windows);
+  }, skip: ui_web.browser.operatingSystem == ui_web.OperatingSystem.windows);
+
+  // Regression test for https://github.com/flutter/flutter/issues/147050
+  //
+  // This test emulates a long-press. Start with a "pointerdown" followed by no
+  // activity long enough that the debounce timer expires and the state of the
+  // ClickDebouncer is reset back to idle. Then a "pointerup" arrives seemingly
+  // standalone. Since no gesture is being debounced, the debouncer simply
+  // forwards it to the framework. However, "pointerup" will be immediately
+  // followed by a "click". Since we sent the "pointerdown" and "pointerup" to
+  // the framework already, the framework registered a tap. Forwarding the
+  // "click" would lead to a double-tap. This was the bug.
+  testWithSemantics('Dedupes click if pointer up happened recently without debouncing', () async {
+    expect(EnginePlatformDispatcher.instance.semanticsEnabled, true);
+    expect(PointerBinding.clickDebouncer.isDebouncing, false);
+
+    final DomElement testElement = createDomElement('flt-semantics');
+    testElement.setAttribute('flt-tappable', '');
+    view.dom.semanticsHost.appendChild(testElement);
+
+    // Begin a long-press with a "pointerdown".
+    testElement.dispatchEvent(context.primaryDown());
+
+    // Expire the timer causing the debouncer to reset itself.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    expect(
+      reason: '"pointerdown" should be flushed when the timer expires.',
+      pointerPackets,
+      <ui.PointerChange>[ui.PointerChange.add, ui.PointerChange.down],
+    );
+    pointerPackets.clear();
+
+    // Send a "pointerup" while the debouncer is not debouncing anything.
+    testElement.dispatchEvent(context.primaryUp());
+
+    // A standalone "pointerup" should not start debouncing anything.
+    expect(PointerBinding.clickDebouncer.isDebouncing, isFalse);
+    expect(
+      reason: 'The "pointerup" should be forwarded to the framework immediately',
+      pointerPackets,
+      <ui.PointerChange>[ui.PointerChange.up],
+    );
+
+    // Use a delay that's short enough for the click to be deduped.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    final DomEvent click = createDomMouseEvent(
+      'click',
+      <Object?, Object?>{
+        'clientX': testElement.getBoundingClientRect().x,
+        'clientY': testElement.getBoundingClientRect().y,
+      }
+    );
+    PointerBinding.clickDebouncer.onClick(click, 42, true);
+
+    expect(
+      reason: 'Because the DOM click event was deduped.',
+      semanticsActions,
+      isEmpty,
+    );
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/142991.
+  }, skip: ui_web.browser.operatingSystem == ui_web.OperatingSystem.windows);
 
   testWithSemantics('Forwards click if enough time passed after the last flushed pointerup', () async {
     expect(EnginePlatformDispatcher.instance.semanticsEnabled, true);
@@ -3113,6 +3312,9 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
         if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
         'ctrlKey': ctrlKey,
+        'cancelable': true,
+        'bubbles': true,
+        'composed': true,
     });
     // timeStamp can't be set in the constructor, need to override the getter.
     if (timeStamp != null) {

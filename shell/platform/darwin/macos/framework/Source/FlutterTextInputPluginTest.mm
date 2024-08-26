@@ -1801,6 +1801,42 @@
   return true;
 }
 
+- (bool)testSelectorsNotForwardedToFrameworkIfNoClient {
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  // Make sure the selectors are not forwarded to the framework.
+  OCMReject([binaryMessengerMock sendOnChannel:@"flutter/textinput" message:[OCMArg any]]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  // Can't run CFRunLoop in default mode because it causes crashes from scheduled
+  // sources from other tests.
+  NSString* runLoopMode = @"FlutterTestRunLoopMode";
+  plugin.customRunLoopMode = runLoopMode;
+
+  // Call selectors without setting a client.
+  [plugin doCommandBySelector:@selector(moveUp:)];
+  [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
+
+  __block bool done = false;
+  CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
+    done = true;
+  });
+
+  while (!done) {
+    CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
+  }
+  // At this point the selectors should be dropped; otherwise, OCMReject will throw.
+  return true;
+}
+
 @end
 
 namespace flutter::testing {
@@ -1886,7 +1922,7 @@ TEST(FlutterTextInputPluginTest, TestComposingWithDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingWithDelta]);
 }
 
-TEST(FlutterTextInputPluginTest, testComposingWithDeltasWhenSelectionIsActive) {
+TEST(FlutterTextInputPluginTest, TestComposingWithDeltasWhenSelectionIsActive) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingWithDeltasWhenSelectionIsActive]);
 }
 
@@ -1910,12 +1946,64 @@ TEST(FlutterTextInputPluginTest, TestSelectorsAreForwardedToFramework) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSelectorsAreForwardedToFramework]);
 }
 
+TEST(FlutterTextInputPluginTest, TestSelectorsNotForwardedToFrameworkIfNoClient) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSelectorsNotForwardedToFrameworkIfNoClient]);
+}
+
 TEST(FlutterTextInputPluginTest, TestInsertNewLine) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testInsertNewLine]);
 }
 
 TEST(FlutterTextInputPluginTest, TestSendActionDoNotInsertNewLine) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSendActionDoNotInsertNewLine]);
+}
+
+TEST(FlutterTextInputPluginTest, TestAttributedSubstringOutOfRange) {
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  NSDictionary* setClientConfig = @{
+    @"inputAction" : @"action",
+    @"enableDeltaModel" : @"true",
+    @"inputType" : @{@"name" : @"inputName"},
+  };
+  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                                             arguments:@[ @(1), setClientConfig ]]
+                    result:^(id){
+                    }];
+
+  FlutterMethodCall* call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
+                                                              arguments:@{
+                                                                @"text" : @"Text",
+                                                                @"selectionBase" : @(0),
+                                                                @"selectionExtent" : @(0),
+                                                                @"composingBase" : @(-1),
+                                                                @"composingExtent" : @(-1),
+                                                              }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  NSRange out;
+  NSAttributedString* text = [plugin attributedSubstringForProposedRange:NSMakeRange(1, 10)
+                                                             actualRange:&out];
+  EXPECT_TRUE([text.string isEqualToString:@"ext"]);
+  EXPECT_EQ(out.location, 1u);
+  EXPECT_EQ(out.length, 3u);
+
+  text = [plugin attributedSubstringForProposedRange:NSMakeRange(4, 10) actualRange:&out];
+  EXPECT_EQ(text, nil);
 }
 
 TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {

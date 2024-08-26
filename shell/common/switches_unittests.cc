@@ -69,24 +69,6 @@ TEST(SwitchesTest, RouteParsedFlag) {
   EXPECT_TRUE(settings.route.empty());
 }
 
-TEST(SwitchesTest, MsaaSamples) {
-  for (int samples : {0, 1, 2, 4, 8, 16}) {
-    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
-        {"command", ("--msaa-samples=" + std::to_string(samples)).c_str()});
-    Settings settings = SettingsFromCommandLine(command_line);
-    EXPECT_EQ(settings.msaa_samples, samples);
-  }
-  fml::CommandLine command_line =
-      fml::CommandLineFromInitializerList({"command", "--msaa-samples=3"});
-  Settings settings = SettingsFromCommandLine(command_line);
-  EXPECT_EQ(settings.msaa_samples, 0);
-
-  command_line =
-      fml::CommandLineFromInitializerList({"command", "--msaa-samples=foobar"});
-  settings = SettingsFromCommandLine(command_line);
-  EXPECT_EQ(settings.msaa_samples, 0);
-}
-
 TEST(SwitchesTest, EnableEmbedderAPI) {
   {
     // enable
@@ -122,6 +104,16 @@ TEST(SwitchesTest, NoEnableImpeller) {
     EXPECT_EQ(settings.enable_impeller, false);
   }
 }
+
+#if !FLUTTER_RELEASE
+TEST(SwitchesTest, EnableAsserts) {
+  fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+      {"command", "--dart-flags=--enable-asserts"});
+  Settings settings = SettingsFromCommandLine(command_line);
+  ASSERT_EQ(settings.dart_flags.size(), 1ul);
+  EXPECT_EQ(settings.dart_flags[0], "--enable-asserts");
+}
+#endif
 
 }  // namespace testing
 }  // namespace flutter

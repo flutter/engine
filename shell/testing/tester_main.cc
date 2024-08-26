@@ -159,8 +159,7 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override {}
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override {}
 
   // |ExternalViewEmbedder|
@@ -642,6 +641,7 @@ int main(int argc, char* argv[]) {
   }
 
   settings.leak_vm = false;
+  settings.enable_platform_isolates = true;
 
   if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";

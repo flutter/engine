@@ -14,18 +14,23 @@ import os
 import subprocess
 import sys
 
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib'))
+import yaml  # pylint: disable=import-error, wrong-import-position
+
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
 
 ALL_PACKAGES = [
+    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'ci'),
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
-    os.path.join(ENGINE_DIR, 'testing', 'android_background_image'),
     os.path.join(ENGINE_DIR, 'testing', 'benchmark'),
     os.path.join(ENGINE_DIR, 'testing', 'dart'),
     os.path.join(ENGINE_DIR, 'testing', 'litetest'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'testing', 'scenario_app'),
     os.path.join(ENGINE_DIR, 'testing', 'skia_gold_client'),
     os.path.join(ENGINE_DIR, 'testing', 'smoke_test_failure'),
@@ -34,6 +39,7 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'tools', 'api_check'),
     os.path.join(ENGINE_DIR, 'tools', 'build_bucket_golden_scraper'),
     os.path.join(ENGINE_DIR, 'tools', 'clang_tidy'),
+    os.path.join(ENGINE_DIR, 'tools', 'clangd_check'),
     os.path.join(ENGINE_DIR, 'tools', 'compare_goldens'),
     os.path.join(ENGINE_DIR, 'tools', 'const_finder'),
     os.path.join(ENGINE_DIR, 'tools', 'dir_contents_diff'),
@@ -63,7 +69,14 @@ def fetch_package(pub, package):
   return 0
 
 
-def check_package(package):
+def package_uses_workspace_resolution(package):
+  pubspec = os.path.join(package, 'pubspec.yaml')
+
+  with open(pubspec) as pubspec_file:
+    return yaml.safe_load(pubspec_file).get('resolution') == 'workspace'
+
+
+def check_package_config(package):
   package_config = os.path.join(package, '.dart_tool', 'package_config.json')
   pub_count = 0
   with open(package_config) as config_file:
@@ -91,6 +104,7 @@ EXCLUDED_DIRS = [
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
     os.path.join(ENGINE_DIR, 'sky', 'packages'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'third_party'),
     os.path.join(ENGINE_DIR, 'web_sdk'),
 ]
@@ -117,7 +131,12 @@ def find_unlisted_packages():
 
 
 def main():
-  dart_sdk_bin = os.path.join(SRC_ROOT, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin')
+  # Intentionally use the Dart SDK prebuilt instead of the Flutter prebuilt
+  # (i.e. prebuilts/{platform}/dart-sdk/bin/dart) because the script has to run
+  # in a monorepo build *before* the newer Dart SDK has been built from source.
+  dart_sdk_bin = os.path.join(
+      SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
+  )
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()
@@ -135,7 +154,8 @@ def main():
   for package in ALL_PACKAGES:
     if fetch_package(pubcmd, package) != 0:
       return 1
-    pub_count = pub_count + check_package(package)
+    if not package_uses_workspace_resolution(package):
+      pub_count = pub_count + check_package_config(package)
 
   if pub_count > 0:
     return 1

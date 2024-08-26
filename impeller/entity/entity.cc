@@ -19,9 +19,7 @@
 
 namespace impeller {
 
-Entity Entity::FromSnapshot(const Snapshot& snapshot,
-                            BlendMode blend_mode,
-                            uint32_t clip_depth) {
+Entity Entity::FromSnapshot(const Snapshot& snapshot, BlendMode blend_mode) {
   auto texture_rect = Rect::MakeSize(snapshot.texture->GetSize());
 
   auto contents = TextureContents::MakeRect(texture_rect);
@@ -32,7 +30,6 @@ Entity Entity::FromSnapshot(const Snapshot& snapshot,
 
   Entity entity;
   entity.SetBlendMode(blend_mode);
-  entity.SetClipDepth(clip_depth);
   entity.SetTransform(snapshot.transform);
   entity.SetContents(contents);
   return entity;
@@ -46,8 +43,22 @@ Entity::Entity(Entity&&) = default;
 
 Entity::Entity(const Entity&) = default;
 
+Entity& Entity::operator=(Entity&&) = default;
+
 const Matrix& Entity::GetTransform() const {
   return transform_;
+}
+
+Matrix Entity::GetShaderTransform(const RenderPass& pass) const {
+  return Entity::GetShaderTransform(GetShaderClipDepth(), pass, transform_);
+}
+
+Matrix Entity::GetShaderTransform(Scalar shader_clip_depth,
+                                  const RenderPass& pass,
+                                  const Matrix& transform) {
+  return Matrix::MakeTranslation({0, 0, shader_clip_depth}) *
+         Matrix::MakeScale({1, 1, Entity::kDepthEpsilon}) *
+         pass.GetOrthographicTransform() * transform;
 }
 
 void Entity::SetTransform(const Matrix& transform) {
@@ -94,22 +105,13 @@ uint32_t Entity::GetClipDepth() const {
   return clip_depth_;
 }
 
-void Entity::SetNewClipDepth(uint32_t clip_depth) {
-  new_clip_depth_ = clip_depth;
+Scalar Entity::GetShaderClipDepth() const {
+  return Entity::GetShaderClipDepth(clip_depth_);
 }
 
-uint32_t Entity::GetNewClipDepth() const {
-  return new_clip_depth_;
-}
-
-static const Scalar kDepthEpsilon = 1.0f / std::pow(2, 18);
-
-float Entity::GetShaderClipDepth() const {
-  return std::clamp(new_clip_depth_ * kDepthEpsilon, 0.0f, 1.0f);
-}
-
-void Entity::IncrementStencilDepth(uint32_t increment) {
-  clip_depth_ += increment;
+Scalar Entity::GetShaderClipDepth(uint32_t clip_depth) {
+  Scalar result = std::clamp(clip_depth * kDepthEpsilon, 0.0f, 1.0f);
+  return std::min(result, 1.0f - kDepthEpsilon);
 }
 
 void Entity::SetBlendMode(BlendMode blend_mode) {
@@ -188,16 +190,8 @@ Scalar Entity::DeriveTextScale() const {
   return GetTransform().GetMaxBasisLengthXY();
 }
 
-Capture& Entity::GetCapture() const {
-  return capture_;
-}
-
 Entity Entity::Clone() const {
   return Entity(*this);
-}
-
-void Entity::SetCapture(Capture capture) const {
-  capture_ = std::move(capture);
 }
 
 }  // namespace impeller

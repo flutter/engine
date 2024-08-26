@@ -777,6 +777,10 @@ static char markerKey;
     void (*func)(id, SEL, id) = reinterpret_cast<void (*)(id, SEL, id)>(imp);
     func(self, selector, nil);
   }
+  if (self.clientID == nil) {
+    // The macOS may still call selector even if it is no longer a first responder.
+    return;
+  }
 
   if (selector == @selector(insertNewline:)) {
     // Already handled through text insertion (multiline) or action.
@@ -900,10 +904,14 @@ static char markerKey;
   if (_activeModel == nullptr) {
     return nil;
   }
+  NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
+  if (range.location >= text.length) {
+    return nil;
+  }
+  range.length = std::min(range.length, text.length - range.location);
   if (actualRange != nil) {
     *actualRange = range;
   }
-  NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
   NSString* substring = [text substringWithRange:range];
   return [[NSAttributedString alloc] initWithString:substring attributes:nil];
 }

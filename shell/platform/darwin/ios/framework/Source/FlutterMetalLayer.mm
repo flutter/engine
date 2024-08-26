@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
+
 #include <IOSurface/IOSurfaceObjC.h>
 #include <Metal/Metal.h>
 #include <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+
+FLUTTER_ASSERT_ARC
 
 @interface DisplayLinkManager : NSObject
 @property(class, nonatomic, readonly) BOOL maxRefreshRateEnabledOnIPhone;
@@ -46,6 +50,7 @@ extern CFTimeInterval display_link_target;
   BOOL _displayLinkForcedMaxRate;
 }
 
+- (void)onDisplayLink:(CADisplayLink*)link;
 - (void)presentTexture:(FlutterTexture*)texture;
 - (void)returnTexture:(FlutterTexture*)texture;
 
@@ -159,6 +164,26 @@ extern CFTimeInterval display_link_target;
 
 @end
 
+@interface FlutterMetalLayerDisplayLinkProxy : NSObject {
+  __weak FlutterMetalLayer* _layer;
+}
+
+@end
+
+@implementation FlutterMetalLayerDisplayLinkProxy
+- (instancetype)initWithLayer:(FlutterMetalLayer*)layer {
+  if (self = [super init]) {
+    _layer = layer;
+  }
+  return self;
+}
+
+- (void)onDisplayLink:(CADisplayLink*)link {
+  [_layer onDisplayLink:link];
+}
+
+@end
+
 @implementation FlutterMetalLayer
 
 @synthesize preferredDevice = _preferredDevice;
@@ -175,8 +200,10 @@ extern CFTimeInterval display_link_target;
     self.pixelFormat = MTLPixelFormatBGRA8Unorm;
     _availableTextures = [[NSMutableSet alloc] init];
 
-    _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
+    FlutterMetalLayerDisplayLinkProxy* proxy =
+        [[FlutterMetalLayerDisplayLinkProxy alloc] initWithLayer:self];
+    _displayLink = [CADisplayLink displayLinkWithTarget:proxy selector:@selector(onDisplayLink:)];
+    [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:NO];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didEnterBackground:)
@@ -187,6 +214,7 @@ extern CFTimeInterval display_link_target;
 }
 
 - (void)dealloc {
+  [_displayLink invalidate];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -214,7 +242,7 @@ extern CFTimeInterval display_link_target;
   if (_displayLinkPauseCountdown == 3) {
     _displayLink.paused = YES;
     if (_displayLinkForcedMaxRate) {
-      [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
+      [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:NO];
       _displayLinkForcedMaxRate = NO;
     }
   } else {
@@ -259,6 +287,9 @@ extern CFTimeInterval display_link_target;
   } else if (self.pixelFormat == MTLPixelFormatBGRA8Unorm) {
     pixelFormat = kCVPixelFormatType_32BGRA;
     bytesPerElement = 4;
+  } else if (self.pixelFormat == MTLPixelFormatBGRA10_XR) {
+    pixelFormat = kCVPixelFormatType_40ARGBLEWideGamut;
+    bytesPerElement = 8;
   } else {
     FML_LOG(ERROR) << "Unsupported pixel format: " << self.pixelFormat;
     return nil;
@@ -392,7 +423,7 @@ extern CFTimeInterval display_link_target;
     _didSetContentsDuringThisDisplayLinkPeriod = YES;
   } else if (!_displayLinkForcedMaxRate) {
     _displayLinkForcedMaxRate = YES;
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:YES];
+    [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:YES];
   }
 }
 
@@ -421,15 +452,14 @@ extern CFTimeInterval display_link_target;
 }
 
 + (BOOL)enabled {
-  static BOOL enabled = NO;
+  static BOOL enabled = YES;
   static BOOL didCheckInfoPlist = NO;
   if (!didCheckInfoPlist) {
     didCheckInfoPlist = YES;
     NSNumber* use_flutter_metal_layer =
         [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
-    if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
-      enabled = YES;
-      FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
+    if (use_flutter_metal_layer != nil && ![use_flutter_metal_layer boolValue]) {
+      enabled = NO;
     }
   }
   return enabled;

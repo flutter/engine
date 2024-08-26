@@ -24,7 +24,6 @@ tags
 Thumbs.db
 .idea
 pubspec.lock
-.vscode/
 docs/doxygen/
 xcuserdata
 
@@ -49,7 +48,6 @@ xcuserdata
 .classpath
 .project
 .settings/
-.vscode/
 
 # packages file containing multi-root paths
 .packages.generated
@@ -133,6 +131,9 @@ app.*.symbols
 # buildmoot is completed.
 # GN build support for protobufs vended by Fuchsia.
 # /build/secondary/third_party/protobuf
+
+# Build tools vended from CIPD
+/buildtools
 
 # RBE support configurations and scripts vended from CIPD
 /build/rbe

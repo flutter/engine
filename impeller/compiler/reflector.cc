@@ -348,6 +348,8 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     uniform_description.name = compiler_->get_name(var.self);
     uniform_description.location = compiler_->get_decoration(
         var.self, spv::Decoration::DecorationLocation);
+    uniform_description.binding =
+        compiler_->get_decoration(var.self, spv::Decoration::DecorationBinding);
     uniform_description.type = spir_type.basetype;
     uniform_description.rows = spir_type.vecsize;
     uniform_description.columns = spir_type.columns;
@@ -374,6 +376,8 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
 
     const auto& ubo = ubos[0];
 
+    size_t binding =
+        compiler_->get_decoration(ubo.id, spv::Decoration::DecorationBinding);
     auto members = ReadStructMembers(ubo.type_id);
     std::vector<uint8_t> struct_layout;
     size_t float_count = 0;
@@ -408,8 +412,8 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     }
     data->uniforms.emplace_back(UniformDescription{
         .name = ubo.name,
-        .location = 64,  // Magic constant that must match the descriptor set
-                         // location for fragment programs.
+        .location = binding,
+        .binding = binding,
         .type = spirv_cross::SPIRType::Struct,
         .struct_layout = std::move(struct_layout),
         .struct_float_count = float_count,
@@ -651,12 +655,15 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
       CompilerBackend::ExtendedResourceIndex::kPrimary, resource.id);
   result["ext_res_1"] = compiler_.GetExtendedMSLResourceBinding(
       CompilerBackend::ExtendedResourceIndex::kSecondary, resource.id);
+  result["relaxed_precision"] =
+      compiler_->get_decoration(
+          resource.id, spv::Decoration::DecorationRelaxedPrecision) == 1;
+  result["offset"] = offset.value_or(0u);
   auto type = ReflectType(resource.type_id);
   if (!type.has_value()) {
     return std::nullopt;
   }
   result["type"] = std::move(type.value());
-  result["offset"] = offset.value_or(0u);
   return result;
 }
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "common/settings.h"
 #define FML_USED_ON_EMBEDDER
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
@@ -122,7 +123,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
-  std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
   std::shared_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
@@ -218,7 +219,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _pluginPublications = [[NSMutableDictionary alloc] init];
   _registrars = [[NSMutableDictionary alloc] init];
   [self recreatePlatformViewController];
-
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
   _textureRegistry = [[FlutterTextureRegistryRelay alloc] initWithParent:self];
   _connections.reset(new flutter::ConnectionCollection());
@@ -271,7 +271,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)recreatePlatformViewController {
   _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-  _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
+  _platformViewsController.reset(new flutter::PlatformViewsController());
 }
 
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI {
@@ -430,7 +430,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
   _textInputPlugin.get().viewController = viewController;
-  _undoManagerPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -465,7 +464,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   _textInputPlugin.get().viewController = nil;
-  _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else if (_shell) {
@@ -497,7 +495,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterPlatformPlugin*)platformPlugin {
   return _platformPlugin.get();
 }
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
 - (FlutterTextInputPlugin*)textInputPlugin {
@@ -788,7 +786,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [NSString stringWithFormat:@"%@.%zu", labelPrefix, ++s_shellCount];
 }
 
-+ (flutter::ThreadHost)makeThreadHost:(NSString*)threadLabel {
+static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
+                                          const flutter::Settings& settings) {
   // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -800,22 +799,24 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
   }
 
-  flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
+  flutter::ThreadHost::ThreadHostConfig host_config(thread_label.UTF8String, threadHostType,
                                                     IOSPlatformThreadConfigSetter);
 
-  host_config.ui_config =
-      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::kDisplay);
+  if (!settings.enable_impeller) {
+    host_config.ui_config =
+        fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                      flutter::ThreadHost::Type::kUi, thread_label.UTF8String),
+                                  fml::Thread::ThreadPriority::kDisplay);
+  }
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kRaster, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kRaster, thread_label.UTF8String),
                                 fml::Thread::ThreadPriority::kRaster);
 
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kIo, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kIo, thread_label.UTF8String),
                                 fml::Thread::ThreadPriority::kNormal);
 
   return (flutter::ThreadHost){host_config};
@@ -860,13 +861,15 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();
-  *_threadHost = [FlutterEngine makeThreadHost:threadLabel];
+  *_threadHost = MakeThreadHost(threadLabel, settings);
 
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is synchronous.
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [self](flutter::Shell& shell) {
         [self recreatePlatformViewController];
+        self->_platformViewsController->SetTaskRunner(
+            shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
             shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners(),
             shell.GetConcurrentWorkerTaskRunner(), shell.GetIsGpuDisabledSyncSwitch());
@@ -875,10 +878,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
+  fml::RefPtr<fml::TaskRunner> ui_runner;
+  if (settings.enable_impeller) {
+    ui_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  } else {
+    ui_runner = _threadHost->ui_thread->GetTaskRunner();
+  }
   flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                     fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
                                     _threadHost->raster_thread->GetTaskRunner(),     // raster
-                                    _threadHost->ui_thread->GetTaskRunner(),         // ui
+                                    ui_runner,                                       // ui
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
@@ -1082,6 +1091,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), @(start), @(end) ]];
 }
 
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    willDismissEditMenuWithTextInputClient:(int)client {
+  [_platformChannel.get() invokeMethod:@"ContextMenu.onDismissSystemContextMenu"
+                             arguments:@[ @(client) ]];
+}
+
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {
@@ -1189,10 +1204,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Undo Manager Delegate
 
-- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-         handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
+- (void)handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
   [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
+}
+
+- (UIView<UITextInput>*)activeTextInputView {
+  return [[self textInputPlugin] textInputView];
+}
+
+- (NSUndoManager*)undoManager {
+  return self.viewController.undoManager;
 }
 
 #pragma mark - Screenshot Delegate
@@ -1446,6 +1468,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [result, context](flutter::Shell& shell) {
         [result recreatePlatformViewController];
+        result->_platformViewsController->SetTaskRunner(
+            shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
             shell, context, result->_platformViewsController, shell.GetTaskRunners());
       };

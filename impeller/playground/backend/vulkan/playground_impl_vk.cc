@@ -16,11 +16,12 @@
 #include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"
 #include "impeller/entity/vk/modern_shaders_vk.h"
 #include "impeller/fixtures/vk/fixtures_shaders_vk.h"
+#include "impeller/fixtures/vk/modern_fixtures_shaders_vk.h"
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_surface_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/vk/compute_shaders_vk.h"
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"
@@ -40,6 +41,9 @@ ShaderLibraryMappingsForPlayground() {
       std::make_shared<fml::NonOwnedMapping>(
           impeller_fixtures_shaders_vk_data,
           impeller_fixtures_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_modern_fixtures_shaders_vk_data,
+          impeller_modern_fixtures_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_vk_data,
                                              impeller_imgui_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
@@ -88,6 +92,9 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
   context_settings.shader_libraries_data = ShaderLibraryMappingsForPlayground();
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
   context_settings.enable_validation = switches_.enable_vulkan_validation;
+  context_settings.fatal_missing_validations =
+      switches_.enable_vulkan_validation;
+  ;
 
   auto context_vk = ContextVK::Create(std::move(context_settings));
   if (!context_vk || !context_vk->IsValid()) {

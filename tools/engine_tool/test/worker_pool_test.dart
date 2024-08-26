@@ -73,7 +73,10 @@ void main() {
       Environment(
         abi: ffi.Abi.macosArm64,
         engine: engine,
-        platform: FakePlatform(operatingSystem: Platform.macOS),
+        platform: FakePlatform(
+          operatingSystem: Platform.macOS,
+          pathSeparator: '/',
+        ),
         processRunner: ProcessRunner(
             processManager: FakeProcessManager(onStart: (List<String> command) {
           runHistory.add(command);
@@ -97,7 +100,7 @@ void main() {
   }
 
   test('worker pool success', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = macEnv(logger);
     final TestWorkerPoolProgressReporter reporter =
         TestWorkerPoolProgressReporter();
@@ -111,7 +114,7 @@ void main() {
   });
 
   test('worker pool failure', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = macEnv(logger);
     final TestWorkerPoolProgressReporter reporter =
         TestWorkerPoolProgressReporter();

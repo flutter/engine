@@ -20,7 +20,7 @@ void GoldenPlaygroundTest::SetTypographerContext(
 void GoldenPlaygroundTest::TearDown() {}
 
 void GoldenPlaygroundTest::SetUp() {
-  GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
+  GTEST_SKIP() << "GoldenPlaygroundTest doesn't support this backend type.";
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
@@ -37,11 +37,28 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return false;
 }
 
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
+  return false;
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const sk_sp<flutter::DisplayList>& list) {
+  return false;
+}
+
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
   return nullptr;
 }
+
+sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
+  return nullptr;
+}
+
 RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
   return {};
@@ -70,6 +87,11 @@ fml::Status GoldenPlaygroundTest::SetCapabilities(
   return fml::Status(
       fml::StatusCode::kUnimplemented,
       "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
 }
 
 }  // namespace impeller

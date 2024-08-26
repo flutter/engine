@@ -4,6 +4,8 @@
 
 #include <fuchsia/inspect/cpp/fidl.h>
 #include <fuchsia/logger/cpp/fidl.h>
+#include <fuchsia/sysmem/cpp/fidl.h>
+#include <fuchsia/sysmem2/cpp/fidl.h>
 #include <fuchsia/tracing/provider/cpp/fidl.h>
 #include <fuchsia/ui/app/cpp/fidl.h>
 #include <fuchsia/ui/composition/cpp/fidl.h>
@@ -235,6 +237,7 @@ void FlutterEmbedderTest::SetUpRealmBase() {
                     Protocol{fuchsia::logger::LogSink::Name_},
                     Protocol{fuchsia::inspect::InspectSink::Name_},
                     Protocol{fuchsia::sysmem::Allocator::Name_},
+                    Protocol{fuchsia::sysmem2::Allocator::Name_},
                     Protocol{fuchsia::tracing::provider::Registry::Name_},
                     Protocol{kVulkanLoaderServiceName},
                 },
@@ -247,6 +250,7 @@ void FlutterEmbedderTest::SetUpRealmBase() {
       .capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
                        Protocol{fuchsia::inspect::InspectSink::Name_},
                        Protocol{fuchsia::sysmem::Allocator::Name_},
+                       Protocol{fuchsia::sysmem2::Allocator::Name_},
                        Protocol{fuchsia::tracing::provider::Registry::Name_},
                        Protocol{kVulkanLoaderServiceName}},
       .source = ParentRef{},

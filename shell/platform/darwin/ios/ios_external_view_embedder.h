@@ -12,16 +12,15 @@ namespace flutter {
 
 class IOSExternalViewEmbedder : public ExternalViewEmbedder {
  public:
-  IOSExternalViewEmbedder(const std::shared_ptr<FlutterPlatformViewsController>&
-                              platform_views_controller,
-                          std::shared_ptr<IOSContext> context);
+  IOSExternalViewEmbedder(
+      const std::shared_ptr<PlatformViewsController>& platform_views_controller,
+      const std::shared_ptr<IOSContext>& context);
 
   // |ExternalViewEmbedder|
   virtual ~IOSExternalViewEmbedder() override;
 
  private:
-  const std::shared_ptr<FlutterPlatformViewsController>&
-      platform_views_controller_;
+  const std::shared_ptr<PlatformViewsController>& platform_views_controller_;
   std::shared_ptr<IOSContext> ios_context_;
 
   // |ExternalViewEmbedder|
@@ -36,8 +35,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
@@ -55,6 +53,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFlutterView(
+      int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<SurfaceFrame> frame) override;

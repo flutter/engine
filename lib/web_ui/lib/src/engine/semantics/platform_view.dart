@@ -20,12 +20,12 @@ import 'semantics.dart';
 /// See also:
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-owns
 ///   * https://bugs.webkit.org/show_bug.cgi?id=223798
-class PlatformViewRoleManager extends PrimaryRoleManager {
-  PlatformViewRoleManager(SemanticsObject semanticsObject)
+class SemanticPlatformView extends SemanticRole {
+  SemanticPlatformView(SemanticsObject semanticsObject)
       : super.withBasics(
-          PrimaryRole.platformView,
+          SemanticRoleKind.platformView,
           semanticsObject,
-          labelRepresentation: LeafLabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         );
 
   @override

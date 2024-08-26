@@ -15,10 +15,14 @@
 namespace impeller {
 
 namespace {
-// Generous padding to make sure blurs with large sigmas are fully visible.
-// Used to expand the geometry around the rrect.
+// Generous padding to make sure blurs with large sigmas are fully visible. Used
+// to expand the geometry around the rrect.  Larger sigmas have more subtle
+// gradients so they need larger padding to avoid hard cutoffs.  Sigma is
+// maximized to 3.5 since that should cover 99.95% of all samples.  3.0 should
+// cover 99.7% but that was seen to be not enough for large sigmas.
 Scalar PadForSigma(Scalar sigma) {
-  return sigma * 4.0;
+  Scalar scalar = std::min((1.0f / 47.6f) * sigma + 2.5f, 3.5f);
+  return sigma * scalar;
 }
 }  // namespace
 
@@ -98,9 +102,10 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   }
 
   VS::FrameInfo frame_info;
-  frame_info.depth = entity.GetShaderClipDepth();
-  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
-                   Matrix::MakeTranslation(positive_rect.GetOrigin());
+  frame_info.mvp = Entity::GetShaderTransform(
+      entity.GetShaderClipDepth(), pass,
+      entity.GetTransform() *
+          Matrix::MakeTranslation(positive_rect.GetOrigin()));
 
   FS::FragInfo frag_info;
   frag_info.color = color;
@@ -108,12 +113,11 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   frag_info.rect_size = Point(positive_rect.GetSize());
   frag_info.corner_radii = {std::clamp(corner_radii_.width, kEhCloseEnough,
                                        positive_rect.GetWidth() * 0.5f),
-                            std::clamp(corner_radii_.width, kEhCloseEnough,
+                            std::clamp(corner_radii_.height, kEhCloseEnough,
                                        positive_rect.GetHeight() * 0.5f)};
 
   pass.SetCommandLabel("RRect Shadow");
   pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
-  pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(
       vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
   VS::BindFrameInfo(pass,

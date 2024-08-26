@@ -53,12 +53,12 @@ class StubPictureRenderer implements PictureRenderer {
   Map<ScenePicture, ui.Rect> clipRequests = <ScenePicture, ui.Rect>{};
 }
 
-class StubFlutterView implements ui.FlutterView {
+class StubFlutterView implements EngineFlutterView {
   @override
   double get devicePixelRatio => throw UnimplementedError();
 
   @override
-  ui.Display get display => throw UnimplementedError();
+  EngineFlutterDisplay get display => throw UnimplementedError();
 
   @override
   List<ui.DisplayFeature> get displayFeatures => throw UnimplementedError();
@@ -67,23 +67,23 @@ class StubFlutterView implements ui.FlutterView {
   ui.GestureSettings get gestureSettings => throw UnimplementedError();
 
   @override
-  ui.ViewPadding get padding => throw UnimplementedError();
+  ViewPadding get padding => throw UnimplementedError();
 
   @override
-  ui.ViewConstraints get physicalConstraints => throw UnimplementedError();
+  ViewConstraints get physicalConstraints => throw UnimplementedError();
 
   @override
   ui.Size get physicalSize => const ui.Size(1000, 1000);
 
   @override
-  ui.PlatformDispatcher get platformDispatcher => throw UnimplementedError();
+  EnginePlatformDispatcher get platformDispatcher => throw UnimplementedError();
 
   @override
   void render(ui.Scene scene, {ui.Size? size}) {
   }
 
   @override
-  ui.ViewPadding get systemGestureInsets => throw UnimplementedError();
+  ViewPadding get systemGestureInsets => throw UnimplementedError();
 
   @override
   void updateSemantics(ui.SemanticsUpdate update) {
@@ -93,10 +93,60 @@ class StubFlutterView implements ui.FlutterView {
   int get viewId => throw UnimplementedError();
 
   @override
-  ui.ViewPadding get viewInsets => throw UnimplementedError();
+  ViewPadding get viewInsets => throw UnimplementedError();
 
   @override
-  ui.ViewPadding get viewPadding => throw UnimplementedError();
+  ViewPadding get viewPadding => throw UnimplementedError();
+
+  @override
+  ui.Size? debugPhysicalSizeOverride;
+
+  @override
+  bool isDisposed = false;
+
+  @override
+  PointerBinding get pointerBinding => throw UnimplementedError();
+
+  @override
+  set pointerBinding(_) {
+    throw UnimplementedError();
+  }
+
+  @override
+  ContextMenu get contextMenu => throw UnimplementedError();
+
+  @override
+  void debugForceResize() {
+    throw UnimplementedError();
+  }
+
+  @override
+  DimensionsProvider get dimensionsProvider => throw UnimplementedError();
+
+  @override
+  void dispose() {
+    throw UnimplementedError();
+  }
+
+  @override
+  DomManager get dom => throw UnimplementedError();
+
+  @override
+  EmbeddingStrategy get embeddingStrategy => throw UnimplementedError();
+
+  @override
+  MouseCursor get mouseCursor => throw UnimplementedError();
+
+  @override
+  Stream<ui.Size?> get onResize => throw UnimplementedError();
+
+  @override
+  void resize(ui.Size newPhysicalSize) {
+    throw UnimplementedError();
+  }
+
+  @override
+  EngineSemanticsOwner get semantics => throw UnimplementedError();
 }
 
 void testMain() {
@@ -128,10 +178,10 @@ void testMain() {
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
+
     expect(children.length, 1);
     final DomElement containerElement = children.first;
-    expect(
-        containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
+    expect(containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
 
     final List<DomElement> containerChildren =
         containerElement.children.toList();
@@ -152,10 +202,8 @@ void testMain() {
 
     final PlatformView platformView = PlatformView(
         1,
-        const ui.Size(100, 120),
-        const PlatformViewStyling(
-          position: PlatformViewPosition.offset(ui.Offset(50, 80)),
-        ));
+        const ui.Rect.fromLTWH(50, 80, 100, 120),
+        const PlatformViewStyling());
     final EngineRootLayer rootLayer = EngineRootLayer();
     rootLayer.slices.add(PlatformViewSlice(<PlatformView>[platformView], null));
     final EngineScene scene = EngineScene(rootLayer);
@@ -163,16 +211,23 @@ void testMain() {
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
-    expect(children.length, 1);
-    final DomElement containerElement = children.first;
-    expect(
-        containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
 
+    expect(children.length, 1);
+    final DomElement clipElement = children.first;
+    expect(clipElement.tagName, equalsIgnoringCase('flt-clip'));
+
+    final List<DomElement> clipChildren = clipElement.children.toList();
+    expect(clipChildren.length, 1);
+
+    final DomElement containerElement = clipChildren.first;
     final DomCSSStyleDeclaration style = containerElement.style;
-    expect(style.left, '25px');
-    expect(style.top, '40px');
-    expect(style.width, '50px');
-    expect(style.height, '60px');
+    expect(style.left, '');
+    expect(style.top, '');
+    expect(style.width, '100px');
+    expect(style.height, '120px');
+
+    // The heavy lifting of offsetting and sizing is done by the transform
+    expect(style.transform, 'matrix(0.5, 0, 0, 0.5, 25, 40)');
 
     debugOverrideDevicePixelRatio(null);
   });

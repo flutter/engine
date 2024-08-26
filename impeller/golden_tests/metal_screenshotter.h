@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/metal_screenshot.h"
 #include "flutter/impeller/golden_tests/screenshotter.h"
@@ -18,13 +17,17 @@ namespace testing {
 /// playground backend.
 class MetalScreenshotter : public Screenshotter {
  public:
-  MetalScreenshotter();
+  explicit MetalScreenshotter(bool enable_wide_gamut);
 
   std::unique_ptr<Screenshot> MakeScreenshot(
       AiksContext& aiks_context,
       const Picture& picture,
       const ISize& size = {300, 300},
       bool scale_content = true) override;
+
+  std::unique_ptr<Screenshot> MakeScreenshot(
+      AiksContext& aiks_context,
+      const std::shared_ptr<Texture> texture) override;
 
   PlaygroundImpl& GetPlayground() override { return *playground_; }
 

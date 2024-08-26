@@ -12,7 +12,6 @@
 #include <unordered_set>
 
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
@@ -470,7 +469,8 @@ class DartIsolate : public UIDartState {
   ///
   [[nodiscard]] bool Initialize(Dart_Isolate dart_isolate);
 
-  void SetMessageHandlingTaskRunner(const fml::RefPtr<fml::TaskRunner>& runner);
+  void SetMessageHandlingTaskRunner(const fml::RefPtr<fml::TaskRunner>& runner,
+                                    bool post_directly_to_runner);
 
   bool LoadKernel(const std::shared_ptr<const fml::Mapping>& mapping,
                   bool last_piece);

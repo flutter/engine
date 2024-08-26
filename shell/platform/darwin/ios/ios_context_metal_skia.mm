@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #import "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 
 #include "flutter/common/graphics/persistent_cache.h"
@@ -10,9 +12,11 @@
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
-IOSContextMetalSkia::IOSContextMetalSkia(MsaaSampleCount msaa_samples) : IOSContext(msaa_samples) {
+IOSContextMetalSkia::IOSContextMetalSkia() {
   darwin_context_metal_ = fml::scoped_nsobject<FlutterDarwinContextMetalSkia>{
       [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]};
 }
@@ -52,8 +56,9 @@ std::unique_ptr<Texture> IOSContextMetalSkia::CreateExternalTexture(
     fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
   return std::make_unique<IOSExternalTextureMetal>(
       fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>{
-          [[darwin_context_metal_ createExternalTextureWithIdentifier:texture_id
-                                                              texture:texture] retain]});
+          [darwin_context_metal_ createExternalTextureWithIdentifier:texture_id texture:texture]});
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

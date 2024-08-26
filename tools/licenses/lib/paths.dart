@@ -22,6 +22,7 @@ final Set<String> skippedPaths = <String>{
   r'buildtools', // only used by build
   r'flutter/build',
   r'flutter/build_overrides', // only used by build
+  r'flutter/buildtools', // only used by build
   r'flutter/ci',
   r'flutter/docs',
   r'flutter/flutter_frontend_server',
@@ -30,6 +31,8 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
+  r'flutter/third_party/android_tools', // excluded on advice
   r'flutter/third_party/angle/android',
   r'flutter/third_party/angle/doc',
   r'flutter/third_party/angle/extensions',
@@ -46,6 +49,27 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'flutter/third_party/boringssl/src/rust', // rust-related code is not shipped
   r'flutter/third_party/boringssl/src/util', // code generators, not shipped
+  r'flutter/third_party/dart/benchmarks', // not shipped in binary
+  r'flutter/third_party/dart/build', // not shipped in binary
+  r'flutter/third_party/dart/docs', // not shipped in binary
+  r'flutter/third_party/dart/pkg', // packages that don't become part of the binary (e.g. the analyzer)
+  r'flutter/third_party/dart/runtime/bin/ffi_test',
+  r'flutter/third_party/dart/runtime/docs',
+  r'flutter/third_party/dart/runtime/vm/service',
+  r'flutter/third_party/dart/sdk/lib/html/doc',
+  r'flutter/third_party/dart/sdk/lib/svg/dart2js', // generated from other sources
+  r'flutter/third_party/dart/third_party/binary_size', // not linked in
+  r'flutter/third_party/dart/third_party/binaryen', // not linked in
+  r'flutter/third_party/dart/third_party/d3', // Siva says "that is the charting library used by the binary size tool"
+  r'flutter/third_party/dart/third_party/d8', // testing tool for dart2js
+  r'flutter/third_party/dart/third_party/devtools', // not linked in
+  r'flutter/third_party/dart/third_party/fallback_root_certificates/certdata.pem',
+  r'flutter/third_party/dart/third_party/fallback_root_certificates/certdata.txt',
+  r'flutter/third_party/dart/third_party/firefox_jsshell', // testing tool for dart2js
+  r'flutter/third_party/dart/third_party/pkg',
+  r'flutter/third_party/dart/third_party/pkg_tested',
+  r'flutter/third_party/dart/third_party/requirejs', // only used by DDC
+  r'flutter/third_party/dart/tools', // not shipped in binary
   r'flutter/third_party/depot_tools', // only used for the Windows build system.
   r'flutter/third_party/expat/expat/doc',
   r'flutter/third_party/expat/expat/win32/expat.iss',
@@ -64,10 +88,12 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
   r'flutter/third_party/google_fonts_for_unit_tests', // only used in web unit tests
+  r'flutter/third_party/gradle',
   r'flutter/third_party/harfbuzz/docs',
   r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
   r'flutter/third_party/icu/filters',
   r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/patches', // patches added by Chromium that are already applied to the code base
   r'flutter/third_party/icu/scripts',
   r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
   r'flutter/third_party/icu/source/config',
@@ -79,8 +105,16 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/inja/doc', // documentation
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
   r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
+  r'flutter/third_party/java', // only used for Android builds
   r'flutter/third_party/json/docs',
+  r'flutter/third_party/libcxx/benchmarks',
+  r'flutter/third_party/libcxx/docs',
+  r'flutter/third_party/libcxx/src/support/solaris',
+  r'flutter/third_party/libcxx/utils',
+  r'flutter/third_party/libcxxabi/www',
+  r'flutter/third_party/libpng/ci', // not linked in
   r'flutter/third_party/libpng/contrib', // not linked in
+  r'flutter/third_party/libpng/loongarch', // not linked in
   r'flutter/third_party/libpng/mips', // not linked in
   r'flutter/third_party/libpng/powerpc', // not linked in
   r'flutter/third_party/libpng/projects', // not linked in
@@ -139,7 +173,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/skia/third_party/vello', // not linked in
   r'flutter/third_party/skia/tools', // contains nothing that ends up in the binary executable
   r'flutter/third_party/stb',
-  r'flutter/third_party/swiftshader', // only used on hosts for tests
+  r'flutter/third_party/swiftshader/third_party', // See: https://github.com/flutter/flutter/issues/145726
   r'flutter/third_party/test_shaders', // for tests only
   r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
@@ -174,6 +208,8 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/wuffs/docs',
   r'flutter/third_party/wuffs/script',
   r'flutter/third_party/yapf', // only used for code formatting
+  r'flutter/third_party/zlib/contrib/minizip/miniunz.c', // sample file
+  r'flutter/third_party/zlib/contrib/minizip/minizip.c', // sample file
   r'flutter/tools',
   r'flutter/web_sdk', // this code is not linked into Flutter apps; it's only used by engine tests and tools
   r'fuchsia/sdk/linux/docs',
@@ -186,40 +222,8 @@ final Set<String> skippedPaths = <String>{
   r'fuchsia/sdk/mac/NOTICE.fuchsia',
   r'fuchsia/sdk/mac/tools',
   r'out', // output of build
-  r'third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
   r'third_party/android_tools', // excluded on advice
-  r'third_party/dart/benchmarks', // not shipped in binary
-  r'third_party/dart/build', // not shipped in binary
-  r'third_party/dart/docs', // not shipped in binary
-  r'third_party/dart/pkg', // packages that don't become part of the binary (e.g. the analyzer)
-  r'third_party/dart/runtime/bin/ffi_test',
-  r'third_party/dart/runtime/docs',
-  r'third_party/dart/runtime/vm/service',
-  r'third_party/dart/sdk/lib/html/doc',
-  r'third_party/dart/sdk/lib/svg/dart2js', // generated from other sources
-  r'third_party/dart/third_party/binary_size', // not linked in
-  r'third_party/dart/third_party/binaryen', // not linked in
-  r'third_party/dart/third_party/d3', // Siva says "that is the charting library used by the binary size tool"
-  r'third_party/dart/third_party/d8', // testing tool for dart2js
-  r'third_party/dart/third_party/devtools', // not linked in
-  r'third_party/dart/third_party/fallback_root_certificates/certdata.pem',
-  r'third_party/dart/third_party/fallback_root_certificates/certdata.txt',
-  r'third_party/dart/third_party/firefox_jsshell', // testing tool for dart2js
-  r'third_party/dart/third_party/pkg',
-  r'third_party/dart/third_party/pkg_tested',
-  r'third_party/dart/third_party/requirejs', // only used by DDC
-  r'third_party/dart/tools', // not shipped in binary
-  r'third_party/gradle',
-  r'third_party/java', // only used for Android builds
-  r'third_party/libcxx/benchmarks',
-  r'third_party/libcxx/docs',
-  r'third_party/libcxx/src/support/solaris',
-  r'third_party/libcxx/utils',
-  r'third_party/libcxxabi/www',
   r'third_party/libxml', // dependency of the testing system that we don't actually use
-  r'third_party/web_dependencies/canvaskit', // redundant; covered by Skia dependencies
-  r'third_party/zlib/contrib/minizip/miniunz.c', // sample file
-  r'third_party/zlib/contrib/minizip/minizip.c', // sample file
   r'tools', // not distributed in binary
 };
 
@@ -465,7 +469,7 @@ final List<Pattern> skippedFilePatterns = <Pattern>[
   RegExp(r'^flutter/third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
+  RegExp(r'^flutter/third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^flutter/third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
-  RegExp(r'^third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(r'^third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
+  RegExp(r'^flutter/third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
 ];

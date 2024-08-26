@@ -49,14 +49,14 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     case fml::Thread::ThreadPriority::kDisplay: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::kRaster: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -94,10 +94,12 @@ AndroidShellHolder::AndroidShellHolder(
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
-  host_config.ui_config = fml::Thread::ThreadConfig(
-      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::kUi, thread_label),
-      fml::Thread::ThreadPriority::kDisplay);
+  if (!settings.merged_platform_ui_thread) {
+    host_config.ui_config = fml::Thread::ThreadConfig(
+        flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+            flutter::ThreadHost::Type::kUi, thread_label),
+        fml::Thread::ThreadPriority::kDisplay);
+  }
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
           flutter::ThreadHost::Type::kRaster, thread_label),
@@ -118,8 +120,7 @@ AndroidShellHolder::AndroidShellHolder(
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             shell.GetSettings()
-                .enable_software_rendering,   // use software rendering
-            shell.GetSettings().msaa_samples  // msaa sample count
+                .enable_software_rendering  // use software rendering
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         return platform_view_android;
@@ -138,7 +139,13 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
-  ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  if (settings.merged_platform_ui_thread) {
+    FML_LOG(IMPORTANT)
+        << "Warning: Using highly experimental merged thread mode.";
+    ui_runner = platform_runner;
+  } else {
+    ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  }
   io_runner = thread_host_->io_thread->GetTaskRunner();
 
   flutter::TaskRunners task_runners(thread_label,     // label

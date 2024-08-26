@@ -234,36 +234,20 @@ static const CGFloat kCompareAccuracy = 0.001;
   XCTAssertEqual(platform_view2.frame.size.width, 250);
   XCTAssertEqual(platform_view2.frame.size.height, 250);
 
-  XCUIElement* overlay1 = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay1 = app.otherElements[@"platform_view[1].overlay[0]"];
   XCTAssertTrue(overlay1.exists);
   XCTAssertEqual(overlay1.frame.origin.x, 25);
-  XCTAssertEqual(overlay1.frame.origin.y, 300);
+  XCTAssertEqual(overlay1.frame.origin.y, 0);
   XCTAssertEqual(overlay1.frame.size.width, 225);
-  XCTAssertEqual(overlay1.frame.size.height, 200);
+  XCTAssertEqual(overlay1.frame.size.height, 500);
 
-  XCUIElement* overlay2 = app.otherElements[@"platform_view[1].overlay[0]"];
-  XCTAssertTrue(overlay2.exists);
-  XCTAssertEqual(overlay2.frame.origin.x, 25);
-  XCTAssertEqual(overlay2.frame.origin.y, 0);
-  XCTAssertEqual(overlay2.frame.size.width, 225);
-  XCTAssertEqual(overlay2.frame.size.height, 250);
-
-  XCUIElement* overlayView0 = app.otherElements[@"platform_view[0].overlay_view[0]"];
+  XCUIElement* overlayView0 = app.otherElements[@"platform_view[1].overlay_view[0]"];
   XCTAssertTrue(overlayView0.exists);
   // Overlay should always be the same frame as the app.
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.size.width, app.frame.size.width, kCompareAccuracy);
   XCTAssertEqualWithAccuracy(overlayView0.frame.size.height, app.frame.size.height,
-                             kCompareAccuracy);
-
-  XCUIElement* overlayView1 = app.otherElements[@"platform_view[1].overlay_view[0]"];
-  XCTAssertTrue(overlayView1.exists);
-  // Overlay should always be the same frame as the app.
-  XCTAssertEqualWithAccuracy(overlayView1.frame.origin.x, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView1.frame.origin.y, app.frame.origin.x, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView1.frame.size.width, app.frame.size.width, kCompareAccuracy);
-  XCTAssertEqualWithAccuracy(overlayView1.frame.size.height, app.frame.size.height,
                              kCompareAccuracy);
 }
 
@@ -305,4 +289,59 @@ static const CGFloat kCompareAccuracy = 0.001;
   XCTAssertFalse(overlayView1.exists);
 }
 
+// Platform view surrounded by adjacent layers on each side should not create any overlays.
+//      +----+
+//      | B  |
+//  +---+----+---+
+//  | A | PV | C |
+//  +---+----+---+
+//      | D  |
+//      +----+
+- (void)testPlatformViewsWithAdjacentSurroundingLayersAndFractionalCoordinate {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-surrounding-layers-fractional-coordinate" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
+  XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
+
+  CGFloat scale = [UIScreen mainScreen].scale;
+  XCTAssertEqual(platform_view.frame.origin.x * scale, 100.5);
+  XCTAssertEqual(platform_view.frame.origin.y * scale, 100.5);
+  XCTAssertEqual(platform_view.frame.size.width * scale, 100);
+  XCTAssertEqual(platform_view.frame.size.height * scale, 100);
+
+  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssertFalse(overlay.exists);
+}
+
+// Platform view partially intersect with a layer in fractional coordinate.
+// +-------+
+// |       |
+// | PV +--+--+
+// |    |     |
+// +----+  A  |
+//      |     |
+//      +-----+
+- (void)testPlatformViewsWithPartialIntersectionAndFractionalCoordinate {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-partial-intersection-fractional-coordinate" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
+  XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
+
+  CGFloat scale = [UIScreen mainScreen].scale;
+  XCTAssertEqual(platform_view.frame.origin.x * scale, 0.5);
+  XCTAssertEqual(platform_view.frame.origin.y * scale, 0.5);
+  XCTAssertEqual(platform_view.frame.size.width * scale, 100);
+  XCTAssertEqual(platform_view.frame.size.height * scale, 100);
+
+  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssert(overlay.exists);
+
+  // We want to make sure the overlay covers the edge (which is at 100.5).
+  XCTAssertEqual(CGRectGetMaxX(overlay.frame) * scale, 101);
+  XCTAssertEqual(CGRectGetMaxY(overlay.frame) * scale, 101);
+}
 @end

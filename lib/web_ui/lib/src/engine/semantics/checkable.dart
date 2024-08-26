@@ -49,13 +49,13 @@ _CheckableKind _checkableKindFromSemanticsFlag(
 /// See also [ui.SemanticsFlag.hasCheckedState], [ui.SemanticsFlag.isChecked],
 /// [ui.SemanticsFlag.isInMutuallyExclusiveGroup], [ui.SemanticsFlag.isToggled],
 /// [ui.SemanticsFlag.hasToggledState]
-class Checkable extends PrimaryRoleManager {
-  Checkable(SemanticsObject semanticsObject)
+class SemanticCheckable extends SemanticRole {
+  SemanticCheckable(SemanticsObject semanticsObject)
       : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
         super.withBasics(
-          PrimaryRole.checkable,
+          SemanticRoleKind.checkable,
           semanticsObject,
-          labelRepresentation: LeafLabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {
     addTappable();
   }

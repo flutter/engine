@@ -233,7 +233,21 @@ class ShaderMaskEngineLayer extends _EngineLayerWrapper {
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
 /// it to the scene using [addPicture].
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [SceneBuilder] objects ([RendererBinding.createSceneBuilder]) that allows
+/// tests to hook into the scene creation logic. When creating a [SceneBuilder]
+/// in the context of the Flutter framework, consider calling
+/// [RendererBinding.createSceneBuilder] instead of calling the
+/// [SceneBuilder.new] constructor directly.
+///
+/// This does not apply when using the `dart:ui` API directly, without using the
+/// Flutter framework bindings, `flutter_test` framework, et al.
 abstract class SceneBuilder {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   factory SceneBuilder() = _NativeSceneBuilder;
 
   /// Pushes a transform operation onto the operation stack.
@@ -532,37 +546,6 @@ abstract class SceneBuilder {
     double width = 0.0,
     double height = 0.0,
   });
-
-  /// Sets a threshold after which additional debugging information should be recorded.
-  ///
-  /// Currently this interface is difficult to use by end-developers. If you're
-  /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  /// We'll hopefully be able to figure out how to make this feature more useful
-  /// to you.
-  void setRasterizerTracingThreshold(int frameInterval);
-
-  /// Sets whether the raster cache should checkerboard cached entries. This is
-  /// only useful for debugging purposes.
-  ///
-  /// The compositor can sometimes decide to cache certain portions of the
-  /// widget hierarchy. Such portions typically don't change often from frame to
-  /// frame and are expensive to render. This can speed up overall rendering. However,
-  /// there is certain upfront cost to constructing these cache entries. And, if
-  /// the cache entries are not used very often, this cost may not be worth the
-  /// speedup in rendering of subsequent frames. If the developer wants to be certain
-  /// that populating the raster cache is not causing stutters, this option can be
-  /// set. Depending on the observations made, hints can be provided to the compositor
-  /// that aid it in making better decisions about caching.
-  ///
-  /// Currently this interface is difficult to use by end-developers. If you're
-  /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  void setCheckerboardRasterCacheImages(bool checkerboard);
-
-  /// Sets whether the compositor should checkerboard layers that are rendered
-  /// to offscreen bitmaps.
-  ///
-  /// This is only useful for debugging purposes.
-  void setCheckerboardOffscreenLayers(bool checkerboard);
 
   /// Finishes building the scene.
   ///
@@ -932,18 +915,6 @@ base class _NativeSceneBuilder extends NativeFieldWrapperClass1 implements Scene
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Int64)>(symbol: 'SceneBuilder::addPlatformView', isLeaf: true)
   external void _addPlatformView(double dx, double dy, double width, double height, int viewId);
-
-  @override
-  @Native<Void Function(Pointer<Void>, Uint32)>(symbol: 'SceneBuilder::setRasterizerTracingThreshold', isLeaf: true)
-  external void setRasterizerTracingThreshold(int frameInterval);
-
-  @override
-  @Native<Void Function(Pointer<Void>, Bool)>(symbol: 'SceneBuilder::setCheckerboardRasterCacheImages', isLeaf: true)
-  external void setCheckerboardRasterCacheImages(bool checkerboard);
-
-  @override
-  @Native<Void Function(Pointer<Void>, Bool)>(symbol: 'SceneBuilder::setCheckerboardOffscreenLayers', isLeaf: true)
-  external void setCheckerboardOffscreenLayers(bool checkerboard);
 
   @override
   Scene build() {

@@ -22,19 +22,17 @@ import 'package:ui/ui.dart' as ui;
 /// contents is less than the size of the viewport the browser snaps
 /// "scrollTop" back to zero. If there is more content than available in the
 /// viewport "scrollTop" may take positive values.
-class Scrollable extends PrimaryRoleManager {
-  Scrollable(SemanticsObject semanticsObject)
+class SemanticScrollable extends SemanticRole {
+  SemanticScrollable(SemanticsObject semanticsObject)
       : super.withBasics(
-          PrimaryRole.scrollable,
+          SemanticRoleKind.scrollable,
           semanticsObject,
-          labelRepresentation: LeafLabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {
-    _scrollOverflowElement.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0'
-      // Ignore pointer events since this is a dummy element.
-      ..pointerEvents = 'none';
-    append(_scrollOverflowElement);
+    // Mark as group to prevent the browser from merging this element along with
+    // all the children into one giant node. This is what happened with the
+    // repro provided in https://github.com/flutter/flutter/issues/130950.
+    setAriaRole('group');
   }
 
   /// Disables browser-driven scrolling in the presence of pointer events.
@@ -95,6 +93,20 @@ class Scrollable extends PrimaryRoleManager {
         }
       }
     }
+  }
+
+  @override
+  void initState() {
+    // Scrolling is controlled by setting overflow-y/overflow-x to 'scroll`. The
+    // default overflow = "visible" needs to be unset.
+    semanticsObject.element.style.overflow = '';
+
+    _scrollOverflowElement.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0'
+      // Ignore pointer events since this is a dummy element.
+      ..pointerEvents = 'none';
+    append(_scrollOverflowElement);
   }
 
   @override

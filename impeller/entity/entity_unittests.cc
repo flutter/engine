@@ -12,6 +12,7 @@
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -38,6 +39,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -922,6 +924,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
+      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -946,10 +949,12 @@ TEST_P(EntityTest, BlendingModeOptions) {
 
       VS::FrameInfo frame_info;
       frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
-      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(
           pass, context.GetTransientsBuffer().EmplaceUniform(frame_info));
-
+      FS::FragInfo frag_info;
+      frag_info.color = color.Premultiply();
+      FS::BindFragInfo(
+          pass, context.GetTransientsBuffer().EmplaceUniform(frame_info));
       return pass.Draw().ok();
     };
 
@@ -1414,202 +1419,6 @@ TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
   }
 }
 
-TEST_P(EntityTest, DrawAtlasNoColor) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kModulate);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasWithColorSimple) {
-  // Draws the image as four squares stiched together. Because blend modes
-  // aren't implented this ends up as four solid color blocks.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kSourceATop);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  auto transform = Matrix::MakeScale(GetContentScale());
-  Entity e;
-  e.SetTransform(transform);
-  e.SetContents(contents);
-
-  ASSERT_EQ(contents->GetCoverage(e).value(),
-            Rect::MakeSize(size).TransformBounds(transform));
-
-  contents->SetCullRect(Rect::MakeLTRB(0, 0, 10, 10));
-
-  ASSERT_EQ(contents->GetCoverage(e).value(),
-            Rect::MakeLTRB(0, 0, 10, 10).TransformBounds(transform));
-}
-
-TEST_P(EntityTest, DrawAtlasWithOpacity) {
-  // Draws the image as four squares stiched together slightly
-  // opaque
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-  contents->SetAlpha(0.5);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
-TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, size.width, size.height)};
-  std::vector<Matrix> transforms = {Matrix::MakeTranslation({0, 0, 0})};
-  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas);
-  contents->SetBlendMode(BlendMode::kSource);
-
-  Entity e;
-  e.SetTransform(Matrix::MakeScale(GetContentScale()));
-  e.SetContents(contents);
-
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
-}
-
 TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
   // No transform
   {
@@ -2027,69 +1836,6 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(EntityTest, AtlasContentsSubAtlas) {
-  auto boston = CreateTextureForFixture("boston.jpg");
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Red(),
-        Color::Red(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors and sample rects are the same, there should
-    // only be a single entry in the sub atlas.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
-  }
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Green(),
-        Color::Blue(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors are different, there are three entires.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
-
-    // The translations are kept but the sample rects point into
-    // different parts of the sub atlas.
-    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[1],
-              Rect::MakeXYWH(11, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[2],
-              Rect::MakeXYWH(22, 0, 10, 10));
-  }
-}
-
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {
   Vector3 yuv;
   switch (yuv_color_space) {
@@ -2133,6 +1879,9 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
       uv_data.push_back(j % 2 == 0 ? u : v);
     }
   }
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+
   impeller::TextureDescriptor y_texture_descriptor;
   y_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   y_texture_descriptor.format = PixelFormat::kR8UNormInt;
@@ -2140,9 +1889,10 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto y_texture =
       context->GetResourceAllocator()->CreateTexture(y_texture_descriptor);
   auto y_mapping = std::make_shared<fml::DataMapping>(y_data);
-  if (!y_texture->SetContents(y_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into Y texture.";
-  }
+  auto y_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*y_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(y_mapping_buffer), y_texture);
 
   impeller::TextureDescriptor uv_texture_descriptor;
   uv_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
@@ -2151,8 +1901,14 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto uv_texture =
       context->GetResourceAllocator()->CreateTexture(uv_texture_descriptor);
   auto uv_mapping = std::make_shared<fml::DataMapping>(uv_data);
-  if (!uv_texture->SetContents(uv_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into UV texture.";
+  auto uv_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*uv_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(uv_mapping_buffer), uv_texture);
+
+  if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+      !context->GetCommandQueue()->Submit({cmd_buffer}).ok()) {
+    FML_DLOG(ERROR) << "Could not copy contents into Y/UV texture.";
   }
 
   return {y_texture, uv_texture};
@@ -2161,7 +1917,8 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
 TEST_P(EntityTest, YUVToRGBFilter) {
   if (GetParam() == PlaygroundBackend::kOpenGLES) {
     // TODO(114588) : Support YUV to RGB filter on OpenGLES backend.
-    GTEST_SKIP_("YUV to RGB filter is not supported on OpenGLES backend yet.");
+    GTEST_SKIP()
+        << "YUV to RGB filter is not supported on OpenGLES backend yet.";
   }
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
@@ -2200,7 +1957,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool expect_dirty = true;
-  Pipeline<PipelineDescriptor>* first_pipeline = nullptr;
+  Pipeline<PipelineDescriptor>* first_pipeline;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     EXPECT_EQ(runtime_stage->IsDirty(), expect_dirty);
 
@@ -2238,7 +1995,10 @@ TEST_P(EntityTest, RuntimeEffect) {
   // Simulate some renders and hot reloading of the shader.
   auto content_context = GetContentContext();
   {
-    RenderTarget target;
+    RenderTarget target =
+        content_context->GetRenderTargetCache()->CreateOffscreen(
+            *content_context->GetContext(), {1, 1}, 1u);
+
     testing::MockRenderPass mock_pass(GetContext(), target);
     callback(*content_context, mock_pass);
     callback(*content_context, mock_pass);
@@ -2252,10 +2012,7 @@ TEST_P(EntityTest, RuntimeEffect) {
     expect_dirty = true;
 
     callback(*content_context, mock_pass);
-    callback(*content_context, mock_pass);
   }
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
@@ -2305,6 +2062,20 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
                   .has_value());
 }
 
+TEST_P(EntityTest, RuntimeEffectCanPrecache) {
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  auto contents = std::make_shared<RuntimeEffectContents>();
+  contents->SetRuntimeStage(runtime_stage);
+
+  EXPECT_TRUE(contents->BootstrapShader(*GetContentContext()));
+}
+
 TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   if (GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP() << "Test only applies to Vulkan";
@@ -2319,7 +2090,6 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
 
   auto contents = std::make_shared<RuntimeEffectContents>();
   contents->SetGeometry(Geometry::MakeCover());
-
   contents->SetRuntimeStage(runtime_stage);
 
   struct FragUniforms {
@@ -2338,7 +2108,9 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   entity.SetContents(contents);
 
   auto context = GetContentContext();
-  RenderTarget target;
+  RenderTarget target = context->GetRenderTargetCache()->CreateOffscreen(
+      *context->GetContext(), {1, 1}, 1u);
+
   testing::MockRenderPass pass(GetContext(), target);
   ASSERT_TRUE(contents->Render(*context, entity, pass));
   ASSERT_EQ(pass.GetCommands().size(), 1u);
@@ -2392,26 +2164,6 @@ TEST_P(EntityTest, InheritOpacityTest) {
   ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
   ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
-
-  // Text contents can accept opacity if the text frames do not
-  // overlap
-  SkFont font = flutter::testing::CreateTestFontOfSize(30);
-  auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
-  auto lazy_glyph_atlas =
-      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
-  lazy_glyph_atlas->AddTextFrame(*frame, 1.0f);
-
-  auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(frame);
-  text_contents->SetColor(Color::Blue().WithAlpha(0.5));
-
-  ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
-
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
 
   // Clips and restores trivially accept opacity.
   ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));
@@ -2513,7 +2265,11 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
-  EXPECT_LT(transform.e[0][0], 0.f);
+  // Note that e[0][0] used to be tested here, but it was -epsilon solely
+  // due to floating point inaccuracy in the transcendental trig functions.
+  // e[1][0] is the intended negative value that we care about (-1.0) as it
+  // comes from the rotation of pi/2.
+  EXPECT_LT(transform.e[1][0], 0.0f);
   auto coverage = geometry->GetCoverage(transform);
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
 }
@@ -2577,24 +2333,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
-TEST_P(EntityTest, PointFieldGeometryDivisions) {
-  // Square always gives 4 divisions.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
-
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
-  // Caps at 140.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
-}
-
 TEST_P(EntityTest, PointFieldGeometryCoverage) {
   std::vector<Point> points = {{10, 20}, {100, 200}};
   auto geometry = Geometry::MakePointField(points, 5.0, false);
@@ -2628,6 +2366,7 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f, 12), 48.0f);
 }
 
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
@@ -2683,22 +2422,23 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
   auto content_context = GetContentContext();
 
-  auto default_color_burn = content_context->GetBlendColorBurnPipeline({
+  auto default_gyph = content_context->GetGlyphAtlasPipeline({
       .color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
       .has_depth_stencil_attachments = false,
   });
-  auto alt_color_burn = content_context->GetBlendColorBurnPipeline(
+  auto alt_gyph = content_context->GetGlyphAtlasPipeline(
       {.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
        .has_depth_stencil_attachments = true});
 
-  ASSERT_NE(default_color_burn, alt_color_burn);
-  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
-            alt_color_burn->GetDescriptor().GetSpecializationConstants());
+  EXPECT_NE(default_gyph, alt_gyph);
+  EXPECT_EQ(default_gyph->GetDescriptor().GetSpecializationConstants(),
+            alt_gyph->GetDescriptor().GetSpecializationConstants());
 
-  auto decal_supported = static_cast<Scalar>(
-      GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
-  std::vector<Scalar> expected_constants = {5, decal_supported};
-  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+  auto use_a8 = GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
+                PixelFormat::kA8UNormInt;
+
+  std::vector<Scalar> expected_constants = {static_cast<Scalar>(use_a8)};
+  EXPECT_EQ(default_gyph->GetDescriptor().GetSpecializationConstants(),
             expected_constants);
 }
 
@@ -2790,12 +2530,93 @@ TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
                     .Close()
                     .TakePath();
     GeometryResult result = get_result(path);
-    if constexpr (ContentContext::kEnableStencilThenCover) {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
-    } else {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
-    }
+    EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
   }
+}
+
+TEST_P(EntityTest, FailOnValidationError) {
+  if (GetParam() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Validation is only fatal on Vulkan backend.";
+  }
+  EXPECT_DEATH(
+      // The easiest way to trigger a validation error is to try to compile
+      // a shader with an unsupported pixel format.
+      GetContentContext()->GetBlendColorBurnPipeline({
+          .color_attachment_pixel_format = PixelFormat::kUnknown,
+          .has_depth_stencil_attachments = false,
+      }),
+      "");
+}
+
+TEST_P(EntityTest, CanComputeGeometryForEmptyPathsWithoutCrashing) {
+  PathBuilder builder = {};
+  builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
+  Path path = builder.TakePath();
+
+  EXPECT_TRUE(path.GetBoundingBox()->IsEmpty());
+
+  auto geom = Geometry::MakeFillPath(path);
+
+  Entity entity;
+  RenderTarget target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreen(
+          *GetContext(), {1, 1}, 1u);
+  testing::MockRenderPass render_pass(GetContext(), target);
+  auto position_result =
+      geom->GetPositionBuffer(*GetContentContext(), entity, render_pass);
+
+  EXPECT_EQ(position_result.vertex_buffer.vertex_count, 0u);
+
+  EXPECT_EQ(geom->GetResultMode(), GeometryResult::Mode::kNormal);
+}
+
+TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
+  PathBuilder builder = {};
+  builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
+  Path path = builder.TakePath();
+
+  EXPECT_TRUE(path.GetBoundingBox()->IsEmpty());
+
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
+}
+
+TEST_P(EntityTest, DrawSuperEllipse) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // UI state.
+    static float alpha = 10;
+    static float beta = 10;
+    static float radius = 40;
+    static int degree = 4;
+    static Color color = Color::Red();
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Alpha", &alpha, 0, 100);
+    ImGui::SliderFloat("Beta", &beta, 0, 100);
+    ImGui::SliderInt("Degreee", &degree, 1, 20);
+    ImGui::SliderFloat("Radius", &radius, 0, 400);
+    ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
+    ImGui::End();
+
+    auto contents = std::make_shared<SolidColorContents>();
+    contents->SetColor(color);
+    contents->SetGeometry(std::make_shared<SuperellipseGeometry>(
+        Point{400, 400}, radius, degree, alpha, beta));
+
+    Entity entity;
+    entity.SetContents(contents);
+
+    return entity.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

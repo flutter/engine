@@ -25,6 +25,7 @@
 #include "fml/message_loop_task_queues.h"
 #include "fml/task_source.h"
 #include "fml/time/time_point.h"
+#include "third_party/dart/runtime/include/bin/native_assets_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -504,9 +505,12 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
   }
 
-  SetMessageHandlingTaskRunner(is_platform_isolate_
-                                   ? GetTaskRunners().GetPlatformTaskRunner()
-                                   : GetTaskRunners().GetUITaskRunner());
+  if (is_platform_isolate_) {
+    SetMessageHandlingTaskRunner(GetTaskRunners().GetPlatformTaskRunner(),
+                                 true);
+  } else {
+    SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(), false);
+  }
 
   if (tonic::CheckAndHandleError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
@@ -562,30 +566,41 @@ void DartIsolate::LoadLoadingUnitError(intptr_t loading_unit_id,
 }
 
 void DartIsolate::SetMessageHandlingTaskRunner(
-    const fml::RefPtr<fml::TaskRunner>& runner) {
+    const fml::RefPtr<fml::TaskRunner>& runner,
+    bool post_directly_to_runner) {
   if (!runner) {
     return;
   }
 
   message_handling_task_runner_ = runner;
 
-  message_handler().Initialize([runner](std::function<void()> task) {
+  tonic::DartMessageHandler::TaskDispatcher dispatcher;
+
 #ifdef OS_FUCHSIA
-    runner->PostTask([task = std::move(task)]() {
-      TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
-      task();
-    });
-#else
-    auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
-    task_queues->RegisterTask(
-        runner->GetTaskQueueId(),
-        [task = std::move(task)]() {
-          TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
-          task();
-        },
-        fml::TimePoint::Now(), fml::TaskSourceGrade::kDartEventLoop);
+  post_directly_to_runner = true;
 #endif
-  });
+
+  if (post_directly_to_runner) {
+    dispatcher = [runner](std::function<void()> task) {
+      runner->PostTask([task = std::move(task)]() {
+        TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
+        task();
+      });
+    };
+  } else {
+    dispatcher = [runner](std::function<void()> task) {
+      auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+      task_queues->RegisterTask(
+          runner->GetTaskQueueId(),
+          [task = std::move(task)]() {
+            TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
+            task();
+          },
+          fml::TimePoint::Now(), fml::TaskSourceGrade::kDartEventLoop);
+    };
+  }
+
+  message_handler().Initialize(dispatcher);
 }
 
 // Updating thread names here does not change the underlying OS thread names.
@@ -1151,6 +1166,27 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
   return true;
 }
 
+static void* NativeAssetsDlopenRelative(const char* path, char** error) {
+  auto* isolate_group_data =
+      static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+          Dart_CurrentIsolateGroupData());
+  const std::string& script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
+  return dart::bin::NativeAssets::DlopenRelative(path, script_uri.data(),
+                                                 error);
+}
+
+static void InitDartFFIForIsolateGroup() {
+  NativeAssetsApi native_assets;
+  memset(&native_assets, 0, sizeof(native_assets));
+  native_assets.dlopen_absolute = &dart::bin::NativeAssets::DlopenAbsolute;
+  native_assets.dlopen_relative = &NativeAssetsDlopenRelative;
+  native_assets.dlopen_system = &dart::bin::NativeAssets::DlopenSystem;
+  native_assets.dlopen_executable = &dart::bin::NativeAssets::DlopenExecutable;
+  native_assets.dlopen_process = &dart::bin::NativeAssets::DlopenProcess;
+  native_assets.dlsym = &dart::bin::NativeAssets::Dlsym;
+  Dart_InitializeNativeAssetsResolver(&native_assets);
+};
+
 Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
     std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
@@ -1176,6 +1212,8 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     isolate_group_data.release();
     isolate_data.release();
     // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
+
+    InitDartFFIForIsolateGroup();
 
     success = InitializeIsolate(embedder_isolate, isolate, error);
   }

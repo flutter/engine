@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -188,19 +189,13 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.ImageFilter createDilateImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.dilate not implemented for CanvasKit.');
-  }
+          {double radiusX = 0.0, double radiusY = 0.0}) =>
+      CkImageFilter.dilate(radiusX: radiusX, radiusY: radiusY);
 
   @override
   ui.ImageFilter createErodeImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.erode not implemented for CanvasKit.');
-  }
+          {double radiusX = 0.0, double radiusY = 0.0}) =>
+      CkImageFilter.erode(radiusX: radiusX, radiusY: radiusY);
 
   @override
   ui.ImageFilter createMatrixImageFilter(Float64List matrix4,
@@ -227,7 +222,8 @@ class CanvasKitRenderer implements Renderer {
           {int? targetWidth,
           int? targetHeight,
           bool allowUpscaling = true}) async =>
-      skiaInstantiateImageCodec(list, targetWidth, targetHeight);
+      skiaInstantiateImageCodec(
+          list, targetWidth, targetHeight, allowUpscaling);
 
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri,
@@ -238,6 +234,29 @@ class CanvasKitRenderer implements Renderer {
   ui.Image createImageFromImageBitmap(DomImageBitmap imageBitmap) {
     final SkImage? skImage =
         canvasKit.MakeLazyImageFromImageBitmap(imageBitmap, true);
+    if (skImage == null) {
+      throw Exception('Failed to convert image bitmap to an SkImage.');
+    }
+    return CkImage(skImage, imageSource: ImageBitmapImageSource(imageBitmap));
+  }
+
+  @override
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
+      {required int width, required int height, required bool transferOwnership}) async {
+        if (!transferOwnership) {
+          final DomImageBitmap bitmap = await createImageBitmap(object, (x:0, y: 0, width: width, height: height));
+          return createImageFromImageBitmap(bitmap);
+        }
+    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+        object,
+        SkPartialImageInfo(
+          width: width.toDouble(),
+          height: height.toDouble(),
+          alphaType: canvasKit.AlphaType.Premul,
+          colorType: canvasKit.ColorType.RGBA_8888,
+          colorSpace: SkColorSpaceSRGB,
+        ));
+
     if (skImage == null) {
       throw Exception('Failed to convert image bitmap to an SkImage.');
     }
@@ -382,7 +401,7 @@ class CanvasKitRenderer implements Renderer {
   // TODO(harryterkelsen): Merge this logic with the async logic in
   // [EngineScene], https://github.com/flutter/flutter/issues/142072.
   @override
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
+  Future<void> renderScene(ui.Scene scene, EngineFlutterView view) async {
     assert(_rasterizers.containsKey(view.viewId),
         "Unable to render to a view which hasn't been registered");
     final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;

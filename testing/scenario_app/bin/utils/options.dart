@@ -46,17 +46,6 @@ extension type const Options._(ArgResults _args) {
       );
     }
 
-    // Cannot use forceSurfaceProducerSurfaceTexture with Impeller+Vulkan.
-    if (options.forceSurfaceProducerSurfaceTexture &&
-        options.enableImpeller &&
-        options.impellerBackend != 'opengles') {
-      throw const FormatException(
-        'Cannot use --force-surface-producer-surface-texture with '
-        '--enable-impeller unless --impeller-backend="opengles" is used. See '
-        'https://github.com/flutter/flutter/issues/143539 for details.',
-      );
-    }
-
     return options;
   }
 
@@ -65,7 +54,7 @@ extension type const Options._(ArgResults _args) {
   /// This is a shortcut that can be used to determine if the usage information
   /// before parsing the remaining command line arguments. For example:
   ///
-  /// ```
+  /// ```dart
   /// void main(List<String> args) {
   ///   if (Options.showUsage(args)) {
   ///     stdout.writeln(Options.usage);
@@ -88,7 +77,7 @@ extension type const Options._(ArgResults _args) {
   /// be enabled before parsing the remaining command line arguments. For
   /// example:
   ///
-  /// ```
+  /// ```dart
   /// void main(List<String> args) {
   ///   final bool verbose = Options.showVerbose(args);
   ///   // ...
@@ -152,11 +141,7 @@ extension type const Options._(ArgResults _args) {
             'rendering strategy. This is used to emulate the behavior of older '
             'devices that do not support ImageReader, or to explicitly test '
             'SurfaceTexture path for rendering plugins still using the older '
-            'createSurfaceTexture() API.'
-            '\n'
-            'Cannot be used with --enable-impeller unless --impeller-backend='
-            '"opengles" is used. See '
-            'https://github.com/flutter/flutter/issues/143539 for details.',
+            'createSurfaceTexture() API.',
         negatable: false
       )
       ..addFlag(
@@ -164,6 +149,10 @@ extension type const Options._(ArgResults _args) {
         help: 'Whether to prefix logs with a per-run unique identifier.',
         defaultsTo: environment.isCi,
         hide: hideUnusualOptions,
+      )
+      ..addFlag(
+        'record-screen',
+        help: 'Whether to record the screen during the test run.',
       )
       ..addOption(
         'impeller-backend',
@@ -182,10 +171,12 @@ extension type const Options._(ArgResults _args) {
         'adb',
         help: 'Path to the Android Debug Bridge (adb) executable. '
             'If the current working directory is within the engine repository, '
-            'defaults to ./third_party/android_tools/sdk/platform-tools/adb.',
+            'defaults to '
+            './flutter/third_party/android_tools/sdk/platform-tools/adb.',
         defaultsTo: localEngine != null
             ? p.join(
                 localEngine.srcDir.path,
+                'flutter',
                 'third_party',
                 'android_tools',
                 'sdk',
@@ -200,14 +191,16 @@ extension type const Options._(ArgResults _args) {
         'ndk-stack',
         help:
             'Path to the NDK stack tool. Defaults to the checked-in version in '
-            'third_party/android_tools if the current working directory is '
-            'within the engine repository on a supported platform.',
+            'flutter/third_party/android_tools if the current working '
+            'directory is within the engine repository on a supported '
+            'platform.',
         defaultsTo: localEngine != null &&
                 (io.Platform.isLinux ||
                     io.Platform.isMacOS ||
                     io.Platform.isWindows)
             ? p.join(
                 localEngine.srcDir.path,
+                'flutter',
                 'third_party',
                 'android_tools',
                 'ndk',
@@ -286,6 +279,9 @@ extension type const Options._(ArgResults _args) {
   /// Whether to enable Impeller as the graphics backend.
   bool get enableImpeller => _args['enable-impeller'] as bool;
 
+  /// Whether to record the screen during the test run.
+  bool get recordScreen => _args['record-screen'] as bool;
+
   /// The graphics backend to use when --enable-impeller is true.
   String get impellerBackend => _args['impeller-backend'] as String;
 
@@ -311,13 +307,7 @@ extension type const Options._(ArgResults _args) {
   String? get outputContentsGolden => _args['output-contents-golden'] as String;
 
   /// Whether to force the use of `SurfaceTexture` for `SurfaceProducer`.
-  ///
-  /// Always returns `false` if `--enable-impeller` is `true` and
-  /// `--impeller-backend` is not `opengles`.
   bool get forceSurfaceProducerSurfaceTexture {
-    if (enableImpeller && impellerBackend != 'opengles') {
-      return false;
-    }
     return _args['force-surface-producer-surface-texture'] as bool;
   }
 

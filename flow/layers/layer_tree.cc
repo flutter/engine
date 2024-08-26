@@ -7,7 +7,6 @@
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
-#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache.h"
@@ -18,13 +17,9 @@
 
 namespace flutter {
 
-LayerTree::LayerTree(const Config& config, const SkISize& frame_size)
-    : root_layer_(config.root_layer),
-      frame_size_(frame_size),
-      rasterizer_tracing_threshold_(config.rasterizer_tracing_threshold),
-      checkerboard_raster_cache_images_(
-          config.checkerboard_raster_cache_images),
-      checkerboard_offscreen_layers_(config.checkerboard_offscreen_layers) {}
+LayerTree::LayerTree(const std::shared_ptr<Layer>& root_layer,
+                     const SkISize& frame_size)
+    : root_layer_(root_layer), frame_size_(frame_size) {}
 
 inline SkColorSpace* GetColorSpace(DlCanvas* canvas) {
   return canvas ? canvas->GetImageInfo().colorSpace() : nullptr;
@@ -41,28 +36,26 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   }
 
   SkColorSpace* color_space = GetColorSpace(frame.canvas());
-  frame.context().raster_cache().SetCheckboardCacheImages(
-      checkerboard_raster_cache_images_);
   LayerStateStack state_stack;
   state_stack.set_preroll_delegate(cull_rect,
                                    frame.root_surface_transformation());
-  RasterCache* cache =
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+
   raster_cache_items_.clear();
 
   PrerollContext context = {
-      // clang-format off
-      .raster_cache                  = cache,
-      .gr_context                    = frame.gr_context(),
-      .view_embedder                 = frame.view_embedder(),
-      .state_stack                   = state_stack,
-      .dst_color_space               = sk_ref_sp<SkColorSpace>(color_space),
-      .surface_needs_readback        = false,
-      .raster_time                   = frame.context().raster_time(),
-      .ui_time                       = frame.context().ui_time(),
-      .texture_registry              = frame.context().texture_registry(),
-      .raster_cached_entries         = &raster_cache_items_,
-      // clang-format on
+#if !SLIMPELLER
+      .raster_cache =
+          ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+#endif  //  !SLIMPELLER
+      .gr_context = frame.gr_context(),
+      .view_embedder = frame.view_embedder(),
+      .state_stack = state_stack,
+      .dst_color_space = sk_ref_sp<SkColorSpace>(color_space),
+      .surface_needs_readback = false,
+      .raster_time = frame.context().raster_time(),
+      .ui_time = frame.context().ui_time(),
+      .texture_registry = frame.context().texture_registry(),
+      .raster_cached_entries = &raster_cache_items_,
   };
 
   root_layer_->Preroll(&context);
@@ -70,6 +63,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   return context.surface_needs_readback;
 }
 
+#if !SLIMPELLER
 void LayerTree::TryToRasterCache(
     const std::vector<RasterCacheItem*>& raster_cached_items,
     const PaintContext* paint_context,
@@ -97,6 +91,7 @@ void LayerTree::TryToRasterCache(
     i++;
   }
 }
+#endif  //  !SLIMPELLER
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
                       bool ignore_raster_cache) const {
@@ -109,24 +104,16 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
   LayerStateStack state_stack;
 
-  // DrawCheckerboard is not supported on Impeller.
-  if (checkerboard_offscreen_layers_ && !frame.aiks_context()) {
-    state_stack.set_checkerboard_func(DrawCheckerboard);
-  }
-
   DlCanvas* canvas = frame.canvas();
   state_stack.set_delegate(canvas);
 
-  // clear the previous snapshots.
-  LayerSnapshotStore* snapshot_store = nullptr;
-  if (enable_leaf_layer_tracing_) {
-    frame.context().snapshot_store().Clear();
-    snapshot_store = &frame.context().snapshot_store();
-  }
-
   SkColorSpace* color_space = GetColorSpace(frame.canvas());
+
+#if !SLIMPELLER
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+#endif  //  !SLIMPELLER
+
   PaintContext context = {
       // clang-format off
       .state_stack                   = state_stack,
@@ -137,18 +124,20 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
+#if !SLIMPELLER
       .raster_cache                  = cache,
-      .layer_snapshot_store          = snapshot_store,
-      .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
+#endif  //  !SLIMPELLER
       .impeller_enabled              = !!frame.aiks_context(),
       .aiks_context                  = frame.aiks_context(),
       // clang-format on
   };
 
+#if !SLIMPELLER
   if (cache) {
     cache->EvictUnusedCacheEntries();
     TryToRasterCache(raster_cache_items_, &context, ignore_raster_cache);
   }
+#endif  //  !SLIMPELLER
 
   if (root_layer_->needs_painting(context)) {
     root_layer_->Paint(context);
@@ -169,8 +158,10 @@ sk_sp<DisplayList> LayerTree::Flatten(
   // No root surface transformation. So assume identity.
   preroll_state_stack.set_preroll_delegate(bounds);
   PrerollContext preroll_context{
-      // clang-format off
+  // clang-format off
+#if !SLIMPELLER
       .raster_cache                  = nullptr,
+#endif  //  !SLIMPELLER
       .gr_context                    = gr_context,
       .view_embedder                 = nullptr,
       .state_stack                   = preroll_state_stack,
@@ -194,9 +185,9 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
       .texture_registry              = texture_registry,
+#if !SLIMPELLER
       .raster_cache                  = nullptr,
-      .layer_snapshot_store          = nullptr,
-      .enable_leaf_layer_tracing     = false,
+#endif  //  !SLIMPELLER
       // clang-format on
   };
 

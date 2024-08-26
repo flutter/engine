@@ -7,6 +7,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/runtime_types.h"
@@ -42,10 +43,11 @@ TEST_P(RuntimeStageTest, CanRejectInvalidBlob) {
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
   auto junk_allocation = std::make_shared<Allocation>();
-  ASSERT_TRUE(junk_allocation->Truncate(fixture->GetSize(), false));
+  ASSERT_TRUE(junk_allocation->Truncate(Bytes{fixture->GetSize()}, false));
   // Not meant to be secure. Just reject obviously bad blobs using magic
   // numbers.
-  ::memset(junk_allocation->GetBuffer(), 127, junk_allocation->GetLength());
+  ::memset(junk_allocation->GetBuffer(), 127,
+           junk_allocation->GetLength().GetByteSize());
   auto stages = RuntimeStage::DecodeRuntimeStages(
       CreateMappingFromAllocation(junk_allocation));
   ASSERT_FALSE(stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())]);
@@ -62,6 +64,7 @@ TEST_P(RuntimeStageTest, CanReadUniforms) {
   ASSERT_TRUE(stage->IsValid());
   switch (GetBackend()) {
     case PlaygroundBackend::kMetal:
+      [[fallthrough]];
     case PlaygroundBackend::kOpenGLES: {
       ASSERT_EQ(stage->GetUniforms().size(), 17u);
       {
@@ -224,6 +227,56 @@ TEST_P(RuntimeStageTest, CanReadUniforms) {
   }
 }
 
+TEST_P(RuntimeStageTest, CanReadUniformsSamplerBeforeUBO) {
+  if (GetBackend() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Test only relevant for Vulkan";
+  }
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(
+          "uniforms_and_sampler_1.frag.iplr");
+  ASSERT_TRUE(fixture);
+  ASSERT_GT(fixture->GetSize(), 0u);
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+
+  EXPECT_EQ(stage->GetUniforms().size(), 2u);
+  auto uni = stage->GetUniform(RuntimeStage::kVulkanUBOName);
+  ASSERT_TRUE(uni);
+  // Struct must be offset at 65.
+  EXPECT_EQ(uni->type, RuntimeUniformType::kStruct);
+  EXPECT_EQ(uni->binding, 65u);
+  // Sampler should be offset at 64 but due to current bug
+  // has offset of 0, the correct offset is computed at runtime.
+  auto sampler_uniform = stage->GetUniform("u_texture");
+  EXPECT_EQ(sampler_uniform->type, RuntimeUniformType::kSampledImage);
+  EXPECT_EQ(sampler_uniform->binding, 64u);
+}
+
+TEST_P(RuntimeStageTest, CanReadUniformsSamplerAfterUBO) {
+  if (GetBackend() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Test only relevant for Vulkan";
+  }
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(
+          "uniforms_and_sampler_2.frag.iplr");
+  ASSERT_TRUE(fixture);
+  ASSERT_GT(fixture->GetSize(), 0u);
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+
+  EXPECT_EQ(stage->GetUniforms().size(), 2u);
+  auto uni = stage->GetUniform(RuntimeStage::kVulkanUBOName);
+  ASSERT_TRUE(uni);
+  // Struct must be offset at 45.
+  EXPECT_EQ(uni->type, RuntimeUniformType::kStruct);
+  EXPECT_EQ(uni->binding, 64u);
+  // Sampler should be offset at 64 but due to current bug
+  // has offset of 0, the correct offset is computed at runtime.
+  auto sampler_uniform = stage->GetUniform("u_texture");
+  EXPECT_EQ(sampler_uniform->type, RuntimeUniformType::kSampledImage);
+  EXPECT_EQ(sampler_uniform->binding, 65u);
+}
+
 TEST_P(RuntimeStageTest, CanRegisterStage) {
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
@@ -277,7 +330,16 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
-  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+
+  std::array<DescriptorSetLayout, 2> descriptor_set_layouts = {
+      VS::kDescriptorSetLayouts[0],
+      DescriptorSetLayout{
+          .binding = 64u,
+          .descriptor_type = DescriptorType::kUniformBuffer,
+          .shader_stage = ShaderStage::kFragment,
+      },
+  };
+  vertex_descriptor->RegisterDescriptorSetLayouts(descriptor_set_layouts);
 
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;

@@ -11,7 +11,6 @@
 
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/size.h"
 #include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
@@ -62,9 +61,8 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
+    "--enable-asserts",
 };
 // clang-format on
 
@@ -162,7 +160,7 @@ static std::vector<std::string> ParseCommaDelimited(const std::string& input) {
 }
 
 static bool IsAllowedDartVMFlag(const std::string& flag) {
-  for (uint32_t i = 0; i < fml::size(kAllowedDartFlags); ++i) {
+  for (uint32_t i = 0; i < std::size(kAllowedDartFlags); ++i) {
     const std::string& allowed = kAllowedDartFlags[i];
     // Check that the prefix of the flag matches one of the allowed flags. This
     // is to handle cases where flags take arguments, such as in
@@ -362,6 +360,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
 
+  settings.merged_platform_ui_thread = command_line.HasOption(
+      FlagForSwitch(Switch::EnableMergedPlatformUIThread));
+
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
@@ -520,27 +521,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
         std::stoi(resource_cache_max_bytes_threshold);
   }
 
-  if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {
-    std::string msaa_samples;
-    command_line.GetOptionValue(FlagForSwitch(Switch::MsaaSamples),
-                                &msaa_samples);
-    if (msaa_samples == "0") {
-      settings.msaa_samples = 0;
-    } else if (msaa_samples == "1") {
-      settings.msaa_samples = 1;
-    } else if (msaa_samples == "2") {
-      settings.msaa_samples = 2;
-    } else if (msaa_samples == "4") {
-      settings.msaa_samples = 4;
-    } else if (msaa_samples == "8") {
-      settings.msaa_samples = 8;
-    } else if (msaa_samples == "16") {
-      settings.msaa_samples = 16;
-    } else {
-      FML_DLOG(ERROR) << "Invalid value for --msaa-samples: '" << msaa_samples
-                      << "' (expected 0, 1, 2, 4, 8, or 16).";
-    }
-  }
+  settings.enable_platform_isolates =
+      command_line.HasOption(FlagForSwitch(Switch::EnablePlatformIsolates));
 
   return settings;
 }

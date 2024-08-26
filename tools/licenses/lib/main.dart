@@ -461,14 +461,14 @@ class _RepositoryIcuLicenseFile extends _RepositorySingleLicenseFile {
   _RepositoryIcuLicenseFile._(_RepositoryDirectory parent, fs.TextFile io, this.template, License license)
     : super(parent, io, license);
 
+  // Every paragraph of the license is mentioned. All newlines are disregarded [\n+].
   static final RegExp _pattern = RegExp(
-    r'^(UNICODE, INC\. LICENSE AGREEMENT - DATA FILES AND SOFTWARE\n+' // group
-    r'See Terms of Use (?:.|\n)+?'
-    r'COPYRIGHT AND PERMISSION NOTICE\n+'
-    r'Copyright.+\n'
-    r'Distributed under the Terms of Use in .+\n+'
+    // Starting from ICU 74.1 this has been changed to Unicode License V3.
+    r'^(UNICODE LICENSE V3\n+' // group
+    r'COPYRIGHT AND PERMISSION NOTICE(?:.|\n)+?'
     r')(Permission is hereby granted(?:.|\n)+?)' // template group
     r'\n+-+\n+'
+    // From here onwards should be the same as before 74.1
     r'(Third-Party Software Licenses\n+' // group
     r'This section contains third-party software notices and/or additional\n'
     r'terms for licensed third-party software components included within ICU\n'
@@ -991,9 +991,12 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
 
   static const Map<String, _Constructor> _specialCaseFiles = <String, _Constructor>{
     '/flutter/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
+    '/flutter/third_party/dart/LICENSE': _RepositoryDartLicenseFile.new,
     '/flutter/third_party/freetype2/LICENSE.TXT': _RepositoryFreetypeLicenseFile.new,
     '/flutter/third_party/icu/LICENSE': _RepositoryIcuLicenseFile.new,
     '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
+    '/flutter/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
+    '/flutter/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/flutter/third_party/libjpeg-turbo/src/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
     '/flutter/third_party/libjpeg-turbo/src/README.ijg': _RepositoryReadmeIjgFile.new,
     '/flutter/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
@@ -1002,10 +1005,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/flutter/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
-    '/third_party/dart/LICENSE': _RepositoryDartLicenseFile.new,
     '/third_party/khronos/LICENSE': _RepositoryKhronosLicenseFile.new,
-    '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
-    '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
@@ -1389,10 +1389,13 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
   bool get subdirectoriesAreLicenseRoots => false;
 
   @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'third_party' // all third_party components have been moved to flutter/third_party
+        && super.shouldRecurse(entry);
+  }
+
+  @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'third_party') {
-      return _RepositoryRootThirdPartyDirectory(this, entry);
-    }
     if (entry.name == 'flutter') {
       return _RepositoryFlutterDirectory(this, entry);
     }
@@ -1409,12 +1412,11 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
   List<_RepositoryDirectory> get virtualSubdirectories {
     // Dart and Skia are updated more frequently than other third party
     // libraries and is therefore represented as a separate top-level component.
-    final fs.Directory thirdPartyNode = findChildDirectory(ioDirectory, 'third_party')!;
-    final fs.Directory dartNode = findChildDirectory(thirdPartyNode, 'dart')!;
-
     final fs.Directory flutterNode = findChildDirectory(ioDirectory, 'flutter')!;
     final fs.Directory flutterThirdPartyNode = findChildDirectory(flutterNode, 'third_party')!;
     final fs.Directory skiaNode = findChildDirectory(flutterThirdPartyNode, 'skia')!;
+    final fs.Directory dartNode = findChildDirectory(flutterThirdPartyNode, 'dart')!;
+
     return <_RepositoryDirectory>[
       _RepositoryDartDirectory(this, dartNode),
       _RepositorySkiaDirectory(this, skiaNode),
@@ -1427,27 +1429,6 @@ class _RepositoryGenericThirdPartyDirectory extends _RepositoryDirectory {
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
-}
-
-class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
-  _RepositoryRootThirdPartyDirectory(super.parent, super.io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'dart' // handled as a virtual directory of the root
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'icu') {
-      return _RepositoryIcuDirectory(this, entry);
-    }
-    if (entry.name == 'zlib') {
-      return _RepositoryZLibDirectory(this, entry);
-    }
-    return super.createSubdirectory(entry);
-  }
 }
 
 class _RepositoryExpatDirectory extends _RepositoryDirectory {
@@ -1531,18 +1512,6 @@ class _RepositoryFreetypeSrcGZipDirectory extends _RepositoryDirectory {
       return result;
     }
     return super.nearestLicenseOfType(type);
-  }
-}
-
-class _RepositoryIcuDirectory extends _RepositoryDirectory {
-  _RepositoryIcuDirectory(super.parent, super.io);
-
-  @override
-  _RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'LICENSE') {
-      return _RepositoryIcuLicenseFile(this, entry as fs.TextFile);
-    }
-    return super.createFile(entry);
   }
 }
 
@@ -1745,6 +1714,7 @@ class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdParty
   @override
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'skia' // handled as a virtual directory of the root
+        && entry.name != 'dart' // handled as a virtual directory of the root
         && super.shouldRecurse(entry);
   }
 
@@ -1761,6 +1731,9 @@ class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdParty
     }
     if (entry.name == 'vulkan-deps') {
       return _RepositoryGenericThirdPartyDirectory(this, entry);
+    }
+    if (entry.name == 'zlib') {
+      return _RepositoryZLibDirectory(this, entry);
     }
     return super.createSubdirectory(entry);
   }
