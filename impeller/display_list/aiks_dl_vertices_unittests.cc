@@ -479,7 +479,7 @@ TEST_P(AiksTest,
       SkPoint::Make(250, 250),  //
   };
 
-  auto vertices_lt = flutter::DlVertices::Make(
+  auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangleStrip, positions_lt.size(),
       positions_lt.data(),
       /*texture_coordinates=*/positions_lt.data(), /*colors=*/nullptr,
@@ -512,7 +512,7 @@ TEST_P(AiksTest,
 
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawRect(SkRect::MakeLTRB(200, 200, 250, 250), rect_paint);
-  builder.DrawVertices(vertices_lt, flutter::DlBlendMode::kSrcOver, paint);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
