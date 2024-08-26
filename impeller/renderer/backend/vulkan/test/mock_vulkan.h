@@ -83,6 +83,13 @@ class MockVulkanContextBuilder {
     return *this;
   }
 
+  MockVulkanContextBuilder& SetDeviceExtensions(
+      const std::vector<std::string>& device_extensions) {
+    device_extensions_ = device_extensions;
+    device_extensions_.push_back("VK_KHR_swapchain");
+    return *this;
+  }
+
   MockVulkanContextBuilder& SetInstanceLayers(
       const std::vector<std::string>& instance_layers) {
     instance_layers_ = instance_layers;
@@ -103,6 +110,7 @@ class MockVulkanContextBuilder {
  private:
   std::function<void(ContextVK::Settings&)> settings_callback_;
   std::vector<std::string> instance_extensions_;
+  std::vector<std::string> device_extensions_;
   std::vector<std::string> instance_layers_;
   std::function<void(VkPhysicalDevice physicalDevice,
                      VkFormat format,

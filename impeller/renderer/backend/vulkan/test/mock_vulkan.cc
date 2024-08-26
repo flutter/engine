@@ -191,16 +191,23 @@ void vkGetPhysicalDeviceQueueFamilyProperties(
   }
 }
 
+static thread_local std::vector<std::string> g_device_extensions;
+
 VkResult vkEnumerateDeviceExtensionProperties(
     VkPhysicalDevice physicalDevice,
     const char* pLayerName,
     uint32_t* pPropertyCount,
     VkExtensionProperties* pProperties) {
   if (!pProperties) {
-    *pPropertyCount = 1;
+    *pPropertyCount = g_device_extensions.size();
   } else {
-    strcpy(pProperties[0].extensionName, "VK_KHR_swapchain");
-    pProperties[0].specVersion = 0;
+    uint32_t count = 0;
+    for (const std::string& ext : g_device_extensions) {
+      strncpy(pProperties[count].extensionName, ext.c_str(),
+              sizeof(VkExtensionProperties::extensionName));
+      pProperties[count].specVersion = 0;
+      count++;
+    }
   }
   return VK_SUCCESS;
 }
@@ -916,7 +923,11 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   if (settings_callback_) {
     settings_callback_(settings);
   }
+  if (device_extensions_.empty()) {
+    device_extensions_.push_back("VK_KHR_swapchain");
+  }
   g_instance_extensions = instance_extensions_;
+  g_device_extensions = device_extensions_;
   g_instance_layers = instance_layers_;
   g_format_properties_callback = format_properties_callback_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));

@@ -288,12 +288,10 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
 
   auto for_each_optional_android_extension =
       [&](OptionalAndroidDeviceExtensionVK ext) {
-#ifdef FML_OS_ANDROID
         auto name = GetExtensionName(ext);
         if (exts->find(name) != exts->end()) {
           enabled.push_back(name);
         }
-#endif  //  FML_OS_ANDROID
         return true;
       };
 

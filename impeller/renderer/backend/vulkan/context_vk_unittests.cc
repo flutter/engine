@@ -241,5 +241,24 @@ TEST(ContextVKTest, HasDefaultColorFormat) {
   ASSERT_NE(capabilites_vk->GetDefaultColorFormat(), PixelFormat::kUnknown);
 }
 
+TEST(ContextVKTest, ChecksOptionalDeviceExtensionsForAndroid) {
+  auto context = MockVulkanContextBuilder().Build();
+  ASSERT_NE(context, nullptr);
+
+  EXPECT_FALSE(context->SupportsAHBSwapchain());
+
+  context = MockVulkanContextBuilder()
+                .SetDeviceExtensions({
+                    VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME,      //
+                    VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,         //
+                    VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,  //
+                    VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME      //
+                })
+                .Build();
+  ASSERT_NE(context, nullptr);
+
+  EXPECT_TRUE(context->SupportsAHBSwapchain());
+}
+
 }  // namespace testing
 }  // namespace impeller
