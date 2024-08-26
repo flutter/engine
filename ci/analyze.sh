@@ -59,11 +59,16 @@ echo "Using dart from $DART_BIN"
 echo ""
 
 # The web SDK does not use pub_get_offline.py, so we need to run pub get first:
+echo "Running 'pub get' in the Web SDK"
+echo ""
+(cd "$FLUTTER_DIR/lib/web_ui"; "$DART" pub --suppress-analytics get)
 (cd "$FLUTTER_DIR/web_sdk"; "$DART" pub --suppress-analytics get)
 (cd "$FLUTTER_DIR/web_sdk/web_test_utils"; "$DART" pub --suppress-analytics get)
 (cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; "$DART" pub --suppress-analytics get)
 
 # Check *all* the Dart code in the engine.
+echo "Analyzing the Flutter engine"
+echo ""
 "$DART" analyze --suppress-analytics --fatal-infos --fatal-warnings "$FLUTTER_DIR"
 echo ""
 
