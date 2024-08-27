@@ -13,6 +13,7 @@ CoverGeometry::CoverGeometry() = default;
 GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) const {
+  FML_LOG(ERROR) << "CoverGeometry::GetPositionBuffer";
   auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   auto& host_buffer = renderer.GetTransientsBuffer();

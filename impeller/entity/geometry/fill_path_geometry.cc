@@ -20,6 +20,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
+  FML_LOG(ERROR) << "FillPathGeometry::GetPositionBuffer";
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   const auto& bounding_box = path_.GetBoundingBox();
