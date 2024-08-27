@@ -36,7 +36,11 @@
 
 namespace impeller {
 
+#if EXPERIMENTAL_CANVAS && !defined(NDEBUG)
 #define USE_DEPTH_WATCHER true
+#else  // EXPERIMENTAL_CANVAS && !defined(NDEBUG)
+#define USE_DEPTH_WATCHER false
+#endif  // EXPERIMENTAL_CANVAS && !defined(NDEBUG)
 
 #if USE_DEPTH_WATCHER
 
