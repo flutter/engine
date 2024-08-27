@@ -941,10 +941,13 @@ def uses_package_test_runner(package):
     return False
   with open(pubspec, 'r') as f:
     # Check if either "dependencies" or "dev_dependencies" contains "test".
-    deps = yaml.safe_load(f).get('dependencies', {})
+    data = yaml.safe_load(f)
+    if data is None:
+      return False
+    deps = data.get('dependencies', {})
     if 'test' in deps:
       return True
-    dev_deps = yaml.safe_load(f).get('dev_dependencies', {})
+    dev_deps = data.get('dev_dependencies', {})
     if 'test' in dev_deps:
       return True
   return False
