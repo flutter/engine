@@ -16,7 +16,6 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  FML_LOG(ERROR) << "EllipseGeometry::GetPositionBuffer";
   return ComputePositionGeometry(
       renderer,
       renderer.GetTessellator()->FilledEllipse(entity.GetTransform(), bounds_),
