@@ -523,6 +523,8 @@ class PictureLayer extends Layer {
 
     paintContext.leafNodesCanvas!.drawPicture(picture);
     paintContext.leafNodesCanvas!.restore();
+    CkCanvas nextCanvas = paintContext.viewEmbedder?.drawPicture(picture);
+    paintContext.leafNodesCanvas = nextCanvas;
   }
 }
 
@@ -585,10 +587,6 @@ class PlatformViewLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
-    final CkCanvas? canvas =
-        paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
-    if (canvas != null) {
-      paintContext.leafNodesCanvas = canvas;
-    }
+    paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
   }
 }

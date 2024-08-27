@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager, configuration, longestIncreasingSubsequence;
+import '../../engine.dart'
+    show PlatformViewManager, configuration, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -107,6 +108,12 @@ class HtmlViewEmbedder {
     _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
   }
 
+  CkCanvas drawPicture(CkPicture picture) {
+    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
+    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+  }
+
   void prerollShaderMask() {
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
@@ -114,29 +121,17 @@ class HtmlViewEmbedder {
   }
 
   /// Prepares to composite [viewId].
-  ///
-  /// If this returns a [CkCanvas], then that canvas should be the new leaf
-  /// node. Otherwise, keep the same leaf node.
-  CkCanvas? compositeEmbeddedView(int viewId) {
+  void compositeEmbeddedView(int viewId) {
     // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
     rasterizer.view.dom.injectPlatformView(viewId);
 
-    final int overlayIndex = _context.viewCount;
     _compositionOrder.add(viewId);
     _context.viewCount++;
-
-    CkPictureRecorder? recorderToUseForRendering;
-    if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
-      recorderToUseForRendering =
-          _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
-      _context.pictureRecorders.add(recorderToUseForRendering);
-    }
 
     if (_viewsToRecomposite.contains(viewId)) {
       _compositeWithParams(viewId, _currentCompositionParams[viewId]!);
       _viewsToRecomposite.remove(viewId);
     }
-    return recorderToUseForRendering?.recordingCanvas;
   }
 
   void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
@@ -397,11 +392,11 @@ class HtmlViewEmbedder {
       debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
       final CkPictureRecorder boundsRecorder = CkPictureRecorder();
       final CkCanvas boundsCanvas = boundsRecorder.beginRecording(
-          ui.Rect.fromLTWH(
-        0,
-        0,
-        _frameSize.width.toDouble(),
-        _frameSize.height.toDouble(),
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          _frameSize.width.toDouble(),
+          _frameSize.height.toDouble(),
         ),
       );
       final CkPaint platformViewBoundsPaint = CkPaint()
@@ -925,4 +920,7 @@ class EmbedderFrameContext {
 
   /// The number of platform views in this frame.
   int viewCount = 0;
+
+  /// Unoptimized rendering.
+  final Rendering unoptimizedRendering = Rendering();
 }
