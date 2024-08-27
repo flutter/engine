@@ -20,6 +20,7 @@ import '../vector_math.dart';
 import '../window.dart';
 import 'accessibility.dart';
 import 'checkable.dart';
+import 'click_selectable.dart';
 import 'focusable.dart';
 import 'heading.dart';
 import 'image.dart';
@@ -30,7 +31,6 @@ import 'live_region.dart';
 import 'platform_view.dart';
 import 'route.dart';
 import 'scrollable.dart';
-import 'selectable.dart';
 import 'semantics_helper.dart';
 import 'tappable.dart';
 import 'text_field.dart';
@@ -365,7 +365,7 @@ enum SemanticRoleKind {
   checkable,
 
   /// A control that has a selected state, such as a tab
-  selectable,
+  click_selectable,
 
   /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is
   /// also assigned.
@@ -715,7 +715,7 @@ final class GenericRole extends SemanticRole {
 /// Provides a piece of functionality to a [SemanticsObject].
 ///
 /// Semantic behaviors can be shared by multiple types of [SemanticRole]s. For
-/// example, [SemanticButton], [SemanticCheckable], and [SemanticSelectable] both use the [Tappable] behavior. If a
+/// example, [SemanticButton], [SemanticCheckable], and [SemanticsClickSelectable] both use the [Tappable] behavior. If a
 /// semantic role needs bespoke functionality, it is simpler to implement it
 /// directly in the [SemanticRole] implementation.
 ///
@@ -1652,8 +1652,8 @@ class SemanticsObject {
       return SemanticRoleKind.image;
     } else if (isCheckable) {
       return SemanticRoleKind.checkable;
-    } else if (isSelectable) {
-      return SemanticRoleKind.selectable;
+    } else if (isClickSelectable) {
+      return SemanticRoleKind.click_selectable;
     } else if (isButton) {
       return SemanticRoleKind.button;
     } else if (isScrollContainer) {
@@ -1674,7 +1674,7 @@ class SemanticsObject {
       SemanticRoleKind.incrementable => SemanticIncrementable(this),
       SemanticRoleKind.button => SemanticButton(this),
       SemanticRoleKind.checkable => SemanticCheckable(this),
-      SemanticRoleKind.selectable => SemanticSelectable(this),
+      SemanticRoleKind.click_selectable => SemanticsClickSelectable(this),
       SemanticRoleKind.route => SemanticRoute(this),
       SemanticRoleKind.image => SemanticImage(this),
       SemanticRoleKind.platformView => SemanticPlatformView(this),
@@ -1751,7 +1751,7 @@ class SemanticsObject {
       hasFlag(ui.SemanticsFlag.hasCheckedState) ||
       hasFlag(ui.SemanticsFlag.hasToggledState);
 
-  bool get isSelectable =>
+  bool get isClickSelectable =>
       hasFlag(ui.SemanticsFlag.isSelected) ||
       hasFlag(ui.SemanticsFlag.hasSelectedState);
 
