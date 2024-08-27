@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/experimental_canvas.h"
+#include <limits>
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
@@ -381,9 +382,12 @@ void ExperimentalCanvas::SaveLayer(
           return filter;
         };
 
-    auto input_texture =
-        FlipBackdrop(render_passes_, GetGlobalPassPosition(), current_depth_,
-                     clip_coverage_stack_, renderer_);
+    auto input_texture = FlipBackdrop(render_passes_,                        //
+                                      GetGlobalPassPosition(),               //
+                                      std::numeric_limits<uint32_t>::max(),  //
+                                      clip_coverage_stack_,                  //
+                                      renderer_                              //
+    );
     if (!input_texture) {
       // Validation failures are logged in FlipBackdrop.
       return;
