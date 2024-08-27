@@ -84,7 +84,7 @@ TEST_P(AiksTest, ColorWheel) {
     }
   };
 
-  std::shared_ptr<Image> color_wheel_image;
+  std::shared_ptr<Texture> color_wheel_image;
   Matrix color_wheel_transform;
 
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
@@ -129,10 +129,10 @@ TEST_P(AiksTest, ColorWheel) {
       auto color_wheel_picture = canvas.EndRecordingAsPicture();
       auto image = color_wheel_picture.ToImage(
           renderer, ISize{GetWindowSize().width, GetWindowSize().height});
-      if (!image || !image->GetTexture()) {
+      if (!image) {
         return std::nullopt;
       }
-      color_wheel_image = std::make_shared<Image>(image->GetTexture());
+      color_wheel_image = image;
       color_wheel_transform = Matrix();
     }
 
