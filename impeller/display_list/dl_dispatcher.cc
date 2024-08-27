@@ -39,6 +39,34 @@ namespace impeller {
 #define USE_DEPTH_WATCHER true
 
 #if USE_DEPTH_WATCHER
+
+// Invoke this macro at the top of any DlOpReceiver dispatch function
+// using a number indicating the maximum depth that the operation is
+// expected to consume in the Canvas. Most rendering ops consume 1
+// except for DrawImageNine that currently consumes 1 per section (i.e. 9).
+// Attribute, clip and transform ops do not consume depth but this
+// macro can still be used with an argument of 0 to verify that expectation.
+//
+// The watchdog object allocated here will automatically double-check
+// the depth usage at any exit point to the function, or any other
+// point at which it falls out of scope.
+#define AUTO_DEPTH_WATCHER(d) \
+  DepthWatcher _watcher(__FILE__, __LINE__, GetCanvas(), d)
+
+// While the AUTO_DEPTH_WATCHER macro will check the depth usage at
+// any exit point from the dispatch function, sometimes the dispatch
+// functions are somewhat compounded and result in multiple Canvas
+// calls.
+//
+// Invoke this macro at any key points in the middle of a dispatch
+// function to verify that you still haven't exceeded the maximum
+// allowed depth. This is especially useful if the function does
+// an implicit save/restore where the restore call might assert the
+// depth constraints in a function in Canvas that can't be as easily
+// traced back to a given dispatch function as these macros can.
+#define AUTO_DEPTH_CHECK() _watcher.check(__FILE__, __LINE__)
+
+// Helper class, use the AUTO_DEPTH_WATCHER macros to access it
 struct DepthWatcher {
   DepthWatcher(const std::string& file,
                int line,
@@ -71,10 +99,6 @@ struct DepthWatcher {
   const uint64_t old_depth_;
   const uint64_t old_max_;
 };
-
-#define AUTO_DEPTH_WATCHER(d) \
-  DepthWatcher _watcher(__FILE__, __LINE__, GetCanvas(), d)
-#define AUTO_DEPTH_CHECK() _watcher.check(__FILE__, __LINE__)
 
 #else  // USE_DEPTH_WATCHER
 
