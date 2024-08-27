@@ -20,9 +20,8 @@ Scalar LineGeometry::ComputePixelHalfWidth(const Matrix& transform,
     return {};
   }
 
-  Scalar min_size = 1.0f / max_basis;
-  return std::max(width, min_size) * 0.5f *
-         (msaa ? kMinStrokeSize : kMinStrokeSizeMSAA);
+  Scalar min_size = (msaa ? kMinStrokeSize : kMinStrokeSizeMSAA) / max_basis;
+  return std::max(width, min_size) * 0.5f;
 }
 
 Vector2 LineGeometry::ComputeAlongVector(const Matrix& transform,
