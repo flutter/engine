@@ -23,11 +23,15 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path
 import tempfile
 import time
 import typing
 import xvfb
+
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys_path.insert(0, os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib'))
+import yaml  # pylint: disable=import-error, wrong-import-position
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
@@ -905,15 +909,44 @@ def gather_dart_smoke_test(build_dir, test_filter):
 
 
 def gather_dart_package_tests(build_dir, package_path, extra_opts):
-  dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
-  if not dart_tests:
-    raise Exception('No tests found for Dart package at %s' % package_path)
-  for dart_test_file in dart_tests:
-    opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+  if uses_package_test_runner(package_path):
+    # Package that use package:test (dart test) do not support command-line arguments.
+    #
+    # The usual workaround is to use Platform.environment, but that would require changing
+    # the test execution a tiny bit. TODO(https://github.com/flutter/flutter/issues/133569).
+    #
+    # Until then, assert that no extra_opts are passed and explain the limitation.
+    assert not extra_opts, 'Package %s uses package:test and does not support command-line arguments' % package_path
+    opts = ['--disable-dart-dev', 'test']
     yield EngineExecutableTask(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )
+  else:
+    dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
+    if not dart_tests:
+      raise Exception('No tests found for Dart package at %s' % package_path)
+    for dart_test_file in dart_tests:
+      opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+      yield EngineExecutableTask(
+          build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
+      )
 
+# Returns whether the given package path should be tested with `dart test`.
+#
+# Inferred by a dependency on the `package:test` package in the pubspec.yaml.
+def uses_package_test_runner(package):
+  pubspec = os.path.join(package, 'pubspec.yaml')
+  if not os.path.exists(pubspec):
+    return False
+  with open(pubspec, 'r') as f:
+    # Check if either "dependencies" or "dev_dependencies" contains "test".
+    deps = yaml.safe_load(f).get('dependencies', {})
+    if 'test' in deps:
+      return True
+    dev_deps = yaml.safe_load(f).get('dev_dependencies', {})
+    if 'test' in dev_deps:
+      return True
+  return False
 
 # Returns a list of Dart packages to test.
 #
