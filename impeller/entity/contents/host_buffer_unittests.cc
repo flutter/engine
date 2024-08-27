@@ -91,7 +91,10 @@ TEST_P(HostBufferTest, ResetIncrementsFrameCounter) {
   EXPECT_EQ(buffer->GetStateForTest().current_frame, 2u);
 
   buffer->Reset();
-  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 3u);
+
+  buffer->Reset();
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 4u);
 }
 
 TEST_P(HostBufferTest,
