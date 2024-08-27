@@ -931,6 +931,7 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
           build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
       )
 
+
 # Returns whether the given package path should be tested with `dart test`.
 #
 # Inferred by a dependency on the `package:test` package in the pubspec.yaml.
@@ -947,6 +948,7 @@ def uses_package_test_runner(package):
     if 'test' in dev_deps:
       return True
   return False
+
 
 # Returns a list of Dart packages to test.
 #
