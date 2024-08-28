@@ -265,7 +265,7 @@ TEST_F(PainterTest, DrawStrokedTextWithLargeWidthImpeller) {
   auto style = makeStyle();
   DlPaint foreground;
   foreground.setDrawStyle(DlDrawStyle::kStroke);
-  foreground.setStrokeWidth(100);
+  foreground.setStrokeWidth(10);
   style.foreground = foreground;
 
   auto recorder = DlOpRecorder();
