@@ -161,6 +161,39 @@ TEST(EntityPassClipStackTest, AppendLargerClipCoverage) {
   EXPECT_FALSE(result.clip_did_change);
 }
 
+// Since clip entities return the outer coverage we can only cull axis aligned
+// rectangles and intersect clips.
+TEST(EntityPassClipStackTest,
+     AppendLargerClipCoverageWithDifferenceOrNonSquare) {
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
+
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
+
+  // Push a clip.
+  Entity entity;
+  EntityPassClipStack::ClipStateResult result = recorder.ApplyClipState(
+      Contents::ClipCoverage{
+          .type = Contents::ClipCoverage::Type::kAppend,
+          .coverage = Rect::MakeLTRB(50, 50, 55, 55),
+      },
+      entity, 0, Point(0, 0));
+  EXPECT_TRUE(result.should_render);
+  EXPECT_TRUE(result.clip_did_change);
+
+  // Push a clip with larger coverage than the previous state.
+  result = recorder.ApplyClipState(
+      Contents::ClipCoverage{
+          .type = Contents::ClipCoverage::Type::kAppend,
+          .is_difference_or_non_square = true,
+          .coverage = Rect::MakeLTRB(0, 0, 100, 100),
+      },
+      entity, 0, Point(0, 0));
+
+  EXPECT_TRUE(result.should_render);
+  EXPECT_TRUE(result.clip_did_change);
+}
+
 TEST(EntityPassClipStackTest, AppendDecreasingSizeClipCoverage) {
   EntityPassClipStack recorder =
       EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));

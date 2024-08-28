@@ -79,9 +79,10 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
       }
       auto op = maybe_coverage.value();
 
-      // If the new clip coverage is bigger than the existing coverage, we
-      // do not need to change the clip region.
-      if (global_clip_coverage.coverage.has_value() &&
+      // If the new clip coverage is bigger than the existing coverage for
+      // intersect clips, we do not need to change the clip region.
+      if (!global_clip_coverage.is_difference_or_non_square &&
+          global_clip_coverage.coverage.has_value() &&
           global_clip_coverage.coverage.value().Contains(op)) {
         subpass_state.clip_coverage.push_back(ClipCoverageLayer{
             .coverage = op, .clip_height = previous_clip_height + 1});

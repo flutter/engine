@@ -53,8 +53,11 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
     case Entity::ClipOperation::kDifference:
       // This can be optimized further by considering cases when the bounds of
       // the current stencil will shrink.
-      return {.type = ClipCoverage::Type::kAppend,
-              .coverage = current_clip_coverage};
+      return {
+          .type = ClipCoverage::Type::kAppend,  //
+          .is_difference_or_non_square = true,  //
+          .coverage = current_clip_coverage     //
+      };
     case Entity::ClipOperation::kIntersect:
       if (!geometry_) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
@@ -64,8 +67,9 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
       return {
-          .type = ClipCoverage::Type::kAppend,
-          .coverage = current_clip_coverage->Intersection(coverage.value()),
+          .type = ClipCoverage::Type::kAppend,                                //
+          .is_difference_or_non_square = !geometry_->IsAxisAlignedRect(),     //
+          .coverage = current_clip_coverage->Intersection(coverage.value()),  //
       };
   }
   FML_UNREACHABLE();
