@@ -92,6 +92,7 @@ def run_cmd(
 
   process = subprocess.Popen(
       cmd,
+      cwd=cwd,
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
       env=env,
