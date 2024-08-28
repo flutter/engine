@@ -83,13 +83,6 @@ class Contents {
   ///
   void SetCoverageHint(std::optional<Rect> coverage_hint);
 
-  //----------------------------------------------------------------------------
-  /// @brief  Whether this entity can be entirely skipped during rendering.
-  ///
-  /// TODO(jonahwilliams): remove this method which was only added for clipping
-  /// once experimental canvas lands.
-  virtual bool CanSkip(ISize render_pass_size, const Matrix& transform) const;
-
   const std::optional<Rect>& GetCoverageHint() const;
 
   //----------------------------------------------------------------------------

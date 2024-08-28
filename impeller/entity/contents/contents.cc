@@ -182,8 +182,4 @@ void Contents::SetColorSourceSize(Size size) {
   color_source_size_ = size;
 }
 
-bool Contents::CanSkip(ISize render_pass_size, const Matrix& transform) const {
-  return false;
-}
-
 }  // namespace impeller

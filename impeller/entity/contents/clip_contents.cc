@@ -82,20 +82,6 @@ bool ClipContents::CanInheritOpacity(const Entity& entity) const {
 
 void ClipContents::SetInheritedOpacity(Scalar opacity) {}
 
-bool ClipContents::CanSkip(ISize render_pass_size, const Matrix& ctm) const {
-  if (clip_op_ == Entity::ClipOperation::kIntersect &&
-      geometry_->IsAxisAlignedRect() && ctm.IsTranslationScaleOnly()) {
-    std::optional<Rect> coverage = geometry_->GetCoverage(ctm);
-    if (coverage.has_value() &&
-        coverage->Contains(Rect::MakeSize(render_pass_size))) {
-      // Skip axis-aligned intersect clips that cover the whole render target
-      // since they won't draw anything to the depth buffer.
-      return true;
-    }
-  }
-  return false;
-}
-
 bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
@@ -104,10 +90,6 @@ bool ClipContents::Render(const ContentContext& renderer,
   }
 
   using VS = ClipPipeline::VertexShader;
-
-  if (CanSkip(pass.GetRenderTargetSize(), entity.GetTransform())) {
-    return true;
-  }
 
   VS::FrameInfo info;
   info.depth = GetShaderClipDepth(entity);
