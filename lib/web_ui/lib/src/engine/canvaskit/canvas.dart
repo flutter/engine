@@ -333,7 +333,7 @@ class CkCanvas {
     } else {
       convertible = filter as CkManagedSkImageFilterConvertible;
     }
-    convertible.imageFilter((SkImageFilter filter) {
+    convertible.withSkImageFilter((SkImageFilter filter) {
       final skPaint = paint?.toSkPaint();
       skCanvas.saveLayer(
         skPaint,

@@ -21,6 +21,7 @@ import 'shader.dart';
 ///
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
+// TODO(154281): try to unify with SkwasmPaint
 class CkPaint implements ui.Paint {
   CkPaint();
 
@@ -63,7 +64,7 @@ class CkPaint implements ui.Paint {
 
     final localImageFilter = _imageFilter;
     if (localImageFilter != null) {
-      localImageFilter.imageFilter((SkImageFilter skImageFilter) {
+      localImageFilter.withSkImageFilter((skImageFilter) {
         skPaint.setImageFilter(skImageFilter);
       });
     }
@@ -196,8 +197,7 @@ class CkPaint implements ui.Paint {
 
     if (value is ui.ColorFilter) {
       _imageFilter = createCkColorFilter(value as EngineColorFilter);
-    }
-    else {
+    } else {
       _imageFilter = value as CkManagedSkImageFilterConvertible?;
     }
   }

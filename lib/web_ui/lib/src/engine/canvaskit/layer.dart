@@ -417,16 +417,17 @@ class ImageFilterEngineLayer extends ContainerLayer
     }
     final ui.Rect childPaintBounds =
         prerollChildren(prerollContext, childMatrix);
-    convertible.imageFilter((SkImageFilter filter) {
-      // If the filter is a ColorFilter, the extended paint bounds will be the
-      // entire screen, which is not what we want.
       if (_filter is ui.ColorFilter) {
+        // If the filter is a ColorFilter, the extended paint bounds will be the
+        // entire screen, which is not what we want.
         paintBounds = childPaintBounds;
       } else {
-        paintBounds =
-            rectFromSkIRect(filter.getOutputBounds(toSkRect(childPaintBounds)));
+        convertible.withSkImageFilter((skFilter) {
+          paintBounds = rectFromSkIRect(
+            skFilter.getOutputBounds(toSkRect(childPaintBounds)),
+          );
+        });
       }
-    });
     prerollContext.mutatorsStack.pop();
   }
 
