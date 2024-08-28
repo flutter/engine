@@ -2699,12 +2699,14 @@
 ../../../flutter/third_party/skia/include/gpu/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/egl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/epoxy/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/glx/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/ios/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/mac/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/mock/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/gl/BUILD.bazel
@@ -3488,6 +3490,9 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-22/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-22/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-22/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/hwasan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/ld.so.1
@@ -3503,6 +3508,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-21/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-22/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-22/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-23/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-23/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
@@ -3517,6 +3524,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-21/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-22/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-22/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-23/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-23/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
