@@ -447,8 +447,9 @@ abstract class LayerOperation {
 
   PlatformViewStyling createPlatformViewStyling();
 
-  // Most operations don't need to actually be performed at all if they don't
-  // contain any pictures.
+  /// Indicates whether this operation's `pre` and `post` methods should be
+  /// invoked even if it contains no pictures. (Most operations don't need to
+  /// actually be performed at all if they don't contain any pictures.)
   bool get shouldDrawIfEmpty;
 }
 
