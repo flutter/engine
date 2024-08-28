@@ -1942,6 +1942,7 @@ void _testSelectables() {
       flags: 0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
+          ui.SemanticsFlag.hasSelectedState.index |
           ui.SemanticsFlag.isSelected.index |
           ui.SemanticsFlag.isFocusable.index,
       transform: Matrix4.identity().toFloat64(),
@@ -1954,7 +1955,7 @@ void _testSelectables() {
 ''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(node.semanticRole?.kind, SemanticRoleKind.selectable);
+    expect(node.semanticRole?.kind, SemanticRoleKind.click_selectable);
     expect(
       reason: 'Selectables use generic semantic behaviors',
       node.semanticRole!.debugSemanticBehaviorTypes,
