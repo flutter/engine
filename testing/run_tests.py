@@ -71,6 +71,7 @@ def is_asan(build_dir):
 
 def run_cmd(
     cmd: typing.List[str],
+    cwd: str = None,
     forbidden_output: typing.List[str] = None,
     expect_failure: bool = False,
     env: typing.Dict[str, str] = None,
@@ -85,7 +86,7 @@ def run_cmd(
   command_string = ' '.join(cmd)
 
   print_divider('>')
-  logger.info('Running command "%s"', command_string)
+  logger.info('Running command "%s" in "%s"', command_string, cwd)
 
   start_time = time.time()
 
@@ -917,7 +918,8 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
     #
     # Until then, assert that no extra_opts are passed and explain the limitation.
     assert not extra_opts, 'Package %s uses package:test and does not support command-line arguments' % package_path
-    opts = ['test', '--disable-dart-dev']
+    # TODO(https://github.com/flutter/flutter/issues/154263): Restore `--disable-dart-dev`.
+    opts = ['test']
     yield EngineExecutableTask(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )
