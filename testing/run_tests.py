@@ -917,7 +917,7 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
     #
     # Until then, assert that no extra_opts are passed and explain the limitation.
     assert not extra_opts, 'Package %s uses package:test and does not support command-line arguments' % package_path
-    opts = ['--disable-dart-dev', 'test']
+    opts = ['test', '--disable-dart-dev']
     yield EngineExecutableTask(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )
