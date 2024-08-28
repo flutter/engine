@@ -21,7 +21,7 @@
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 
@@ -72,7 +72,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
