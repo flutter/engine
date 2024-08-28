@@ -22,6 +22,7 @@
 #include "fml/logging.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "include/core/SkMatrix.h"
+#include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace txt {
 
@@ -85,7 +86,9 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
     if (impeller_enabled_) {
-      if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+      SkTextBlobRunIterator run(blob.get());
+      if (ShouldRenderAsPath(dl_paints_[paint_id]) ||
+          ShouldForcePathRendering(run.font(), /*dpr_guess=*/3.0)) {
         auto path = skia::textlayout::Paragraph::GetPath(blob.get());
         // If there is no path, this is an emoji and should be drawn as is,
         // ignoring the color source.
@@ -184,7 +187,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // running on Impeller for correctness. These filters rely on having the
     // glyph coverage, whereas regular text is drawn as rectangular texture
     // samples.
-    return (paint.getColorSource() && !paint.getColorSource()->asColor());
+    // If the text is stroked and the stroke width is large enough, use path
+    // rendering anyway, as the fidelity problems won't be as noticable and
+    // rendering will be faster as it avoids software rasterization.
+    return (paint.getColorSource() && !paint.getColorSource()->asColor()) ||
+      (paint.getDrawStyle() == DlDrawStyle::kStroke && paint.getStrokeWidth() > 16);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
