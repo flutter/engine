@@ -69,7 +69,7 @@ def is_asan(build_dir):
   return False
 
 
-def run_cmd(
+def run_cmd( # pylint: disable=too-many-arguments
     cmd: typing.List[str],
     cwd: str = None,
     forbidden_output: typing.List[str] = None,
@@ -918,7 +918,7 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
     # the test execution a tiny bit. TODO(https://github.com/flutter/flutter/issues/133569).
     #
     # Until then, assert that no extra_opts are passed and explain the limitation.
-    assert not extra_opts, 'Package %s uses package:test and does not support command-line arguments' % package_path
+    assert not extra_opts, '%s uses package:test and cannot use CLI args' % package_path
     # TODO(https://github.com/flutter/flutter/issues/154263): Restore `--disable-dart-dev`.
     opts = ['test']
     yield EngineExecutableTask(
@@ -942,9 +942,9 @@ def uses_package_test_runner(package):
   pubspec = os.path.join(package, 'pubspec.yaml')
   if not os.path.exists(pubspec):
     return False
-  with open(pubspec, 'r') as f:
+  with open(pubspec, 'r') as file:
     # Check if either "dependencies" or "dev_dependencies" contains "test".
-    data = yaml.safe_load(f)
+    data = yaml.safe_load(file)
     if data is None:
       return False
     deps = data.get('dependencies', {})
