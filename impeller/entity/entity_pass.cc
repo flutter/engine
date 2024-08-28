@@ -71,7 +71,7 @@ std::optional<Rect> EntityPass::GetBoundsLimit() const {
 
 void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() == BlendMode::kSourceOver &&
-      entity.GetContents()->IsOpaque()) {
+      entity.GetContents()->IsOpaque(entity.GetTransform())) {
     entity.SetBlendMode(BlendMode::kSource);
   }
 
@@ -718,7 +718,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // If there are any pending clips to replay, render any that may affect
   // the entity we're about to render.
   while (const EntityPassClipStack::ReplayResult* next_replay_clip =
-             clip_coverage_stack.GetNextReplayResult(element_entity)) {
+             clip_coverage_stack.GetNextReplayResult(
+                 element_entity.GetClipDepth())) {
     auto& replay_entity = next_replay_clip->entity;
     SetClipScissor(next_replay_clip->clip_coverage, *result.pass,
                    global_pass_position);
