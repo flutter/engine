@@ -64,7 +64,7 @@ def main():
 
   # Create XCFramework from the arm64 and x64 fat framework.
   xcframeworks = [fat_framework]
-  dsyms = [fat_framework + '.dSYM'] if args.dsym else None
+  dsyms = {fat_framework: fat_framework + '.dSYM'} if args.dsym else None
   create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks, dsyms=dsyms)
 
   if args.zip:
@@ -111,29 +111,6 @@ def zip_framework(dst, args):
   shutil.move(final_src_path, final_dst_path)
 
   zip_xcframework_archive(dst, args)
-
-  # Generate Flutter.dSYM.zip for manual symbolification.
-  #
-  # Historically, the framework dSYM was named FlutterMacOS.dSYM, so in order
-  # to remain backward-compatible with existing instructions in docs/Crashes.md
-  # and existing tooling such as dart-lang/dart_ci, we rename back to that name
-  #
-  # TODO(cbracken): remove these archives and the upload steps once we bundle
-  # dSYMs in app archives. https://github.com/flutter/flutter/issues/153879
-  framework_dsym = framework_dst + '.dSYM'
-  if os.path.exists(framework_dsym):
-    renamed_dsym = framework_dsym.replace('FlutterMacOS.framework.dSYM', 'FlutterMacOS.dSYM')
-    os.rename(framework_dsym, renamed_dsym)
-
-    # Create a zip of just the contents of the dSYM, then create a zip of that zip.
-    # TODO(cbracken): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-    sky_utils.create_zip(renamed_dsym, 'FlutterMacOS.dSYM.zip', ['.'])
-    sky_utils.create_zip(renamed_dsym, 'FlutterMacOS.dSYM_.zip', ['FlutterMacOS.dSYM.zip'])
-
-    # Move the double-zipped FlutterMacOS.dSYM.zip to dst.
-    dsym_final_src_path = os.path.join(renamed_dsym, 'FlutterMacOS.dSYM_.zip')
-    dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
-    shutil.move(dsym_final_src_path, dsym_final_dst_path)
 
 
 def zip_xcframework_archive(dst, args):
