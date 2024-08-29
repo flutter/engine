@@ -43,6 +43,8 @@ Entity::Entity(Entity&&) = default;
 
 Entity::Entity(const Entity&) = default;
 
+Entity& Entity::operator=(Entity&&) = default;
+
 const Matrix& Entity::GetTransform() const {
   return transform_;
 }
@@ -124,7 +126,8 @@ bool Entity::CanInheritOpacity() const {
   if (!contents_) {
     return false;
   }
-  if (!((blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) ||
+  if (!((blend_mode_ == BlendMode::kSource &&
+         contents_->IsOpaque(GetTransform())) ||
         blend_mode_ == BlendMode::kSourceOver)) {
     return false;
   }
@@ -135,7 +138,8 @@ bool Entity::SetInheritedOpacity(Scalar alpha) {
   if (!CanInheritOpacity()) {
     return false;
   }
-  if (blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) {
+  if (blend_mode_ == BlendMode::kSource &&
+      contents_->IsOpaque(GetTransform())) {
     blend_mode_ = BlendMode::kSourceOver;
   }
   contents_->SetInheritedOpacity(alpha);
