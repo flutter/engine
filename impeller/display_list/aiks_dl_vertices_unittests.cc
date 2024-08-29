@@ -355,6 +355,10 @@ TEST_P(AiksTest, DrawVerticesPremultipliesColors) {
 }
 
 TEST_P(AiksTest, DrawVerticesWithInvalidIndices) {
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/154368): Re-enable.
+    GTEST_SKIP() << "Test acts erratically on OpenGLES.";
+  }
   std::vector<SkPoint> positions = {
       SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
       SkPoint::Make(200, 500)};
