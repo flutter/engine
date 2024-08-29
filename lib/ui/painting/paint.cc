@@ -71,8 +71,11 @@ DlColor ReadColor(const tonic::DartByteData& byte_data) {
   // Invert alpha so 0 initialized buffer has default value;
   float alpha = 1.f - float_data[kColorAlphaIndex];
   uint32_t colorspace = uint_data[kColorSpaceIndex];
-  return DlColor(alpha, red, green, blue,
-                 static_cast<DlColorSpace>(colorspace));
+
+  DlColor dl_color(alpha, red, green, blue,
+                   static_cast<DlColorSpace>(colorspace));
+
+  return dl_color.withColorSpace(DlColorSpace::kExtendedSRGB);
 }
 }  // namespace
 
