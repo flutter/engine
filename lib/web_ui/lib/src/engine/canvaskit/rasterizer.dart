@@ -61,14 +61,11 @@ abstract class ViewRasterizer {
     currentFrameSize = bitmapSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize.toSize());
-    final Frame compositorFrame =
-        context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
+    final Frame compositorFrame = context.acquireFrame(viewEmbedder);
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    await viewEmbedder.submitFrame(pictureRecorder.endRecording());
+    await viewEmbedder.submitFrame();
   }
 
   /// Do some initialization to prepare to draw a frame.

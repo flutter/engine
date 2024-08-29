@@ -44,13 +44,12 @@ class LayerTree {
   /// not be used.
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
-    internalNodesCanvas.addCanvas(frame.canvas);
     final Iterable<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getPictureCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
     final PaintContext context = PaintContext(
       internalNodesCanvas,
-      frame.canvas,
+      frame.viewEmbedder?.getBaseCanvas(),
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
@@ -81,10 +80,7 @@ class LayerTree {
 
 /// A single frame to be rendered.
 class Frame {
-  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
-
-  /// The canvas to render this frame to.
-  final CkCanvas canvas;
+  Frame(this.rasterCache, this.viewEmbedder);
 
   /// A cache of pre-rastered pictures.
   final RasterCache? rasterCache;
@@ -110,7 +106,7 @@ class CompositorContext {
   RasterCache? rasterCache;
 
   /// Acquire a frame using this compositor's settings.
-  Frame acquireFrame(CkCanvas canvas, HtmlViewEmbedder? viewEmbedder) {
-    return Frame(canvas, rasterCache, viewEmbedder);
+  Frame acquireFrame(HtmlViewEmbedder? viewEmbedder) {
+    return Frame(rasterCache, viewEmbedder);
   }
 }

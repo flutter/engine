@@ -465,7 +465,7 @@ class ShaderMaskEngineLayer extends ContainerLayer
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = prerollChildren(prerollContext, matrix);
-    prerollContext.viewEmbedder?.prerollShaderMask();
+    prerollContext.viewEmbedder?.prerollPicture();
   }
 
   @override
@@ -487,6 +487,11 @@ class ShaderMaskEngineLayer extends ContainerLayer
         ui.Rect.fromLTWH(0, 0, maskRect.width, maskRect.height), paint);
     paint.dispose();
     paintContext.leafNodesCanvas!.restore();
+
+    final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
+    if (nextCanvas != null) {
+      paintContext.leafNodesCanvas = nextCanvas;
+    }
 
     paintContext.internalNodesCanvas.restore();
   }
@@ -523,8 +528,10 @@ class PictureLayer extends Layer {
 
     paintContext.leafNodesCanvas!.drawPicture(picture);
     paintContext.leafNodesCanvas!.restore();
-    CkCanvas nextCanvas = paintContext.viewEmbedder?.drawPicture(picture);
-    paintContext.leafNodesCanvas = nextCanvas;
+    final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
+    if (nextCanvas != null) {
+      paintContext.leafNodesCanvas = nextCanvas;
+    }
   }
 }
 

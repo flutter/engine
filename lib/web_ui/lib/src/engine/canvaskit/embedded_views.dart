@@ -5,8 +5,7 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart'
-    show PlatformViewManager, configuration, longestIncreasingSubsequence;
+import '../../engine.dart' show PlatformViewManager, configuration, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -88,6 +87,15 @@ class HtmlViewEmbedder {
         .map((CkPictureRecorder r) => r.recordingCanvas!);
   }
 
+  /// Returns the first canvas to draw into.
+  ///
+  /// This returns `null` if preroll hasn't been done, or if there are no
+  /// pictures in the scene.
+  CkCanvas? getBaseCanvas() {
+    return _context
+        .pictureRecordersCreatedDuringPreroll.firstOrNull?.recordingCanvas;
+  }
+
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
     // Do nothing if the params didn't change.
     if (_currentCompositionParams[viewId] == params) {
@@ -102,22 +110,28 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.add(viewId);
   }
 
+  /// Record that another picture recorder is needed.
   void prerollPicture() {
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
     _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
   }
 
-  CkCanvas drawPicture(CkPicture picture) {
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
-  }
-
-  void prerollShaderMask() {
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+  /// Finalize the given canvas and add it to the unoptimized scene.
+  ///
+  /// Returns the next canvas to draw pictures into.
+  CkCanvas? finalizePicture() {
+    final CkPictureRecorder currentRecorder = _context
+        .pictureRecordersCreatedDuringPreroll[_context.pictureRecorderIndex++];
+    _context.sceneElements.add(currentRecorder);
+    // If this is the last picture, return null for the next canvas.
+    if (_context.pictureRecorderIndex >=
+        _context.pictureRecordersCreatedDuringPreroll.length) {
+      return null;
+    }
+    return _context
+        .pictureRecordersCreatedDuringPreroll[_context.pictureRecorderIndex]
+        .recordingCanvas!;
   }
 
   /// Prepares to composite [viewId].
@@ -126,7 +140,7 @@ class HtmlViewEmbedder {
     rasterizer.view.dom.injectPlatformView(viewId);
 
     _compositionOrder.add(viewId);
-    _context.viewCount++;
+    _context.sceneElements.add(viewId);
 
     if (_viewsToRecomposite.contains(viewId)) {
       _compositeWithParams(viewId, _currentCompositionParams[viewId]!);
@@ -354,13 +368,17 @@ class HtmlViewEmbedder {
     sceneHost.append(_svgPathDefs!);
   }
 
-  Future<void> submitFrame(CkPicture basePicture) async {
-    final List<CkPicture> pictures = <CkPicture>[basePicture];
-    for (final CkPictureRecorder recorder in _context.pictureRecorders) {
-      pictures.add(recorder.endRecording());
-    }
+  Future<void> submitFrame() async {
+    final List<Object> unoptimizedRendering =
+        _context.sceneElements.map((Object element) {
+      if (element is CkPictureRecorder) {
+        return element.endRecording();
+      } else {
+        return element;
+      }
+    }).toList();
     Rendering rendering = createOptimizedRendering(
-        pictures, _compositionOrder, _currentCompositionParams);
+        unoptimizedRendering, _currentCompositionParams);
     rendering = _modifyRenderingForMaxCanvases(rendering);
     _updateDomForNewRendering(rendering);
     if (rendering.equalsForRendering(_activeRendering)) {
@@ -918,9 +936,10 @@ class EmbedderFrameContext {
   /// This is a subset of [_pictureRecordersCreatedDuringPreroll].
   final List<CkPictureRecorder> pictureRecorders = <CkPictureRecorder>[];
 
-  /// The number of platform views in this frame.
-  int viewCount = 0;
+  /// The index of the current picture recorder.
+  int pictureRecorderIndex = 0;
 
-  /// Unoptimized rendering.
-  final Rendering unoptimizedRendering = Rendering();
+  /// List of picture recorders and platform view ids in the order they were
+  /// painted.
+  final List<Object> sceneElements = <Object>[];
 }
