@@ -23,11 +23,15 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path
 import tempfile
 import time
 import typing
 import xvfb
+
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys_path.insert(0, os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib'))
+import yaml  # pylint: disable=import-error, wrong-import-position
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
@@ -65,8 +69,9 @@ def is_asan(build_dir):
   return False
 
 
-def run_cmd(
+def run_cmd( # pylint: disable=too-many-arguments
     cmd: typing.List[str],
+    cwd: str = None,
     forbidden_output: typing.List[str] = None,
     expect_failure: bool = False,
     env: typing.Dict[str, str] = None,
@@ -81,12 +86,13 @@ def run_cmd(
   command_string = ' '.join(cmd)
 
   print_divider('>')
-  logger.info('Running command "%s"', command_string)
+  logger.info('Running command "%s" in "%s"', command_string, cwd)
 
   start_time = time.time()
 
   process = subprocess.Popen(
       cmd,
+      cwd=cwd,
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
       env=env,
@@ -905,14 +911,49 @@ def gather_dart_smoke_test(build_dir, test_filter):
 
 
 def gather_dart_package_tests(build_dir, package_path, extra_opts):
-  dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
-  if not dart_tests:
-    raise Exception('No tests found for Dart package at %s' % package_path)
-  for dart_test_file in dart_tests:
-    opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+  if uses_package_test_runner(package_path):
+    # Package that use package:test (dart test) do not support command-line arguments.
+    #
+    # The usual workaround is to use Platform.environment, but that would require changing
+    # the test execution a tiny bit. TODO(https://github.com/flutter/flutter/issues/133569).
+    #
+    # Until then, assert that no extra_opts are passed and explain the limitation.
+    assert not extra_opts, '%s uses package:test and cannot use CLI args' % package_path
+    # TODO(https://github.com/flutter/flutter/issues/154263): Restore `--disable-dart-dev`.
+    opts = ['test']
     yield EngineExecutableTask(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )
+  else:
+    dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
+    if not dart_tests:
+      raise Exception('No tests found for Dart package at %s' % package_path)
+    for dart_test_file in dart_tests:
+      opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+      yield EngineExecutableTask(
+          build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
+      )
+
+
+# Returns whether the given package path should be tested with `dart test`.
+#
+# Inferred by a dependency on the `package:test` package in the pubspec.yaml.
+def uses_package_test_runner(package):
+  pubspec = os.path.join(package, 'pubspec.yaml')
+  if not os.path.exists(pubspec):
+    return False
+  with open(pubspec, 'r') as file:
+    # Check if either "dependencies" or "dev_dependencies" contains "test".
+    data = yaml.safe_load(file)
+    if data is None:
+      return False
+    deps = data.get('dependencies', {})
+    if 'test' in deps:
+      return True
+    dev_deps = data.get('dev_dependencies', {})
+    if 'test' in dev_deps:
+      return True
+  return False
 
 
 # Returns a list of Dart packages to test.
@@ -975,7 +1016,7 @@ def run_benchmark_tests(build_dir):
   test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'benchmark')
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
-    opts = ['--disable-dart-dev', dart_test_file]
+    opts = [dart_test_file]
     run_engine_executable(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir
     )
@@ -1073,7 +1114,7 @@ def run_impeller_golden_tests(build_dir: str, require_skia_gold: bool = False):
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'{dart_bin} --disable-dart-dev {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1113,7 +1154,7 @@ for more information.
 
     with DirectoryChange(harvester_path):
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd([dart_bin, '--disable-dart-dev', str(bin_path), temp_dir])
+      run_cmd([dart_bin, str(bin_path), temp_dir])
 
 
 def main():

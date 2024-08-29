@@ -126,6 +126,10 @@ class ColorSourceContents : public Contents {
     return geom.GetPositionBuffer(renderer, entity, pass);
   }
 
+  /// @brief Whether the entity should be treated as non-opaque due to stroke
+  ///        geometry requiring alpha for coverage.
+  bool AppliesAlphaForStrokeCoverage(const Matrix& transform) const;
+
   template <typename VertexShaderT>
   bool DrawGeometry(const ContentContext& renderer,
                     const Entity& entity,
@@ -212,6 +216,11 @@ class ColorSourceContents : public Contents {
     }
     pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
     options.primitive_type = geometry_result.type;
+
+    // Enable depth writing for all opaque entities in order to allow
+    // reordering. Opaque entities are coerced to source blending by
+    // `EntityPass::AddEntity`.
+    options.depth_write_enabled = options.blend_mode == BlendMode::kSource;
 
     // Take the pre-populated vertex shader uniform struct and set managed
     // values.
