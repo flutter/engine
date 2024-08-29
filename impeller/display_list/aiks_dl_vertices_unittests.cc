@@ -12,6 +12,7 @@
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/testing/testing.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 
 namespace impeller {
@@ -355,10 +356,6 @@ TEST_P(AiksTest, DrawVerticesPremultipliesColors) {
 }
 
 TEST_P(AiksTest, DrawVerticesWithInvalidIndices) {
-  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
-    // TODO(https://github.com/flutter/flutter/issues/154368): Re-enable.
-    GTEST_SKIP() << "Test acts erratically on OpenGLES.";
-  }
   std::vector<SkPoint> positions = {
       SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
       SkPoint::Make(200, 500)};
@@ -379,7 +376,15 @@ TEST_P(AiksTest, DrawVerticesWithInvalidIndices) {
   builder.DrawRect(SkRect::MakeLTRB(0, 0, 400, 400), paint);
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrc, paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/154368): Re-enable.
+    AiksContext renderer(GetContext(), nullptr);
+    std::shared_ptr<Texture> image =
+        DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
+    EXPECT_TRUE(image);
+  } else {
+    ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+  }
 }
 
 // All four vertices should form a solid red rectangle with no gaps.
