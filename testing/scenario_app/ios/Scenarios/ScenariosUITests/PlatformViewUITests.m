@@ -147,6 +147,37 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+
+@interface PlatformViewMutationClipRectAfterMovedMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRectAfterMovedMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-after-moved-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  // This test needs to wait for several frames for the PlatformView to settle to
+  // the correct position. The PlatformView accessiblity is set to platform_view[10000] when it is
+  // ready.
+  XCUIElement* element = self.application.otherElements[@"platform_view[10000]"];
+  BOOL exists = [element waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface PlatformViewMutationClipRRectTests : GoldenPlatformViewTests
 
 @end
@@ -156,6 +187,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
       [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipRRectMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRRectMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-multilpe-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -183,6 +232,25 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+
+@interface PlatformViewMutationLargeClipRRectMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationLargeClipRRectMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-large-cliprrect-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface PlatformViewMutationClipPathTests : GoldenPlatformViewTests
 
 @end
@@ -201,6 +269,26 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+
+@interface PlatformViewMutationClipPathMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipPathMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+
 @interface PlatformViewMutationClipRectWithTransformTests : GoldenPlatformViewTests
 
 @end
@@ -210,6 +298,25 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
       [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+
+@interface PlatformViewMutationClipRectWithTransformMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRectWithTransformMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-with-transform-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -237,6 +344,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+@interface PlatformViewMutationClipRRectWithTransformMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRRectWithTransformMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-with-transform-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface PlatformViewMutationLargeClipRRectWithTransformTests : GoldenPlatformViewTests
 
 @end
@@ -246,6 +371,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager = [[GoldenTestManager alloc]
       initWithLaunchArg:@"--platform-view-large-cliprrect-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationLargeClipRRectWithTransformMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationLargeClipRRectWithTransformMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-large-cliprrect-with-transform-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -273,6 +416,25 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+
+@interface PlatformViewMutationClipPathWithTransformMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipPathWithTransformMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath-with-transform-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface TwoPlatformViewClipRectTests : GoldenPlatformViewTests
 
 @end
@@ -282,6 +444,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
       [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewClipRectMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipRectMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rect-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -309,6 +489,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+@interface TwoPlatformViewClipRRectMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipRRectMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rrect-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface TwoPlatformViewClipPathTests : GoldenPlatformViewTests
 
 @end
@@ -318,6 +516,24 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
       [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-path"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewClipPathMultipleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipPathMultipleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-path-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -526,6 +742,41 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   XCUIApplication* app = [[XCUIApplication alloc] init];
   app.launchArguments =
       @[ @"--platform-views-with-clips-scrolling", @"platform_views_with_clips_scrolling" ];
+  [app launch];
+
+  XCUIElement* platformView = app.textViews.firstMatch;
+  BOOL exists = [platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  // Wait and let the scenario app scroll a bit.
+  XCTWaiterResult waitResult = [XCTWaiter
+      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5 seconds"] ]
+                  timeout:5];
+  // If the waiter is not interrupted, we know the app is in a valid state after timeout, thus the
+  // test passes.
+  XCTAssert(waitResult != XCTWaiterResultInterrupted);
+}
+
+@interface PlatformViewWithClipsScrollingMultipleClips : XCTestCase
+
+@end
+
+@implementation PlatformViewWithClipsScrollingMultipleClips
+
+- (void)setUp {
+  [super setUp];
+  self.continueAfterFailure = NO;
+}
+
+- (void)testPlatformViewsWithClipsScrolling {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments =
+      @[ @"--platform-views-with-clips-scrolling", @"platform_views_with_clips_scrolling-multiple-clips" ];
   [app launch];
 
   XCUIElement* platformView = app.textViews.firstMatch;
