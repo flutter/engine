@@ -37,6 +37,7 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'platform_view_surrounding_layers_fractional_coordinate': (FlutterView view) => PlatformViewSurroundingLayersFractionalCoordinateScenario(view, id: _viewId++),
   'platform_view_partial_intersection_fractional_coordinate': (FlutterView view) => PlatformViewPartialIntersectionFractionalCoordinateScenario(view, id: _viewId++),
   'platform_view_cliprect': (FlutterView view) => PlatformViewClipRectScenario(view, id: _viewId++),
+  'platform_view_cliprect_multiple_clips': (FlutterView view) => PlatformViewClipRectMultipleClipsScenario(view, id: _viewId++),
   'platform_view_cliprect_with_transform': (FlutterView view) => PlatformViewClipRectWithTransformScenario(view, id: _viewId++),
   'platform_view_cliprect_after_moved': (FlutterView view) => PlatformViewClipRectAfterMovedScenario(view, id: _viewId++),
   'platform_view_cliprrect': (FlutterView view) => PlatformViewClipRRectScenario(view, id: _viewId++),

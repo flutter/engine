@@ -680,6 +680,33 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
   }
 }
 
+/// Platform view with clip rect, with multiple clips.
+class PlatformViewClipRectMultipleClipsScenario extends Scenario with _BasePlatformViewScenarioMixin {
+  /// Constructs a platform view with clip rect scenario.
+  PlatformViewClipRectMultipleClipsScenario(
+    super.view, {
+    required this.id,
+  });
+
+  /// The platform view identifier.
+  final int id;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder()
+      ..pushClipRect(const Rect.fromLTRB(100, 100, 400, 400))
+      ..pushClipRect(const Rect.fromLTRB(200, 200, 500, 500));
+
+    addPlatformView(
+      id,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+    );
+
+    finishBuilder(builder);
+  }
+}
+
 /// Platform view with clip rect then the PlatformView is moved for 10 frames.
 ///
 /// The clip rect moves with the same transform matrix with the PlatformView.

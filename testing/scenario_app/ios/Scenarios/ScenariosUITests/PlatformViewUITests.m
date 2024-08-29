@@ -98,6 +98,25 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+// Clip Rect Tests
+@interface PlatformViewMutationClipRectWithMultiupleClipsTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRectWithMultiupleClipsTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-multiple-clips"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface PlatformViewMutationClipRectAfterMovedTests : GoldenPlatformViewTests
 
 @end

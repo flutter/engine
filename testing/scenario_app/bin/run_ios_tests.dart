@@ -361,6 +361,7 @@ final _skipTestsForImpeller = [
   'ScenariosUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView',
   'ScenariosUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView',
   'ScenariosUITests/PlatformViewMutationClipRectTests/testPlatformView',
+  'ScenariosUITests/PlatformViewMutationClipRectMultipleClipsTests/testPlatformView',
   'ScenariosUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView',
   'ScenariosUITests/PlatformViewMutationClipRRectTests/testPlatformView',
   'ScenariosUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView',

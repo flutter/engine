@@ -29,6 +29,7 @@ const double kDefaultRmseThreshold = 0.5;
         @"--platform-view-multiple-background-foreground" :
             @"platform_view_multiple_background_foreground",
         @"--platform-view-cliprect" : @"platform_view_cliprect",
+        @"--platform-view-cliprect-multiple-clips" : @"platform_view_cliprect_multiple_clips",
         @"--platform-view-cliprrect" : @"platform_view_cliprrect",
         @"--platform-view-large-cliprrect" : @"platform_view_large_cliprrect",
         @"--platform-view-clippath" : @"platform_view_clippath",
