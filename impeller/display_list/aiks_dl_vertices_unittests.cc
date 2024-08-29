@@ -376,15 +376,10 @@ TEST_P(AiksTest, DrawVerticesWithInvalidIndices) {
   builder.DrawRect(SkRect::MakeLTRB(0, 0, 400, 400), paint);
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrc, paint);
 
-  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
-    // TODO(https://github.com/flutter/flutter/issues/154368): Re-enable.
-    AiksContext renderer(GetContext(), nullptr);
-    std::shared_ptr<Texture> image =
-        DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
-    EXPECT_TRUE(image);
-  } else {
-    ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-  }
+  AiksContext renderer(GetContext(), nullptr);
+  std::shared_ptr<Texture> image =
+      DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
+  EXPECT_TRUE(image);
 }
 
 // All four vertices should form a solid red rectangle with no gaps.
