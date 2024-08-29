@@ -181,7 +181,7 @@ void testMain() {
       expect(slices.length, 3);
       expect(slices[0], pictureSliceWithRect(pictureRect1));
       expect(slices[1], platformViewSliceWithViews(<PlatformView>[
-        PlatformView(1, platformViewRect, const PlatformViewStyling(position: PlatformViewPosition.offset(ui.Offset(150, 150))))
+        PlatformView(1, platformViewRect.size, const PlatformViewStyling(position: PlatformViewPosition.offset(ui.Offset(150, 150))))
       ]));
       expect(slices[2], pictureSliceWithRect(const ui.Rect.fromLTRB(200, 200, 300, 300)));
     });
