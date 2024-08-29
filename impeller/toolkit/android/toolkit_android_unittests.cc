@@ -7,6 +7,7 @@
 #include "impeller/toolkit/android/choreographer.h"
 #include "impeller/toolkit/android/hardware_buffer.h"
 #include "impeller/toolkit/android/proc_table.h"
+#include "impeller/toolkit/android/shadow_realm.h"
 #include "impeller/toolkit/android/surface_control.h"
 #include "impeller/toolkit/android/surface_transaction.h"
 
