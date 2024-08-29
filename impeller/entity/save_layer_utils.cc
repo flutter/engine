@@ -32,37 +32,43 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     coverage = Rect::MakeMaximum();
   }
 
-  // If flood_output_coverage is true, then the restore is applied with a
-  // destructive blend mode that requires flooding to the coverage limit.
-  // Technically we could only allocated a render target as big as the input
-  // coverage and then use a decal sampling mode to perform the flood. Returning
-  // the coverage limit is a correct but non optimal means of ensuring correct
-  // rendering.
-  if (flood_output_coverage) {
-    return coverage_limit;
-  }
-
   // The content coverage must be scaled by any image filters present on the
   // saveLayer paint. For example, if a saveLayer has a coverage limit of
   // 100x100, but it has a Matrix image filter that scales by one half, the
   // actual coverage limit is 200x200.
   if (image_filter) {
+    // Transform the input coverage into the global coordinate space before
+    // computing the bounds limit intersection. This is the "worst case"
+    // coverage value before we intersect with the content coverage below.
     std::optional<Rect> source_coverage_limit =
         image_filter->GetSourceCoverage(effect_transform, coverage_limit);
     if (!source_coverage_limit.has_value()) {
       // No intersection with parent coverage limit.
       return std::nullopt;
     }
+    // The image filter may change the coverage limit required to flood
+    // the parent layer. Returning the source coverage limit so that we
+    // can guarantee the render target is larger enough.
+    //
+    // See note below on flood_output_coverage.
+    if (flood_output_coverage) {
+      return source_coverage_limit;
+    }
 
-    // Transform the input coverage into the global coordinate space before
-    // computing the bounds limit intersection.
     return coverage.TransformBounds(effect_transform)
         .Intersection(source_coverage_limit.value());
   }
 
   // If the input coverage is maximum, just return the coverage limit that
   // is already in the global coordinate space.
-  if (coverage.IsMaximum()) {
+  //
+  // If flood_output_coverage is true, then the restore is applied with a
+  // destructive blend mode that requires flooding to the coverage limit.
+  // Technically we could only allocated a render target as big as the input
+  // coverage and then use a decal sampling mode to perform the flood. Returning
+  // the coverage limit is a correct but non optimal means of ensuring correct
+  // rendering.
+  if (flood_output_coverage | coverage.IsMaximum()) {
     return coverage_limit;
   }
 
