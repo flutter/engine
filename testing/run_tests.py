@@ -133,7 +133,10 @@ def run_cmd( # pylint: disable=too-many-arguments
       )
 
   print_divider('<')
-  logger.info('Command run successfully in %.2f seconds: %s', end_time - start_time, command_string)
+  logger.info(
+      'Command run successfully in %.2f seconds: %s (in %s)', end_time - start_time, command_string,
+      cwd
+  )
 
 
 def is_mac():
@@ -919,8 +922,7 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
     #
     # Until then, assert that no extra_opts are passed and explain the limitation.
     assert not extra_opts, '%s uses package:test and cannot use CLI args' % package_path
-    # TODO(https://github.com/flutter/flutter/issues/154263): Restore `--disable-dart-dev`.
-    opts = ['test']
+    opts = ['test', '--reporter=expanded']
     yield EngineExecutableTask(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )

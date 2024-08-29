@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:litetest/litetest.dart';
+import 'dart:io' as io;
+
 import 'package:path_ops/path_ops.dart';
+import 'package:test/test.dart';
 
 void main() {
+  print(io.Directory.current);
   test('Path tests', () {
     final Path path = Path()
       ..lineTo(10, 0)
@@ -68,10 +71,13 @@ void main() {
     expect(intersection.points, <double>[
       34.06542205810547, 128.0, // move
       48.90797424316406, 48.59233856201172, // line
-      57.80497360229492, 39.73065185546875, 68.189697265625, 32.3614387512207, 79.66168212890625, 26.885154724121094, // cubic
+      57.80497360229492, 39.73065185546875, 68.189697265625, 32.3614387512207,
+      79.66168212890625, 26.885154724121094, // cubic
       151.7936248779297, 58.72270584106445, // line
-      150.66123962402344, 59.74142837524414, 149.49365234375, 60.752471923828125, 148.32867431640625, 61.76123809814453, // cubic
-      132.3506317138672, 75.59684753417969, 116.86703491210938, 89.0042953491211, 199.52090454101562, 115.93260192871094, // cubic
+      150.66123962402344, 59.74142837524414, 149.49365234375,
+      60.752471923828125, 148.32867431640625, 61.76123809814453, // cubic
+      132.3506317138672, 75.59684753417969, 116.86703491210938,
+      89.0042953491211, 199.52090454101562, 115.93260192871094, // cubic
       199.36000061035156, 128.0, // line
       34.06542205810547, 128.0, // line
       // close
@@ -85,9 +91,11 @@ void main() {
     final Path a = Path(FillType.evenOdd)
       ..moveTo(9.989999771118164, 20.0)
       ..cubicTo(4.46999979019165, 20.0, 0.0, 15.520000457763672, 0.0, 10.0)
-      ..cubicTo(0.0, 4.480000019073486, 4.46999979019165, 0.0, 9.989999771118164, 0.0)
+      ..cubicTo(
+          0.0, 4.480000019073486, 4.46999979019165, 0.0, 9.989999771118164, 0.0)
       ..cubicTo(15.520000457763672, 0.0, 20.0, 4.480000019073486, 20.0, 10.0)
-      ..cubicTo(20.0, 15.520000457763672, 15.520000457763672, 20.0, 9.989999771118164, 20.0)
+      ..cubicTo(20.0, 15.520000457763672, 15.520000457763672, 20.0,
+          9.989999771118164, 20.0)
       ..close()
       ..moveTo(10.0, 18.0)
       ..cubicTo(5.579999923706055, 18.0, 2.0, 14.420000076293945, 2.0, 10.0)
@@ -107,9 +115,14 @@ void main() {
       ..lineTo(9.0, 13.0)
       ..lineTo(11.0, 13.0)
       ..close();
-   final Path b = Path()..moveTo(0, 0)..lineTo(0, 20)..lineTo(20, 20)..lineTo(20, 0)..close();
+    final Path b = Path()
+      ..moveTo(0, 0)
+      ..lineTo(0, 20)
+      ..lineTo(20, 20)
+      ..lineTo(20, 0)
+      ..close();
 
-   final Path intersection = a.applyOp(b, PathOp.intersect);
-   expect(intersection.fillType, a.fillType);
+    final Path intersection = a.applyOp(b, PathOp.intersect);
+    expect(intersection.fillType, a.fillType);
   });
 }
