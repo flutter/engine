@@ -134,4 +134,12 @@ TEST(ToolkitAndroidTest, CanPostAndWaitForFrameCallbacks) {
   event.Wait();
 }
 
+TEST(ToolkitAndroidTest, ShouldDisableAHB) {
+  EXPECT_FALSE(ShadowRealm::ShouldDisableAHB());
+
+  EXPECT_TRUE(ShadowRealm::ShouldDisableAHBInternal("android-huawei", 29));
+  EXPECT_FALSE(ShadowRealm::ShouldDisableAHBInternal("android-huawei", 30));
+  EXPECT_FALSE(ShadowRealm::ShouldDisableAHBInternal("something made up", 29));
+}
+
 }  // namespace impeller::android::testing
