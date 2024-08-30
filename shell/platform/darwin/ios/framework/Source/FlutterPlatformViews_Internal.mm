@@ -247,8 +247,8 @@ static BOOL _preparedOnce = NO;
 }
 
 - (void)drawRect:(CGRect)rect {
-  // It's hard to compute intersection of arbitrary paths.
-  // So we fallback to software rendering if the mask contains multiple paths and any non-rect path.
+  // It's hard to compute intersection of arbitrary non-rect paths.
+  // So we fallback to software rendering.
   if (containsNonRectPath_ && paths_.size() > 1) {
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextSaveGState(context);
@@ -263,13 +263,15 @@ static BOOL _preparedOnce = NO;
     CGContextFillRect(context, rect);
     CGContextRestoreGState(context);
   } else {
+    // Either a single path, or multiple rect paths.
+    // Use hardware rendering with CAShapeLayer.
     [super drawRect:rect];
     if (![self shapeLayer].path) {
       if (paths_.size() == 1) {
         // A single path, either rect or non-rect.
         [self shapeLayer].path = paths_.at(0);
       } else {
-        // Multiple paths, all must be rect.
+        // Multiple paths, all paths must be rects.
         [self shapeLayer].path = CGPathCreateWithRect(rectSoFar_, nil);
       }
     }
@@ -284,7 +286,7 @@ static BOOL _preparedOnce = NO;
       CATransform3DConcat(GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
   paths_.push_back([self getTransformedPath:path matrix:matrixInPoints]);
   CGAffineTransform affine = [self affineWithMatrix:matrixInPoints];
-  // Make sure the rect is not rotated (only translation or scaling)
+  // Make sure the rect is not rotated (only translated or scaled).
   if (affine.b == 0 && affine.c == 0) {
     rectSoFar_ = CGRectIntersection(rectSoFar_, CGRectApplyAffineTransform(clipRect, affine));
   } else {
