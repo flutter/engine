@@ -14,11 +14,15 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     bool flood_output_coverage,
     bool flood_input_coverage) {
   Rect coverage = content_coverage;
-  // There are three conditions that currently trigger flood_input_coverage, the
+  // There are three conditions that should cause input coverage to flood, the
   // first is the presence of a backdrop filter on the saveLayer. The second is
   // the presence of a color filter that effects transparent black on the
   // saveLayer. The last is the presence of unbounded content within the
-  // saveLayer (such as a drawPaint, bdf, et cetera).
+  // saveLayer (such as a drawPaint, bdf, et cetera). Note that currently
+  // only the presence of a backdrop filter impacts this flag, while color
+  // filters are not yet handled
+  // (https://github.com/flutter/flutter/issues/154035) and unbounded coverage
+  // is handled in the display list dispatcher.
   //
   // Backdrop filters apply before the saveLayer is restored. The presence of
   // a backdrop filter causes the content coverage of the saveLayer to be
@@ -32,7 +36,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // non-optimal but technically correct way to render this.
   //
   // If the saveLayer contains unbounded content, then at this point the
-  // dl_dispatched will have set content coverage to Rect::MakeMaximum().
+  // dl_dispatcher will have set content coverage to Rect::MakeMaximum().
   if (flood_input_coverage) {
     coverage = Rect::MakeMaximum();
   }
