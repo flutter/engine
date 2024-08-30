@@ -60,7 +60,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     // can guarantee the render target is larger enough.
     //
     // See note below on flood_output_coverage.
-    if (flood_output_coverage) {
+    if (flood_output_coverage || coverage.IsMaximum()) {
       return source_coverage_limit;
     }
 
@@ -77,7 +77,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // coverage and then use a decal sampling mode to perform the flood. Returning
   // the coverage limit is a correct but non optimal means of ensuring correct
   // rendering.
-  if (flood_output_coverage | coverage.IsMaximum()) {
+  if (flood_output_coverage || coverage.IsMaximum()) {
     return coverage_limit;
   }
 
