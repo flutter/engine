@@ -35,9 +35,3 @@ void fl_key_event_dispose(FlKeyEvent* event) {
   }
   g_free(event);
 }
-
-FlKeyEvent* fl_key_event_clone(const FlKeyEvent* event) {
-  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
-  *new_event = *event;
-  return new_event;
-}
