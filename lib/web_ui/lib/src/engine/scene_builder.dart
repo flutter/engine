@@ -62,16 +62,38 @@ class EngineScene implements ui.Scene {
     final ui.Rect canvasRect = ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
     final ui.Canvas canvas = ui.Canvas(recorder, canvasRect);
 
-    // Only rasterizes the picture slices.
-    for (final PictureSlice slice in rootLayer.slices.whereType<PictureSlice>()) {
-      canvas.drawPicture(slice.picture);
+    // Only rasterizes the pictures.
+    for (final LayerSlice? slice in rootLayer.slices) {
+      if (slice != null) {
+        canvas.drawPicture(slice.picture);
+      }
     }
     return recorder.endRecording().toImageSync(width, height);
   }
 }
 
+class OcclusionMap {
+  void addRect(ui.Rect rect) {
+    occlusionRects.add(rect);
+  }
+
+  bool overlaps(ui.Rect rect) {
+    return occlusionRects.any((ui.Rect o) => o.overlaps(rect));
+  }
+
+  // TODO(jacksongardner): Make this actually smart
+  List<ui.Rect> occlusionRects = <ui.Rect>[];
+}
+
+class SceneSlice {
+  final OcclusionMap pictureOcclusionMap = OcclusionMap();
+  final OcclusionMap platformViewOcclusionMap = OcclusionMap();
+}
+
 class EngineSceneBuilder implements ui.SceneBuilder {
   LayerBuilder currentBuilder = LayerBuilder.rootLayer();
+
+  final List<SceneSlice> sceneSlices = <SceneSlice>[SceneSlice()];
 
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
@@ -86,12 +108,34 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false
   }) {
+    _placePicture(offset, picture as ScenePicture);
+    currentBuilder.addDrawCommand(PictureDrawCommand(offset, picture));
+  }
+
+  void _placePicture(ui.Offset offset, ScenePicture picture) {
+    final ui.Rect cullRect = picture.cullRect.shift(offset);
+    currentBuilder.mapLocalToGlobal(cullRect);
+    int sliceIndex = sceneSlices.length;
+    while (sliceIndex > 0) {
+      final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
+      if (sliceBelow.platformViewOcclusionMap.overlaps(cullRect)) {
+        break;
+      }
+      sliceIndex--;
+      if (sliceBelow.pictureOcclusionMap.overlaps(cullRect)) {
+        break;
+      }
+    }
+    if (sliceIndex == sceneSlices.length) {
+      // Insert a new slice.
+      sceneSlices.add(SceneSlice());
+    }
+    final SceneSlice slice = sceneSlices[sliceIndex];
+    slice.pictureOcclusionMap.addRect(cullRect);
     currentBuilder.addPicture(
       offset,
       picture,
-      isComplexHint:
-      isComplexHint,
-      willChangeHint: willChangeHint
+      sliceIndex: sliceIndex,
     );
   }
 
@@ -102,17 +146,55 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0
   }) {
+    final ui.Rect platformViewRect = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+    _placePlatformView(viewId, platformViewRect);
+    currentBuilder.addDrawCommand(PlatformViewDrawCommand(viewId, platformViewRect));
+  }
+
+  void _placePlatformView(int viewId, ui.Rect rect) {
+    final ui.Rect globalPlatformViewRect = currentBuilder.mapLocalToGlobal(rect);
+    int sliceIndex = sceneSlices.length - 1;
+    while (sliceIndex > 0) {
+      final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
+      if (sliceBelow.platformViewOcclusionMap.overlaps(globalPlatformViewRect) ||
+          sliceBelow.pictureOcclusionMap.overlaps(globalPlatformViewRect)) {
+        break;
+      }
+      sliceIndex--;
+    }
+    if (sliceIndex == sceneSlices.length) {
+      // Insert a new slice.
+      sceneSlices.add(SceneSlice());
+    }
+    final SceneSlice slice = sceneSlices[sliceIndex];
+    slice.platformViewOcclusionMap.addRect(globalPlatformViewRect);
+
     currentBuilder.addPlatformView(
       viewId,
-      offset: offset,
-      width: width,
-      height: height
+      bounds: rect,
+      sliceIndex: sliceIndex,
     );
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    currentBuilder.mergeLayer(retainedLayer as PictureEngineLayer);
+    _placeRetainedLayer(retainedLayer as PictureEngineLayer);
+    currentBuilder.addDrawCommand(RetainedLayerDrawCommand(retainedLayer));
+  }
+
+  void _placeRetainedLayer(PictureEngineLayer retainedLayer) {
+    // TODO(jacksongardner): add optimized path
+    for (final LayerDrawCommand command in retainedLayer.drawCommands) {
+      switch (command) {
+        case PictureDrawCommand(offset: final ui.Offset offset, picture: final ScenePicture picture):
+          _placePicture(offset, picture);
+        case PlatformViewDrawCommand(viewId: final int viewId, bounds: final ui.Rect bounds):
+          // TODO(jacksongardner): we need to somehow deal with transformations here
+          _placePlatformView(viewId, bounds);
+        case RetainedLayerDrawCommand(layer: final PictureEngineLayer layer):
+          _placeRetainedLayer(layer);
+      }
+    }
   }
 
   @override
