@@ -1923,20 +1923,20 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   /*
   clip 1            clip 2
-    2 3 4 5 6         2 3 4 5 6 
-  2 + - - +         2   
-  3 |     |         3   + - - +      
+    2 3 4 5 6         2 3 4 5 6
+  2 + - - +         2
+  3 |     |         3   + - - +
   4 |     |         4   |     |
   5 + - - +         5   |     |
   6                 6   + - - +
-                   
+
   Result should be the intersection of 2 clips
-    2 3 4 5 6        
-  2                   
-  3   + - +              
-  4   |   |         
-  5   + - +        
-  6                 
+    2 3 4 5 6
+  2
+  3   + - +
+  4   |   |
+  5   + - +
+  6
   */
   CGRect insideClipping = CGRectMake(3, 3, 2, 2);
   for (int i = 0; i < 10; i++) {
@@ -2131,13 +2131,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   7 \ - - - - /         7     + - - - - +
 
   Result should be the intersection of 2 clips
-    2 3 4 5 6 7 8 9  
-  2     + - - \        
-  3     |     |       
-  4     |     |        
-  5     |     |        
-  6     |     |         
-  7     + - - /        
+    2 3 4 5 6 7 8 9
+  2     + - - \
+  3     |     |
+  4     |     |
+  5     |     |
+  6     |     |
+  7     + - - /
   */
   CGRect clipping = CGRectMake(4, 2, 4, 6);
   for (int i = 0; i < 10; i++) {
@@ -2145,32 +2145,27 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       CGPoint point = CGPointMake(i, j);
       int alpha = [self alphaOfPoint:CGPointMake(i, j) onView:flutterView];
       if (i == 7 && (j == 2 || j == 7)) {
-        // Upper and lower right corners should be partially transparent. 
+        // Upper and lower right corners should be partially transparent.
         XCTAssert(0 < alpha && alpha < 255);
       } else if (
-        // left
-        (i == 4 && j >= 2 && j <= 7) || 
-        // right
-        (i == 7 && j >= 2 && j <= 7) || 
-        // top
-        (j == 2 && i >= 4 && i <= 7) || 
-        // bottom
-        (j == 7 && i >= 4 && i <= 7)) 
-      {
+          // left
+          (i == 4 && j >= 2 && j <= 7) ||
+          // right
+          (i == 7 && j >= 2 && j <= 7) ||
+          // top
+          (j == 2 && i >= 4 && i <= 7) ||
+          // bottom
+          (j == 7 && i >= 4 && i <= 7)) {
         // Since we are falling back to software rendering for this case
-        // The edge pixels can be anti-aliased, so it may not be fully opaque. 
+        // The edge pixels can be anti-aliased, so it may not be fully opaque.
         XCTAssert(alpha > 127);
-      } else if (
-        (i == 3 && j >= 1 && j <= 8) ||
-        (i == 8 && j >= 1 && j <= 8) ||
-        (j == 1 && i >= 3 && i <= 8) ||
-        (j == 8 && i >= 3 && i <= 8))
-      {
+      } else if ((i == 3 && j >= 1 && j <= 8) || (i == 8 && j >= 1 && j <= 8) ||
+                 (j == 1 && i >= 3 && i <= 8) || (j == 8 && i >= 3 && i <= 8)) {
         // Since we are falling back to software rendering for this case
-        // The edge pixels can be anti-aliased, so it may not be fully transparent. 
+        // The edge pixels can be anti-aliased, so it may not be fully transparent.
         XCTAssert(alpha < 127);
       } else if (CGRectContainsPoint(clipping, point)) {
-        // Other pixels inside clipping should be fully opaque. 
+        // Other pixels inside clipping should be fully opaque.
         XCTAssertEqual(alpha, 255);
       } else {
         // Pixels outside clipping should be fully transparent.
@@ -2361,13 +2356,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   7 \ - - - - /         7     + - - - - +
 
   Result should be the intersection of 2 clips
-    2 3 4 5 6 7 8 9  
-  2     + - - \        
-  3     |     |       
-  4     |     |        
-  5     |     |        
-  6     |     |         
-  7     + - - /        
+    2 3 4 5 6 7 8 9
+  2     + - - \
+  3     |     |
+  4     |     |
+  5     |     |
+  6     |     |
+  7     + - - /
   */
   CGRect clipping = CGRectMake(4, 2, 4, 6);
   for (int i = 0; i < 10; i++) {
@@ -2375,32 +2370,27 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       CGPoint point = CGPointMake(i, j);
       int alpha = [self alphaOfPoint:CGPointMake(i, j) onView:flutterView];
       if (i == 7 && (j == 2 || j == 7)) {
-        // Upper and lower right corners should be partially transparent. 
+        // Upper and lower right corners should be partially transparent.
         XCTAssert(0 < alpha && alpha < 255);
       } else if (
-        // left
-        (i == 4 && j >= 2 && j <= 7) || 
-        // right
-        (i == 7 && j >= 2 && j <= 7) || 
-        // top
-        (j == 2 && i >= 4 && i <= 7) || 
-        // bottom
-        (j == 7 && i >= 4 && i <= 7)) 
-      {
+          // left
+          (i == 4 && j >= 2 && j <= 7) ||
+          // right
+          (i == 7 && j >= 2 && j <= 7) ||
+          // top
+          (j == 2 && i >= 4 && i <= 7) ||
+          // bottom
+          (j == 7 && i >= 4 && i <= 7)) {
         // Since we are falling back to software rendering for this case
-        // The edge pixels can be anti-aliased, so it may not be fully opaque. 
+        // The edge pixels can be anti-aliased, so it may not be fully opaque.
         XCTAssert(alpha > 127);
-      } else if (
-        (i == 3 && j >= 1 && j <= 8) ||
-        (i == 8 && j >= 1 && j <= 8) ||
-        (j == 1 && i >= 3 && i <= 8) ||
-        (j == 8 && i >= 3 && i <= 8))
-      {
+      } else if ((i == 3 && j >= 1 && j <= 8) || (i == 8 && j >= 1 && j <= 8) ||
+                 (j == 1 && i >= 3 && i <= 8) || (j == 8 && i >= 3 && i <= 8)) {
         // Since we are falling back to software rendering for this case
-        // The edge pixels can be anti-aliased, so it may not be fully transparent. 
+        // The edge pixels can be anti-aliased, so it may not be fully transparent.
         XCTAssert(alpha < 127);
       } else if (CGRectContainsPoint(clipping, point)) {
-        // Other pixels inside clipping should be fully opaque. 
+        // Other pixels inside clipping should be fully opaque.
         XCTAssertEqual(alpha, 255);
       } else {
         // Pixels outside clipping should be fully transparent.

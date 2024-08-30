@@ -147,7 +147,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-
 @interface PlatformViewMutationClipRectAfterMovedMultipleClipsTests : GoldenPlatformViewTests
 
 @end
@@ -155,8 +154,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipRectAfterMovedMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-after-moved-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-cliprect-after-moved-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -232,7 +231,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-
 @interface PlatformViewMutationLargeClipRRectMultipleClipsTests : GoldenPlatformViewTests
 
 @end
@@ -240,8 +238,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationLargeClipRRectMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-large-cliprrect-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-large-cliprrect-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -269,7 +267,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-
 @interface PlatformViewMutationClipPathMultipleClipsTests : GoldenPlatformViewTests
 
 @end
@@ -287,7 +284,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 }
 
 @end
-
 
 @interface PlatformViewMutationClipRectWithTransformTests : GoldenPlatformViewTests
 
@@ -307,7 +303,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-
 @interface PlatformViewMutationClipRectWithTransformMultipleClipsTests : GoldenPlatformViewTests
 
 @end
@@ -315,8 +310,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipRectWithTransformMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-with-transform-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-cliprect-with-transform-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -351,8 +346,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipRRectWithTransformMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-with-transform-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-cliprrect-with-transform-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -380,7 +375,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-@interface PlatformViewMutationLargeClipRRectWithTransformMultipleClipsTests : GoldenPlatformViewTests
+@interface PlatformViewMutationLargeClipRRectWithTransformMultipleClipsTests
+    : GoldenPlatformViewTests
 
 @end
 
@@ -416,7 +412,6 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
-
 @interface PlatformViewMutationClipPathWithTransformMultipleClipsTests : GoldenPlatformViewTests
 
 @end
@@ -424,8 +419,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipPathWithTransformMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath-with-transform-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-clippath-with-transform-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -496,8 +491,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation TwoPlatformViewClipRRectMultipleClipsTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rrect-multiple-clips"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--two-platform-view-clip-rrect-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -775,8 +770,9 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (void)testPlatformViewsWithClipsScrolling {
   XCUIApplication* app = [[XCUIApplication alloc] init];
-  app.launchArguments =
-      @[ @"--platform-views-with-clips-scrolling", @"platform_views_with_clips_scrolling-multiple-clips" ];
+  app.launchArguments = @[
+    @"--platform-views-with-clips-scrolling", @"platform_views_with_clips_scrolling-multiple-clips"
+  ];
   [app launch];
 
   XCUIElement* platformView = app.textViews.firstMatch;
