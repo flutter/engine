@@ -185,7 +185,7 @@ class CkPaint implements ui.Paint {
   ManagedSkColorFilter? _effectiveColorFilter;
 
   @override
-  double strokeMiterLimit = 0.0;
+  double strokeMiterLimit = 4.0;
 
   @override
   ui.ImageFilter? get imageFilter => _imageFilter;
