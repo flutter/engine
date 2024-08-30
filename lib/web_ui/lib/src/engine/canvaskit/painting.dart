@@ -38,6 +38,7 @@ class CkPaint implements ui.Paint {
     skPaint.setStrokeCap(toSkStrokeCap(strokeCap));
     skPaint.setStrokeJoin(toSkStrokeJoin(strokeJoin));
     skPaint.setColorInt(_colorValue);
+    skPaint.setStrokeMiter(strokeMiterLimit);
 
     final effectiveColorFilter = _effectiveColorFilter;
     if (effectiveColorFilter != null) {
@@ -59,8 +60,6 @@ class CkPaint implements ui.Paint {
         ));
       }
     }
-
-    skPaint.setStrokeMiter(strokeMiterLimit);
 
     final localImageFilter = _imageFilter;
     if (localImageFilter != null) {
