@@ -723,7 +723,7 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
                      ? ContentBoundsPromise::kMayClipContents
                      : ContentBoundsPromise::kContainsContents;
   std::optional<Rect> impeller_bounds;
-  if (!options.content_is_unbounded() || options.bounds_from_caller()) {
+  if (!options.content_is_unbounded()) {
     impeller_bounds = skia_conversions::ToRect(bounds);
   }
   GetCanvas().SaveLayer(paint, impeller_bounds, ToImageFilter(backdrop),
