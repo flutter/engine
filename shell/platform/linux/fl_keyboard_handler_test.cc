@@ -88,19 +88,6 @@ typedef struct {
   std::unique_ptr<char[]> event_character;
 } CallRecord;
 
-// Clone a C-string.
-//
-// Must be deleted by delete[].
-char* cloneString(const char* source) {
-  if (source == nullptr) {
-    return nullptr;
-  }
-  size_t charLen = strlen(source);
-  char* target = new char[charLen + 1];
-  strncpy(target, source, charLen + 1);
-  return target;
-}
-
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 constexpr guint16 kKeyCodeKeyB = 0x38u;
 constexpr guint16 kKeyCodeKeyM = 0x3au;
@@ -508,7 +495,7 @@ class KeyboardTester {
                                 AsyncKeyCallback callback) {
           EXPECT_FALSE(during_redispatch_);
           auto new_event = std::make_unique<FlutterKeyEvent>(*event);
-          char* new_event_character = cloneString(event->character);
+          char* new_event_character = g_strdup(event->character);
           new_event->character = new_event_character;
           storage.push_back(CallRecord{
               .type = CallRecord::kKeyCallEmbedder,
@@ -527,7 +514,7 @@ class KeyboardTester {
                                           const AsyncKeyCallback& callback) {
           EXPECT_FALSE(during_redispatch_);
           auto new_event = std::make_unique<FlutterKeyEvent>(*event);
-          char* new_event_character = cloneString(event->character);
+          char* new_event_character = g_strdup(event->character);
           new_event->character = new_event_character;
           storage.push_back(CallRecord{
               .type = CallRecord::kKeyCallEmbedder,
