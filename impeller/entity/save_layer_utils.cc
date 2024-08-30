@@ -14,9 +14,11 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     bool flood_output_coverage,
     bool flood_input_coverage) {
   Rect coverage = content_coverage;
-  // There are two conditions that currently trigger flood_input_coverage, the
-  // first is the presence of a backdrop filter and the second is the presence
-  // of a color filter that effects transparent black.
+  // There are three conditions that currently trigger flood_input_coverage, the
+  // first is the presence of a backdrop filter on the saveLayer. The second is
+  // the presence of a color filter that effects transparent black on the
+  // saveLayer. The last is the presence of unbounded content within the
+  // saveLayer (such as a drawPaint, bdf, et cetera).
   //
   // Backdrop filters apply before the saveLayer is restored. The presence of
   // a backdrop filter causes the content coverage of the saveLayer to be
@@ -28,6 +30,9 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // color filter and could allocate a render target sized just to the content,
   // but we don't currenty have the means to do so. Flooding the coverage is a
   // non-optimal but technically correct way to render this.
+  //
+  // If the saveLayer contains unbounded content, then at this point the
+  // dl_dispatched will have set content coverage to Rect::MakeMaximum().
   if (flood_input_coverage) {
     coverage = Rect::MakeMaximum();
   }
