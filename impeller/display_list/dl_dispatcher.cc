@@ -728,9 +728,13 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
   if (!options.content_is_unbounded() || options.bounds_from_caller()) {
     impeller_bounds = skia_conversions::ToRect(bounds);
   }
-  GetCanvas().SaveLayer(paint, impeller_bounds, ToImageFilter(backdrop),
-                        promise, total_content_depth,
-                        options.can_distribute_opacity());
+
+  GetCanvas().SaveLayer(
+      paint, impeller_bounds, ToImageFilter(backdrop), promise,
+      total_content_depth,
+      // Unbounded content can still have user specified bounds that require a
+      // saveLayer to be created to perform the clip.
+      options.can_distribute_opacity() && !options.content_is_unbounded());
 }
 
 // |flutter::DlOpReceiver|
