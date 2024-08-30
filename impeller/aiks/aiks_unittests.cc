@@ -16,7 +16,6 @@
 #include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
-#include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/device_buffer.h"
@@ -38,115 +37,6 @@ namespace impeller {
 namespace testing {
 
 INSTANTIATE_PLAYGROUND_SUITE(AiksTest);
-
-TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
-  Canvas canvas;
-  Matrix identity;
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), identity);
-  canvas.Translate(Size{100, 100});
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-}
-
-TEST_P(AiksTest, CanvasCanPushPopCTM) {
-  Canvas canvas;
-  ASSERT_EQ(canvas.GetSaveCount(), 1u);
-  ASSERT_EQ(canvas.Restore(), false);
-
-  canvas.Translate(Size{100, 100});
-  canvas.Save();
-  ASSERT_EQ(canvas.GetSaveCount(), 2u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-  ASSERT_TRUE(canvas.Restore());
-  ASSERT_EQ(canvas.GetSaveCount(), 1u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-}
-
-TEST_P(AiksTest, CanPictureConvertToImage) {
-  Canvas recorder_canvas;
-  Paint paint;
-  paint.color = Color{0.9568, 0.2627, 0.2118, 1.0};
-  recorder_canvas.DrawRect(Rect::MakeXYWH(100.0, 100.0, 600, 600), paint);
-  paint.color = Color{0.1294, 0.5882, 0.9529, 1.0};
-  recorder_canvas.DrawRect(Rect::MakeXYWH(200.0, 200.0, 600, 600), paint);
-
-  Canvas canvas;
-  AiksContext renderer(GetContext(), nullptr);
-  paint.color = Color::BlackTransparent();
-  canvas.DrawPaint(paint);
-  Picture picture = recorder_canvas.EndRecordingAsPicture();
-  auto image = picture.ToImage(renderer, ISize{1000, 1000});
-  if (image) {
-    canvas.DrawImage(image, Point(), Paint());
-    paint.color = Color{0.1, 0.1, 0.1, 0.2};
-    canvas.DrawRect(Rect::MakeSize(ISize{1000, 1000}), paint);
-  }
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/142358 .
-// Without a change to force render pass construction the image is left in an
-// undefined layout and triggers a validation error.
-TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
-  Canvas recorder_canvas;
-
-  Canvas canvas;
-  AiksContext renderer(GetContext(), nullptr);
-  Paint paint;
-  paint.color = Color::BlackTransparent();
-  canvas.DrawPaint(paint);
-  Picture picture = recorder_canvas.EndRecordingAsPicture();
-  auto image = picture.ToImage(renderer, ISize{1000, 1000});
-  if (image) {
-    canvas.DrawImage(image, Point(), Paint());
-    paint.color = Color{0.1, 0.1, 0.1, 0.2};
-    canvas.DrawRect(Rect::MakeSize(ISize{1000, 1000}), paint);
-  }
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, TransformMultipliesCorrectly) {
-  Canvas canvas;
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), Matrix());
-
-  // clang-format off
-  canvas.Translate(Vector3(100, 200));
-  ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransform(),
-    Matrix(  1,   0,   0,   0,
-             0,   1,   0,   0,
-             0,   0,   1,   0,
-           100, 200,   0,   1));
-
-  canvas.Rotate(Radians(kPiOver2));
-  ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransform(),
-    Matrix(  0,   1,   0,   0,
-            -1,   0,   0,   0,
-             0,   0,   1,   0,
-           100, 200,   0,   1));
-
-  canvas.Scale(Vector3(2, 3));
-  ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransform(),
-    Matrix(  0,   2,   0,   0,
-            -3,   0,   0,   0,
-             0,   0,   0,   0,
-           100, 200,   0,   1));
-
-  canvas.Translate(Vector3(100, 200));
-  ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransform(),
-    Matrix(   0,   2,   0,   0,
-             -3,   0,   0,   0,
-              0,   0,   0,   0,
-           -500, 400,   0,   1));
-  // clang-format on
-}
 
 #if IMPELLER_ENABLE_3D
 TEST_P(AiksTest, SceneColorSource) {
@@ -235,7 +125,7 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -259,7 +149,7 @@ TEST_P(AiksTest,
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(),
             GetBackend() == PlaygroundBackend::kOpenGLES ? 4llu : 3llu);
@@ -280,7 +170,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -300,7 +190,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -320,7 +210,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -340,7 +230,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {301, 301});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {301, 301});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -364,7 +254,7 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
   AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  std::shared_ptr<Texture> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
@@ -424,7 +314,7 @@ TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   });
 
   ASSERT_TRUE(entity.size() >= 1);
-  ASSERT_TRUE(contents->IsOpaque());
+  ASSERT_TRUE(contents->IsOpaque({}));
   ASSERT_EQ(entity[0].GetBlendMode(), BlendMode::kSource);
 }
 
@@ -495,6 +385,5 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 // █
 // █ Subdivisions:
 // █ - aiks_blend_unittests.cc
-// █ - aiks_blur_unittests.cc
 // █ - aiks_gradient_unittests.cc
 // █████████████████████████████████████████████████████████████████████████████

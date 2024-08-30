@@ -92,10 +92,10 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
   display_list->Dispatch(dispatcher);
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
 
-  std::shared_ptr<impeller::Image> image =
+  std::shared_ptr<impeller::Texture> image =
       picture.ToImage(*context, render_target_size);
   if (image) {
-    return impeller::DlImageImpeller::Make(image->GetTexture(),
+    return impeller::DlImageImpeller::Make(image,
                                            DlImage::OwningContext::kRaster);
   }
 #endif  // EXPERIMENTAL_CANVAS
@@ -137,10 +137,11 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
             if (context) {
               context->GetContext()->StoreTaskForGPU(
                   [context, sync_switch, display_list = std::move(display_list),
-                   picture_size, callback = std::move(callback)] {
+                   picture_size, callback] {
                     callback(DoMakeRasterSnapshot(display_list, picture_size,
                                                   sync_switch, context));
-                  });
+                  },
+                  [callback]() { callback(nullptr); });
             } else {
               callback(nullptr);
             }
