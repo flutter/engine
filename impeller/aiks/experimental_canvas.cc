@@ -346,6 +346,14 @@ void ExperimentalCanvas::SaveLayer(
     Save(total_content_depth);
     return;
   }
+
+  maybe_coverage_limit = maybe_coverage_limit->Intersection(
+      Rect::MakeSize(render_target_.GetRenderTargetSize()));
+  if (!maybe_coverage_limit.has_value()) {
+    Save(total_content_depth);
+    return;
+  }
+
   auto coverage_limit = maybe_coverage_limit.value();
 
   if (can_distribute_opacity && !backdrop_filter &&
@@ -371,12 +379,16 @@ void ExperimentalCanvas::SaveLayer(
       /*flood_input_coverage=*/!!backdrop_filter         //
   );
 
-  if (!maybe_subpass_coverage.has_value() ||
-      maybe_subpass_coverage->IsEmpty()) {
+  if (!maybe_subpass_coverage.has_value()) {
     Save(total_content_depth);
     return;
   }
   auto subpass_coverage = maybe_subpass_coverage.value();
+  auto subpass_size = ISize(subpass_coverage.GetSize());
+  if (subpass_size.IsEmpty()) {
+    Save(total_content_depth);
+    return;
+  }
 
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
@@ -419,12 +431,12 @@ void ExperimentalCanvas::SaveLayer(
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
   transform_stack_.back().distributed_opacity = 1.0;
 
-  render_passes_.push_back(LazyRenderingConfig(
-      renderer_,                                             //
-      CreateRenderTarget(renderer_,                          //
-                         ISize(subpass_coverage.GetSize()),  //
-                         Color::BlackTransparent()           //
-                         )));
+  render_passes_.push_back(
+      LazyRenderingConfig(renderer_,                                    //
+                          CreateRenderTarget(renderer_,                 //
+                                             subpass_size,              //
+                                             Color::BlackTransparent()  //
+                                             )));
   save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
