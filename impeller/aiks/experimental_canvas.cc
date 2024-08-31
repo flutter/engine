@@ -296,7 +296,17 @@ void ExperimentalCanvas::SetupRenderPass() {
   }
 }
 
+void ExperimentalCanvas::SkipUntilMatchingRestore() {
+  auto entry = CanvasStackEntry{};
+  entry.skipping = true;
+  transform_stack_.push_back(entry);
+}
+
 void ExperimentalCanvas::Save(uint32_t total_content_depth) {
+  if (IsSkipping()) {
+    return SkipUntilMatchingRestore();
+  }
+
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
@@ -307,7 +317,7 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
-  transform_stack_.emplace_back(entry);
+  transform_stack_.push_back(entry);
 }
 
 void ExperimentalCanvas::SaveLayer(
@@ -322,14 +332,12 @@ void ExperimentalCanvas::SaveLayer(
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
 
   auto maybe_current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
   if (!maybe_current_clip_coverage.has_value()) {
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
   auto current_clip_coverage = maybe_current_clip_coverage.value();
 
@@ -343,15 +351,13 @@ void ExperimentalCanvas::SaveLayer(
           .Intersection(current_clip_coverage);
 
   if (!maybe_coverage_limit.has_value() || maybe_coverage_limit->IsEmpty()) {
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
 
   maybe_coverage_limit = maybe_coverage_limit->Intersection(
       Rect::MakeSize(render_target_.GetRenderTargetSize()));
   if (!maybe_coverage_limit.has_value()) {
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
 
   auto coverage_limit = maybe_coverage_limit.value();
@@ -364,10 +370,9 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
-  std::shared_ptr<FilterContents> filter_contents;
-  if (paint.image_filter) {
-    filter_contents = paint.image_filter->GetFilterContents();
-  }
+  std::shared_ptr<FilterContents> filter_contents = paint.WithImageFilter(
+      Rect(), transform_stack_.back().transform,
+      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
 
   std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
       bounds.value_or(Rect::MakeMaximum()),
@@ -380,14 +385,12 @@ void ExperimentalCanvas::SaveLayer(
   );
 
   if (!maybe_subpass_coverage.has_value()) {
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
   auto subpass_coverage = maybe_subpass_coverage.value();
   auto subpass_size = ISize(subpass_coverage.GetSize());
   if (subpass_size.IsEmpty()) {
-    Save(total_content_depth);
-    return;
+    return SkipUntilMatchingRestore();
   }
 
   // Backdrop filter state, ignored if there is no BDF.
@@ -405,11 +408,11 @@ void ExperimentalCanvas::SaveLayer(
           return filter;
         };
 
-    auto input_texture = FlipBackdrop(render_passes_,                        //
-                                      GetGlobalPassPosition(),               //
-                                      std::numeric_limits<uint32_t>::max(),  //
-                                      clip_coverage_stack_,                  //
-                                      renderer_                              //
+    auto input_texture = FlipBackdrop(render_passes_,           //
+                                      GetGlobalPassPosition(),  //
+                                      current_depth_,           //
+                                      clip_coverage_stack_,     //
+                                      renderer_                 //
     );
     if (!input_texture) {
       // Validation failures are logged in FlipBackdrop.
@@ -483,6 +486,11 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
+  if (IsSkipping()) {
+    transform_stack_.pop_back();
+    return true;
+  }
+
   // This check is important to make sure we didn't exceed the depth
   // that the clips were rendered at while rendering any of the
   // rendering ops. It is OK for the current depth to equal the
@@ -511,12 +519,13 @@ bool ExperimentalCanvas::Restore() {
 
     SaveLayerState save_layer_state = save_layer_state_.back();
     save_layer_state_.pop_back();
+    auto global_pass_position = GetGlobalPassPosition();
 
     std::shared_ptr<Contents> contents =
         PaintPassDelegate(save_layer_state.paint)
             .CreateContentsForSubpassTarget(
                 lazy_render_pass.inline_pass_context->GetTexture(),
-                Matrix::MakeTranslation(Vector3{-GetGlobalPassPosition()}) *
+                Matrix::MakeTranslation(Vector3{global_pass_position}) *
                     transform_stack_.back().transform);
 
     lazy_render_pass.inline_pass_context->EndPass();
@@ -534,8 +543,7 @@ bool ExperimentalCanvas::Restore() {
     //
     // See also this bug: https://github.com/flutter/flutter/issues/144213
     Point subpass_texture_position =
-        (save_layer_state.coverage.GetOrigin() - GetGlobalPassPosition())
-            .Round();
+        (save_layer_state.coverage.GetOrigin() - global_pass_position).Round();
 
     Entity element_entity;
     element_entity.SetClipDepth(++current_depth_);
@@ -682,6 +690,10 @@ void ExperimentalCanvas::DrawTextFrame(
 
 void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                                       bool reuse_depth) {
+  if (IsSkipping()) {
+    return;
+  }
+
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
       entity.GetTransform());
@@ -775,6 +787,10 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
 }
 
 void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
+  if (IsSkipping()) {
+    return;
+  }
+
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);

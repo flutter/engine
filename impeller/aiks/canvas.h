@@ -37,6 +37,7 @@ struct CanvasStackEntry {
   size_t num_clips = 0u;
   Scalar distributed_opacity = 1.0f;
   Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
+  bool skipping = true;
 };
 
 enum class PointStyle {

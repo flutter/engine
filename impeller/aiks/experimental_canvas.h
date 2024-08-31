@@ -95,6 +95,13 @@ class ExperimentalCanvas : public Canvas {
     return 0;
   }
 
+  bool IsSkipping() {
+    return transform_stack_.back().skipping;
+  }
+
+  // Increment on SaveLayers that should be skipped, decrement on restores.
+  void SkipUntilMatchingRestore();
+
   ContentContext& renderer_;
   RenderTarget& render_target_;
   const bool requires_readback_;
