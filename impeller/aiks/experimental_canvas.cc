@@ -4,6 +4,7 @@
 
 #include "impeller/aiks/experimental_canvas.h"
 #include <limits>
+#include <optional>
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
@@ -320,25 +321,18 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   transform_stack_.push_back(entry);
 }
 
-void ExperimentalCanvas::SaveLayer(
-    const Paint& paint,
-    std::optional<Rect> bounds,
-    const std::shared_ptr<ImageFilter>& backdrop_filter,
-    ContentBoundsPromise bounds_promise,
-    uint32_t total_content_depth,
-    bool can_distribute_opacity) {
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
-
+std::optional<Rect> ExperimentalCanvas::ComputeCoverageLimit() const {
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
-    return SkipUntilMatchingRestore();
+    return std::nullopt;
   }
 
   auto maybe_current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
   if (!maybe_current_clip_coverage.has_value()) {
-    return SkipUntilMatchingRestore();
+    return std::nullopt;
   }
+
   auto current_clip_coverage = maybe_current_clip_coverage.value();
 
   // The maximum coverage of the subpass. Subpasses textures should never
@@ -351,15 +345,29 @@ void ExperimentalCanvas::SaveLayer(
           .Intersection(current_clip_coverage);
 
   if (!maybe_coverage_limit.has_value() || maybe_coverage_limit->IsEmpty()) {
+    return std::nullopt;
+  }
+
+  return maybe_coverage_limit->Intersection(
+      Rect::MakeSize(render_target_.GetRenderTargetSize()));
+}
+
+void ExperimentalCanvas::SaveLayer(
+    const Paint& paint,
+    std::optional<Rect> bounds,
+    const std::shared_ptr<ImageFilter>& backdrop_filter,
+    ContentBoundsPromise bounds_promise,
+    uint32_t total_content_depth,
+    bool can_distribute_opacity) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  if (IsSkipping()) {
     return SkipUntilMatchingRestore();
   }
 
-  maybe_coverage_limit = maybe_coverage_limit->Intersection(
-      Rect::MakeSize(render_target_.GetRenderTargetSize()));
+  auto maybe_coverage_limit = ComputeCoverageLimit();
   if (!maybe_coverage_limit.has_value()) {
     return SkipUntilMatchingRestore();
   }
-
   auto coverage_limit = maybe_coverage_limit.value();
 
   if (can_distribute_opacity && !backdrop_filter &&
@@ -387,6 +395,9 @@ void ExperimentalCanvas::SaveLayer(
   if (!maybe_subpass_coverage.has_value()) {
     return SkipUntilMatchingRestore();
   }
+
+  // TODO(jonahwilliams): this should round out if there are no image
+  // filters.
   auto subpass_coverage = maybe_subpass_coverage.value();
   auto subpass_size = ISize(subpass_coverage.GetSize());
   if (subpass_size.IsEmpty()) {

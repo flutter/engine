@@ -87,6 +87,9 @@ class ExperimentalCanvas : public Canvas {
   };
 
  private:
+  /// @brief Compute the current coverage limit in screen space, or std::nullopt.
+  std::optional<Rect> ComputeCoverageLimit() const;
+
   // clip depth of the previous save or 0.
   size_t GetClipHeightFloor() const {
     if (transform_stack_.size() > 1) {
@@ -115,7 +118,7 @@ class ExperimentalCanvas : public Canvas {
   void AddClipEntityToCurrentPass(Entity entity) override;
   bool BlitToOnscreen();
 
-  Point GetGlobalPassPosition() {
+  Point GetGlobalPassPosition() const {
     if (save_layer_state_.empty()) {
       return Point(0, 0);
     }
