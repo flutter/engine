@@ -110,12 +110,12 @@
     @"--platform-view-cliprect-after-moved-multiple-clips" :
         @"platform_view_cliprect_after_moved_multiple_clips",
     @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
-    @"--two-platform-view-clip-rect-multilpe-clips" : @"two_platform_view_clip_rect_multiple_clips",
+    @"--two-platform-view-clip-rect-multiple-clips" : @"two_platform_view_clip_rect_multiple_clips",
     @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
-    @"--two-platform-view-clip-rrect-multilpe-clips" :
+    @"--two-platform-view-clip-rrect-multiple-clips" :
         @"two_platform_view_clip_rrect_multiple_clips",
     @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
-    @"--two-platform-view-clip-path-multilpe-clips" : @"two_platform_view_clip_path_multiple_clips",
+    @"--two-platform-view-clip-path-multiple-clips" : @"two_platform_view_clip_path_multiple_clips",
     @"--darwin-system-font" : @"darwin_system_font",
   };
   __block NSString* flutterViewControllerTestName = nil;

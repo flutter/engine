@@ -921,7 +921,7 @@ class PlatformViewLargeClipRRectScenario extends PlatformViewScenario {
   }
 }
 
-/// Platform view with clip rrect, with multilpe clips.
+/// Platform view with clip rrect, with multiple clips.
 /// The bounding rect of the rrect is the same as PlatformView and only the corner radii clips the PlatformView.
 class PlatformViewLargeClipRRectMultipleClipsScenario extends PlatformViewScenario {
   /// Constructs a platform view with large clip rrect scenario.

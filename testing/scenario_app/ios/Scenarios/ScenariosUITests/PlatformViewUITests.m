@@ -203,7 +203,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-multilpe-clips"];
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-multiple-clips"];
   return [super initWithManager:manager invocation:invocation];
 }
 
