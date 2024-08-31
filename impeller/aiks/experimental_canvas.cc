@@ -62,7 +62,6 @@ static void ApplyFramebufferBlend(Entity& entity) {
 static std::shared_ptr<Texture> FlipBackdrop(
     std::vector<LazyRenderingConfig>& render_passes,
     Point global_pass_position,
-    size_t current_clip_depth,
     EntityPassClipStack& clip_coverage_stack,
     ContentContext& renderer) {
   auto rendering_config = std::move(render_passes.back());
@@ -139,22 +138,6 @@ static std::shared_ptr<Texture> FlipBackdrop(
   // Restore any clips that were recorded before the backdrop filter was
   // applied.
   clip_coverage_stack.ActivateClipReplay();
-
-  // If there are any pending clips to replay, render any that may affect
-  // the entity we're about to render.
-  while (const EntityPassClipStack::ReplayResult* next_replay_clip =
-             clip_coverage_stack.GetNextReplayResult(current_clip_depth)) {
-    auto& replay_entity = next_replay_clip->entity;
-    SetClipScissor(
-        next_replay_clip->clip_coverage,
-        *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
-        global_pass_position);
-    if (!replay_entity.Render(
-            renderer,
-            *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
-      VALIDATION_LOG << "Failed to render entity for clip replay.";
-    }
-  }
 
   return input_texture;
 }
@@ -397,10 +380,17 @@ void ExperimentalCanvas::SaveLayer(
     return SkipUntilMatchingRestore(total_content_depth);
   }
 
-  // TODO(jonahwilliams): this should round out if there are no image
-  // filters.
   auto subpass_coverage = maybe_subpass_coverage.value();
-  auto subpass_size = ISize(subpass_coverage.GetSize());
+
+  // When an image filter is present, clamp to avoid flicking due to nearest
+  // sampled image. For other cases, round out to ensure than any geometry is
+  // not cut off.
+  ISize subpass_size;
+  if (paint.image_filter) {
+    subpass_size = ISize(subpass_coverage.GetSize());
+  } else {
+    subpass_size = ISize(IRect::RoundOut(subpass_coverage).GetSize());
+  }
   if (subpass_size.IsEmpty()) {
     return SkipUntilMatchingRestore(total_content_depth);
   }
@@ -422,7 +412,6 @@ void ExperimentalCanvas::SaveLayer(
 
     auto input_texture = FlipBackdrop(render_passes_,           //
                                       GetGlobalPassPosition(),  //
-                                      current_depth_,           //
                                       clip_coverage_stack_,     //
                                       renderer_                 //
     );
@@ -550,8 +539,9 @@ bool ExperimentalCanvas::Restore() {
     //
     // We do this in lieu of expanding/rounding out the subpass coverage in
     // order to keep the bounds wrapping consistently tight around subpass
-    // elements. Which is necessary to avoid intense flickering in cases
-    // where a subpass texture has a large blur filter with clamp sampling.
+    // elements when there are image filters. Which is necessary to avoid
+    // intense flickering in cases where a subpass texture has a large blur
+    // filter with clamp sampling.
     //
     // See also this bug: https://github.com/flutter/flutter/issues/144213
     Point subpass_texture_position =
@@ -577,9 +567,9 @@ bool ExperimentalCanvas::Restore() {
         // to the render target texture so far need to execute before it's bound
         // for blending (otherwise the blend pass will end up executing before
         // all the previous commands in the active pass).
-        auto input_texture = FlipBackdrop(
-            render_passes_, GetGlobalPassPosition(),
-            element_entity.GetClipDepth(), clip_coverage_stack_, renderer_);
+        auto input_texture =
+            FlipBackdrop(render_passes_, GetGlobalPassPosition(),
+                         clip_coverage_stack_, renderer_);
         if (!input_texture) {
           return false;
         }
@@ -705,6 +695,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   if (IsSkipping()) {
     return;
   }
+  RenderPendingClips();
 
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
@@ -761,9 +752,8 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       // to the render target texture so far need to execute before it's bound
       // for blending (otherwise the blend pass will end up executing before
       // all the previous commands in the active pass).
-      auto input_texture =
-          FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                       entity.GetClipDepth(), clip_coverage_stack_, renderer_);
+      auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
+                                        clip_coverage_stack_, renderer_);
       if (!input_texture) {
         return;
       }
@@ -854,6 +844,26 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   entity.Render(
       renderer_,
       *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+}
+
+void ExperimentalCanvas::RenderPendingClips() {
+  // If there are any pending clips to replay, render any that may affect
+  // the entity we're about to render.
+  while (const EntityPassClipStack::ReplayResult* next_replay_clip =
+             clip_coverage_stack_.GetNextReplayResult(current_depth_)) {
+    auto& replay_entity = next_replay_clip->entity;
+
+    SetClipScissor(
+        next_replay_clip->clip_coverage,
+        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
+        GetGlobalPassPosition());
+    if (!replay_entity.Render(renderer_,
+                              *render_passes_.back()
+                                   .inline_pass_context->GetRenderPass(0)
+                                   .pass)) {
+      VALIDATION_LOG << "Failed to render entity for clip replay.";
+    }
+  }
 }
 
 bool ExperimentalCanvas::BlitToOnscreen() {
