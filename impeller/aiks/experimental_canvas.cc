@@ -297,15 +297,16 @@ void ExperimentalCanvas::SetupRenderPass() {
   }
 }
 
-void ExperimentalCanvas::SkipUntilMatchingRestore() {
+void ExperimentalCanvas::SkipUntilMatchingRestore(size_t total_content_depth) {
   auto entry = CanvasStackEntry{};
   entry.skipping = true;
+  entry.clip_depth = current_depth_ + total_content_depth;
   transform_stack_.push_back(entry);
 }
 
 void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   if (IsSkipping()) {
-    return SkipUntilMatchingRestore();
+    return SkipUntilMatchingRestore(total_content_depth);
   }
 
   auto entry = CanvasStackEntry{};
@@ -361,12 +362,12 @@ void ExperimentalCanvas::SaveLayer(
     bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   if (IsSkipping()) {
-    return SkipUntilMatchingRestore();
+    return SkipUntilMatchingRestore(total_content_depth);
   }
 
   auto maybe_coverage_limit = ComputeCoverageLimit();
   if (!maybe_coverage_limit.has_value()) {
-    return SkipUntilMatchingRestore();
+    return SkipUntilMatchingRestore(total_content_depth);
   }
   auto coverage_limit = maybe_coverage_limit.value();
 
@@ -393,7 +394,7 @@ void ExperimentalCanvas::SaveLayer(
   );
 
   if (!maybe_subpass_coverage.has_value()) {
-    return SkipUntilMatchingRestore();
+    return SkipUntilMatchingRestore(total_content_depth);
   }
 
   // TODO(jonahwilliams): this should round out if there are no image
@@ -401,7 +402,7 @@ void ExperimentalCanvas::SaveLayer(
   auto subpass_coverage = maybe_subpass_coverage.value();
   auto subpass_size = ISize(subpass_coverage.GetSize());
   if (subpass_size.IsEmpty()) {
-    return SkipUntilMatchingRestore();
+    return SkipUntilMatchingRestore(total_content_depth);
   }
 
   // Backdrop filter state, ignored if there is no BDF.
@@ -497,11 +498,6 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
-  if (IsSkipping()) {
-    transform_stack_.pop_back();
-    return true;
-  }
-
   // This check is important to make sure we didn't exceed the depth
   // that the clips were rendered at while rendering any of the
   // rendering ops. It is OK for the current depth to equal the
@@ -518,6 +514,11 @@ bool ExperimentalCanvas::Restore() {
   FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   current_depth_ = transform_stack_.back().clip_depth;
+
+  if (IsSkipping()) {
+    transform_stack_.pop_back();
+    return true;
+  }
 
   if (transform_stack_.back().rendering_mode ==
           Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
@@ -536,7 +537,7 @@ bool ExperimentalCanvas::Restore() {
         PaintPassDelegate(save_layer_state.paint)
             .CreateContentsForSubpassTarget(
                 lazy_render_pass.inline_pass_context->GetTexture(),
-                Matrix::MakeTranslation(Vector3{global_pass_position}) *
+                Matrix::MakeTranslation(Vector3{-global_pass_position}) *
                     transform_stack_.back().transform);
 
     lazy_render_pass.inline_pass_context->EndPass();

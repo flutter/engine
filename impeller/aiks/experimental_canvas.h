@@ -104,7 +104,7 @@ class ExperimentalCanvas : public Canvas {
   bool IsSkipping() { return transform_stack_.back().skipping; }
 
   /// @brief Skip all rendering/clipping entities until next restore.
-  void SkipUntilMatchingRestore();
+  void SkipUntilMatchingRestore(size_t total_content_depth);
 
   ContentContext& renderer_;
   RenderTarget& render_target_;
