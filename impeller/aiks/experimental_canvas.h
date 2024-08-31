@@ -91,8 +91,8 @@ class ExperimentalCanvas : public Canvas {
   /// std::nullopt.
   std::optional<Rect> ComputeCoverageLimit() const;
 
-  /// @brief After flipping the backdrop texture, render any clips that effect the current
-  ///        entity based on depth.
+  /// @brief After flipping the backdrop texture, render any clips that effect
+  ///        the current entity based on depth.
   void RenderPendingClips();
 
   // clip depth of the previous save or 0.
@@ -104,7 +104,7 @@ class ExperimentalCanvas : public Canvas {
   }
 
   /// @brief Whether all entites should be skipped until a corresponding
-  /// restore.
+  ///        restore.
   bool IsSkipping() { return transform_stack_.back().skipping; }
 
   /// @brief Skip all rendering/clipping entities until next restore.
