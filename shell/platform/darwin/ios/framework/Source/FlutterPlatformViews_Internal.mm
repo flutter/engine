@@ -272,7 +272,9 @@ static BOOL _preparedOnce = NO;
         [self shapeLayer].path = paths_.at(0);
       } else {
         // Multiple paths, all paths must be rects.
-        [self shapeLayer].path = CGPathCreateWithRect(rectSoFar_, nil);
+        CGPathRef pathSoFar = CGPathCreateWithRect(rectSoFar_, nil);
+        [self shapeLayer].path = pathSoFar;
+        CGPathRelease(pathSoFar);
       }
     }
   }
