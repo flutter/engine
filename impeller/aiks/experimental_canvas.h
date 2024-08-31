@@ -95,11 +95,11 @@ class ExperimentalCanvas : public Canvas {
     return 0;
   }
 
-  bool IsSkipping() {
-    return transform_stack_.back().skipping;
-  }
+  /// @brief Whether all entites should be skipped until a corresponding
+  /// restore.
+  bool IsSkipping() { return transform_stack_.back().skipping; }
 
-  // Increment on SaveLayers that should be skipped, decrement on restores.
+  /// @brief Skip all rendering/clipping entities until next restore.
   void SkipUntilMatchingRestore();
 
   ContentContext& renderer_;
