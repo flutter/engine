@@ -757,6 +757,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   XCTAssert(waitResult != XCTWaiterResultInterrupted);
 }
 
+@end
+
 @interface PlatformViewWithClipsScrollingMultipleClips : XCTestCase
 
 @end
