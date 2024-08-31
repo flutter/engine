@@ -87,7 +87,8 @@ class ExperimentalCanvas : public Canvas {
   };
 
  private:
-  /// @brief Compute the current coverage limit in screen space, or std::nullopt.
+  /// @brief Compute the current coverage limit in screen space, or
+  /// std::nullopt.
   std::optional<Rect> ComputeCoverageLimit() const;
 
   // clip depth of the previous save or 0.
