@@ -478,6 +478,8 @@ void ExperimentalCanvas::SaveLayer(
     backdrop_entity.Render(
         renderer_,
         *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+
+    RenderPendingClips();
   }
 }
 
