@@ -67,6 +67,9 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
       FML_LOG(IMPORTANT) << "Using the Impeller rendering backend (Vulkan).";
     }
   }
+  if (context->GetDriverInfo()->IsKnownBadDriver()) {
+    return nullptr;
+  }
 
   return context;
 }
