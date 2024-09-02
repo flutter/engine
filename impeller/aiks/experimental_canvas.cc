@@ -419,6 +419,7 @@ void ExperimentalCanvas::SaveLayer(
       // Validation failures are logged in FlipBackdrop.
       return;
     }
+    FlushPendingClips();
 
     backdrop_filter_contents = backdrop_filter_proc(
         FilterInput::Make(std::move(input_texture)),
@@ -478,8 +479,6 @@ void ExperimentalCanvas::SaveLayer(
     backdrop_entity.Render(
         renderer_,
         *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
-
-    RenderPendingClips();
   }
 }
 
@@ -697,7 +696,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   if (IsSkipping()) {
     return;
   }
-  RenderPendingClips();
+  FlushPendingClips();
 
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
@@ -759,6 +758,8 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       if (!input_texture) {
         return;
       }
+
+      FlushPendingClips();
 
       // The coverage hint tells the rendered Contents which portion of the
       // rendered output will actually be used, and so we set this to the
@@ -848,7 +849,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
       *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
 }
 
-void ExperimentalCanvas::RenderPendingClips() {
+void ExperimentalCanvas::FlushPendingClips() {
   // If there are any pending clips to replay, render any that may affect
   // the entity we're about to render.
   while (const EntityPassClipStack::ReplayResult* next_replay_clip =
