@@ -146,11 +146,12 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
 sk_sp<DisplayList> LayerTree::Flatten(
     const SkRect& bounds,
+    bool impeller,
     const std::shared_ptr<TextureRegistry>& texture_registry,
     GrDirectContext* gr_context) {
   TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
-  DisplayListBuilder builder(bounds);
+  DisplayListBuilder builder(bounds, /*impeller=*/impeller);
 
   const FixedRefreshRateStopwatch unused_stopwatch;
 

@@ -92,7 +92,7 @@ static void BM_DisplayListBuilderDefault(benchmark::State& state,
                                          DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
   }
@@ -103,7 +103,7 @@ static void BM_DisplayListBuilderWithScaleAndTranslate(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     builder.Scale(3.5, 3.5);
     builder.Translate(10.3, 6.9);
     InvokeAllRenderingOps(builder);
@@ -116,7 +116,7 @@ static void BM_DisplayListBuilderWithPerspective(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     builder.TransformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0,
                                      0, 0, 12);
     InvokeAllRenderingOps(builder);
@@ -130,7 +130,7 @@ static void BM_DisplayListBuilderWithClipRect(
   SkRect clip_bounds = SkRect::MakeLTRB(6.5, 7.3, 90.2, 85.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     builder.ClipRect(clip_bounds, DlCanvas::ClipOp::kIntersect, true);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
@@ -142,7 +142,7 @@ static void BM_DisplayListBuilderWithGlobalSaveLayer(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     builder.Scale(3.5, 3.5);
     builder.Translate(10.3, 6.9);
     builder.SaveLayer(nullptr, nullptr);
@@ -164,7 +164,7 @@ static void BM_DisplayListBuilderWithSaveLayer(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     DlOpReceiver& receiver = DisplayListBuilderBenchmarkAccessor(builder);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
@@ -186,7 +186,7 @@ static void BM_DisplayListBuilderWithSaveLayerAndImageFilter(
   SkRect layer_bounds = SkRect::MakeLTRB(6.5, 7.3, 35.2, 42.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(prepare_rtree);
+    DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
     DlOpReceiver& receiver = DisplayListBuilderBenchmarkAccessor(builder);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
@@ -209,7 +209,7 @@ static void BM_DisplayListDispatchDefault(
     benchmark::State& state,
     DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }
@@ -224,7 +224,7 @@ static void BM_DisplayListDispatchByIndexDefault(
     benchmark::State& state,
     DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }
@@ -242,7 +242,7 @@ static void BM_DisplayListDispatchByIteratorDefault(
     benchmark::State& state,
     DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }
@@ -259,7 +259,7 @@ static void BM_DisplayListDispatchByVectorDefault(
     benchmark::State& state,
     DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }
@@ -277,7 +277,7 @@ static void BM_DisplayListDispatchByVectorDefault(
 static void BM_DisplayListDispatchCull(benchmark::State& state,
                                        DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }
@@ -294,7 +294,7 @@ static void BM_DisplayListDispatchByVectorCull(
     benchmark::State& state,
     DisplayListDispatchBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
-  DisplayListBuilder builder(prepare_rtree);
+  DisplayListBuilder builder(/*impeller=*/true, prepare_rtree);
   for (int i = 0; i < 5; i++) {
     InvokeAllOps(builder);
   }

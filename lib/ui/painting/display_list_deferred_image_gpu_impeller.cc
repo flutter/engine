@@ -173,7 +173,7 @@ void DlDeferredImageGPUImpeller::ImageWrapper::SnapshotDisplayList(
         if (layer_tree) {
           wrapper->display_list_ = layer_tree->Flatten(
               SkRect::MakeWH(wrapper->size_.width(), wrapper->size_.height()),
-              wrapper->texture_registry_);
+              /*impeller=*/true, wrapper->texture_registry_);
         }
         auto snapshot = snapshot_delegate->MakeRasterSnapshotSync(
             wrapper->display_list_, wrapper->size_);

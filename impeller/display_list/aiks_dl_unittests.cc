@@ -862,7 +862,7 @@ TEST_P(AiksTest, TransparentShadowProducesCorrectColor) {
 
 // Regression test for https://github.com/flutter/flutter/issues/130613
 TEST_P(AiksTest, DispatcherDoesNotCullPerspectiveTransformedChildDisplayLists) {
-  flutter::DisplayListBuilder sub_builder(true);
+  flutter::DisplayListBuilder sub_builder(/*enable_impeller=*/true, true);
   sub_builder.DrawRect(SkRect::MakeXYWH(0, 0, 50, 50),
                        flutter::DlPaint(flutter::DlColor::kRed()));
   auto display_list = sub_builder.Build();

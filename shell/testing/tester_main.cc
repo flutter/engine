@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/dl_builder.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <cstdlib>
@@ -147,6 +148,9 @@ static void ConfigureShell(Shell* shell) {
 }
 
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
+  explicit TesterExternalViewEmbedder(bool impeller)
+      : builder_(DisplayListBuilder::kMaxCullRect, /*impeller=*/true);
+
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override { return nullptr; }
 

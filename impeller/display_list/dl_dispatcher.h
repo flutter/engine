@@ -25,9 +25,6 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   Picture EndRecordingAsPicture();
 
   // |flutter::DlOpReceiver|
-  bool PrefersImpellerPaths() const override { return true; }
-
-  // |flutter::DlOpReceiver|
   void setAntiAlias(bool aa) override;
 
   // |flutter::DlOpReceiver|
@@ -133,9 +130,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
-  void clipPath(const CacheablePath& cache,
-                ClipOp clip_op,
-                bool is_aa) override;
+  void clipPath(const Path& path, ClipOp clip_op) override;
 
   // |flutter::DlOpReceiver|
   void drawColor(flutter::DlColor color, flutter::DlBlendMode mode) override;
@@ -171,7 +166,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void drawPath(const SkPath& path) override;
 
   // |flutter::DlOpReceiver|
-  void drawPath(const CacheablePath& cache) override;
+  void drawPath(const Path& cache) override;
 
   // |flutter::DlOpReceiver|
   void drawArc(const SkRect& oval_bounds,
@@ -242,7 +237,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                   SkScalar dpr) override;
 
   // |flutter::DlOpReceiver|
-  void drawShadow(const CacheablePath& cache,
+  void drawShadow(const Path& cache,
                   const flutter::DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
@@ -254,11 +249,11 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   Paint paint_;
   Matrix initial_matrix_;
 
-  static const Path& GetOrCachePath(const CacheablePath& cache);
+  // static const Path& GetOrCachePath(const CacheablePath& cache);
 
-  static void SimplifyOrDrawPath(Canvas& canvas,
-                                 const CacheablePath& cache,
-                                 const Paint& paint);
+  // static void SimplifyOrDrawPath(Canvas& canvas,
+  //                                const Path& path,
+  //                                const Paint& paint);
 };
 
 #if !EXPERIMENTAL_CANVAS

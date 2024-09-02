@@ -21,7 +21,8 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            const SubmitCallback& submit_callback,
                            SkISize frame_size,
                            std::unique_ptr<GLContextResult> context_result,
-                           bool display_list_fallback)
+                           bool display_list_fallback,
+                           bool impeller)
     : surface_(std::move(surface)),
       framebuffer_info_(framebuffer_info),
       encode_callback_(encode_callback),
@@ -44,6 +45,7 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
     // will live underneath any platform views so we do not need to compute
     // exact coverage to describe "pixel ownership" to the platform.
     dl_builder_ = sk_make_sp<DisplayListBuilder>(SkRect::Make(frame_size),
+                                                 /*impeller=*/impeller,
                                                  /*prepare_rtree=*/false);
     canvas_ = dl_builder_.get();
   }

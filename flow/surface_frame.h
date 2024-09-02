@@ -67,7 +67,8 @@ class SurfaceFrame {
                const SubmitCallback& submit_callback,
                SkISize frame_size,
                std::unique_ptr<GLContextResult> context_result = nullptr,
-               bool display_list_fallback = false);
+               bool display_list_fallback = false,
+               bool impeller = false);
 
   struct SubmitInfo {
     // The frame damage for frame n is the difference between frame n and

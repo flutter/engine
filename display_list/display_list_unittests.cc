@@ -825,8 +825,8 @@ TEST_F(DisplayListTest, SingleOpDisplayListsCompareToEachOther) {
 TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      DisplayListBuilder builder1(/*prepare_rtree=*/false);
-      DisplayListBuilder builder2(/*prepare_rtree=*/true);
+      DisplayListBuilder builder1(/*impeller=*/true, /*prepare_rtree=*/false);
+      DisplayListBuilder builder2(/*impeller=*/true, /*prepare_rtree=*/true);
       group.variants[i].Invoke(ToReceiver(builder1));
       group.variants[i].Invoke(ToReceiver(builder2));
       sk_sp<DisplayList> dl1 = builder1.Build();
@@ -2445,7 +2445,7 @@ static void test_rtree(const sk_sp<const DlRTree>& rtree,
 }
 
 TEST_F(DisplayListTest, RTreeOfSimpleScene) {
-  DisplayListBuilder builder(/*prepare_rtree=*/true);
+  DisplayListBuilder builder(/*impeller=*/true, /*prepare_rtree=*/true);
   DlOpReceiver& receiver = ToReceiver(builder);
   std::vector<SkRect> rects = {
       {10, 10, 20, 20},
@@ -2474,7 +2474,7 @@ TEST_F(DisplayListTest, RTreeOfSimpleScene) {
 }
 
 TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
-  DisplayListBuilder builder(/*prepare_rtree=*/true);
+  DisplayListBuilder builder(/*impeller=*/true, /*prepare_rtree=*/true);
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.drawRect({10, 10, 20, 20});
   receiver.save();
@@ -2505,7 +2505,7 @@ TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
 }
 
 TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
-  DisplayListBuilder builder(/*prepare_rtree=*/true);
+  DisplayListBuilder builder(/*impeller=*/true, /*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
   auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
@@ -2541,13 +2541,14 @@ TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
 }
 
 TEST_F(DisplayListTest, NestedDisplayListRTreesAreSparse) {
-  DisplayListBuilder nested_dl_builder(/**prepare_rtree=*/true);
+  DisplayListBuilder nested_dl_builder(/*impeller=*/true,
+                                       /*prepare_rtree=*/true);
   DlOpReceiver& nested_dl_receiver = ToReceiver(nested_dl_builder);
   nested_dl_receiver.drawRect({10, 10, 20, 20});
   nested_dl_receiver.drawRect({50, 50, 60, 60});
   auto nested_display_list = nested_dl_builder.Build();
 
-  DisplayListBuilder builder(/**prepare_rtree=*/true);
+  DisplayListBuilder builder(/*impeller=*/true, /*prepare_rtree=*/true);
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.drawDisplayList(nested_display_list);
   auto display_list = builder.Build();
@@ -3198,7 +3199,7 @@ TEST_F(DisplayListTest, NOPClipDoesNotTriggerDeferredSave) {
 }
 
 TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
-  DisplayListBuilder builder(/*prepare_rtree=*/true);
+  DisplayListBuilder builder(/*impeller=*/true, /*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
   auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
@@ -3245,7 +3246,7 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
   DlPaint paint3 = DlPaint().setColor(DlColor::kBlue());
   DlPaint paint4 = DlPaint().setColor(DlColor::kMagenta());
 
-  DisplayListBuilder main_builder(true);
+  DisplayListBuilder main_builder(/*impeller=*/true, /*prepare_rtree=*/true);
   main_builder.DrawRect(rect1, paint1);
   main_builder.DrawRect(rect2, paint2);
   main_builder.DrawRect(rect3, paint3);
@@ -3578,98 +3579,6 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
               builder.SaveLayer(nullptr, &save_paint);
               builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear);
             });
-}
-
-TEST_F(DisplayListTest, ImpellerPathPreferenceIsHonored) {
-  class Tester : public virtual DlOpReceiver,
-                 public IgnoreClipDispatchHelper,
-                 public IgnoreDrawDispatchHelper,
-                 public IgnoreAttributeDispatchHelper,
-                 public IgnoreTransformDispatchHelper {
-   public:
-    explicit Tester(bool prefer_impeller_paths)
-        : prefer_impeller_paths_(prefer_impeller_paths) {}
-
-    bool PrefersImpellerPaths() const override {
-      return prefer_impeller_paths_;
-    }
-
-    void drawPath(const SkPath& path) override { skia_draw_path_calls_++; }
-
-    void drawPath(const CacheablePath& cache) override {
-      impeller_draw_path_calls_++;
-    }
-
-    void clipPath(const SkPath& path, ClipOp op, bool is_aa) override {
-      skia_clip_path_calls_++;
-    }
-
-    void clipPath(const CacheablePath& cache, ClipOp op, bool is_aa) override {
-      impeller_clip_path_calls_++;
-    }
-
-    virtual void drawShadow(const SkPath& sk_path,
-                            const DlColor color,
-                            const SkScalar elevation,
-                            bool transparent_occluder,
-                            SkScalar dpr) override {
-      skia_draw_shadow_calls_++;
-    }
-
-    virtual void drawShadow(const CacheablePath& cache,
-                            const DlColor color,
-                            const SkScalar elevation,
-                            bool transparent_occluder,
-                            SkScalar dpr) override {
-      impeller_draw_shadow_calls_++;
-    }
-
-    int skia_draw_path_calls() const { return skia_draw_path_calls_; }
-    int skia_clip_path_calls() const { return skia_draw_path_calls_; }
-    int skia_draw_shadow_calls() const { return skia_draw_path_calls_; }
-    int impeller_draw_path_calls() const { return impeller_draw_path_calls_; }
-    int impeller_clip_path_calls() const { return impeller_draw_path_calls_; }
-    int impeller_draw_shadow_calls() const { return impeller_draw_path_calls_; }
-
-   private:
-    const bool prefer_impeller_paths_;
-    int skia_draw_path_calls_ = 0;
-    int skia_clip_path_calls_ = 0;
-    int skia_draw_shadow_calls_ = 0;
-    int impeller_draw_path_calls_ = 0;
-    int impeller_clip_path_calls_ = 0;
-    int impeller_draw_shadow_calls_ = 0;
-  };
-
-  DisplayListBuilder builder;
-  builder.DrawPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)), DlPaint());
-  builder.ClipPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)),
-                   ClipOp::kIntersect, true);
-  builder.DrawShadow(SkPath::Rect(SkRect::MakeLTRB(20, 20, 80, 80)),
-                     DlColor::kBlue(), 1.0f, true, 1.0f);
-  auto display_list = builder.Build();
-
-  {
-    Tester skia_tester(false);
-    display_list->Dispatch(skia_tester);
-    EXPECT_EQ(skia_tester.skia_draw_path_calls(), 1);
-    EXPECT_EQ(skia_tester.skia_clip_path_calls(), 1);
-    EXPECT_EQ(skia_tester.skia_draw_shadow_calls(), 1);
-    EXPECT_EQ(skia_tester.impeller_draw_path_calls(), 0);
-    EXPECT_EQ(skia_tester.impeller_clip_path_calls(), 0);
-    EXPECT_EQ(skia_tester.impeller_draw_shadow_calls(), 0);
-  }
-
-  {
-    Tester impeller_tester(true);
-    display_list->Dispatch(impeller_tester);
-    EXPECT_EQ(impeller_tester.skia_draw_path_calls(), 0);
-    EXPECT_EQ(impeller_tester.skia_clip_path_calls(), 0);
-    EXPECT_EQ(impeller_tester.skia_draw_shadow_calls(), 0);
-    EXPECT_EQ(impeller_tester.impeller_draw_path_calls(), 1);
-    EXPECT_EQ(impeller_tester.impeller_clip_path_calls(), 1);
-    EXPECT_EQ(impeller_tester.impeller_draw_shadow_calls(), 1);
-  }
 }
 
 class SaveLayerBoundsExpector : public virtual DlOpReceiver,
@@ -4233,7 +4142,7 @@ TEST_F(DisplayListTest, SaveContentDepthTest) {
 }
 
 TEST_F(DisplayListTest, FloodingFilteredLayerPushesRestoreOpIndex) {
-  DisplayListBuilder builder(true);
+  DisplayListBuilder builder(/*impeller=*/true, true);
   builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
   // ClipRect does not contribute to rtree rects, no id needed
 

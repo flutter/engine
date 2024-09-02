@@ -297,7 +297,7 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
 TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   const SkRect picture1_bounds = SkRect::MakeXYWH(10, 10, 10, 10);
   const SkRect picture2_bounds = SkRect::MakeXYWH(15, 15, 10, 10);
-  DisplayListBuilder builder(true);
+  DisplayListBuilder builder(/*impeller=*/true, true);
   builder.DrawRect(picture1_bounds, DlPaint());
   builder.DrawRect(picture2_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -321,7 +321,7 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
                                 &paint_context(), false);
   }
 
-  DisplayListBuilder expected_root_canvas(true);
+  DisplayListBuilder expected_root_canvas(/*impeller=*/true, true);
   expected_root_canvas.Scale(2.0, 2.0);
   ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
                                           expected_root_canvas, nullptr,
@@ -334,7 +334,7 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   };
   EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
 
-  DisplayListBuilder expected_overlay_canvas(true);
+  DisplayListBuilder expected_overlay_canvas(/*impeller=*/true, true);
   expected_overlay_canvas.Scale(2.0, 2.0);
   ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
                                           expected_overlay_canvas, nullptr,
@@ -545,7 +545,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   auto opacity_layer = std::make_shared<OpacityLayer>(0.5f, opacity_offset);
   std::vector<std::shared_ptr<DisplayListLayer>> layers;
   for (int i = 0; i < layer_count; i++) {
-    DisplayListBuilder builder(false);
+    DisplayListBuilder builder(/*impeller=*/true, false);
     builder.DrawRect({0, 0, 100, 100}, DlPaint());
     builder.DrawRect({50, 50, 100, 100}, DlPaint());
     auto display_list = builder.Build();

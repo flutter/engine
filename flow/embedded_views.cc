@@ -6,9 +6,11 @@
 
 namespace flutter {
 
-DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
+DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(bool impeller,
+                                                           SkRect view_bounds) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
+      /*impeller=*/impeller,
       /*prepare_rtree=*/true);
 }
 

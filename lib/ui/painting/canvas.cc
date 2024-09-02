@@ -36,6 +36,7 @@ void Canvas::Create(Dart_Handle wrapper,
 
   fml::RefPtr<Canvas> canvas =
       fml::MakeRefCounted<Canvas>(recorder->BeginRecording(
+          UIDartState::Current()->IsImpellerEnabled(),
           SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top), SafeNarrow(right),
                            SafeNarrow(bottom))));
   recorder->set_canvas(canvas);

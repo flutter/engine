@@ -327,6 +327,8 @@ DisplayListOpCategory DisplayList::GetOpCategory(DisplayListOpType type) {
     case DisplayListOpType::kClipDifferenceOval:
     case DisplayListOpType::kClipDifferenceRRect:
     case DisplayListOpType::kClipDifferencePath:
+    case DisplayListOpType::kClipDifferenceImpellerPath:
+    case DisplayListOpType::kClipIntersectImpellerPath:
       return DisplayListOpCategory::kClip;
 
     case DisplayListOpType::kDrawPaint:
@@ -355,6 +357,9 @@ DisplayListOpCategory DisplayList::GetOpCategory(DisplayListOpType type) {
     case DisplayListOpType::kDrawTextFrame:
     case DisplayListOpType::kDrawShadow:
     case DisplayListOpType::kDrawShadowTransparentOccluder:
+    case DisplayListOpType::kDrawImpellerShadow:
+    case DisplayListOpType::kDrawImpellerShadowTransparentOccluder:
+    case DisplayListOpType::kDrawImpellerPath:
       return DisplayListOpCategory::kRendering;
 
     case DisplayListOpType::kDrawDisplayList:
@@ -362,6 +367,7 @@ DisplayListOpCategory DisplayList::GetOpCategory(DisplayListOpType type) {
 
     case DisplayListOpType::kInvalidOp:
       return DisplayListOpCategory::kInvalidCategory;
+      break;
   }
 }
 

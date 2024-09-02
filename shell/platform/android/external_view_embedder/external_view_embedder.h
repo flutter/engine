@@ -128,6 +128,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // The number of platform views in the previous frame.
   int64_t previous_frame_view_count_;
 
+  // If Impeller rendering engine is enabled.
+  const bool impeller_;
+
   // Destroys the surfaces created from the surface factory.
   // This method schedules a task on the platform thread, and waits for
   // the task until it completes.

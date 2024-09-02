@@ -32,10 +32,11 @@ class DisplayListBuilder final : public virtual DlCanvas,
   static constexpr SkRect kMaxCullRect =
       SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
-  explicit DisplayListBuilder(bool prepare_rtree)
-      : DisplayListBuilder(kMaxCullRect, prepare_rtree) {}
+  explicit DisplayListBuilder(bool impeller, bool prepare_rtree)
+      : DisplayListBuilder(kMaxCullRect, impeller, prepare_rtree) {}
 
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
+                              bool impeller = false,
                               bool prepare_rtree = false);
 
   ~DisplayListBuilder();
@@ -517,6 +518,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   uint32_t nested_op_count_ = 0;
 
   bool is_ui_thread_safe_ = true;
+  bool impeller_ = false;
 
   template <typename T, typename... Args>
   void* Push(size_t extra, Args&&... args);
@@ -841,6 +843,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   bool AccumulateBounds(const SkRect& bounds) {
     return AccumulateBounds(bounds, current_info(), op_index_);
   }
+
+  void SimplifyOrPushPath(const SkPath& path);
 };
 
 }  // namespace flutter

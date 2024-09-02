@@ -181,11 +181,11 @@ void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
           return;
         }
         if (layer_tree) {
-          auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(wrapper->image_info_.width(),
-                                                 wrapper->image_info_.height()),
-                                  snapshot_delegate->GetTextureRegistry(),
-                                  snapshot_delegate->GetGrContext());
+          auto display_list = layer_tree->Flatten(
+              SkRect::MakeWH(wrapper->image_info_.width(),
+                             wrapper->image_info_.height()),
+              /*impeller=*/false, snapshot_delegate->GetTextureRegistry(),
+              snapshot_delegate->GetGrContext());
           wrapper->display_list_ = std::move(display_list);
         }
         auto result = snapshot_delegate->MakeSkiaGpuImage(

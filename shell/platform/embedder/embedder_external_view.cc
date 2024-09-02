@@ -124,7 +124,8 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
   if (impeller_target) {
     auto aiks_context = render_target.GetAiksContext();
 
-    auto dl_builder = DisplayListBuilder();
+    auto dl_builder =
+        DisplayListBuilder(DisplayListBuilder::kMaxCullRect, /*impeller=*/true);
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
     auto display_list = dl_builder.Build();

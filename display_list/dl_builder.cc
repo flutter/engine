@@ -15,6 +15,25 @@
 
 namespace flutter {
 
+namespace {
+constexpr float kEhCloseEnough = 1e-3f;
+
+bool SkScalarsNearlyEqual(SkScalar a, SkScalar b, SkScalar c, SkScalar d) {
+  return SkScalarNearlyEqual(a, b, kEhCloseEnough) &&
+         SkScalarNearlyEqual(a, c, kEhCloseEnough) &&
+         SkScalarNearlyEqual(a, d, kEhCloseEnough);
+}
+
+bool IsNearlySimpleRRect(const SkRRect& rr) {
+  auto [xa, ya] = rr.radii(SkRRect::kUpperLeft_Corner);
+  auto [xb, yb] = rr.radii(SkRRect::kLowerLeft_Corner);
+  auto [xc, yc] = rr.radii(SkRRect::kUpperRight_Corner);
+  auto [xd, yd] = rr.radii(SkRRect::kLowerRight_Corner);
+  return SkScalarsNearlyEqual(xa, xb, xc, xd) &&
+         SkScalarsNearlyEqual(ya, yb, yc, yd);
+}
+}  // namespace
+
 #define DL_BUILDER_PAGE 4096
 
 // CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
@@ -124,8 +143,9 @@ static const DlRect& ProtectEmpty(const SkRect& rect) {
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
+                                       bool impeller,
                                        bool prepare_rtree)
-    : original_cull_rect_(ProtectEmpty(cull_rect)) {
+    : impeller_(impeller), original_cull_rect_(ProtectEmpty(cull_rect)) {
   Init(prepare_rtree);
 }
 
@@ -1074,13 +1094,24 @@ void DisplayListBuilder::ClipPath(const SkPath& path,
   }
   current_info().has_valid_clip = true;
   checkForDeferredSave();
-  switch (clip_op) {
-    case ClipOp::kIntersect:
-      Push<ClipIntersectPathOp>(0, path, is_aa);
-      break;
-    case ClipOp::kDifference:
-      Push<ClipDifferencePathOp>(0, path, is_aa);
-      break;
+  if (impeller_) {
+    switch (clip_op) {
+      case ClipOp::kIntersect:
+        Push<ClipIntersectImpellerPathOp>(0, path);
+        break;
+      case ClipOp::kDifference:
+        Push<ClipIntersectImpellerPathOp>(0, path);
+        break;
+    }
+  } else {
+    switch (clip_op) {
+      case ClipOp::kIntersect:
+        Push<ClipIntersectPathOp>(0, path, is_aa);
+        break;
+      case ClipOp::kDifference:
+        Push<ClipDifferencePathOp>(0, path, is_aa);
+        break;
+    }
   }
 }
 
@@ -1196,6 +1227,7 @@ void DisplayListBuilder::DrawCircle(const SkPoint& center,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawCircleFlags);
   drawCircle(center, radius);
 }
+
 void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   if (rrect.isRect()) {
     drawRect(rrect.rect());
@@ -1206,7 +1238,17 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
     OpResult result = PaintResult(current_, flags);
     if (result != OpResult::kNoEffect &&
         AccumulateOpBounds(rrect.getBounds(), flags)) {
-      Push<DrawRRectOp>(0, rrect);
+      if (impeller_) {
+        if (IsNearlySimpleRRect(rrect)) {
+          Push<DrawRRectOp>(0, rrect);
+        } else {
+          SkPath path;
+          path.addRRect(rrect);
+          Push<DrawImpellerPathOp>(0, path);
+        }
+      } else {
+        Push<DrawRRectOp>(0, rrect);
+      }
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
     }
@@ -1233,6 +1275,28 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawDRRectFlags);
   drawDRRect(outer, inner);
 }
+
+void DisplayListBuilder::SimplifyOrPushPath(const SkPath& path) {
+  SkRect rect;
+  bool closed;
+  if (path.isRect(&rect, &closed) && closed) {
+    Push<DrawRectOp>(0, rect);
+  }
+
+  SkRRect rrect;
+  if (path.isRRect(&rrect) && IsNearlySimpleRRect(rrect)) {
+    Push<DrawRRectOp>(0, rrect);
+    return;
+  }
+
+  SkRect oval;
+  if (path.isOval(&oval)) {
+    Push<DrawOvalOp>(0, oval);
+    return;
+  }
+  Push<DrawImpellerPathOp>(0, path);
+}
+
 void DisplayListBuilder::drawPath(const SkPath& path) {
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
@@ -1241,7 +1305,11 @@ void DisplayListBuilder::drawPath(const SkPath& path) {
                           ? AccumulateUnbounded()
                           : AccumulateOpBounds(path.getBounds(), flags);
     if (is_visible) {
-      Push<DrawPathOp>(0, path);
+      if (impeller_) {
+        SimplifyOrPushPath(path);
+      } else {
+        Push<DrawPathOp>(0, path);
+      }
       CheckLayerOpacityHairlineCompatibility();
       UpdateLayerResult(result);
     }
@@ -1734,11 +1802,19 @@ void DisplayListBuilder::DrawShadow(const SkPath& path,
   if (result != OpResult::kNoEffect) {
     SkRect shadow_bounds =
         DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
+
     if (AccumulateOpBounds(shadow_bounds, kDrawShadowFlags)) {
-      transparent_occluder  //
-          ? Push<DrawShadowTransparentOccluderOp>(0, path, color, elevation,
-                                                  dpr)
-          : Push<DrawShadowOp>(0, path, color, elevation, dpr);
+      if (impeller_) {
+        transparent_occluder  //
+            ? Push<DrawImpellerShadowTransparentOccluderOp>(0, path, color,
+                                                            elevation, dpr)
+            : Push<DrawImpellerShadowOp>(0, path, color, elevation, dpr);
+      } else {
+        transparent_occluder  //
+            ? Push<DrawShadowTransparentOccluderOp>(0, path, color, elevation,
+                                                    dpr)
+            : Push<DrawShadowOp>(0, path, color, elevation, dpr);
+      }
       UpdateLayerOpacityCompatibility(false);
       UpdateLayerResult(result, DlBlendMode::kSrcOver);
     }

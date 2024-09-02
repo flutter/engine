@@ -158,6 +158,7 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
+  bool impeller = dart_state->IsImpellerEnabled();
 
   // We can't create an image on this task runner because we don't have a
   // graphics context. Even if we did, it would be slow anyway. Also, this
@@ -204,17 +205,17 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list, width,
-                         height, ui_task,
-                         layer_tree = std::move(layer_tree)]() mutable {
+                         height, ui_task, layer_tree = std::move(layer_tree),
+                         impeller]() mutable {
         auto picture_bounds = SkISize::Make(width, height);
         sk_sp<DlImage> image;
         sk_sp<DisplayList> snapshot_display_list = display_list;
         if (layer_tree) {
           FML_DCHECK(picture_bounds == layer_tree->frame_size());
-          snapshot_display_list =
-              layer_tree->Flatten(SkRect::MakeWH(width, height),
-                                  snapshot_delegate->GetTextureRegistry(),
-                                  snapshot_delegate->GetGrContext());
+          snapshot_display_list = layer_tree->Flatten(
+              SkRect::MakeWH(width, height),
+              /*impeller=*/impeller, snapshot_delegate->GetTextureRegistry(),
+              snapshot_delegate->GetGrContext());
         }
         snapshot_delegate->MakeRasterSnapshot(
             snapshot_display_list, picture_bounds,
