@@ -84,7 +84,7 @@ def _contains_duplicates(strings):
 
 def _is_macho_binary(filename):
   """Returns True if the specified path is file and a Mach-O binary."""
-  if not os.path.isfile(filename):
+  if os.path.islink(filename) or not os.path.isfile(filename):
     return False
 
   with open(filename, 'rb') as file:
@@ -118,37 +118,48 @@ def copy_tree(source_path, destination_path, symlinks=False):
   shutil.copytree(source_path, destination_path, symlinks=symlinks)
 
 
-def create_fat_macos_framework(fat_framework, arm64_framework, x64_framework):
+def create_fat_macos_framework(args, dst, fat_framework, arm64_framework, x64_framework):
+  """Creates a fat framework from two arm64 and x64 frameworks."""
+  # Clone the arm64 framework bundle as a starting point.
   copy_tree(arm64_framework, fat_framework, symlinks=True)
   _regenerate_symlinks(fat_framework)
-
-  fat_framework_binary = os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
-
-  # Create the arm64/x64 fat framework.
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
-  lipo([arm64_dylib, x64_dylib], fat_framework_binary)
+  framework_dylib = get_mac_framework_dylib_path(fat_framework)
+  lipo([get_mac_framework_dylib_path(arm64_framework),
+        get_mac_framework_dylib_path(x64_framework)], framework_dylib)
   _set_framework_permissions(fat_framework)
+
+  framework_dsym = fat_framework + '.dSYM' if args.dsym else None
+  _process_macos_framework(args, dst, framework_dylib, framework_dsym)
 
 
 def _regenerate_symlinks(framework_dir):
-  """Regenerates the symlinks structure.
+  """Regenerates the framework symlink structure.
 
-  Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
-  This logic regenerates the symlinks in the expected structure.
+  When building on the bots, the framework is produced in one shard, uploaded
+  to LUCI's content-addressable storage cache (CAS), then pulled down in
+  another shard. When that happens, symlinks are dereferenced, resulting a
+  corrupted framework. This regenerates the expected symlink farm.
   """
-  if os.path.islink(os.path.join(framework_dir, 'FlutterMacOS')):
+  # If the dylib is symlinked, assume symlinks are all fine and bail out.
+  # The shutil.rmtree calls below only work on directories, and fail on symlinks.
+  framework_name = get_framework_name(framework_dir)
+  if os.path.islink(os.path.join(framework_dir, framework_name)):
     return
-  os.remove(os.path.join(framework_dir, 'FlutterMacOS'))
+
+  # Delete any existing files/directories.
+  os.remove(os.path.join(framework_dir, framework_name))
   shutil.rmtree(os.path.join(framework_dir, 'Headers'), True)
   shutil.rmtree(os.path.join(framework_dir, 'Modules'), True)
   shutil.rmtree(os.path.join(framework_dir, 'Resources'), True)
   current_version_path = os.path.join(framework_dir, 'Versions', 'Current')
   shutil.rmtree(current_version_path, True)
+
+  # Recreate the expected framework symlinks.
   os.symlink('A', current_version_path)
+
   os.symlink(
-      os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(framework_dir, 'FlutterMacOS')
+      os.path.join('Versions', 'Current', framework_name),
+      os.path.join(framework_dir, framework_name)
   )
   os.symlink(os.path.join('Versions', 'Current', 'Headers'), os.path.join(framework_dir, 'Headers'))
   os.symlink(os.path.join('Versions', 'Current', 'Modules'), os.path.join(framework_dir, 'Modules'))
@@ -158,6 +169,7 @@ def _regenerate_symlinks(framework_dir):
 
 
 def _set_framework_permissions(framework_dir):
+  """Sets framework contents to be world readable, and world executable if user-executable."""
   # Make the framework readable and executable: u=rwx,go=rx.
   subprocess.check_call(['chmod', '755', framework_dir])
 
@@ -174,13 +186,23 @@ def _set_framework_permissions(framework_dir):
   xargs_subprocess.wait()
 
 
+def _process_macos_framework(args, dst, framework_dylib, dsym):
+  if dsym:
+    extract_dsym(framework_dylib, dsym)
+
+  if args.strip:
+    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
+    strip_binary(framework_dylib, unstripped_out)
+
+
 def create_zip(cwd, zip_filename, paths):
   """Creates a zip archive in cwd, containing a set of cwd-relative files.
 
   In order to preserve the correct internal structure of macOS frameworks,
-  symlinks are preserved.
+  symlinks are preserved (-y). In order to generate reproducible builds,
+  owner/group and unix file timestamps are not included in the archive (-X).
   """
-  subprocess.check_call(['zip', '-r', '-y', zip_filename] + paths, cwd=cwd)
+  subprocess.check_call(['zip', '-r', '-X', '-y', zip_filename] + paths, cwd=cwd)
 
 
 def _dsymutil_path():
@@ -188,6 +210,16 @@ def _dsymutil_path():
   arch_subpath = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
   dsymutil_path = os.path.join('flutter', 'buildtools', arch_subpath, 'clang', 'bin', 'dsymutil')
   return buildroot_relative_path(dsymutil_path)
+
+
+def get_framework_name(framework_dir):
+  """Returns Foo given /path/to/Foo.framework."""
+  return os.path.splitext(os.path.basename(framework_dir))[0]
+
+
+def get_mac_framework_dylib_path(framework_dir):
+  """Returns /path/to/Foo.framework/Versions/A/Foo given /path/to/Foo.framework."""
+  return os.path.join(framework_dir, 'Versions', 'A', get_framework_name(framework_dir))
 
 
 def extract_dsym(binary_path, dsym_out_path):

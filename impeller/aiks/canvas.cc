@@ -719,7 +719,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   AddRenderEntityToCurrentPass(std::move(entity));
 }
 
-void Canvas::DrawImage(const std::shared_ptr<Image>& image,
+void Canvas::DrawImage(const std::shared_ptr<Texture>& image,
                        Point offset,
                        const Paint& paint,
                        SamplerDescriptor sampler) {
@@ -733,7 +733,7 @@ void Canvas::DrawImage(const std::shared_ptr<Image>& image,
   DrawImageRect(image, source, dest, paint, std::move(sampler));
 }
 
-void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
+void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
                            Rect source,
                            Rect dest,
                            const Paint& paint,
@@ -750,7 +750,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   }
 
   auto texture_contents = TextureContents::MakeRect(dest);
-  texture_contents->SetTexture(image->GetTexture());
+  texture_contents->SetTexture(image);
   texture_contents->SetSourceRect(source);
   texture_contents->SetStrictSourceRect(src_rect_constraint ==
                                         SourceRectConstraint::kStrict);
@@ -814,8 +814,7 @@ void Canvas::SaveLayer(const Paint& paint,
                        const std::shared_ptr<ImageFilter>& backdrop_filter,
                        ContentBoundsPromise bounds_promise,
                        uint32_t total_content_depth,
-                       bool can_distribute_opacity,
-                       bool bounds_from_caller) {
+                       bool can_distribute_opacity) {
   if (can_distribute_opacity && !backdrop_filter &&
       Paint::CanApplyOpacityPeephole(paint) &&
       bounds_promise != ContentBoundsPromise::kMayClipContents) {
@@ -837,7 +836,7 @@ void Canvas::SaveLayer(const Paint& paint,
 
   auto& new_layer_pass = GetCurrentPass();
   if (bounds) {
-    new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
+    new_layer_pass.SetBoundsLimit(bounds);
   }
 
   // When applying a save layer, absorb any pending distributed opacity.
@@ -970,9 +969,8 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
-  Rect translated_coverage = Rect::MakeSize(src_coverage.GetSize());
   src_contents = src_paint.CreateContentsForGeometry(
-      Geometry::MakeRect(translated_coverage));
+      Geometry::MakeRect(Rect::Round(src_coverage)));
 
   auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
@@ -980,18 +978,19 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   contents->SetGeometry(vertices);
   contents->SetLazyTextureCoverage(src_coverage);
   contents->SetLazyTexture(
-      [src_contents, translated_coverage](const ContentContext& renderer) {
+      [src_contents, src_coverage](const ContentContext& renderer) {
         // Applying the src coverage as the coverage limit prevents the 1px
         // coverage pad from adding a border that is picked up by developer
         // specified UVs.
-        return src_contents->RenderToSnapshot(renderer, {}, translated_coverage)
+        return src_contents
+            ->RenderToSnapshot(renderer, {}, Rect::Round(src_coverage))
             ->texture;
       });
   entity.SetContents(paint.WithFilters(std::move(contents)));
   AddRenderEntityToCurrentPass(std::move(entity));
 }
 
-void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
+void Canvas::DrawAtlas(const std::shared_ptr<Texture>& atlas,
                        std::vector<Matrix> transforms,
                        std::vector<Rect> texture_coordinates,
                        std::vector<Color> colors,
@@ -1007,7 +1006,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   contents->SetColors(std::move(colors));
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
-  contents->SetTexture(atlas->GetTexture());
+  contents->SetTexture(atlas);
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetBlendMode(blend_mode);
   contents->SetCullRect(cull_rect);

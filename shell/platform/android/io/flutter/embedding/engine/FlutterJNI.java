@@ -873,7 +873,13 @@ public class FlutterJNI {
   @UiThread
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setSemanticsEnabledInNative(enabled);
+    }
+  }
+
+  @VisibleForTesting
+  public void setSemanticsEnabledInNative(boolean enabled) {
     nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
   }
 
@@ -884,7 +890,13 @@ public class FlutterJNI {
   @UiThread
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setAccessibilityFeaturesInNative(flags);
+    }
+  }
+
+  @VisibleForTesting
+  public void setAccessibilityFeaturesInNative(int flags) {
     nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
   }
 
@@ -1524,4 +1536,14 @@ public class FlutterJNI {
   public interface AsyncWaitForVsyncDelegate {
     void asyncWaitForVsync(final long cookie);
   }
+
+  /**
+   * Whether Android Hardware Buffer import is known to not work on this particular vendor + API
+   * level and should be disabled.
+   */
+  public boolean ShouldDisableAHB() {
+    return nativeShouldDisableAHB();
+  }
+
+  private native boolean nativeShouldDisableAHB();
 }

@@ -18,6 +18,7 @@
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/testing/testing.h"
 #include "imgui.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/geometry/scalar.h"
 #include "include/core/SkMatrix.h"
@@ -888,6 +889,89 @@ TEST_P(AiksTest, DispatcherDoesNotCullPerspectiveTransformedChildDisplayLists) {
   builder.DrawDisplayList(display_list, 1.0f);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Results in a 100x100 green square. If any red is drawn, there is a bug.
+TEST_P(AiksTest, BackdropRestoreUsesCorrectCoverageForFirstRestoredClip) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  // Add a difference clip that cuts out the bottom right corner
+  builder.ClipRect(SkRect::MakeLTRB(50, 50, 100, 100),
+                   DlCanvas::ClipOp::kDifference);
+
+  // Draw a red rectangle that's going to be completely covered by green later.
+  paint.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 100, 100), paint);
+
+  // Add a clip restricting the backdrop filter to the top right corner.
+  auto count = builder.GetSaveCount();
+  builder.Save();
+  {
+    builder.ClipRect(SkRect::MakeLTRB(0, 0, 100, 100));
+    {
+      // Create a save layer with a backdrop blur filter.
+      auto backdrop_filter =
+          DlBlurImageFilter::Make(10.0, 10.0, DlTileMode::kDecal);
+      builder.SaveLayer(nullptr, nullptr, backdrop_filter.get());
+    }
+  }
+  builder.RestoreToCount(count);
+
+  // Finally, overwrite all the previous stuff with green.
+  paint.setColor(DlColor::kGreen());
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 100, 100), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, CanPictureConvertToImage) {
+  DisplayListBuilder recorder_canvas;
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0));
+  recorder_canvas.DrawRect(SkRect::MakeXYWH(100.0, 100.0, 600, 600), paint);
+  paint.setColor(DlColor::RGBA(0.1294, 0.5882, 0.9529, 1.0));
+  recorder_canvas.DrawRect(SkRect::MakeXYWH(200.0, 200.0, 600, 600), paint);
+
+  DisplayListBuilder canvas;
+  AiksContext renderer(GetContext(), nullptr);
+  paint.setColor(DlColor::kTransparent());
+  canvas.DrawPaint(paint);
+
+  auto image =
+      DisplayListToTexture(recorder_canvas.Build(), {1000, 1000}, renderer);
+  if (image) {
+    canvas.DrawImage(DlImageImpeller::Make(image), {}, {});
+    paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 0.2));
+    canvas.DrawRect(SkRect::MakeSize({1000, 1000}), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.Build()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/142358 .
+// Without a change to force render pass construction the image is left in an
+// undefined layout and triggers a validation error.
+TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
+  DisplayListBuilder recorder_builder;
+
+  DisplayListBuilder builder;
+  AiksContext renderer(GetContext(), nullptr);
+
+  DlPaint paint;
+  paint.setColor(DlColor::kTransparent());
+  builder.DrawPaint(paint);
+
+  auto result_image =
+      DisplayListToTexture(builder.Build(), ISize{1000, 1000}, renderer);
+  if (result_image) {
+    recorder_builder.DrawImage(DlImageImpeller::Make(result_image), {}, {});
+
+    paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 0.2));
+    recorder_builder.DrawRect(SkRect::MakeSize({1000, 1000}), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(recorder_builder.Build()));
 }
 
 }  // namespace testing

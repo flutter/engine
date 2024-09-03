@@ -21,7 +21,7 @@ enum class DlColorSpace { kSRGB = 0, kExtendedSRGB = 1, kDisplayP3 = 2 };
 struct DlColor {
  public:
   constexpr DlColor()
-      : alpha_(0.f),
+      : alpha_(1.f),
         red_(0.f),
         green_(0.f),
         blue_(0.f),
@@ -90,6 +90,8 @@ struct DlColor {
   static constexpr DlColor kGreenYellow()        {return DlColor(0xFFADFF2F);};
   static constexpr DlColor kDarkMagenta()        {return DlColor(0xFF8B008B);};
   static constexpr DlColor kOrangeRed()          {return DlColor(0xFFFF4500);};
+  static constexpr DlColor kDarkGreen()          {return DlColor(0xFF006400);};
+  static constexpr DlColor kChartreuse()         {return DlColor(0xFF7FFF00);};
   // clang-format on
 
   constexpr bool isOpaque() const { return alpha_ >= 1.f; }
