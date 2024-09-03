@@ -458,7 +458,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureWillGrowTilMaxTextureSize) {
   for (int i = 0; i < 13; i++) {
     SkTextBlobBuilder builder;
 
-    auto add_char = [&](SkFont sk_font, char c) {
+    auto add_char = [&](const SkFont& sk_font, char c) {
       int count = sk_font.countText(&c, 1, SkTextEncoding::kUTF8);
       auto buffer = builder.allocRunPos(sk_font, count);
       sk_font.textToGlyphs(&c, 1, SkTextEncoding::kUTF8, buffer.glyphs, count);
