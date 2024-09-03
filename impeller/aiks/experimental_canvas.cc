@@ -11,10 +11,13 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
+#include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_target.h"
 
@@ -313,14 +316,8 @@ void ExperimentalCanvas::SaveLayer(
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
-    bool can_distribute_opacity,
-    bool bounds_from_caller) {
+    bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
-
-  if (bounds.has_value() && bounds->IsEmpty()) {
-    Save(total_content_depth);
-    return;
-  }
 
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
@@ -345,13 +342,6 @@ void ExperimentalCanvas::SaveLayer(
                                     ->GetSize()))
           .Intersection(current_clip_coverage);
 
-  if (!maybe_coverage_limit.has_value()) {
-    Save(total_content_depth);
-    return;
-  }
-  maybe_coverage_limit = maybe_coverage_limit->Intersection(
-      Rect::MakeSize(render_target_.GetRenderTargetSize()));
-
   if (!maybe_coverage_limit.has_value() || maybe_coverage_limit->IsEmpty()) {
     Save(total_content_depth);
     return;
@@ -366,12 +356,33 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
+  std::shared_ptr<FilterContents> filter_contents;
+  if (paint.image_filter) {
+    filter_contents = paint.image_filter->GetFilterContents();
+  }
+
+  std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
+      bounds.value_or(Rect::MakeMaximum()),
+      transform_stack_.back().transform,  //
+      coverage_limit,                     //
+      filter_contents,                    //
+      /*flood_output_coverage=*/
+      Entity::IsBlendModeDestructive(paint.blend_mode),  //
+      /*flood_input_coverage=*/!!backdrop_filter         //
+  );
+
+  if (!maybe_subpass_coverage.has_value() ||
+      maybe_subpass_coverage->IsEmpty()) {
+    Save(total_content_depth);
+    return;
+  }
+  auto subpass_coverage = maybe_subpass_coverage.value();
+
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
-    local_position =
-        current_clip_coverage.GetOrigin() - GetGlobalPassPosition();
+    local_position = subpass_coverage.GetOrigin() - GetGlobalPassPosition();
     EntityPass::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
@@ -408,21 +419,6 @@ void ExperimentalCanvas::SaveLayer(
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
   transform_stack_.back().distributed_opacity = 1.0;
 
-  // Backdrop Filter must expand bounds to at least the clip stack, otherwise
-  // the coverage of the parent render pass.
-  Rect subpass_coverage;
-  if (backdrop_filter_contents ||
-      Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
-    subpass_coverage = coverage_limit;
-    // TODO(jonahwilliams): if we have tight bounds we should be able to reduce
-    // this size here. if (bounds.has_value() && bounds_from_caller) {
-    //   subpass_coverage =
-    //       coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
-    // }
-  } else {
-    subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
-  }
-
   render_passes_.push_back(LazyRenderingConfig(
       renderer_,                                             //
       CreateRenderTarget(renderer_,                          //
@@ -441,6 +437,12 @@ void ExperimentalCanvas::SaveLayer(
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpassAppendSnapshotTransform;
   transform_stack_.emplace_back(entry);
+
+  // The current clip aiks clip culling can not handle image filters.
+  // Remove this once we've migrated to exp canvas and removed it.
+  if (paint.image_filter) {
+    transform_stack_.back().cull_rect = std::nullopt;
+  }
 
   // Start non-collapsed subpasses with a fresh clip coverage stack limited by
   // the subpass coverage. This is important because image filters applied to
@@ -673,7 +675,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       entity.GetTransform());
   entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
   if (entity.GetBlendMode() == BlendMode::kSourceOver &&
-      entity.GetContents()->IsOpaque()) {
+      entity.GetContents()->IsOpaque(entity.GetTransform())) {
     entity.SetBlendMode(BlendMode::kSource);
   }
 
@@ -764,6 +766,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+
   // Ideally the clip depth would be greater than the current rendering
   // depth because any rendering calls that follow this clip operation will
   // pre-increment the depth and then be rendering above our clip depth,
