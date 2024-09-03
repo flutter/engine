@@ -108,26 +108,22 @@ final _engineRoot = Engine.findWithin();
 void main() {
   // This test requires a compile_commands.json file to exist.
   //
-  // On CI, we'll want to provide exactly which build to use, i.e.:
+  // We can provide exactly which build to use, i.e.:
   //    COMPILE_COMMANDS_PATH=/path/to/compile_commands.json dart test
   //
-  // Locally, we can fall back to the latest build output if one isn't provided.
-  //
-  // Otherwise, fail.
+  // Or, we can fall back to the latest build output if one isn't provided.
   final String buildCommands;
   if (io.Platform.environment['COMPILE_COMMANDS_PATH'] case final String compileCommandsPath) {
     buildCommands = compileCommandsPath;
-  } else if (io.Platform.environment['LUCI_CONTEXT'] == null) {
+  } else {
     final String? inferredPath = _engineRoot.latestOutput()?.compileCommandsJson.path;
     io.stderr.writeln('No COMPILE_COMMANDS_PATH found in environment.');
     if (inferredPath != null) {
-      io.stderr.writeln('Since this is a local run, inferring the last build output: $inferredPath');
+      io.stderr.writeln('Inferring the last build output: $inferredPath');
       buildCommands = inferredPath;
     } else {
       fail('No outputs or build commands found.');
     }
-  } else {
-    fail('No COMPILE_COMMANDS_PATH found in environment.');
   }
 
   test('--help gives help, and uses host_debug by default outside of an engine root', () async {
