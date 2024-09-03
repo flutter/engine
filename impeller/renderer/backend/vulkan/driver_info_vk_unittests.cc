@@ -7,8 +7,6 @@
 #include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller::testing {
 
