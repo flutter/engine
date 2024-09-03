@@ -4455,7 +4455,7 @@ enum TileMode {
 Float32List _encodeWideColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Float32List result = Float32List(colorCount * 4);
-  for (int i = 0; i < colorCount; ++i) {
+  for (int i = 0; i < colorCount; i++) {
     final Color colorXr =
         colors[i].withValues(colorSpace: ColorSpace.extendedSRGB);
     result[i*4+0] = colorXr.a;
@@ -4470,7 +4470,7 @@ Float32List _encodeWideColorList(List<Color> colors) {
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i) {
+  for (int i = 0; i < colorCount; i++) {
     result[i] = colors[i].value;
   }
   return result;
@@ -4479,7 +4479,7 @@ Int32List _encodeColorList(List<Color> colors) {
 Float32List _encodePointList(List<Offset> points) {
   final int pointCount = points.length;
   final Float32List result = Float32List(pointCount * 2);
-  for (int i = 0; i < pointCount; ++i) {
+  for (int i = 0; i < pointCount; i++) {
     final int xIndex = i * 2;
     final int yIndex = xIndex + 1;
     final Offset point = points[i];
@@ -6518,7 +6518,7 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
 
-    for (int i = 0; i < rectCount; ++i) {
+    for (int i = 0; i < rectCount; i++) {
       final int index0 = i * 4;
       final int index1 = index0 + 1;
       final int index2 = index0 + 2;
