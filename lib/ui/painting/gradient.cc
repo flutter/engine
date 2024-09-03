@@ -56,7 +56,7 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   }
 
   dl_shader_ = DlColorSource::MakeLinear(
-      p0, p1, color_stops.num_elements(), dl_colors.data(), color_stops.data(),
+      p0, p1, colors.num_elements() / 4, dl_colors.data(), color_stops.data(),
       tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
@@ -93,7 +93,7 @@ void CanvasGradient::initRadial(double center_x,
 
   dl_shader_ = DlColorSource::MakeRadial(
       SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
-      SafeNarrow(radius), color_stops.num_elements(), dl_colors.data(),
+      SafeNarrow(radius), colors.num_elements() / 4, dl_colors.data(),
       color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
@@ -133,7 +133,7 @@ void CanvasGradient::initSweep(double center_x,
       SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
       SafeNarrow(start_angle) * 180.0f / static_cast<float>(M_PI),
       SafeNarrow(end_angle) * 180.0f / static_cast<float>(M_PI),
-      color_stops.num_elements(), dl_colors.data(), color_stops.data(),
+      colors.num_elements() / 4, dl_colors.data(), color_stops.data(),
       tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
@@ -175,7 +175,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
       SkPoint::Make(SafeNarrow(start_x), SafeNarrow(start_y)),
       SafeNarrow(start_radius),
       SkPoint::Make(SafeNarrow(end_x), SafeNarrow(end_y)),
-      SafeNarrow(end_radius), color_stops.num_elements(), dl_colors.data(),
+      SafeNarrow(end_radius), colors.num_elements() / 4, dl_colors.data(),
       color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());

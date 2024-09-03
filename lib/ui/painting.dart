@@ -4548,13 +4548,11 @@ base class Gradient extends Shader {
        assert(_offsetIsValid(to)),
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
-    print("gradient.linear1");
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
     final Float32List colorsBuffer = _encodeWideColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    print("gradient.linear2");
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
 
