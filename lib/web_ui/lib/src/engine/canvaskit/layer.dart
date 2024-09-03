@@ -57,6 +57,10 @@ class PrerollContext {
   /// A compositor for embedded HTML views.
   final HtmlViewEmbedder? viewEmbedder;
 
+  /// How many layers deep of filter masks we are. We cannot split pictures
+  /// that are affected by a shader mask or a backdrop filter.
+  int filterMaskLayers = 0;
+
   final MutatorsStack mutatorsStack = MutatorsStack();
 
   ui.Rect get cullRect {
@@ -101,6 +105,10 @@ class PaintContext {
 
   /// A compositor for embedded HTML views.
   final HtmlViewEmbedder? viewEmbedder;
+
+  /// How many layers deep of filter masks we are. We cannot split pictures
+  /// that are children of the same shader mask or backdrop filter.
+  int filterMaskLayers = 0;
 }
 
 /// A layer that contains child layers.
@@ -173,8 +181,13 @@ class BackdropFilterEngineLayer extends ContainerLayer
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    prerollContext.filterMaskLayers++;
     final ui.Rect childBounds = prerollChildren(prerollContext, matrix);
     paintBounds = childBounds.expandToInclude(prerollContext.cullRect);
+    prerollContext.filterMaskLayers--;
+    if (prerollContext.filterMaskLayers == 0) {
+      prerollContext.viewEmbedder?.prerollPicture();
+    }
   }
 
   @override
@@ -186,9 +199,17 @@ class BackdropFilterEngineLayer extends ContainerLayer
     // [internalNodesCanvas]), then later when we compose the canvases into a
     // single canvas, the backdrop filter will be applied multiple times.
     final CkCanvas currentCanvas = paintContext.leafNodesCanvas!;
+    paintContext.filterMaskLayers++;
     currentCanvas.saveLayerWithFilter(paintBounds, _filter, paint);
     paintChildren(paintContext);
     currentCanvas.restore();
+    paintContext.filterMaskLayers--;
+    if (paintContext.filterMaskLayers == 0) {
+      final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
+      if (nextCanvas != null) {
+        paintContext.leafNodesCanvas = nextCanvas;
+      }
+    }
   }
 
   // TODO(dnfield): dispose of the _filter
@@ -417,17 +438,17 @@ class ImageFilterEngineLayer extends ContainerLayer
     }
     final ui.Rect childPaintBounds =
         prerollChildren(prerollContext, childMatrix);
-      if (_filter is ui.ColorFilter) {
-        // If the filter is a ColorFilter, the extended paint bounds will be the
-        // entire screen, which is not what we want.
-        paintBounds = childPaintBounds;
-      } else {
-        convertible.withSkImageFilter((skFilter) {
-          paintBounds = rectFromSkIRect(
-            skFilter.getOutputBounds(toSkRect(childPaintBounds)),
-          );
-        });
-      }
+    if (_filter is ui.ColorFilter) {
+      // If the filter is a ColorFilter, the extended paint bounds will be the
+      // entire screen, which is not what we want.
+      paintBounds = childPaintBounds;
+    } else {
+      convertible.withSkImageFilter((skFilter) {
+        paintBounds = rectFromSkIRect(
+          skFilter.getOutputBounds(toSkRect(childPaintBounds)),
+        );
+      });
+    }
     prerollContext.mutatorsStack.pop();
   }
 
@@ -462,14 +483,19 @@ class ShaderMaskEngineLayer extends ContainerLayer
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    prerollContext.filterMaskLayers++;
     paintBounds = prerollChildren(prerollContext, matrix);
-    prerollContext.viewEmbedder?.prerollPicture();
+    prerollContext.filterMaskLayers--;
+    if (prerollContext.filterMaskLayers == 0) {
+      prerollContext.viewEmbedder?.prerollPicture();
+    }
   }
 
   @override
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
+    paintContext.filterMaskLayers++;
     paintContext.internalNodesCanvas.saveLayer(paintBounds, null);
     paintChildren(paintContext);
 
@@ -484,10 +510,13 @@ class ShaderMaskEngineLayer extends ContainerLayer
     paintContext.leafNodesCanvas!.drawRect(
         ui.Rect.fromLTWH(0, 0, maskRect.width, maskRect.height), paint);
     paintContext.leafNodesCanvas!.restore();
+    paintContext.filterMaskLayers--;
 
-    final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
-    if (nextCanvas != null) {
-      paintContext.leafNodesCanvas = nextCanvas;
+    if (paintContext.filterMaskLayers == 0) {
+      final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
+      if (nextCanvas != null) {
+        paintContext.leafNodesCanvas = nextCanvas;
+      }
     }
 
     paintContext.internalNodesCanvas.restore();
@@ -513,7 +542,9 @@ class PictureLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = picture.cullRect.shift(offset);
-    prerollContext.viewEmbedder?.prerollPicture();
+    if (prerollContext.filterMaskLayers == 0) {
+      prerollContext.viewEmbedder?.prerollPicture();
+    }
   }
 
   @override
@@ -525,9 +556,12 @@ class PictureLayer extends Layer {
 
     paintContext.leafNodesCanvas!.drawPicture(picture);
     paintContext.leafNodesCanvas!.restore();
-    final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
-    if (nextCanvas != null) {
-      paintContext.leafNodesCanvas = nextCanvas;
+
+    if (paintContext.filterMaskLayers == 0) {
+      final CkCanvas? nextCanvas = paintContext.viewEmbedder?.finalizePicture();
+      if (nextCanvas != null) {
+        paintContext.leafNodesCanvas = nextCanvas;
+      }
     }
   }
 }
@@ -590,6 +624,8 @@ class PlatformViewLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
+    // TODO(harryterkelsen): Warn if we are a child of a backdrop filter or
+    // shader mask.
     paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
   }
 }
