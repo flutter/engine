@@ -124,7 +124,9 @@ def run_cmd( # pylint: disable=too-many-arguments
         allowed_failure = True
 
     if not allowed_failure:
-      raise RuntimeError('Command "%s" (in %s) exited with code %s.' % (command_string, cwd, process.returncode))
+      raise RuntimeError(
+          'Command "%s" (in %s) exited with code %s.' % (command_string, cwd, process.returncode)
+      )
 
   for forbidden_string in forbidden_output:
     if forbidden_string in output:
