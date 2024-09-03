@@ -23,7 +23,6 @@ class SemanticsClickSelectable extends SemanticRole {
     super.update();
 
     if (semanticsObject.isFlagsDirty && semanticsObject.hasFlag(ui.SemanticsFlag.hasSelectedState)) {
-      setAriaRole('tab');
 
       /// Adding disabled and aria-disabled attribute to notify the assistive
       /// technologies of disabled elements.
