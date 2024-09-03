@@ -67,7 +67,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       const SkPoint start_point,
       const SkPoint end_point,
       uint32_t stop_count,
-      const DlColor* colors,
+      const DlScalar* colors,
       const float* stops,
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
@@ -334,10 +334,13 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
   }
 
   void store_color_stops(void* pod,
-                         const DlColor* color_data,
+                         const DlScalar* color_data,
                          const float* stop_data) {
     DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
-    memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
+    for (uint32_t i = 0; i < stop_count_; ++i, color_data += 4) {
+      *color_storage++ = DlColor(color_data[0], color_data[1], color_data[2],
+                                 color_data[3], DlColorSpace::kExtendedSRGB);
+    }
     float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
     if (stop_data) {
       memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
@@ -394,7 +397,7 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   DlLinearGradientColorSource(const SkPoint start_point,
                               const SkPoint end_point,
                               uint32_t stop_count,
-                              const DlColor* colors,
+                              const DlScalar* colors,
                               const float* stops,
                               DlTileMode tile_mode,
                               const SkMatrix* matrix = nullptr)

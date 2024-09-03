@@ -23,7 +23,7 @@ std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
     const SkPoint start_point,
     const SkPoint end_point,
     uint32_t stop_count,
-    const DlColor* colors,
+    const float* colors,
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
