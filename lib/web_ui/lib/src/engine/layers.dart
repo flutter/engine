@@ -8,11 +8,39 @@ import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-class EngineRootLayer with PictureEngineLayer {}
+class EngineRootLayer with PictureEngineLayer {
+  @override
+  final NoopOperation operation = NoopOperation();
+}
+
+class NoopOperation implements LayerOperation {
+  @override
+  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+
+  @override
+  ui.Rect mapRect(ui.Rect contentRect) => contentRect;
+
+  @override
+  void post(SceneCanvas canvas) {
+    print('pre');
+    canvas.save();
+  }
+
+  @override
+  void pre(SceneCanvas canvas) {
+    print('post');
+    canvas.restore();
+  }
+}
 
 class BackdropFilterLayer
   with PictureEngineLayer
-  implements ui.BackdropFilterEngineLayer {}
+  implements ui.BackdropFilterEngineLayer {
+  BackdropFilterLayer(this.operation);
+
+  @override
+  final LayerOperation operation;
+}
 class BackdropFilterOperation implements LayerOperation {
   BackdropFilterOperation(this.filter, this.mode);
 
@@ -38,7 +66,12 @@ class BackdropFilterOperation implements LayerOperation {
 
 class ClipPathLayer
   with PictureEngineLayer
-  implements ui.ClipPathEngineLayer {}
+  implements ui.ClipPathEngineLayer {
+  ClipPathLayer(this.operation);
+
+  @override
+  final ClipPathOperation operation;
+}
 class ClipPathOperation implements LayerOperation {
   ClipPathOperation(this.path, this.clip);
 
@@ -73,7 +106,12 @@ class ClipPathOperation implements LayerOperation {
 
 class ClipRectLayer
   with PictureEngineLayer
-  implements ui.ClipRectEngineLayer {}
+  implements ui.ClipRectEngineLayer {
+  ClipRectLayer(this.operation);
+
+  @override
+  final ClipRectOperation operation;
+}
 class ClipRectOperation implements LayerOperation {
   const ClipRectOperation(this.rect, this.clip);
 
@@ -108,7 +146,12 @@ class ClipRectOperation implements LayerOperation {
 
 class ClipRRectLayer
   with PictureEngineLayer
-  implements ui.ClipRRectEngineLayer {}
+  implements ui.ClipRRectEngineLayer {
+  ClipRRectLayer(this.operation);
+
+  @override
+  final ClipRRectOperation operation;
+}
 class ClipRRectOperation implements LayerOperation {
   const ClipRRectOperation(this.rrect, this.clip);
 
@@ -143,7 +186,12 @@ class ClipRRectOperation implements LayerOperation {
 
 class ColorFilterLayer
   with PictureEngineLayer
-  implements ui.ColorFilterEngineLayer {}
+  implements ui.ColorFilterEngineLayer {
+  ColorFilterLayer(this.operation);
+
+  @override
+  final ColorFilterOperation operation;
+}
 class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation(this.filter);
 
@@ -168,7 +216,12 @@ class ColorFilterOperation implements LayerOperation {
 
 class ImageFilterLayer
   with PictureEngineLayer
-  implements ui.ImageFilterEngineLayer {}
+  implements ui.ImageFilterEngineLayer {
+  ImageFilterLayer(this.operation);
+
+  @override
+  final ImageFilterOperation operation;
+}
 class ImageFilterOperation implements LayerOperation {
   ImageFilterOperation(this.filter, this.offset);
 
@@ -209,7 +262,12 @@ class ImageFilterOperation implements LayerOperation {
 
 class OffsetLayer
   with PictureEngineLayer
-  implements ui.OffsetEngineLayer {}
+  implements ui.OffsetEngineLayer {
+  OffsetLayer(this.operation);
+
+  @override
+  final OffsetOperation operation;
+}
 class OffsetOperation implements LayerOperation {
   OffsetOperation(this.dx, this.dy);
 
@@ -238,7 +296,12 @@ class OffsetOperation implements LayerOperation {
 
 class OpacityLayer
   with PictureEngineLayer
-  implements ui.OpacityEngineLayer {}
+  implements ui.OpacityEngineLayer {
+  OpacityLayer(this.operation);
+
+  @override
+  final OpacityOperation operation;
+}
 class OpacityOperation implements LayerOperation {
   OpacityOperation(this.alpha, this.offset);
 
@@ -277,7 +340,12 @@ class OpacityOperation implements LayerOperation {
 
 class TransformLayer
   with PictureEngineLayer
-  implements ui.TransformEngineLayer {}
+  implements ui.TransformEngineLayer {
+  TransformLayer(this.operation);
+
+  @override
+  final TransformOperation operation;
+}
 class TransformOperation implements LayerOperation {
   TransformOperation(this.transform);
 
@@ -308,7 +376,12 @@ class TransformOperation implements LayerOperation {
 
 class ShaderMaskLayer
   with PictureEngineLayer
-  implements ui.ShaderMaskEngineLayer {}
+  implements ui.ShaderMaskEngineLayer {
+  ShaderMaskLayer(this.operation);
+
+  @override
+  final ShaderMaskOperation operation;
+}
 class ShaderMaskOperation implements LayerOperation {
   ShaderMaskOperation(this.shader, this.maskRect, this.blendMode);
 
@@ -374,8 +447,11 @@ mixin PictureEngineLayer implements ui.EngineLayer {
   // Each layer is represented as a series of "slices" which contain either
   // flutter content or platform views. Slices in this list are ordered from
   // bottom to top.
-  late List<LayerSlice?> slices;
-  late List<LayerDrawCommand> drawCommands;
+  List<LayerSlice?> slices = [];
+  List<LayerDrawCommand> drawCommands = [];
+  PlatformViewStyling platformViewStyling = const PlatformViewStyling();
+
+  LayerOperation get operation;
 
   @override
   void dispose() {
@@ -516,6 +592,10 @@ class PlatformViewStyling {
   final PlatformViewPosition position;
   final double opacity;
   final PlatformViewClip clip;
+
+  ui.Rect mapLocalToGlobal(ui.Rect rect) {
+    return position.mapLocalToGlobal(rect).intersect(clip.outerRect);
+  }
 
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
     // Attempt to reuse one of the existing immutable objects.
@@ -753,25 +833,22 @@ class LayerSliceBuilder {
 
 class LayerBuilder {
   factory LayerBuilder.rootLayer() {
-    return LayerBuilder._(null, EngineRootLayer(), null);
+    return LayerBuilder._(null, EngineRootLayer());
   }
 
   factory LayerBuilder.childLayer({
     required LayerBuilder parent,
     required PictureEngineLayer layer,
-    required LayerOperation operation
   }) {
-    return LayerBuilder._(parent, layer, operation);
+    return LayerBuilder._(parent, layer);
   }
 
   LayerBuilder._(
     this.parent,
-    this.layer,
-    this.operation);
+    this.layer);
 
   final LayerBuilder? parent;
   final PictureEngineLayer layer;
-  final LayerOperation? operation;
 
   final List<LayerSliceBuilder?> sliceBuilders = <LayerSliceBuilder?>[];
   final List<LayerDrawCommand> drawCommands = <LayerDrawCommand>[];
@@ -779,12 +856,7 @@ class LayerBuilder {
   PlatformViewStyling? _memoizedPlatformViewStyling;
 
   PlatformViewStyling get platformViewStyling {
-    return _memoizedPlatformViewStyling ??= operation?.createPlatformViewStyling() ?? const PlatformViewStyling();
-  }
-
-  ui.Rect mapLocalToGlobal(ui.Rect rect) {
-    final ui.Rect clippedRect = rect.intersect(platformViewStyling.clip.outerRect);
-    return platformViewStyling.position.mapLocalToGlobal(clippedRect);
+    return _memoizedPlatformViewStyling ??= layer.operation.createPlatformViewStyling();
   }
 
   LayerSliceBuilder getOrCreateSliceBuilderAtIndex(int index) {
@@ -795,9 +867,10 @@ class LayerBuilder {
     if (existingSliceBuilder != null) {
       return existingSliceBuilder;
     }
+    print('creating new slice builder');
     final LayerSliceBuilder newSliceBuilder = LayerSliceBuilder();
-    operation?.pre(newSliceBuilder.canvas);
-    sliceBuilders[index] = LayerSliceBuilder();
+    layer.operation.pre(newSliceBuilder.canvas);
+    sliceBuilders[index] = newSliceBuilder;
     return newSliceBuilder;
   }
 
@@ -808,6 +881,7 @@ class LayerBuilder {
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
     final SceneCanvas canvas = sliceBuilder.canvas;
+    print('drawing picture with cullrect: ${(picture as ScenePicture).cullRect} and offset: $offset');
     if (offset != ui.Offset.zero) {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
@@ -822,9 +896,10 @@ class LayerBuilder {
     int viewId, {
     required ui.Rect bounds,
     required int sliceIndex,
+    PlatformViewStyling existingStyling = const PlatformViewStyling(),
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
-    sliceBuilder.platformViews.add(PlatformView(viewId, bounds, platformViewStyling));
+    sliceBuilder.platformViews.add(PlatformView(viewId, bounds, PlatformViewStyling.combine(platformViewStyling, existingStyling)));
   }
 
   void mergeLayer(PictureEngineLayer layer) {
@@ -832,8 +907,11 @@ class LayerBuilder {
       final LayerSlice? slice = layer.slices[i];
       if (slice != null) {
         final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(i);
+        print('merging picture with cullrect: ${slice.picture.cullRect}');
         sliceBuilder.canvas.drawPicture(slice.picture);
-        sliceBuilder.platformViews.addAll(slice.platformViews);
+        sliceBuilder.platformViews.addAll(slice.platformViews.map((PlatformView view) {
+          return PlatformView(view.viewId, view.bounds, PlatformViewStyling.combine(platformViewStyling, view.styling));
+        }));
       }
     }
   }
@@ -842,17 +920,23 @@ class LayerBuilder {
     drawCommands.add(command);
   }
 
-  PictureEngineLayer build() {
+  PictureEngineLayer sliceUp() {
     final List<LayerSlice?> slices = sliceBuilders.map((LayerSliceBuilder? builder) {
       if (builder == null) {
         return null;
       }
-      operation?.post(builder.canvas);
+      layer.operation.post(builder.canvas);
       final ScenePicture picture = builder.recorder.endRecording() as ScenePicture;
+      print('made a picture with cullrect: ${picture.cullRect}');
       return LayerSlice(picture, builder.platformViews);
     }).toList();
     layer.slices = slices;
-    layer.drawCommands = drawCommands;
     return layer;
+  }
+
+  PictureEngineLayer build() {
+    layer.drawCommands = drawCommands;
+    layer.platformViewStyling = platformViewStyling;
+    return sliceUp();
   }
 }

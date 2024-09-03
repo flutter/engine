@@ -114,7 +114,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   void _placePicture(ui.Offset offset, ScenePicture picture) {
     final ui.Rect cullRect = picture.cullRect.shift(offset);
-    currentBuilder.mapLocalToGlobal(cullRect);
+    currentBuilder.platformViewStyling.mapLocalToGlobal(cullRect);
     int sliceIndex = sceneSlices.length;
     while (sliceIndex > 0) {
       final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
@@ -151,8 +151,13 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     currentBuilder.addDrawCommand(PlatformViewDrawCommand(viewId, platformViewRect));
   }
 
-  void _placePlatformView(int viewId, ui.Rect rect) {
-    final ui.Rect globalPlatformViewRect = currentBuilder.mapLocalToGlobal(rect);
+  void _placePlatformView(
+    int viewId,
+    ui.Rect rect, {
+    PlatformViewStyling styling = const PlatformViewStyling(),
+  }) {
+    final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(currentBuilder.platformViewStyling, styling);
+    final ui.Rect globalPlatformViewRect = combinedStyling.mapLocalToGlobal(rect);
     int sliceIndex = sceneSlices.length - 1;
     while (sliceIndex > 0) {
       final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
@@ -173,6 +178,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
       viewId,
       bounds: rect,
       sliceIndex: sliceIndex,
+      existingStyling: styling,
     );
   }
 
@@ -182,19 +188,23 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     currentBuilder.addDrawCommand(RetainedLayerDrawCommand(retainedLayer));
   }
 
-  void _placeRetainedLayer(PictureEngineLayer retainedLayer) {
+  PictureEngineLayer _placeRetainedLayer(PictureEngineLayer retainedLayer) {
     // TODO(jacksongardner): add optimized path
+    currentBuilder = LayerBuilder.childLayer(parent: currentBuilder, layer: retainedLayer);
     for (final LayerDrawCommand command in retainedLayer.drawCommands) {
       switch (command) {
         case PictureDrawCommand(offset: final ui.Offset offset, picture: final ScenePicture picture):
           _placePicture(offset, picture);
         case PlatformViewDrawCommand(viewId: final int viewId, bounds: final ui.Rect bounds):
-          // TODO(jacksongardner): we need to somehow deal with transformations here
           _placePlatformView(viewId, bounds);
         case RetainedLayerDrawCommand(layer: final PictureEngineLayer layer):
           _placeRetainedLayer(layer);
       }
     }
+    final PictureEngineLayer newLayer = currentBuilder.sliceUp();
+    currentBuilder = currentBuilder.parent!;
+    currentBuilder.mergeLayer(newLayer);
+    return newLayer;
   }
 
   @override
@@ -214,30 +224,21 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.BackdropFilterEngineLayer? oldLayer
-  }) => pushLayer<BackdropFilterLayer>(
-      BackdropFilterLayer(),
-      BackdropFilterOperation(filter, blendMode),
-    );
+  }) => pushLayer<BackdropFilterLayer>(BackdropFilterLayer(BackdropFilterOperation(filter, blendMode)));
 
   @override
   ui.ClipPathEngineLayer pushClipPath(
     ui.Path path, {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipPathEngineLayer? oldLayer
-  }) => pushLayer<ClipPathLayer>(
-      ClipPathLayer(),
-      ClipPathOperation(path as ScenePath, clipBehavior),
-    );
+  }) => pushLayer<ClipPathLayer>(ClipPathLayer(ClipPathOperation(path as ScenePath, clipBehavior)));
 
   @override
   ui.ClipRRectEngineLayer pushClipRRect(
     ui.RRect rrect, {
     required ui.Clip clipBehavior,
     ui.ClipRRectEngineLayer? oldLayer
-  }) => pushLayer<ClipRRectLayer>(
-      ClipRRectLayer(),
-      ClipRRectOperation(rrect, clipBehavior)
-    );
+  }) => pushLayer<ClipRRectLayer>(ClipRRectLayer(ClipRRectOperation(rrect, clipBehavior)));
 
   @override
   ui.ClipRectEngineLayer pushClipRect(
@@ -245,20 +246,14 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipRectEngineLayer? oldLayer
   }) {
-    return pushLayer<ClipRectLayer>(
-      ClipRectLayer(),
-      ClipRectOperation(rect, clipBehavior)
-    );
+    return pushLayer<ClipRectLayer>(ClipRectLayer(ClipRectOperation(rect, clipBehavior)));
   }
 
   @override
   ui.ColorFilterEngineLayer pushColorFilter(
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer
-  }) => pushLayer<ColorFilterLayer>(
-      ColorFilterLayer(),
-      ColorFilterOperation(filter),
-    );
+  }) => pushLayer<ColorFilterLayer>(ColorFilterLayer(ColorFilterOperation(filter)));
 
   @override
   ui.ImageFilterEngineLayer pushImageFilter(
@@ -266,8 +261,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer
   }) => pushLayer<ImageFilterLayer>(
-      ImageFilterLayer(),
-      ImageFilterOperation(filter as SceneImageFilter, offset),
+      ImageFilterLayer(ImageFilterOperation(filter as SceneImageFilter, offset)),
     );
 
   @override
@@ -275,19 +269,14 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     double dx,
     double dy, {
     ui.OffsetEngineLayer? oldLayer
-  }) => pushLayer<OffsetLayer>(
-      OffsetLayer(),
-      OffsetOperation(dx, dy)
-    );
+  }) => pushLayer<OffsetLayer>(OffsetLayer(OffsetOperation(dx, dy)));
 
   @override
   ui.OpacityEngineLayer pushOpacity(int alpha, {
     ui.Offset offset = ui.Offset.zero,
     ui.OpacityEngineLayer? oldLayer
-  }) => pushLayer<OpacityLayer>(
-      OpacityLayer(),
-      OpacityOperation(alpha, offset),
-    );
+  }) => pushLayer<OpacityLayer>(OpacityLayer(OpacityOperation(alpha, offset)));
+
   @override
   ui.ShaderMaskEngineLayer pushShaderMask(
     ui.Shader shader,
@@ -296,18 +285,14 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.ShaderMaskEngineLayer? oldLayer,
     ui.FilterQuality filterQuality = ui.FilterQuality.low
   }) => pushLayer<ShaderMaskLayer>(
-      ShaderMaskLayer(),
-      ShaderMaskOperation(shader, maskRect, blendMode)
+      ShaderMaskLayer(ShaderMaskOperation(shader, maskRect, blendMode)),
     );
 
   @override
   ui.TransformEngineLayer pushTransform(
     Float64List matrix4, {
     ui.TransformEngineLayer? oldLayer
-  }) => pushLayer<TransformLayer>(
-      TransformLayer(),
-      TransformOperation(matrix4),
-    );
+  }) => pushLayer<TransformLayer>(TransformLayer(TransformOperation(matrix4)));
 
   @override
   void setProperties(
@@ -342,11 +327,10 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     currentBuilder.mergeLayer(layer);
   }
 
-  T pushLayer<T extends PictureEngineLayer>(T layer, LayerOperation operation) {
+  T pushLayer<T extends PictureEngineLayer>(T layer) {
     currentBuilder = LayerBuilder.childLayer(
       parent: currentBuilder,
       layer: layer,
-      operation: operation
     );
     return layer;
   }
