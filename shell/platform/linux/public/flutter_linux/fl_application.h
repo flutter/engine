@@ -40,6 +40,20 @@ struct _FlApplicationClass {
    */
   void (*register_plugins)(FlApplication* application,
                            FlPluginRegistry* registry);
+
+  /**
+   * FlApplication::create_window:
+   * @application: the application
+   * @view: the view to add to this window.
+   *
+   * The ::create_window signal is emitted when a needs to be created for a
+   * view. By handling this signal the application can create the appropriate
+   * window for the given view and set any window properties or additional
+   * widgets required.
+   *
+   * If this signal is not handled a standard GTK window will be created.
+   */
+  GtkWindow* (*create_window)(FlApplication* application, FlView* view);
 };
 
 /**
@@ -61,28 +75,6 @@ struct _FlApplicationClass {
  */
 FlApplication* fl_application_new(const gchar* application_id,
                                   GApplicationFlags flags);
-
-/**
- * fl_application_set_default_window_title:
- * @application: an #FlApplication.
- * @window_title: window title text.
- *
- * Sets the title to apply to the window.
- */
-void fl_application_set_default_window_title(FlApplication* application,
-                                             const gchar* window_title);
-
-/**
- * fl_application_set_default_window_size:
- * @application: an #FlApplication.
- * @width: width in pixels or -1 to set the default width.
- * @height: height in pixels or -1 to set the default height.
- *
- * Sets the dimensions to apply to Flutter windows.
- */
-void fl_application_set_default_window_size(FlApplication* application,
-                                            int width,
-                                            int height);
 
 G_END_DECLS
 

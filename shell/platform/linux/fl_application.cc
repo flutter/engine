@@ -14,24 +14,15 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 struct FlApplicationPrivate {
-  // Default window title to use.
-  gchar* window_title;
-
   // Arguments to pass to Dart.
   gchar** dart_entrypoint_arguments;
-
-  // Default width of a Flutter window in pixels.
-  int window_width;
-
-  // Default height of a Flutter window in pixels.
-  int window_height;
 };
 
 #define FL_APPLICATION_GET_PRIVATE(app)                        \
   ((FlApplicationPrivate*)fl_application_get_instance_private( \
       FL_APPLICATION(app)))
 
-enum { kSignalRegisterPlugins, kSignalLastSignal };
+enum { kSignalRegisterPlugins, kSignalCreateWindow, kSignalLastSignal };
 
 static guint fl_application_signals[kSignalLastSignal];
 
@@ -44,11 +35,9 @@ G_DEFINE_TYPE_WITH_CODE(FlApplication,
 static void fl_application_register_plugins(FlApplication* self,
                                             FlPluginRegistry* registry) {}
 
-// Implements GApplication::activate.
-static void fl_application_activate(GApplication* application) {
-  FlApplication* self = FL_APPLICATION(application);
-  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
-
+// Default implementation of FlApplication::create_window
+static GtkWindow* fl_application_create_window(FlApplication* self,
+                                               FlView* view) {
   GtkApplicationWindow* window =
       GTK_APPLICATION_WINDOW(gtk_application_window_new(GTK_APPLICATION(self)));
 
@@ -72,16 +61,19 @@ static void fl_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, priv->window_title);
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(GTK_WINDOW(window), GTK_WIDGET(header_bar));
-  } else {
-    gtk_window_set_title(GTK_WINDOW(window), priv->window_title);
   }
 
-  gtk_window_set_default_size(GTK_WINDOW(window), priv->window_width,
-                              priv->window_height);
-  gtk_widget_show(GTK_WIDGET(window));
+  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+
+  return GTK_WINDOW(window);
+}
+
+// Implements GApplication::activate.
+static void fl_application_activate(GApplication* application) {
+  FlApplication* self = FL_APPLICATION(application);
+  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
@@ -89,7 +81,11 @@ static void fl_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   gtk_widget_show(GTK_WIDGET(view));
-  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+
+  GtkWindow* window;
+  g_signal_emit(self, fl_application_signals[kSignalCreateWindow], 0, view,
+                &window);
+  gtk_widget_show(GTK_WIDGET(window));
 
   g_signal_emit(self, fl_application_signals[kSignalRegisterPlugins], 0,
                 FL_PLUGIN_REGISTRY(view));
@@ -127,7 +123,6 @@ static void fl_application_dispose(GObject* object) {
   FlApplication* self = FL_APPLICATION(object);
   FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
 
-  g_clear_pointer(&priv->window_title, g_free);
   g_clear_pointer(&priv->dart_entrypoint_arguments, g_strfreev);
 
   G_OBJECT_CLASS(fl_application_parent_class)->dispose(object);
@@ -140,20 +135,20 @@ static void fl_application_class_init(FlApplicationClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_application_dispose;
 
   klass->register_plugins = fl_application_register_plugins;
+  klass->create_window = fl_application_create_window;
 
   fl_application_signals[kSignalRegisterPlugins] = g_signal_new(
       "register-plugins", fl_application_get_type(), G_SIGNAL_RUN_LAST,
-      G_STRUCT_OFFSET(FlApplicationClass, register_plugins), NULL, NULL,
-      g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1,
-      fl_plugin_registry_get_type());
+      G_STRUCT_OFFSET(FlApplicationClass, register_plugins), nullptr, nullptr,
+      nullptr, G_TYPE_NONE, 1, fl_plugin_registry_get_type());
+  fl_application_signals[kSignalCreateWindow] = g_signal_new(
+      "create-window", fl_application_get_type(), G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET(FlApplicationClass, create_window),
+      g_signal_accumulator_first_wins, nullptr, nullptr, GTK_TYPE_WINDOW, 1,
+      fl_view_get_type());
 }
 
-static void fl_application_init(FlApplication* self) {
-  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
-  priv->window_title = g_strdup("");
-  priv->window_width = 1280;
-  priv->window_height = 720;
-}
+static void fl_application_init(FlApplication* self) {}
 
 G_MODULE_EXPORT
 FlApplication* fl_application_new(const gchar* application_id,
@@ -161,23 +156,4 @@ FlApplication* fl_application_new(const gchar* application_id,
   return FL_APPLICATION(g_object_new(fl_application_get_type(),
                                      "application-id", application_id, "flags",
                                      flags, nullptr));
-}
-
-G_MODULE_EXPORT
-void fl_application_set_default_window_title(FlApplication* self,
-                                             const gchar* window_title) {
-  g_return_if_fail(FL_IS_APPLICATION(self));
-  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
-  g_free(priv->window_title);
-  priv->window_title = g_strdup(window_title);
-}
-
-G_MODULE_EXPORT
-void fl_application_set_default_window_size(FlApplication* self,
-                                            int width,
-                                            int height) {
-  g_return_if_fail(FL_IS_APPLICATION(self));
-  FlApplicationPrivate* priv = FL_APPLICATION_GET_PRIVATE(self);
-  priv->window_width = width;
-  priv->window_height = height;
 }
