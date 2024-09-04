@@ -470,7 +470,8 @@ void testMain() {
       );
 
       strategy.disable();
-    });
+      // Firefox strips out `-webkit-text-security` from outerHTML.
+    }, skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
 
     test('Does not position or size its DOM element', () {
       strategy.enable(
