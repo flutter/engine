@@ -12,6 +12,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -472,7 +473,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
       0.0,
       1.0,
   };
-  text_paint.setColorSource(DlColorSource::MakeLinear(
+  text_paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},            //
       /*end_point=*/{100, 100},          //
       /*stop_count=*/2,                  //

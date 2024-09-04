@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/shader_mask_layer.h"
 
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/raster_cache.h"
@@ -30,8 +31,8 @@ static std::shared_ptr<DlColorSource> MakeFilter(DlColor color) {
       0,
       1,
   };
-  return DlColorSource::MakeLinear(SkPoint::Make(0, 0), SkPoint::Make(10, 10),
-                                   2, colors, stops, DlTileMode::kRepeat);
+  return MakeLinearColorSource(SkPoint::Make(0, 0), SkPoint::Make(10, 10), 2,
+                               colors, stops, DlTileMode::kRepeat);
 }
 
 #ifndef NDEBUG

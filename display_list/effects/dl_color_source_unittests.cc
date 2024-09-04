@@ -10,6 +10,7 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_runtime_effect.h"
 #include "flutter/display_list/image/dl_image.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/display_list/testing/dl_test_equality.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -229,13 +230,13 @@ TEST(DisplayListColorSource, ImageNotEquals) {
 }
 
 TEST(DisplayListColorSource, LinearGradientConstructor) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
 }
 
 TEST(DisplayListColorSource, LinearGradientShared) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->shared().get(), source.get());
@@ -243,7 +244,7 @@ TEST(DisplayListColorSource, LinearGradientShared) {
 }
 
 TEST(DisplayListColorSource, LinearGradientAsLinear) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->asLinearGradient(), nullptr);
@@ -258,7 +259,7 @@ TEST(DisplayListColorSource, LinearGradientAsLinear) {
 }
 
 TEST(DisplayListColorSource, LinearGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
@@ -274,7 +275,7 @@ TEST(DisplayListColorSource, LinearGradientContents) {
 }
 
 TEST(DisplayListColorSource, AlphaLinearGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestAlphaColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
@@ -290,57 +291,57 @@ TEST(DisplayListColorSource, AlphaLinearGradientContents) {
 }
 
 TEST(DisplayListColorSource, LinearGradientEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source1 = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
-  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, LinearGradientNotEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeLinear(
+  std::shared_ptr<DlColorSource> source1 = MakeLinearColorSource(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints2[0], kTestPoints[1], kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Point 0 differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints2[1], kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Point 1 differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints[1], 2, kTestColors, kTestStops,  //
         DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stop count differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints[1], kTestStopCount, kTestAlphaColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Colors differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors,
         kTestStops2, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stops differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
         DlTileMode::kMirror, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Tile Mode differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+    std::shared_ptr<DlColorSource> source2 = MakeLinearColorSource(
         kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
         DlTileMode::kClamp, &kTestMatrix2);
     TestNotEquals(*source1, *source2, "Matrix differs");

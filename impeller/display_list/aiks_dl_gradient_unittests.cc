@@ -8,6 +8,7 @@
 #include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
 #include "flutter/display_list/dl_builder.h"
@@ -44,7 +45,7 @@ void CanRenderLinearGradient(AiksTest* aiks_test, DlTileMode tile_mode) {
       DlColor(Color{0.1294, 0.5882, 0.9529, 0.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  auto gradient = DlColorSource::MakeLinear(
+  auto gradient = flutter::testing::MakeLinearColorSource(
       {0, 0}, {200, 200}, 2, colors.data(), stops.data(), tile_mode);
   paint.setColorSource(gradient);
   paint.setColor(DlColor::kWhite());
@@ -89,7 +90,7 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
       DlColor(Color{0.1294, 0.5882, 0.9529, 0.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kDecal));
   // Overlay the gradient with 25% green. This should appear as the entire
   // rectangle being drawn with 25% green, including the border area outside the
@@ -111,7 +112,7 @@ static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test) {
   std::vector<DlColor> colors = {DlColor(0xFFCCCCCC), DlColor(0xFF333333)};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       {0, 0}, {800, 500}, 2, colors.data(), stops.data(), DlTileMode::kClamp));
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 800, 500), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
@@ -201,9 +202,9 @@ void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
       DlColor(Color{0.1294, 0.5882, 0.9529, 1.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {500, 500},
-                                                 stops.size(), colors.data(),
-                                                 stops.data(), tile_mode));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 0}, {500, 500}, stops.size(), colors.data(), stops.data(),
+      tile_mode));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 500, 500), paint);
@@ -242,9 +243,9 @@ void CanRenderLinearGradientManyColors(AiksTest* aiks_test,
       1.0,
   };
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {200, 200},
-                                                 stops.size(), colors.data(),
-                                                 stops.data(), tile_mode));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 0}, {200, 200}, stops.size(), colors.data(), stops.data(),
+      tile_mode));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
@@ -283,9 +284,9 @@ void CanRenderLinearGradientWayManyColors(AiksTest* aiks_test,
   }
   stops[2000 - 1] = 1.0;
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {200, 200},
-                                                 stops.size(), colors.data(),
-                                                 stops.data(), tile_mode));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 0}, {200, 200}, stops.size(), colors.data(), stops.data(),
+      tile_mode));
 
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
@@ -335,9 +336,9 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
         0.0, 2.0 / 62.0, 4.0 / 62.0, 8.0 / 62.0, 16.0 / 62.0, 32.0 / 62.0, 1.0,
     };
 
-    paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {200, 200},
-                                                   stops.size(), colors.data(),
-                                                   stops.data(), tile_mode));
+    paint.setColorSource(flutter::testing::MakeLinearColorSource(
+        {0, 0}, {200, 200}, stops.size(), colors.data(), stops.data(),
+        tile_mode));
 
     builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
     return builder.Build();
@@ -357,7 +358,7 @@ TEST_P(AiksTest, CanRenderLinearGradientMaskBlur) {
 
   DlPaint paint;
   paint.setColor(DlColor::kWhite());
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       {200, 200}, {400, 400}, stops.size(), colors.data(), stops.data(),
       DlTileMode::kClamp));
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
@@ -599,8 +600,9 @@ TEST_P(AiksTest, CanRenderGradientDecalWithBackground) {
   std::vector<Scalar> stops = {0.0, 1.f / 3.f, 2.f / 3.f, 1.0};
 
   std::array<std::shared_ptr<DlColorSource>, 3> color_sources = {
-      DlColorSource::MakeLinear({0, 0}, {100, 100}, stops.size(), colors.data(),
-                                stops.data(), DlTileMode::kDecal),
+      flutter::testing::MakeLinearColorSource({0, 0}, {100, 100}, stops.size(),
+                                              colors.data(), stops.data(),
+                                              DlTileMode::kDecal),
       DlColorSource::MakeRadial({100, 100}, 100, stops.size(), colors.data(),
                                 stops.data(), DlTileMode::kDecal),
       DlColorSource::MakeSweep({100, 100}, 45, 135, stops.size(), colors.data(),
@@ -658,9 +660,9 @@ TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
         DlColor(Color{0.1294, 0.5882, 0.9529, 1.0}.ToARGB())};
     std::vector<Scalar> stops = {0.0, 1.0};
 
-    paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {50, 50},
-                                                   stops.size(), colors.data(),
-                                                   stops.data(), tile_mode));
+    paint.setColorSource(flutter::testing::MakeLinearColorSource(
+        {0, 0}, {50, 50}, stops.size(), colors.data(), stops.data(),
+        tile_mode));
 
     SkPath path;
     path.moveTo(20, 20);
@@ -722,9 +724,9 @@ TEST_P(AiksTest, FastGradientTestHorizontal) {
                                  DlColor::kGreen()};
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {300, 0}, stops.size(),
-                                                 colors.data(), stops.data(),
-                                                 DlTileMode::kClamp));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 0}, {300, 0}, stops.size(), colors.data(), stops.data(),
+      DlTileMode::kClamp));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 300, 300), paint);
@@ -745,9 +747,9 @@ TEST_P(AiksTest, FastGradientTestVertical) {
                                  DlColor::kGreen()};
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {0, 300}, stops.size(),
-                                                 colors.data(), stops.data(),
-                                                 DlTileMode::kClamp));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 0}, {0, 300}, stops.size(), colors.data(), stops.data(),
+      DlTileMode::kClamp));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 300, 300), paint);
@@ -768,9 +770,9 @@ TEST_P(AiksTest, FastGradientTestHorizontalReversed) {
                                  DlColor::kGreen()};
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear({300, 0}, {0, 0}, stops.size(),
-                                                 colors.data(), stops.data(),
-                                                 DlTileMode::kClamp));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {300, 0}, {0, 0}, stops.size(), colors.data(), stops.data(),
+      DlTileMode::kClamp));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 300, 300), paint);
@@ -791,9 +793,9 @@ TEST_P(AiksTest, FastGradientTestVerticalReversed) {
                                  DlColor::kGreen()};
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear({0, 300}, {0, 0}, stops.size(),
-                                                 colors.data(), stops.data(),
-                                                 DlTileMode::kClamp));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 300}, {0, 0}, stops.size(), colors.data(), stops.data(),
+      DlTileMode::kClamp));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 300, 300), paint);
@@ -815,9 +817,9 @@ TEST_P(AiksTest, VerifyNonOptimizedGradient) {
 
   // Inset the start and end point to verify that we do not apply
   // the fast gradient condition.
-  paint.setColorSource(
-      DlColorSource::MakeLinear({0, 150}, {0, 100}, stops.size(), colors.data(),
-                                stops.data(), DlTileMode::kRepeat));
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
+      {0, 150}, {0, 100}, stops.size(), colors.data(), stops.data(),
+      DlTileMode::kRepeat));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 300, 300), paint);

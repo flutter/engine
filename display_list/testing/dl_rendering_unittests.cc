@@ -11,6 +11,7 @@
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/display_list/testing/dl_test_surface_provider.h"
 #include "flutter/display_list/utils/dl_comparable.h"
@@ -1781,8 +1782,8 @@ class CanvasCompareTester {
           1.0,
       };
       auto dl_gradient =
-          DlColorSource::MakeLinear(end_points[0], end_points[1], 3, dl_colors,
-                                    stops, DlTileMode::kMirror);
+          MakeLinearColorSource(end_points[0], end_points[1], 3, dl_colors,
+                                stops, DlTileMode::kMirror);
       auto sk_gradient = SkGradientShader::MakeLinear(
           end_points, sk_colors, stops, 3, SkTileMode::kMirror, 0, nullptr);
       {

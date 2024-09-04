@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -93,12 +94,12 @@ static const DlImageColorSource kTestSource1(TestImage1,
                                              DlTileMode::kMirror,
                                              kLinearSampling);
 static const std::shared_ptr<DlColorSource> kTestSource2 =
-    DlColorSource::MakeLinear(kEndPoints[0],
-                              kEndPoints[1],
-                              3,
-                              kColors,
-                              kStops,
-                              DlTileMode::kMirror);
+    MakeLinearColorSource(kEndPoints[0],
+                          kEndPoints[1],
+                          3,
+                          kColors,
+                          kStops,
+                          DlTileMode::kMirror);
 static const std::shared_ptr<DlColorSource> kTestSource3 =
     DlColorSource::MakeRadial(kEndPoints[0],
                               10.0,

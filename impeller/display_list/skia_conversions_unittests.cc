@@ -4,6 +4,7 @@
 
 #include "display_list/dl_color.h"
 #include "display_list/dl_tile_mode.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/geometry/scalar.h"
@@ -51,13 +52,13 @@ TEST(SkiaConversionsTest, GradientStopConversion) {
                                           flutter::DlColor::kGreen()};
   std::vector<float> stops = {0.0, 0.5, 1.0};
   const auto gradient =
-      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                         SkPoint::Make(1.0, 1.0),      //
-                                         3,                            //
-                                         colors.data(),                //
-                                         stops.data(),                 //
-                                         flutter::DlTileMode::kClamp,  //
-                                         nullptr                       //
+      flutter::testing::MakeLinearColorSource(SkPoint::Make(0, 0),          //
+                                              SkPoint::Make(1.0, 1.0),      //
+                                              3,                            //
+                                              colors.data(),                //
+                                              stops.data(),                 //
+                                              flutter::DlTileMode::kClamp,  //
+                                              nullptr                       //
       );
 
   std::vector<Color> converted_colors;
@@ -75,13 +76,13 @@ TEST(SkiaConversionsTest, GradientMissing0) {
                                           flutter::DlColor::kRed()};
   std::vector<float> stops = {0.5, 1.0};
   const auto gradient =
-      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                         SkPoint::Make(1.0, 1.0),      //
-                                         2,                            //
-                                         colors.data(),                //
-                                         stops.data(),                 //
-                                         flutter::DlTileMode::kClamp,  //
-                                         nullptr                       //
+      flutter::testing::MakeLinearColorSource(SkPoint::Make(0, 0),          //
+                                              SkPoint::Make(1.0, 1.0),      //
+                                              2,                            //
+                                              colors.data(),                //
+                                              stops.data(),                 //
+                                              flutter::DlTileMode::kClamp,  //
+                                              nullptr                       //
       );
 
   std::vector<Color> converted_colors;
@@ -101,13 +102,13 @@ TEST(SkiaConversionsTest, GradientMissingLastValue) {
                                           flutter::DlColor::kRed()};
   std::vector<float> stops = {0.0, .5};
   const auto gradient =
-      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                         SkPoint::Make(1.0, 1.0),      //
-                                         2,                            //
-                                         colors.data(),                //
-                                         stops.data(),                 //
-                                         flutter::DlTileMode::kClamp,  //
-                                         nullptr                       //
+      flutter::testing::MakeLinearColorSource(SkPoint::Make(0, 0),          //
+                                              SkPoint::Make(1.0, 1.0),      //
+                                              2,                            //
+                                              colors.data(),                //
+                                              stops.data(),                 //
+                                              flutter::DlTileMode::kClamp,  //
+                                              nullptr                       //
       );
 
   std::vector<Color> converted_colors;
@@ -128,13 +129,13 @@ TEST(SkiaConversionsTest, GradientStopGreaterThan1) {
                                           flutter::DlColor::kRed()};
   std::vector<float> stops = {0.0, 100, 1.0};
   const auto gradient =
-      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                         SkPoint::Make(1.0, 1.0),      //
-                                         3,                            //
-                                         colors.data(),                //
-                                         stops.data(),                 //
-                                         flutter::DlTileMode::kClamp,  //
-                                         nullptr                       //
+      flutter::testing::MakeLinearColorSource(SkPoint::Make(0, 0),          //
+                                              SkPoint::Make(1.0, 1.0),      //
+                                              3,                            //
+                                              colors.data(),                //
+                                              stops.data(),                 //
+                                              flutter::DlTileMode::kClamp,  //
+                                              nullptr                       //
       );
 
   std::vector<Color> converted_colors;
@@ -154,13 +155,13 @@ TEST(SkiaConversionsTest, GradientConversionNonMonotonic) {
       flutter::DlColor::kGreen(), flutter::DlColor::kRed()};
   std::vector<float> stops = {0.0, 0.5, 0.4, 1.0};
   const auto gradient =
-      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                         SkPoint::Make(1.0, 1.0),      //
-                                         4,                            //
-                                         colors.data(),                //
-                                         stops.data(),                 //
-                                         flutter::DlTileMode::kClamp,  //
-                                         nullptr                       //
+      flutter::testing::MakeLinearColorSource(SkPoint::Make(0, 0),          //
+                                              SkPoint::Make(1.0, 1.0),      //
+                                              4,                            //
+                                              colors.data(),                //
+                                              stops.data(),                 //
+                                              flutter::DlTileMode::kClamp,  //
+                                              nullptr                       //
       );
 
   std::vector<Color> converted_colors;

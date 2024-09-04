@@ -6,6 +6,7 @@
 #include "flutter/display_list/skia/dl_sk_paint_dispatcher.h"
 
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "gtest/gtest.h"
@@ -28,13 +29,13 @@ static const DlColor kTestColors[2] = {DlColor(0xFF000000),
                                        DlColor(0xFFFFFFFF)};
 static const float kTestStops[2] = {0.0f, 1.0f};
 static const auto kTestLinearGradient =
-    DlColorSource::MakeLinear(SkPoint::Make(0.0f, 0.0f),
-                              SkPoint::Make(100.0f, 100.0f),
-                              2,
-                              kTestColors,
-                              kTestStops,
-                              DlTileMode::kClamp,
-                              nullptr);
+    MakeLinearColorSource(SkPoint::Make(0.0f, 0.0f),
+                          SkPoint::Make(100.0f, 100.0f),
+                          2,
+                          kTestColors,
+                          kTestStops,
+                          DlTileMode::kClamp,
+                          nullptr);
 
 // Regression test for https://github.com/flutter/flutter/issues/100176.
 TEST(DisplayListUtils, OverRestore) {

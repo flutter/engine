@@ -15,6 +15,7 @@
 #include "testing/canvas_test.h"
 #include "testing/testing.h"
 #include "txt/platform.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 
 namespace flutter {
 namespace testing {
@@ -284,7 +285,7 @@ TEST_F(PainterTest, DrawTextWithGradientImpeller) {
   DlPaint foreground;
   std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kCyan()};
   std::vector<float> stops = {0.0, 1.0};
-  foreground.setColorSource(DlColorSource::MakeLinear(
+  foreground.setColorSource(MakeLinearColorSource(
       SkPoint::Make(0, 0), SkPoint::Make(100, 100), 2, colors.data(),
       stops.data(), DlTileMode::kClamp));
   style.foreground = foreground;
@@ -305,7 +306,7 @@ TEST_F(PainterTest, DrawEmojiTextWithGradientImpeller) {
   DlPaint foreground;
   std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kCyan()};
   std::vector<float> stops = {0.0, 1.0};
-  foreground.setColorSource(DlColorSource::MakeLinear(
+  foreground.setColorSource(MakeLinearColorSource(
       SkPoint::Make(0, 0), SkPoint::Make(100, 100), 2, colors.data(),
       stops.data(), DlTileMode::kClamp));
   style.foreground = foreground;

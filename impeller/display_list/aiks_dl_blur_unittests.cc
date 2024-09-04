@@ -15,6 +15,7 @@
 #include "display_list/effects/dl_mask_filter.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "gmock/gmock.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
@@ -692,7 +693,7 @@ TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
   std::vector<Scalar> stops = {0.0, 1.0};
 
   paint = DlPaint{};
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},
       /*end_point=*/{200, 200},
       /*stop_count=*/colors.size(),
@@ -729,7 +730,7 @@ TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
   std::vector<Scalar> stops = {0.0, 1.0};
 
   paint = DlPaint{};
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},
       /*end_point=*/{200, 200},
       /*stop_count=*/colors.size(),
@@ -765,7 +766,7 @@ TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
   std::vector<Scalar> stops = {0.0, 1.0};
 
   paint = DlPaint{};
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},
       /*end_point=*/{200, 200},
       /*stop_count=*/colors.size(),

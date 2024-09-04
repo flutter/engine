@@ -11,6 +11,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
@@ -215,7 +216,7 @@ TEST_P(AiksTest, DrawVerticesLinearGradientWithoutIndices) {
                                           flutter::DlColor::kRed()};
   const float stops[2] = {0.0, 1.0};
 
-  auto linear = flutter::DlColorSource::MakeLinear(
+  auto linear = flutter::testing::MakeLinearColorSource(
       {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
       flutter::DlTileMode::kRepeat);
 
@@ -244,7 +245,7 @@ TEST_P(AiksTest, DrawVerticesLinearGradientWithTextureCoordinates) {
                                           flutter::DlColor::kRed()};
   const float stops[2] = {0.0, 1.0};
 
-  auto linear = flutter::DlColorSource::MakeLinear(
+  auto linear = flutter::testing::MakeLinearColorSource(
       {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
       flutter::DlTileMode::kRepeat);
 

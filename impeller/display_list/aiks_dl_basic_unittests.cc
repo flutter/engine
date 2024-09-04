@@ -15,6 +15,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/scalar.h"
 #include "flutter/testing/display_list_testing.h"
@@ -349,7 +350,7 @@ TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
       1.0,
   };
 
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},            //
       /*end_point=*/{100, 100},          //
       /*stop_count=*/2,                  //
@@ -796,7 +797,7 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
       1.0,
   };
   DlPaint paint;
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},            //
       /*end_point=*/{100, 100},          //
       /*stop_count=*/2,                  //

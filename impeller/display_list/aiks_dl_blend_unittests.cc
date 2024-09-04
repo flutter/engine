@@ -16,6 +16,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/scalar.h"
 #include "include/core/SkMatrix.h"
@@ -150,7 +151,7 @@ TEST_P(AiksTest, DrawAdvancedBlendPartlyOffscreen) {
 
   DlPaint paint;
   SkMatrix matrix = SkMatrix::Scale(0.3, 0.3);
-  paint.setColorSource(DlColorSource::MakeLinear(
+  paint.setColorSource(flutter::testing::MakeLinearColorSource(
       /*start_point=*/{0, 0},             //
       /*end_point=*/{100, 100},           //
       /*stop_count=*/colors.size(),       //

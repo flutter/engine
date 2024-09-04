@@ -95,6 +95,7 @@ template("display_list_unittests_component") {
     deps += [
       ":display_list",
       "../playground:playground_test",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/impeller/golden_tests:screenshot",
       "//flutter/impeller/scene",
       "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
@@ -125,6 +126,7 @@ impeller_component("skia_conversions_unittests") {
 
   deps = [
     ":skia_conversions",
+    "//flutter/display_list/testing:display_list_testing",
     "//flutter/testing:testing_lib",
   ]
 }

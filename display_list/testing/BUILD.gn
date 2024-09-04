@@ -9,6 +9,8 @@ source_set("display_list_testing") {
   testonly = true
 
   sources = [
+    "dl_test_color_source.cc",
+    "dl_test_color_source.h",
     "dl_test_equality.h",
     "dl_test_snippets.cc",
     "dl_test_snippets.h",

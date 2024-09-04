@@ -16,6 +16,7 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
+#include "flutter/display_list/testing/dl_test_color_source.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/aiks/aiks_context.h"
@@ -68,9 +69,9 @@ TEST_P(DisplayListTest, CanDrawTextBlobWithGradient) {
                                           flutter::DlColor::kRed()};
   const float stops[2] = {0.0, 1.0};
 
-  auto linear = flutter::DlColorSource::MakeLinear({0.0, 0.0}, {300.0, 300.0},
-                                                   2, colors.data(), stops,
-                                                   flutter::DlTileMode::kClamp);
+  auto linear = flutter::testing::MakeLinearColorSource(
+      {0.0, 0.0}, {300.0, 300.0}, 2, colors.data(), stops,
+      flutter::DlTileMode::kClamp);
   flutter::DlPaint paint;
   paint.setColorSource(linear);
 
@@ -1133,9 +1134,9 @@ TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   builder.Save();
   builder.Translate(100, 100);
   builder.ClipRect(clip_bounds, flutter::DlCanvas::ClipOp::kIntersect, false);
-  auto linear =
-      flutter::DlColorSource::MakeLinear({0.0, 0.0}, {100.0, 100.0}, 2, colors,
-                                         stops, flutter::DlTileMode::kRepeat);
+  auto linear = flutter::testing::MakeLinearColorSource(
+      {0.0, 0.0}, {100.0, 100.0}, 2, colors, stops,
+      flutter::DlTileMode::kRepeat);
   paint.setColorSource(linear);
   builder.DrawPaint(paint);
   builder.Restore();
@@ -1264,7 +1265,7 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   std::array<float, 2> stops = {0, 1};
   std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
       std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
-      flutter::DlColorSource::MakeLinear(
+      flutter::testing::MakeLinearColorSource(
           SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
           stops.data(), flutter::DlTileMode::kClamp)};
 
@@ -1534,7 +1535,7 @@ TEST_P(DisplayListTest, DrawPaintIgnoresMaskFilter) {
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kGreen(),
                                           flutter::DlColor::kGreen()};
   const float stops[2] = {0.0, 1.0};
-  auto linear = flutter::DlColorSource::MakeLinear(
+  auto linear = flutter::testing::MakeLinearColorSource(
       {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
       flutter::DlTileMode::kRepeat);
   flutter::DlPaint blend_paint =
