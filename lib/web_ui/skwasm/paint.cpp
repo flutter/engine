@@ -12,16 +12,14 @@
 
 using namespace Skwasm;
 
-SKWASM_EXPORT SkPaint* paint_create(
-  bool isAntiAlias,
-  SkBlendMode blendMode,
-  SkColor color,
-  SkPaint::Style style,
-  SkScalar strokeWidth,
-  SkPaint::Cap strokeCap,
-  SkPaint::Join strokeJoin,
-  SkScalar strokeMiterLimit
-) {
+SKWASM_EXPORT SkPaint* paint_create(bool isAntiAlias,
+                                    SkBlendMode blendMode,
+                                    SkColor color,
+                                    SkPaint::Style style,
+                                    SkScalar strokeWidth,
+                                    SkPaint::Cap strokeCap,
+                                    SkPaint::Join strokeJoin,
+                                    SkScalar strokeMiterLimit) {
   auto paint = new SkPaint();
   paint->setAntiAlias(isAntiAlias);
   paint->setBlendMode(blendMode);
