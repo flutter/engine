@@ -16,7 +16,7 @@ void main() {
 
 void testMain() {
   setUpAll(() {
-    LayerSliceBuilder.debugRecorderFactory = (ui.Rect rect) {
+    LayerSliceBuilder.debugRecorderFactory = () {
       final StubSceneCanvas canvas = StubSceneCanvas();
       final StubPictureRecorder recorder = StubPictureRecorder(canvas);
       return (recorder, canvas);
@@ -44,7 +44,7 @@ void testMain() {
       final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
 
       const ui.Rect pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect pictureRect2 = ui.Rect.fromLTRB(300, 400, 400, 400);
+      const ui.Rect pictureRect2 = ui.Rect.fromLTRB(300, 300, 400, 400);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect1));
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
@@ -196,7 +196,7 @@ class LayerSliceMatcher extends Matcher {
 
   @override
   Description describe(Description description) {
-    return description.add('<picture slice with cullRect: $expectedPictureRect and >');
+    return description.add('<picture slice with cullRect: $expectedPictureRect and platform views: $expectedPlatformViews>');
   }
 
   @override
@@ -215,7 +215,6 @@ class LayerSliceMatcher extends Matcher {
 
     if (item.platformViews.length != expectedPlatformViews.length) {
       return false;
-
     }
 
     for (int i = 0; i < item.platformViews.length; i++) {
@@ -233,5 +232,16 @@ class LayerSliceMatcher extends Matcher {
     }
 
     return true;
+  }
+
+  @override
+  Description describeMismatch(
+    dynamic item,
+    Description mismatchDescription,
+    Map<dynamic, dynamic> matchState,
+    bool verbose
+  ) {
+    // TODO: implement describeMismatch
+    return super.describeMismatch(item, mismatchDescription, matchState, verbose);
   }
 }

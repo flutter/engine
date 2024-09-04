@@ -114,15 +114,15 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   void _placePicture(ui.Offset offset, ScenePicture picture) {
     final ui.Rect cullRect = picture.cullRect.shift(offset);
-    currentBuilder.platformViewStyling.mapLocalToGlobal(cullRect);
+    final ui.Rect mappedCullRect = currentBuilder.globalPlatformViewStyling.mapLocalToGlobal(cullRect);
     int sliceIndex = sceneSlices.length;
     while (sliceIndex > 0) {
       final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
-      if (sliceBelow.platformViewOcclusionMap.overlaps(cullRect)) {
+      if (sliceBelow.platformViewOcclusionMap.overlaps(mappedCullRect)) {
         break;
       }
       sliceIndex--;
-      if (sliceBelow.pictureOcclusionMap.overlaps(cullRect)) {
+      if (sliceBelow.pictureOcclusionMap.overlaps(mappedCullRect)) {
         break;
       }
     }
@@ -131,7 +131,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
       sceneSlices.add(SceneSlice());
     }
     final SceneSlice slice = sceneSlices[sliceIndex];
-    slice.pictureOcclusionMap.addRect(cullRect);
+    slice.pictureOcclusionMap.addRect(mappedCullRect);
     currentBuilder.addPicture(
       offset,
       picture,
@@ -156,7 +156,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.Rect rect, {
     PlatformViewStyling styling = const PlatformViewStyling(),
   }) {
-    final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(currentBuilder.platformViewStyling, styling);
+    final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(currentBuilder.globalPlatformViewStyling, styling);
     final ui.Rect globalPlatformViewRect = combinedStyling.mapLocalToGlobal(rect);
     int sliceIndex = sceneSlices.length - 1;
     while (sliceIndex > 0) {

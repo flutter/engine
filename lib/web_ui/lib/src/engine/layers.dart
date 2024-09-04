@@ -21,14 +21,12 @@ class NoopOperation implements LayerOperation {
   ui.Rect mapRect(ui.Rect contentRect) => contentRect;
 
   @override
-  void post(SceneCanvas canvas) {
-    print('pre');
+  void pre(SceneCanvas canvas) {
     canvas.save();
   }
 
   @override
-  void pre(SceneCanvas canvas) {
-    print('post');
+  void post(SceneCanvas canvas) {
     canvas.restore();
   }
 }
@@ -817,14 +815,19 @@ class PlatformViewPathClip implements PlatformViewClip {
 
 class LayerSliceBuilder {
   factory LayerSliceBuilder() {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final SceneCanvas canvas = ui.Canvas(recorder, ui.Rect.largest) as SceneCanvas;
+    final (recorder, canvas) = debugRecorderFactory != null ? debugRecorderFactory!() : defaultRecorderFactory();
     return LayerSliceBuilder._(recorder, canvas);
   }
   LayerSliceBuilder._(this.recorder, this.canvas);
 
   @visibleForTesting
-  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)? debugRecorderFactory;
+  static (ui.PictureRecorder, SceneCanvas) Function()? debugRecorderFactory;
+
+  static (ui.PictureRecorder, SceneCanvas) defaultRecorderFactory() {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final SceneCanvas canvas = ui.Canvas(recorder, ui.Rect.largest) as SceneCanvas;
+    return (recorder, canvas);
+  }
 
   final ui.PictureRecorder recorder;
   final SceneCanvas canvas;
@@ -859,6 +862,13 @@ class LayerBuilder {
     return _memoizedPlatformViewStyling ??= layer.operation.createPlatformViewStyling();
   }
 
+  PlatformViewStyling get globalPlatformViewStyling {
+    if (parent != null) {
+      return PlatformViewStyling.combine(parent!.globalPlatformViewStyling, platformViewStyling);
+    }
+    return platformViewStyling;
+  }
+
   LayerSliceBuilder getOrCreateSliceBuilderAtIndex(int index) {
     while (sliceBuilders.length <= index) {
       sliceBuilders.add(null);
@@ -867,7 +877,6 @@ class LayerBuilder {
     if (existingSliceBuilder != null) {
       return existingSliceBuilder;
     }
-    print('creating new slice builder');
     final LayerSliceBuilder newSliceBuilder = LayerSliceBuilder();
     layer.operation.pre(newSliceBuilder.canvas);
     sliceBuilders[index] = newSliceBuilder;
@@ -881,7 +890,6 @@ class LayerBuilder {
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
     final SceneCanvas canvas = sliceBuilder.canvas;
-    print('drawing picture with cullrect: ${(picture as ScenePicture).cullRect} and offset: $offset');
     if (offset != ui.Offset.zero) {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
@@ -907,7 +915,6 @@ class LayerBuilder {
       final LayerSlice? slice = layer.slices[i];
       if (slice != null) {
         final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(i);
-        print('merging picture with cullrect: ${slice.picture.cullRect}');
         sliceBuilder.canvas.drawPicture(slice.picture);
         sliceBuilder.platformViews.addAll(slice.platformViews.map((PlatformView view) {
           return PlatformView(view.viewId, view.bounds, PlatformViewStyling.combine(platformViewStyling, view.styling));
@@ -927,7 +934,6 @@ class LayerBuilder {
       }
       layer.operation.post(builder.canvas);
       final ScenePicture picture = builder.recorder.endRecording() as ScenePicture;
-      print('made a picture with cullrect: ${picture.cullRect}');
       return LayerSlice(picture, builder.platformViews);
     }).toList();
     layer.slices = slices;
