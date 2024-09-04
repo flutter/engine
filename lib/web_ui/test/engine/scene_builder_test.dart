@@ -181,6 +181,62 @@ void testMain() {
       ]));
       expect(slices[1], layerSlice(withPictureRect: const ui.Rect.fromLTRB(200, 200, 300, 300)));
     });
+
+    test('grid view test', () {
+      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+
+      const double padding = 10;
+      const double tileSize = 50;
+      final List<PlatformView> expectedPlatformViews = <PlatformView>[];
+      for (int x = 0; x < 10; x++) {
+        for (int y = 0; y < 10; y++) {
+          final ui.Offset offset = ui.Offset(
+            padding + (tileSize + padding) * x,
+            padding + (tileSize + padding) * y,
+          );
+          sceneBuilder.pushOffset(offset.dx, offset.dy);
+          sceneBuilder.addPicture(
+            ui.Offset.zero,
+            StubPicture(const ui.Rect.fromLTWH(0, 0, tileSize, tileSize))
+          );
+          sceneBuilder.addPlatformView(
+            1,
+            offset: const ui.Offset(5, 5),
+            width: tileSize - 10,
+            height: tileSize - 10,
+          );
+          sceneBuilder.addPicture(
+            const ui.Offset(10, 10),
+            StubPicture(const ui.Rect.fromLTWH(0, 0, tileSize - 20, tileSize - 20)),
+          );
+          sceneBuilder.pop();
+          expectedPlatformViews.add(PlatformView(
+            1,
+            const ui.Rect.fromLTRB(5.0, 5.0, tileSize - 5.0, tileSize - 5.0),
+            PlatformViewStyling(position: PlatformViewPosition.offset(offset))
+          ));
+        }
+      }
+
+      final EngineScene scene = sceneBuilder.build() as EngineScene;
+      final List<LayerSlice?> slices = scene.rootLayer.slices;
+      expect(slices.length, 2);
+      expect(slices[0], layerSlice(
+        withPictureRect: const ui.Rect.fromLTRB(
+          padding,
+          padding,
+          10 * (padding + tileSize),
+          10 * (padding + tileSize)
+        ),
+        withPlatformViews: expectedPlatformViews,
+      ));
+      expect(slices[1], layerSlice(withPictureRect: const ui.Rect.fromLTRB(
+        padding + 10,
+        padding + 10,
+        10 * (padding + tileSize) - 10,
+        10 * (padding + tileSize) - 10,
+      )));
+    });
   });
 }
 

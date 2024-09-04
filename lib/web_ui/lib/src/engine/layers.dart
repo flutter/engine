@@ -460,6 +460,11 @@ class PlatformView {
   final ui.Rect bounds;
 
   final PlatformViewStyling styling;
+
+  @override
+  String toString() {
+    return 'PlatformView(viewId: $viewId, bounds: $bounds, styling: $styling)';
+  }
 }
 
 class LayerSlice {
@@ -613,6 +618,17 @@ class PlatformViewPosition {
   int get hashCode {
     return Object.hash(offset, transform);
   }
+
+  @override
+  String toString() {
+    if (offset != null) {
+      return 'PlatformViewPosition(offset: $offset)';
+    }
+    if (transform != null) {
+      return 'PlatformViewPosition(transform: $transform)';
+    }
+    return 'PlatformViewPosition(zero)';
+  }
 }
 
 // Represents the styling to be performed on a platform view when it is
@@ -664,6 +680,11 @@ class PlatformViewStyling {
   @override
   int get hashCode {
     return Object.hash(position, opacity, clip);
+  }
+
+  @override
+  String toString() {
+    return 'PlatformViewStyling(position: $position, clip: $clip, opacity: $opacity)';
   }
 }
 

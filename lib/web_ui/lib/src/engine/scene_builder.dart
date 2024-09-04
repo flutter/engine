@@ -160,9 +160,9 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     final ui.Rect globalPlatformViewRect = combinedStyling.mapLocalToGlobal(rect);
     int sliceIndex = sceneSlices.length - 1;
     while (sliceIndex > 0) {
-      final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
-      if (sliceBelow.platformViewOcclusionMap.overlaps(globalPlatformViewRect) ||
-          sliceBelow.pictureOcclusionMap.overlaps(globalPlatformViewRect)) {
+      final SceneSlice slice = sceneSlices[sliceIndex];
+      if (slice.platformViewOcclusionMap.overlaps(globalPlatformViewRect) ||
+          slice.pictureOcclusionMap.overlaps(globalPlatformViewRect)) {
         break;
       }
       sliceIndex--;
