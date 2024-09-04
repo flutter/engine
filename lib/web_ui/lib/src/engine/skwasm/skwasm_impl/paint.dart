@@ -11,18 +11,24 @@ import 'package:ui/ui.dart' as ui;
 class SkwasmPaint implements ui.Paint {
   SkwasmPaint();
 
-  // TODO(yjbanov): turns this into a stack-allocated callback-based API.
+  /// Creates the C++ side paint object based on the current state of this
+  /// paint object, and returns it with ownership.
+  ///
+  /// It is the responsibility of the caller to dispose of the returned handle
+  /// when it's no longer needed.
   PaintHandle toRawPaint() {
-    final rawPaint = paintCreate();
-    paintSetAntiAlias(rawPaint, isAntiAlias);
-    paintSetBlendMode(rawPaint, blendMode.index);
-    paintSetStyle(rawPaint, style.index);
-    paintSetStrokeWidth(rawPaint, strokeWidth);
-    paintSetStrokeCap(rawPaint, strokeCap.index);
-    paintSetStrokeJoin(rawPaint, strokeJoin.index);
-    paintSetColorInt(rawPaint, _colorValue);
-    paintSetMiterLimit(rawPaint, strokeMiterLimit);
-    _setEffectiveColorFilter(rawPaint);
+    final rawPaint = paintCreate(
+      isAntiAlias,
+      blendMode.index,
+      _colorValue,
+      style.index,
+      strokeWidth,
+      strokeCap.index,
+      strokeJoin.index,
+      strokeMiterLimit,
+    );
+
+    _maybeSetEffectiveColorFilter(rawPaint);
 
     final shaderHandle = _shader?.handle;
     if (shaderHandle != null) {
@@ -46,12 +52,18 @@ class SkwasmPaint implements ui.Paint {
     return rawPaint;
   }
 
-  void _setEffectiveColorFilter(Pointer<RawPaint> handle) {
-    final SkwasmColorFilter? nativeFilter = _colorFilter != null
-      ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!) : null;
+  /// If `invertColors` is true or `colorFilter` is not null, sets the
+  /// appropriate Skia color filter. Otherwise, does nothing.
+  void _maybeSetEffectiveColorFilter(Pointer<RawPaint> handle) {
+    final nativeFilter = _colorFilter != null
+      ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!)
+      : null;
     if (invertColors) {
       if (nativeFilter != null) {
-        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
+        final composedFilter = SkwasmColorFilter.composed(
+          _invertColorFilter,
+          nativeFilter,
+        );
         nativeFilter.dispose();
         paintSetColorFilter(handle, composedFilter.handle);
         composedFilter.dispose();
@@ -61,8 +73,6 @@ class SkwasmPaint implements ui.Paint {
     } else if (nativeFilter != null) {
       paintSetColorFilter(handle, nativeFilter.handle);
       nativeFilter.dispose();
-    } else {
-      paintSetColorFilter(handle, nullptr);
     }
   }
 
