@@ -419,6 +419,7 @@ void ExperimentalCanvas::SaveLayer(
       // Validation failures are logged in FlipBackdrop.
       return;
     }
+    FlushPendingClips();
 
     backdrop_filter_contents = backdrop_filter_proc(
         FilterInput::Make(std::move(input_texture)),
@@ -468,8 +469,6 @@ void ExperimentalCanvas::SaveLayer(
   clip_coverage_stack_.PushSubpass(subpass_coverage, GetClipHeight());
 
   if (backdrop_filter_contents) {
-    FlushPendingClips();
-
     // Render the backdrop entity.
     Entity backdrop_entity;
     backdrop_entity.SetContents(std::move(backdrop_filter_contents));
@@ -759,7 +758,6 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       if (!input_texture) {
         return;
       }
-
       FlushPendingClips();
 
       // The coverage hint tells the rendered Contents which portion of the
