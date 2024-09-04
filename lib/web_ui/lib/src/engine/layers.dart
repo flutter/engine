@@ -29,6 +29,9 @@ class NoopOperation implements LayerOperation {
   void post(SceneCanvas canvas) {
     canvas.restore();
   }
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class BackdropFilterLayer
@@ -60,6 +63,11 @@ class BackdropFilterOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+
+  // The backdrop filter actually has an effect on the scene even if it contains
+  // no pictures, so we return true here.
+  @override
+  bool get shouldDrawIfEmpty => true;
 }
 
 class ClipPathLayer
@@ -100,6 +108,9 @@ class ClipPathOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() {
     return PlatformViewStyling(clip: PlatformViewPathClip(path));
   }
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class ClipRectLayer
@@ -140,6 +151,9 @@ class ClipRectOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() {
     return PlatformViewStyling(clip: PlatformViewRectClip(rect));
   }
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class ClipRRectLayer
@@ -180,6 +194,9 @@ class ClipRRectOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() {
     return PlatformViewStyling(clip: PlatformViewRRectClip(rrect));
   }
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class ColorFilterLayer
@@ -210,6 +227,9 @@ class ColorFilterOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class ImageFilterLayer
@@ -256,6 +276,9 @@ class ImageFilterOperation implements LayerOperation {
       return const PlatformViewStyling();
     }
   }
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class OffsetLayer
@@ -290,6 +313,9 @@ class OffsetOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
     position: PlatformViewPosition.offset(ui.Offset(dx, dy))
   );
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class OpacityLayer
@@ -334,6 +360,9 @@ class OpacityOperation implements LayerOperation {
     position: offset != ui.Offset.zero ? PlatformViewPosition.offset(offset) : const PlatformViewPosition.zero(),
     opacity: alpha.toDouble() / 255.0,
   );
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class TransformLayer
@@ -370,6 +399,9 @@ class TransformOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
     position: PlatformViewPosition.transform(matrix),
   );
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class ShaderMaskLayer
@@ -414,6 +446,9 @@ class ShaderMaskOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+
+  @override
+  bool get shouldDrawIfEmpty => false;
 }
 
 class PlatformView {
@@ -471,6 +506,11 @@ abstract class LayerOperation {
   void post(SceneCanvas canvas);
 
   PlatformViewStyling createPlatformViewStyling();
+
+  /// Indicates whether this operation's `pre` and `post` methods should be
+  /// invoked even if it contains no pictures. (Most operations don't need to
+  /// actually be performed at all if they don't contain any pictures.)
+  bool get shouldDrawIfEmpty;
 }
 
 sealed class LayerDrawCommand {

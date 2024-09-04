@@ -233,15 +233,4 @@ class LayerSliceMatcher extends Matcher {
 
     return true;
   }
-
-  @override
-  Description describeMismatch(
-    dynamic item,
-    Description mismatchDescription,
-    Map<dynamic, dynamic> matchState,
-    bool verbose
-  ) {
-    // TODO: implement describeMismatch
-    return super.describeMismatch(item, mismatchDescription, matchState, verbose);
-  }
 }
