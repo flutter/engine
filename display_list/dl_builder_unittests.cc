@@ -33,5 +33,5 @@ TEST(DlBuilderTest, EmptySaveTranslateRestore) {
   ASSERT_TRUE(display_list);
 }
 
-}
-}
+}  // namespace testing
+}  // namespace flutter
