@@ -74,6 +74,8 @@ void CanvasGradient::initRadial(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
+  // TODO(https://github.com/flutter/flutter/issues/154650): Eliminate this
+  // heap allocation.
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(num_colors);
   for (int i = 0; i < colors.num_elements(); i += 4) {
@@ -113,6 +115,8 @@ void CanvasGradient::initSweep(double center_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
+  // TODO(https://github.com/flutter/flutter/issues/154650): Eliminate this
+  // heap allocation.
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(num_colors);
   for (int i = 0; i < colors.num_elements(); i += 4) {
@@ -156,6 +160,8 @@ void CanvasGradient::initTwoPointConical(double start_x,
     sk_matrix = ToSkMatrix(matrix4);
   }
 
+  // TODO(https://github.com/flutter/flutter/issues/154650): Eliminate this
+  // heap allocation.
   std::vector<DlColor> dl_colors;
   dl_colors.reserve(num_colors);
   for (int i = 0; i < colors.num_elements(); i += 4) {
