@@ -992,7 +992,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
 
-      if (event.target == _viewTarget) {
+      if (event.target == _viewTarget && !EngineSemantics.instance.semanticsEnabled) {
         // Ensure smooth focus transitions between text fields within the Flutter view.
         // Without preventing the default and this delay, the engine may not have fully
         // rendered the next input element, leading to the focus incorrectly returning to
