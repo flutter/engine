@@ -310,7 +310,7 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
   entry.distributed_opacity = transform_stack_.back().distributed_opacity;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+  FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
@@ -460,7 +460,7 @@ void ExperimentalCanvas::SaveLayer(
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+  FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
@@ -513,7 +513,7 @@ bool ExperimentalCanvas::Restore() {
   // to be overly conservative, but we need to jump the depth to
   // the clip depth so that the next rendering op will get a
   // larger depth (it will pre-increment the current_depth_ value).
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   current_depth_ = transform_stack_.back().clip_depth;
 
@@ -747,7 +747,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   // We can render at a depth up to and including the depth of the currently
   // active clips and we will still be clipped out, but we cannot render at
   // a depth that is greater than the current clips or we will not be clipped.
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(current_depth_);
 
@@ -819,7 +819,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   // to know if a clip will actually be used in advance of storing it in
   // the DisplayList buffer.
   // See https://github.com/flutter/flutter/issues/147021
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(transform_stack_.back().clip_depth);
 
