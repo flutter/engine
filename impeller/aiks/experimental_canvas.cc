@@ -142,7 +142,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   auto& replay_entities = clip_coverage_stack.GetReplayEntities();
   for (const auto& replay : replay_entities) {
     SetClipScissor(
-        clip_coverage_stack.CurrentClipCoverage(),
+        replay.clip_coverage,
         *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
         global_pass_position);
     if (!replay.entity.Render(
