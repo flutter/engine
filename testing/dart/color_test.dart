@@ -6,6 +6,19 @@ import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
+/// Positive result when the Colors will map to the same argb8888 color.
+Matcher colorMatches(dynamic o) => (v) {
+  Expect.isTrue(o is Color);
+  Expect.isTrue(v is Color);
+  if (o is Color && v is Color) {
+    Expect.equals(o.colorSpace, v.colorSpace);
+    Expect.isTrue((o.a - v.a).abs() <= (1 / 255));
+    Expect.isTrue((o.r - v.r).abs() <= (1 / 255));
+    Expect.isTrue((o.g - v.g).abs() <= (1 / 255));
+    Expect.isTrue((o.b - v.b).abs() <= (1 / 255));
+  }
+};
+
 class NotAColor extends Color {
   const NotAColor(super.value);
 }
@@ -58,7 +71,7 @@ void main() {
     );
     expect(
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 0.5),
-      const Color(0x7F7F7F7F),
+      colorMatches(const Color(0x7F7F7F7F)),
     );
     expect(
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.0),

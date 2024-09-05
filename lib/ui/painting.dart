@@ -48,8 +48,8 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+Color _scaleAlpha(Color x, double factor) {
+  return x.withValues(alpha: (x.a * factor).clamp(0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -339,28 +339,26 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color? lerp(Color? a, Color? b, double t) {
-    // TODO(gaaclarke): Update math to use floats. This was already attempted
-    //                  but it leads to subtle changes that change test results.
-    assert(a?.colorSpace != ColorSpace.extendedSRGB);
-    assert(b?.colorSpace != ColorSpace.extendedSRGB);
-    if (b == null) {
-      if (a == null) {
+  static Color? lerp(Color? x, Color? y, double t) {
+    assert(x?.colorSpace != ColorSpace.extendedSRGB);
+    assert(y?.colorSpace != ColorSpace.extendedSRGB);
+    if (y == null) {
+      if (x == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleAlpha(x, 1.0 - t);
       }
     } else {
-      if (a == null) {
-        return _scaleAlpha(b, t);
+      if (x == null) {
+        return _scaleAlpha(y, t);
       } else {
-        assert(a.colorSpace == b.colorSpace);
-        return Color._fromARGBC(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
-          a.colorSpace,
+        assert(x.colorSpace == y.colorSpace);
+        return Color.from(
+          alpha: _lerpDouble(x.a, y.a, t).clamp(0, 1),
+          red: _lerpDouble(x.r, y.r, t).clamp(0, 1),
+          green: _lerpDouble(x.g, y.g, t).clamp(0, 1),
+          blue: _lerpDouble(x.b, y.b, t).clamp(0, 1),
+          colorSpace: x.colorSpace,
         );
       }
     }
