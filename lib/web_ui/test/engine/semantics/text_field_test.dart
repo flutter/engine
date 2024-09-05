@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -159,7 +158,7 @@ void testMain() {
       // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
     }, skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
 
-    test('Syncs semantic state from framework', () async {
+    test('Syncs semantic state from framework', () {
       expect(
           owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
@@ -223,10 +222,12 @@ void testMain() {
         owner().semanticsHost.ownerDocument?.activeElement,
         textField.editableElement,
       );
-      await Future<void>.delayed(Duration.zero);
+
+      // When semantics are enabled, deactivation shouldn't move focus or blur the
+      // editable element. Instead the engine/browser should move it accordingly.
       expect(
         owner().semanticsHost.ownerDocument?.activeElement,
-        EnginePlatformDispatcher.instance.implicitView!.dom.rootElement,
+        textField.editableElement,
       );
 
       // There was no user interaction with the <input> element,
@@ -336,8 +337,7 @@ void testMain() {
       strategy.disable();
     });
 
-    test('Does not dispose and recreate dom elements in persistent mode',
-        () async {
+    test('Does not dispose and recreate dom elements in persistent mode', () {
       strategy.enable(
         singlelineConfig,
         onChange: (_, __) {},
@@ -362,12 +362,15 @@ void testMain() {
       // It doesn't remove the DOM element.
       final textField = textFieldSemantics.semanticRole! as SemanticTextField;
       expect(owner().semanticsHost.contains(textField.editableElement), isTrue);
+
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
-      await Future<void>.delayed(Duration.zero);
+
+      // When semantics are enabled, deactivation shouldn't move focus or blur the
+      // editable element. Instead the engine/browser should move it accordingly.
       expect(
         owner().semanticsHost.ownerDocument?.activeElement,
-        EnginePlatformDispatcher.instance.implicitView!.dom.rootElement,
+        textField.editableElement,
       );
     });
 
