@@ -91,10 +91,6 @@ class ExperimentalCanvas : public Canvas {
   /// std::nullopt.
   std::optional<Rect> ComputeCoverageLimit() const;
 
-  /// @brief After flipping the backdrop texture, render any clips that effect
-  ///        the current entity based on depth.
-  void FlushPendingClips();
-
   // clip depth of the previous save or 0.
   size_t GetClipHeightFloor() const {
     if (transform_stack_.size() > 1) {

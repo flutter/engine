@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/experimental_canvas.h"
+
 #include <limits>
 #include <optional>
+
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
@@ -137,7 +139,18 @@ static std::shared_ptr<Texture> FlipBackdrop(
 
   // Restore any clips that were recorded before the backdrop filter was
   // applied.
-  clip_coverage_stack.ActivateClipReplay();
+  auto& replay_entities = clip_coverage_stack.GetReplayEntities();
+  for (const auto& replay : replay_entities) {
+    SetClipScissor(
+        clip_coverage_stack.CurrentClipCoverage(),
+        *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
+        global_pass_position);
+    if (!replay.entity.Render(
+            renderer,
+            *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+      VALIDATION_LOG << "Failed to render entity for clip restore.";
+    }
+  }
 
   return input_texture;
 }
@@ -419,7 +432,6 @@ void ExperimentalCanvas::SaveLayer(
       // Validation failures are logged in FlipBackdrop.
       return;
     }
-    FlushPendingClips();
 
     backdrop_filter_contents = backdrop_filter_proc(
         FilterInput::Make(std::move(input_texture)),
@@ -696,7 +708,6 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   if (IsSkipping()) {
     return;
   }
-  FlushPendingClips();
 
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
@@ -758,7 +769,6 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       if (!input_texture) {
         return;
       }
-      FlushPendingClips();
 
       // The coverage hint tells the rendered Contents which portion of the
       // rendered output will actually be used, and so we set this to the
@@ -846,26 +856,6 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   entity.Render(
       renderer_,
       *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
-}
-
-void ExperimentalCanvas::FlushPendingClips() {
-  // If there are any pending clips to replay, render any that may affect
-  // the entity we're about to render.
-  while (const EntityPassClipStack::ReplayResult* next_replay_clip =
-             clip_coverage_stack_.GetNextReplayResult(current_depth_)) {
-    auto& replay_entity = next_replay_clip->entity;
-
-    SetClipScissor(
-        next_replay_clip->clip_coverage,
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
-        GetGlobalPassPosition());
-    if (!replay_entity.Render(renderer_,
-                              *render_passes_.back()
-                                   .inline_pass_context->GetRenderPass(0)
-                                   .pass)) {
-      VALIDATION_LOG << "Failed to render entity for clip replay.";
-    }
-  }
 }
 
 bool ExperimentalCanvas::BlitToOnscreen() {
