@@ -81,7 +81,7 @@ struct DepthWatcher {
       : file_(file),
         line_(line),
         canvas_(canvas),
-        allowed_(has_mask_blur ? allowed : (allowed + 1)),
+        allowed_(has_mask_blur ? allowed + 1 : allowed),
         old_depth_(canvas.GetOpDepth()),
         old_max_(canvas.GetMaxOpDepth()) {}
 
