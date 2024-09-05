@@ -7,8 +7,8 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
@@ -129,7 +129,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     slice_->render_into(&dl_builder);
     auto display_list = dl_builder.Build();
 
-#if ENABLE_EXPERIMENTAL_CANVAS
+#if EXPERIMENTAL_CANVAS
     auto cull_rect =
         impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
     SkIRect sk_cull_rect =

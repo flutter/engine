@@ -12,8 +12,8 @@
 
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
 
 namespace flutter {
 
@@ -311,9 +311,13 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
                                   const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = atlas->skia_image();
-  const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
-  delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors, count, ToSk(mode),
-                       ToSk(sampling), cullRect, sk_paint());
+  std::vector<SkColor> sk_colors;
+  sk_colors.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    sk_colors.push_back(colors[i].argb());
+  }
+  delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors.data(), count,
+                       ToSk(mode), ToSk(sampling), cullRect, sk_paint());
 }
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,

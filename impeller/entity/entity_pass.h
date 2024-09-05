@@ -13,6 +13,7 @@
 
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/draw_order_resolver.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/entity_pass_delegate.h"
@@ -53,6 +54,8 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
+  static bool IsSubpass(const Element& element);
+
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
@@ -64,32 +67,12 @@ class EntityPass {
 
   void SetDelegate(std::shared_ptr<EntityPassDelegate> delgate);
 
-  /// @brief  Set the bounds limit, which is provided by the user when creating
-  ///         a SaveLayer. This is a hint that allows the user to communicate
-  ///         that it's OK to not render content outside of the bounds.
-  ///
-  ///         For consistency with Skia, we effectively treat this like a
-  ///         rectangle clip by forcing the subpass texture size to never exceed
-  ///         it.
-  ///
-  ///         The entity pass will assume that these bounds cause a clipping
-  ///         effect on the layer unless this call is followed up with a
-  ///         call to |SetBoundsClipsContent()| specifying otherwise.
-  void SetBoundsLimit(
-      std::optional<Rect> bounds_limit,
-      ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown);
+  /// @brief  Set the computed content bounds, or std::nullopt if the contents
+  ///         are unbounded.
+  void SetBoundsLimit(std::optional<Rect> content_bounds);
 
-  /// @brief  Get the bounds limit, which is provided by the user when creating
-  ///         a SaveLayer.
+  /// @brief  Get the bounds limit.
   std::optional<Rect> GetBoundsLimit() const;
-
-  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
-  ///         might clip the contents of the pass.
-  bool GetBoundsLimitMightClipContent() const;
-
-  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
-  ///         is a reasonably tight estimate of the bounds of the contents.
-  bool GetBoundsLimitIsSnug() const;
 
   size_t GetSubpassesDepth() const;
 
@@ -178,30 +161,6 @@ class EntityPass {
     required_mip_count_ = mip_count;
   }
 
-  //----------------------------------------------------------------------------
-  /// @brief  Computes the coverage of a given subpass. This is used to
-  ///         determine the texture size of a given subpass before it's rendered
-  ///         to and passed through the subpass ImageFilter, if any.
-  ///
-  /// @param[in]  subpass         The EntityPass for which to compute
-  ///                             pre-filteredcoverage.
-  /// @param[in]  coverage_limit  Confines coverage to a specified area. This
-  ///                             hint is used to trim coverage to the root
-  ///                             framebuffer area. `std::nullopt` means there
-  ///                             is no limit.
-  ///
-  /// @return  The screen space pixel area that the subpass contents will render
-  ///          into, prior to being transformed by the subpass ImageFilter, if
-  ///          any. `std::nullopt` means rendering the subpass will have no
-  ///          effect on the color attachment.
-  ///
-  std::optional<Rect> GetSubpassCoverage(
-      const EntityPass& subpass,
-      std::optional<Rect> coverage_limit) const;
-
-  std::optional<Rect> GetElementsCoverage(
-      std::optional<Rect> coverage_limit) const;
-
  private:
   struct EntityResult {
     enum Status {
@@ -214,8 +173,7 @@ class EntityPass {
       kSkip,
     };
 
-    /// @brief  The resulting entity that should be rendered. If `std::nullopt`,
-    ///         there is nothing to render.
+    /// @brief  The resulting entity that should be rendered.
     Entity entity;
     /// @brief  This is set to `false` if there was an unexpected rendering
     ///         error while resolving the Entity.
@@ -316,10 +274,12 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
+  DrawOrderResolver draw_order_resolver_;
+
   /// The stack of currently active clips (during Aiks recording time). Each
-  /// entry is an index into the `elements_` list. The depth value of a clip is
-  /// the max of all the entities it affects, so assignment of the depth value
-  /// is deferred until clip restore or end of the EntityPass.
+  /// entry is an index into the `elements_` list. The depth value of a clip
+  /// is the max of all the entities it affects, so assignment of the depth
+  /// value is deferred until clip restore or end of the EntityPass.
   std::vector<size_t> active_clips_;
 
   EntityPass* superpass_ = nullptr;
@@ -329,7 +289,6 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   std::optional<Rect> bounds_limit_;
-  ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
   int32_t required_mip_count_ = 1;
 
   /// These values indicate whether something has been added to the EntityPass
@@ -338,8 +297,8 @@ class EntityPass {
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
   /// These are tracked as separate values because we may ignore
-  /// `blend_reads_from_pass_texture_` if the device supports framebuffer based
-  /// advanced blends.
+  /// `blend_reads_from_pass_texture_` if the device supports framebuffer
+  /// based advanced blends.
   bool advanced_blend_reads_from_pass_texture_ = false;
   bool backdrop_filter_reads_from_pass_texture_ = false;
 
