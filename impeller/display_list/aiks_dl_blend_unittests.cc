@@ -575,7 +575,7 @@ TEST_P(AiksTest, ColorWheel) {
 
   BlendModeSelection blend_modes = GetBlendModeSelection();
 
-  auto draw_color_wheel = [](DisplayListBuilder& builder) {
+  auto draw_color_wheel = [](DisplayListBuilder& builder) -> void {
     /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
     /// cyan domain: r >= 0 (because modulo used is non euclidean)
     auto color_wheel_sampler = [](Radians r) {
