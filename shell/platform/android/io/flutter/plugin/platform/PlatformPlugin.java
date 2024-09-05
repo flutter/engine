@@ -287,7 +287,7 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at 19.
+      // Available starting at SDK 19.
       //
       // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
       // NOT work unless the app developer performs the migration detailed in
@@ -307,7 +307,7 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at 19.
+      // Available starting at SDK 19.
       //
       // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
       // NOT work unless the app developer performs the migration detailed in
@@ -327,9 +327,12 @@ public class PlatformPlugin {
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
         && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       // EDGE TO EDGE
-      // Available starting at 29
-      // If the Flutter app targets SDK 15 (which Flutter does by default), then this mode is
+      //
+      // Available starting at SDK 29.
+      //
+      // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode is
       // used by default.
+      //
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
