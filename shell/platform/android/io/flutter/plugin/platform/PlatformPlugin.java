@@ -290,8 +290,9 @@ public class PlatformPlugin {
       // IMMERSIVE
       // Available starting at SDK 19.
       //
-      // If the Flutter app targets API 35 (Flutter does this by default), then this mode will
-      // NOT work unless the app developer performs the migration detailed in
+      // If the Flutter Android app targets API 35 or later then the Android
+      // system will ignore this value unless the app also follows the opt out
+      // instructions found in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
       //
       // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
@@ -310,8 +311,9 @@ public class PlatformPlugin {
       // STICKY IMMERSIVE
       // Available starting at SDK 19.
       //
-      // If the Flutter app targets API 35 (Flutter does this by default), then this mode will
-      // NOT work unless the app developer performs the migration detailed in
+      // If the Flutter Android app targets API 35 or later then the Android
+      // system will ignore this value unless the app also follows the opt out
+      // instructions found in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
       //
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
@@ -331,8 +333,8 @@ public class PlatformPlugin {
       //
       // Available starting at SDK 29.
       //
-      // If the Flutter app targets API 35 (Flutter does this by default), then this mode is
-      // used by default.
+      // If the Flutter app targets API 35 or later (Flutter does this by default), then this mode
+      // is used by default.
       //
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
