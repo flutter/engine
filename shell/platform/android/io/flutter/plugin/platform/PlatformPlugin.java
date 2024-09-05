@@ -268,10 +268,12 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 16
-      // If the Flutter app targets SDK 15 (which Flutter does by default), then this mode will
-      // not work unless the app developer performs the migration detailed in
-      // <TODO(camsim99): put link here>.
+      // Available starting at SDK 16.
+      //
+      // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
+      // NOT work unless the app developer performs the migration detailed in
+      // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
+      //
       // Should not show overlays, tap to reveal overlays, needs onChange callback
       // When the overlays come in on tap, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
@@ -285,10 +287,12 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at 19
-      // If the Flutter app targets SDK 15 (which Flutter does by default), then this mode will
-      // not work unless the app developer performs the migration detailed in
-      // <TODO(camsim99): put link here>.
+      // Available starting at 19.
+      //
+      // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
+      // NOT work unless the app developer performs the migration detailed in
+      // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
+      //
       // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
       // When the overlays come in on swipe, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
@@ -303,10 +307,12 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at 19
-      // If the Flutter app targets SDK 15 (which Flutter does by default), then this mode will
-      // not work unless the app developer performs the migration detailed in
-      // <TODO(camsim99): put link here>.
+      // Available starting at 19.
+      //
+      // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
+      // NOT work unless the app developer performs the migration detailed in
+      // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
+      //
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
