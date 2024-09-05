@@ -20,6 +20,8 @@
 #include "flutter/impeller/geometry/scalar.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/playground/playground.h"
+#include "impeller/playground/playground_test.h"
 #include "include/core/SkMatrix.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -569,6 +571,9 @@ TEST_P(AiksTest, FramebufferAdvancedBlendCoverage) {
 }
 
 TEST_P(AiksTest, ColorWheel) {
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Fails to render on OpenGLES.";
+  }
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
   BlendModeSelection blend_modes = GetBlendModeSelection();
