@@ -40,7 +40,7 @@ void main() {
     const Color c = Color(0x00000000);
     final Paint p = Paint();
     p.color = c;
-    expect(c.toString(), equals('Color(0x00000000)'));
+    expect(c, equals(const Color(0x00000000)));
   });
 
   test('color created with out of bounds value', () {
@@ -161,15 +161,15 @@ void main() {
     );
     expect(
       Color.alphaBlend(const Color(0x80808080), const Color(0xFFFFFFFF)),
-      const Color(0xFFBFBFBF),
+      colorMatches(const Color(0xFFBFBFBF)),
     );
     expect(
       Color.alphaBlend(const Color(0x80808080), const Color(0xFF000000)),
-      const Color(0xFF404040),
+      colorMatches(const Color(0xFF404040)),
     );
     expect(
       Color.alphaBlend(const Color(0x01020304), const Color(0xFF000000)),
-      const Color(0xFF000000),
+      colorMatches(const Color(0xFF000000)),
     );
     expect(
       Color.alphaBlend(const Color(0x11223344), const Color(0xFF000000)),

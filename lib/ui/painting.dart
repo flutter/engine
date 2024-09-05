@@ -419,16 +419,19 @@ class Color {
       return false;
     }
     return other is Color &&
-        other.value == value &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
         other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => Object.hash(value, colorSpace);
+  int get hashCode => Object.hash(a, r, g, b, colorSpace);
 
-  // TODO(gaaclarke): Make toString() print out float values.
   @override
-  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
+  String toString() =>
+      'Color(alpha: ${a.toStringAsFixed(4)}, red: ${r.toStringAsFixed(4)}, green: ${g.toStringAsFixed(4)}, blue: ${b.toStringAsFixed(4)}, colorSpace: $colorSpace)';
 }
 
 /// Algorithms to use when painting on the canvas.
