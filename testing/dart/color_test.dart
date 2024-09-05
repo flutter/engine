@@ -12,10 +12,10 @@ Matcher colorMatches(dynamic o) => (v) {
   Expect.isTrue(v is Color);
   if (o is Color && v is Color) {
     Expect.equals(o.colorSpace, v.colorSpace);
-    Expect.isTrue((o.a - v.a).abs() <= (1 / 255));
-    Expect.isTrue((o.r - v.r).abs() <= (1 / 255));
-    Expect.isTrue((o.g - v.g).abs() <= (1 / 255));
-    Expect.isTrue((o.b - v.b).abs() <= (1 / 255));
+    Expect.approxEquals(o.a, v.a, 1 / 255);
+    Expect.approxEquals(o.r, v.r, 1 / 255);
+    Expect.approxEquals(o.g, v.g, 1 / 255);
+    Expect.approxEquals(o.b, v.b, 1 / 255);
   }
 };
 
@@ -173,11 +173,11 @@ void main() {
     );
     expect(
       Color.alphaBlend(const Color(0x11223344), const Color(0xFF000000)),
-      const Color(0xFF020304),
+      colorMatches(const Color(0xFF020304)),
     );
     expect(
       Color.alphaBlend(const Color(0x11223344), const Color(0x80000000)),
-      const Color(0x88040608),
+      colorMatches(const Color(0x88040608)),
     );
   });
 

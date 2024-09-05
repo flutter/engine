@@ -375,32 +375,30 @@ class Color {
   static Color alphaBlend(Color foreground, Color background) {
     assert(foreground.colorSpace == background.colorSpace);
     assert(foreground.colorSpace != ColorSpace.extendedSRGB);
-    // TODO(gaaclarke): Update math to use floats. This was already attempted
-    //                  but it leads to subtle changes that change test results.
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) { // Foreground completely transparent.
+    final double alpha = foreground.a;
+    if (alpha == 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
-    if (backAlpha == 0xff) { // Opaque background case
-      return Color._fromARGBC(
-        0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
-        foreground.colorSpace,
+    final double invAlpha = 1 - alpha;
+    double backAlpha = background.a;
+    if (backAlpha == 1) { // Opaque background case
+      return Color.from(
+        alpha: 1,
+        red: alpha * foreground.r + invAlpha * background.r,
+        green: alpha * foreground.g + invAlpha * background.g,
+        blue: alpha * foreground.b + invAlpha * background.b,
+        colorSpace: foreground.colorSpace,
       );
     } else { // General case
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color._fromARGBC(
-        outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
-        foreground.colorSpace,
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0);
+      return Color.from(
+        alpha: outAlpha,
+        red: (foreground.r * alpha + background.r * backAlpha) / outAlpha,
+        green: (foreground.g * alpha + background.g * backAlpha) / outAlpha,
+        blue: (foreground.b * alpha + background.b * backAlpha) / outAlpha,
+        colorSpace: foreground.colorSpace,
       );
     }
   }
