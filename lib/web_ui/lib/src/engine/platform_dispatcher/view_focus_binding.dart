@@ -69,7 +69,8 @@ final class ViewFocusBinding {
     // We leverage this behavior to ignore focusout events where the document has focus but activeElement is not <body />.
     //
     // Refer to https://github.com/flutter/engine/pull/54965 for more info.
-    if (domDocument.hasFocus() && domDocument.activeElement != domDocument.body) {
+    final bool wasFocusInvoked = domDocument.hasFocus() && domDocument.activeElement != domDocument.body;
+    if (wasFocusInvoked) {
       return;
     }
 
