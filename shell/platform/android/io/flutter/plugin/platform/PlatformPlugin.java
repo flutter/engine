@@ -272,7 +272,8 @@ public class PlatformPlugin {
       //
       // If the Flutter Android app targets API 35 or later then the Android
       // system will ignore this value unless the app also follows the opt out
-      // instructions found in https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
+      // instructions found in
+      // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
       //
       // Should not show overlays, tap to reveal overlays, needs onChange callback
       // When the overlays come in on tap, the app does not receive the gesture and does not know
