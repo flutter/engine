@@ -20,12 +20,7 @@ FLUTTER_ASSERT_ARC
 namespace flutter {
 
 bool ShouldUseMetalRenderer() {
-  bool ios_version_supports_metal = false;
-  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
-    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-    ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
-  }
-  return ios_version_supports_metal;
+  return false;
 }
 
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
