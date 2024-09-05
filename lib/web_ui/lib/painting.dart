@@ -32,10 +32,10 @@ class Color {
       required double green,
       required double blue,
       this.colorSpace = ColorSpace.sRGB})
-      : _a = alpha,
-        _r = red,
-        _g = green,
-        _b = blue;
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
 
   const Color.fromARGB(int a, int r, int g, int b)
       : this._fromARGBC(a, r, g, b, ColorSpace.sRGB);
@@ -49,22 +49,18 @@ class Color {
       : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
 
   const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
-      : _a = opacity,
-        _r = (r & 0xff) / 255,
-        _g = (g & 0xff) / 255,
-        _b = (b & 0xff) / 255;
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
 
-  double get a => _a;
-  final double _a;
+  final double a;
 
-  double get r => _r;
-  final double _r;
+  final double r;
 
-  double get g => _g;
-  final double _g;
+  final double g;
 
-  double get b => _b;
-  final double _b;
+  final double b;
 
   final ColorSpace colorSpace;
 
@@ -73,10 +69,10 @@ class Color {
   }
 
   int get value {
-    return _floatToInt8(_a) << 24 |
-        _floatToInt8(_r) << 16 |
-        _floatToInt8(_g) << 8 |
-        _floatToInt8(_b) << 0;
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
   }
 
 

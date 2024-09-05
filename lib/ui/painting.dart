@@ -114,10 +114,10 @@ class Color {
       required double green,
       required double blue,
       this.colorSpace = ColorSpace.sRGB})
-      : _a = alpha,
-        _r = red,
-        _g = green,
-        _b = blue;
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
 
   /// Construct an sRGB color from the lower 8 bits of four integers.
   ///
@@ -155,29 +155,25 @@ class Color {
       : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
 
   const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
-      : _a = opacity,
-        _r = (r & 0xff) / 255,
-        _g = (g & 0xff) / 255,
-        _b = (b & 0xff) / 255;
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
 
   /// The alpha channel of this color.
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  double get a => _a;
-  final double _a;
+  final double a;
 
   /// The red channel of this color.
-  double get r => _r;
-  final double _r;
+  final double r;
 
   /// The green channel of this color.
-  double get g => _g;
-  final double _g;
+  final double g;
 
   /// The blue channel of this color.
-  double get b => _b;
-  final double _b;
+  final double b;
 
   /// The color space of this color.
   final ColorSpace colorSpace;
@@ -196,10 +192,10 @@ class Color {
   /// * Bits 0-7 are the blue value.
   @Deprecated('Use component accessors like .r or .g.')
   int get value {
-    return _floatToInt8(_a) << 24 |
-        _floatToInt8(_r) << 16 |
-        _floatToInt8(_g) << 8 |
-        _floatToInt8(_b) << 0;
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
   }
 
   /// The alpha channel of this color in an 8 bit value.
