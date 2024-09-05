@@ -115,8 +115,8 @@ final class ViewFocusBinding {
         direction: _viewFocusDirection,
       );
     }
-    _maybeMarkViewAsFocusable(_lastViewId, reachableByKeyboard: true);
-    _maybeMarkViewAsFocusable(viewId, reachableByKeyboard: false);
+    _updateViewFocusStatus(_lastViewId, reachableByKeyboard: true);
+    _updateViewFocusStatus(viewId, reachableByKeyboard: false);
     _lastViewId = viewId;
     _onViewFocusChange(event);
   }
@@ -127,10 +127,10 @@ final class ViewFocusBinding {
   }
 
   void _handleViewCreated(int viewId) {
-    _maybeMarkViewAsFocusable(viewId, reachableByKeyboard: true);
+    _updateViewFocusStatus(viewId, reachableByKeyboard: true);
   }
 
-  void _maybeMarkViewAsFocusable(
+  void _updateViewFocusStatus(
     int? viewId, {
     required bool reachableByKeyboard,
   }) {
@@ -139,17 +139,13 @@ final class ViewFocusBinding {
     }
 
     final DomElement? rootElement = _viewManager[viewId]?.dom.rootElement;
-    if (EngineSemantics.instance.semanticsEnabled) {
-      rootElement?.removeAttribute('tabindex');
-    } else {
-      // A tabindex with value zero means the DOM element can be reached by using
-      // the keyboard (tab, shift + tab). When its value is -1 it is still focusable
-      // but can't be focused by the result of keyboard events This is specially
-      // important when the semantics tree is enabled as it puts DOM nodes inside
-      // the flutter view and having it with a zero tabindex messes the focus
-      // traversal order when pressing tab or shift tab.
-      rootElement?.setAttribute('tabindex', reachableByKeyboard ? 0 : -1);
-    }
+    // A tabindex with value zero means the DOM element can be reached by using
+    // the keyboard (tab, shift + tab). When its value is -1 it is still focusable
+    // but can't be focused by the result of keyboard events This is specially
+    // important when the semantics tree is enabled as it puts DOM nodes inside
+    // the flutter view and having it with a zero tabindex messes the focus
+    // traversal order when pressing tab or shift tab.
+    rootElement?.setAttribute('tabindex', reachableByKeyboard ? 0 : -1);
   }
 
   static const String _focusin = 'focusin';
