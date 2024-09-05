@@ -311,9 +311,9 @@ class Color {
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
