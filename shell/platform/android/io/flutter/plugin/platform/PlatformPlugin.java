@@ -270,7 +270,7 @@ public class PlatformPlugin {
       // LEAN BACK
       // Available starting at SDK 16.
       //
-      // If the Flutter app targets SDK 15 (Flutter does this by default), then this mode will
+      // If the Flutter android app targets api 35 or later then the android system will ignore this value unless the app also follows the opt out instructions found in https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
       // NOT work unless the app developer performs the migration detailed in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
       //
