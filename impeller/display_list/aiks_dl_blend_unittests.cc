@@ -571,13 +571,9 @@ TEST_P(AiksTest, FramebufferAdvancedBlendCoverage) {
 }
 
 TEST_P(AiksTest, ColorWheel) {
-  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP() << "Fails to render on OpenGLES.";
-  }
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
   BlendModeSelection blend_modes = GetBlendModeSelection();
-  AiksContext aiks_context(GetContext(), nullptr);
 
   auto draw_color_wheel = [](DisplayListBuilder& builder) {
     /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
@@ -617,8 +613,6 @@ TEST_P(AiksTest, ColorWheel) {
     }
   };
 
-  std::shared_ptr<Texture> color_wheel_image;
-
   auto callback = [&]() -> sk_sp<DisplayList> {
     // UI state.
     static bool cache_the_wheel = true;
@@ -643,34 +637,8 @@ TEST_P(AiksTest, ColorWheel) {
       ImGui::End();
     }
 
-    static Point content_scale;
-    Point new_content_scale = GetContentScale();
-
-    if (!cache_the_wheel || new_content_scale != content_scale) {
-      content_scale = new_content_scale;
-
-      // Render the color wheel to an image.
-
-      DisplayListBuilder builder;
-      builder.Scale(content_scale.x, content_scale.y);
-      builder.Translate(500, 400);
-      builder.Scale(3, 3);
-
-      draw_color_wheel(builder);
-      auto image = DisplayListToTexture(
-          builder.Build(),
-          ISize{GetWindowSize().width * 3, GetWindowSize().height * 3},
-          aiks_context);
-
-      if (!image) {
-        return nullptr;
-      }
-      color_wheel_image = image;
-    }
-
     DisplayListBuilder builder;
 
-    // Blit the color wheel backdrop to the screen with managed alpha.
     DlPaint paint;
     paint.setColor(DlColor::kWhite().withAlpha(dst_alpha * 255));
     paint.setBlendMode(DlBlendMode::kSrc);
@@ -680,13 +648,16 @@ TEST_P(AiksTest, ColorWheel) {
       paint.setColor(DlColor::kWhite());
       builder.DrawPaint(paint);
 
-      builder.Save();
-      builder.DrawImage(DlImageImpeller::Make(color_wheel_image), {}, {});
+      builder.SaveLayer(nullptr, nullptr);
+      builder.Scale(GetContentScale().x, GetContentScale().y);
+      builder.Translate(500, 400);
+      builder.Scale(3, 3);
+      draw_color_wheel(builder);
       builder.Restore();
     }
     builder.Restore();
 
-    builder.Scale(content_scale.x, content_scale.y);
+    builder.Scale(GetContentScale().x, GetContentScale().y);
     builder.Translate(500, 400);
     builder.Scale(3, 3);
 
