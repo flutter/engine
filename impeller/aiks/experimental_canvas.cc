@@ -398,10 +398,13 @@ void ExperimentalCanvas::SaveLayer(
   // When an image filter is present, clamp to avoid flicking due to nearest
   // sampled image. For other cases, round out to ensure than any geometry is
   // not cut off.
+  // See also this bug: https://github.com/flutter/flutter/issues/144213
   ISize subpass_size;
+  bool did_round_out = false;
   if (paint.image_filter) {
     subpass_size = ISize(subpass_coverage.GetSize());
   } else {
+    did_round_out = true;
     subpass_size = ISize(IRect::RoundOut(subpass_coverage).GetSize());
   }
   if (subpass_size.IsEmpty()) {
@@ -465,6 +468,7 @@ void ExperimentalCanvas::SaveLayer(
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpassAppendSnapshotTransform;
+  entry.did_round_out = did_round_out;
   transform_stack_.emplace_back(entry);
 
   // The current clip aiks clip culling can not handle image filters.
@@ -549,16 +553,18 @@ bool ExperimentalCanvas::Restore() {
     // sampling, so aligning here is important for avoiding visual nearest
     // sampling errors caused by limited floating point precision when
     // straddling a half pixel boundary.
-    //
-    // We do this in lieu of expanding/rounding out the subpass coverage in
-    // order to keep the bounds wrapping consistently tight around subpass
-    // elements when there are image filters. Which is necessary to avoid
-    // intense flickering in cases where a subpass texture has a large blur
-    // filter with clamp sampling.
-    //
-    // See also this bug: https://github.com/flutter/flutter/issues/144213
-    Point subpass_texture_position =
-        (save_layer_state.coverage.GetOrigin() - global_pass_position).Round();
+    Point subpass_texture_position;
+    if (transform_stack_.back().did_round_out) {
+      // Subpass coverage was rounded out, origin potentially moved "down" by
+      // as much as a pixel.
+      subpass_texture_position =
+          (save_layer_state.coverage.GetOrigin() - global_pass_position).Floor();
+    } else {
+      // Subpass coverage was truncated. Pick the closest phyiscal pixel.
+      subpass_texture_position =
+          (save_layer_state.coverage.GetOrigin() - global_pass_position)
+              .Round();
+    }
 
     Entity element_entity;
     element_entity.SetClipDepth(++current_depth_);
