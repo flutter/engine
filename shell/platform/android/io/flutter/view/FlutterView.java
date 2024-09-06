@@ -15,6 +15,7 @@ import android.graphics.Bitmap;
 import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.text.format.DateFormat;
@@ -31,7 +32,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
-import android.view.WindowManager;
+// import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -537,10 +538,10 @@ public class FlutterView extends SurfaceView
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
     int rotation =
-        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
-            .getDefaultDisplay()
+        ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
+            .getDisplay(0)
             .getRotation();
-
+ 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       if (rotation == Surface.ROTATION_90) {
         return ZeroSides.RIGHT;

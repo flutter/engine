@@ -14,6 +14,7 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -612,8 +613,8 @@ public class FlutterView extends FrameLayout
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
     int rotation =
-        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
-            .getDefaultDisplay()
+        ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
+            .getDisplay(0)
             .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
