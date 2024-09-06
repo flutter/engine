@@ -897,9 +897,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   _isGpuDisabled =
       [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
 #endif
-  settings.route = [self.initialRoute UTF8String];
-  [self.initialRoute release];
-  self.initialRoute = nil;
+  // Override the setting route, as the dart project or function may have specified
+  // different values. During construction, the Engine constuctor will read the
+  // value of settings.route to determine the initial route value.
+  if (self.initialRoute) {
+    settings.route = [self.initialRoute UTF8String];
+    [self.initialRoute release];
+    self.initialRoute = nil;
+  }
 
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
