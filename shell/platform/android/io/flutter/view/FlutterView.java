@@ -540,7 +540,7 @@ public class FlutterView extends SurfaceView
         ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
             .getDisplay(0)
             .getRotation();
- 
+
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       if (rotation == Surface.ROTATION_90) {
         return ZeroSides.RIGHT;
