@@ -81,7 +81,7 @@ const double kDefaultRmseThreshold = 0.5;
     _identifier = launchArgsMap[launchArg];
 
     NSString* impeller = @"";
-    NSNumber* enableImpeller = [[NSBundle bundleWithIdentifier:@"dev.flutter.ScenariosUITests"]
+    NSNumber* enableImpeller = [[NSBundle bundleWithIdentifier:@"dev.flutter.Scenarios"]
         objectForInfoDictionaryKey:@"FLTEnableImpeller"];
     if (enableImpeller != nil) {
       impeller = enableImpeller.boolValue ? @"impeller_" : @"";
