@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:math';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -117,8 +117,8 @@ class OcclusionMapBranch implements OcclusionMapNode {
   final ui.Rect boundingBox;
 
   double _areaOfUnion(ui.Rect first, ui.Rect second) {
-    return (max(first.right, second.right) - min(first.left, second.left))
-      * (max(first.bottom, second.bottom) - max(first.top, second.top));
+    return (math.max(first.right, second.right) - math.min(first.left, second.left))
+      * (math.max(first.bottom, second.bottom) - math.max(first.top, second.top));
   }
 
   @override
