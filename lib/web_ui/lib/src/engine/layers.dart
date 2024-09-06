@@ -10,10 +10,15 @@ import 'package:ui/ui.dart' as ui;
 
 class EngineRootLayer with PictureEngineLayer {
   @override
-  final NoopOperation operation = NoopOperation();
+  final NoopOperation operation = const NoopOperation();
+
+  @override
+  EngineRootLayer emptyClone() => EngineRootLayer();
 }
 
 class NoopOperation implements LayerOperation {
+  const NoopOperation();
+
   @override
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 
@@ -41,6 +46,9 @@ class BackdropFilterLayer
 
   @override
   final LayerOperation operation;
+
+  @override
+  BackdropFilterLayer emptyClone() => BackdropFilterLayer(operation);
 }
 class BackdropFilterOperation implements LayerOperation {
   BackdropFilterOperation(this.filter, this.mode);
@@ -77,6 +85,9 @@ class ClipPathLayer
 
   @override
   final ClipPathOperation operation;
+
+  @override
+  ClipPathLayer emptyClone() => ClipPathLayer(operation);
 }
 class ClipPathOperation implements LayerOperation {
   ClipPathOperation(this.path, this.clip);
@@ -120,6 +131,9 @@ class ClipRectLayer
 
   @override
   final ClipRectOperation operation;
+
+  @override
+  ClipRectLayer emptyClone() => ClipRectLayer(operation);
 }
 class ClipRectOperation implements LayerOperation {
   const ClipRectOperation(this.rect, this.clip);
@@ -163,6 +177,9 @@ class ClipRRectLayer
 
   @override
   final ClipRRectOperation operation;
+
+  @override
+  ClipRRectLayer emptyClone() => ClipRRectLayer(operation);
 }
 class ClipRRectOperation implements LayerOperation {
   const ClipRRectOperation(this.rrect, this.clip);
@@ -206,6 +223,9 @@ class ColorFilterLayer
 
   @override
   final ColorFilterOperation operation;
+
+  @override
+  ColorFilterLayer emptyClone() => ColorFilterLayer(operation);
 }
 class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation(this.filter);
@@ -239,6 +259,9 @@ class ImageFilterLayer
 
   @override
   final ImageFilterOperation operation;
+
+  @override
+  ImageFilterLayer emptyClone() => ImageFilterLayer(operation);
 }
 class ImageFilterOperation implements LayerOperation {
   ImageFilterOperation(this.filter, this.offset);
@@ -288,6 +311,9 @@ class OffsetLayer
 
   @override
   final OffsetOperation operation;
+
+  @override
+  OffsetLayer emptyClone() => OffsetLayer(operation);
 }
 class OffsetOperation implements LayerOperation {
   OffsetOperation(this.dx, this.dy);
@@ -325,6 +351,9 @@ class OpacityLayer
 
   @override
   final OpacityOperation operation;
+
+  @override
+  OpacityLayer emptyClone() => OpacityLayer(operation);
 }
 class OpacityOperation implements LayerOperation {
   OpacityOperation(this.alpha, this.offset);
@@ -372,6 +401,9 @@ class TransformLayer
 
   @override
   final TransformOperation operation;
+
+  @override
+  TransformLayer emptyClone() => TransformLayer(operation);
 }
 class TransformOperation implements LayerOperation {
   TransformOperation(this.transform);
@@ -411,6 +443,9 @@ class ShaderMaskLayer
 
   @override
   final ShaderMaskOperation operation;
+
+  @override
+  ShaderMaskLayer emptyClone() => ShaderMaskLayer(operation);
 }
 class ShaderMaskOperation implements LayerOperation {
   ShaderMaskOperation(this.shader, this.maskRect, this.blendMode);
@@ -486,10 +521,13 @@ mixin PictureEngineLayer implements ui.EngineLayer {
   // flutter content or platform views. Slices in this list are ordered from
   // bottom to top.
   List<LayerSlice?> slices = [];
+
   List<LayerDrawCommand> drawCommands = [];
   PlatformViewStyling platformViewStyling = const PlatformViewStyling();
 
   LayerOperation get operation;
+
+  PictureEngineLayer emptyClone();
 
   @override
   void dispose() {
@@ -522,15 +560,17 @@ sealed class LayerDrawCommand {
 }
 
 class PictureDrawCommand extends LayerDrawCommand {
-  PictureDrawCommand(this.offset, this.picture);
+  PictureDrawCommand(this.offset, this.picture, this.sliceIndex);
 
+  final int sliceIndex;
   final ui.Offset offset;
   final ScenePicture picture;
 }
 
 class PlatformViewDrawCommand extends LayerDrawCommand {
-  PlatformViewDrawCommand(this.viewId, this.bounds);
+  PlatformViewDrawCommand(this.viewId, this.bounds, this.sliceIndex);
 
+  final int sliceIndex;
   final int viewId;
   final ui.Rect bounds;
 }
@@ -918,16 +958,19 @@ class LayerBuilder {
   final List<LayerDrawCommand> drawCommands = <LayerDrawCommand>[];
 
   PlatformViewStyling? _memoizedPlatformViewStyling;
-
   PlatformViewStyling get platformViewStyling {
     return _memoizedPlatformViewStyling ??= layer.operation.createPlatformViewStyling();
   }
 
+  PlatformViewStyling? _memoizedGlobalPlatformViewStyling;
   PlatformViewStyling get globalPlatformViewStyling {
-    if (parent != null) {
-      return PlatformViewStyling.combine(parent!.globalPlatformViewStyling, platformViewStyling);
+    if (_memoizedGlobalPlatformViewStyling != null) {
+      return _memoizedGlobalPlatformViewStyling!;
     }
-    return platformViewStyling;
+    if (parent != null) {
+      return _memoizedGlobalPlatformViewStyling ??= PlatformViewStyling.combine(parent!.globalPlatformViewStyling, platformViewStyling);
+    }
+    return _memoizedGlobalPlatformViewStyling ??= platformViewStyling;
   }
 
   LayerSliceBuilder getOrCreateSliceBuilderAtIndex(int index) {
@@ -959,16 +1002,17 @@ class LayerBuilder {
     } else {
       canvas.drawPicture(picture);
     }
+    drawCommands.add(PictureDrawCommand(offset, picture as ScenePicture, sliceIndex));
   }
 
   void addPlatformView(
     int viewId, {
     required ui.Rect bounds,
     required int sliceIndex,
-    PlatformViewStyling existingStyling = const PlatformViewStyling(),
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
-    sliceBuilder.platformViews.add(PlatformView(viewId, bounds, PlatformViewStyling.combine(platformViewStyling, existingStyling)));
+    sliceBuilder.platformViews.add(PlatformView(viewId, bounds, platformViewStyling));
+    drawCommands.add(PlatformViewDrawCommand(viewId, bounds, sliceIndex));
   }
 
   void mergeLayer(PictureEngineLayer layer) {
@@ -982,10 +1026,7 @@ class LayerBuilder {
         }));
       }
     }
-  }
-
-  void addDrawCommand(LayerDrawCommand command) {
-    drawCommands.add(command);
+    drawCommands.add(RetainedLayerDrawCommand(layer));
   }
 
   PictureEngineLayer sliceUp() {

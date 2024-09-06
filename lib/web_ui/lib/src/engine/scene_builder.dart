@@ -108,11 +108,15 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false
   }) {
-    _placePicture(offset, picture as ScenePicture);
-    currentBuilder.addDrawCommand(PictureDrawCommand(offset, picture));
+    final int sliceIndex = _placePicture(offset, picture as ScenePicture);
+    currentBuilder.addPicture(
+      offset,
+      picture,
+      sliceIndex: sliceIndex,
+    );
   }
 
-  void _placePicture(ui.Offset offset, ScenePicture picture) {
+  int _placePicture(ui.Offset offset, ScenePicture picture) {
     final ui.Rect cullRect = picture.cullRect.shift(offset);
     final ui.Rect mappedCullRect = currentBuilder.globalPlatformViewStyling.mapLocalToGlobal(cullRect);
     int sliceIndex = sceneSlices.length;
@@ -132,11 +136,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     }
     final SceneSlice slice = sceneSlices[sliceIndex];
     slice.pictureOcclusionMap.addRect(mappedCullRect);
-    currentBuilder.addPicture(
-      offset,
-      picture,
-      sliceIndex: sliceIndex,
-    );
+    return sliceIndex;
   }
 
   @override
@@ -147,11 +147,15 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     double height = 0.0
   }) {
     final ui.Rect platformViewRect = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    _placePlatformView(viewId, platformViewRect);
-    currentBuilder.addDrawCommand(PlatformViewDrawCommand(viewId, platformViewRect));
+    final int sliceIndex = _placePlatformView(viewId, platformViewRect);
+    currentBuilder.addPlatformView(
+      viewId,
+      bounds: platformViewRect,
+      sliceIndex: sliceIndex,
+    );
   }
 
-  void _placePlatformView(
+  int _placePlatformView(
     int viewId,
     ui.Rect rect, {
     PlatformViewStyling styling = const PlatformViewStyling(),
@@ -173,37 +177,58 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     }
     final SceneSlice slice = sceneSlices[sliceIndex];
     slice.platformViewOcclusionMap.addRect(globalPlatformViewRect);
-
-    currentBuilder.addPlatformView(
-      viewId,
-      bounds: rect,
-      sliceIndex: sliceIndex,
-      existingStyling: styling,
-    );
+    return sliceIndex;
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    _placeRetainedLayer(retainedLayer as PictureEngineLayer);
-    currentBuilder.addDrawCommand(RetainedLayerDrawCommand(retainedLayer));
+    final PictureEngineLayer placedEngineLayer = _placeRetainedLayer(retainedLayer as PictureEngineLayer);
+    currentBuilder.mergeLayer(placedEngineLayer);
   }
 
   PictureEngineLayer _placeRetainedLayer(PictureEngineLayer retainedLayer) {
-    // TODO(jacksongardner): add optimized path
-    currentBuilder = LayerBuilder.childLayer(parent: currentBuilder, layer: retainedLayer);
+    bool needsRebuild = false;
+    final List<LayerDrawCommand> revisedDrawCommands = [];
     for (final LayerDrawCommand command in retainedLayer.drawCommands) {
       switch (command) {
         case PictureDrawCommand(offset: final ui.Offset offset, picture: final ScenePicture picture):
-          _placePicture(offset, picture);
+          final int sliceIndex = _placePicture(offset, picture);
+          if (command.sliceIndex != sliceIndex) {
+            needsRebuild = true;
+          }
+          revisedDrawCommands.add(PictureDrawCommand(offset, picture, sliceIndex));
         case PlatformViewDrawCommand(viewId: final int viewId, bounds: final ui.Rect bounds):
-          _placePlatformView(viewId, bounds);
-        case RetainedLayerDrawCommand(layer: final PictureEngineLayer layer):
-          _placeRetainedLayer(layer);
+          final int sliceIndex = _placePlatformView(viewId, bounds);
+          if (command.sliceIndex != sliceIndex) {
+            needsRebuild = true;
+          }
+          revisedDrawCommands.add(PlatformViewDrawCommand(viewId, bounds, sliceIndex));
+        case RetainedLayerDrawCommand(layer: final PictureEngineLayer sublayer):
+          final PictureEngineLayer revisedSublayer = _placeRetainedLayer(sublayer);
+          if (sublayer != revisedSublayer) {
+            needsRebuild = true;
+          }
+          revisedDrawCommands.add(RetainedLayerDrawCommand(revisedSublayer));
       }
     }
-    final PictureEngineLayer newLayer = currentBuilder.sliceUp();
+
+    if (!needsRebuild) {
+      return retainedLayer;
+    }
+
+    currentBuilder = LayerBuilder.childLayer(parent: currentBuilder, layer: retainedLayer.emptyClone());
+    for (final LayerDrawCommand command in revisedDrawCommands) {
+      switch (command) {
+        case PictureDrawCommand(offset: final ui.Offset offset, picture: final ScenePicture picture):
+          currentBuilder.addPicture(offset, picture, sliceIndex: command.sliceIndex);
+        case PlatformViewDrawCommand(viewId: final int viewId, bounds: final ui.Rect bounds):
+          currentBuilder.addPlatformView(viewId, bounds: bounds, sliceIndex: command.sliceIndex);
+        case RetainedLayerDrawCommand(layer: final PictureEngineLayer layer):
+          currentBuilder.mergeLayer(layer);
+      }
+    }
+    final PictureEngineLayer newLayer = currentBuilder.build();
     currentBuilder = currentBuilder.parent!;
-    currentBuilder.mergeLayer(newLayer);
     return newLayer;
   }
 
