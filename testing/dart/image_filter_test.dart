@@ -293,7 +293,7 @@ void main() async {
       ).toString(),
       contains(
         'matrix([10.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.0, -0.0, 0.0, 1.0], FilterQuality.low) -> '
-        'ColorFilter.mode(Color(0xffabcdef), BlendMode.color) -> '
+        'ColorFilter.mode(Color(alpha: 1.0000, red: 0.6706, green: 0.8039, blue: 0.9373, colorSpace: ColorSpace.sRGB), BlendMode.color) -> '
         'blur(20.0, 20.0, repeated) -> '
         'blur(30.0, 30.0, mirror)'
       ),
