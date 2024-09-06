@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -72,17 +73,93 @@ class EngineScene implements ui.Scene {
   }
 }
 
-class OcclusionMap {
-  void addRect(ui.Rect rect) {
-    occlusionRects.add(rect);
+sealed class OcclusionMapNode {
+  bool overlaps(ui.Rect rect);
+  OcclusionMapNode insert(ui.Rect rect);
+  ui.Rect get boundingBox;
+}
+
+class OcclusionMapEmpty implements OcclusionMapNode {
+  @override
+  ui.Rect get boundingBox => ui.Rect.zero;
+
+  @override
+  OcclusionMapNode insert(ui.Rect rect) => OcclusionMapLeaf(rect);
+
+  @override
+  bool overlaps(ui.Rect rect) => false;
+
+}
+
+class OcclusionMapLeaf implements OcclusionMapNode {
+  OcclusionMapLeaf(this.rect);
+
+  final ui.Rect rect;
+
+  @override
+  ui.Rect get boundingBox => rect;
+
+  @override
+  OcclusionMapNode insert(ui.Rect other) => OcclusionMapBranch(this, OcclusionMapLeaf(other));
+
+  @override
+  bool overlaps(ui.Rect other) => rect.overlaps(other);
+}
+
+class OcclusionMapBranch implements OcclusionMapNode {
+  OcclusionMapBranch(this.left, this.right)
+    : boundingBox = left.boundingBox.expandToInclude(right.boundingBox);
+
+  final OcclusionMapNode left;
+  final OcclusionMapNode right;
+
+  @override
+  final ui.Rect boundingBox;
+
+  double _areaOfUnion(ui.Rect first, ui.Rect second) {
+    return (max(first.right, second.right) - min(first.left, second.left))
+      * (max(first.bottom, second.bottom) - max(first.top, second.top));
   }
 
+  @override
+  OcclusionMapNode insert(ui.Rect other) {
+    // Try to create nodes with the smallest possible area
+    final double leftOtherArea = _areaOfUnion(left.boundingBox, other);
+    final double rightOtherArea = _areaOfUnion(right.boundingBox, other);
+    final double leftRightArea = boundingBox.width * boundingBox.height;
+    if (leftOtherArea < rightOtherArea) {
+      if (leftOtherArea < leftRightArea) {
+        return OcclusionMapBranch(
+          OcclusionMapBranch(left, OcclusionMapLeaf(other)),
+          right,
+        );
+      }
+    } else {
+      if (rightOtherArea < leftRightArea) {
+        return OcclusionMapBranch(
+          left,
+          OcclusionMapBranch(right, OcclusionMapLeaf(other)),
+        );
+      }
+    }
+    return OcclusionMapBranch(this, OcclusionMapLeaf(other));
+  }
+
+  @override
   bool overlaps(ui.Rect rect) {
-    return occlusionRects.any((ui.Rect o) => o.overlaps(rect));
+    if (!boundingBox.overlaps(rect)) {
+      return false;
+    }
+    return left.overlaps(rect) || right.overlaps(rect);
   }
+}
 
-  // TODO(jacksongardner): Make this actually smart
-  List<ui.Rect> occlusionRects = <ui.Rect>[];
+class OcclusionMap {
+  OcclusionMapNode root = OcclusionMapEmpty();
+
+  void addRect(ui.Rect rect) => root = root.insert(rect);
+
+  bool overlaps(ui.Rect rect) => root.overlaps(rect);
 }
 
 class SceneSlice {
