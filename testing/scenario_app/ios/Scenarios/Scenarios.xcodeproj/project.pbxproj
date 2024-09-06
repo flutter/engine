@@ -307,7 +307,7 @@
 		E0D5A1DC2C8115F7003BB890 /* golden_two_platform_view_clip_rect_multiple_clips_iPhone SE (3rd generation)_17.0_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_two_platform_view_clip_rect_multiple_clips_iPhone SE (3rd generation)_17.0_simulator.png"; sourceTree = "<group>"; };
 		E0D5A1DD2C8115F7003BB890 /* golden_two_platform_view_clip_rrect_multiple_clips_iPhone SE (3rd generation)_17.0_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_two_platform_view_clip_rrect_multiple_clips_iPhone SE (3rd generation)_17.0_simulator.png"; sourceTree = "<group>"; };
 		F26F15B7268B6B5500EC54D3 /* iPadGestureTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iPadGestureTests.m; sourceTree = "<group>"; };
-		F72114B628EF99F500184A2D /* Info_Impeller.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info_Impeller.plist; sourceTree = "<group>"; };
+		F72114B628EF99F500184A2D /* Info_Skia.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info_Skia.plist; sourceTree = "<group>"; };
 		F76CA8BF2C8BB0E6002A7EF5 /* golden_platform_view_clippath_multiple_clips_impeller_iPhone SE (3rd generation)_17.0_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_clippath_multiple_clips_impeller_iPhone SE (3rd generation)_17.0_simulator.png"; sourceTree = "<group>"; };
 		F76CA8C02C8BB0E6002A7EF5 /* golden_platform_view_cliprect_multiple_clips_impeller_iPhone SE (3rd generation)_17.0_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_cliprect_multiple_clips_impeller_iPhone SE (3rd generation)_17.0_simulator.png"; sourceTree = "<group>"; };
 		F76CA8C12C8BB0E6002A7EF5 /* golden_platform_view_cliprect_with_transform_impeller_iPhone SE (3rd generation)_17.0_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_cliprect_with_transform_impeller_iPhone SE (3rd generation)_17.0_simulator.png"; sourceTree = "<group>"; };
@@ -415,7 +415,7 @@
 				248D76CB22E388370012F0C1 /* AppDelegate.m */,
 				248D76D322E388380012F0C1 /* Assets.xcassets */,
 				248D76D822E388380012F0C1 /* Info.plist */,
-				F72114B628EF99F500184A2D /* Info_Impeller.plist */,
+				F72114B628EF99F500184A2D /* Info_Skia.plist */,
 				248D76D922E388380012F0C1 /* main.m */,
 				0A57B3BB2323C4BD00DD9521 /* ScreenBeforeFlutter.h */,
 				0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */,
