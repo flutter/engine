@@ -902,7 +902,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // value of settings.route to determine the initial route value.
   if (self.initialRoute) {
     settings.route = [self.initialRoute UTF8String];
-    [self.initialRoute release];
     self.initialRoute = nil;
   }
 
