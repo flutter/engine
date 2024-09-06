@@ -87,7 +87,8 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  INFOPLIST_FILE="Scenarios/Info_Skia.plist"; then
   echo "test success."
 else
   echo "test failed."
@@ -98,17 +99,12 @@ rm -rf $RESULT_BUNDLE_PATH
 echo "Running simulator tests with Impeller"
 echo ""
 
-# Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
-# Skip golden tests that use software rendering: https://github.com/flutter/flutter/issues/131888
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  # Plist with FLTEnableImpeller=YES, all projects in the workspace requires this file.
-  # For example, FlutterAppExtensionTestHost has a dummy file under the below directory.
-  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then
+  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
   echo "test success."
 else
   echo "test failed."
