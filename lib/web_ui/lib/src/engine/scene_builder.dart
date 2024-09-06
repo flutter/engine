@@ -290,9 +290,12 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     }
 
     if (!needsRebuild) {
+      // No elements changed which slice position they are in, so we can simply
+      // merge the existing layer down and don't have to redraw individual elements.
       return retainedLayer;
     }
 
+    // Otherwise, we replace the commands of the layer to create a new one.
     currentBuilder = LayerBuilder.childLayer(parent: currentBuilder, layer: retainedLayer.emptyClone());
     for (final LayerDrawCommand command in revisedDrawCommands) {
       switch (command) {

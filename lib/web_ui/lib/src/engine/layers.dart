@@ -517,9 +517,8 @@ class LayerSlice {
 }
 
 mixin PictureEngineLayer implements ui.EngineLayer {
-  // Each layer is represented as a series of "slices" which contain either
-  // flutter content or platform views. Slices in this list are ordered from
-  // bottom to top.
+  // Each layer is represented as a series of "slices" which contain flutter content
+  // with platform views on top. This is ordered from bottommost to topmost.
   List<LayerSlice?> slices = [];
 
   List<LayerDrawCommand> drawCommands = [];

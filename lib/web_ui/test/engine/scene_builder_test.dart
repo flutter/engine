@@ -183,6 +183,10 @@ void testMain() {
     });
 
     test('grid view test', () {
+      // This test case covers a grid of elements, where each element is a platform
+      // view that has flutter content underneath it and on top of it.
+      // See a detailed explanation of this use-case in the following flutter issue:
+      // https://github.com/flutter/flutter/issues/149863
       final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
 
       const double padding = 10;
@@ -220,6 +224,9 @@ void testMain() {
 
       final EngineScene scene = sceneBuilder.build() as EngineScene;
       final List<LayerSlice?> slices = scene.rootLayer.slices;
+
+      // It is important that the optimizations of the scene builder result in
+      // there only being two scene slices.
       expect(slices.length, 2);
       expect(slices[0], layerSlice(
         withPictureRect: const ui.Rect.fromLTRB(
