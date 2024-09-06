@@ -130,7 +130,7 @@ class OcclusionMapBranch implements OcclusionMapNode {
     if (leftOtherArea < rightOtherArea) {
       if (leftOtherArea < leftRightArea) {
         return OcclusionMapBranch(
-          OcclusionMapBranch(left, OcclusionMapLeaf(other)),
+          left.insert(other),
           right,
         );
       }
@@ -138,7 +138,7 @@ class OcclusionMapBranch implements OcclusionMapNode {
       if (rightOtherArea < leftRightArea) {
         return OcclusionMapBranch(
           left,
-          OcclusionMapBranch(right, OcclusionMapLeaf(other)),
+          right.insert(other),
         );
       }
     }
