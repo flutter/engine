@@ -398,7 +398,11 @@ void ExperimentalCanvas::SaveLayer(
   // When an image filter is present, clamp to avoid flicking due to nearest
   // sampled image. For other cases, round out to ensure than any geometry is
   // not cut off.
+  //
   // See also this bug: https://github.com/flutter/flutter/issues/144213
+  //
+  // TODO(jonahwilliams): this could still round out for filters that use decal
+  // sampling mode.
   ISize subpass_size;
   bool did_round_out = false;
   if (paint.image_filter) {
@@ -558,7 +562,8 @@ bool ExperimentalCanvas::Restore() {
       // Subpass coverage was rounded out, origin potentially moved "down" by
       // as much as a pixel.
       subpass_texture_position =
-          (save_layer_state.coverage.GetOrigin() - global_pass_position).Floor();
+          (save_layer_state.coverage.GetOrigin() - global_pass_position)
+              .Floor();
     } else {
       // Subpass coverage was truncated. Pick the closest phyiscal pixel.
       subpass_texture_position =
