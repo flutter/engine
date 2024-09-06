@@ -1789,14 +1789,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testClipRect_multipleClips {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/GetDefaultTaskRunner(),
-                               /*raster=*/GetDefaultTaskRunner(),
-                               /*ui=*/GetDefaultTaskRunner(),
-                               /*io=*/GetDefaultTaskRunner());
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1841,8 +1840,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeWithParams(
-      2, flutterPlatformViewsController->GetCompositionParams(2));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -1985,14 +1983,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testClipRRect_multipleClips {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/GetDefaultTaskRunner(),
-                               /*raster=*/GetDefaultTaskRunner(),
-                               /*ui=*/GetDefaultTaskRunner(),
-                               /*io=*/GetDefaultTaskRunner());
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2037,8 +2034,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeWithParams(
-      2, flutterPlatformViewsController->GetCompositionParams(2));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2206,14 +2202,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testClipPath_multipleClips {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
-
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
-                               /*platform=*/GetDefaultTaskRunner(),
-                               /*raster=*/GetDefaultTaskRunner(),
-                               /*ui=*/GetDefaultTaskRunner(),
-                               /*io=*/GetDefaultTaskRunner());
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2259,8 +2254,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
-  flutterPlatformViewsController->CompositeWithParams(
-      2, flutterPlatformViewsController->GetCompositionParams(2));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
