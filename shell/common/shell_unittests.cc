@@ -4302,11 +4302,11 @@ TEST_F(ShellTest, NavigationMessageDispachedImmediately) {
         "flutter/navigation",
         {{"method", "setInitialRoute"}, {"args", "/testo"}}, nullptr);
     SendPlatformMessage(shell.get(), std::move(message));
+    EXPECT_EQ(shell->GetEngine()->InitialRoute(), "/testo");
+
     latch->CountDown();
   });
   latch->Wait();
-
-  EXPECT_EQ(shell->GetEngine()->InitialRoute(), "/testo");
 
   DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
