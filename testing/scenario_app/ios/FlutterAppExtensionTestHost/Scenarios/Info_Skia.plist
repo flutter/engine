@@ -5,7 +5,7 @@
 <dict>
 	<!--This flag does not do anything, it only makes the xcodebuild command happy-->
 	<key>FLTEnableImpeller</key>
-	<true/>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
