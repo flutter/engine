@@ -1481,21 +1481,6 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-template <typename Contents>
-static std::optional<Rect> GetCoverageOfFirstEntity(const Picture& picture) {
-  std::optional<Rect> coverage;
-  picture.pass->IterateAllEntities([&coverage](Entity& entity) {
-    if (std::static_pointer_cast<Contents>(entity.GetContents())) {
-      auto contents = std::static_pointer_cast<Contents>(entity.GetContents());
-      Entity entity;
-      coverage = contents->GetCoverage(entity);
-      return false;
-    }
-    return true;
-  });
-  return coverage;
-}
-
 #ifdef IMPELLER_ENABLE_3D
 TEST_P(DisplayListTest, SceneColorSource) {
   // Load up the scene.

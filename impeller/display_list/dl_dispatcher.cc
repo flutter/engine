@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
@@ -36,11 +36,11 @@
 
 namespace impeller {
 
-#if EXPERIMENTAL_CANVAS && !defined(NDEBUG)
+#if !defined(NDEBUG)
 #define USE_DEPTH_WATCHER true
-#else  // EXPERIMENTAL_CANVAS && !defined(NDEBUG)
+#else
 #define USE_DEPTH_WATCHER false
-#endif  // EXPERIMENTAL_CANVAS && !defined(NDEBUG)
+#endif  //  !defined(NDEBUG)
 
 #if USE_DEPTH_WATCHER
 
@@ -1373,24 +1373,7 @@ void DlDispatcherBase::drawShadow(const CacheablePath& cache,
   GetCanvas().Restore();
 }
 
-Picture DlDispatcherBase::EndRecordingAsPicture() {
-  TRACE_EVENT0("impeller", "DisplayListDispatcher::EndRecordingAsPicture");
-  return GetCanvas().EndRecordingAsPicture();
-}
-
 /// Subclasses
-
-#if !EXPERIMENTAL_CANVAS
-DlDispatcher::DlDispatcher() = default;
-
-DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
-
-DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
-
-Canvas& DlDispatcher::GetCanvas() {
-  return canvas_;
-}
-#endif  // !EXPERIMENTAL_CANVAS
 
 static bool RequiresReadbackForBlends(
     const ContentContext& renderer,
@@ -1617,6 +1600,34 @@ std::shared_ptr<Texture> DisplayListToTexture(
   context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
 
   return target.GetRenderTargetTexture();
+}
+
+bool RenderToOnscreen(AiksContext& context,
+                      RenderTarget render_target,
+                      const sk_sp<flutter::DisplayList>& display_list,
+                      SkIRect cull_rect,
+                      bool reset_host_buffer) {
+  TextFrameDispatcher collector(context.GetContentContext(),
+                                impeller::Matrix());
+  display_list->Dispatch(collector, cull_rect);
+
+  IRect ip_cull_rect = IRect::MakeLTRB(cull_rect.left(), cull_rect.top(),
+                                       cull_rect.right(), cull_rect.bottom());
+  impeller::ExperimentalDlDispatcher impeller_dispatcher(
+      context.GetContentContext(),               //
+      render_target,                             //
+      display_list->root_has_backdrop_filter(),  //
+      display_list->max_root_blend_mode(),       //
+      ip_cull_rect                               //
+  );
+  display_list->Dispatch(impeller_dispatcher, cull_rect);
+  impeller_dispatcher.FinishRecording();
+  if (reset_host_buffer) {
+    context.GetContentContext().GetTransientsBuffer().Reset();
+  }
+  context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+
+  return true;
 }
 
 }  // namespace impeller

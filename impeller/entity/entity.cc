@@ -12,7 +12,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"

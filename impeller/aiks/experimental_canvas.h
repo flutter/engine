@@ -13,8 +13,9 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
+#include "impeller/entity/entity_pass_target.h"
+#include "impeller/entity/inline_pass_context.h"
 
 namespace impeller {
 

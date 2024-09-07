@@ -23,7 +23,6 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
@@ -164,84 +163,16 @@ Canvas::~Canvas() = default;
 
 void Canvas::Initialize(std::optional<Rect> cull_rect) {
   initial_cull_rect_ = cull_rect;
-  base_pass_ = std::make_unique<EntityPass>();
-  base_pass_->SetClipDepth(++current_depth_);
-  current_pass_ = base_pass_.get();
   transform_stack_.emplace_back(CanvasStackEntry{
       .cull_rect = cull_rect,
       .clip_depth = kMaxDepth,
   });
   FML_DCHECK(GetSaveCount() == 1u);
-  FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
 
 void Canvas::Reset() {
-  base_pass_ = nullptr;
-  current_pass_ = nullptr;
   current_depth_ = 0u;
   transform_stack_ = {};
-}
-
-void Canvas::Save(uint32_t total_content_depth) {
-  Save(false, total_content_depth);
-}
-
-void Canvas::Save(bool create_subpass,
-                  uint32_t total_content_depth,
-                  BlendMode blend_mode,
-                  const std::shared_ptr<ImageFilter>& backdrop_filter) {
-  auto entry = CanvasStackEntry{};
-  entry.transform = transform_stack_.back().transform;
-  entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_height = transform_stack_.back().clip_height;
-  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
-  if (create_subpass) {
-    entry.rendering_mode =
-        Entity::RenderingMode::kSubpassAppendSnapshotTransform;
-    auto subpass = std::make_unique<EntityPass>();
-    if (backdrop_filter) {
-      EntityPass::BackdropFilterProc backdrop_filter_proc =
-          [backdrop_filter = backdrop_filter->Clone()](
-              const FilterInput::Ref& input, const Matrix& effect_transform,
-              Entity::RenderingMode rendering_mode) {
-            auto filter = backdrop_filter->WrapInput(input);
-            filter->SetEffectTransform(effect_transform);
-            filter->SetRenderingMode(rendering_mode);
-            return filter;
-          };
-      subpass->SetBackdropFilter(backdrop_filter_proc);
-    }
-    subpass->SetBlendMode(blend_mode);
-    current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
-    current_pass_->SetTransform(transform_stack_.back().transform);
-    current_pass_->SetClipHeight(transform_stack_.back().clip_height);
-  }
-  transform_stack_.emplace_back(entry);
-}
-
-bool Canvas::Restore() {
-  FML_DCHECK(transform_stack_.size() > 0);
-  if (transform_stack_.size() == 1) {
-    return false;
-  }
-  size_t num_clips = transform_stack_.back().num_clips;
-  current_pass_->PopClips(num_clips, current_depth_);
-
-  if (transform_stack_.back().rendering_mode ==
-          Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
-      transform_stack_.back().rendering_mode ==
-          Entity::RenderingMode::kSubpassPrependSnapshotTransform) {
-    current_pass_->SetClipDepth(++current_depth_);
-    current_pass_ = GetCurrentPass().GetSuperpass();
-    FML_DCHECK(current_pass_);
-  }
-
-  transform_stack_.pop_back();
-  if (num_clips > 0) {
-    RestoreClip();
-  }
-
-  return true;
 }
 
 void Canvas::Concat(const Matrix& transform) {
@@ -771,114 +702,8 @@ void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
   AddRenderEntityToCurrentPass(std::move(entity));
 }
 
-Picture Canvas::EndRecordingAsPicture() {
-  // Assign clip depths to any outstanding clip entities.
-  while (current_pass_ != nullptr) {
-    current_pass_->PopAllClips(current_depth_);
-    current_pass_ = current_pass_->GetSuperpass();
-  }
-
-  Picture picture;
-  picture.pass = std::move(base_pass_);
-
-  Reset();
-  Initialize(initial_cull_rect_);
-
-  return picture;
-}
-
-EntityPass& Canvas::GetCurrentPass() {
-  FML_DCHECK(current_pass_ != nullptr);
-  return *current_pass_;
-}
-
 size_t Canvas::GetClipHeight() const {
   return transform_stack_.back().clip_height;
-}
-
-void Canvas::AddRenderEntityToCurrentPass(Entity entity, bool reuse_depth) {
-  if (!reuse_depth) {
-    ++current_depth_;
-  }
-  entity.SetClipDepth(current_depth_);
-  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
-  GetCurrentPass().AddEntity(std::move(entity));
-}
-
-void Canvas::AddClipEntityToCurrentPass(Entity entity) {
-  GetCurrentPass().PushClip(std::move(entity));
-}
-
-void Canvas::SaveLayer(const Paint& paint,
-                       std::optional<Rect> bounds,
-                       const std::shared_ptr<ImageFilter>& backdrop_filter,
-                       ContentBoundsPromise bounds_promise,
-                       uint32_t total_content_depth,
-                       bool can_distribute_opacity) {
-  if (can_distribute_opacity && !backdrop_filter &&
-      Paint::CanApplyOpacityPeephole(paint) &&
-      bounds_promise != ContentBoundsPromise::kMayClipContents) {
-    Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
-    transform_stack_.back().distributed_opacity *= paint.color.alpha;
-    return;
-  }
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
-
-  Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
-
-  // The DisplayList bounds/rtree doesn't account for filters applied to parent
-  // layers, and so sub-DisplayLists are getting culled as if no filters are
-  // applied.
-  // See also: https://github.com/flutter/flutter/issues/139294
-  if (paint.image_filter) {
-    transform_stack_.back().cull_rect = std::nullopt;
-  }
-
-  auto& new_layer_pass = GetCurrentPass();
-  if (bounds) {
-    new_layer_pass.SetBoundsLimit(bounds);
-  }
-
-  // When applying a save layer, absorb any pending distributed opacity.
-  Paint paint_copy = paint;
-  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
-  transform_stack_.back().distributed_opacity = 1.0;
-
-  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
-}
-
-void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                           Point position,
-                           const Paint& paint) {
-  Entity entity;
-  entity.SetBlendMode(paint.blend_mode);
-
-  auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(text_frame);
-  text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
-  text_contents->SetOffset(position);
-  text_contents->SetColor(paint.color);
-  text_contents->SetTextProperties(paint.color,                           //
-                                   paint.style == Paint::Style::kStroke,  //
-                                   paint.stroke_width,                    //
-                                   paint.stroke_cap,                      //
-                                   paint.stroke_join,                     //
-                                   paint.stroke_miter                     //
-  );
-
-  entity.SetTransform(GetCurrentTransform() *
-                      Matrix::MakeTranslation(position));
-
-  // TODO(bdero): This mask blur application is a hack. It will always wind up
-  //              doing a gaussian blur that affects the color source itself
-  //              instead of just the mask. The color filter text support
-  //              needs to be reworked in order to interact correctly with
-  //              mask filters.
-  //              https://github.com/flutter/flutter/issues/133297
-  entity.SetContents(paint.WithFilters(paint.WithMaskBlur(
-      std::move(text_contents), true, GetCurrentTransform())));
-
-  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 static bool UseColorSourceContents(

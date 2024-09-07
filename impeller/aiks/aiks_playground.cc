@@ -28,44 +28,6 @@ void AiksPlayground::TearDown() {
   PlaygroundTest::TearDown();
 }
 
-bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
-  if (!switches_.enable_playground) {
-    return true;
-  }
-
-  AiksContext renderer(GetContext(), typographer_context_);
-
-  if (!renderer.IsValid()) {
-    return false;
-  }
-
-  return Playground::OpenPlaygroundHere(
-      [&renderer, &picture](RenderTarget& render_target) -> bool {
-        return renderer.Render(picture, render_target, true);
-      });
-}
-
-bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
-  if (!switches_.enable_playground) {
-    return true;
-  }
-
-  AiksContext renderer(GetContext(), typographer_context_);
-
-  if (!renderer.IsValid()) {
-    return false;
-  }
-
-  return Playground::OpenPlaygroundHere(
-      [&renderer, &callback](RenderTarget& render_target) -> bool {
-        std::optional<Picture> picture = callback(renderer);
-        if (!picture.has_value()) {
-          return false;
-        }
-        return renderer.Render(*picture, render_target, true);
-      });
-}
-
 bool AiksPlayground::ImGuiBegin(const char* name,
                                 bool* p_open,
                                 ImGuiWindowFlags flags) {
@@ -88,7 +50,6 @@ bool AiksPlayground::OpenPlaygroundHere(
 
   return Playground::OpenPlaygroundHere(
       [&renderer, &callback](RenderTarget& render_target) -> bool {
-#if EXPERIMENTAL_CANVAS
         auto display_list = callback();
         TextFrameDispatcher collector(renderer.GetContentContext(), Matrix());
         display_list->Dispatch(collector);
@@ -102,14 +63,6 @@ bool AiksPlayground::OpenPlaygroundHere(
         renderer.GetContentContext().GetTransientsBuffer().Reset();
         renderer.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
         return true;
-#else
-        auto display_list = callback();
-        DlDispatcher dispatcher;
-        display_list->Dispatch(dispatcher);
-        Picture picture = dispatcher.EndRecordingAsPicture();
-
-        return renderer.Render(picture, render_target, true);
-#endif  // EXPERIMENTAL_CANVAS
       });
 }
 

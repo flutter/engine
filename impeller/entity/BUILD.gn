@@ -170,8 +170,6 @@ impeller_component("entity") {
     "draw_order_resolver.h",
     "entity.cc",
     "entity.h",
-    "entity_pass.cc",
-    "entity_pass.h",
     "entity_pass_clip_stack.cc",
     "entity_pass_clip_stack.h",
     "entity_pass_delegate.cc",

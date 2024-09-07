@@ -13,10 +13,8 @@
 
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
-#include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/matrix.h"
@@ -61,9 +59,31 @@ enum class SourceRectConstraint {
   kStrict,
 };
 
+/// Specifies how much to trust the bounds rectangle provided for a list
+/// of contents. Used by both |EntityPass| and |Canvas::SaveLayer|.
+enum class ContentBoundsPromise {
+  /// @brief The caller makes no claims related to the size of the bounds.
+  kUnknown,
+
+  /// @brief The caller claims the bounds are a reasonably tight estimate
+  ///        of the coverage of the contents and should contain all of the
+  ///        contents.
+  kContainsContents,
+
+  /// @brief The caller claims the bounds are a subset of an estimate of
+  ///        the reasonably tight bounds but likely clips off some of the
+  ///        contents.
+  kMayClipContents,
+};
+
 class Canvas {
  public:
   static constexpr uint32_t kMaxDepth = 1 << 24;
+
+  using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      const Matrix& effect_transform,
+      Entity::RenderingMode rendering_mode)>;
 
   Canvas();
 
@@ -73,7 +93,7 @@ class Canvas {
 
   virtual ~Canvas();
 
-  virtual void Save(uint32_t total_content_depth = kMaxDepth);
+  virtual void Save(uint32_t total_content_depth = kMaxDepth) = 0;
 
   virtual void SaveLayer(
       const Paint& paint,
@@ -81,9 +101,9 @@ class Canvas {
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
-      bool can_distribute_opacity = false);
+      bool can_distribute_opacity = false) = 0;
 
-  virtual bool Restore();
+  virtual bool Restore() = 0;
 
   size_t GetSaveCount() const;
 
@@ -164,7 +184,7 @@ class Canvas {
 
   virtual void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                              Point position,
-                             const Paint& paint);
+                             const Paint& paint) = 0;
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
@@ -178,8 +198,6 @@ class Canvas {
                  SamplerDescriptor sampler,
                  std::optional<Rect> cull_rect,
                  const Paint& paint);
-
-  Picture EndRecordingAsPicture();
 
   uint64_t GetOpDepth() const { return current_depth_; }
   uint64_t GetMaxOpDepth() const { return transform_stack_.back().clip_depth; }
@@ -196,26 +214,15 @@ class Canvas {
   void Reset();
 
  private:
-  std::unique_ptr<EntityPass> base_pass_;
-  EntityPass* current_pass_ = nullptr;
-
-  EntityPass& GetCurrentPass();
-
   virtual void AddRenderEntityToCurrentPass(Entity entity,
-                                            bool reuse_depth = false);
-  virtual void AddClipEntityToCurrentPass(Entity entity);
+                                            bool reuse_depth = false) = 0;
+  virtual void AddClipEntityToCurrentPass(Entity entity) = 0;
 
   void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
 
   void IntersectCulling(Rect clip_bounds);
   void SubtractCulling(Rect clip_bounds);
-
-  virtual void Save(
-      bool create_subpass,
-      uint32_t total_content_depth,
-      BlendMode = BlendMode::kSourceOver,
-      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 

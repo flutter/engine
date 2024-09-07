@@ -9,6 +9,7 @@
 #include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "fml/logging.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
@@ -22,8 +23,6 @@ using DlPoint = flutter::DlPoint;
 
 class DlDispatcherBase : public flutter::DlOpReceiver {
  public:
-  Picture EndRecordingAsPicture();
-
   // |flutter::DlOpReceiver|
   bool PrefersImpellerPaths() const override { return true; }
 
@@ -261,45 +260,6 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                                  const Paint& paint);
 };
 
-#if !EXPERIMENTAL_CANVAS
-class DlDispatcher : public DlDispatcherBase {
- public:
-  DlDispatcher();
-
-  explicit DlDispatcher(IRect cull_rect);
-
-  explicit DlDispatcher(Rect cull_rect);
-
-  ~DlDispatcher() = default;
-
-  // |flutter::DlOpReceiver|
-  void save() override {
-    // This dispatcher is used from test cases that might not supply
-    // a content_depth parameter. Since this dispatcher doesn't use
-    // the value, we just pass through a 0.
-    DlDispatcherBase::save(0u);
-  }
-  using DlDispatcherBase::save;
-
-  // |flutter::DlOpReceiver|
-  void saveLayer(const SkRect& bounds,
-                 const flutter::SaveLayerOptions options,
-                 const flutter::DlImageFilter* backdrop) override {
-    // This dispatcher is used from test cases that might not supply
-    // a content_depth parameter. Since this dispatcher doesn't use
-    // the value, we just pass through a 0.
-    DlDispatcherBase::saveLayer(bounds, options, 0u,
-                                flutter::DlBlendMode::kLastMode, backdrop);
-  }
-  using DlDispatcherBase::saveLayer;
-
- private:
-  Canvas canvas_;
-
-  Canvas& GetCanvas() override;
-};
-#endif  // !EXPERIMENTAL_CANVAS
-
 class ExperimentalDlDispatcher : public DlDispatcherBase {
  public:
   ExperimentalDlDispatcher(ContentContext& renderer,
@@ -410,6 +370,12 @@ std::shared_ptr<Texture> DisplayListToTexture(
     const sk_sp<flutter::DisplayList>& display_list,
     ISize size,
     AiksContext& context);
+
+/// Render the provided display list to the render target.
+bool RenderToOnscreen(AiksContext& context, RenderTarget render_target,
+                         const sk_sp<flutter::DisplayList>& display_list,
+                         SkIRect cull_rect,
+                         bool reset_host_buffer);
 
 }  // namespace impeller
 

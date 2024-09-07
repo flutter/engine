@@ -12,8 +12,7 @@
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
-#define ENABLE_EXPERIMENTAL_CANVAS false
-#endif  // IMPELLER_SUPPORTS_RENDERING
+#endif                                            // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -129,7 +128,6 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     slice_->render_into(&dl_builder);
     auto display_list = dl_builder.Build();
 
-#if EXPERIMENTAL_CANVAS
     auto cull_rect =
         impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
     SkIRect sk_cull_rect =
@@ -144,16 +142,9 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
         display_list->max_root_blend_mode(), cull_rect);
     display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
     impeller_dispatcher.FinishRecording();
-    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
     aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-
+    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
     return true;
-#else
-    auto dispatcher = impeller::DlDispatcher();
-    dispatcher.drawDisplayList(display_list, 1);
-    return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
-                                *impeller_target, /*reset_host_buffer=*/true);
-#endif
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

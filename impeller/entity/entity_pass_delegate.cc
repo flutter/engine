@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/entity_pass_delegate.h"
-#include "impeller/entity/entity_pass.h"
 
 namespace impeller {
 

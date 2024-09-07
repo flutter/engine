@@ -420,7 +420,7 @@ void ExperimentalCanvas::SaveLayer(
   Point local_position = {0, 0};
   if (backdrop_filter) {
     local_position = subpass_coverage.GetOrigin() - GetGlobalPassPosition();
-    EntityPass::BackdropFilterProc backdrop_filter_proc =
+    Canvas::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
             Entity::RenderingMode rendering_mode) {

@@ -33,11 +33,9 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/entity/render_target_cache.h"
@@ -107,43 +105,6 @@ class TestPassDelegate final : public EntityPassDelegate {
   const std::optional<Rect> coverage_;
   const bool collapse_;
 };
-
-auto CreatePassWithRectPath(
-    Rect rect,
-    std::optional<Rect> bounds_hint,
-    ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
-    bool collapse = false) {
-  auto subpass = std::make_unique<EntityPass>();
-  Entity entity;
-  entity.SetContents(SolidColorContents::Make(
-      PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  subpass->AddEntity(std::move(entity));
-  subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
-  subpass->SetBoundsLimit(bounds_hint);
-  return subpass;
-}
-
-TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
-  // Both a red and a blue box should appear if the pass merging has worked
-  // correctly.
-
-  EntityPass pass;
-  auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
-                                        Rect::MakeLTRB(50, 50, 150, 150),
-                                        ContentBoundsPromise::kUnknown, true);
-  pass.AddSubpass(std::move(subpass));
-
-  Entity entity;
-  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  contents->SetColor(Color::Blue());
-  entity.SetContents(std::move(contents));
-
-  pass.AddEntity(std::move(entity));
-
-  ASSERT_TRUE(OpenPlaygroundHere(pass));
-}
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
@@ -2330,56 +2291,6 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f, 12), 48.0f);
-}
-
-TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
-  if (GetContext()->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage "
-                    "for advanced blends.";
-  }
-
-  auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
-  contents->SetColor(Color::Red());
-
-  Entity entity;
-  entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
-  entity.SetBlendMode(BlendMode::kColorBurn);
-  entity.SetContents(contents);
-
-  auto coverage = entity.GetCoverage();
-  EXPECT_TRUE(coverage.has_value());
-
-  auto pass = std::make_unique<EntityPass>();
-  std::shared_ptr<RenderTargetCache> render_target_allocator =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  auto stencil_config = RenderTarget::AttachmentConfig{
-      .storage_mode = StorageMode::kDevicePrivate,
-      .load_action = LoadAction::kClear,
-      .store_action = StoreAction::kDontCare,
-      .clear_color = Color::BlackTransparent()};
-  auto rt = render_target_allocator->CreateOffscreen(
-      *GetContext(), ISize::MakeWH(1000, 1000),
-      /*mip_count=*/1, "Offscreen", RenderTarget::kDefaultColorAttachmentConfig,
-      stencil_config);
-  auto content_context = ContentContext(
-      GetContext(), TypographerContextSkia::Make(), render_target_allocator);
-  pass->AddEntity(std::move(entity));
-
-  EXPECT_TRUE(pass->Render(content_context, rt));
-
-  auto contains_size = [&render_target_allocator](ISize size) -> bool {
-    return std::find_if(render_target_allocator->GetRenderTargetDataBegin(),
-                        render_target_allocator->GetRenderTargetDataEnd(),
-                        [&size](const auto& data) {
-                          return data.config.size == size;
-                        }) != render_target_allocator->GetRenderTargetDataEnd();
-  };
-
-  EXPECT_TRUE(contains_size(ISize(1000, 1000)))
-      << "The root texture wasn't allocated";
-  EXPECT_TRUE(contains_size(ISize(200, 200)))
-      << "The ColorBurned texture wasn't allocated (100x100 scales up 2x)";
 }
 
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {

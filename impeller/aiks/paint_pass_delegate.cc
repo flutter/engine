@@ -7,7 +7,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/texture_contents.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {

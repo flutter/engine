@@ -22,8 +22,6 @@ impeller_component("aiks") {
     "paint.h",
     "paint_pass_delegate.cc",
     "paint_pass_delegate.h",
-    "picture.cc",
-    "picture.h",
   ]
 
   public_deps = [
@@ -115,14 +113,5 @@ aiks_unittests_component("aiks_unittests_golden") {
   defines = [
     "IMPELLER_GOLDEN_TESTS",
     "IMPELLER_ENABLE_VALIDATION=1",
-  ]
-}
-
-executable("canvas_benchmarks") {
-  testonly = true
-  sources = [ "canvas_benchmarks.cc" ]
-  deps = [
-    ":aiks",
-    "//flutter/benchmarking",
   ]
 }
