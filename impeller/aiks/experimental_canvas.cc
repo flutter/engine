@@ -10,7 +10,6 @@
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
-#include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
@@ -153,6 +152,23 @@ static std::shared_ptr<Texture> FlipBackdrop(
   }
 
   return input_texture;
+}
+
+/// @brief Create the subpass restore contents, appling any filters or opacity
+///        from the provided paint object.
+static std::shared_ptr<Contents> CreateContentsForSubpassTarget(
+    const Paint& paint,
+    const std::shared_ptr<Texture>& target,
+    const Matrix& effect_transform) {
+  auto contents = TextureContents::MakeRect(Rect::MakeSize(target->GetSize()));
+  contents->SetTexture(target);
+  contents->SetLabel("Subpass");
+  contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
+  contents->SetOpacity(paint.color.alpha);
+  contents->SetDeferApplyingOpacity(true);
+
+  return paint.WithFiltersForSubpassTarget(std::move(contents),
+                                           effect_transform);
 }
 
 }  // namespace
@@ -535,12 +551,12 @@ bool ExperimentalCanvas::Restore() {
     save_layer_state_.pop_back();
     auto global_pass_position = GetGlobalPassPosition();
 
-    std::shared_ptr<Contents> contents =
-        PaintPassDelegate(save_layer_state.paint)
-            .CreateContentsForSubpassTarget(
-                lazy_render_pass.inline_pass_context->GetTexture(),
-                Matrix::MakeTranslation(Vector3{-global_pass_position}) *
-                    transform_stack_.back().transform);
+    std::shared_ptr<Contents> contents = CreateContentsForSubpassTarget(
+        save_layer_state.paint,                                    //
+        lazy_render_pass.inline_pass_context->GetTexture(),        //
+        Matrix::MakeTranslation(Vector3{-global_pass_position}) *  //
+            transform_stack_.back().transform                      //
+    );
 
     lazy_render_pass.inline_pass_context->EndPass();
 

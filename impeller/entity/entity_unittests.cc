@@ -33,7 +33,6 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
@@ -71,40 +70,6 @@ TEST_P(EntityTest, CanCreateEntity) {
   Entity entity;
   ASSERT_TRUE(entity.GetTransform().IsIdentity());
 }
-
-class TestPassDelegate final : public EntityPassDelegate {
- public:
-  explicit TestPassDelegate(bool collapse = false) : collapse_(collapse) {}
-
-  // |EntityPassDelegate|
-  ~TestPassDelegate() override = default;
-
-  // |EntityPassDelgate|
-  bool CanElide() override { return false; }
-
-  // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override {
-    return collapse_;
-  }
-
-  // |EntityPassDelgate|
-  std::shared_ptr<Contents> CreateContentsForSubpassTarget(
-      std::shared_ptr<Texture> target,
-      const Matrix& transform) override {
-    return nullptr;
-  }
-
-  // |EntityPassDelegate|
-  std::shared_ptr<FilterContents> WithImageFilter(
-      const FilterInput::Variant& input,
-      const Matrix& effect_transform) const override {
-    return nullptr;
-  }
-
- private:
-  const std::optional<Rect> coverage_;
-  const bool collapse_;
-};
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   auto image = CreateTextureForFixture("boston.jpg");
