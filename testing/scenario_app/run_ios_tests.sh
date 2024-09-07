@@ -98,6 +98,8 @@ rm -rf $RESULT_BUNDLE_PATH
 echo "Running simulator tests with Skia"
 echo ""
 
+# Override Info.plist with FLTEnableImpeller=NO, all projects in the workspace requires a Info_Skia.plist.
+# For example, FlutterAppExtensionTestHost has a Info_Skia.plist dummy file in its directory.
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
