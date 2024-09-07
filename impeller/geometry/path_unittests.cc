@@ -48,7 +48,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(100, 50));
-    EXPECT_TRUE(contour.is_closed);
+    EXPECT_TRUE(contour.IsClosed());
   }
 
   {
@@ -57,7 +57,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(150, 100));
-    EXPECT_TRUE(contour.is_closed);
+    EXPECT_TRUE(contour.IsClosed());
   }
 
   {
@@ -66,7 +66,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(100, 100));
-    EXPECT_TRUE(contour.is_closed);
+    EXPECT_TRUE(contour.IsClosed());
   }
 
   {
@@ -76,7 +76,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(110, 100));
-    EXPECT_TRUE(contour.is_closed);
+    EXPECT_TRUE(contour.IsClosed());
   }
 
   {
@@ -87,7 +87,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(110, 100));
-    EXPECT_TRUE(contour.is_closed);
+    EXPECT_TRUE(contour.IsClosed());
   }
 
   // Open shapes.
@@ -97,7 +97,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     ASSERT_POINT_NEAR(contour.destination, p);
-    ASSERT_FALSE(contour.is_closed);
+    ASSERT_FALSE(contour.IsClosed());
   }
 
   {
@@ -108,7 +108,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_FALSE(contour.is_closed);
+    ASSERT_FALSE(contour.IsClosed());
   }
 
   {
@@ -118,7 +118,7 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_FALSE(contour.is_closed);
+    ASSERT_FALSE(contour.IsClosed());
   }
 }
 
@@ -394,66 +394,6 @@ TEST(PathTest, EmptyPath) {
   ASSERT_TRUE(polyline.contours.empty());
 }
 
-TEST(PathTest, SimplePath) {
-  PathBuilder builder;
-
-  auto path = builder.AddLine({0, 0}, {100, 100})
-                  .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
-                  .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
-                  .TakePath();
-
-  ASSERT_EQ(path.GetComponentCount(), 6u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 3u);
-
-  path.EnumerateComponents(
-      [](size_t index, const LinearPathComponent& linear) {
-        Point p1(0, 0);
-        Point p2(100, 100);
-        ASSERT_EQ(index, 1u);
-        ASSERT_EQ(linear.p1, p1);
-        ASSERT_EQ(linear.p2, p2);
-      },
-      [](size_t index, const QuadraticPathComponent& quad) {
-        Point p1(100, 100);
-        Point cp(200, 200);
-        Point p2(300, 300);
-        ASSERT_EQ(index, 3u);
-        ASSERT_EQ(quad.p1, p1);
-        ASSERT_EQ(quad.cp, cp);
-        ASSERT_EQ(quad.p2, p2);
-      },
-      [](size_t index, const CubicPathComponent& cubic) {
-        Point p1(300, 300);
-        Point cp1(400, 400);
-        Point cp2(500, 500);
-        Point p2(600, 600);
-        ASSERT_EQ(index, 5u);
-        ASSERT_EQ(cubic.p1, p1);
-        ASSERT_EQ(cubic.cp1, cp1);
-        ASSERT_EQ(cubic.cp2, cp2);
-        ASSERT_EQ(cubic.p2, p2);
-      },
-      [](size_t index, const ContourComponent& contour) {
-        // There is an initial countour added for each curve.
-        if (index == 0u) {
-          Point p1(0, 0);
-          ASSERT_EQ(contour.destination, p1);
-        } else if (index == 2u) {
-          Point p1(100, 100);
-          ASSERT_EQ(contour.destination, p1);
-        } else if (index == 4u) {
-          Point p1(300, 300);
-          ASSERT_EQ(contour.destination, p1);
-        } else {
-          ASSERT_FALSE(true);
-        }
-        ASSERT_FALSE(contour.is_closed);
-      });
-}
-
 TEST(PathTest, RepeatCloseDoesNotAddNewLines) {
   PathBuilder builder;
   auto path = builder.LineTo({0, 10})
@@ -553,7 +493,7 @@ TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
             ContourComponent contour;
             EXPECT_TRUE(path.GetContourComponentAtIndex(0, contour)) << label;
             EXPECT_EQ(contour.destination, offset + Point(10, 10)) << label;
-            EXPECT_EQ(contour.is_closed, is_closed) << label;
+            EXPECT_EQ(contour.IsClosed(), is_closed) << label;
           }
           {
             LinearPathComponent line;
