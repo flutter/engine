@@ -79,6 +79,22 @@ echo "Creating $DEVICE_NAME $DEVICE $OS_RUNTIME ..."
 xcrun simctl create "$DEVICE_NAME" "$DEVICE" "$OS_RUNTIME"
 echo ""
 
+echo "Running simulator tests with Impeller"
+echo ""
+
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
+  -scheme Scenarios \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
+  -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
+  clean test \
+  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  echo "test success."
+else
+  echo "test failed."
+  zip_and_upload_xcresult_to_luci "ios_scenario_xcresult.zip"
+fi
+rm -rf $RESULT_BUNDLE_PATH
+
 echo "Running simulator tests with Skia"
 echo ""
 
@@ -89,22 +105,6 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
   INFOPLIST_FILE="Scenarios/Info_Skia.plist"; then
-  echo "test success."
-else
-  echo "test failed."
-  zip_and_upload_xcresult_to_luci "ios_scenario_xcresult.zip"
-fi
-rm -rf $RESULT_BUNDLE_PATH
-
-echo "Running simulator tests with Impeller"
-echo ""
-
-if set -o pipefail && xcodebuild -sdk iphonesimulator \
-  -scheme Scenarios \
-  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
-  -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
-  clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
   echo "test success."
 else
   echo "test failed."
