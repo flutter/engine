@@ -94,7 +94,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     display_list->Dispatch(impeller_dispatcher,
                            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
     impeller_dispatcher.FinishRecording();
-    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
     aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
     if (reset_host_buffer) {
       aiks_context->GetContentContext().GetTransientsBuffer().Reset();
