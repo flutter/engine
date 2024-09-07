@@ -5,7 +5,6 @@
 #include "impeller/geometry/path.h"
 
 #include <optional>
-#include <variant>
 
 #include "flutter/fml/logging.h"
 #include "impeller/geometry/path_component.h"
@@ -36,9 +35,6 @@ size_t Path::GetComponentCount(std::optional<ComponentType> type) const {
     return data_->components.size();
   }
   auto type_value = type.value();
-  if (type_value == ComponentType::kContour) {
-    return data_->components.size();
-  }
   size_t count = 0u;
   for (const auto& component : data_->components) {
     if (component == type_value) {
@@ -201,7 +197,7 @@ bool Path::GetContourComponentAtIndex(size_t index,
   }
   auto& points = data_->points;
 
-  move = ContourComponent(points[storage_offset], points[storage_offset]);
+  move = ContourComponent(points[storage_offset], points[storage_offset + 1]);
   return true;
 }
 
@@ -256,7 +252,7 @@ Path::Polyline Path::CreatePolyline(
 
     size_t previous_index = previous_path_component_index.value();
     size_t local_storage_offset = storage_offset;
-    while (previous_index > 0) {
+    while (previous_index >= 0 && local_storage_offset >= 0) {
       const auto& path_component = path_components[previous_index];
       switch (path_component) {
         case ComponentType::kLinear: {
@@ -294,7 +290,8 @@ Path::Polyline Path::CreatePolyline(
           return;
         };
       }
-      storage_offset -= VerbToOffset(path_component);
+      local_storage_offset -= VerbToOffset(path_component);
+      previous_index--;
     }
   };
 

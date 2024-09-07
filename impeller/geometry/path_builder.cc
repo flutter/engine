@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include "impeller/geometry/path_component.h"
+
 namespace impeller {
 
 PathBuilder::PathBuilder() {
@@ -270,8 +272,8 @@ void PathBuilder::AddContourComponent(const Point& destination,
   if (components.size() > 0 &&
       components.back() == Path::ComponentType::kContour) {
     // Never insert contiguous contours.
-    points[current_contour_location_] = closed;
-    points[current_contour_location_ + 1] = destination;
+    points[current_contour_location_] = destination;
+    points[current_contour_location_ + 1] = closed;
   } else {
     current_contour_location_ = points.size();
     points.push_back(destination);
@@ -467,9 +469,12 @@ PathBuilder& PathBuilder::Shift(Point offset) {
         cubic->p1 += offset;
         cubic->p2 += offset;
         cubic->cp1 += offset;
-        cubic->cp1 += offset;
+        cubic->cp2 += offset;
       } break;
       case Path::ComponentType::kContour:
+        auto* contour =
+            reinterpret_cast<ContourComponent*>(&points[storage_offset]);
+        contour->destination += offset;
         break;
     }
     storage_offset += Path::VerbToOffset(component);

@@ -8,6 +8,7 @@
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -392,6 +393,84 @@ TEST(PathTest, EmptyPath) {
   Path::Polyline polyline = path.CreatePolyline(1.0f);
   ASSERT_TRUE(polyline.points->empty());
   ASSERT_TRUE(polyline.contours.empty());
+}
+
+TEST(PathTest, SimplePath) {
+  PathBuilder builder;
+
+  auto path = builder.AddLine({0, 0}, {100, 100})
+                  .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
+                  .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 6u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 3u);
+
+  {
+    LinearPathComponent linear;
+    EXPECT_TRUE(path.GetLinearComponentAtIndex(1, linear));
+
+    Point p1(0, 0);
+    Point p2(100, 100);
+    EXPECT_EQ(linear.p1, p1);
+    EXPECT_EQ(linear.p2, p2);
+  }
+
+  {
+    QuadraticPathComponent quad;
+    EXPECT_TRUE(path.GetQuadraticComponentAtIndex(3, quad));
+
+    Point p1(100, 100);
+    Point cp(200, 200);
+    Point p2(300, 300);
+    EXPECT_EQ(quad.p1, p1);
+    EXPECT_EQ(quad.cp, cp);
+    EXPECT_EQ(quad.p2, p2);
+  }
+
+  {
+    CubicPathComponent cubic;
+    EXPECT_TRUE(path.GetCubicComponentAtIndex(5, cubic));
+
+    Point p1(300, 300);
+    Point cp1(400, 400);
+    Point cp2(500, 500);
+    Point p2(600, 600);
+    EXPECT_EQ(cubic.p1, p1);
+    EXPECT_EQ(cubic.cp1, cp1);
+    EXPECT_EQ(cubic.cp2, cp2);
+    EXPECT_EQ(cubic.p2, p2);
+  }
+
+  {
+    ContourComponent contour;
+    EXPECT_TRUE(path.GetContourComponentAtIndex(0, contour));
+
+    Point p1(0, 0);
+    EXPECT_EQ(contour.destination, p1);
+    EXPECT_FALSE(contour.IsClosed());
+  }
+
+  {
+    ContourComponent contour;
+    EXPECT_TRUE(path.GetContourComponentAtIndex(2, contour));
+
+    Point p1(100, 100);
+    EXPECT_EQ(contour.destination, p1);
+    EXPECT_FALSE(contour.IsClosed());
+  }
+
+  {
+    ContourComponent contour;
+    EXPECT_TRUE(path.GetContourComponentAtIndex(4, contour));
+
+    Point p1(300, 300);
+    EXPECT_EQ(contour.destination, p1);
+    EXPECT_FALSE(contour.IsClosed());
+  }
 }
 
 TEST(PathTest, RepeatCloseDoesNotAddNewLines) {
