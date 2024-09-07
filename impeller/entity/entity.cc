@@ -122,6 +122,9 @@ BlendMode Entity::GetBlendMode() const {
 }
 
 bool Entity::SetInheritedOpacity(Scalar alpha) {
+  if (alpha >= 1.0) {
+    return true;
+  }
   if (blend_mode_ == BlendMode::kSource &&
       contents_->IsOpaque(GetTransform())) {
     blend_mode_ = BlendMode::kSourceOver;
