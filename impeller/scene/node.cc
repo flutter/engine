@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <atomic>
 #include <memory>
-#include <variant>
 #include <vector>
 
 #include "flutter/fml/logging.h"
