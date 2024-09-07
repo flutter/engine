@@ -7,8 +7,8 @@
 
 #include <memory>
 #include <optional>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "impeller/base/thread.h"
 #include "impeller/base/thread_safety.h"

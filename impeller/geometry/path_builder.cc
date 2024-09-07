@@ -441,6 +441,13 @@ PathBuilder& PathBuilder::AddPath(const Path& path) {
   components.insert(components.end(), path.data_->components.begin(),
                     path.data_->components.end());
 
+  size_t source_offset = points.size();
+  for (auto component : path.data_->components) {
+    if (component == Path::ComponentType::kContour) {
+      current_contour_location_ = source_offset;
+    }
+    source_offset += Path::VerbToOffset(component);
+  }
   return *this;
 }
 
