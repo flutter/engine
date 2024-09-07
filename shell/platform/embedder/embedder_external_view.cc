@@ -133,18 +133,12 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     SkIRect sk_cull_rect =
         SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 
-    impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
-                                            impeller::Matrix());
-
-    impeller::ExperimentalDlDispatcher impeller_dispatcher(
-        aiks_context->GetContentContext(), *impeller_target,
-        display_list->root_has_backdrop_filter(),
-        display_list->max_root_blend_mode(), cull_rect);
-    display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
-    impeller_dispatcher.FinishRecording();
-    aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
-    return true;
+    return impeller::RenderToOnscreen(*aiks_context,              //
+                                      *impeller_target,           //
+                                      display_list,               //
+                                      sk_cull_rect,               //
+                                      /*reset_host_buffer=*/true  //
+    );
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
