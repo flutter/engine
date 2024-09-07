@@ -220,6 +220,72 @@ Path::Polyline::~Polyline() {
   }
 }
 
+void Path::EndContour(
+    size_t storage_offset,
+    Polyline& polyline,
+    std::optional<size_t> previous_path_component_index,
+    std::vector<PolylineContour::Component>& poly_components) const {
+  auto& path_components = data_->components;
+  auto& path_points = data_->points;
+  // Whenever a contour has ended, extract the exact end direction from
+  // the last component.
+  if (polyline.contours.empty()) {
+    return;
+  }
+
+  if (!previous_path_component_index.has_value()) {
+    return;
+  }
+
+  auto& contour = polyline.contours.back();
+  contour.end_direction = Vector2(0, 1);
+  contour.components = poly_components;
+  poly_components.clear();
+
+  size_t previous_index = previous_path_component_index.value();
+  while (previous_index >= 0 && storage_offset >= 0) {
+    const auto& path_component = path_components[previous_index];
+    switch (path_component) {
+      case ComponentType::kLinear: {
+        auto* linear = reinterpret_cast<const LinearPathComponent*>(
+            &path_points[storage_offset]);
+        auto maybe_end = linear->GetEndDirection();
+        if (maybe_end.has_value()) {
+          contour.end_direction = maybe_end.value();
+          return;
+        }
+        break;
+      }
+      case ComponentType::kQuadratic: {
+        auto* quad = reinterpret_cast<const QuadraticPathComponent*>(
+            &path_points[storage_offset]);
+        auto maybe_end = quad->GetEndDirection();
+        if (maybe_end.has_value()) {
+          contour.end_direction = maybe_end.value();
+          return;
+        }
+        break;
+      }
+      case ComponentType::kCubic: {
+        auto* cubic = reinterpret_cast<const CubicPathComponent*>(
+            &path_points[storage_offset]);
+        auto maybe_end = cubic->GetEndDirection();
+        if (maybe_end.has_value()) {
+          contour.end_direction = maybe_end.value();
+          return;
+        }
+        break;
+      }
+      case ComponentType::kContour: {
+        // Hit previous contour, return.
+        return;
+      };
+    }
+    storage_offset -= VerbToOffset(path_component);
+    previous_index--;
+  }
+};
+
 Path::Polyline Path::CreatePolyline(
     Scalar scale,
     Path::Polyline::PointBufferPtr point_buffer,
@@ -228,72 +294,10 @@ Path::Polyline Path::CreatePolyline(
 
   auto& path_components = data_->components;
   auto& path_points = data_->points;
-
   std::vector<PolylineContour::Component> poly_components;
   std::optional<size_t> previous_path_component_index;
   std::optional<Vector2> start_direction = std::nullopt;
   size_t storage_offset = 0u;
-
-  auto end_contour = [&]() {
-    // Whenever a contour has ended, extract the exact end direction from
-    // the last component.
-    if (polyline.contours.empty()) {
-      return;
-    }
-
-    if (!previous_path_component_index.has_value()) {
-      return;
-    }
-
-    auto& contour = polyline.contours.back();
-    contour.end_direction = Vector2(0, 1);
-    contour.components = poly_components;
-    poly_components.clear();
-
-    size_t previous_index = previous_path_component_index.value();
-    size_t local_storage_offset = storage_offset;
-    while (previous_index >= 0 && local_storage_offset >= 0) {
-      const auto& path_component = path_components[previous_index];
-      switch (path_component) {
-        case ComponentType::kLinear: {
-          auto* linear = reinterpret_cast<const LinearPathComponent*>(
-              &path_points[local_storage_offset]);
-          auto maybe_end = linear->GetEndDirection();
-          if (maybe_end.has_value()) {
-            contour.end_direction = maybe_end.value();
-            return;
-          }
-          break;
-        }
-        case ComponentType::kQuadratic: {
-          auto* quad = reinterpret_cast<const QuadraticPathComponent*>(
-              &path_points[local_storage_offset]);
-          auto maybe_end = quad->GetEndDirection();
-          if (maybe_end.has_value()) {
-            contour.end_direction = maybe_end.value();
-            return;
-          }
-          break;
-        }
-        case ComponentType::kCubic: {
-          auto* cubic = reinterpret_cast<const CubicPathComponent*>(
-              &path_points[local_storage_offset]);
-          auto maybe_end = cubic->GetEndDirection();
-          if (maybe_end.has_value()) {
-            contour.end_direction = maybe_end.value();
-            return;
-          }
-          break;
-        }
-        case ComponentType::kContour: {
-          // Hit previous contour, return.
-          return;
-        };
-      }
-      local_storage_offset -= VerbToOffset(path_component);
-      previous_index--;
-    }
-  };
 
   for (size_t component_i = 0; component_i < path_components.size();
        component_i++) {
@@ -347,7 +351,8 @@ Path::Polyline Path::CreatePolyline(
           // contour, so skip it.
           continue;
         }
-        end_contour();
+        EndContour(storage_offset, polyline, previous_path_component_index,
+                   poly_components);
 
         auto* contour = reinterpret_cast<const ContourComponent*>(
             &path_points[storage_offset]);
@@ -362,7 +367,11 @@ Path::Polyline Path::CreatePolyline(
     }
     storage_offset += VerbToOffset(path_component);
   }
-  end_contour();
+  // Subtract the last storage offset increment so that the storage lookup is
+  // correct.
+  storage_offset -= VerbToOffset(path_components.back());
+  EndContour(storage_offset, polyline, previous_path_component_index,
+             poly_components);
   return polyline;
 }
 
