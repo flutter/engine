@@ -40,6 +40,11 @@ bool debugShowClipLayers = false;
 /// reasonable.
 const double kScreenPixelRatioWarningThreshold = 6.0;
 
+/// A monotonically increasing frame number being rendered.
+///
+/// Used for debugging only.
+int _debugFrameNumber = 1;
+
 /// Performs any outstanding painting work enqueued by [PersistedPicture]s.
 void commitScene(PersistedScene scene) {
   if (paintQueue.isNotEmpty) {
@@ -74,7 +79,7 @@ void commitScene(PersistedScene scene) {
     retainedSurfaces = <PersistedSurface>[];
   }
   if (debugExplainSurfaceStats) {
-    debugPrintSurfaceStats(scene, debugFrameNumber);
+    debugPrintSurfaceStats(scene, _debugFrameNumber);
     debugRepaintSurfaceStatsOverlay(scene);
   }
 
@@ -97,7 +102,7 @@ void commitScene(PersistedScene scene) {
     surfaceStats = <PersistedSurface, DebugSurfaceStats>{};
   }
   assert(() {
-    debugFrameNumber++;
+    _debugFrameNumber++;
     return true;
   }());
 }
