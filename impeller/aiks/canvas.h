@@ -27,8 +27,6 @@ namespace impeller {
 
 struct CanvasStackEntry {
   Matrix transform;
-  // |cull_rect| is conservative screen-space bounds of the clipped output area
-  std::optional<Rect> cull_rect;
   uint32_t clip_depth = 0u;
   size_t clip_height = 0u;
   // The number of clips tracked for this canvas stack entry.
@@ -110,8 +108,6 @@ class Canvas {
   void RestoreToCount(size_t count);
 
   const Matrix& GetCurrentTransform() const;
-
-  const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
@@ -220,9 +216,6 @@ class Canvas {
 
   void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
-
-  void IntersectCulling(Rect clip_bounds);
-  void SubtractCulling(Rect clip_bounds);
 
   void RestoreClip();
 

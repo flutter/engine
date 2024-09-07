@@ -13,7 +13,6 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -34,10 +33,13 @@ bool IsNearlySimpleRRect(const SkRRect& rr);
 Rect ToRect(const SkRect& rect);
 
 std::optional<Rect> ToRect(const SkRect* rect);
+std::optional<const Rect> ToRect(const flutter::DlRect* rect);
 
 std::vector<Rect> ToRects(const SkRect tex[], int count);
+std::vector<Rect> ToRects(const flutter::DlRect tex[], int count);
 
 std::vector<Point> ToPoints(const SkPoint points[], int count);
+std::vector<Point> ToPoints(const flutter::DlPoint points[], int count);
 
 Point ToPoint(const SkPoint& point);
 

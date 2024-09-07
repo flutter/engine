@@ -12,7 +12,6 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/aiks/color_source.h"
 #include "impeller/aiks/image_filter.h"
-#include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_contents.h"
@@ -164,7 +163,6 @@ Canvas::~Canvas() = default;
 void Canvas::Initialize(std::optional<Rect> cull_rect) {
   initial_cull_rect_ = cull_rect;
   transform_stack_.emplace_back(CanvasStackEntry{
-      .cull_rect = cull_rect,
       .clip_depth = kMaxDepth,
   });
   FML_DCHECK(GetSaveCount() == 1u);
@@ -193,15 +191,6 @@ void Canvas::Transform(const Matrix& transform) {
 
 const Matrix& Canvas::GetCurrentTransform() const {
   return transform_stack_.back().transform;
-}
-
-const std::optional<Rect> Canvas::GetCurrentLocalCullingBounds() const {
-  auto cull_rect = transform_stack_.back().cull_rect;
-  if (cull_rect.has_value()) {
-    Matrix inverse = transform_stack_.back().transform.Invert();
-    cull_rect = cull_rect.value().TransformBounds(inverse);
-  }
-  return cull_rect;
 }
 
 void Canvas::Translate(const Vector3& offset) {
@@ -488,94 +477,24 @@ void Canvas::DrawCircle(const Point& center,
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
-  auto bounds = path.GetBoundingBox();
   ClipGeometry(Geometry::MakeFillPath(path), clip_op);
-  if (clip_op == Entity::ClipOperation::kIntersect) {
-    if (bounds.has_value()) {
-      IntersectCulling(bounds.value());
-    }
-  }
 }
 
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
   auto geometry = Geometry::MakeRect(rect);
-  auto& cull_rect = transform_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&                      //
-      cull_rect.has_value() &&                                             //
-      geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
-  ) {
-    return;  // This clip will do nothing, so skip it.
-  }
-
   ClipGeometry(geometry, clip_op);
-  switch (clip_op) {
-    case Entity::ClipOperation::kIntersect:
-      IntersectCulling(rect);
-      break;
-    case Entity::ClipOperation::kDifference:
-      SubtractCulling(rect);
-      break;
-  }
 }
 
 void Canvas::ClipOval(const Rect& bounds, Entity::ClipOperation clip_op) {
   auto geometry = Geometry::MakeOval(bounds);
-  auto& cull_rect = transform_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&                      //
-      cull_rect.has_value() &&                                             //
-      geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
-  ) {
-    return;  // This clip will do nothing, so skip it.
-  }
-
   ClipGeometry(geometry, clip_op);
-  switch (clip_op) {
-    case Entity::ClipOperation::kIntersect:
-      IntersectCulling(bounds);
-      break;
-    case Entity::ClipOperation::kDifference:
-      break;
-  }
 }
 
 void Canvas::ClipRRect(const Rect& rect,
                        const Size& corner_radii,
                        Entity::ClipOperation clip_op) {
-  // Does the rounded rect have a flat part on the top/bottom or left/right?
-  bool flat_on_TB = corner_radii.width * 2 < rect.GetWidth();
-  bool flat_on_LR = corner_radii.height * 2 < rect.GetHeight();
   auto geometry = Geometry::MakeRoundRect(rect, corner_radii);
-  auto& cull_rect = transform_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&                      //
-      cull_rect.has_value() &&                                             //
-      geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
-  ) {
-    return;  // This clip will do nothing, so skip it.
-  }
-
   ClipGeometry(geometry, clip_op);
-  switch (clip_op) {
-    case Entity::ClipOperation::kIntersect:
-      IntersectCulling(rect);
-      break;
-    case Entity::ClipOperation::kDifference:
-      if (corner_radii.IsEmpty()) {
-        SubtractCulling(rect);
-      } else {
-        // We subtract the inner "tall" and "wide" rectangle pieces
-        // that fit inside the corners which cover the greatest area
-        // without involving the curved corners
-        // Since this is a subtract operation, we can subtract each
-        // rectangle piece individually without fear of interference.
-        if (flat_on_TB) {
-          SubtractCulling(rect.Expand(Size{-corner_radii.width, 0.0}));
-        }
-        if (flat_on_LR) {
-          SubtractCulling(rect.Expand(Size{0.0, -corner_radii.height}));
-        }
-      }
-      break;
-  }
 }
 
 void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
@@ -592,31 +511,6 @@ void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
 
   ++transform_stack_.back().clip_height;
   ++transform_stack_.back().num_clips;
-}
-
-void Canvas::IntersectCulling(Rect clip_rect) {
-  clip_rect = clip_rect.TransformBounds(GetCurrentTransform());
-  std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
-  if (cull_rect.has_value()) {
-    cull_rect = cull_rect
-                    .value()                  //
-                    .Intersection(clip_rect)  //
-                    .value_or(Rect{});
-  } else {
-    cull_rect = clip_rect;
-  }
-}
-
-void Canvas::SubtractCulling(Rect clip_rect) {
-  std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
-  if (cull_rect.has_value()) {
-    clip_rect = clip_rect.TransformBounds(GetCurrentTransform());
-    cull_rect = cull_rect
-                    .value()            //
-                    .Cutout(clip_rect)  //
-                    .value_or(Rect{});
-  }
-  // else (no cull) diff (any clip) is non-rectangular
 }
 
 void Canvas::RestoreClip() {

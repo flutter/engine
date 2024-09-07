@@ -307,7 +307,6 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
 
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
-  entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
   entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
@@ -465,7 +464,6 @@ void ExperimentalCanvas::SaveLayer(
 
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
-  entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
   FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
@@ -474,12 +472,6 @@ void ExperimentalCanvas::SaveLayer(
   entry.rendering_mode = Entity::RenderingMode::kSubpassAppendSnapshotTransform;
   entry.did_round_out = did_round_out;
   transform_stack_.emplace_back(entry);
-
-  // The current clip aiks clip culling can not handle image filters.
-  // Remove this once we've migrated to exp canvas and removed it.
-  if (paint.image_filter) {
-    transform_stack_.back().cull_rect = std::nullopt;
-  }
 
   // Start non-collapsed subpasses with a fresh clip coverage stack limited by
   // the subpass coverage. This is important because image filters applied to

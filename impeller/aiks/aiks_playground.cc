@@ -5,7 +5,6 @@
 #include "impeller/aiks/aiks_playground.h"
 
 #include <memory>
-#include <optional>
 
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"

@@ -47,8 +47,8 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
   }
 
   return impeller::DlImageImpeller::Make(
-      impeller::DisplayListToTexture(display_list, render_target_size,
-                                     *context),
+      impeller::DisplayListToTexture(display_list, render_target_size, *context,
+                                     /*reset_host_buffer=*/false),
       DlImage::OwningContext::kRaster);
 }
 
