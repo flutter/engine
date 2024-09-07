@@ -6,6 +6,13 @@
 
 namespace impeller {
 
+namespace {
+bool SizeDifferenceUnderThreshold(Size a, Size b, Scalar threshold) {
+  return (std::abs(a.width - b.width) / b.width) < threshold &&
+         (std::abs(a.height - b.height) / b.height) < threshold;
+}
+}  // namespace
+
 std::optional<Rect> ComputeSaveLayerCoverage(
     const Rect& content_coverage,
     const Matrix& effect_transform,
@@ -64,12 +71,11 @@ std::optional<Rect> ComputeSaveLayerCoverage(
       return source_coverage_limit;
     }
 
-    // Returning the transformed coverage is always correct, it just may
-    // be larger than the clip area or onscreen - trimming it via the coverage
-    // limit can reduce memory bandwith. In cases where there are animated
-    // matrix filters, such as in the framework's zoom transition, the changing
-    // scale values continually change the source_coverage_limit. Thus
-    // intersecting the source_coverage_limit with the coverage may result in
+    // Trimming the content coverage by the coverage limit can reduce memory
+    // coverage. limit can reduce memory bandwith. But in cases where there are
+    // animated matrix filters, such as in the framework's zoom transition, the
+    // changing scale values continually change the source_coverage_limit.
+    // Intersecting the source_coverage_limit with the coverage may result in
     // slightly different texture sizes each frame of the animation. This leads
     // to non-optimal allocation patterns as differently sized textures cannot
     // be reused. Hence the following herustic: If the coverage is within a
@@ -78,12 +84,11 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     auto transformed_coverage = coverage.TransformBounds(effect_transform);
     auto intersected_coverage =
         transformed_coverage.Intersection(source_coverage_limit.value());
-    if ((std::abs(transformed_coverage.GetWidth() -
-                  intersected_coverage->GetWidth()) /
-         intersected_coverage->GetWidth()) <= 0.2 &&
-        (std::abs(transformed_coverage.GetHeight() -
-                  intersected_coverage->GetHeight()) /
-         intersected_coverage->GetHeight()) <= 0.2) {
+    if (intersected_coverage.has_value() &&
+        SizeDifferenceUnderThreshold(transformed_coverage.GetSize(),
+                                     intersected_coverage->GetSize(), 0.2)) {
+      // Returning the transformed coverage is always correct, it just may
+      // be larger than the clip area or onscreen texture.
       return transformed_coverage;
     }
     return intersected_coverage;
