@@ -64,12 +64,6 @@ class Contents {
 
   virtual ~Contents();
 
-  /// @brief  Add any text data to the specified lazy atlas. The scale parameter
-  ///         must be used again later when drawing the text.
-  virtual void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) {}
-
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
                       RenderPass& pass) const = 0;
@@ -147,18 +141,6 @@ class Contents {
   std::optional<Size> GetColorSourceSize() const;
 
   void SetColorSourceSize(Size size);
-
-  //----------------------------------------------------------------------------
-  /// @brief Whether or not this contents can accept the opacity peephole
-  ///        optimization.
-  ///
-  ///        By default all contents return false. Contents are responsible
-  ///        for determining whether or not their own geometries intersect in
-  ///        a way that makes accepting opacity impossible. It is always safe
-  ///        to return false, especially if computing overlap would be
-  ///        computationally expensive.
-  ///
-  virtual bool CanInheritOpacity(const Entity& entity) const;
 
   //----------------------------------------------------------------------------
   /// @brief Inherit the provided opacity.

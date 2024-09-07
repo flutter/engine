@@ -128,10 +128,6 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   return snapshot;
 }
 
-bool Contents::CanInheritOpacity(const Entity& entity) const {
-  return false;
-}
-
 void Contents::SetInheritedOpacity(Scalar opacity) {
   VALIDATION_LOG << "Contents::SetInheritedOpacity should never be called when "
                     "Contents::CanAcceptOpacity returns false.";

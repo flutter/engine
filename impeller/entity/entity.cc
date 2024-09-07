@@ -121,22 +121,7 @@ BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 
-bool Entity::CanInheritOpacity() const {
-  if (!contents_) {
-    return false;
-  }
-  if (!((blend_mode_ == BlendMode::kSource &&
-         contents_->IsOpaque(GetTransform())) ||
-        blend_mode_ == BlendMode::kSourceOver)) {
-    return false;
-  }
-  return contents_->CanInheritOpacity(*this);
-}
-
 bool Entity::SetInheritedOpacity(Scalar alpha) {
-  if (!CanInheritOpacity()) {
-    return false;
-  }
   if (blend_mode_ == BlendMode::kSource &&
       contents_->IsOpaque(GetTransform())) {
     blend_mode_ = BlendMode::kSourceOver;
@@ -185,10 +170,6 @@ bool Entity::Render(const ContentContext& renderer,
   }
 
   return contents_->Render(renderer, *this, parent_pass);
-}
-
-Scalar Entity::DeriveTextScale() const {
-  return GetTransform().GetMaxBasisLengthXY();
 }
 
 Entity Entity::Clone() const {

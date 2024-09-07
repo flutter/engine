@@ -80,10 +80,6 @@ bool ClipContents::ShouldRender(const Entity& entity,
   return true;
 }
 
-bool ClipContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
-
 void ClipContents::SetInheritedOpacity(Scalar opacity) {}
 
 bool ClipContents::Render(const ContentContext& renderer,
@@ -209,10 +205,6 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
 bool ClipRestoreContents::ShouldRender(
     const Entity& entity,
     const std::optional<Rect> clip_coverage) const {
-  return true;
-}
-
-bool ClipRestoreContents::CanInheritOpacity(const Entity& entity) const {
   return true;
 }
 
