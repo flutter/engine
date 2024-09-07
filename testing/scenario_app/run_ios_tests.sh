@@ -104,7 +104,7 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  INFOPLIST_FILE="Scenarios/Info_Skia.plist"; then
+  INFOPLIST_FILE="\$(TARGET_NAME)/Info_Skia.plist"; then
   echo "test success."
 else
   echo "test failed."
