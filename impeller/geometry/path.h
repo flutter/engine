@@ -176,10 +176,11 @@ class Path {
           std::make_unique<std::vector<Point>>(),
       Polyline::ReclaimPointBufferCallback reclaim = nullptr) const;
 
-  void EndContour(size_t storage_offset,
-                  Polyline& polyline,
-                  std::optional<size_t> previous_path_component_index,
-                  std::vector<PolylineContour::Component>& poly_components) const;
+  void EndContour(
+      size_t storage_offset,
+      Polyline& polyline,
+      std::optional<size_t> previous_path_component_index,
+      std::vector<PolylineContour::Component>& poly_components) const;
 
   std::optional<Rect> GetBoundingBox() const;
 
