@@ -1169,29 +1169,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     return _styleStack.last;
   }
 
-  static SkPaint createForegroundPaint(CkTextStyle style) {
-    final SkPaint foreground;
-    if (style.foreground != null) {
-      foreground = style.foreground!.toSkPaint();
-    } else {
-      foreground = SkPaint();
-      foreground.setColorInt(
-        style.color?.value ?? 0xFF000000,
-      );
-    }
-    return foreground;
-  }
-
-  static SkPaint createBackgroundPaint(CkTextStyle style) {
-    final SkPaint background;
-    if (style.background != null) {
-      background = style.background!.toSkPaint();
-    } else {
-      background = SkPaint()
-        ..setColorInt(0x00000000);
-    }
-    return background;
-  }
+  // Background fallback paint can be stored forever. There's only one, and it
+  // doesn't change.
+  static final _defaultBackgroundColorPaint = SkPaint()
+    ..setColorInt(0x00000000);
 
   @override
   void pushStyle(ui.TextStyle leafStyle) {
@@ -1202,12 +1183,28 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     _styleStack.add(mergedStyle);
 
     if (mergedStyle.foreground != null || mergedStyle.background != null) {
-      final foreground = createForegroundPaint(mergedStyle);
-      final background = createBackgroundPaint(mergedStyle);
+      // If the style did not provide a paint, we create a one-off SkPaint,
+      // which needs to be deleted immediately after it's used.
+      bool useOneOffForegroundPaint = false;
+      SkPaint? foregroundPaint = mergedStyle.foreground?.toSkPaint();
+
+      if (foregroundPaint == null) {
+        useOneOffForegroundPaint = true;
+        foregroundPaint = SkPaint();
+        foregroundPaint.setColorInt(
+          mergedStyle.color?.value ?? 0xFF000000,
+        );
+      }
+
       _paragraphBuilder.pushPaintStyle(
-          mergedStyle.skTextStyle, foreground, background);
-      foreground.delete();
-      background.delete();
+        mergedStyle.skTextStyle,
+        foregroundPaint,
+        mergedStyle.background?.toSkPaint() ?? _defaultBackgroundColorPaint,
+      );
+
+      if (useOneOffForegroundPaint) {
+        foregroundPaint.delete();
+      }
     } else {
       _paragraphBuilder.pushStyle(mergedStyle.skTextStyle);
     }

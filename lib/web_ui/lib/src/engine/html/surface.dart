@@ -93,11 +93,6 @@ void commitScene(PersistedScene scene) {
     return true;
   }());
 
-  for (int i = 0; i < frameReferences.length; i++) {
-    frameReferences[i].value = null;
-  }
-  frameReferences = <FrameReference<dynamic>>[];
-
   if (debugExplainSurfaceStats) {
     surfaceStats = <PersistedSurface, DebugSurfaceStats>{};
   }
@@ -205,7 +200,7 @@ bool debugAssertSurfaceState(
 abstract class PersistedSurface implements ui.EngineLayer {
   /// Creates a persisted surface.
   PersistedSurface(PersistedSurface? oldLayer)
-      : _oldLayer = FrameReference<PersistedSurface>(
+      : _oldLayer = FrameScopedValue<PersistedSurface>(
             oldLayer != null && oldLayer.isActive ? oldLayer : null);
 
   /// The surface that is being updated using this surface.
@@ -214,7 +209,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This value is set to null at the end of the frame.
   PersistedSurface? get oldLayer => _oldLayer.value;
-  final FrameReference<PersistedSurface> _oldLayer;
+  final FrameScopedValue<PersistedSurface> _oldLayer;
 
   /// The index of this surface in its parent's [PersistedContainerSurface._children]
   /// list.

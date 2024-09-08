@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../color_filter.dart';
+import '../frame_reference.dart';
 import '../shader_data.dart';
 import '../vector_math.dart';
 import 'canvaskit_api.dart';
@@ -22,17 +23,35 @@ import 'shader.dart';
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
 // TODO(154281): try to unify with SkwasmPaint
-class CkPaint implements ui.Paint {
+class CkPaint extends FrameScoped implements ui.Paint {
   CkPaint();
+
+  SkPaint? _skPaint;
+
+  SkPaint? get debugRawSkPaint => _skPaint;
+
+  @override
+  void disposeFrameResources() {
+    final skPaint = _skPaint;
+    if (skPaint != null) {
+      skPaint.delete();
+      _skPaint = null;
+    }
+  }
 
   /// Creates a new [SkPaint] object and returns it.
   ///
   /// The caller is responsible for deleting the returned object when it's no
   /// longer needed.
   SkPaint toSkPaint() {
+    if (_skPaint != null) {
+      return _skPaint!;
+    }
+
     final skPaint = SkPaint();
+    _skPaint = skPaint;
     skPaint.setAntiAlias(isAntiAlias);
-    skPaint.setBlendMode(toSkBlendMode(blendMode));
+    skPaint.setBlendMode(toSkBlendMode(_blendMode));
     skPaint.setStyle(toSkPaintStyle(style));
     skPaint.setStrokeWidth(strokeWidth);
     skPaint.setStrokeCap(toSkStrokeCap(strokeCap));
@@ -71,29 +90,92 @@ class CkPaint implements ui.Paint {
     return skPaint;
   }
 
-  @override
-  ui.BlendMode blendMode = ui.BlendMode.srcOver;
+  ui.BlendMode _blendMode = ui.BlendMode.srcOver;
 
   @override
-  ui.PaintingStyle style = ui.PaintingStyle.fill;
+  ui.BlendMode get blendMode => _blendMode;
 
   @override
-  double strokeWidth = 0.0;
+  set blendMode(ui.BlendMode value) {
+    if (_blendMode != value) {
+      disposeFrameResources();
+      _blendMode = value;
+    }
+  }
+
+  ui.PaintingStyle _style = ui.PaintingStyle.fill;
 
   @override
-  ui.StrokeCap strokeCap = ui.StrokeCap.butt;
+  ui.PaintingStyle get style => _style;
 
   @override
-  ui.StrokeJoin strokeJoin = ui.StrokeJoin.miter;
+  set style(ui.PaintingStyle value) {
+    if (_style != value) {
+      disposeFrameResources();
+      _style = value;
+    }
+  }
+
+  double _strokeWidth = 0.0;
 
   @override
-  bool isAntiAlias = true;
+  double get strokeWidth => _strokeWidth;
+
+  @override
+  set strokeWidth(double value) {
+    if (_strokeWidth != value) {
+      disposeFrameResources();
+      _strokeWidth = value;
+    }
+  }
+
+  ui.StrokeCap _strokeCap = ui.StrokeCap.butt;
+
+  @override
+  ui.StrokeCap get strokeCap => _strokeCap;
+
+  @override
+  set strokeCap(ui.StrokeCap value) {
+    if (_strokeCap != value) {
+      disposeFrameResources();
+      _strokeCap = value;
+    }
+  }
+
+  ui.StrokeJoin _strokeJoin = ui.StrokeJoin.miter;
+
+  @override
+  ui.StrokeJoin get strokeJoin => _strokeJoin;
+
+  @override
+  set strokeJoin(ui.StrokeJoin value) {
+    if (_strokeJoin != value) {
+      disposeFrameResources();
+      _strokeJoin = value;
+    }
+  }
+
+  bool _isAntiAlias = true;
+
+  @override
+  bool get isAntiAlias => _isAntiAlias;
+
+  @override
+  set isAntiAlias(bool value) {
+    if (_isAntiAlias != value) {
+      disposeFrameResources();
+      _isAntiAlias = value;
+    }
+  }
 
   @override
   ui.Color get color => ui.Color(_colorValue);
   @override
   set color(ui.Color value) {
-    _colorValue = value.value;
+    if (_colorValue != value.value) {
+      disposeFrameResources();
+      _colorValue = value.value;
+    }
   }
 
   static const int _defaultPaintColorValue = 0xFF000000;
@@ -106,6 +188,7 @@ class CkPaint implements ui.Paint {
     if (value == _invertColors) {
       return;
     }
+    disposeFrameResources();
     if (!value) {
       _effectiveColorFilter = _originalColorFilter;
       _originalColorFilter = null;
@@ -135,16 +218,37 @@ class CkPaint implements ui.Paint {
     if (_shader == value) {
       return;
     }
+    disposeFrameResources();
     _shader = value as CkShader?;
   }
 
   CkShader? _shader;
 
-  @override
-  ui.MaskFilter? maskFilter;
+  ui.MaskFilter? _maskFilter;
 
   @override
-  ui.FilterQuality filterQuality = ui.FilterQuality.none;
+  ui.MaskFilter? get maskFilter => _maskFilter;
+
+  @override
+  set maskFilter(ui.MaskFilter? value) {
+    if (_maskFilter != value) {
+      disposeFrameResources();
+      _maskFilter = value;
+    }
+  }
+
+  ui.FilterQuality _filterQuality = ui.FilterQuality.none;
+
+  @override
+  ui.FilterQuality get filterQuality => _filterQuality;
+
+  @override
+  set filterQuality(ui.FilterQuality value) {
+    if (_filterQuality != value) {
+      disposeFrameResources();
+      _filterQuality = value;
+    }
+  }
 
   @override
   ui.ColorFilter? get colorFilter => _engineColorFilter;
@@ -154,6 +258,7 @@ class CkPaint implements ui.Paint {
     if (_engineColorFilter == value) {
       return;
     }
+    disposeFrameResources();
     _engineColorFilter = value as EngineColorFilter?;
     _originalColorFilter = null;
     if (value == null) {
@@ -183,8 +288,18 @@ class CkPaint implements ui.Paint {
   /// This is a combination of the `colorFilter` and `invertColors` properties.
   ManagedSkColorFilter? _effectiveColorFilter;
 
+  double _strokeMiterLimit = 4.0;
+
   @override
-  double strokeMiterLimit = 4.0;
+  double get strokeMiterLimit => _strokeMiterLimit;
+
+  @override
+  set strokeMiterLimit(double value) {
+    if (_strokeMiterLimit != value) {
+      disposeFrameResources();
+      _strokeMiterLimit = value;
+    }
+  }
 
   @override
   ui.ImageFilter? get imageFilter => _imageFilter;
@@ -193,6 +308,8 @@ class CkPaint implements ui.Paint {
     if (_imageFilter == value) {
       return;
     }
+
+    disposeFrameResources();
 
     if (value is ui.ColorFilter) {
       _imageFilter = createCkColorFilter(value as EngineColorFilter);

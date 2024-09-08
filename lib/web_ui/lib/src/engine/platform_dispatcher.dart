@@ -844,6 +844,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     if (shouldRender || renderer.rendererTag == 'html') {
       await renderer.renderScene(scene, target);
     }
+    endFrameScope();
   }
 
   /// Additional accessibility features that may be enabled by the platform.

@@ -11,6 +11,36 @@ void main() {
 }
 
 void testMain() {
+  group('FrameScoped', () {
+    test('lifecycle', () {
+      final v1 = TestFrameScoped();
+      final v2 = TestFrameScoped();
+      expect(TestFrameScoped.disposedList, isEmpty);
+
+      endFrameScope();
+
+      expect(
+        TestFrameScoped.disposedList,
+        [v1, v2],
+      );
+    });
+  });
+
+  group('FrameScopedValue', () {
+    test('Holds a value until end of frame', () {
+      final v1 = FrameScopedValue<int>(42);
+      final v2 = FrameScopedValue<int>(123);
+
+      expect(v1.value, 42);
+      expect(v2.value, 123);
+
+      endFrameScope();
+
+      expect(v1.value, isNull);
+      expect(v2.value, isNull);
+    });
+  });
+
   group('CrossFrameCache', () {
     test('Reuse returns no object when cache empty', () {
       final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
@@ -77,4 +107,13 @@ void testMain() {
 class TestItem {
   TestItem(this.label);
   final String label;
+}
+
+class TestFrameScoped extends FrameScoped {
+  static final disposedList = <FrameScoped>[];
+
+  @override
+  void disposeFrameResources() {
+    disposedList.add(this);
+  }
 }

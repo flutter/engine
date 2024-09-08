@@ -2,23 +2,58 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-List<FrameReference<dynamic>> frameReferences = <FrameReference<dynamic>>[];
-
-/// A temporary reference to a value of type [V].
+/// Holds a resource that's valid until the end of the current frame.
 ///
-/// The value automatically gets set to null after the current frame is
-/// rendered.
+/// If a frame-scoped object is created outside a frame, it is disposed of at
+/// the end of the next frame.
+///
+/// At the end of the frame the [disposeFrameResources] method is called automatically.
+abstract class FrameScoped {
+  FrameScoped() {
+    _scopedObjects.add(this);
+  }
+
+  /// Disposes of the frame resources held by this object.
+  void disposeFrameResources();
+}
+
+/// All frame-scoped variables for the current frame.
+List<FrameScoped> _scopedObjects = <FrameScoped>[];
+
+/// Disposes of all the objects that were registered this frame.
+///
+/// This method is called at the end of every frame.
+void endFrameScope() {
+  final scopedObjects = _scopedObjects;
+  _scopedObjects = <FrameScoped>[];
+
+  for (final scopedObject in scopedObjects) {
+    scopedObject.disposeFrameResources();
+  }
+}
+
+/// Holds a frame-scoped value of type [V].
+///
+/// After disposal, the reference to the value is cleared and the [value] getter
+/// returns null. If this object was the last strong reference to the value, it
+/// will eventually be garbage collected.
 ///
 /// It is useful to think of this as a weak reference that's scoped to a
 /// single frame.
-class FrameReference<V> {
-  /// Creates a frame reference to a value.
-  FrameReference([this.value]) {
-    frameReferences.add(this);
-  }
+class FrameScopedValue<V> extends FrameScoped {
+  /// Scopes the given value to this frame.
+  FrameScopedValue([this._value]);
 
   /// The current value of this reference.
-  V? value;
+  ///
+  /// Returns `null` after [disposeFrameResources] is called.
+  V? get value => _value;
+  V? _value;
+
+  @override
+  void disposeFrameResources() {
+    _value = null;
+  }
 }
 
 /// Cache where items cached before frame(N) is committed, can be reused in
