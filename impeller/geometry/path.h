@@ -138,6 +138,8 @@ class Path {
 
   bool IsEmpty() const;
 
+  bool IsSingleContour() const;
+
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
   void EnumerateComponents(

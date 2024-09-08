@@ -16,9 +16,8 @@ class LineGeometry final : public Geometry {
 
   ~LineGeometry() = default;
 
-  static Scalar ComputePixelHalfWidth(const Matrix& transform,
-                                      Scalar width,
-                                      bool msaa);
+  static std::pair<Scalar, bool> ComputePixelHalfWidth(Scalar max_basis,
+                                                       Scalar width);
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
@@ -44,13 +43,10 @@ class LineGeometry final : public Geometry {
   //
   // @return true if the transform and width were not degenerate
   bool ComputeCorners(Point corners[4],
-                      const Matrix& transform,
-                      bool extend_endpoints,
-                      bool msaa) const;
+                      Scalar max_basis,
+                      bool extend_endpoints) const;
 
-  Vector2 ComputeAlongVector(const Matrix& transform,
-                             bool allow_zero_length,
-                             bool msaa) const;
+  Vector2 ComputeAlongVector(Scalar max_basis, bool allow_zero_length) const;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,

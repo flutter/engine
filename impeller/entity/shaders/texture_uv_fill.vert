@@ -19,6 +19,7 @@ in vec2 position;
 out mediump vec2 v_texture_coords;
 
 void main() {
+  gl_PointSize = 1.0;
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
   vec2 texture_coords = (frame_info.uv_transform * vec4(position, 0.0, 1.0)).xy;
   v_texture_coords =

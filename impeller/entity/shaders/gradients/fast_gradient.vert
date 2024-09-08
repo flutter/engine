@@ -18,6 +18,7 @@ in mediump vec4 color;
 out mediump vec4 v_color;
 
 void main() {
+  gl_PointSize = 1.0;
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
   v_color = color;
 }

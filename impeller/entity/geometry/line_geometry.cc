@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry/line_geometry.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
@@ -12,22 +13,15 @@ LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
   FML_DCHECK(width >= 0);
 }
 
-Scalar LineGeometry::ComputePixelHalfWidth(const Matrix& transform,
-                                           Scalar width,
-                                           bool msaa) {
-  Scalar max_basis = transform.GetMaxBasisLengthXY();
-  if (max_basis == 0) {
-    return {};
-  }
-
-  Scalar min_size = (msaa ? kMinStrokeSize : kMinStrokeSizeMSAA) / max_basis;
-  return std::max(width, min_size) * 0.5f;
+std::pair<Scalar, bool> LineGeometry::ComputePixelHalfWidth(Scalar max_basis,
+                                                            Scalar width) {
+  Scalar min_size = kMinStrokeSize / max_basis;
+  return std::make_pair(std::max(width, min_size) * 0.5f, width <= min_size);
 }
 
-Vector2 LineGeometry::ComputeAlongVector(const Matrix& transform,
-                                         bool allow_zero_length,
-                                         bool msaa) const {
-  Scalar stroke_half_width = ComputePixelHalfWidth(transform, width_, msaa);
+Vector2 LineGeometry::ComputeAlongVector(Scalar max_basis,
+                                         bool allow_zero_length) const {
+  auto [stroke_half_width, _] = ComputePixelHalfWidth(max_basis, width_);
   if (stroke_half_width < kEhCloseEnough) {
     return {};
   }
@@ -46,10 +40,9 @@ Vector2 LineGeometry::ComputeAlongVector(const Matrix& transform,
 }
 
 bool LineGeometry::ComputeCorners(Point corners[4],
-                                  const Matrix& transform,
-                                  bool extend_endpoints,
-                                  bool msaa) const {
-  auto along = ComputeAlongVector(transform, extend_endpoints, msaa);
+                                  Scalar max_basis,
+                                  bool extend_endpoints) const {
+  auto along = ComputeAlongVector(max_basis, extend_endpoints);
   if (along.IsZero()) {
     return false;
   }
@@ -77,23 +70,40 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                RenderPass& pass) const {
   using VT = SolidFillVertexShader::PerVertexData;
 
-  auto& transform = entity.GetTransform();
-  auto radius = ComputePixelHalfWidth(
-      transform, width_, pass.GetSampleCount() == SampleCount::kCount4);
+  Scalar max_basis = entity.GetTransform().GetMaxBasisLengthXY();
+  auto& host_buffer = renderer.GetTransientsBuffer();
+
+  if (max_basis == 0) {
+    return {};
+  }
+
+  auto [radius, is_harline] = ComputePixelHalfWidth(max_basis, width_);
+
+  // This is a harline stroke and can be drawn directly with line primitives,
+  // which avoids extra tessellation work, cap/joins, and overdraw prevention.
+  if (is_harline) {
+    Point points[2] = {p0_, p1_};
+    return GeometryResult{
+        .type = PrimitiveType::kLineStrip,
+        .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
+                              points, sizeof(points), alignof(Point)),
+                          .vertex_count = 2,
+                          .index_type = IndexType::kNone},
+        .transform = entity.GetShaderTransform(pass),
+    };
+  }
 
   if (cap_ == Cap::kRound) {
+    auto& transform = entity.GetTransform();
     std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
     auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
     return ComputePositionGeometry(renderer, generator, entity, pass);
   }
 
   Point corners[4];
-  if (!ComputeCorners(corners, transform, cap_ == Cap::kSquare,
-                      pass.GetSampleCount() == SampleCount::kCount4)) {
+  if (!ComputeCorners(corners, max_basis, cap_ == Cap::kSquare)) {
     return kEmptyResult;
   }
-
-  auto& host_buffer = renderer.GetTransientsBuffer();
 
   size_t count = 4;
   BufferView vertex_buffer = host_buffer.Emplace(
@@ -120,8 +130,8 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
 
 std::optional<Rect> LineGeometry::GetCoverage(const Matrix& transform) const {
   Point corners[4];
-  // Note: MSAA boolean doesn't matter for coverage computation.
-  if (!ComputeCorners(corners, transform, cap_ != Cap::kButt, /*msaa=*/false)) {
+  if (!ComputeCorners(corners, transform.GetMaxBasisLengthXY(),
+                      cap_ != Cap::kButt)) {
     return {};
   }
 

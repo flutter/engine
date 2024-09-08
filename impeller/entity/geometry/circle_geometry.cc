@@ -7,7 +7,6 @@
 #include "flutter/impeller/entity/geometry/circle_geometry.h"
 
 #include "flutter/impeller/entity/geometry/line_geometry.h"
-#include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
@@ -40,11 +39,12 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                  RenderPass& pass) const {
   auto& transform = entity.GetTransform();
 
-  Scalar half_width = stroke_width_ < 0
-                          ? 0.0
-                          : LineGeometry::ComputePixelHalfWidth(
-                                transform, stroke_width_,
-                                pass.GetSampleCount() == SampleCount::kCount4);
+  Scalar half_width = 0;
+  if (stroke_width_ > 0) {
+    auto [width, _] = LineGeometry::ComputePixelHalfWidth(
+        transform.GetMaxBasisLengthXY(), stroke_width_);
+    half_width = width;
+  }
 
   const std::shared_ptr<Tessellator>& tessellator = renderer.GetTessellator();
 

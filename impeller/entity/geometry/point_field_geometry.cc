@@ -7,6 +7,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -23,15 +24,28 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     return {};
   }
   const Matrix& transform = entity.GetTransform();
+  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
 
   Scalar max_basis = transform.GetMaxBasisLengthXY();
   if (max_basis == 0) {
     return {};
   }
+
   Scalar min_size = 0.5f / max_basis;
   Scalar radius = std::max(radius_, min_size);
+  if (radius_ <= min_size) {
+    // Hairline points can be drawn with the point primitive.
+    return GeometryResult{
+        .type = PrimitiveType::kPoint,
+        .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
+                              points_.data(), sizeof(Point) * points_.size(),
+                              alignof(Point)),
+                          .vertex_count = points_.size(),
+                          .index_type = IndexType::kNone},
+        .transform = entity.GetShaderTransform(pass),
+    };
+  }
 
-  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
   if (round_) {
     // Get triangulation relative to {0, 0} so we can translate it to each
