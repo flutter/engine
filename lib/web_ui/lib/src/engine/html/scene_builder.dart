@@ -10,6 +10,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../../engine.dart' show FrameTimingRecorder, kProfileApplyFrame, kProfilePrerollFrame;
 import '../display.dart';
 import '../dom.dart';
+import '../frame_reference.dart';
 import '../profiler.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -451,6 +452,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// sizes. If the cache is not cleared, then canvases allocated in one test
   /// may be reused in another test.
   static void debugForgetFrameScene() {
+    endFrameScope();
     _lastFrameScene?.rootElement?.remove();
     _lastFrameScene = null;
     resetSvgClipIds();
@@ -492,6 +494,18 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       }
       commitScene(_persistedScene);
       _lastFrameScene = _persistedScene;
+
+      // The HTML renderer is weird in that the DOM mutations are rendered in
+      // `SceneBuilder.build()` rather than waiting for the framework to call
+      // `PlatformDispatcher.render`. So for the purposes of managing frame
+      // resources this is where the frame scope ends, and all the frame-scoped
+      // resources are expected to be released.
+      //
+      // Note that `endFrameScope` is called here _in addition_ to
+      // `PlatformDispatcher.render`. This is fine, because `endFrameScope` is
+      // idempotent.
+      endFrameScope();
+
       return SurfaceScene(_persistedScene.rootElement, timingRecorder: recorder);
     });
   }

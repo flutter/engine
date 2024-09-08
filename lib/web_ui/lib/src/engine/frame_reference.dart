@@ -20,9 +20,12 @@ abstract class FrameScoped {
 /// All frame-scoped variables for the current frame.
 List<FrameScoped> _scopedObjects = <FrameScoped>[];
 
-/// Disposes of all the objects that were registered this frame.
+/// Disposes of all the frame-scoped objects that were registered this frame.
 ///
-/// This method is called at the end of every frame.
+/// This method is called at the end of every frame. It is idempotent, so it is
+/// safe to call it more than once per frame. Calling it multiple times will
+/// simply release whatever resources have accummulated since the last
+/// invocation.
 void endFrameScope() {
   final scopedObjects = _scopedObjects;
   _scopedObjects = <FrameScoped>[];
