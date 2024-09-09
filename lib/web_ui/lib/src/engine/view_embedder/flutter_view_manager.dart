@@ -113,6 +113,35 @@ class FlutterViewManager {
     return viewId == null ? null : _viewData[viewId];
   }
 
+  /// Safely manages focus when blurring and optionally removing a DOM element.
+  ///
+  /// This function ensures the blur operation doesn't disrupt the framework's view focus management.
+  ///
+  /// * [removeElement] controls whether the element is removed from the DOM after being blurred.
+  /// * [delayed] controls whether the engine will be given the opportunity to focus on another element first.
+  void safelyBlurElement(DomElement element, {bool removeElement = false, bool delayed = true}) {
+    final EngineFlutterView? view = findViewForElement(element);
+
+    void blur() {
+      // If by the time the timer fired the focused element is no longer the
+      // editing element whose editing session was disabled, there's no need to
+      // move the focus, as it is likely that another widget already took the
+      // focus.
+      if (element == domDocument.activeElement) {
+        view?.dom.rootElement.focusWithoutScroll();
+      }
+      if (removeElement) {
+        element.remove();
+      }
+    }
+
+    if (delayed) {
+      Timer(Duration.zero, blur);
+    } else {
+      blur();
+    }
+  }
+
   void dispose() {
     // We need to call `toList()` in order to avoid concurrent modification
     // inside the loop.
