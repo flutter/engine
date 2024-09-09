@@ -141,7 +141,7 @@ Future<void> _run(
       xcodeBuildExtraArgs: [
         // Plist with `FTEEnableImpeller=NO`; all projects in the workspace require this file.
         // For example, `FlutterAppExtensionTestHost` has a dummy file under the below directory.
-        r'INFOPLIST_FILE="$(TARGET_NAME)/Info_Skia.plist"',
+        r'INFOPLIST_FILE=$(TARGET_NAME)/Info_Skia.plist',
       ],
     );
     cleanup.add(process.kill);
