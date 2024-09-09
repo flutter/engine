@@ -193,7 +193,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
-        auto result = aiks_context->Render(picture, render_target, reset_host_buffer);
+        auto result = aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
 
         if (!surface->PreparePresent()) {
           return false;
