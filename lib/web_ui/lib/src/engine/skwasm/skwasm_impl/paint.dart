@@ -44,9 +44,10 @@ class SkwasmPaint implements ui.Paint {
 
     final filter = imageFilter;
     if (filter != null) {
-      final nativeImageFilter = SkwasmImageFilter.fromUiFilter(filter);
-      paintSetImageFilter(rawPaint, nativeImageFilter.handle);
-      nativeImageFilter.dispose();
+      final skwasmImageFilter = SkwasmImageFilter.fromUiFilter(filter);
+      skwasmImageFilter.withRawImageFilter((nativeHandle) {
+        paintSetImageFilter(rawPaint, nativeHandle);
+      });
     }
 
     return rawPaint;
@@ -64,15 +65,18 @@ class SkwasmPaint implements ui.Paint {
           _invertColorFilter,
           nativeFilter,
         );
-        nativeFilter.dispose();
-        paintSetColorFilter(handle, composedFilter.handle);
-        composedFilter.dispose();
+        composedFilter.withRawColorFilter((composedFilterHandle) {
+          paintSetColorFilter(handle, composedFilterHandle);
+        });
       } else {
-        paintSetColorFilter(handle, _invertColorFilter.handle);
+        _invertColorFilter.withRawColorFilter((invertFilterHandle) {
+          paintSetColorFilter(handle, invertFilterHandle);
+        });
       }
     } else if (nativeFilter != null) {
-      paintSetColorFilter(handle, nativeFilter.handle);
-      nativeFilter.dispose();
+      nativeFilter.withRawColorFilter((nativeFilterHandle) {
+        paintSetColorFilter(handle, nativeFilterHandle);
+      });
     }
   }
 

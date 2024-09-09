@@ -46,10 +46,14 @@ class SkwasmCanvas implements SceneCanvas {
     final paintHandle = (paint as SkwasmPaint).toRawPaint();
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paintHandle, nativeFilter.handle);
+        nativeFilter.withRawImageFilter((nativeFilterHandle) {
+          canvasSaveLayer(_handle, s.convertRectToNative(bounds), paintHandle, nativeFilterHandle);
+        });
       });
     } else {
-      canvasSaveLayer(_handle, nullptr, paintHandle, nativeFilter.handle);
+      nativeFilter.withRawImageFilter((nativeFilterHandle) {
+        canvasSaveLayer(_handle, nullptr, paintHandle, nativeFilterHandle);
+      });
     }
     paintDispose(paintHandle);
   }
