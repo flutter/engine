@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Loading an asset that does not exist returns null', () async {
@@ -33,26 +33,30 @@ void main() {
   });
 
   test('returns the bytes of a bundled asset', () async {
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
+    final ImmutableBuffer buffer =
+        await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
 
     expect(buffer.length == 354679, true);
   });
 
   test('returns the bytes of a file', () async {
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromFilePath('flutter/lib/ui/fixtures/DashInNooglerHat.jpg');
+    final ImmutableBuffer buffer = await ImmutableBuffer.fromFilePath(
+        'flutter/lib/ui/fixtures/DashInNooglerHat.jpg');
 
     expect(buffer.length == 354679, true);
   });
 
   test('Can load an asset with a space in the key', () async {
     // This assets actual path is "fixtures/DashInNooglerHat%20WithSpace.jpg"
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat WithSpace.jpg');
+    final ImmutableBuffer buffer =
+        await ImmutableBuffer.fromAsset('DashInNooglerHat WithSpace.jpg');
 
     expect(buffer.length == 354679, true);
   });
 
   test('can dispose immutable buffer', () async {
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
+    final ImmutableBuffer buffer =
+        await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
 
     buffer.dispose();
   });
@@ -68,9 +72,11 @@ void main() {
 
   test('Tester can still load through dart:ui', () async {
     /// Manually load font asset through dart.
-    final Uint8List encoded = utf8.encode(Uri(path: Uri.encodeFull('Roboto-Medium.ttf')).path);
+    final Uint8List encoded =
+        utf8.encode(Uri(path: Uri.encodeFull('Roboto-Medium.ttf')).path);
     final Completer<Uint8List> result = Completer<Uint8List>();
-    PlatformDispatcher.instance.sendPlatformMessage('flutter/assets', encoded.buffer.asByteData(), (ByteData? data) {
+    PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/assets', encoded.buffer.asByteData(), (ByteData? data) {
       result.complete(data!.buffer.asUint8List());
     });
 
@@ -81,7 +87,7 @@ void main() {
     final List<int> bundledFontImage = await _createPictureFromFont('Roboto2');
     // Bundling fonts is disabled, so the font selected in both cases should be ahem.
     // Therefore each buffer will contain identical contents.
-    expect(ahemImage, notEquals(bundledFontImage));
+    expect(ahemImage, isNot(equals(bundledFontImage)));
   });
 }
 

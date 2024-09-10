@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:litetest/litetest.dart' as litetest;
+import 'package:test/test.dart' as pkg_test;
 
 // A group of tests that must be run without concurrency.
 // This is useful for tests that modify global state.
@@ -22,6 +22,6 @@ class SerializedTestSuite {
       await body();
       currentTestCompleter.complete();
     }
-    litetest.test(name, wrappedBody);
+    pkg_test.test(name, wrappedBody);
   }
 }

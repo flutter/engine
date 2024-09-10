@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 int counter = 0;
 

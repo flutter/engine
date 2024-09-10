@@ -7,10 +7,11 @@ import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 void main() {
-  test('PlatformIsolate runOnPlatformThread, cancels pending jobs if shutdown', () async {
+  test('PlatformIsolate runOnPlatformThread, cancels pending jobs if shutdown',
+      () async {
     final Future<int> slowTask = runOnPlatformThread(() async {
       await Future<void>.delayed(const Duration(seconds: 10));
       return 123;
@@ -25,7 +26,8 @@ void main() {
     try {
       await slowTask;
     } catch (error) {
-      expect(error.toString(), contains('PlatformIsolate shutdown unexpectedly'));
+      expect(
+          error.toString(), contains('PlatformIsolate shutdown unexpectedly'));
       throws = true;
     }
     expect(throws, true);

@@ -5,7 +5,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 import 'canvas_test.dart' show createImage, testCanvas;
 
 void main() {
@@ -38,9 +38,9 @@ void main() {
     image.dispose();
 
     if (assertsEnabled) {
-      expectAssertion(() => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)));
+      expect(() => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)), throwsA(isA<AssertionError>()));
     } else {
-      throwsException(() => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)));
+      expect(() => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)), throwsException);
     }
   });
 
@@ -50,7 +50,7 @@ void main() {
     shader.dispose();
 
     if (assertsEnabled) {
-      expectAssertion(() => Paint()..shader = shader);
+      expect(() => Paint()..shader = shader, throwsA(isA<AssertionError>()));
       return;
     }
     final Paint paint = Paint()..shader = shader;

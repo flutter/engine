@@ -7,7 +7,7 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 // This import is used in a test, but not in a way that the analyzer can understand.
 // ignore: unused_import
@@ -83,5 +83,5 @@ void main() {
     final Pointer<Utf8> fakePath = 'fake-path'.toNativeUtf8();
     expect(_loadLibraryFromKernel(fakePath), null);
     malloc.free(fakePath);
-  }, skip: kProfileMode || kReleaseMode); // ignore: avoid_redundant_argument_values
+  }, skip: kProfileMode || kReleaseMode);
 }
