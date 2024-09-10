@@ -219,7 +219,7 @@ class FontGlyphAtlas {
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 
-  //FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
+  // FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller

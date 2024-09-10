@@ -78,11 +78,8 @@ struct std::equal_to<impeller::ScaledFont> {
 template <>
 struct std::hash<impeller::SubpixelGlyph> {
   constexpr std::size_t operator()(const impeller::SubpixelGlyph& sg) const {
-    return fml::HashCombine(
-        sg.glyph.index, sg.subpixel_offset.x, sg.subpixel_offset.y,
-        sg.properties.color.ToARGB(), sg.properties.stroke,
-        sg.properties.stroke_cap, sg.properties.stroke_join,
-        sg.properties.stroke_miter, sg.properties.stroke_width);
+    return fml::HashCombine(sg.glyph.index, sg.subpixel_offset.x,
+                            sg.subpixel_offset.y);
   }
 };
 
@@ -92,13 +89,7 @@ struct std::equal_to<impeller::SubpixelGlyph> {
                             const impeller::SubpixelGlyph& rhs) const {
     return lhs.glyph.index == rhs.glyph.index &&
            lhs.glyph.type == rhs.glyph.type &&
-           lhs.subpixel_offset == rhs.subpixel_offset &&
-           lhs.properties.color.ToARGB() == rhs.properties.color.ToARGB() &&
-           lhs.properties.stroke == rhs.properties.stroke &&
-           lhs.properties.stroke_cap == rhs.properties.stroke_cap &&
-           lhs.properties.stroke_join == rhs.properties.stroke_join &&
-           lhs.properties.stroke_miter == rhs.properties.stroke_miter &&
-           lhs.properties.stroke_width == rhs.properties.stroke_width;
+           lhs.subpixel_offset == rhs.subpixel_offset;
   }
 };
 

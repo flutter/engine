@@ -240,12 +240,15 @@ bool TextContents::Render(const ContentContext& renderer,
                 continue;
               }
               Point subpixel = TextFrame::ComputeSubpixelPosition(
-                  glyph_position, font.GetAxisAlignment(), offset_, rounded_scale);
+                  glyph_position, font.GetAxisAlignment(), offset_,
+                  rounded_scale);
               std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
                       glyph_position.glyph, subpixel, properties_});
               if (!maybe_atlas_glyph_bounds.has_value()) {
-                VALIDATION_LOG << "Could not find glyph position in the atlas.: " << glyph_position.glyph.index << " at scale " << scale_;
+                VALIDATION_LOG
+                    << "Could not find glyph position in the atlas.: "
+                    << glyph_position.glyph.index << " at scale " << scale_;
                 continue;
               }
               atlas_glyph_bounds = maybe_atlas_glyph_bounds.value().first;

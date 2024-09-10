@@ -27,9 +27,16 @@ class TypographerContextSkia : public TypographerContext {
       GlyphAtlas::Type type,
       HostBuffer& host_buffer,
       const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-      const std::vector<std::shared_ptr<TextFrame>>& text_frames) const override;
+      const std::vector<std::shared_ptr<TextFrame>>& text_frames)
+      const override;
 
  private:
+  static void CollectNewGlyphs(
+      const std::shared_ptr<GlyphAtlas>& atlas,
+      const std::vector<std::shared_ptr<TextFrame>>& text_frames,
+      std::vector<FontGlyphPair>& new_glyphs,
+      std::vector<Rect>& glyph_sizes);
+
   TypographerContextSkia(const TypographerContextSkia&) = delete;
 
   TypographerContextSkia& operator=(const TypographerContextSkia&) = delete;

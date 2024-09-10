@@ -403,7 +403,7 @@ static Rect ComputeGlyphSize(const SkFont& font,
                         scaled_bounds.fBottom);
 };
 
-static void CollectNewGlyphs(
+void TypographerContextSkia::CollectNewGlyphs(
     const std::shared_ptr<GlyphAtlas>& atlas,
     const std::vector<std::shared_ptr<TextFrame>>& text_frames,
     std::vector<FontGlyphPair>& new_glyphs,

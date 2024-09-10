@@ -84,4 +84,43 @@ Point TextFrame::ComputeSubpixelPosition(
   }
 }
 
+void TextFrame::SetPerFrameData(Scalar scale,
+                                Point offset,
+                                const GlyphProperties& properties) {
+  scale_ = scale;
+  offset_ = offset;
+  properties_ = properties;
+  bound_values_.clear();
+}
+
+Scalar TextFrame::GetScale() const {
+  return scale_;
+}
+
+Point TextFrame::GetOffset() const {
+  return offset_;
+}
+
+const GlyphProperties& TextFrame::GetProperties() const {
+  return properties_;
+}
+
+void TextFrame::AppendFontGlyphBounds(Rect atlas_bounds,
+                                      Rect glyph_bounds,
+                                      bool first) {
+  bound_values_.push_back(FrameBounds{atlas_bounds, glyph_bounds, first});
+}
+
+bool TextFrame::IsFrameComplete() const {
+  size_t run_size = 0;
+  for (const auto& x : runs_) {
+    run_size += x.GetGlyphCount();
+  }
+  return bound_values_.size() == run_size;
+}
+
+TextFrame::FrameBounds TextFrame::GetFrameBounds(size_t index) {
+  return bound_values_[index];
+}
+
 }  // namespace impeller

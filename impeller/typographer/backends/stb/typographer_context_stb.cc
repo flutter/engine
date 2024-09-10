@@ -383,18 +383,18 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   return texture;
 }
 
-// static Rect ComputeGlyphSize(const ScaledFont& font,
-//                              const SubpixelGlyph& glyph) {
-//   std::shared_ptr<TypefaceSTB> typeface_stb =
-//       std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
-//   float scale = stbtt_ScaleForMappingEmToPixels(
-//       typeface_stb->GetFontInfo(),
-//       font.font.GetMetrics().point_size * TypefaceSTB::kPointsToPixels);
-//   int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-//   stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
-//                           scale, &x0, &y0, &x1, &y1);
-//   return Rect::MakeLTRB(0, 0, x1 - x0, y1 - y0);
-// }
+static Rect ComputeGlyphSize(const ScaledFont& font,
+                             const SubpixelGlyph& glyph) {
+  std::shared_ptr<TypefaceSTB> typeface_stb =
+      std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
+  float scale = stbtt_ScaleForMappingEmToPixels(
+      typeface_stb->GetFontInfo(),
+      font.font.GetMetrics().point_size * TypefaceSTB::kPointsToPixels);
+  int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
+                          scale, &x0, &y0, &x1, &y1);
+  return Rect::MakeLTRB(0, 0, x1 - x0, y1 - y0);
+}
 
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
@@ -419,24 +419,42 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> new_sizes;
-  // for (const auto& font_value : font_glyph_map) {
-  //   const ScaledFont& scaled_font = font_value.first;
-  //   const FontGlyphAtlas* font_glyph_atlas =
-  //       last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
-  //   if (font_glyph_atlas) {
-  //     for (const SubpixelGlyph& glyph : font_value.second) {
-  //       if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
-  //         new_glyphs.emplace_back(scaled_font, glyph);
-  //         new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
-  //       }
-  //     }
-  //   } else {
-  //     for (const SubpixelGlyph& glyph : font_value.second) {
-  //       new_glyphs.emplace_back(scaled_font, glyph);
-  //       new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
-  //     }
-  //   }
-  // }
+  for (const auto& frame : text_frames) {
+    for (const auto& run : frame->GetRuns()) {
+      auto metrics = run.GetFont().GetMetrics();
+
+      auto rounded_scale =
+          TextFrame::RoundScaledFontSize(frame->GetScale(), metrics.point_size);
+      ScaledFont scaled_font{.font = run.GetFont(), .scale = rounded_scale};
+
+      FontGlyphAtlas* font_glyph_atlas =
+          last_atlas->GetOrCreateFontGlyphAtlas(scaled_font);
+
+      for (const auto& glyph_position : run.GetGlyphPositions()) {
+        Point subpixel = TextFrame::ComputeSubpixelPosition(
+            glyph_position, scaled_font.font.GetAxisAlignment(),
+            frame->GetOffset(), rounded_scale);
+        SubpixelGlyph subpixel_glyph(glyph_position.glyph, subpixel,
+                                     frame->GetProperties());
+        const auto& font_glyph_bounds =
+            font_glyph_atlas->FindGlyphBounds(subpixel_glyph);
+
+        if (!font_glyph_bounds.has_value()) {
+          new_glyphs.push_back(FontGlyphPair{scaled_font, subpixel_glyph});
+          auto glyph_bounds = ComputeGlyphSize(scaled_font, subpixel_glyph);
+          new_sizes.push_back(glyph_bounds);
+          frame->AppendFontGlyphBounds(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds,
+                                       /*first=*/true);
+          font_glyph_atlas->positions[subpixel_glyph] =
+              std::make_pair(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds);
+        } else {
+          frame->AppendFontGlyphBounds(font_glyph_bounds.value().first,
+                                       font_glyph_bounds.value().second,
+                                       /*first=*/false);
+        }
+      }
+    }
+  }
 
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;

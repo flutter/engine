@@ -91,10 +91,9 @@ FontGlyphAtlas* GlyphAtlas::GetOrCreateFontGlyphAtlas(
 }
 
 size_t GlyphAtlas::GetGlyphCount() const {
-  return std::accumulate(font_atlas_map_.begin(), font_atlas_map_.end(), 0,
-                         [](const int a, const auto& b) {
-                           return a + b.second.positions.size();
-                         });
+  return std::accumulate(
+      font_atlas_map_.begin(), font_atlas_map_.end(), 0,
+      [](const int a, const auto& b) { return a + b.second.positions.size(); });
 }
 
 size_t GlyphAtlas::IterateGlyphs(

@@ -40,7 +40,8 @@ namespace testing {
 //   FontGlyphMap font_glyph_map;
 //   frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0}, {});
 //   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
-//                                                atlas_context, font_glyph_map);
+//                                                atlas_context,
+//                                                font_glyph_map);
 // }
 
 // static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
@@ -59,7 +60,8 @@ namespace testing {
 //                                        properties[offset++]);
 //   }
 //   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
-//                                                atlas_context, font_glyph_map);
+//                                                atlas_context,
+//                                                font_glyph_map);
 // }
 
 // TEST_P(TypographerTest, CanConvertTextBlob) {
@@ -84,7 +86,8 @@ namespace testing {
 //   auto context = TypographerContextSkia::Make();
 //   auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator());
 //   ASSERT_TRUE(context && context->IsValid());
 //   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
 //   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
@@ -118,9 +121,11 @@ namespace testing {
 // }
 
 // TEST_P(TypographerTest, LazyAtlasTracksColor) {
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator());
 // #if FML_OS_MACOSX
-//   auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
+//   auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color
+//   Emoji.ttc");
 // #else
 //   auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
 // #endif
@@ -160,7 +165,8 @@ namespace testing {
 //   auto context = TypographerContextSkia::Make();
 //   auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator());
 //   ASSERT_TRUE(context && context->IsValid());
 //   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
 //   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
@@ -180,7 +186,8 @@ namespace testing {
 //   auto context = TypographerContextSkia::Make();
 //   auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator());
 //   ASSERT_TRUE(context && context->IsValid());
 //   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
 //   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
@@ -204,9 +211,9 @@ namespace testing {
 // }
 
 // TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
-//   auto context = TypographerContextSkia::Make();
-//   auto atlas_context =
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator()); auto context =
+//   TypographerContextSkia::Make(); auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
 //   ASSERT_TRUE(context && context->IsValid());
 
@@ -227,7 +234,8 @@ namespace testing {
 //         font_glyph_map, 0.6 * index, {0, 0}, {});
 //   };
 //   auto atlas =
-//       context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kAlphaBitmap,
+//       context->CreateGlyphAtlas(*GetContext(),
+//       GlyphAtlas::Type::kAlphaBitmap,
 //                                 *host_buffer, atlas_context, font_glyph_map);
 //   ASSERT_NE(atlas, nullptr);
 //   ASSERT_NE(atlas->GetTexture(), nullptr);
@@ -251,9 +259,9 @@ namespace testing {
 // }
 
 // TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
-//   auto context = TypographerContextSkia::Make();
-//   auto atlas_context =
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator()); auto context =
+//   TypographerContextSkia::Make(); auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
 //   ASSERT_TRUE(context && context->IsValid());
 //   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
@@ -288,9 +296,11 @@ namespace testing {
 // }
 
 // TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator());
 // #if FML_OS_MACOSX
-//   auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
+//   auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color
+//   Emoji.ttc");
 // #else
 //   auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
 // #endif
@@ -322,9 +332,9 @@ namespace testing {
 // }
 
 // TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
-//   sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
-//   sk_sp<SkTypeface> typeface =
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator()); sk_sp<SkFontMgr>
+//   font_mgr = txt::GetDefaultFontManager(); sk_sp<SkTypeface> typeface =
 //       font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
 //   SkFont sk_font(typeface, 0.5f);
 
@@ -332,12 +342,15 @@ namespace testing {
 //   auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
 
-//   // Create two frames with the same character and a different color, but as a
+//   // Create two frames with the same character and a different color, but as
+//   a
 //   // non-emoji font the text frame constructor will ignore it.
 //   auto frame =
-//       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
+//       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A",
+//       sk_font));
 //   auto frame_2 =
-//       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
+//       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A",
+//       sk_font));
 //   auto properties = {
 //       GlyphProperties{},
 //       GlyphProperties{},
@@ -421,9 +434,9 @@ namespace testing {
 //     GTEST_SKIP() << "Atlas growth isn't supported for OpenGLES currently.";
 //   }
 
-//   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
-//   auto context = TypographerContextSkia::Make();
-//   auto atlas_context =
+//   auto host_buffer =
+//   HostBuffer::Create(GetContext()->GetResourceAllocator()); auto context =
+//   TypographerContextSkia::Make(); auto atlas_context =
 //       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
 //   ASSERT_TRUE(context && context->IsValid());
 //   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
@@ -461,8 +474,8 @@ namespace testing {
 //     auto add_char = [&](const SkFont& sk_font, char c) {
 //       int count = sk_font.countText(&c, 1, SkTextEncoding::kUTF8);
 //       auto buffer = builder.allocRunPos(sk_font, count);
-//       sk_font.textToGlyphs(&c, 1, SkTextEncoding::kUTF8, buffer.glyphs, count);
-//       sk_font.getPos(buffer.glyphs, count, buffer.points(), {0, 0});
+//       sk_font.textToGlyphs(&c, 1, SkTextEncoding::kUTF8, buffer.glyphs,
+//       count); sk_font.getPos(buffer.glyphs, count, buffer.points(), {0, 0});
 //     };
 
 //     SkFont sk_font = flutter::testing::CreateTestFontOfSize(50 + i);
@@ -472,7 +485,8 @@ namespace testing {
 
 //     atlas =
 //         CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-//                          GlyphAtlas::Type::kAlphaBitmap, 50 + i, atlas_context,
+//                          GlyphAtlas::Type::kAlphaBitmap, 50 + i,
+//                          atlas_context,
 //                          *MakeTextFrameFromTextBlobSkia(blob));
 //     ASSERT_TRUE(!!atlas);
 //     EXPECT_EQ(atlas->GetTexture()->GetTextureDescriptor().size,

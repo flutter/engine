@@ -16,6 +16,8 @@ namespace impeller {
 ///             This object is typically the entrypoint in the Impeller type
 ///             rendering subsystem.
 ///
+/// A text frame should not be reused in multiple places within a single frame,
+/// as internally it is used as a cache for various glyph properties.
 class TextFrame {
  public:
   TextFrame();
@@ -64,65 +66,59 @@ class TextFrame {
   bool HasColor() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      The type of atlas this run should be emplaced in.
+  /// @brief      The type of atlas this run should be place in.
   GlyphAtlas::Type GetAtlasType() const;
+
+  /// @brief Verifies that all glyphs in this text frame have computed bounds
+  ///        information.
+  bool IsFrameComplete() const;
+
+  struct FrameBounds {
+    /// The bounds of the glyph within the glyph atlas.
+    Rect atlas_bounds;
+    /// The local glyph bounds.
+    Rect glyph_bounds;
+    /// Whether [atlas_bounds] have been correctly computed.
+    bool first;
+  };
+
+  /// @brief Retrieve the frame bounds for the glyph at [index].
+  ///
+  /// This method is only valid if [IsFrameComplete] returns true.
+  FrameBounds GetFrameBounds(size_t index);
 
   TextFrame& operator=(TextFrame&& other) = default;
 
   TextFrame(const TextFrame& other) = default;
 
-  void SetPerFrameData(Scalar scale, Point offset, const GlyphProperties& properties) {
-    scale_ = scale;
-    offset_ = offset;
-    properties_ = properties;
-    bound_values_.clear();
-  }
-
-  Scalar GetScale() const {
-    return scale_;
-  }
-
-  Point GetOffset() const {
-    return offset_;
-  }
-
-  const GlyphProperties& GetProperties() const {
-    return properties_;
-  }
-
-  void AppendFontGlyphBounds(Rect atlas_bounds, Rect glyph_bounds, bool first) {
-    bound_values_.push_back(FrameBounds{atlas_bounds, glyph_bounds, first});
-  }
-
-  bool IsFrameComplete() const {
-    size_t run_size  = 0;
-    for (const auto& x : runs_) {
-      run_size += x.GetGlyphCount();
-    }
-    return bound_values_.size() == run_size;
-  }
-
-  struct FrameBounds {
-    Rect atlas_bounds;
-    Rect glyph_bounds;
-    bool first;
-  };
-
-  FrameBounds GetFrameBounds(size_t index) {
-    return bound_values_[index];
-  }
-
  private:
-  std::vector<TextRun> runs_;
-  std::vector<FrameBounds> bound_values_;
+  friend class TypographerContextSkia;
+  friend class TypographerContextSTB;
+  friend class LazyGlyphAtlas;
 
-  // Perf frame data.
+  /// @brief Store text frame scale, offset, and properties for hashing in th
+  /// glyph atlas.
+  void SetPerFrameData(Scalar scale,
+                       Point offset,
+                       const GlyphProperties& properties);
+
+  Scalar GetScale() const;
+
+  Point GetOffset() const;
+
+  const GlyphProperties& GetProperties() const;
+
+  void AppendFontGlyphBounds(Rect atlas_bounds, Rect glyph_bounds, bool first);
+
+  std::vector<TextRun> runs_;
+  Rect bounds_;
+  bool has_color_;
+
+  // per frame data.
+  std::vector<FrameBounds> bound_values_;
   Scalar scale_;
   Point offset_;
   GlyphProperties properties_;
-
-  Rect bounds_;
-  bool has_color_;
 };
 
 }  // namespace impeller
