@@ -8,7 +8,5 @@
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
-	<key>NSPrivacyAccessedAPITypes</key>
-	<array/>
 </dict>
 </plist>
