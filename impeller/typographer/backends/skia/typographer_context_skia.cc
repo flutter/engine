@@ -222,10 +222,7 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setSubpixel(true);
   sk_font.setSize(sk_font.getSize() * scaled_font.scale);
 
-  // auto glyph_color =
-  //     has_color ? glyph.properties.color.ToARGB() : SK_ColorBLACK;
-
-  auto glyph_color = SK_ColorBLACK;
+  auto glyph_color = prop.has_value() ? prop->color.ToARGB() : SK_ColorBLACK;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
