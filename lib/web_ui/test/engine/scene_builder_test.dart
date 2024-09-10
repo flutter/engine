@@ -239,8 +239,7 @@ class PlatformViewSliceMatcher extends Matcher {
         print('viewID mismatch');
         return false;
       }
-      if (expectedView.size != actualView.size) {
-        print('size mismatch');
+      if (expectedView.bounds != actualView.bounds) {
         return false;
       }
       if (expectedView.styling != actualView.styling) {
