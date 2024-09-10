@@ -84,23 +84,4 @@ Point TextFrame::ComputeSubpixelPosition(
   }
 }
 
-void TextFrame::CollectUniqueFontGlyphPairs(
-    FontGlyphMap& glyph_map,
-    Scalar scale,
-    Point offset,
-    const GlyphProperties& properties) const {
-  for (const TextRun& run : GetRuns()) {
-    const Font& font = run.GetFont();
-    auto rounded_scale =
-        RoundScaledFontSize(scale, font.GetMetrics().point_size);
-    auto& set = glyph_map[ScaledFont{font, rounded_scale}];
-    for (const TextRun::GlyphPosition& glyph_position :
-         run.GetGlyphPositions()) {
-      Point subpixel = ComputeSubpixelPosition(
-          glyph_position, font.GetAxisAlignment(), offset, scale);
-      set.emplace(glyph_position.glyph, subpixel, properties);
-    }
-  }
-}
-
 }  // namespace impeller

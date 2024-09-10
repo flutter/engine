@@ -5,9 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
 
-#include <unordered_map>
-#include <unordered_set>
-
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -50,9 +47,6 @@ struct SubpixelGlyph {
         properties(p_properties) {}
 };
 
-using FontGlyphMap =
-    std::unordered_map<ScaledFont, std::unordered_set<SubpixelGlyph>>;
-
 //------------------------------------------------------------------------------
 /// @brief      A font along with a glyph in that font rendered at a particular
 ///             scale and subpixel position.
@@ -60,8 +54,8 @@ using FontGlyphMap =
 struct FontGlyphPair {
   FontGlyphPair(const ScaledFont& sf, const SubpixelGlyph& g)
       : scaled_font(sf), glyph(g) {}
-  const ScaledFont& scaled_font;
-  const SubpixelGlyph& glyph;
+  ScaledFont scaled_font;
+  SubpixelGlyph glyph;
 };
 
 }  // namespace impeller

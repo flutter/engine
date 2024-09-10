@@ -30,7 +30,7 @@ class TypographerContextSTB : public TypographerContext {
       GlyphAtlas::Type type,
       HostBuffer& host_buffer,
       const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-      const FontGlyphMap& font_glyph_map) const override;
+      const std::vector<std::shared_ptr<TextFrame>>& text_frames) const override;
 
  private:
   TypographerContextSTB(const TypographerContextSTB&) = delete;

@@ -6,6 +6,7 @@
 
 #include <numeric>
 #include <utility>
+#include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {
 
@@ -66,7 +67,7 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
 void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
                                                    Rect position,
                                                    Rect bounds) {
-  font_atlas_map_[pair.scaled_font].positions_[pair.glyph] =
+  font_atlas_map_[pair.scaled_font].positions[pair.glyph] =
       std::make_pair(position, bounds);
 }
 
@@ -79,19 +80,20 @@ std::optional<std::pair<Rect, Rect>> GlyphAtlas::FindFontGlyphBounds(
   return found->second.FindGlyphBounds(pair.glyph);
 }
 
-const FontGlyphAtlas* GlyphAtlas::GetFontGlyphAtlas(const Font& font,
-                                                    Scalar scale) const {
-  const auto& found = font_atlas_map_.find(ScaledFont{font, scale});
-  if (found == font_atlas_map_.end()) {
-    return nullptr;
+FontGlyphAtlas* GlyphAtlas::GetOrCreateFontGlyphAtlas(
+    const ScaledFont& scaled_font) {
+  const auto& found = font_atlas_map_.find(scaled_font);
+  if (found != font_atlas_map_.end()) {
+    return &found->second;
   }
-  return &found->second;
+  font_atlas_map_[scaled_font] = FontGlyphAtlas();
+  return &font_atlas_map_[scaled_font];
 }
 
 size_t GlyphAtlas::GetGlyphCount() const {
   return std::accumulate(font_atlas_map_.begin(), font_atlas_map_.end(), 0,
                          [](const int a, const auto& b) {
-                           return a + b.second.positions_.size();
+                           return a + b.second.positions.size();
                          });
 }
 
@@ -105,7 +107,7 @@ size_t GlyphAtlas::IterateGlyphs(
 
   size_t count = 0u;
   for (const auto& font_value : font_atlas_map_) {
-    for (const auto& glyph_value : font_value.second.positions_) {
+    for (const auto& glyph_value : font_value.second.positions) {
       count++;
       if (!iterator(font_value.first, glyph_value.first,
                     glyph_value.second.first)) {
@@ -118,8 +120,8 @@ size_t GlyphAtlas::IterateGlyphs(
 
 std::optional<std::pair<Rect, Rect>> FontGlyphAtlas::FindGlyphBounds(
     const SubpixelGlyph& glyph) const {
-  const auto& found = positions_.find(glyph);
-  if (found == positions_.end()) {
+  const auto& found = positions.find(glyph);
+  if (found == positions.end()) {
     return std::nullopt;
   }
   return found->second;

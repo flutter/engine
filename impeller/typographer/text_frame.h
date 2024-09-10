@@ -24,11 +24,6 @@ class TextFrame {
 
   ~TextFrame();
 
-  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
-                                   Scalar scale,
-                                   Point offset,
-                                   const GlyphProperties& properties) const;
-
   static Point ComputeSubpixelPosition(
       const TextRun::GlyphPosition& glyph_position,
       AxisAlignment alignment,
@@ -76,8 +71,56 @@ class TextFrame {
 
   TextFrame(const TextFrame& other) = default;
 
+  void SetPerFrameData(Scalar scale, Point offset, const GlyphProperties& properties) {
+    scale_ = scale;
+    offset_ = offset;
+    properties_ = properties;
+    bound_values_.clear();
+  }
+
+  Scalar GetScale() const {
+    return scale_;
+  }
+
+  Point GetOffset() const {
+    return offset_;
+  }
+
+  const GlyphProperties& GetProperties() const {
+    return properties_;
+  }
+
+  void AppendFontGlyphBounds(Rect atlas_bounds, Rect glyph_bounds, bool first) {
+    bound_values_.push_back(FrameBounds{atlas_bounds, glyph_bounds, first});
+  }
+
+  bool IsFrameComplete() const {
+    size_t run_size  = 0;
+    for (const auto& x : runs_) {
+      run_size += x.GetGlyphCount();
+    }
+    return bound_values_.size() == run_size;
+  }
+
+  struct FrameBounds {
+    Rect atlas_bounds;
+    Rect glyph_bounds;
+    bool first;
+  };
+
+  FrameBounds GetFrameBounds(size_t index) {
+    return bound_values_[index];
+  }
+
  private:
   std::vector<TextRun> runs_;
+  std::vector<FrameBounds> bound_values_;
+
+  // Perf frame data.
+  Scalar scale_;
+  Point offset_;
+  GlyphProperties properties_;
+
   Rect bounds_;
   bool has_color_;
 };

@@ -130,7 +130,7 @@ class GlyphAtlas {
   ///             scale are not available in the atlas.  The pointer is only
   ///             valid for the lifetime of the GlyphAtlas.
   ///
-  const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font, Scalar scale) const;
+  FontGlyphAtlas* GetOrCreateFontGlyphAtlas(const ScaledFont& scaled_font);
 
  private:
   const Type type_;
@@ -212,13 +212,14 @@ class FontGlyphAtlas {
   std::optional<std::pair<Rect, Rect>> FindGlyphBounds(
       const SubpixelGlyph& glyph) const;
 
+  std::unordered_map<SubpixelGlyph, std::pair<Rect, Rect>> positions;
+
  private:
   friend class GlyphAtlas;
-  std::unordered_map<SubpixelGlyph, std::pair<Rect, Rect>> positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 
-  FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
+  //FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller

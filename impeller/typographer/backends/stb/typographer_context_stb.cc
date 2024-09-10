@@ -383,25 +383,25 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   return texture;
 }
 
-static Rect ComputeGlyphSize(const ScaledFont& font,
-                             const SubpixelGlyph& glyph) {
-  std::shared_ptr<TypefaceSTB> typeface_stb =
-      std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
-  float scale = stbtt_ScaleForMappingEmToPixels(
-      typeface_stb->GetFontInfo(),
-      font.font.GetMetrics().point_size * TypefaceSTB::kPointsToPixels);
-  int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-  stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
-                          scale, &x0, &y0, &x1, &y1);
-  return Rect::MakeLTRB(0, 0, x1 - x0, y1 - y0);
-}
+// static Rect ComputeGlyphSize(const ScaledFont& font,
+//                              const SubpixelGlyph& glyph) {
+//   std::shared_ptr<TypefaceSTB> typeface_stb =
+//       std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
+//   float scale = stbtt_ScaleForMappingEmToPixels(
+//       typeface_stb->GetFontInfo(),
+//       font.font.GetMetrics().point_size * TypefaceSTB::kPointsToPixels);
+//   int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+//   stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
+//                           scale, &x0, &y0, &x1, &y1);
+//   return Rect::MakeLTRB(0, 0, x1 - x0, y1 - y0);
+// }
 
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
     HostBuffer& host_buffer,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-    const FontGlyphMap& font_glyph_map) const {
+    const std::vector<std::shared_ptr<TextFrame>>& text_frames) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
     return nullptr;
@@ -409,7 +409,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   auto& atlas_context_stb = GlyphAtlasContextSTB::Cast(*atlas_context);
   std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
 
-  if (font_glyph_map.empty()) {
+  if (text_frames.empty()) {
     return last_atlas;
   }
 
@@ -419,24 +419,24 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> new_sizes;
-  for (const auto& font_value : font_glyph_map) {
-    const ScaledFont& scaled_font = font_value.first;
-    const FontGlyphAtlas* font_glyph_atlas =
-        last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
-    if (font_glyph_atlas) {
-      for (const SubpixelGlyph& glyph : font_value.second) {
-        if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
-          new_glyphs.emplace_back(scaled_font, glyph);
-          new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
-        }
-      }
-    } else {
-      for (const SubpixelGlyph& glyph : font_value.second) {
-        new_glyphs.emplace_back(scaled_font, glyph);
-        new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
-      }
-    }
-  }
+  // for (const auto& font_value : font_glyph_map) {
+  //   const ScaledFont& scaled_font = font_value.first;
+  //   const FontGlyphAtlas* font_glyph_atlas =
+  //       last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
+  //   if (font_glyph_atlas) {
+  //     for (const SubpixelGlyph& glyph : font_value.second) {
+  //       if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
+  //         new_glyphs.emplace_back(scaled_font, glyph);
+  //         new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
+  //       }
+  //     }
+  //   } else {
+  //     for (const SubpixelGlyph& glyph : font_value.second) {
+  //       new_glyphs.emplace_back(scaled_font, glyph);
+  //       new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
+  //     }
+  //   }
+  // }
 
   if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;
@@ -495,15 +495,15 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   // Step 3b: Get the optimum size of the texture atlas.
   // ---------------------------------------------------------------------------
   std::vector<FontGlyphPair> font_glyph_pairs;
-  font_glyph_pairs.reserve(std::accumulate(
-      font_glyph_map.begin(), font_glyph_map.end(), 0,
-      [](const int a, const auto& b) { return a + b.second.size(); }));
-  for (const auto& font_value : font_glyph_map) {
-    const ScaledFont& scaled_font = font_value.first;
-    for (const SubpixelGlyph& glyph : font_value.second) {
-      font_glyph_pairs.push_back({scaled_font, glyph});
-    }
-  }
+  // font_glyph_pairs.reserve(std::accumulate(
+  //     font_glyph_map.begin(), font_glyph_map.end(), 0,
+  //     [](const int a, const auto& b) { return a + b.second.size(); }));
+  // for (const auto& font_value : font_glyph_map) {
+  //   const ScaledFont& scaled_font = font_value.first;
+  //   for (const SubpixelGlyph& glyph : font_value.second) {
+  //     font_glyph_pairs.push_back({scaled_font, glyph});
+  //   }
+  // }
   auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
   auto atlas_size = OptimumAtlasSizeForFontGlyphPairs(
       font_glyph_pairs,                                             //
