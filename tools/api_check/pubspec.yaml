@@ -16,6 +16,6 @@ dependencies:
   analyzer: any
 
 dev_dependencies:
-  engine_repo_tools:
+  engine_repo_tools: any
   path: any
   test: any
