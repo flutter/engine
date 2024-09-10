@@ -240,9 +240,9 @@ void main() {
         alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
     final Color srgb = p3.withValues(colorSpace: ColorSpace.extendedSRGB);
     expect(srgb.a, equals(1.0));
-    expect(srgb.r, closeTo(1.0931, 1e4));
-    expect(srgb.g, closeTo(-0.22684034705162098, 1e4));
-    expect(srgb.b, closeTo(-0.15007957816123998, 1e4));
+    expect(srgb.r, closeTo(1.0931, 1e-4));
+    expect(srgb.g, closeTo(-0.22684034705162098, 1e-4));
+    expect(srgb.b, closeTo(-0.15007957816123998, 1e-4));
     expect(srgb.colorSpace, equals(ColorSpace.extendedSRGB));
   });
 
@@ -251,9 +251,9 @@ void main() {
         alpha: 1, red: 1, green: 0, blue: 0, colorSpace: ColorSpace.displayP3);
     final Color srgb = p3.withValues(colorSpace: ColorSpace.sRGB);
     expect(srgb.a, equals(1.0));
-    expect(srgb.r, closeTo(1, 1e4));
-    expect(srgb.g, closeTo(0, 1e4));
-    expect(srgb.b, closeTo(0, 1e4));
+    expect(srgb.r, closeTo(1, 1e-4));
+    expect(srgb.g, closeTo(0, 1e-4));
+    expect(srgb.b, closeTo(0, 1e-4));
     expect(srgb.colorSpace, equals(ColorSpace.sRGB));
   });
 
@@ -266,9 +266,9 @@ void main() {
         colorSpace: ColorSpace.extendedSRGB);
     final Color p3 = srgb.withValues(colorSpace: ColorSpace.displayP3);
     expect(p3.a, equals(1.0));
-    expect(p3.r, closeTo(1, 1e4));
-    expect(p3.g, closeTo(0, 1e4));
-    expect(p3.b, closeTo(0, 1e4));
+    expect(p3.r, closeTo(1, 1e-4));
+    expect(p3.g, closeTo(0, 1e-4));
+    expect(p3.b, closeTo(0, 1e-4));
     expect(p3.colorSpace, equals(ColorSpace.displayP3));
   });
 
