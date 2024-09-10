@@ -88,6 +88,12 @@ void main(List<String> args) async {
   }
 }
 
+void _deleteIfPresent(io.FileSystemEntity entity) {
+  if (entity.existsSync()) {
+    entity.deleteSync(recursive: true);
+  }
+}
+
 /// Runs the script.
 ///
 /// The [cleanup] set contains cleanup tasks to run when the script is either
@@ -127,7 +133,7 @@ Future<void> _run(
     iosEngineVariant: iosEngineVariant,
   );
 
-  cleanup.add(() => resultBundle.deleteSync(recursive: true));
+  cleanup.add(() => _deleteIfPresent(resultBundle));
 
   if (withSkia) {
     io.stderr.writeln('Running simulator tests with Skia');
@@ -165,7 +171,7 @@ Future<void> _run(
     } else {
       io.stderr.writeln('test succcess.');
     }
-    resultBundle.deleteSync(recursive: true);
+    _deleteIfPresent(resultBundle);
   }
 
   if (withImpeller) {
@@ -197,7 +203,7 @@ Future<void> _run(
     } else {
       io.stderr.writeln('test succcess.');
     }
-    resultBundle.deleteSync(recursive: true);
+    _deleteIfPresent(resultBundle);
   }
 }
 
