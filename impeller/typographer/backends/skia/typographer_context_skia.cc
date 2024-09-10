@@ -230,8 +230,8 @@ static void DrawGlyph(SkCanvas* canvas,
   if (prop.has_value() && prop->stroke) {
     glyph_paint.setStroke(true);
     glyph_paint.setStrokeWidth(prop->stroke_width * scaled_font.scale);
-    glyph_paint.setStrokeCap(ToSkiaCap(glyph.properties->stroke_cap));
-    glyph_paint.setStrokeJoin(ToSkiaJoin(glyph.properties->stroke_join));
+    glyph_paint.setStrokeCap(ToSkiaCap(prop->stroke_cap));
+    glyph_paint.setStrokeJoin(ToSkiaJoin(prop->stroke_join));
     glyph_paint.setStrokeMiter(prop->stroke_miter * scaled_font.scale);
   }
   canvas->save();
