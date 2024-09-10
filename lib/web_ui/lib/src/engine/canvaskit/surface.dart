@@ -498,13 +498,17 @@ class Surface extends DisplayCanvas {
       _didWarnAboutWebGlInitializationFailure = true;
     }
 
-    SkSurface surface;
-    if (useOffscreenCanvas) {
-      surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
-    } else {
-      surface = canvasKit.MakeSWCanvasSurface(_canvasElement!);
+    try {
+      SkSurface surface;
+      if (useOffscreenCanvas) {
+        surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
+      } else {
+        surface = canvasKit.MakeSWCanvasSurface(_canvasElement!);
+      }
+      return CkSurface(surface, null, size);
+    } catch (error) {
+      throw CanvasKitError('Failed to create CPU-based surface: $error.');
     }
-    return CkSurface(surface, null, size);
   }
 
   bool _presentSurface() {
