@@ -1031,14 +1031,6 @@ public class FlutterViewTest {
     assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
   }
 
-  @Test
-  public void flutterSplashView_itDoesNotCrashOnRestoreInstanceState() {
-    final FlutterSplashView splashView = new FlutterSplashView(ctx);
-    splashView.onRestoreInstanceState(View.BaseSavedState.EMPTY_STATE);
-    // It should not crash and "splashScreenState" should be null.
-    assertEquals(null, splashView.splashScreenState);
-  }
-
   public void ViewportMetrics_initializedPhysicalTouchSlop() {
     FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -1053,6 +1045,7 @@ public class FlutterViewTest {
     assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
   }
 
+  @SuppressWarnings("deprecation")
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
         Shadows.shadowOf(
@@ -1072,6 +1065,7 @@ public class FlutterViewTest {
     assertEquals(bottom, viewportMetricsCaptor.getValue().viewPaddingBottom);
   }
 
+  @SuppressWarnings("deprecation")
   private void mockSystemWindowInsets(
       WindowInsets windowInsets, int left, int top, int right, int bottom) {
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(left);
@@ -1090,6 +1084,7 @@ public class FlutterViewTest {
    * A custom shadow that reports fullscreen flag for system UI visibility
    */
   @Implements(View.class)
+  @SuppressWarnings("deprecation")
   public static class ShadowFullscreenView {
     @Implementation
     public int getWindowSystemUiVisibility() {
