@@ -223,7 +223,7 @@ Path::Polyline::~Polyline() {
 void Path::EndContour(
     size_t storage_offset,
     Polyline& polyline,
-    std::optional<size_t> previous_path_component_index,
+    size_t component_index,
     std::vector<PolylineContour::Component>& poly_components) const {
   auto& path_components = data_->components;
   auto& path_points = data_->points;
@@ -233,7 +233,7 @@ void Path::EndContour(
     return;
   }
 
-  if (!previous_path_component_index.has_value()) {
+  if (component_index <= 0) {
     return;
   }
 
@@ -242,7 +242,7 @@ void Path::EndContour(
   contour.components = poly_components;
   poly_components.clear();
 
-  size_t previous_index = previous_path_component_index.value();
+  size_t previous_index = component_index - 1;
   while (previous_index >= 0 && storage_offset >= 0) {
     const auto& path_component = path_components[previous_index];
     switch (path_component) {
@@ -294,13 +294,12 @@ Path::Polyline Path::CreatePolyline(
 
   auto& path_components = data_->components;
   auto& path_points = data_->points;
+  std::optional<Vector2> start_direction;
   std::vector<PolylineContour::Component> poly_components;
-  std::optional<size_t> previous_path_component_index;
-  std::optional<Vector2> start_direction = std::nullopt;
   size_t storage_offset = 0u;
+  size_t component_i = 0;
 
-  for (size_t component_i = 0; component_i < path_components.size();
-       component_i++) {
+  for (; component_i < path_components.size(); component_i++) {
     const auto& path_component = path_components[component_i];
     switch (path_component) {
       case ComponentType::kLinear: {
@@ -314,7 +313,6 @@ Path::Polyline Path::CreatePolyline(
         if (!start_direction.has_value()) {
           start_direction = linear->GetStartDirection();
         }
-        previous_path_component_index = component_i;
         break;
       }
       case ComponentType::kQuadratic: {
@@ -325,7 +323,6 @@ Path::Polyline Path::CreatePolyline(
         auto* quad = reinterpret_cast<const QuadraticPathComponent*>(
             &path_points[storage_offset]);
         quad->AppendPolylinePoints(scale, *polyline.points);
-        previous_path_component_index = component_i;
         if (!start_direction.has_value()) {
           start_direction = quad->GetStartDirection();
         }
@@ -339,7 +336,6 @@ Path::Polyline Path::CreatePolyline(
         auto* cubic = reinterpret_cast<const CubicPathComponent*>(
             &path_points[storage_offset]);
         cubic->AppendPolylinePoints(scale, *polyline.points);
-        previous_path_component_index = component_i;
         if (!start_direction.has_value()) {
           start_direction = cubic->GetStartDirection();
         }
@@ -351,27 +347,36 @@ Path::Polyline Path::CreatePolyline(
           // contour, so skip it.
           continue;
         }
-        EndContour(storage_offset, polyline, previous_path_component_index,
-                   poly_components);
+        if (!polyline.contours.empty()) {
+          polyline.contours.back().start_direction =
+              start_direction.value_or(Vector2(0, -1));
+          start_direction = std::nullopt;
+        }
+        EndContour(storage_offset, polyline, component_i, poly_components);
 
         auto* contour = reinterpret_cast<const ContourComponent*>(
             &path_points[storage_offset]);
-        polyline.contours.push_back(
-            {.start_index = polyline.points->size(),
-             .is_closed = contour->IsClosed(),
-             .start_direction = start_direction.value_or(Vector2(0, -1)),
-             .components = poly_components});
+        polyline.contours.push_back(PolylineContour{
+            .start_index = polyline.points->size(),  //
+            .is_closed = contour->IsClosed(),        //
+            .start_direction = Vector2(0, -1),       //
+            .components = poly_components            //
+        });
 
         polyline.points->push_back(contour->destination);
         break;
     }
     storage_offset += VerbToOffset(path_component);
   }
+
   // Subtract the last storage offset increment so that the storage lookup is
   // correct.
   storage_offset -= VerbToOffset(path_components.back());
-  EndContour(storage_offset, polyline, previous_path_component_index,
-             poly_components);
+  if (!polyline.contours.empty()) {
+    polyline.contours.back().start_direction =
+        start_direction.value_or(Vector2(0, -1));
+  }
+  EndContour(storage_offset, polyline, component_i, poly_components);
   return polyline;
 }
 

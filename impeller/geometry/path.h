@@ -179,7 +179,7 @@ class Path {
   void EndContour(
       size_t storage_offset,
       Polyline& polyline,
-      std::optional<size_t> previous_path_component_index,
+      size_t component_index,
       std::vector<PolylineContour::Component>& poly_components) const;
 
   std::optional<Rect> GetBoundingBox() const;
