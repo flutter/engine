@@ -982,10 +982,7 @@ def build_dart_host_test_list(build_dir):
       (os.path.join('flutter', 'testing', 'litetest'), []),
       (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
       (os.path.join('flutter', 'testing', 'scenario_app'), []),
-      (
-          os.path.join('flutter', 'tools', 'api_check'),
-          [os.path.join(BUILDROOT_DIR, 'flutter')],
-      ),
+      (os.path.join('flutter', 'tools', 'api_check'), [],),
       (os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'), []),
       (os.path.join('flutter', 'tools', 'clang_tidy'), []),
       (
