@@ -187,13 +187,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
-        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable([aiks_context, picture = std::move(picture),
                                reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target, reset_host_buffer);
+              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
             }));
 #endif
       });
