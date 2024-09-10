@@ -190,8 +190,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
         return renderer->Render(
             std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture),
-                               reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
+            fml::MakeCopyable([aiks_context, picture = std::move(picture)]
+                              (impeller::RenderTarget& render_target) -> bool {
               return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
             }));
 #endif
