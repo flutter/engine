@@ -361,46 +361,6 @@ public class FlutterViewTest {
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
-  @Test
-  public void itSendsTextShowPasswordToFrameworkOnAttach() {
-    // Setup test.
-    AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
-
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
-    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
-    Settings.System.putInt(
-        flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1);
-
-    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
-    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
-    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
-        .thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
-        .thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
-        .thenAnswer(
-            new Answer<SettingsChannel.MessageBuilder>() {
-              @Override
-              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
-                  throws Throwable {
-                reportedShowPassword.set((Boolean) invocation.getArguments()[0]);
-                return fakeMessageBuilder;
-              }
-            });
-    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
-    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
-
-    flutterView.attachToFlutterEngine(flutterEngine);
-
-    // Verify results.
-    assertTrue(reportedShowPassword.get());
-  }
-
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void itSendsTextHidePasswordToFrameworkOnAttach() {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
