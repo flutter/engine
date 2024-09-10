@@ -8,14 +8,12 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/rectangle_packer.h"
-
-#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
-#include "flutter/third_party/abseil-cpp/absl/container/node_hash_map.h"
 
 namespace impeller {
 
@@ -138,10 +136,10 @@ class GlyphAtlas {
   const Type type_;
   std::shared_ptr<Texture> texture_;
 
-  absl::node_hash_map<ScaledFont,
-                      FontGlyphAtlas,
-                      ScaledFont::Hash,
-                      ScaledFont::Equal>
+  std::unordered_map<ScaledFont,
+                     FontGlyphAtlas,
+                     ScaledFont::Hash,
+                     ScaledFont::Equal>
       font_atlas_map_;
 
   GlyphAtlas(const GlyphAtlas&) = delete;
@@ -220,10 +218,10 @@ class FontGlyphAtlas {
 
  private:
   friend class GlyphAtlas;
-  absl::flat_hash_map<SubpixelGlyph,
-                      std::pair<Rect, Rect>,
-                      SubpixelGlyph::Hash,
-                      SubpixelGlyph::Equal>
+  std::unordered_map<SubpixelGlyph,
+                     std::pair<Rect, Rect>,
+                     SubpixelGlyph::Hash,
+                     SubpixelGlyph::Equal>
       positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;

@@ -66,8 +66,8 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
 void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
                                                    Rect position,
                                                    Rect bounds) {
-  auto& x = font_atlas_map_[pair.scaled_font];
-  x.positions_[pair.glyph] = std::make_pair(position, bounds);
+  font_atlas_map_[pair.scaled_font].positions_[pair.glyph] =
+      std::make_pair(position, bounds);
 }
 
 std::optional<std::pair<Rect, Rect>> GlyphAtlas::FindFontGlyphBounds(

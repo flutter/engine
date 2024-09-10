@@ -5,15 +5,15 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
 
+#include <unordered_map>
+#include <unordered_set>
+
 #include "fml/hash_combine.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
-
-#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
-#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_set.h"
 
 namespace impeller {
 
@@ -100,12 +100,12 @@ struct SubpixelGlyph {
 };
 
 using FontGlyphMap =
-    absl::flat_hash_map<ScaledFont,
-                        absl::flat_hash_set<SubpixelGlyph,
-                                            SubpixelGlyph::Hash,
-                                            SubpixelGlyph::Equal>,
-                        ScaledFont::Hash,
-                        ScaledFont::Equal>;
+    std::unordered_map<ScaledFont,
+                       std::unordered_set<SubpixelGlyph,
+                                          SubpixelGlyph::Hash,
+                                          SubpixelGlyph::Equal>,
+                       ScaledFont::Hash,
+                       ScaledFont::Equal>;
 
 //------------------------------------------------------------------------------
 /// @brief      A font along with a glyph in that font rendered at a particular
