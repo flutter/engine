@@ -57,6 +57,16 @@ bool DlPath::operator==(const DlPath& other) const {
   return sk_path_ == other.sk_path_;
 }
 
+bool DlPath::IsConverted() const {
+  if (!path_.IsEmpty()) {
+    return true;
+  }
+  if (sk_path_.isEmpty()) {
+    return true;
+  }
+  return false;
+}
+
 using Path = impeller::Path;
 using PathBuilder = impeller::PathBuilder;
 using FillType = impeller::FillType;

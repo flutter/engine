@@ -36,6 +36,8 @@ class DlPath {
 
   bool operator==(const DlPath& other) const;
 
+  bool IsConverted() const;
+
  private:
   const SkPath sk_path_;
   mutable impeller::Path path_;
