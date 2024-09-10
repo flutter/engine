@@ -165,9 +165,8 @@ Future<void> _run(
     } else {
       io.stderr.writeln('test succcess.');
     }
+    resultBundle.deleteSync(recursive: true);
   }
-
-  resultBundle.deleteSync(recursive: true);
 
   if (withImpeller) {
     final process = await _runTests(
@@ -198,9 +197,8 @@ Future<void> _run(
     } else {
       io.stderr.writeln('test succcess.');
     }
+    resultBundle.deleteSync(recursive: true);
   }
-
-  resultBundle.deleteSync(recursive: true);
 }
 
 /// Exception thrown when the tool should halt execution intentionally.
