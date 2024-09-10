@@ -915,23 +915,30 @@ def gather_dart_smoke_test(build_dir, test_filter):
 
 def gather_dart_package_tests(build_dir, package_path, extra_opts):
   if uses_package_test_runner(package_path):
-    # Package that use package:test (dart test) do not support command-line arguments.
-    #
-    # The usual workaround is to use Platform.environment, but that would require changing
-    # the test execution a tiny bit. TODO(https://github.com/flutter/flutter/issues/133569).
-    #
-    # Until then, assert that no extra_opts are passed and explain the limitation.
-    assert not extra_opts, '%s uses package:test and cannot use CLI args' % package_path
+    # Assert that extra_opts is either None, or is an empty list, or is a dictionary.
+    assert len(extra_opts) == 0 or isinstance(
+        extra_opts, dict
+    ), '%s uses package:test and expects a dictionary, but passed a %s' % (
+        package_path, type(extra_opts)
+    )
+    extra_env = {}
+    if isinstance(extra_opts, dict):
+      extra_env = extra_opts
     opts = ['test', '--reporter=expanded']
     yield EngineExecutableTask(
-        build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
+        build_dir,
+        os.path.join('dart-sdk', 'bin', 'dart'),
+        None,
+        flags=opts,
+        cwd=package_path,
+        extra_env=extra_env
     )
   else:
     dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
     if not dart_tests:
       raise Exception('No tests found for Dart package at %s' % package_path)
     for dart_test_file in dart_tests:
-      opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+      opts = [dart_test_file] + extra_opts
       yield EngineExecutableTask(
           build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
       )
@@ -969,20 +976,13 @@ def uses_package_test_runner(package):
 def build_dart_host_test_list(build_dir):
   dart_host_tests = [
       (os.path.join('flutter', 'ci'), []),
-      (
-          os.path.join('flutter', 'flutter_frontend_server'),
-          [
-              build_dir,
-              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
-              os.path.join(build_dir, 'flutter_patched_sdk')
-          ],
-      ),
+      (os.path.join('flutter', 'flutter_frontend_server'), {'ENGINE_BUILD_DIR': build_dir}),
       (os.path.join('flutter', 'testing', 'litetest'), []),
       (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
       (os.path.join('flutter', 'testing', 'scenario_app'), []),
       (
           os.path.join('flutter', 'tools', 'api_check'),
-          [os.path.join(BUILDROOT_DIR, 'flutter')],
+          [],
       ),
       (os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'), []),
       (os.path.join('flutter', 'tools', 'clang_tidy'), []),

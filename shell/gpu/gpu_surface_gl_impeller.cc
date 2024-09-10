@@ -117,12 +117,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 
     auto cull_rect = render_target.GetRenderTargetSize();
     SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.width, cull_rect.height);
-    return impeller::RenderToOnscreen(
-        *aiks_context,                                                    //
-        render_target,                                                    //
-        display_list,                                                     //
-        sk_cull_rect,                                                     //
-        /*reset_host_buffer=*/surface_frame.submit_info().frame_boundary  //
+    return impeller::RenderToOnscreen(*aiks_context,              //
+                                      render_target,              //
+                                      display_list,               //
+                                      sk_cull_rect,               //
+                                      /*reset_host_buffer=*/true  //
     );
     return true;
   };
