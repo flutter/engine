@@ -17,6 +17,9 @@ class SemanticButton extends SemanticRole {
   }
 
   @override
+  bool get acceptsPointerEvents => true;
+
+  @override
   bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 
   @override
