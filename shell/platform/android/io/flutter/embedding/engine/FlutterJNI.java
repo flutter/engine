@@ -139,7 +139,7 @@ public class FlutterJNI {
    * loading native libraries.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
-   *
+   * 
    * @deprecated replaced by {@link #loadLibrary(Context)}.
    */
   @Deprecated
@@ -150,7 +150,7 @@ public class FlutterJNI {
     System.loadLibrary("flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
-
+  
   /**
    * Loads the libflutter.so C++ library.
    *
