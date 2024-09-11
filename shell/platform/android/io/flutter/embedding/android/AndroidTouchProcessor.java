@@ -13,6 +13,8 @@ import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+
+import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -144,7 +146,7 @@ public class AndroidTouchProcessor {
 
     // Prepare a data packet of the appropriate size and order.
     ByteBuffer packet =
-        ByteBuffer.allocateDirect(pointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
+        ByteBuffer.allocateDirect((pointerCount + 1) * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
     int maskedAction = event.getActionMasked();
@@ -172,6 +174,8 @@ public class AndroidTouchProcessor {
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+
+      addPointerForIndex(event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
@@ -256,6 +260,7 @@ public class AndroidTouchProcessor {
       Matrix transformMatrix,
       ByteBuffer packet,
       Context context) {
+    Log.e("HI GRAY", "POINTER CHANGE: " + pointerChange);
     if (pointerChange == -1) {
       return;
     }
