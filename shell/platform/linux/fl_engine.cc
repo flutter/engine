@@ -169,8 +169,8 @@ static void setup_locales(FlEngine* self) {
       continue;
     }
 
-    g_autofree gchar* language = NULL;
-    g_autofree gchar* territory = NULL;
+    g_autofree gchar* language = nullptr;
+    g_autofree gchar* territory = nullptr;
     parse_locale(locale_string, &language, &territory, nullptr, nullptr);
 
     // Ignore duplicate locales, caused by settings like `LANGUAGE=C` (returns
