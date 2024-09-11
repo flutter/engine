@@ -263,11 +263,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlColorSourceType::kSweepGradient:
           RecordByType(DisplayListOpType::kSetPodColorSource);
           break;
-#ifdef IMPELLER_ENABLE_3D
-        case DlColorSourceType::kScene:
-          RecordByType(DisplayListOpType::kSetSceneColorSource);
-          break;
-#endif  // IMPELLER_ENABLE_3D
       }
     } else {
       RecordByType(DisplayListOpType::kClearColorSource);
