@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
-import 'dart:ui' show Color;
 
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as path;
@@ -61,7 +60,8 @@ void main() {
     ]));
     final runResult = io.Process.runSync(dart, <String>[regularDill]);
     checkProcessResult(runResult);
-    var paintString = '"Paint.toString":"Paint(${const Color(0xffffffff)})"';
+    var paintString =
+      '"Paint.toString":"Paint(Color(alpha: 1.0000, red: 1.0000, green: 1.0000, blue: 1.0000, colorSpace: ColorSpace.sRGB))"';
     if (buildDir.contains('release')) {
       paintString = '"Paint.toString":"Instance of \'Paint\'"';
     }
