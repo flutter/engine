@@ -76,7 +76,7 @@ void main() {
     if (assertsEnabled) {
       expect(
         () => builder.addPicture(Offset.zero, picture),
-        throwsA(isInstanceOf<AssertionError>()),
+        throwsA(const isInstanceOf<AssertionError>()),
       );
     } else {
       builder.addPicture(Offset.zero, picture);

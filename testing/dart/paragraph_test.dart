@@ -326,7 +326,8 @@ void main() {
     final Canvas canvas = Canvas(recorder);
 
     void callback() { canvas.drawParagraph(paragraph, Offset.zero); }
-    expect(callback, throwsA(isA<Error>()));
+
+    expect(callback, throwsA(isA<AssertionError>()));
   });
 
   test('rounding hack disabled', () {

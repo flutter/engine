@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 void main() {
   test('Message loop flushes microtasks between iterations', () async {

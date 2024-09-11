@@ -14,6 +14,7 @@ resolution: workspace
 
 dependencies:
   ffi: any
+  litetest: any
   path: any
   skia_gold_client: any
   sky_engine: any
