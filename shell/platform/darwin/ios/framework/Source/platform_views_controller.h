@@ -7,6 +7,7 @@
 
 #include <Metal/Metal.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/memory/weak_ptr.h"
