@@ -136,7 +136,11 @@ class GlyphAtlas {
   const Type type_;
   std::shared_ptr<Texture> texture_;
 
-  std::unordered_map<ScaledFont, FontGlyphAtlas> font_atlas_map_;
+  std::unordered_map<ScaledFont,
+                     FontGlyphAtlas,
+                     ScaledFont::Hash,
+                     ScaledFont::Equal>
+      font_atlas_map_;
 
   GlyphAtlas(const GlyphAtlas&) = delete;
 
