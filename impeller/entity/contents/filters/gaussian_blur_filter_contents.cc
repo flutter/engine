@@ -669,9 +669,15 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return result;
   }
 
-  std::shared_ptr<CommandBuffer> command_buffer =
+  // Note: The code below uses three different command buffers when it would be
+  // possible to combine the operations into a single buffer. From testing and
+  // user bug reports (see https://github.com/flutter/flutter/issues/154046 ),
+  // this sometimes causes deviceLost errors on older Adreno devices. Breaking
+  // the work up into three different command buffers seems to prevent this
+  // crash.
+  std::shared_ptr<CommandBuffer> command_buffer_1 =
       renderer.GetContext()->CreateCommandBuffer();
-  if (!command_buffer) {
+  if (!command_buffer_1) {
     return std::nullopt;
   }
 
@@ -680,7 +686,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       source_expanded_coverage_hint, inputs[0], snapshot_entity);
 
   fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
-      renderer, command_buffer, input_snapshot->texture,
+      renderer, command_buffer_1, input_snapshot->texture,
       input_snapshot->sampler_descriptor, downsample_pass_args, tile_mode_);
 
   if (!pass1_out.ok()) {
@@ -692,8 +698,14 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
 
+  std::shared_ptr<CommandBuffer> command_buffer_2 =
+      renderer.GetContext()->CreateCommandBuffer();
+  if (!command_buffer_2) {
+    return std::nullopt;
+  }
+
   fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
-      renderer, command_buffer, /*input_pass=*/pass1_out.value(),
+      renderer, command_buffer_2, /*input_pass=*/pass1_out.value(),
       input_snapshot->sampler_descriptor, tile_mode_,
       BlurParameters{
           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
@@ -709,6 +721,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  std::shared_ptr<CommandBuffer> command_buffer_3 =
+      renderer.GetContext()->CreateCommandBuffer();
+  if (!command_buffer_3) {
+    return std::nullopt;
+  }
+
   // Only ping pong if the first pass actually created a render target.
   auto pass3_destination = pass2_out.value().GetRenderTargetTexture() !=
                                    pass1_out.value().GetRenderTargetTexture()
@@ -716,7 +734,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                : std::optional<RenderTarget>(std::nullopt);
 
   fml::StatusOr<RenderTarget> pass3_out = MakeBlurSubpass(
-      renderer, command_buffer, /*input_pass=*/pass2_out.value(),
+      renderer, command_buffer_3, /*input_pass=*/pass2_out.value(),
       input_snapshot->sampler_descriptor, tile_mode_,
       BlurParameters{
           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
@@ -734,7 +752,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   if (!renderer.GetContext()
            ->GetCommandQueue()
-           ->Submit(/*buffers=*/{command_buffer})
+           ->Submit(/*buffers=*/{command_buffer_1, command_buffer_2,
+                                 command_buffer_3})
            .ok()) {
     return std::nullopt;
   }
