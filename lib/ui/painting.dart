@@ -49,7 +49,7 @@ bool _radiusIsValid(Radius radius) {
 }
 
 Color _scaleAlpha(Color x, double factor) {
-  return x.withValues(alpha: (x.a * factor).clamp(0, 1));
+  return x.withValues(alpha: clampDouble(x.a * factor, 0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -354,10 +354,10 @@ class Color {
       } else {
         assert(x.colorSpace == y.colorSpace);
         return Color.from(
-          alpha: _lerpDouble(x.a, y.a, t).clamp(0, 1),
-          red: _lerpDouble(x.r, y.r, t).clamp(0, 1),
-          green: _lerpDouble(x.g, y.g, t).clamp(0, 1),
-          blue: _lerpDouble(x.b, y.b, t).clamp(0, 1),
+          alpha: clampDouble(_lerpDouble(x.a, y.a, t), 0, 1),
+          red: clampDouble(_lerpDouble(x.r, y.r, t), 0, 1),
+          green: clampDouble(_lerpDouble(x.g, y.g, t), 0, 1),
+          blue: clampDouble(_lerpDouble(x.b, y.b, t), 0, 1),
           colorSpace: x.colorSpace,
         );
       }
