@@ -52,6 +52,8 @@ wasm_lib("skwasm") {
     "-sEXPORTED_RUNTIME_METHODS=[addFunction,wasmExports]",
     "-Wno-pthreads-mem-growth",
     "--js-library",
+    rebase_path("library_skwasm_multi_threaded.js"),
+    "--js-library",
     rebase_path("library_skwasm_support.js"),
   ]
 

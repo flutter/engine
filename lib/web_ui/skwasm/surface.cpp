@@ -29,10 +29,7 @@ Surface::Surface() {
       },
       this);
   // Listen to messages from the worker
-  skwasm_registerMessageListener(_thread);
-
-  // Synchronize the time origin for the worker thread
-  skwasm_syncTimeOriginForThread(_thread);
+  skwasm_connectThread(_thread);
 }
 
 // Worker thread only
@@ -88,7 +85,7 @@ void Surface::_runWorker() {
 // Worker thread only
 void Surface::_init() {
   // Listen to messages from the main thread
-  skwasm_registerMessageListener(0);
+  skwasm_connectThread(0);
   _glContext = skwasm_createOffscreenCanvas(256, 256);
   if (!_glContext) {
     printf("Failed to create context!\n");
