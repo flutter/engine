@@ -122,7 +122,7 @@ Future<void> testMain() async {
     expect(
       style.toString(),
       'TextStyle('
-      'color: Color(0xff000000), '
+      'color: ${const ui.Color(0xff000000)}, '
       'decoration: TextDecoration.none, '
       'decorationColor: Color(0xffaa0000), '
       'decorationStyle: TextDecorationStyle.solid, '
@@ -140,7 +140,7 @@ Future<void> testMain() async {
       'locale: en_US, '
       'background: Paint(), '
       'foreground: unspecified, '
-      'shadows: [TextShadow(Color(0xff000000), Offset(0.0, 0.0), ${0.0})], '
+      'shadows: [TextShadow(${const ui.Color(0xff000000)}, Offset(0.0, 0.0), ${0.0})], '
       "fontFeatures: [FontFeature('case', 1)], "
       "fontVariations: [FontVariation('ital', 0.1)]"
       ')',
