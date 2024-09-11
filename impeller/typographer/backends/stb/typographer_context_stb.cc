@@ -283,7 +283,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
       continue;
     }
     DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph.glyph,
-              pos.value().first, has_color);
+              pos->atlas_bounds, has_color);
   }
   return true;
 }
@@ -443,14 +443,17 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
           new_glyphs.push_back(FontGlyphPair{scaled_font, subpixel_glyph});
           auto glyph_bounds = ComputeGlyphSize(scaled_font, subpixel_glyph);
           new_sizes.push_back(glyph_bounds);
-          frame->AppendFontGlyphBounds(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds,
-                                       /*first=*/true);
-          font_glyph_atlas->positions[subpixel_glyph] =
-              std::make_pair(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds);
+
+          auto frame_bounds = FrameBounds{
+              Rect::MakeLTRB(0, 0, 0, 0),  //
+              glyph_bounds,                //
+              /*placeholder=*/true         //
+          };
+
+          frame->AppendFrameBounds(frame_bounds);
+          font_glyph_atlas->AppendGlyph(subpixel_glyph, frame_bounds);
         } else {
-          frame->AppendFontGlyphBounds(font_glyph_bounds.value().first,
-                                       font_glyph_bounds.value().second,
-                                       /*first=*/false);
+          frame->AppendFrameBounds(font_glyph_bounds.value());
         }
       }
     }

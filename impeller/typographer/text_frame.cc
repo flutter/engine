@@ -105,10 +105,8 @@ std::optional<GlyphProperties> TextFrame::GetProperties() const {
   return properties_;
 }
 
-void TextFrame::AppendFontGlyphBounds(Rect atlas_bounds,
-                                      Rect glyph_bounds,
-                                      bool first) {
-  bound_values_.push_back(FrameBounds{atlas_bounds, glyph_bounds, first});
+void TextFrame::AppendFrameBounds(const FrameBounds& frame_bounds) {
+  bound_values_.push_back(frame_bounds);
 }
 
 bool TextFrame::IsFrameComplete() const {
@@ -119,7 +117,7 @@ bool TextFrame::IsFrameComplete() const {
   return bound_values_.size() == run_size;
 }
 
-TextFrame::FrameBounds TextFrame::GetFrameBounds(size_t index) {
+FrameBounds TextFrame::GetFrameBounds(size_t index) {
   return bound_values_[index];
 }
 

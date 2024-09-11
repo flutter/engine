@@ -67,11 +67,11 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
 void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
                                                    Rect position,
                                                    Rect bounds) {
-  font_atlas_map_[pair.scaled_font].positions[pair.glyph] =
-      std::make_pair(position, bounds);
+  font_atlas_map_[pair.scaled_font].positions_[pair.glyph] =
+      FrameBounds{position, bounds, /*placeholder=*/false};
 }
 
-std::optional<std::pair<Rect, Rect>> GlyphAtlas::FindFontGlyphBounds(
+std::optional<FrameBounds> GlyphAtlas::FindFontGlyphBounds(
     const FontGlyphPair& pair) const {
   const auto& found = font_atlas_map_.find(pair.scaled_font);
   if (found == font_atlas_map_.end()) {
@@ -93,7 +93,7 @@ FontGlyphAtlas* GlyphAtlas::GetOrCreateFontGlyphAtlas(
 size_t GlyphAtlas::GetGlyphCount() const {
   return std::accumulate(
       font_atlas_map_.begin(), font_atlas_map_.end(), 0,
-      [](const int a, const auto& b) { return a + b.second.positions.size(); });
+      [](const int a, const auto& b) { return a + b.second.positions_.size(); });
 }
 
 size_t GlyphAtlas::IterateGlyphs(
@@ -106,10 +106,10 @@ size_t GlyphAtlas::IterateGlyphs(
 
   size_t count = 0u;
   for (const auto& font_value : font_atlas_map_) {
-    for (const auto& glyph_value : font_value.second.positions) {
+    for (const auto& glyph_value : font_value.second.positions_) {
       count++;
       if (!iterator(font_value.first, glyph_value.first,
-                    glyph_value.second.first)) {
+                    glyph_value.second.atlas_bounds)) {
         return count;
       }
     }
@@ -117,13 +117,18 @@ size_t GlyphAtlas::IterateGlyphs(
   return count;
 }
 
-std::optional<std::pair<Rect, Rect>> FontGlyphAtlas::FindGlyphBounds(
+std::optional<FrameBounds> FontGlyphAtlas::FindGlyphBounds(
     const SubpixelGlyph& glyph) const {
-  const auto& found = positions.find(glyph);
-  if (found == positions.end()) {
+  const auto& found = positions_.find(glyph);
+  if (found == positions_.end()) {
     return std::nullopt;
   }
   return found->second;
+}
+
+void FontGlyphAtlas::AppendGlyph(const SubpixelGlyph& glyph,
+                                 const FrameBounds& frame_bounds) {
+  positions_[glyph] = frame_bounds;
 }
 
 }  // namespace impeller

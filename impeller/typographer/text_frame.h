@@ -73,15 +73,6 @@ class TextFrame {
   ///        information.
   bool IsFrameComplete() const;
 
-  struct FrameBounds {
-    /// The bounds of the glyph within the glyph atlas.
-    Rect atlas_bounds;
-    /// The local glyph bounds.
-    Rect glyph_bounds;
-    /// Whether [atlas_bounds] have been correctly computed.
-    bool first;
-  };
-
   /// @brief Retrieve the frame bounds for the glyph at [index].
   ///
   /// This method is only valid if [IsFrameComplete] returns true.
@@ -108,7 +99,7 @@ class TextFrame {
 
   std::optional<GlyphProperties> GetProperties() const;
 
-  void AppendFontGlyphBounds(Rect atlas_bounds, Rect glyph_bounds, bool first);
+  void AppendFrameBounds(const FrameBounds& frame_bounds);
 
   std::vector<TextRun> runs_;
   Rect bounds_;

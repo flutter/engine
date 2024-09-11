@@ -282,7 +282,8 @@ static bool BulkUpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!data.has_value()) {
       continue;
     }
-    auto [pos, bounds] = data.value();
+    auto [pos, bounds, placeholder] = data.value();
+    FML_DCHECK(!placeholder);
     Size size = pos.GetSize();
     if (size.IsEmpty()) {
       continue;
@@ -325,7 +326,9 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!data.has_value()) {
       continue;
     }
-    auto [pos, bounds] = data.value();
+    auto [pos, bounds, placeholder] = data.value();
+    FML_DCHECK(!placeholder);
+
     Size size = pos.GetSize();
     if (size.IsEmpty()) {
       continue;
@@ -444,16 +447,18 @@ void TypographerContextSkia::CollectNewGlyphs(
           new_glyphs.push_back(FontGlyphPair{scaled_font, subpixel_glyph});
           auto glyph_bounds =
               ComputeGlyphSize(sk_font, subpixel_glyph, scaled_font.scale);
-          glyph_sizes.push_back(
-              ComputeGlyphSize(sk_font, subpixel_glyph, scaled_font.scale));
-          frame->AppendFontGlyphBounds(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds,
-                                       /*first=*/true);
-          font_glyph_atlas->positions[subpixel_glyph] =
-              std::make_pair(Rect::MakeLTRB(0, 0, 0, 0), glyph_bounds);
+          glyph_sizes.push_back(glyph_bounds);
+
+          auto frame_bounds = FrameBounds{
+              Rect::MakeLTRB(0, 0, 0, 0),  //
+              glyph_bounds,                //
+              /*placeholder=*/true         //
+          };
+
+          frame->AppendFrameBounds(frame_bounds);
+          font_glyph_atlas->AppendGlyph(subpixel_glyph, frame_bounds);
         } else {
-          frame->AppendFontGlyphBounds(font_glyph_bounds.value().first,
-                                       font_glyph_bounds.value().second,
-                                       /*first=*/false);
+          frame->AppendFrameBounds(font_glyph_bounds.value());
         }
       }
     }

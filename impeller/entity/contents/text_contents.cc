@@ -222,17 +222,16 @@ bool TextContents::Render(const ContentContext& renderer,
           Point screen_offset = (entity_transform * Point(0, 0));
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
-            TextFrame::FrameBounds frame_bounds =
-                frame_->GetFrameBounds(bounds_offset);
+            FrameBounds frame_bounds = frame_->GetFrameBounds(bounds_offset);
             bounds_offset++;
             auto atlas_glyph_bounds = frame_bounds.atlas_bounds;
             auto glyph_bounds = frame_bounds.glyph_bounds;
 
-            // If frame_bounds.first is true, this is the first frame the
+            // If frame_bounds.placeholder is true, this is the first frame the
             // glyph has been rendered and so its atlas position was not known
             // when the glyph was recorded. Perform a slow lookup into the glyph
             // atlas hash table.
-            if (frame_bounds.first) {
+            if (frame_bounds.placeholder) {
               // Note: uses unrounded scale for more accurate subpixel position.
               if (!font_atlas) {
                 font_atlas = atlas->GetOrCreateFontGlyphAtlas(
@@ -247,19 +246,18 @@ bool TextContents::Render(const ContentContext& renderer,
                   glyph_position, font.GetAxisAlignment(), offset_,
                   rounded_scale);
 
-              std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
+              std::optional<FrameBounds> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
                       glyph_position.glyph,  //
                       subpixel,              //
                       GetGlyphProperties()   //
                   });
               if (!maybe_atlas_glyph_bounds.has_value()) {
-                VALIDATION_LOG
-                    << "Could not find glyph position in the atlas.: "
-                    << glyph_position.glyph.index << " at scale " << scale_;
+                VALIDATION_LOG << "Could not find glyph position in the atlas.";
                 continue;
               }
-              atlas_glyph_bounds = maybe_atlas_glyph_bounds.value().first;
+              atlas_glyph_bounds =
+                  maybe_atlas_glyph_bounds.value().atlas_bounds;
             }
 
             Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
