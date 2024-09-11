@@ -10,7 +10,6 @@
 @implementation SpawnEngineTest
 
 - (void)testSpawnEngineWorks {
-  XCTFail();
   self.continueAfterFailure = NO;
 
   XCUIApplication* application = [[XCUIApplication alloc] init];
