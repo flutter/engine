@@ -121,7 +121,7 @@ Future<void> testMain() async {
 
   test('color filter as image filter', () async {
     const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
-      ui.Color.fromRGBO(0, 0, 255, 128),
+      ui.Color.fromARGB(128, 0, 0, 255),
       ui.BlendMode.srcOver,
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = colorFilter);
@@ -131,7 +131,7 @@ Future<void> testMain() async {
 
   test('mode color filter', () async {
     const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
-      ui.Color.fromRGBO(0, 0, 255, 128),
+      ui.Color.fromARGB(128, 0, 0, 255),
       ui.BlendMode.srcOver,
     );
     await drawTestImageWithPaint(ui.Paint()..colorFilter = colorFilter);
