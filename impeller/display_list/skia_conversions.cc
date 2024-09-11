@@ -38,6 +38,13 @@ std::optional<Rect> ToRect(const SkRect* rect) {
   return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
 }
 
+std::optional<const Rect> ToRect(const flutter::DlRect* rect) {
+  if (rect == nullptr) {
+    return std::nullopt;
+  }
+  return *rect;
+}
+
 std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
@@ -46,10 +53,26 @@ std::vector<Rect> ToRects(const SkRect tex[], int count) {
   return result;
 }
 
+std::vector<Rect> ToRects(const flutter::DlRect tex[], int count) {
+  auto result = std::vector<Rect>();
+  for (int i = 0; i < count; i++) {
+    result.push_back(tex[i]);
+  }
+  return result;
+}
+
 std::vector<Point> ToPoints(const SkPoint points[], int count) {
   std::vector<Point> result(count);
   for (auto i = 0; i < count; i++) {
     result[i] = ToPoint(points[i]);
+  }
+  return result;
+}
+
+std::vector<Point> ToPoints(const flutter::DlPoint points[], int count) {
+  std::vector<Point> result(count);
+  for (auto i = 0; i < count; i++) {
+    result[i] = points[i];
   }
   return result;
 }
@@ -218,7 +241,8 @@ std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 void ConvertStops(const flutter::DlGradientColorSourceBase* gradient,
                   std::vector<Color>& colors,
                   std::vector<float>& stops) {
-  FML_DCHECK(gradient->stop_count() >= 2);
+  FML_DCHECK(gradient->stop_count() >= 2)
+      << "stop_count:" << gradient->stop_count();
 
   auto* dl_colors = gradient->colors();
   auto* dl_stops = gradient->stops();
