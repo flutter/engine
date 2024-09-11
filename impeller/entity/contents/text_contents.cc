@@ -66,7 +66,11 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(frame_, scale, offset_, properties_);
+  lazy_glyph_atlas->AddTextFrame(frame_,               //
+                                 scale,                //
+                                 offset_,              //
+                                 GetGlyphProperties()  //
+  );
   scale_ = scale;
 }
 
@@ -242,9 +246,13 @@ bool TextContents::Render(const ContentContext& renderer,
               Point subpixel = TextFrame::ComputeSubpixelPosition(
                   glyph_position, font.GetAxisAlignment(), offset_,
                   rounded_scale);
+
               std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
-                      glyph_position.glyph, subpixel, properties_});
+                      glyph_position.glyph,  //
+                      subpixel,              //
+                      GetGlyphProperties()   //
+                  });
               if (!maybe_atlas_glyph_bounds.has_value()) {
                 VALIDATION_LOG
                     << "Could not find glyph position in the atlas.: "
@@ -301,6 +309,12 @@ bool TextContents::Render(const ContentContext& renderer,
   });
 
   return pass.Draw().ok();
+}
+
+std::optional<GlyphProperties> TextContents::GetGlyphProperties() const {
+  return (properties_.stroke || frame_->HasColor())
+             ? std::optional<GlyphProperties>(properties_)
+             : std::nullopt;
 }
 
 }  // namespace impeller

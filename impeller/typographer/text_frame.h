@@ -100,13 +100,13 @@ class TextFrame {
   /// glyph atlas.
   void SetPerFrameData(Scalar scale,
                        Point offset,
-                       const GlyphProperties& properties);
+                       std::optional<GlyphProperties> properties);
 
   Scalar GetScale() const;
 
   Point GetOffset() const;
 
-  const GlyphProperties& GetProperties() const;
+  std::optional<GlyphProperties> GetProperties() const;
 
   void AppendFontGlyphBounds(Rect atlas_bounds, Rect glyph_bounds, bool first);
 
@@ -118,7 +118,7 @@ class TextFrame {
   std::vector<FrameBounds> bound_values_;
   Scalar scale_;
   Point offset_;
-  GlyphProperties properties_;
+  std::optional<GlyphProperties> properties_ = std::nullopt;
 };
 
 }  // namespace impeller

@@ -86,7 +86,7 @@ Point TextFrame::ComputeSubpixelPosition(
 
 void TextFrame::SetPerFrameData(Scalar scale,
                                 Point offset,
-                                const GlyphProperties& properties) {
+                                std::optional<GlyphProperties> properties) {
   scale_ = scale;
   offset_ = offset;
   properties_ = properties;
@@ -101,7 +101,7 @@ Point TextFrame::GetOffset() const {
   return offset_;
 }
 
-const GlyphProperties& TextFrame::GetProperties() const {
+std::optional<GlyphProperties> TextFrame::GetProperties() const {
   return properties_;
 }
 

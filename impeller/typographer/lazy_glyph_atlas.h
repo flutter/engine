@@ -22,7 +22,7 @@ class LazyGlyphAtlas {
   void AddTextFrame(const std::shared_ptr<TextFrame>& frame,
                     Scalar scale,
                     Point offset,
-                    const GlyphProperties& properties);
+                    std::optional<GlyphProperties> properties);
 
   void ResetTextFrames();
 

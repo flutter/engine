@@ -216,7 +216,11 @@ class FontGlyphAtlas {
   std::optional<std::pair<Rect, Rect>> FindGlyphBounds(
       const SubpixelGlyph& glyph) const;
 
-  std::unordered_map<SubpixelGlyph, std::pair<Rect, Rect>> positions;
+  std::unordered_map<SubpixelGlyph,
+                     std::pair<Rect, Rect>,
+                     SubpixelGlyph::Hash,
+                     SubpixelGlyph::Equal>
+      positions;
 
  private:
   friend class GlyphAtlas;
