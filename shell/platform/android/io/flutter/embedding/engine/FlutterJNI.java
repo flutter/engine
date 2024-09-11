@@ -139,6 +139,25 @@ public class FlutterJNI {
    * loading native libraries.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
+   * 
+   * @deprecated replaced by {@link #loadLibrary(Context)}.
+   */
+  @Deprecated
+  public void loadLibrary() {
+    if (FlutterJNI.loadLibraryCalled) {
+      Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
+    }
+    System.loadLibrary("flutter");
+    FlutterJNI.loadLibraryCalled = true;
+  }
+  
+  /**
+   * Loads the libflutter.so C++ library.
+   *
+   * <p>This must be called before any other native methods, and can be overridden by tests to avoid
+   * loading native libraries.
+   *
+   * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void loadLibrary(Context context) {
     if (FlutterJNI.loadLibraryCalled) {
