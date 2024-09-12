@@ -13,7 +13,6 @@ import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -264,7 +263,6 @@ public class AndroidTouchProcessor {
       Matrix transformMatrix,
       ByteBuffer packet,
       Context context) {
-    Log.e("HI GRAY", "POINTER CHANGE: " + pointerChange);
     if (pointerChange == -1) {
       return;
     }
