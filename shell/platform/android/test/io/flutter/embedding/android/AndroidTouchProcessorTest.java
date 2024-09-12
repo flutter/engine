@@ -54,15 +54,37 @@ public class AndroidTouchProcessorTest {
   }
 
   private long readPointerChange(ByteBuffer buffer) {
-    return buffer.getLong(2 * AndroidTouchProcessor.BYTES_PER_FIELD);
+    return readPointerChangeForPointer(buffer, 0);
+  }
+
+  private long readPointerChangeForPointer(ByteBuffer buffer, int pointerIndex) {
+    return buffer.getLong(
+        2 * AndroidTouchProcessor.BYTES_PER_FIELD
+            + (AndroidTouchProcessor.BYTES_PER_FIELD
+                * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT
+                * pointerIndex));
   }
 
   private long readPointerDeviceKind(ByteBuffer buffer) {
-    return buffer.getLong(3 * AndroidTouchProcessor.BYTES_PER_FIELD);
+    return readPointerDeviceKindForPointer(buffer, 0);
+  }
+
+  private long readPointerDeviceKindForPointer(ByteBuffer buffer, int pointerIndex) {
+    return buffer.getLong(3 * AndroidTouchProcessor.BYTES_PER_FIELD +
+            (AndroidTouchProcessor.BYTES_PER_FIELD
+            * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT
+            * pointerIndex));
   }
 
   private long readPointerSignalKind(ByteBuffer buffer) {
-    return buffer.getLong(4 * AndroidTouchProcessor.BYTES_PER_FIELD);
+    return readPointerSignalKindForPointer(buffer, 0);
+  }
+
+  private long readPointerSignalKindForPointer(ByteBuffer buffer, int pointerIndex) {
+    return buffer.getLong(4 * AndroidTouchProcessor.BYTES_PER_FIELD +
+            (AndroidTouchProcessor.BYTES_PER_FIELD
+                    * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT
+                    * pointerIndex));
   }
 
   private long readDevice(ByteBuffer buffer) {
@@ -70,11 +92,25 @@ public class AndroidTouchProcessorTest {
   }
 
   private double readPointerPhysicalX(ByteBuffer buffer) {
-    return buffer.getDouble(7 * AndroidTouchProcessor.BYTES_PER_FIELD);
+    return readPointerPhysicalXForPointer(buffer, 0);
+  }
+
+  private double readPointerPhysicalXForPointer(ByteBuffer buffer, int pointerIndex) {
+    return buffer.getDouble(7 * AndroidTouchProcessor.BYTES_PER_FIELD +
+            (AndroidTouchProcessor.BYTES_PER_FIELD
+                    * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT
+                    * pointerIndex));
   }
 
   private double readPointerPhysicalY(ByteBuffer buffer) {
-    return buffer.getDouble(8 * AndroidTouchProcessor.BYTES_PER_FIELD);
+    return readPointerPhysicalYForPointer(buffer, 0);
+  }
+
+  private double readPointerPhysicalYForPointer(ByteBuffer buffer, int pointerIndex) {
+    return buffer.getDouble(8 * AndroidTouchProcessor.BYTES_PER_FIELD +
+            (AndroidTouchProcessor.BYTES_PER_FIELD
+                    * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT
+                    * pointerIndex));
   }
 
   private long readButtons(ByteBuffer buffer) {
@@ -253,6 +289,11 @@ public class AndroidTouchProcessorTest {
     assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
     assertEquals(10.0, readPointerPhysicalX(packet));
     assertEquals(5.0, readPointerPhysicalY(packet));
+    assertEquals(AndroidTouchProcessor.PointerChange.REMOVE, readPointerChangeForPointer(packet, 1));
+    assertEquals(AndroidTouchProcessor.PointerDeviceKind.TOUCH, readPointerDeviceKindForPointer(packet, 1));
+    assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKindForPointer(packet, 1));
+    assertEquals(10.0, readPointerPhysicalXForPointer(packet, 1));
+    assertEquals(5.0, readPointerPhysicalYForPointer(packet, 1));
     inOrder.verifyNoMoreInteractions();
   }
 
