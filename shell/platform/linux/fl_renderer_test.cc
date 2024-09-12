@@ -145,6 +145,8 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
           ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
+  EXPECT_CALL(epoxy, epoxy_has_gl_extension(::testing::_))
+      .WillRepeatedly(::testing::Return(false));
   EXPECT_CALL(epoxy, epoxy_has_gl_extension(
                          ::testing::StrEq("GL_EXT_framebuffer_blit")))
       .WillRepeatedly(::testing::Return(true));
