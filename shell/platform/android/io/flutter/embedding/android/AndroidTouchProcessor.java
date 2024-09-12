@@ -141,11 +141,11 @@ public class AndroidTouchProcessor {
     int maskedAction = event.getActionMasked();
     int pointerChange = getPointerChangeForAction(event.getActionMasked());
     boolean updateForSinglePointer =
-            maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN;
+        maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN;
     boolean updateForMultiplePointers =
-            !updateForSinglePointer
-                    && (maskedAction == MotionEvent.ACTION_UP
-                    || maskedAction == MotionEvent.ACTION_POINTER_UP);
+        !updateForSinglePointer
+            && (maskedAction == MotionEvent.ACTION_UP
+                || maskedAction == MotionEvent.ACTION_POINTER_UP);
 
     // Add an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP update, to handle the
     // synthesized PointerChange.REMOVE event.
