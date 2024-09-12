@@ -13,7 +13,6 @@ import 'package:vm_service/vm_service_io.dart';
 import 'package:vm_service_protos/vm_service_protos.dart';
 
 import '../impeller_enabled.dart';
-import '../serialized_test_suite.dart';
 
 Future<void> _testChromeFormatTrace(vms.VmService vmService) async {
   final vms.Timeline timeline = await vmService.getVMTimeline();
@@ -70,9 +69,7 @@ Future<void> _testPerfettoFormatTrace(vms.VmService vmService) async {
 }
 
 void main() {
-  final SerializedTestSuite suite = SerializedTestSuite();
-
-  suite.test('Canvas.saveLayer emits tracing', () async {
+  test('Canvas.saveLayer emits tracing', () async {
     final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
 
     if (info.serverUri == null) {
@@ -116,7 +113,7 @@ void main() {
     await vmService.dispose();
   });
 
-  suite.test('Frame request pending begin/end pairs are matched', () async {
+  test('Frame request pending begin/end pairs are matched', () async {
     final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
 
     if (info.serverUri == null) {
