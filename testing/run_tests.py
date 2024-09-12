@@ -1306,7 +1306,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     types = args.type.split(',')
 
   if "android" in args.variant:
-    print('Warning: using "android" in variant. Did you mean to use --android-variant?')
+    print('Warning: using *android* in variant. Did you mean to use --android-variant?')
 
   build_dir = os.path.join(OUT_DIR, args.variant)
   if args.type != 'java' and args.type != 'android':
