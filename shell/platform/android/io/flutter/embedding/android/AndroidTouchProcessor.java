@@ -175,7 +175,7 @@ public class AndroidTouchProcessor {
       // to correctly batch everything back into the original Android event if needed.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
 
-      addPointerForIndex(event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+      //addPointerForIndex(event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
