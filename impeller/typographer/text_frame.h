@@ -78,6 +78,12 @@ class TextFrame {
   /// This method is only valid if [IsFrameComplete] returns true.
   FrameBounds GetFrameBounds(size_t index);
 
+  /// @brief Store text frame scale, offset, and properties for hashing in th
+  /// glyph atlas.
+  void SetPerFrameData(Scalar scale,
+                       Point offset,
+                       std::optional<GlyphProperties> properties);
+
   TextFrame& operator=(TextFrame&& other) = default;
 
   TextFrame(const TextFrame& other) = default;
@@ -86,12 +92,6 @@ class TextFrame {
   friend class TypographerContextSkia;
   friend class TypographerContextSTB;
   friend class LazyGlyphAtlas;
-
-  /// @brief Store text frame scale, offset, and properties for hashing in th
-  /// glyph atlas.
-  void SetPerFrameData(Scalar scale,
-                       Point offset,
-                       std::optional<GlyphProperties> properties);
 
   Scalar GetScale() const;
 
