@@ -75,7 +75,12 @@ dart_library("expect") {
 
   deps = []
 
-  sources = [ "expect.dart" ]
+  sources = [
+    "config.dart",
+    "expect.dart",
+    "minitest.dart",
+    "variations.dart",
+  ]
 }
 
 dart_library("meta") {
