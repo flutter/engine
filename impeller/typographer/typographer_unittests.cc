@@ -497,10 +497,9 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
       context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
 
-  auto atlas =
-      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                       GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                       MakeTextFrameFromTextBlobSkia(blob));
+  auto atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                                GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                                atlas_context, frame);
 
   // The glyph position in the atlas was not known when this value
   // was recorded. It is marked as a placeholder.
@@ -509,7 +508,7 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
 
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
                            GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                           MakeTextFrameFromTextBlobSkia(blob));
+                           frame);
 
   // The second time the glyph is rendered, the bounds are correcly known.
   EXPECT_TRUE(frame->IsFrameComplete());
