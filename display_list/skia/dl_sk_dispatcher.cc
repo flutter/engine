@@ -136,7 +136,7 @@ void DlSkCanvasDispatcher::clipRRect(const SkRRect& rrect,
 void DlSkCanvasDispatcher::clipPath(const DlPath& path,
                                     ClipOp clip_op,
                                     bool is_aa) {
-  canvas_->clipPath(path.GetSkPath(), ToSk(clip_op), is_aa);
+  canvas_->clipPath(path.GetSkPath(true), ToSk(clip_op), is_aa);
 }
 
 void DlSkCanvasDispatcher::drawPaint() {
@@ -185,7 +185,7 @@ void DlSkCanvasDispatcher::drawDRRect(const SkRRect& outer,
   canvas_->drawDRRect(outer, inner, paint());
 }
 void DlSkCanvasDispatcher::drawPath(const DlPath& path) {
-  canvas_->drawPath(path.GetSkPath(), paint());
+  canvas_->drawPath(path.GetSkPath(true), paint());
 }
 void DlSkCanvasDispatcher::drawArc(const DlRect& bounds,
                                    DlScalar start,
@@ -333,8 +333,8 @@ void DlSkCanvasDispatcher::drawShadow(const DlPath& path,
                                       const DlScalar elevation,
                                       bool transparent_occluder,
                                       DlScalar dpr) {
-  DrawShadow(canvas_, path.GetSkPath(), color, elevation, transparent_occluder,
-             dpr);
+  DrawShadow(canvas_, path.GetSkPath(true), color, elevation,
+             transparent_occluder, dpr);
 }
 
 }  // namespace flutter

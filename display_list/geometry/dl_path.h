@@ -13,13 +13,15 @@ namespace flutter {
 
 class DlPath {
  public:
-  DlPath() = default;
-  explicit DlPath(const SkPath& path) : sk_path_(path) {}
+  static constexpr uint32_t kMaxVolatileUses = 2;
+
+  DlPath() : data_(std::make_shared<Data>(SkPath())) {}
+  explicit DlPath(const SkPath& path) : data_(std::make_shared<Data>(path)) {}
 
   DlPath(const DlPath& path) = default;
   DlPath(DlPath&& path) = default;
 
-  const SkPath& GetSkPath() const;
+  const SkPath& GetSkPath(bool will_render = false) const;
   impeller::Path GetPath() const;
 
   bool IsInverseFillType() const;
@@ -35,12 +37,21 @@ class DlPath {
   DlRect GetBounds() const;
 
   bool operator==(const DlPath& other) const;
+  bool operator!=(const DlPath& other) const { return !(*this == other); }
 
   bool IsConverted() const;
+  bool IsVolatile() const;
 
  private:
-  const SkPath sk_path_;
-  mutable impeller::Path path_;
+  struct Data {
+    explicit Data(const SkPath& path) : sk_path(path) {}
+
+    SkPath sk_path;
+    impeller::Path path;
+    uint32_t use_count = 0u;
+  };
+
+  std::shared_ptr<Data> data_;
 
   static impeller::Path ConvertToImpellerPath(const SkPath& path,
                                               const DlPoint& shift = DlPoint());

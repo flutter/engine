@@ -19,6 +19,7 @@ TEST(DisplayListPath, DefaultConstruction) {
   EXPECT_FALSE(path.IsInverseFillType());
   // Empty/default paths are always "pre-converted" by default.
   EXPECT_TRUE(path.IsConverted());
+  EXPECT_FALSE(path.IsVolatile());
 
   bool is_closed = false;
   EXPECT_FALSE(path.IsRect(nullptr));
@@ -47,6 +48,7 @@ TEST(DisplayListPath, ConstructFromEmpty) {
   EXPECT_FALSE(path.IsInverseFillType());
   // Empty/default paths are always "pre-converted" by default.
   EXPECT_TRUE(path.IsConverted());
+  EXPECT_FALSE(path.IsVolatile());
 
   bool is_closed = false;
   EXPECT_FALSE(path.IsRect(nullptr));
@@ -92,6 +94,102 @@ TEST(DisplayListPath, CopyConstruct) {
 
   EXPECT_EQ(path2.GetBounds(), DlRect::MakeLTRB(10, 10, 20, 20));
   EXPECT_EQ(path2.GetSkBounds(), SkRect::MakeLTRB(10, 10, 20, 20));
+}
+
+TEST(DisplayListPath, ConstructFromVolatile) {
+  SkPath sk_path;
+  sk_path.setIsVolatile(true);
+  DlPath path(sk_path);
+
+  EXPECT_EQ(path, DlPath());
+  EXPECT_EQ(path.GetSkPath(), SkPath());
+
+  EXPECT_FALSE(path.IsInverseFillType());
+  // Empty/default paths are always "pre-converted" by default.
+  EXPECT_TRUE(path.IsConverted());
+  EXPECT_TRUE(path.IsVolatile());
+
+  bool is_closed = false;
+  EXPECT_FALSE(path.IsRect(nullptr));
+  EXPECT_FALSE(path.IsRect(nullptr, &is_closed));
+  EXPECT_FALSE(is_closed);
+  EXPECT_FALSE(path.IsOval(nullptr));
+
+  is_closed = false;
+  EXPECT_FALSE(path.IsSkRect(nullptr));
+  EXPECT_FALSE(path.IsSkRect(nullptr, &is_closed));
+  EXPECT_FALSE(is_closed);
+  EXPECT_FALSE(path.IsSkOval(nullptr));
+  EXPECT_FALSE(path.IsSkRRect(nullptr));
+
+  EXPECT_EQ(path.GetBounds(), DlRect());
+  EXPECT_EQ(path.GetSkBounds(), SkRect());
+}
+
+TEST(DisplayListPath, VolatileBecomesNonVolatile) {
+  SkPath sk_path;
+  sk_path.setIsVolatile(true);
+  DlPath path(sk_path);
+
+  EXPECT_TRUE(path.IsVolatile());
+
+  for (int i = 0; i < 1000; i++) {
+    // grabbing the Impeller version of the path does not make it non-volatile
+    path.GetPath();
+  }
+  EXPECT_TRUE(path.IsVolatile());
+
+  for (int i = 0; i < 1000; i++) {
+    // not specifying intent to render does not make it non-volatile
+    path.GetSkPath();
+  }
+  EXPECT_TRUE(path.IsVolatile());
+
+  for (int i = 0; i < 1000; i++) {
+    // specifying non-intent to render does not make it non-volatile
+    path.GetSkPath(false);
+  }
+  EXPECT_TRUE(path.IsVolatile());
+
+  for (uint32_t i = 0; i < DlPath::kMaxVolatileUses; i++) {
+    // Expressing intent to render will only be volatile the first few times
+    path.GetSkPath(true);
+    EXPECT_TRUE(path.IsVolatile());
+  }
+
+  // One last time makes the path non-volatile
+  path.GetSkPath(true);
+  EXPECT_FALSE(path.IsVolatile());
+}
+
+TEST(DisplayListPath, MultipleVolatileCopiesBecomeNonVolatileTogether) {
+  SkPath sk_path;
+  sk_path.setIsVolatile(true);
+  DlPath path(sk_path);
+  const DlPath paths[4] = {
+      path,
+      path,
+      path,
+      path,
+  };
+
+  EXPECT_TRUE(path.IsVolatile());
+
+  for (uint32_t i = 0; i < DlPath::kMaxVolatileUses; i++) {
+    // Expressing intent to render will only be volatile the first few times
+    paths[i].GetSkPath(true);
+    EXPECT_TRUE(path.IsVolatile());
+    for (const auto& p : paths) {
+      EXPECT_TRUE(p.IsVolatile());
+    }
+  }
+
+  // One last time makes the path non-volatile
+  paths[3].GetSkPath(true);
+  EXPECT_FALSE(path.IsVolatile());
+  for (const auto& p : paths) {
+    EXPECT_FALSE(p.IsVolatile());
+  }
 }
 
 TEST(DisplayListPath, EmbeddingSharedReference) {
@@ -140,7 +238,7 @@ TEST(DisplayListPath, EmbeddingSharedReference) {
   ConversionSharingTester before_tester(path);
   EXPECT_FALSE(before_tester.Test(path, "Before triggering conversion"));
   EXPECT_FALSE(path.GetPath().IsEmpty());
-  EXPECT_FALSE(before_tester.Test(path, "After conversion of source object"));
+  EXPECT_TRUE(before_tester.Test(path, "After conversion of source object"));
   EXPECT_FALSE(before_tester.ConvertAndTestEmpty());
   EXPECT_TRUE(before_tester.Test(path, "After conversion of captured object"));
 
