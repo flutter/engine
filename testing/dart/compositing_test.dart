@@ -149,7 +149,7 @@ void main() {
     expect(() {
       builder2.addRetained(layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('The layer is already being used'))));
     builder2.build();
   }
@@ -167,7 +167,7 @@ void main() {
     expect(() {
       pushFunction(builder2, layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('The layer is already being used'))));
     builder2.build();
   }
@@ -184,7 +184,7 @@ void main() {
     expect(() {
       builder2.addRetained(layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('The layer is already being used'))));
     builder2.build();
   }
@@ -201,7 +201,7 @@ void main() {
     expect(() {
       pushFunction(builder2, layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('was previously used as oldLayer'))));
     builder2.build();
   }
@@ -220,7 +220,7 @@ void main() {
     expect(() {
       builder2.pushOpacity(321, oldLayer: childLayer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('The layer is already being used'))));
     builder2.build();
   }
@@ -240,7 +240,7 @@ void main() {
     expect(() {
       builder2.addRetained(layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('The layer is already being used'))));
     builder2.build();
   }
@@ -259,7 +259,7 @@ void main() {
       final SceneBuilder builder3 = SceneBuilder();
       builder3.addRetained(layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('was previously used as oldLayer'))));
     builder2.build();
   }
@@ -278,7 +278,7 @@ void main() {
       final SceneBuilder builder3 = SceneBuilder();
       pushFunction(builder3, layer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('was previously used as oldLayer'))));
     builder2.build();
   }
@@ -299,7 +299,7 @@ void main() {
       final SceneBuilder builder3 = SceneBuilder();
       builder3.addRetained(parentLayer);
     }, throwsA(isA<AssertionError>()
-      .having((AssertionError e) => e.toString(), 'toString', 
+      .having((AssertionError e) => e.toString(), 'toString',
           contains('was previously used as oldLayer'))));
     builder2.build();
   }
