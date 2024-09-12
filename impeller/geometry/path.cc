@@ -298,9 +298,11 @@ Path::Polyline Path::CreatePolyline(
   std::vector<PolylineContour::Component> poly_components;
   size_t storage_offset = 0u;
   size_t component_i = 0;
+  bool last_is_empty_contour = false;
 
   for (; component_i < path_components.size(); component_i++) {
-    const auto& path_component = path_components[component_i];
+    auto path_component = path_components[component_i];
+    FML_LOG(ERROR) << static_cast<int>(path_component);
     switch (path_component) {
       case ComponentType::kLinear: {
         poly_components.push_back({
@@ -345,7 +347,8 @@ Path::Polyline Path::CreatePolyline(
         if (component_i == path_components.size() - 1) {
           // If the last component is a contour, that means it's an empty
           // contour, so skip it.
-          continue;
+          last_is_empty_contour = true;
+          break;
         }
         if (!polyline.contours.empty()) {
           polyline.contours.back().start_direction =
@@ -370,8 +373,12 @@ Path::Polyline Path::CreatePolyline(
   }
 
   // Subtract the last storage offset increment so that the storage lookup is
-  // correct.
-  storage_offset -= VerbToOffset(path_components.back());
+  // correct, including potentially an empty contour as well.
+  storage_offset -= VerbToOffset(path_components[component_i]);
+  if (last_is_empty_contour) {
+    component_i--;
+    storage_offset -= VerbToOffset(path_components[component_i]);
+  }
   if (!polyline.contours.empty()) {
     polyline.contours.back().start_direction =
         start_direction.value_or(Vector2(0, -1));
