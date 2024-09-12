@@ -978,7 +978,7 @@ def uses_package_test_runner(package):
 def build_dart_host_test_list(build_dir):
   dart_host_tests = [
       (os.path.join('flutter', 'ci'), []),
-      (os.path.join('flutter', 'flutter_frontend_server'), {'ENGINE_BUILD_DIR': build_dir}),
+      (os.path.join('flutter', 'flutter_frontend_server'), []),
       (os.path.join('flutter', 'testing', 'litetest'), []),
       (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
       (os.path.join('flutter', 'testing', 'scenario_app'), []),
@@ -988,14 +988,7 @@ def build_dart_host_test_list(build_dir):
       ),
       (os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'), []),
       (os.path.join('flutter', 'tools', 'clang_tidy'), []),
-      (
-          os.path.join('flutter', 'tools', 'const_finder'),
-          [
-              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
-              os.path.join(build_dir, 'flutter_patched_sdk'),
-              os.path.join(build_dir, 'dart-sdk', 'lib', 'libraries.json'),
-          ],
-      ),
+      (os.path.join('flutter', 'tools', 'const_finder'), []),
       (os.path.join('flutter', 'tools', 'dir_contents_diff'), []),
       (os.path.join('flutter', 'tools', 'engine_tool'), []),
       (os.path.join('flutter', 'tools', 'githooks'), []),

@@ -182,7 +182,7 @@ public class FlutterLoader {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
                 try {
-                  flutterJNI.loadLibrary();
+                  flutterJNI.loadLibrary(appContext);
                 } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
                   String couldntFindVersion = "couldn't find \"libflutter.so\"";
                   String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
@@ -361,8 +361,12 @@ public class FlutterLoader {
         if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-gpu-tracing");
         }
-        if (metaData.getBoolean(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY, false)) {
-          shellArgs.add("--enable-merged-platform-ui-thread");
+        if (metaData.containsKey(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY)) {
+          if (metaData.getBoolean(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY)) {
+            shellArgs.add("--enable-merged-platform-ui-thread");
+          } else {
+            shellArgs.add("--no-enable-merged-platform-ui-thread");
+          }
         }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {
