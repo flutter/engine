@@ -52,7 +52,8 @@ TEST(FlRendererTest, RestoresGLState) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlView) view = fl_view_new(project);
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlFramebuffer) framebuffer = fl_framebuffer_new(kWidth, kHeight);
+  g_autoptr(FlFramebuffer) framebuffer =
+      fl_framebuffer_new(GL_RGB, kWidth, kHeight);
 
   fl_renderer_add_view(FL_RENDERER(renderer), 0, view);
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
