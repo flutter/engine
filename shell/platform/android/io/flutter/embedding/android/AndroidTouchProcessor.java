@@ -155,7 +155,7 @@ public class AndroidTouchProcessor {
 
     // Prepare a data packet of the appropriate size and order.
     ByteBuffer packet =
-        ByteBuffer.allocateDirect((pointerCount + 1) * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
+        ByteBuffer.allocateDirect(pointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
     if (updateForSinglePointer) {
