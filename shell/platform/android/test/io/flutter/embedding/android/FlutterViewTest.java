@@ -28,6 +28,7 @@ import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
