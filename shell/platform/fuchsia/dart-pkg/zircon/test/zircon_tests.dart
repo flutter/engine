@@ -8,7 +8,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:zircon';
 
-import 'package:litetest/litetest.dart';
+import 'package:async_helper/async_minitest.dart';
 
 /// Helper method to turn a [String] into a [ByteData] containing the
 /// text of the string encoded as UTF-8.

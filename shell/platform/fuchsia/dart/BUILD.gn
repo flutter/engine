@@ -82,45 +82,6 @@ dart_library("meta") {
   ]
 }
 
-dart_library("expect") {
-  package_root = "$dart_src/pkg/expect"
-  package_name = "expect"
-
-  pubspec = "$package_root/pubspec.yaml"
-
-  deps = [ ":meta" ]
-
-  sources = [
-    "config.dart",
-    "expect.dart",
-    "minitest.dart",
-    "variations.dart",
-  ]
-}
-
-dart_library("litetest") {
-  package_root = "//flutter/testing/litetest"
-  package_name = "litetest"
-
-  pubspec = "$package_root/pubspec.yaml"
-
-  source_dir = "lib"
-
-  deps = [
-    ":async_helper",
-    ":expect",
-    ":meta",
-  ]
-
-  sources = [
-    "litetest.dart",
-    "src/async_minitest.dart",
-    "src/matchers.dart",
-    "src/test.dart",
-    "src/test_suite.dart",
-  ]
-}
-
 dart_library("args") {
   package_root = "$dart_src/third_party/pkg/args"
   package_name = "args"
