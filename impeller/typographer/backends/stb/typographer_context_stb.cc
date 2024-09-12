@@ -420,6 +420,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> new_sizes;
   for (const auto& frame : text_frames) {
+    frame->ClearFrameBounds();
+
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
 
