@@ -101,6 +101,8 @@ class TextFrame {
 
   void AppendFrameBounds(const FrameBounds& frame_bounds);
 
+  void ClearFrameBounds();
+
   std::vector<TextRun> runs_;
   Rect bounds_;
   bool has_color_;

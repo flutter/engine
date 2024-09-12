@@ -411,6 +411,12 @@ void TypographerContextSkia::CollectNewGlyphs(
     std::vector<FontGlyphPair>& new_glyphs,
     std::vector<Rect>& glyph_sizes) {
   for (const auto& frame : text_frames) {
+    // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
+    // we could probably guarantee that a text frame that is complete does not
+    // need to be processed unless the scale or properties changed. I'm leaving
+    // this as a future optimization.
+    frame->ClearFrameBounds();
+
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
 

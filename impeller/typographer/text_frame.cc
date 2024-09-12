@@ -90,7 +90,6 @@ void TextFrame::SetPerFrameData(Scalar scale,
   scale_ = scale;
   offset_ = offset;
   properties_ = properties;
-  bound_values_.clear();
 }
 
 Scalar TextFrame::GetScale() const {
@@ -107,6 +106,10 @@ std::optional<GlyphProperties> TextFrame::GetProperties() const {
 
 void TextFrame::AppendFrameBounds(const FrameBounds& frame_bounds) {
   bound_values_.push_back(frame_bounds);
+}
+
+void TextFrame::ClearFrameBounds() {
+  bound_values_.clear();
 }
 
 bool TextFrame::IsFrameComplete() const {
