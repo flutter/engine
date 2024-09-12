@@ -602,11 +602,12 @@ class PlatformViewPosition {
       return rect.shift(offset!);
     }
     if (transform != null) {
-      transform!.transformRect(rect);
+      return transform!.transformRect(rect);
     }
     return rect;
   }
 
+  // Note that by construction only one of these can be set at any given time, not both.
   final ui.Offset? offset;
   final Matrix4? transform;
 

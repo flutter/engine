@@ -193,6 +193,13 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     );
   }
 
+  // This function determines the lowest scene slice that this picture can be placed
+  // into and adds it to that slice's occlusion map.
+  //
+  // The picture is placed in the last slice where it either intersects with a picture
+  // in the slice or it intersects with a platform view in the preceding slice. If the
+  // picture intersects with a platform view in the last slice, a new slice is added at
+  // the end and the picture goes in there.
   int _placePicture(ui.Offset offset, ScenePicture picture) {
     final ui.Rect cullRect = picture.cullRect.shift(offset);
     final ui.Rect mappedCullRect = currentBuilder.globalPlatformViewStyling.mapLocalToGlobal(cullRect);
@@ -232,6 +239,11 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     );
   }
 
+  // This function determines the lowest scene slice this platform view can be placed
+  // into and adds it to that slice's occlusion map.
+  //
+  // The platform view is placed into the last slice where it intersects with a picture
+  // or a platform view.
   int _placePlatformView(
     int viewId,
     ui.Rect rect, {
@@ -247,10 +259,6 @@ class EngineSceneBuilder implements ui.SceneBuilder {
         break;
       }
       sliceIndex--;
-    }
-    if (sliceIndex == sceneSlices.length) {
-      // Insert a new slice.
-      sceneSlices.add(SceneSlice());
     }
     final SceneSlice slice = sceneSlices[sliceIndex];
     slice.platformViewOcclusionMap.addRect(globalPlatformViewRect);
