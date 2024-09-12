@@ -5,7 +5,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
@@ -89,6 +89,7 @@ void main() {
     final SceneBuilder sceneBuilder = SceneBuilder();
 
     final Picture redClippedPicture = makePicture((Canvas canvas) {
+      canvas.drawPaint(Paint()..color = const Color(0xFFFFFFFF));
       canvas.clipRect(const Rect.fromLTRB(10, 10, 200, 200));
       canvas.clipRect(const Rect.fromLTRB(11, 10, 300, 200));
       canvas.drawPaint(Paint()..color = const Color(0xFFFF0000));

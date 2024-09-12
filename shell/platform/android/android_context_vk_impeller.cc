@@ -4,15 +4,12 @@
 
 #include "flutter/shell/platform/android/android_context_vk_impeller.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/impeller/entity/vk/entity_shaders_vk.h"
 #include "flutter/impeller/entity/vk/framebuffer_blend_shaders_vk.h"
 #include "flutter/impeller/entity/vk/modern_shaders_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
-
-#if IMPELLER_ENABLE_3D
-#include "flutter/impeller/scene/shaders/vk/scene_shaders_vk.h"  // nogncheck
-#endif  // IMPELLER_ENABLE_3D
 
 namespace flutter {
 
@@ -32,10 +29,6 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
       std::make_shared<fml::NonOwnedMapping>(
           impeller_framebuffer_blend_shaders_vk_data,
           impeller_framebuffer_blend_shaders_vk_length),
-#if IMPELLER_ENABLE_3D
-      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
-                                             impeller_scene_shaders_vk_length),
-#endif
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
                                              impeller_modern_shaders_vk_length),
   };
@@ -66,6 +59,11 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
     } else {
       FML_LOG(IMPORTANT) << "Using the Impeller rendering backend (Vulkan).";
     }
+  }
+  if (context && context->GetDriverInfo()->IsKnownBadDriver()) {
+    FML_LOG(INFO)
+        << "Known bad Vulkan driver encountered, falling back to OpenGLES.";
+    return nullptr;
   }
 
   return context;

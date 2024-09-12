@@ -12,8 +12,8 @@
 
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
 
 namespace flutter {
 
@@ -268,7 +268,7 @@ void DlSkCanvasAdapter::DrawVertices(
 }
 
 void DlSkCanvasAdapter::DrawImage(const sk_sp<DlImage>& image,
-                                  const SkPoint point,
+                                  const SkPoint& point,
                                   DlImageSampling sampling,
                                   const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);

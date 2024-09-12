@@ -34,10 +34,13 @@ bool IsNearlySimpleRRect(const SkRRect& rr);
 Rect ToRect(const SkRect& rect);
 
 std::optional<Rect> ToRect(const SkRect* rect);
+std::optional<const Rect> ToRect(const flutter::DlRect* rect);
 
 std::vector<Rect> ToRects(const SkRect tex[], int count);
+std::vector<Rect> ToRects(const flutter::DlRect tex[], int count);
 
 std::vector<Point> ToPoints(const SkPoint points[], int count);
+std::vector<Point> ToPoints(const flutter::DlPoint points[], int count);
 
 Point ToPoint(const SkPoint& point);
 
@@ -49,12 +52,7 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
 
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 
-Path ToPath(const SkPath& path, Point shift = Point(0, 0));
-
 Path ToPath(const SkRRect& rrect);
-
-Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob,
-                          Point shift = Point(0, 0));
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);
 

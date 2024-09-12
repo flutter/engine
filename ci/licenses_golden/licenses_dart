@@ -1,4 +1,4 @@
-Signature: 248715c28461ea4aeb73cd5bcb5bc36e
+Signature: f4e7946ef4ed3c88821cf1a23c476c94
 
 ====================================================================================================
 LIBRARY: dart
@@ -3695,14 +3695,13 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.cc + ../../..
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_http/http_testing.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/load_library_priority.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/record_patch.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/boxed_bool.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart + ../../../flutter/third_party/dart/LICENSE
@@ -3767,14 +3766,13 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.h
 FILE: ../../../flutter/third_party/dart/sdk/lib/_http/http_testing.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/load_library_priority.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/record_patch.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/boxed_bool.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
@@ -4100,6 +4098,7 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_t
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/js_helper_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/js_helper_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/concurrent/concurrent.dart + ../../../flutter/third_party/dart/LICENSE
@@ -4144,6 +4143,7 @@ FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_tim
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/js_helper_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/js_helper_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/concurrent/concurrent.dart
@@ -4785,7 +4785,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/139867e57ba92789aa4d649842b503ff1bd041c5
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/23fc7751b8b264ee408c59d3ed558c257ccc2b52
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
