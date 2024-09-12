@@ -1319,7 +1319,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           engine_filter,
           repeat_flags,
           coverage=args.coverage,
-          gtest=True
+          gtest=True,
+          extra_env=extra_env,
       )
     finally:
       xvfb.stop_virtual_x(build_name)
