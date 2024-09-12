@@ -493,6 +493,7 @@ if (!is_fuchsia) {
         "//flutter/third_party/canvaskit:canvaskit_chromium_group",
         "//flutter/third_party/canvaskit:canvaskit_group",
         "//flutter/third_party/canvaskit:skwasm_group",
+        "//flutter/third_party/canvaskit:skwasm_st_group",
       ]
     }
     deps += [ "//flutter/lib/web_ui/flutter_js" ]

@@ -14,24 +14,6 @@
 
 using namespace Skwasm;
 
-Surface::Surface() {
-  assert(emscripten_is_main_browser_thread());
-
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-  pthread_create(
-      &_thread, &attr,
-      [](void* context) -> void* {
-        static_cast<Surface*>(context)->_runWorker();
-        return nullptr;
-      },
-      this);
-  // Listen to messages from the worker
-  skwasm_connectThread(_thread);
-}
-
 // Worker thread only
 void Surface::dispose() {
   delete this;
