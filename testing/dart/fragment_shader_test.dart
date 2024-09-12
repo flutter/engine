@@ -417,7 +417,7 @@ void main() async {
 // of the file name within the test case.
 void _expectFragmentShadersRenderGreen(Map<String, FragmentProgram> programs) {
   if (programs.isEmpty) {
-    print('No shaders found.');
+    fail('No shaders found.');
   }
   for (final String key in programs.keys) {
     test('FragmentProgram $key renders green', () async {

@@ -102,7 +102,7 @@ void main() {
       recvPort.close();
     });
 
-    expect(sumOfReceivedMessages, 5500);
+    expect(sumOfReceivedMessages, 5500); // sum(1 to 10) * 100
     recvPort.close();
   });
 
