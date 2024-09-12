@@ -13,7 +13,6 @@ import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
@@ -179,7 +178,8 @@ public class AndroidTouchProcessor {
       // synthesize remove events. Remove each pointer on it's corresponding ACTION_UP or
       // ACTION_POINTER_UP.
       // See https://github.com/flutter/flutter/issues/154842.
-      addPointerForIndex(event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+      addPointerForIndex(
+          event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to

@@ -74,14 +74,14 @@ void PointerDataPacketConverter::ConvertPointerData(
         break;
       }
       case PointerData::Change::kAdd: {
-	FML_LOG(ERROR) << "HI GRAY, adding pointer in c code";
+        FML_LOG(ERROR) << "HI GRAY, adding pointer in c code";
         FML_DCHECK(states_.find(pointer_data.device) == states_.end());
         EnsurePointerState(pointer_data);
         converted_pointers.push_back(pointer_data);
         break;
       }
       case PointerData::Change::kRemove: {
-	FML_LOG(ERROR) << "HI GRAY, removing pointer in c code";
+        FML_LOG(ERROR) << "HI GRAY, removing pointer in c code";
         // Makes sure we have an existing pointer
         auto iter = states_.find(pointer_data.device);
         FML_DCHECK(iter != states_.end());
@@ -137,7 +137,7 @@ void PointerDataPacketConverter::ConvertPointerData(
         break;
       }
       case PointerData::Change::kDown: {
-	FML_LOG(ERROR) << "HI GRAY, down pointer in c code";
+        FML_LOG(ERROR) << "HI GRAY, down pointer in c code";
         auto iter = states_.find(pointer_data.device);
         PointerState state;
         if (iter == states_.end()) {
