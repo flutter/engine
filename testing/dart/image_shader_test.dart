@@ -29,7 +29,7 @@ void main() {
     image.dispose();
 
     expect(
-      () => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)), 
+      () => ImageShader(image, TileMode.clamp, TileMode.clamp, Float64List(16)),
       throwsA(isA<AssertionError>()),
     );
   });

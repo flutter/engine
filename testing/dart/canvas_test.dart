@@ -191,7 +191,7 @@ void main() async {
 
     expect(
       () => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], null, rect, paint),
-      throwsA(isA<AssertionError>()),  
+      throwsA(isA<AssertionError>()),
     );
   });
 
