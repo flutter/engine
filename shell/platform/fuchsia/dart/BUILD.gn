@@ -67,6 +67,17 @@ dart_library("async_helper") {
   ]
 }
 
+dart_library("expect") {
+  package_root = "$dart_src/pkg/expect"
+  package_name = "expect"
+
+  pubspec = "$package_root/pubspec.yaml"
+
+  deps = [ ":expect" ]
+
+  sources = [ "expect.dart" ]
+}
+
 dart_library("meta") {
   package_root = "$dart_src/pkg/meta"
   package_name = "meta"
