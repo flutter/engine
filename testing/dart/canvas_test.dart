@@ -1281,7 +1281,7 @@ final class _CloseToRectMatcher extends Matcher {
 
   @override
   Description describe(Description description) {
-    return description.add('Rect is close to $_expectedRect');
+    return description.add('Rect is close (within 1e-6) to $_expectedRect');
   }
 }
 
@@ -1308,6 +1308,6 @@ final class _CloseToTransformMatcher extends Matcher {
 
   @override
   Description describe(Description description) {
-    return description.add('Transform is close to $_expected');
+    return description.add('Transform is close (within 1e-10) to $_expected');
   }
 }
