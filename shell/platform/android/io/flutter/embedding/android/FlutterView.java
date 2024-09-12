@@ -888,9 +888,7 @@ public class FlutterView extends FrameLayout
       return super.onTouchEvent(event);
     }
 
-    Log.e("HI GRAY", "Motion event: " + event.toString());
-
-    // requestUnbufferedDispatch(event);
+    requestUnbufferedDispatch(event);
 
     return androidTouchProcessor.onTouchEvent(event);
   }
