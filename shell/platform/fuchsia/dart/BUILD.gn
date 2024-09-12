@@ -59,9 +59,7 @@ dart_library("async_helper") {
 
   pubspec = "$package_root/pubspec.yaml"
 
-  deps = [
-    ":expect",
-  ]
+  deps = [ ":expect" ]
 
   sources = [
     "async_helper.dart",
