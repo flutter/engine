@@ -84,7 +84,7 @@ public class AndroidTouchProcessor {
 
   // This value must match kPointerDataFieldCount in pointer_data.cc. (The
   // pointer_data.cc also lists other locations that must be kept consistent.)
-  private static final int POINTER_DATA_FIELD_COUNT = 36;
+  @VisibleForTesting static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
   // Default if context is null, chosen to ensure reasonable speed scrolling.
@@ -147,15 +147,16 @@ public class AndroidTouchProcessor {
             && (maskedAction == MotionEvent.ACTION_UP
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
 
-    // Add an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP update, to handle the
-    // synthesized PointerChange.REMOVE event.
-    int pointerCount = event.getPointerCount() + (updateForMultiplePointers ? 1 : 0);
+    int originalPointerCount = event.getPointerCount();
 
     // The following packing code must match the struct in pointer_data.h.
 
     // Prepare a data packet of the appropriate size and order.
+    // Allocate space for an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP
+    // update, to handle the synthesized PointerChange.REMOVE event.
+    int totalPointerCount = originalPointerCount + (updateForMultiplePointers ? 1 : 0);
     ByteBuffer packet =
-        ByteBuffer.allocateDirect(pointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
+        ByteBuffer.allocateDirect(totalPointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
     if (updateForSinglePointer) {
@@ -166,7 +167,7 @@ public class AndroidTouchProcessor {
       // We are converting these updates to move events here in order to preserve this data.
       // We also mark these events with a flag in order to help the framework reassemble
       // the original Android event later, should it need to forward it to a PlatformView.
-      for (int p = 0; p < pointerCount; p++) {
+      for (int p = 0; p < originalPointerCount; p++) {
         if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
           addPointerForIndex(
               event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, transformMatrix, packet);
@@ -186,7 +187,7 @@ public class AndroidTouchProcessor {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
       // ignore 0-deltas if desired.
-      for (int p = 0; p < pointerCount; p++) {
+      for (int p = 0; p < originalPointerCount; p++) {
         addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet);
       }
     }
