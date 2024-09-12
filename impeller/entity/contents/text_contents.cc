@@ -232,7 +232,6 @@ bool TextContents::Render(const ContentContext& renderer,
             // when the glyph was recorded. Perform a slow lookup into the glyph
             // atlas hash table.
             if (frame_bounds.placeholder) {
-              // Note: uses unrounded scale for more accurate subpixel position.
               if (!font_atlas) {
                 font_atlas = atlas->GetOrCreateFontGlyphAtlas(
                     ScaledFont{font, rounded_scale});
@@ -242,9 +241,10 @@ bool TextContents::Render(const ContentContext& renderer,
                 VALIDATION_LOG << "Could not find font in the atlas.";
                 continue;
               }
+              // Note: uses unrounded scale for more accurate subpixel position.
               Point subpixel = TextFrame::ComputeSubpixelPosition(
                   glyph_position, font.GetAxisAlignment(), offset_,
-                  rounded_scale);
+                  scale_);
 
               std::optional<FrameBounds> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
