@@ -373,10 +373,12 @@ Path::Polyline Path::CreatePolyline(
 
   // Subtract the last storage offset increment so that the storage lookup is
   // correct, including potentially an empty contour as well.
-  storage_offset -= VerbToOffset(path_components[component_i]);
-  if (last_is_empty_contour) {
-    component_i--;
+  if (component_i > 0) {
     storage_offset -= VerbToOffset(path_components[component_i]);
+    if (last_is_empty_contour) {
+      component_i--;
+      storage_offset -= VerbToOffset(path_components[component_i]);
+    }
   }
   if (!polyline.contours.empty()) {
     polyline.contours.back().start_direction =
