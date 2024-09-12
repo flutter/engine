@@ -198,7 +198,7 @@ void main() {
       final HandleResult vmo = System.vmoCreate(0);
       expect(vmo.status, equals(ZX.OK));
       int originalKoid = vmo.handle.koid;
-      expect(originalKoid, notEquals(ZX.KOID_INVALID));
+      expect(originalKoid != ZX.KOID_INVALID, true);
       // Cached koid should be same value.
       expect(originalKoid, equals(vmo.handle.koid));
       vmo.handle.close();
