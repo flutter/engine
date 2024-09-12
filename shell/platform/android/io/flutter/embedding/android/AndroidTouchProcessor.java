@@ -138,7 +138,18 @@ public class AndroidTouchProcessor {
    * @return True if the event was handled.
    */
   public boolean onTouchEvent(@NonNull MotionEvent event, @NonNull Matrix transformMatrix) {
-    int pointerCount = event.getPointerCount();
+    int maskedAction = event.getActionMasked();
+    int pointerChange = getPointerChangeForAction(event.getActionMasked());
+    boolean updateForSinglePointer =
+            maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN;
+    boolean updateForMultiplePointers =
+            !updateForSinglePointer
+                    && (maskedAction == MotionEvent.ACTION_UP
+                    || maskedAction == MotionEvent.ACTION_POINTER_UP);
+
+    // Add an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP update, to handle the
+    // synthesized PointerChange.REMOVE event.
+    int pointerCount = event.getPointerCount() + (updateForMultiplePointers ? 1 : 0);
 
     // The following packing code must match the struct in pointer_data.h.
 
@@ -147,14 +158,6 @@ public class AndroidTouchProcessor {
         ByteBuffer.allocateDirect((pointerCount + 1) * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
-    int maskedAction = event.getActionMasked();
-    int pointerChange = getPointerChangeForAction(event.getActionMasked());
-    boolean updateForSinglePointer =
-        maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN;
-    boolean updateForMultiplePointers =
-        !updateForSinglePointer
-            && (maskedAction == MotionEvent.ACTION_UP
-                || maskedAction == MotionEvent.ACTION_POINTER_UP);
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
