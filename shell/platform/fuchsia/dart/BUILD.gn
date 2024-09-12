@@ -73,7 +73,7 @@ dart_library("expect") {
 
   pubspec = "$package_root/pubspec.yaml"
 
-  deps = [ "" ]
+  deps = []
 
   sources = [ "expect.dart" ]
 }
