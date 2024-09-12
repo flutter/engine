@@ -310,6 +310,7 @@ class Color {
   ///
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
+    assert(colorSpace != ColorSpace.extendedSRGB);
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
     final double R = _linearizeColorComponent(r);
     final double G = _linearizeColorComponent(g);
