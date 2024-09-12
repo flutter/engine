@@ -7,7 +7,7 @@ import 'dart:convert' show base64Decode;
 import 'dart:developer' as developer;
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 import 'package:vm_service_protos/vm_service_protos.dart';
