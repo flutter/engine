@@ -302,7 +302,6 @@ Path::Polyline Path::CreatePolyline(
 
   for (; component_i < path_components.size(); component_i++) {
     auto path_component = path_components[component_i];
-    FML_LOG(ERROR) << static_cast<int>(path_component);
     switch (path_component) {
       case ComponentType::kLinear: {
         poly_components.push_back({
