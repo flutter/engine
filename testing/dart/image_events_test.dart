@@ -5,14 +5,10 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Image constructor and dispose invokes onCreate once', () async {
-    // We test constructor and dispose in one test because
-    // litetest runs the tests in parallel and static handlers
-    // are shared between tests.
-
     int onCreateInvokedCount = 0;
     Image? createdImage;
     int onDisposeInvokedCount = 0;
