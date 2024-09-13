@@ -36,7 +36,6 @@ import android.util.DisplayMetrics;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -69,6 +68,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowDisplay;
+import org.robolectric.shadows.ShadowViewGroup;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
@@ -944,12 +944,7 @@ public class FlutterViewTest {
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
   @TargetApi(30)
-  @Config(
-      sdk = 30,
-      shadows = {
-        FlutterViewTest.ShadowFullscreenView.class,
-        FlutterViewTest.ShadowFullscreenViewGroup.class
-      })
+  @Config(sdk = 30)
   public void setPaddingTopToZeroForFullscreenMode() {
     FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -978,6 +973,42 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
     validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 100);
+  }
+
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // This test uses the pre-API 30 Algorithm for window insets.
+  @Test
+  @TargetApi(28)
+  @Config(
+      sdk = 28,
+      shadows = {
+        FlutterViewTest.ShadowFullscreenView.class,
+      })
+  public void setPaddingTopToZeroForFullscreenModeLegacy() {
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
   }
 
   @SuppressWarnings("deprecation")
@@ -1019,17 +1050,12 @@ public class FlutterViewTest {
   /*
    * A custom shadow that reports fullscreen flag for system UI visibility
    */
-  @Implements(View.class)
+  @Implements(FrameLayout.class)
   @SuppressWarnings("deprecation")
-  public static class ShadowFullscreenView {
+  public static class ShadowFullscreenView extends ShadowViewGroup {
     @Implementation
     public int getWindowSystemUiVisibility() {
       return View.SYSTEM_UI_FLAG_FULLSCREEN;
     }
   }
-
-  // ViewGroup is the first shadow in the type hierarchy for FlutterView. Shadows need to mimic
-  // production classes' view hierarchy.
-  @Implements(ViewGroup.class)
-  public static class ShadowFullscreenViewGroup extends ShadowFullscreenView {}
 }
