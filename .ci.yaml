@@ -95,6 +95,7 @@ targets:
       - testing/skia_gold_client/**
 
   - name: Linux linux_android_emulator_skia_tests
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/builder
