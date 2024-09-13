@@ -382,7 +382,7 @@ targets:
       - flutter_frontend_server/**
 
   - name: Linux clangd
-    recipe: engine_v2/engine_v2
+    recipe: engine_v2/builder
     properties:
       config_name: linux_unopt_debug_no_rbe
 
