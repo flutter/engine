@@ -239,6 +239,8 @@ void Path::EndContour(
   poly_components.clear();
 
   size_t previous_index = component_index - 1;
+  storage_offset -= VerbToOffset(path_components[previous_index]);
+
   while (previous_index >= 0 && storage_offset >= 0) {
     const auto& path_component = path_components[previous_index];
     switch (path_component) {
@@ -370,9 +372,6 @@ Path::Polyline Path::CreatePolyline(
   if (component_i > 0 && path_components.back() == ComponentType::kContour) {
     storage_offset -= VerbToOffset(ComponentType::kContour);
     component_i--;
-  }
-  if (component_i > 0) {
-    storage_offset -= VerbToOffset(path_components[component_i - 1]);
   }
 
   if (!polyline.contours.empty()) {
