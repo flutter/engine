@@ -150,9 +150,7 @@ public class AndroidTouchProcessor {
     int deviceType = getPointerDeviceTypeForToolType(event.getToolType(event.getActionIndex()));
     boolean shouldRemovePointer =
         updateForMultiplePointers
-            && (deviceType == PointerDeviceKind.INVERTED_STYLUS
-                || deviceType == PointerDeviceKind.STYLUS
-                || deviceType == PointerDeviceKind.TOUCH);
+            && (deviceType == PointerDeviceKind.TOUCH);
     int originalPointerCount = event.getPointerCount();
 
     // The following packing code must match the struct in pointer_data.h.
