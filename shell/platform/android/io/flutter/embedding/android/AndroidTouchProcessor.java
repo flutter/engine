@@ -183,7 +183,7 @@ public class AndroidTouchProcessor {
       if (shouldRemovePointer) {
         // Flutter's pointer handling synthesizes an add event for each new pointer, but does not
         // synthesize remove events. Remove each pointer on it's corresponding ACTION_UP or
-        // ACTION_POINTER_UP, if the input device is touch or either stylus variety.
+        // ACTION_POINTER_UP if and only if the input device is touch.
         // See https://github.com/flutter/flutter/issues/154842.
         addPointerForIndex(
             event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
