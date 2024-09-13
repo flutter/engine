@@ -1381,7 +1381,7 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
   if (paint_.image_filter) {
-    cull_rect_state_.push_back(Rect::MakeMaximum());
+    cull_rect_state_.push_back(bounds);
   } else {
     auto new_cull_rect = GetCurrentLocalCullingBounds().Intersection(bounds);
     if (new_cull_rect.has_value()) {
