@@ -13,8 +13,6 @@ import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
-import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -150,10 +148,11 @@ public class AndroidTouchProcessor {
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
 
     int deviceType = getPointerDeviceTypeForToolType(event.getToolType(event.getActionIndex()));
-    boolean shouldRemovePointer = updateForMultiplePointers
+    boolean shouldRemovePointer =
+        updateForMultiplePointers
             && (deviceType == PointerDeviceKind.INVERTED_STYLUS
-            || deviceType == PointerDeviceKind.STYLUS
-            || deviceType == PointerDeviceKind.TOUCH);
+                || deviceType == PointerDeviceKind.STYLUS
+                || deviceType == PointerDeviceKind.TOUCH);
     int originalPointerCount = event.getPointerCount();
 
     // The following packing code must match the struct in pointer_data.h.
@@ -190,7 +189,7 @@ public class AndroidTouchProcessor {
         // ACTION_POINTER_UP, if the input device is touch or either stylus variety.
         // See https://github.com/flutter/flutter/issues/154842.
         addPointerForIndex(
-                event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+            event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
       }
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved

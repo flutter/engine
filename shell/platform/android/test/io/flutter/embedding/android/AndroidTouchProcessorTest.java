@@ -303,9 +303,8 @@ public class AndroidTouchProcessorTest {
     assertEquals(5.0, readPointerPhysicalYForPointer(packet, 1));
     // Expect two pointer changes - the original UP and the synthesized REMOVE.
     assertEquals(
-            AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT * 2,
-            packet.capacity()
-    );
+        AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT * 2,
+        packet.capacity());
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -392,9 +391,8 @@ public class AndroidTouchProcessorTest {
     assertEquals(5.0, readPointerPhysicalY(packet));
     // Ensure that we don't send a synthesized remove when using a mouse.
     assertEquals(
-            AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT,
-            packet.capacity()
-    );
+        AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT,
+        packet.capacity());
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -453,9 +451,8 @@ public class AndroidTouchProcessorTest {
     verify(event).getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId);
     verify(event).getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId);
     assertEquals(
-            AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT,
-            packet.capacity()
-    );
+        AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT,
+        packet.capacity());
 
     inOrder.verifyNoMoreInteractions();
   }
