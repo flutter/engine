@@ -938,6 +938,49 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
+  @Test
+  @TargetApi(30)
+  @Config(
+      sdk = 30,
+      shadows = {
+        FlutterViewTest.ShadowFullscreenView.class,
+        FlutterViewTest.ShadowFullscreenViewGroup.class
+      })
+  public void setPaddingTopToZeroForFullscreenMode() {
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets =
+        new WindowInsets.Builder()
+            .setInsets(
+                android.view.WindowInsets.Type.navigationBars()
+                    | android.view.WindowInsets.Type.statusBars(),
+                Insets.of(100, 100, 100, 100))
+            .build();
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 100);
+  }
+
+  @SuppressWarnings("deprecation")
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
         Shadows.shadowOf(
