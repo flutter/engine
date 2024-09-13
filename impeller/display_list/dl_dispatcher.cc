@@ -30,10 +30,6 @@
 #include "impeller/geometry/sigma.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
-#if IMPELLER_ENABLE_3D
-#include "impeller/entity/contents/scene_contents.h"
-#endif  // IMPELLER_ENABLE_3D
-
 namespace impeller {
 
 #if EXPERIMENTAL_CANVAS && !defined(NDEBUG)
@@ -356,10 +352,6 @@ static std::optional<ColorSource::Type> ToColorSourceType(
       return ColorSource::Type::kSweepGradient;
     case flutter::DlColorSourceType::kRuntimeEffect:
       return ColorSource::Type::kRuntimeEffect;
-#ifdef IMPELLER_ENABLE_3D
-    case flutter::DlColorSourceType::kScene:
-      return ColorSource::Type::kScene;
-#endif  // IMPELLER_ENABLE_3D
   }
 }
 
@@ -505,21 +497,6 @@ void DlDispatcherBase::setColorSource(const flutter::DlColorSource* source) {
 
       paint_.color_source = ColorSource::MakeRuntimeEffect(
           runtime_stage, uniform_data, texture_inputs);
-      return;
-    }
-    case ColorSource::Type::kScene: {
-#ifdef IMPELLER_ENABLE_3D
-      const flutter::DlSceneColorSource* scene_color_source = source->asScene();
-      std::shared_ptr<scene::Node> scene_node =
-          scene_color_source->scene_node();
-      Matrix camera_transform = scene_color_source->camera_matrix();
-
-      paint_.color_source =
-          ColorSource::MakeScene(scene_node, camera_transform);
-#else   // IMPELLER_ENABLE_3D
-      FML_LOG(ERROR) << "ColorSourceType::kScene can only be used if Impeller "
-                        "Scene is enabled.";
-#endif  // IMPELLER_ENABLE_3D
       return;
     }
   }
@@ -880,38 +857,24 @@ void DlDispatcherBase::clipRRect(const SkRRect& rrect,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::clipPath(const SkPath& path, ClipOp sk_op, bool is_aa) {
-  UNIMPLEMENTED;
-}
-
-const Path& DlDispatcherBase::GetOrCachePath(const CacheablePath& cache) {
-  if (cache.cached_impeller_path.IsEmpty() && !cache.sk_path.isEmpty()) {
-    cache.cached_impeller_path = skia_conversions::ToPath(cache.sk_path);
-  }
-  return cache.cached_impeller_path;
-}
-
-// |flutter::DlOpReceiver|
-void DlDispatcherBase::clipPath(const CacheablePath& cache,
-                                ClipOp sk_op,
-                                bool is_aa) {
+void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
   auto clip_op = ToClipOperation(sk_op);
 
-  SkRect rect;
-  if (cache.sk_path.isRect(&rect)) {
-    GetCanvas().ClipRect(skia_conversions::ToRect(rect), clip_op);
-  } else if (cache.sk_path.isOval(&rect)) {
-    GetCanvas().ClipOval(skia_conversions::ToRect(rect), clip_op);
+  DlRect rect;
+  if (path.IsRect(&rect)) {
+    GetCanvas().ClipRect(rect, clip_op);
+  } else if (path.IsOval(&rect)) {
+    GetCanvas().ClipOval(rect, clip_op);
   } else {
     SkRRect rrect;
-    if (cache.sk_path.isRRect(&rrect) && rrect.isSimple()) {
+    if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
       GetCanvas().ClipRRect(skia_conversions::ToRect(rrect.rect()),
                             skia_conversions::ToSize(rrect.getSimpleRadii()),
                             clip_op);
     } else {
-      GetCanvas().ClipPath(GetOrCachePath(cache), clip_op);
+      GetCanvas().ClipPath(path.GetPath(), clip_op);
     }
   }
 }
@@ -1027,43 +990,37 @@ void DlDispatcherBase::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawPath(const SkPath& path) {
-  UNIMPLEMENTED;
-}
-
-// |flutter::DlOpReceiver|
-void DlDispatcherBase::drawPath(const CacheablePath& cache) {
+void DlDispatcherBase::drawPath(const DlPath& path) {
   AUTO_DEPTH_WATCHER(1u);
 
-  SimplifyOrDrawPath(GetCanvas(), cache, paint_);
+  SimplifyOrDrawPath(GetCanvas(), path, paint_);
 }
 
 void DlDispatcherBase::SimplifyOrDrawPath(Canvas& canvas,
-                                          const CacheablePath& cache,
+                                          const DlPath& path,
                                           const Paint& paint) {
-  SkRect rect;
+  DlRect rect;
 
   // We can't "optimize" a path into a rectangle if it's open.
   bool closed;
-  if (cache.sk_path.isRect(&rect, &closed) && closed) {
-    canvas.DrawRect(skia_conversions::ToRect(rect), paint);
+  if (path.IsRect(&rect, &closed) && closed) {
+    canvas.DrawRect(rect, paint);
     return;
   }
 
   SkRRect rrect;
-  if (cache.sk_path.isRRect(&rrect) && rrect.isSimple()) {
+  if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
     canvas.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                      skia_conversions::ToSize(rrect.getSimpleRadii()), paint);
     return;
   }
 
-  SkRect oval;
-  if (cache.sk_path.isOval(&oval)) {
-    canvas.DrawOval(skia_conversions::ToRect(oval), paint);
+  if (path.IsOval(&rect)) {
+    canvas.DrawOval(rect, paint);
     return;
   }
 
-  canvas.DrawPath(GetOrCachePath(cache), paint);
+  canvas.DrawPath(path.GetPath(), paint);
 }
 
 // |flutter::DlOpReceiver|
@@ -1299,16 +1256,7 @@ void DlDispatcherBase::drawTextFrame(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawShadow(const SkPath& path,
-                                  const flutter::DlColor color,
-                                  const DlScalar elevation,
-                                  bool transparent_occluder,
-                                  DlScalar dpr) {
-  UNIMPLEMENTED;
-}
-
-// |flutter::DlOpReceiver|
-void DlDispatcherBase::drawShadow(const CacheablePath& cache,
+void DlDispatcherBase::drawShadow(const DlPath& path,
                                   const flutter::DlColor color,
                                   const DlScalar elevation,
                                   bool transparent_occluder,
@@ -1363,7 +1311,7 @@ void DlDispatcherBase::drawShadow(const CacheablePath& cache,
   GetCanvas().PreConcat(
       Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
 
-  SimplifyOrDrawPath(GetCanvas(), cache, paint);
+  SimplifyOrDrawPath(GetCanvas(), path, paint);
   AUTO_DEPTH_CHECK();
 
   GetCanvas().Restore();
