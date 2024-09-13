@@ -118,7 +118,7 @@ class DlCanvas {
   virtual void ClipPath(const DlPath& path,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) {
-    ClipPath(path.GetSkPath(true), clip_op, is_aa);
+    ClipPath(path.GetSkPath(), clip_op, is_aa);
   }
 
   /// Conservative estimate of the bounds of all outstanding clip operations
@@ -158,7 +158,7 @@ class DlCanvas {
                           const DlPaint& paint) = 0;
   virtual void DrawPath(const SkPath& path, const DlPaint& paint) = 0;
   virtual void DrawPath(const DlPath& path, const DlPaint& paint) {
-    DrawPath(path.GetSkPath(true), paint);
+    DrawPath(path.GetSkPath(), paint);
   }
   virtual void DrawArc(const SkRect& bounds,
                        DlScalar start,
@@ -236,8 +236,7 @@ class DlCanvas {
                           const DlScalar elevation,
                           bool transparent_occluder,
                           DlScalar dpr) {
-    DrawShadow(path.GetSkPath(true), color, elevation, transparent_occluder,
-               dpr);
+    DrawShadow(path.GetSkPath(), color, elevation, transparent_occluder, dpr);
   }
 
   virtual void Flush() = 0;

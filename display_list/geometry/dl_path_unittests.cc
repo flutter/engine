@@ -17,7 +17,8 @@ TEST(DisplayListPath, DefaultConstruction) {
   EXPECT_EQ(path.GetSkPath(), SkPath());
 
   EXPECT_FALSE(path.IsInverseFillType());
-  // Empty/default paths are always "pre-converted" by default.
+  EXPECT_FALSE(path.IsConverted());
+  EXPECT_TRUE(path.GetPath().IsEmpty());
   EXPECT_TRUE(path.IsConverted());
   EXPECT_FALSE(path.IsVolatile());
 
@@ -46,7 +47,8 @@ TEST(DisplayListPath, ConstructFromEmpty) {
   EXPECT_EQ(path.GetSkPath(), SkPath());
 
   EXPECT_FALSE(path.IsInverseFillType());
-  // Empty/default paths are always "pre-converted" by default.
+  EXPECT_FALSE(path.IsConverted());
+  EXPECT_TRUE(path.GetPath().IsEmpty());
   EXPECT_TRUE(path.IsConverted());
   EXPECT_FALSE(path.IsVolatile());
 
@@ -78,6 +80,7 @@ TEST(DisplayListPath, CopyConstruct) {
 
   EXPECT_FALSE(path2.IsInverseFillType());
   EXPECT_FALSE(path2.IsConverted());
+  EXPECT_FALSE(path2.IsVolatile());
 
   bool is_closed = false;
   EXPECT_FALSE(path2.IsRect(nullptr));
@@ -105,7 +108,8 @@ TEST(DisplayListPath, ConstructFromVolatile) {
   EXPECT_EQ(path.GetSkPath(), SkPath());
 
   EXPECT_FALSE(path.IsInverseFillType());
-  // Empty/default paths are always "pre-converted" by default.
+  EXPECT_FALSE(path.IsConverted());
+  EXPECT_TRUE(path.GetPath().IsEmpty());
   EXPECT_TRUE(path.IsConverted());
   EXPECT_TRUE(path.IsVolatile());
 
@@ -145,20 +149,23 @@ TEST(DisplayListPath, VolatileBecomesNonVolatile) {
   }
   EXPECT_TRUE(path.IsVolatile());
 
-  for (int i = 0; i < 1000; i++) {
-    // specifying non-intent to render does not make it non-volatile
-    path.GetSkPath(false);
-  }
-  EXPECT_TRUE(path.IsVolatile());
-
   for (uint32_t i = 0; i < DlPath::kMaxVolatileUses; i++) {
     // Expressing intent to render will only be volatile the first few times
-    path.GetSkPath(true);
+    path.WillRenderSkPath();
+    path.GetSkPath();
     EXPECT_TRUE(path.IsVolatile());
   }
 
+  for (int i = 0; i < 1000; i++) {
+    // further uses without expressing intent to render do not make it
+    // non-volatile
+    path.GetSkPath();
+  }
+  EXPECT_TRUE(path.IsVolatile());
+
   // One last time makes the path non-volatile
-  path.GetSkPath(true);
+  path.WillRenderSkPath();
+  path.GetSkPath();
   EXPECT_FALSE(path.IsVolatile());
 }
 
@@ -177,7 +184,7 @@ TEST(DisplayListPath, MultipleVolatileCopiesBecomeNonVolatileTogether) {
 
   for (uint32_t i = 0; i < DlPath::kMaxVolatileUses; i++) {
     // Expressing intent to render will only be volatile the first few times
-    paths[i].GetSkPath(true);
+    paths[i].WillRenderSkPath();
     EXPECT_TRUE(path.IsVolatile());
     for (const auto& p : paths) {
       EXPECT_TRUE(p.IsVolatile());
@@ -185,7 +192,7 @@ TEST(DisplayListPath, MultipleVolatileCopiesBecomeNonVolatileTogether) {
   }
 
   // One last time makes the path non-volatile
-  paths[3].GetSkPath(true);
+  paths[3].WillRenderSkPath();
   EXPECT_FALSE(path.IsVolatile());
   for (const auto& p : paths) {
     EXPECT_FALSE(p.IsVolatile());

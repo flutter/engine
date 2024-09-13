@@ -9,23 +9,24 @@
 
 namespace flutter {
 
-const SkPath& DlPath::GetSkPath(bool will_render) const {
-  if (will_render) {
-    if (data_->use_count >= kMaxVolatileUses) {
-      data_->sk_path.setIsVolatile(false);
-    } else {
-      data_->use_count++;
-    }
-  }
+const SkPath& DlPath::GetSkPath() const {
   return data_->sk_path;
 }
 
 impeller::Path DlPath::GetPath() const {
-  if (data_->path.IsEmpty() && !data_->sk_path.isEmpty()) {
+  if (!data_->path.has_value()) {
     data_->path = ConvertToImpellerPath(data_->sk_path);
   }
 
-  return data_->path;
+  return data_->path.value();
+}
+
+void DlPath::WillRenderSkPath() const {
+  if (data_->render_count >= kMaxVolatileUses) {
+    data_->sk_path.setIsVolatile(false);
+  } else {
+    data_->render_count++;
+  }
 }
 
 bool DlPath::IsInverseFillType() const {
@@ -65,13 +66,7 @@ bool DlPath::operator==(const DlPath& other) const {
 }
 
 bool DlPath::IsConverted() const {
-  if (!data_->path.IsEmpty()) {
-    return true;
-  }
-  if (data_->sk_path.isEmpty()) {
-    return true;
-  }
-  return false;
+  return data_->path.has_value();
 }
 
 bool DlPath::IsVolatile() const {

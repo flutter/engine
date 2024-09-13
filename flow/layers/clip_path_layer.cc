@@ -10,11 +10,12 @@ ClipPathLayer::ClipPathLayer(const DlPath& clip_path, Clip clip_behavior)
     : ClipShapeLayer(clip_path, clip_behavior) {}
 
 const SkRect& ClipPathLayer::clip_shape_bounds() const {
-  return clip_shape().GetSkPath(false).getBounds();
+  return clip_shape().GetSkPath().getBounds();
 }
 
 void ClipPathLayer::ApplyClip(LayerStateStack::MutatorContext& mutator) const {
-  mutator.clipPath(clip_shape().GetSkPath(true),
+  clip_shape().WillRenderSkPath();
+  mutator.clipPath(clip_shape().GetSkPath(),
                    clip_behavior() != Clip::kHardEdge);
 }
 

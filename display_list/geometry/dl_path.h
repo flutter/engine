@@ -21,8 +21,16 @@ class DlPath {
   DlPath(const DlPath& path) = default;
   DlPath(DlPath&& path) = default;
 
-  const SkPath& GetSkPath(bool will_render = false) const;
+  const SkPath& GetSkPath() const;
   impeller::Path GetPath() const;
+
+  /// Intent to render an SkPath multiple times will make the path
+  /// non-volatile to enable caching in Skia. Calling this method
+  /// before every rendering call that uses the SkPath will count
+  /// down the uses and eventually reset the volatile flag.
+  ///
+  /// @see |kMaxVolatileUses|
+  void WillRenderSkPath() const;
 
   bool IsInverseFillType() const;
 
@@ -47,8 +55,8 @@ class DlPath {
     explicit Data(const SkPath& path) : sk_path(path) {}
 
     SkPath sk_path;
-    impeller::Path path;
-    uint32_t use_count = 0u;
+    std::optional<impeller::Path> path;
+    uint32_t render_count = 0u;
   };
 
   std::shared_ptr<Data> data_;

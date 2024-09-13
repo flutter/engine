@@ -123,8 +123,6 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   // Must be called whenever the path is created or mutated.
   void resetVolatility();
-
-  friend class CanvasPathMeasure;
 };
 
 }  // namespace flutter

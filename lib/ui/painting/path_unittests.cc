@@ -30,33 +30,34 @@ TEST_F(ShellTest, PathVolatilityOldPathsBecomeNonVolatile) {
 
     for (uint32_t i = 0; i <= DlPath::kMaxVolatileUses * 2; i++) {
       EXPECT_TRUE(path->path().IsVolatile());
-      EXPECT_TRUE(path->path().GetSkPath(false).isVolatile());
-      // Getting the SkPath for purposes other than rendering will not
+      EXPECT_TRUE(path->path().GetSkPath().isVolatile());
+      // Getting the SkPath without expressing intent for rendering will not
       // progress towards non-volatility
-      path->path().GetSkPath(false);
     }
     EXPECT_TRUE(path->path().IsVolatile());
-    EXPECT_TRUE(path->path().GetSkPath(false).isVolatile());
+    EXPECT_TRUE(path->path().GetSkPath().isVolatile());
 
-    for (uint32_t i = 0; i <= DlPath::kMaxVolatileUses; i++) {
+    for (uint32_t i = 0; i < DlPath::kMaxVolatileUses; i++) {
+      path->path().WillRenderSkPath();
       EXPECT_TRUE(path->path().IsVolatile());
-      EXPECT_TRUE(path->path().GetSkPath(false).isVolatile());
-      path->path().GetSkPath(true);
+      EXPECT_TRUE(path->path().GetSkPath().isVolatile());
     }
+    // One last intent to render will make it non-volatile
+    path->path().WillRenderSkPath();
     EXPECT_FALSE(path->path().IsVolatile());
-    EXPECT_FALSE(path->path().GetSkPath(false).isVolatile());
+    EXPECT_FALSE(path->path().GetSkPath().isVolatile());
 
     DlPath saved_path = path->path();
     path->addOval(10, 10, 20, 20);
 
     // Meanwhile if the path being constructed by the CanvasPath object
-    // is changed, new paths extracted via path() are again volatile.
+    // is changed further, new paths extracted via path() are again volatile.
     EXPECT_TRUE(path->path().IsVolatile());
-    EXPECT_TRUE(path->path().GetSkPath(false).isVolatile());
+    EXPECT_TRUE(path->path().GetSkPath().isVolatile());
 
     // But the saved versions copied before the changes are still non-volatile
     EXPECT_FALSE(saved_path.IsVolatile());
-    EXPECT_FALSE(saved_path.GetSkPath(false).isVolatile());
+    EXPECT_FALSE(saved_path.GetSkPath().isVolatile());
 
     message_latch->Signal();
   };
@@ -105,11 +106,11 @@ TEST_F(ShellTest, DeterministicRenderingDisablesPathVolatility) {
 
     for (uint32_t i = 0; i <= DlPath::kMaxVolatileUses * 2; i++) {
       EXPECT_FALSE(path->path().IsVolatile());
-      EXPECT_FALSE(path->path().GetSkPath(false).isVolatile());
-      path->path().GetSkPath(false);
+      EXPECT_FALSE(path->path().GetSkPath().isVolatile());
+      path->path().WillRenderSkPath();
     }
     EXPECT_FALSE(path->path().IsVolatile());
-    EXPECT_FALSE(path->path().GetSkPath(false).isVolatile());
+    EXPECT_FALSE(path->path().GetSkPath().isVolatile());
 
     message_latch->Signal();
   };
