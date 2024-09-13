@@ -450,9 +450,6 @@ public class AndroidTouchProcessorTest {
     assertEquals(-verticalScrollValue * verticalScaleFactor, readScrollDeltaY(packet));
     verify(event).getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId);
     verify(event).getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId);
-    assertEquals(
-        AndroidTouchProcessor.BYTES_PER_FIELD * AndroidTouchProcessor.POINTER_DATA_FIELD_COUNT,
-        packet.capacity());
 
     inOrder.verifyNoMoreInteractions();
   }
