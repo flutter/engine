@@ -1060,7 +1060,7 @@ class BrowserManager {
 
         _controllers.add(controller!);
 
-        List<Future<RunnerSuite>> futures = <Future<RunnerSuite>>[
+        final List<Future<RunnerSuite>> futures = <Future<RunnerSuite>>[
           controller!.suite
         ];
         if (_browser.onUncaughtException != null) {
@@ -1069,7 +1069,7 @@ class BrowserManager {
                   throw Exception('Exception while loading suite: $error')));
         }
 
-        RunnerSuite suite = await Future.any(futures);
+        final RunnerSuite suite = await Future.any(futures);
         return suite;
       } catch (_) {
         closeIframe();

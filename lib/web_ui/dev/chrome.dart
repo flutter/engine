@@ -402,8 +402,8 @@ Future<void> setupChromiumTab(
   wipConnection.runtime.onExceptionThrown.listen(
     (wip.ExceptionThrownEvent event) {
       if (!exceptionCompleter.isCompleted) {
-        String text = event.exceptionDetails.text;
-        String? description = event.exceptionDetails.exception?.description;
+        final String text = event.exceptionDetails.text;
+        final String? description = event.exceptionDetails.exception?.description;
         exceptionCompleter.complete('$text: $description');
       }
     }
