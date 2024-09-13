@@ -13,6 +13,8 @@ import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+
+import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -147,6 +149,11 @@ public class AndroidTouchProcessor {
             && (maskedAction == MotionEvent.ACTION_UP
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
 
+    int deviceType = getPointerDeviceTypeForToolType(event.getToolType(event.getActionIndex()));
+    boolean shouldRemovePointer = updateForMultiplePointers
+            && (deviceType == PointerDeviceKind.INVERTED_STYLUS
+            || deviceType == PointerDeviceKind.STYLUS
+            || deviceType == PointerDeviceKind.TOUCH);
     int originalPointerCount = event.getPointerCount();
 
     // The following packing code must match the struct in pointer_data.h.
@@ -154,7 +161,7 @@ public class AndroidTouchProcessor {
     // Prepare a data packet of the appropriate size and order.
     // Allocate space for an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP
     // update, to handle the synthesized PointerChange.REMOVE event.
-    int totalPointerCount = originalPointerCount + (updateForMultiplePointers ? 1 : 0);
+    int totalPointerCount = originalPointerCount + (shouldRemovePointer ? 1 : 0);
     ByteBuffer packet =
         ByteBuffer.allocateDirect(totalPointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
@@ -177,12 +184,14 @@ public class AndroidTouchProcessor {
       // to correctly batch everything back into the original Android event if needed.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
 
-      // Flutter's pointer handling synthesizes an add event for each new pointer, but does not
-      // synthesize remove events. Remove each pointer on it's corresponding ACTION_UP or
-      // ACTION_POINTER_UP.
-      // See https://github.com/flutter/flutter/issues/154842.
-      addPointerForIndex(
-          event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+      if (shouldRemovePointer) {
+        // Flutter's pointer handling synthesizes an add event for each new pointer, but does not
+        // synthesize remove events. Remove each pointer on it's corresponding ACTION_UP or
+        // ACTION_POINTER_UP, if the input device is touch or either stylus variety.
+        // See https://github.com/flutter/flutter/issues/154842.
+        addPointerForIndex(
+                event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+      }
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
