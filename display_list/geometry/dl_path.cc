@@ -18,6 +18,8 @@ impeller::Path DlPath::GetPath() const {
     data_->path = ConvertToImpellerPath(data_->sk_path);
   }
 
+  // Covered by check above.
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return data_->path.value();
 }
 
