@@ -230,7 +230,7 @@ struct Settings {
 #endif
 
   // Force disable the android surface control even where supported.
-  bool disable_surface_control = true;
+  bool disable_surface_control = false;
 
   // If true, the UI thread is the platform thread on supported
   // platforms.
