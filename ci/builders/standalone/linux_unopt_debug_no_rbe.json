@@ -7,7 +7,6 @@
     "targets are specified, the build will fail, and if an empty list of ",
     "targets are specified, all targets are built (wasteful/slow)"
   ],
-  "drone_dimensions": ["device_type=none", "os=Linux", "cores=32"],
   "gn": [
     "--runtime-mode",
     "debug",

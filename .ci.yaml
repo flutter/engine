@@ -384,6 +384,7 @@ targets:
   - name: Linux clangd
     recipe: engine_v2/builder
     properties:
+      cores: "32"
       config_name: linux_unopt_debug_no_rbe
 
   - name: Linux linux_unopt
