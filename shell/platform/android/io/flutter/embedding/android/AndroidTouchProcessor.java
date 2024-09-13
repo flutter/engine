@@ -156,7 +156,7 @@ public class AndroidTouchProcessor {
 
     // Prepare a data packet of the appropriate size and order.
     // Allocate space for an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP
-    // update, to handle the synthesized PointerChange.REMOVE event.
+    // event taken with device type touch, to handle the synthesized PointerChange.REMOVE event.
     int totalPointerCount = originalPointerCount + (shouldRemovePointer ? 1 : 0);
     ByteBuffer packet =
         ByteBuffer.allocateDirect(totalPointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
