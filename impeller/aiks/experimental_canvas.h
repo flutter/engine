@@ -88,9 +88,8 @@ class ExperimentalCanvas : public Canvas {
   };
 
  private:
-  /// @brief Compute the current coverage limit in screen space, or
-  /// std::nullopt.
-  std::optional<Rect> ComputeCoverageLimit() const;
+  // | Canvas |
+  std::optional<Rect> GetLocalCoverageLimit() const override;
 
   // clip depth of the previous save or 0.
   size_t GetClipHeightFloor() const {

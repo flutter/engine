@@ -1203,7 +1203,27 @@ void DlDispatcherBase::drawDisplayList(
     GetCanvas().Save(display_list->total_depth());
   }
 
-  display_list->Dispatch(*this);
+  // TODO(131445): Remove this restriction if we can correctly cull with
+  // perspective transforms.
+  if (display_list->has_rtree() && !initial_matrix_.HasPerspective()) {
+    // The canvas remembers the screen-space culling bounds clipped by
+    // the surface and the history of clip calls. DisplayList can cull
+    // the ops based on a rectangle expressed in its "destination bounds"
+    // so we need the canvas to transform those into the current local
+    // coordinate space into which the DisplayList will be rendered.
+    auto local_culling_bounds = GetCanvas().GetLocalCoverageLimit();
+    if (local_culling_bounds.has_value()) {
+      Rect cull_rect = local_culling_bounds.value();
+      display_list->Dispatch(
+          *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
+                                  cull_rect.GetRight(), cull_rect.GetBottom()));
+    } else {
+      // If the culling bounds are empty, this display list can be skipped
+      // entirely.
+    }
+  } else {
+    display_list->Dispatch(*this);
+  }
 
   // Restore all saved state back to what it was before we interpreted
   // the display_list

@@ -91,6 +91,10 @@ class Canvas {
 
   virtual ~Canvas();
 
+  /// @brief Return the culling bounds of the current render target, or nullopt
+  ///        if there is no coverage.
+  virtual std::optional<Rect> GetLocalCoverageLimit() const = 0;
+
   virtual void Save(uint32_t total_content_depth = kMaxDepth) = 0;
 
   virtual void SaveLayer(

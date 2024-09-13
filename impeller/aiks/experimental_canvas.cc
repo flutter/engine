@@ -333,7 +333,7 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   transform_stack_.push_back(entry);
 }
 
-std::optional<Rect> ExperimentalCanvas::ComputeCoverageLimit() const {
+std::optional<Rect> ExperimentalCanvas::GetLocalCoverageLimit() const {
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
@@ -376,7 +376,7 @@ void ExperimentalCanvas::SaveLayer(
     return SkipUntilMatchingRestore(total_content_depth);
   }
 
-  auto maybe_coverage_limit = ComputeCoverageLimit();
+  auto maybe_coverage_limit = GetLocalCoverageLimit();
   if (!maybe_coverage_limit.has_value()) {
     return SkipUntilMatchingRestore(total_content_depth);
   }
