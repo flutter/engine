@@ -15,6 +15,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -326,7 +327,8 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
                             public flutter::IgnoreDrawDispatchHelper {
  public:
   TextFrameDispatcher(const ContentContext& renderer,
-                      const Matrix& initial_matrix);
+                      const Matrix& initial_matrix,
+                      const Rect cull_rect);
   void save() override;
 
   void saveLayer(const DlRect& bounds,
@@ -383,9 +385,12 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void setStrokeJoin(flutter::DlStrokeJoin join) override;
 
  private:
+  const Rect GetCurrentLocalCullingBounds() const;
+
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  std::vector<Rect> cull_rect_state_;
   Paint paint_;
 };
 

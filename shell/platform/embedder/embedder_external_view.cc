@@ -135,8 +135,11 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     SkIRect sk_cull_rect =
         SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 
-    impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
-                                            impeller::Matrix());
+    impeller::TextFrameDispatcher collector(
+        aiks_context->GetContentContext(),             //
+        impeller::Matrix(),                            //
+        impeller::Rect::MakeSize(cull_rect.GetSize())  //
+    );
 
     impeller::ExperimentalDlDispatcher impeller_dispatcher(
         aiks_context->GetContentContext(), *impeller_target,

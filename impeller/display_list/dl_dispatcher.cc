@@ -1362,22 +1362,40 @@ Canvas& ExperimentalDlDispatcher::GetCanvas() {
 //// Text Frame Dispatcher
 
 TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
-                                         const Matrix& initial_matrix)
-    : renderer_(renderer), matrix_(initial_matrix) {}
+                                         const Matrix& initial_matrix,
+                                         const Rect cull_rect)
+    : renderer_(renderer), matrix_(initial_matrix) {
+  cull_rect_state_.push_back(cull_rect);
+}
 
 void TextFrameDispatcher::save() {
   stack_.emplace_back(matrix_);
+  cull_rect_state_.push_back(cull_rect_state_.back());
 }
 
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop) {
   save();
+
+  // This dispatcher does not track enough state to accurately compute
+  // cull rects with image filters.
+  if (paint_.image_filter) {
+    cull_rect_state_.push_back(Rect::MakeMaximum());
+  } else {
+    auto new_cull_rect = GetCurrentLocalCullingBounds().Intersection(bounds);
+    if (new_cull_rect.has_value()) {
+      cull_rect_state_.push_back(new_cull_rect.value());
+    } else {
+      cull_rect_state_.push_back(Rect::MakeLTRB(0, 0, 0, 0));
+    }
+  }
 }
 
 void TextFrameDispatcher::restore() {
   matrix_ = stack_.back();
   stack_.pop_back();
+  cull_rect_state_.pop_back();
 }
 
 void TextFrameDispatcher::translate(DlScalar tx, DlScalar ty) {
@@ -1453,6 +1471,15 @@ void TextFrameDispatcher::drawTextFrame(
   );
 }
 
+const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
+  auto cull_rect = cull_rect_state_.back();
+  if (!cull_rect.IsEmpty() && !cull_rect.IsMaximum()) {
+    Matrix inverse = matrix_.Invert();
+    cull_rect = cull_rect.TransformBounds(inverse);
+  }
+  return cull_rect;
+}
+
 void TextFrameDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     DlScalar opacity) {
@@ -1460,7 +1487,13 @@ void TextFrameDispatcher::drawDisplayList(
   save();
   Paint old_paint = paint_;
   paint_ = Paint{};
-  display_list->Dispatch(*this);
+
+  auto cull_rect = IRect::RoundOut(GetCurrentLocalCullingBounds());
+  display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
+                                                  cull_rect.GetTop(),    //
+                                                  cull_rect.GetRight(),  //
+                                                  cull_rect.GetBottom()  //
+                                                  ));
   restore();
   paint_ = old_paint;
   FML_DCHECK(stack_depth == stack_.size());
@@ -1547,8 +1580,8 @@ std::shared_ptr<Texture> DisplayListToTexture(
   }
 
   SkIRect sk_cull_rect = SkIRect::MakeWH(size.width, size.height);
-  impeller::TextFrameDispatcher collector(context.GetContentContext(),
-                                          impeller::Matrix());
+  impeller::TextFrameDispatcher collector(
+      context.GetContentContext(), impeller::Matrix(), Rect::MakeSize(size));
   display_list->Dispatch(collector, sk_cull_rect);
   impeller::ExperimentalDlDispatcher impeller_dispatcher(
       context.GetContentContext(), target,
