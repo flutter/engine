@@ -182,11 +182,13 @@ public class AndroidTouchProcessor {
 
       if (shouldRemovePointer) {
         // Synthesizes remove events immediately after the UP event so that the touches
-        // are divided into distinct segments, each beginning with a DOWN event and ending with an UP event.
+        // are divided into distinct segments, each beginning with a DOWN event and ending with an
+        // UP event.
         // This approach makes sense since each segment can be considered a separate pointer,
         // and it prevents Flutter from generating hover events between these segments, which are
         // not applicable to touch screens, as hovering is not possible.
-        // (Flutter will automatically synthesize an add event before the pointer makes its next contact.)
+        // (Flutter will automatically synthesize an add event before the pointer makes its next
+        // contact.)
         addPointerForIndex(
             event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
       }
