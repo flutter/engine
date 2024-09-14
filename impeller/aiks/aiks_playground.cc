@@ -53,7 +53,7 @@ bool AiksPlayground::OpenPlaygroundHere(
         TextFrameDispatcher collector(renderer.GetContentContext(), Matrix());
         display_list->Dispatch(collector);
 
-        ExperimentalDlDispatcher impeller_dispatcher(
+        CanvasDlDispatcher impeller_dispatcher(
             renderer.GetContentContext(), render_target,
             display_list->root_has_backdrop_filter(),
             display_list->max_root_blend_mode(), IRect::MakeMaximum());

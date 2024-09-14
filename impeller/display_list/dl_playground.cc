@@ -50,7 +50,7 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
         TextFrameDispatcher collector(context.GetContentContext(), Matrix());
         list->Dispatch(collector);
 
-        ExperimentalDlDispatcher impeller_dispatcher(
+        CanvasDlDispatcher impeller_dispatcher(
             context.GetContentContext(), render_target,
             list->root_has_backdrop_filter(), list->max_root_blend_mode(),
             IRect::MakeMaximum());

@@ -1326,19 +1326,18 @@ static bool RequiresReadbackForBlends(
          ToBlendMode(max_root_blend_mode) > Entity::kLastPipelineBlendMode;
 }
 
-ExperimentalDlDispatcher::ExperimentalDlDispatcher(
-    ContentContext& renderer,
-    RenderTarget& render_target,
-    bool has_root_backdrop_filter,
-    flutter::DlBlendMode max_root_blend_mode,
-    IRect cull_rect)
+CanvasDlDispatcher::CanvasDlDispatcher(ContentContext& renderer,
+                                       RenderTarget& render_target,
+                                       bool has_root_backdrop_filter,
+                                       flutter::DlBlendMode max_root_blend_mode,
+                                       IRect cull_rect)
     : canvas_(renderer,
               render_target,
               has_root_backdrop_filter ||
                   RequiresReadbackForBlends(renderer, max_root_blend_mode),
               cull_rect) {}
 
-Canvas& ExperimentalDlDispatcher::GetCanvas() {
+Canvas& CanvasDlDispatcher::GetCanvas() {
   return canvas_;
 }
 
@@ -1534,7 +1533,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
   impeller::TextFrameDispatcher collector(context.GetContentContext(),
                                           impeller::Matrix());
   display_list->Dispatch(collector, sk_cull_rect);
-  impeller::ExperimentalDlDispatcher impeller_dispatcher(
+  impeller::CanvasDlDispatcher impeller_dispatcher(
       context.GetContentContext(),               //
       target,                                    //
       display_list->root_has_backdrop_filter(),  //
@@ -1563,7 +1562,7 @@ bool RenderToOnscreen(AiksContext& context,
 
   IRect ip_cull_rect = IRect::MakeLTRB(cull_rect.left(), cull_rect.top(),
                                        cull_rect.right(), cull_rect.bottom());
-  impeller::ExperimentalDlDispatcher impeller_dispatcher(
+  impeller::CanvasDlDispatcher impeller_dispatcher(
       context.GetContentContext(),               //
       render_target,                             //
       display_list->root_has_backdrop_filter(),  //

@@ -5,7 +5,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/aiks_unittests.h"
-#include "impeller/aiks/experimental_canvas.h"
+#include "impeller/aiks/canvas.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 
@@ -15,17 +15,17 @@
 namespace impeller {
 namespace testing {
 
-std::unique_ptr<ExperimentalCanvas> CreateTestCanvas(
+std::unique_ptr<Canvas> CreateTestCanvas(
     ContentContext& context,
     std::optional<Rect> cull_rect = std::nullopt) {
   RenderTarget render_target = context.GetRenderTargetCache()->CreateOffscreen(
       *context.GetContext(), {1, 1}, 1);
 
   if (cull_rect.has_value()) {
-    return std::make_unique<ExperimentalCanvas>(context, render_target, false,
-                                                cull_rect.value());
+    return std::make_unique<Canvas>(context, render_target, false,
+                                    cull_rect.value());
   }
-  return std::make_unique<ExperimentalCanvas>(context, render_target, false);
+  return std::make_unique<Canvas>(context, render_target, false);
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {

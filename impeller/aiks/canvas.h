@@ -15,8 +15,10 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
+#include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -74,6 +76,27 @@ enum class ContentBoundsPromise {
   kMayClipContents,
 };
 
+struct LazyRenderingConfig {
+  std::unique_ptr<EntityPassTarget> entity_pass_target;
+  std::unique_ptr<InlinePassContext> inline_pass_context;
+
+  /// Whether or not the clear color texture can still be updated.
+  bool IsApplyingClearColor() const { return !inline_pass_context->IsActive(); }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> p_entity_pass_target)
+      : entity_pass_target(std::move(p_entity_pass_target)) {
+    inline_pass_context =
+        std::make_unique<InlinePassContext>(renderer, *entity_pass_target, 0);
+  }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> entity_pass_target,
+                      std::unique_ptr<InlinePassContext> inline_pass_context)
+      : entity_pass_target(std::move(entity_pass_target)),
+        inline_pass_context(std::move(inline_pass_context)) {}
+};
+
 class Canvas {
  public:
   static constexpr uint32_t kMaxDepth = 1 << 24;
@@ -83,29 +106,37 @@ class Canvas {
       const Matrix& effect_transform,
       Entity::RenderingMode rendering_mode)>;
 
-  Canvas();
+  Canvas(ContentContext& renderer,
+         RenderTarget& render_target,
+         bool requires_readback);
 
-  explicit Canvas(Rect cull_rect);
+  explicit Canvas(ContentContext& renderer,
+                  RenderTarget& render_target,
+                  bool requires_readback,
+                  Rect cull_rect);
 
-  explicit Canvas(IRect cull_rect);
+  explicit Canvas(ContentContext& renderer,
+                  RenderTarget& render_target,
+                  bool requires_readback,
+                  IRect cull_rect);
 
-  virtual ~Canvas();
+  ~Canvas() = default;
 
   /// @brief Return the culling bounds of the current render target, or nullopt
   ///        if there is no coverage.
-  virtual std::optional<Rect> GetLocalCoverageLimit() const = 0;
+  std::optional<Rect> GetLocalCoverageLimit() const;
 
-  virtual void Save(uint32_t total_content_depth = kMaxDepth) = 0;
+  void Save(uint32_t total_content_depth = kMaxDepth);
 
-  virtual void SaveLayer(
+  void SaveLayer(
       const Paint& paint,
       std::optional<Rect> bounds = std::nullopt,
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
-      bool can_distribute_opacity = false) = 0;
+      bool can_distribute_opacity = false);
 
-  virtual bool Restore() = 0;
+  bool Restore();
 
   size_t GetSaveCount() const;
 
@@ -182,9 +213,9 @@ class Canvas {
       const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  virtual void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                             Point position,
-                             const Paint& paint) = 0;
+  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                     Point position,
+                     const Paint& paint);
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
@@ -199,13 +230,45 @@ class Canvas {
                  std::optional<Rect> cull_rect,
                  const Paint& paint);
 
+  void EndReplay();
+
   uint64_t GetOpDepth() const { return current_depth_; }
+
   uint64_t GetMaxOpDepth() const { return transform_stack_.back().clip_depth; }
 
- protected:
+  struct SaveLayerState {
+    Paint paint;
+    Rect coverage;
+  };
+
+ private:
+  ContentContext& renderer_;
+  RenderTarget& render_target_;
+  const bool requires_readback_;
+  EntityPassClipStack clip_coverage_stack_;
+
   std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
+  std::vector<LazyRenderingConfig> render_passes_;
+  std::vector<SaveLayerState> save_layer_state_;
+
   uint64_t current_depth_ = 0u;
+
+  Point GetGlobalPassPosition() const;
+
+  // clip depth of the previous save or 0.
+  size_t GetClipHeightFloor() const;
+
+  /// @brief Whether all entites should be skipped until a corresponding
+  ///        restore.
+  bool IsSkipping() const;
+
+  /// @brief Skip all rendering/clipping entities until next restore.
+  void SkipUntilMatchingRestore(size_t total_content_depth);
+
+  void SetupRenderPass();
+
+  bool BlitToOnscreen();
 
   size_t GetClipHeight() const;
 
@@ -213,10 +276,9 @@ class Canvas {
 
   void Reset();
 
- private:
-  virtual void AddRenderEntityToCurrentPass(Entity entity,
-                                            bool reuse_depth = false) = 0;
-  virtual void AddClipEntityToCurrentPass(Entity entity) = 0;
+  void AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth = false);
+
+  void AddClipEntityToCurrentPass(Entity& entity);
 
   void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);

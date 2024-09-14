@@ -12,7 +12,6 @@
 #include "fml/logging.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/canvas.h"
-#include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
 
@@ -243,15 +242,15 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                                  const Paint& paint);
 };
 
-class ExperimentalDlDispatcher : public DlDispatcherBase {
+class CanvasDlDispatcher : public DlDispatcherBase {
  public:
-  ExperimentalDlDispatcher(ContentContext& renderer,
-                           RenderTarget& render_target,
-                           bool has_root_backdrop_filter,
-                           flutter::DlBlendMode max_root_blend_mode,
-                           IRect cull_rect);
+  CanvasDlDispatcher(ContentContext& renderer,
+                     RenderTarget& render_target,
+                     bool has_root_backdrop_filter,
+                     flutter::DlBlendMode max_root_blend_mode,
+                     IRect cull_rect);
 
-  ~ExperimentalDlDispatcher() = default;
+  ~CanvasDlDispatcher() = default;
 
   // |flutter::DlOpReceiver|
   void save() override {
@@ -274,7 +273,7 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
   void FinishRecording() { canvas_.EndReplay(); }
 
  private:
-  ExperimentalCanvas canvas_;
+  Canvas canvas_;
 
   Canvas& GetCanvas() override;
 };
