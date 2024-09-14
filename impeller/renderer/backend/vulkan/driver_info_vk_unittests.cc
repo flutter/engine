@@ -37,19 +37,21 @@ TEST_P(DriverInfoVKTest, CanDumpToLog) {
 }
 
 TEST(DriverInfoVKTest, DisabledDevices) {
-  std::string name = "Adreno (TM) 630";
-  auto const context = MockVulkanContextBuilder()
-                           .SetPhysicalPropertiesCallback(
-                               [&name](VkPhysicalDevice device,
-                                       VkPhysicalDeviceProperties* prop) {
-                                 prop->vendorID = 0x168C;  // Qualcomm
-                                 name.copy(prop->deviceName, name.size());
-                                 prop->deviceType =
-                                     VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-                               })
-                           .Build();
+  std::vector<std::string_view> names = {kAdreno630, kAdreno506};
+  for (auto& name : names) {
+    auto const context = MockVulkanContextBuilder()
+                             .SetPhysicalPropertiesCallback(
+                                 [&name](VkPhysicalDevice device,
+                                         VkPhysicalDeviceProperties* prop) {
+                                   prop->vendorID = 0x168C;  // Qualcomm
+                                   name.copy(prop->deviceName, name.size());
+                                   prop->deviceType =
+                                       VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+                                 })
+                             .Build();
 
-  EXPECT_TRUE(context->GetDriverInfo()->IsKnownBadDriver());
+    EXPECT_TRUE(context->GetDriverInfo()->IsKnownBadDriver());
+  }
 }
 
 }  // namespace impeller::testing

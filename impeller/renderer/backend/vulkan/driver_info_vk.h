@@ -10,6 +10,18 @@
 
 namespace impeller {
 
+// Non functional Vulkan drivers:
+
+/// see:
+/// https://github.com/flutter/flutter/issues/154103
+///
+/// Reports "VK_INCOMPLETE" when compiling certain entity shader with
+/// vkCreateGraphicsPipelines, which is not a valid return status.
+constexpr std::string_view kAdreno630 = "Adreno (TM) 630";
+
+/// See https://github.com/flutter/flutter/issues/155185
+constexpr std::string_view kAdreno506 = "Adreno (TM) 506";
+
 enum class VendorVK {
   kUnknown,
   //----------------------------------------------------------------------------

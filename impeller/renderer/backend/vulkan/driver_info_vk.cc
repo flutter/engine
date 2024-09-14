@@ -19,6 +19,9 @@ namespace impeller {
 /// vkCreateGraphicsPipelines, which is not a valid return status.
 constexpr std::string_view kAdreno630 = "Adreno (TM) 630";
 
+/// See https://github.com/flutter/flutter/issues/155185
+constexpr std::string_view kAdreno506 = "Adreno (TM) 506";
+
 constexpr VendorVK IdentifyVendor(uint32_t vendor) {
   // Check if the vendor has a PCI ID:
   // https://pcisig.com/membership/member-companies
@@ -197,8 +200,13 @@ bool DriverInfoVK::IsEmulator() const {
 }
 
 bool DriverInfoVK::IsKnownBadDriver() const {
-  if (vendor_ == VendorVK::kQualcomm && driver_name_ == kAdreno630) {
-    return true;
+  if (vendor_ == VendorVK::kQualcomm) {
+    if (driver_name_ == kAdreno506) {
+      return true;
+    }
+    if (driver_name_ == kAdreno630) {
+      return true;
+    }
   }
   return false;
 }
