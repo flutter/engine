@@ -1569,3 +1569,29 @@ void render_impeller_test() {
   };
   PlatformDispatcher.instance.scheduleFrame();
 }
+
+@pragma('vm:entry-point')
+// ignore: non_constant_identifier_names
+void render_impeller_text_test() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    final Paint paint = Paint();
+    paint.color = const Color.fromARGB(255, 0, 0, 255);
+    final PictureRecorder baseRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(baseRecorder);
+
+    final ParagraphBuilder paragraphBuilder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'sans-serif'
+    ))
+      ..addText('Flutter is the best!');
+    final Paragraph paragraph = paragraphBuilder.build()
+      ..layout(const ParagraphConstraints(width: 400));
+    canvas.drawParagraph(paragraph, const Offset(20, 20));
+
+    builder.addPicture(Offset.zero, baseRecorder.endRecording());
+    builder.pop();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
