@@ -98,6 +98,33 @@ TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
                      Matrix::MakeTranslation({100.0, 100.0, 0.0}));
 }
 
+TEST_P(AiksTest, PaintWithFilters) {
+  // validate that a paint with a color filter "HasFilters", no other filters
+  // impact this setting.
+  Paint paint;
+
+  ASSERT_FALSE(paint.HasColorFilter());
+
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Blue());
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.image_filter = ImageFilter::MakeBlur(Sigma(1.0), Sigma(1.0),
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp);
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.mask_blur_descriptor = {};
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.color_filter = nullptr;
+
+  ASSERT_FALSE(paint.HasColorFilter());
+}
+
 }  // namespace testing
 }  // namespace impeller
 

@@ -47,25 +47,9 @@ impeller_component("aiks_playground") {
   ]
 }
 
-impeller_component("context_spy") {
-  testonly = true
-
-  sources = [
-    "testing/context_mock.h",
-    "testing/context_spy.cc",
-    "testing/context_spy.h",
-  ]
-  deps = [
-    "//flutter/impeller/entity:entity_test_helpers",
-    "//flutter/impeller/renderer",
-    "//flutter/testing:testing_lib",
-  ]
-}
-
 template("aiks_unittests_component") {
   target_name = invoker.target_name
   predefined_sources = [
-    "aiks_gradient_unittests.cc",
     "aiks_unittests.cc",
     "aiks_unittests.h",
   ]
@@ -86,7 +70,6 @@ template("aiks_unittests_component") {
     deps = [
       ":aiks",
       ":aiks_playground",
-      ":context_spy",
       "//flutter/impeller/geometry:geometry_asserts",
       "//flutter/impeller/golden_tests:golden_playground_test",
       "//flutter/impeller/playground:playground_test",

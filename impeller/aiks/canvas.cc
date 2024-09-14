@@ -1494,8 +1494,11 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
       // to the render target texture so far need to execute before it's bound
       // for blending (otherwise the blend pass will end up executing before
       // all the previous commands in the active pass).
-      auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                                        clip_coverage_stack_, renderer_);
+      auto input_texture = FlipBackdrop(render_passes_,           //
+                                        GetGlobalPassPosition(),  //
+                                        clip_coverage_stack_,     //
+                                        renderer_                 //
+      );
       if (!input_texture) {
         return;
       }

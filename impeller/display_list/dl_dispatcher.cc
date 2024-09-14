@@ -1211,9 +1211,10 @@ void DlDispatcherBase::drawDisplayList(
     // the ops based on a rectangle expressed in its "destination bounds"
     // so we need the canvas to transform those into the current local
     // coordinate space into which the DisplayList will be rendered.
-    auto local_culling_bounds = GetCanvas().GetLocalCoverageLimit();
-    if (local_culling_bounds.has_value()) {
-      Rect cull_rect = local_culling_bounds.value();
+    auto global_culling_bounds = GetCanvas().GetLocalCoverageLimit();
+    if (global_culling_bounds.has_value()) {
+      Rect cull_rect = global_culling_bounds->TransformBounds(
+          GetCanvas().GetCurrentTransform().Invert());
       display_list->Dispatch(
           *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
                                   cull_rect.GetRight(), cull_rect.GetBottom()));

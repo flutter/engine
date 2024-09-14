@@ -15,7 +15,6 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
-#include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/content_context.h"
@@ -29,6 +28,7 @@
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
+#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -37,7 +37,6 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/geometry/superellipse_geometry.h"
-#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
@@ -2374,6 +2373,36 @@ TEST_P(EntityTest, DrawSuperEllipse) {
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
+
+TEST_P(EntityTest, SolidColorApplyColorFilter) {
+  auto contents = SolidColorContents();
+  contents.SetColor(Color::CornflowerBlue().WithAlpha(0.75));
+  auto result = contents.ApplyColorFilter([](const Color& color) {
+    return color.Blend(Color::LimeGreen().WithAlpha(0.75), BlendMode::kScreen);
+  });
+  ASSERT_TRUE(result);
+  ASSERT_COLOR_NEAR(contents.GetColor(),
+                    Color(0.424452, 0.828743, 0.79105, 0.9375));
+}
+
+#define APPLY_COLOR_FILTER_GRADIENT_TEST(name)                                 \
+  TEST_P(EntityTest, name##GradientApplyColorFilter) {                         \
+    auto contents = name##GradientContents();                                  \
+    contents.SetColors({Color::CornflowerBlue().WithAlpha(0.75)});             \
+    auto result = contents.ApplyColorFilter([](const Color& color) {           \
+      return color.Blend(Color::LimeGreen().WithAlpha(0.75),                   \
+                         BlendMode::kScreen);                                  \
+    });                                                                        \
+    ASSERT_TRUE(result);                                                       \
+                                                                               \
+    std::vector<Color> expected = {Color(0.433247, 0.879523, 0.825324, 0.75)}; \
+    ASSERT_COLORS_NEAR(contents.GetColors(), expected);                        \
+  }
+
+APPLY_COLOR_FILTER_GRADIENT_TEST(Linear);
+APPLY_COLOR_FILTER_GRADIENT_TEST(Radial);
+APPLY_COLOR_FILTER_GRADIENT_TEST(Conical);
+APPLY_COLOR_FILTER_GRADIENT_TEST(Sweep);
 
 }  // namespace testing
 }  // namespace impeller
