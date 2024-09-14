@@ -181,10 +181,12 @@ public class AndroidTouchProcessor {
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
 
       if (shouldRemovePointer) {
-        // Flutter's pointer handling synthesizes an add event for each new pointer, but does not
-        // synthesize remove events. Remove each pointer on it's corresponding ACTION_UP or
-        // ACTION_POINTER_UP if and only if the input device is touch.
-        // See https://github.com/flutter/flutter/issues/154842.
+        // Synthesizes remove events immediately after the UP event so that the touches
+        // are divided into distinct segments, each beginning with a DOWN event and ending with an UP event.
+        // This approach makes sense since each segment can be considered a separate pointer,
+        // and it prevents Flutter from generating hover events between these segments, which are
+        // not applicable to touch screens, as hovering is not possible.
+        // (Flutter will automatically synthesize an add event before the pointer makes its next contact.)
         addPointerForIndex(
             event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
       }
