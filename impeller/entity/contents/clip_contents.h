@@ -34,10 +34,6 @@ class ClipContents final : public Contents {
       const std::optional<Rect>& current_clip_coverage) const override;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect> clip_coverage) const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
@@ -77,10 +73,6 @@ class ClipRestoreContents final : public Contents {
   ClipCoverage GetClipCoverage(
       const Entity& entity,
       const std::optional<Rect>& current_clip_coverage) const override;
-
-  // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect> clip_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
