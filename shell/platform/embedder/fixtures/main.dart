@@ -1553,7 +1553,7 @@ void render_gradient_retained() {
 
 @pragma('vm:entry-point')
 // ignore: non_constant_identifier_names
-void render_impeller_gl_test() {
+void render_impeller_test() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0);
