@@ -36,22 +36,49 @@ TEST_P(DriverInfoVKTest, CanDumpToLog) {
   EXPECT_TRUE(log.str().find("Driver Information") != std::string::npos);
 }
 
-TEST(DriverInfoVKTest, DisabledDevices) {
-  std::vector<std::string_view> names = {kAdreno630, kAdreno506};
-  for (auto& name : names) {
-    auto const context = MockVulkanContextBuilder()
-                             .SetPhysicalPropertiesCallback(
-                                 [&name](VkPhysicalDevice device,
-                                         VkPhysicalDeviceProperties* prop) {
-                                   prop->vendorID = 0x168C;  // Qualcomm
-                                   name.copy(prop->deviceName, name.size());
-                                   prop->deviceType =
-                                       VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-                                 })
-                             .Build();
+bool IsBadVersionTest(std::string_view driver_name, bool qc = true) {
+  auto const context =
+      MockVulkanContextBuilder()
+          .SetPhysicalPropertiesCallback(
+              [&driver_name, qc](VkPhysicalDevice device,
+                                 VkPhysicalDeviceProperties* prop) {
+                if (qc) {
+                  prop->vendorID = 0x168C;  // Qualcomm
+                } else {
+                  prop->vendorID = 0x13B5;  // ARM
+                }
+                driver_name.copy(prop->deviceName, driver_name.size());
+                prop->deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+              })
+          .Build();
+  return context->GetDriverInfo()->IsKnownBadDriver();
+}
 
-    EXPECT_TRUE(context->GetDriverInfo()->IsKnownBadDriver());
-  }
+TEST(DriverInfoVKTest, DisabledDevices) {
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 540"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 530"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 512"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 509"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 508"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 506"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 505"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 504"));
+}
+
+TEST(DriverInfoVKTest, EnabledDevicesMali) {
+  EXPECT_FALSE(IsBadVersionTest("Mali-G52", /*qc=*/false));
+  EXPECT_FALSE(IsBadVersionTest("Mali-G54-MORE STUFF", /*qc=*/false));
+}
+
+TEST(DriverInfoVKTest, EnabledDevicesAdreno) {
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 750"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 740"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 732"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 730"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 725"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 720"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 710"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 702"));
 }
 
 }  // namespace impeller::testing

@@ -10,17 +10,103 @@
 
 namespace impeller {
 
-// Non functional Vulkan drivers:
+// https://en.wikipedia.org/wiki/Adreno
+enum class AdrenoGPU {
+  // Unknown GPU, likely newer model.
+  kUnknown,
+  // X
+  kAdrenoX185,
+  kAdrenoX145,
+  // 700s
+  kAdreno750,
+  kAdreno740,
+  kAdreno735,
+  kAdreno732,
+  kAdreno730,
+  kAdreno725,
+  kAdreno720,
+  kAdreno710,
+  kAdreno702,
+  // 600s
+  kAdreno695,
+  kAdreno690,
+  kAdreno685,
+  kAdreno680,
+  kAdreno675,
+  kAdreno663,
+  kAdreno660,
+  kAdreno650,
+  kAdreno644,
+  kAdreno643L,
+  kAdreno642,
+  kAdreno642L,
+  // The 640 is the first GPU inside an Android device with upgradable drivers.
+  // Anything before this point exhibiting broken behavior is broken forever.
+  kAdreno640,
+  kAdreno630,
+  kAdreno620,
+  kAdreno619,
+  kAdreno619L,
+  kAdreno618,
+  kAdreno616,
+  kAdreno615,
+  kAdreno613,
+  kAdreno612,
+  kAdreno610,
+  kAdreno608,
+  kAdreno605,
+  // 500s
+  kAdreno540,
+  kAdreno530,
+  kAdreno512,
+  kAdreno510,
+  kAdreno509,
+  kAdreno508,
+  kAdreno506,
+  kAdreno505,
+  kAdreno504,
+  // I don't think the 400 series will ever run Vulkan, but if some show up we
+  // can add them here.
+};
 
-/// see:
-/// https://github.com/flutter/flutter/issues/154103
-///
-/// Reports "VK_INCOMPLETE" when compiling certain entity shader with
-/// vkCreateGraphicsPipelines, which is not a valid return status.
-constexpr std::string_view kAdreno630 = "Adreno (TM) 630";
+// https://en.wikipedia.org/wiki/Mali_(processor)
+enum class MaliGPU {
+  kUnknown,
+  // 5th Gen
+  kG925,
+  kG725,
+  kG625,
+  kG720,
+  kG620,
 
-/// See https://github.com/flutter/flutter/issues/155185
-constexpr std::string_view kAdreno506 = "Adreno (TM) 506";
+  // Valhall
+  // Note: there is an Immortalis-G715 a Mali-G715
+  kG715,
+  kG615,
+  kG710,
+  kG610,
+  kG510,
+  kG310,
+  kG78,
+  kG68,
+  kG77,
+  kG57,
+
+  // Bifrost
+  kG76,
+  kG72,
+  kG52,
+  kG71,
+  kG51,
+  kG31,
+
+  // These might be Vulkan 1.0 Only.
+  kT880,
+  kT860,
+  kT830,
+  kT820,
+  kT760,
+};
 
 enum class VendorVK {
   kUnknown,
@@ -151,6 +237,10 @@ class DriverInfoVK {
   Version api_version_;
   VendorVK vendor_ = VendorVK::kUnknown;
   DeviceTypeVK type_ = DeviceTypeVK::kUnknown;
+  // If the VendorVK is  VendorVK::kQualcomm, this will be populated with the
+  // identified Adreno GPU.
+  std::optional<AdrenoGPU> adreno_gpu_ = std::nullopt;
+  std::optional<MaliGPU> mali_gpu_ = std::nullopt;
   std::string driver_name_;
 };
 
