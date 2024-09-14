@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/dl_color.h"
+#include "display_list/dl_tile_mode.h"
 #include "gtest/gtest.h"
 
 #include <sstream>
@@ -75,6 +77,20 @@ TEST_F(GoldenTests, ConicalGradient) {
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
   paint.setDrawStyle(flutter::DlDrawStyle::kFill);
+
+  flutter::DlColor colors[2] = {flutter::DlColor::RGBA(1, 0, 0, 1),
+                                flutter::DlColor::RGBA(0, 0, 1, 1)};
+  Scalar stops[2] = {0, 1};
+
+  paint.setColorSource(flutter::DlConicalGradientColorSource::MakeConical(
+      /*start_center=*/{125, 125},               //
+      /*start_radius=*/125, {180, 180},          //
+      /*end_radius=*/0,                          //
+      /*stop_count=*/2,                          //
+      /*colors=*/colors,                         //
+      /*stops=*/stops,                           //
+      /*tile_mode=*/flutter::DlTileMode::kClamp  //
+      ));
 
   builder.DrawRect(SkRect::MakeXYWH(10, 10, 250, 250), paint);
 
