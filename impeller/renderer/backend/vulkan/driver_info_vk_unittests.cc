@@ -54,6 +54,17 @@ bool IsBadVersionTest(std::string_view driver_name, bool qc = true) {
   return context->GetDriverInfo()->IsKnownBadDriver();
 }
 
+TEST(DriverInfoVKTest, DriverParsingMali) {
+  EXPECT_EQ(GetMaliVersion("Mali-G51-MORE STUFF"), MaliGPU::kG51);
+  EXPECT_EQ(GetMaliVersion("Mali-G51"), MaliGPU::kG51);
+  EXPECT_EQ(GetMaliVersion("Mali-111111"), MaliGPU::kUnknown);
+}
+
+TEST(DriverInfoVKTest, DriverParsingArm) {
+  EXPECT_EQ(GetMaliVersion("Adreno (TM) 540"), AdrenoGPU::kAdreno540);
+  EXPECT_EQ(GetMaliVersion("Foo Bar"), AdrenoGPU::kUnknown);
+}
+
 TEST(DriverInfoVKTest, DisabledDevices) {
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 540"));
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 530"));

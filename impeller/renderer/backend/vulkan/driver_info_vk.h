@@ -153,6 +153,12 @@ enum class DeviceTypeVK {
   kCPU,
 };
 
+// visible for testing.
+AdrenoGPU GetAdrenoVersion(std::string_view version);
+
+// visible for testing.
+MaliGPU GetMaliVersion(std::string_view version);
+
 //------------------------------------------------------------------------------
 /// @brief      Get information about the Vulkan driver.
 ///
