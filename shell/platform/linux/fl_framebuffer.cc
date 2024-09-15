@@ -60,8 +60,8 @@ FlFramebuffer* fl_framebuffer_new(GLint format, size_t width, size_t height) {
                GL_UNSIGNED_BYTE, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                         GL_TEXTURE_2D, provider->texture_id, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                         provider->texture_id, 0);
 
   return provider;
 }
