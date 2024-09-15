@@ -1,4 +1,4 @@
-Signature: 20a8f71934632028508dd40f268962d1
+Signature: cd90356c816e1637333eaaa82a3714d6
 
 ====================================================================================================
 LIBRARY: etc1
@@ -328,6 +328,8 @@ TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/.bazelignore
 FILE: ../../../flutter/third_party/skia/.bazelproject
 FILE: ../../../flutter/third_party/skia/Cargo.toml
+FILE: ../../../flutter/third_party/skia/MODULE.bazel
+FILE: ../../../flutter/third_party/skia/MODULE.bazel.lock
 FILE: ../../../flutter/third_party/skia/OWNERS_build_files.android
 FILE: ../../../flutter/third_party/skia/RELEASE_NOTES.md
 FILE: ../../../flutter/third_party/skia/go.mod
@@ -399,9 +401,12 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/android-codec-gainmap.md
 FILE: ../../../flutter/third_party/skia/relnotes/filter-color.md
+FILE: ../../../flutter/third_party/skia/relnotes/fourbytetag.md
 FILE: ../../../flutter/third_party/skia/relnotes/ganesh-move.md
 FILE: ../../../flutter/third_party/skia/relnotes/grglconfig.md
 FILE: ../../../flutter/third_party/skia/relnotes/macro.md
+FILE: ../../../flutter/third_party/skia/relnotes/skmsec.md
+FILE: ../../../flutter/third_party/skia/relnotes/skslbuilders.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9532,6 +9537,7 @@ ORIGIN: ../../../flutter/third_party/skia/gm/luminosity.cpp + ../../../flutter/t
 ORIGIN: ../../../flutter/third_party/skia/gm/pathopsblend.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/gm/rendertomipmappedyuvimageplanes.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/core/SkArc.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/include/core/SkFourByteTag.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/GrGLMakeWebGLInterface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/epoxy/GrGLMakeEpoxyEGLInterface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/ios/GrGLMakeIOSInterface.h + ../../../flutter/third_party/skia/LICENSE
@@ -9592,6 +9598,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnBackendTextu
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnTextureInfo.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticBlurMask.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticBlurMask.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticClip.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlBackendSemaphore.mm + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlBackendTexture.mm + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlTextureInfo.mm + ../../../flutter/third_party/skia/LICENSE
@@ -9646,6 +9653,7 @@ FILE: ../../../flutter/third_party/skia/gm/luminosity.cpp
 FILE: ../../../flutter/third_party/skia/gm/pathopsblend.cpp
 FILE: ../../../flutter/third_party/skia/gm/rendertomipmappedyuvimageplanes.cpp
 FILE: ../../../flutter/third_party/skia/include/core/SkArc.h
+FILE: ../../../flutter/third_party/skia/include/core/SkFourByteTag.h
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/GrGLMakeWebGLInterface.h
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/epoxy/GrGLMakeEpoxyEGLInterface.h
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/gl/ios/GrGLMakeIOSInterface.h
@@ -9706,6 +9714,7 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnBackendTexture
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnTextureInfo.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticBlurMask.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticBlurMask.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/geom/AnalyticClip.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlBackendSemaphore.mm
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlBackendTexture.mm
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/mtl/MtlTextureInfo.mm
