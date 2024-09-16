@@ -372,10 +372,6 @@ void ImpellerPaintSetColor(ImpellerPaint IMPELLER_NONNULL paint,
                            const ImpellerColor* IMPELLER_NONNULL color);
 
 IMPELLER_EXPORT
-void ImpellerPaintSetIntertColors(ImpellerPaint IMPELLER_NONNULL paint,
-                                  bool invert);
-
-IMPELLER_EXPORT
 void ImpellerPaintSetBlendMode(ImpellerPaint IMPELLER_NONNULL paint,
                                ImpellerBlendMode mode);
 
@@ -424,21 +420,17 @@ void ImpellerPaintSetMaskFilter(
 //------------------------------------------------------------------------------
 
 IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerTexture IMPELLER_NULLABLE
-ImpellerTextureNew(
+ImpellerTextureCreateWithContentsNew(
     ImpellerContext IMPELLER_NONNULL context,
-    const ImpellerTextureDescriptor* IMPELLER_NONNULL descriptor);
+    const ImpellerTextureDescriptor* IMPELLER_NONNULL descriptor,
+    const ImpellerMapping* IMPELLER_NONNULL contents,
+    void* IMPELLER_NULLABLE contents_on_release_user_data);
 
 IMPELLER_EXPORT
 void ImpellerTextureRetain(ImpellerTexture IMPELLER_NULLABLE texture);
 
 IMPELLER_EXPORT
 void ImpellerTextureRelease(ImpellerTexture IMPELLER_NULLABLE texture);
-
-IMPELLER_EXPORT
-bool ImpellerTextureSetContents(
-    ImpellerTexture IMPELLER_NONNULL texture,
-    const ImpellerMapping* IMPELLER_NONNULL contents,
-    void* IMPELLER_NULLABLE contents_on_release_user_data);
 
 //------------------------------------------------------------------------------
 // Color Sources

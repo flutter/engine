@@ -32,8 +32,6 @@ class Paint final
 
   void SetColor(Color color);
 
-  void SetInvertColors(bool invert);
-
   void SetBlendMode(BlendMode mode);
 
   void SetDrawStyle(flutter::DlDrawStyle style);

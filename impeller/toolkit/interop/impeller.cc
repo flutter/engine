@@ -338,11 +338,6 @@ void ImpellerPaintSetColor(ImpellerPaint paint, const ImpellerColor* color) {
 }
 
 IMPELLER_EXTERN_C
-void ImpellerPaintSetIntertColors(ImpellerPaint paint, bool invert) {
-  GetPeer(paint)->SetInvertColors(invert);
-}
-
-IMPELLER_EXTERN_C
 void ImpellerPaintSetBlendMode(ImpellerPaint paint, ImpellerBlendMode mode) {
   GetPeer(paint)->SetBlendMode(ToImpellerType(mode));
 }
@@ -455,9 +450,11 @@ void ImpellerDisplayListBuilderDrawPath(ImpellerDisplayListBuilder builder,
 }
 
 IMPELLER_EXTERN_C
-ImpellerTexture ImpellerTextureNew(
+ImpellerTexture ImpellerTextureCreateWithContentsNew(
     ImpellerContext context,
-    const ImpellerTextureDescriptor* descriptor) {
+    const ImpellerTextureDescriptor* descriptor,
+    const ImpellerMapping* IMPELLER_NONNULL contents,
+    void* IMPELLER_NULLABLE contents_on_release_user_data) {
   TextureDescriptor desc;
   desc.storage_mode = StorageMode::kDevicePrivate;
   desc.type = TextureType::kTexture2D;
@@ -471,6 +468,28 @@ ImpellerTexture ImpellerTextureNew(
     VALIDATION_LOG << "Could not create texture.";
     return nullptr;
   }
+  // Depending on whether the de-allocation can be delayed, it may be possible
+  // to avoid a data copy.
+  if (contents->on_release) {
+    // Avoids data copy.
+    auto wrapped_contents = std::make_shared<fml::NonOwnedMapping>(
+        contents->data,    // data ptr
+        contents->length,  // data length
+        [contents, contents_on_release_user_data](auto, auto) {
+          contents->on_release(contents_on_release_user_data);
+        }  // release callback
+    );
+    if (!texture->SetContents(std::move(wrapped_contents))) {
+      VALIDATION_LOG << "Could not set texture contents.";
+      return nullptr;
+    }
+  } else {
+    // May copy.
+    if (!texture->SetContents(contents->data, contents->length)) {
+      VALIDATION_LOG << "Could not set texture contents.";
+      return nullptr;
+    }
+  }
   return texture.Leak();
 }
 
@@ -482,25 +501,6 @@ void ImpellerTextureRetain(ImpellerTexture texture) {
 IMPELLER_EXTERN_C
 void ImpellerTextureRelease(ImpellerTexture texture) {
   ObjectBase::SafeRelease(texture);
-}
-
-IMPELLER_EXTERN_C
-bool ImpellerTextureSetContents(ImpellerTexture texture,
-                                const ImpellerMapping* contents,
-                                void* contents_on_release_user_data) {
-  if (contents->on_release) {
-    auto wrapped_contents = std::make_shared<fml::NonOwnedMapping>(
-        contents->data,    // data ptr
-        contents->length,  // data length
-        [contents, contents_on_release_user_data](auto, auto) {
-          contents->on_release(contents_on_release_user_data);
-        }  // release callback
-    );
-    return GetPeer(texture)->SetContents(std::move(wrapped_contents));
-  } else {
-    return GetPeer(texture)->SetContents(contents->data, contents->length);
-  }
-  FML_UNREACHABLE();
 }
 
 IMPELLER_EXTERN_C

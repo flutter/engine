@@ -17,24 +17,27 @@ const flutter::DlPaint& Paint::GetPaint() const {
 void Paint::SetColor(Color color) {
   paint_.setColor(ToDisplayListType(color));
 }
-void Paint::SetInvertColors(bool invert) {
-  paint_.setInvertColors(invert);
-}
+
 void Paint::SetBlendMode(BlendMode mode) {
   paint_.setBlendMode(ToDisplayListType(mode));
 }
+
 void Paint::SetDrawStyle(flutter::DlDrawStyle style) {
   paint_.setDrawStyle(style);
 }
+
 void Paint::SetStrokeCap(flutter::DlStrokeCap stroke_cap) {
   paint_.setStrokeCap(stroke_cap);
 }
+
 void Paint::SetStrokeJoin(flutter::DlStrokeJoin stroke_join) {
   paint_.setStrokeJoin(stroke_join);
 }
+
 void Paint::SetStrokeWidth(Scalar width) {
   paint_.setStrokeWidth(width);
 }
+
 void Paint::SetStrokeMiter(Scalar miter) {
   paint_.setStrokeMiter(miter);
 }

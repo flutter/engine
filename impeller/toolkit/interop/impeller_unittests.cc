@@ -89,9 +89,9 @@ TEST_P(InteropPlaygroundTest, CanDrawImage) {
   desc.pixel_format = ImpellerPixelFormat::kImpellerPixelFormatRGBA8888;
   desc.size = {decompressed.GetSize().width, decompressed.GetSize().height};
   desc.mip_count = 1u;
-  auto texture = Adopt<Texture>(ImpellerTextureNew(context.GetC(), &desc));
-  ASSERT_TRUE(ImpellerTextureSetContents(texture.GetC(), &mapping, nullptr));
-
+  auto texture = Adopt<Texture>(ImpellerTextureCreateWithContentsNew(
+      context.GetC(), &desc, &mapping, nullptr));
+  ASSERT_TRUE(texture);
   auto builder =
       Adopt<DisplayListBuilder>(ImpellerDisplayListBuilderNew(nullptr));
   ImpellerPoint point = {100, 100};
