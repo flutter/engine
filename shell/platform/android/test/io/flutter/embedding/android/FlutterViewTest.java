@@ -89,7 +89,6 @@ public class FlutterViewTest {
     // ShadowLog.stream = System.out;
   }
 
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
     FlutterView flutterView = new FlutterView(ctx);
