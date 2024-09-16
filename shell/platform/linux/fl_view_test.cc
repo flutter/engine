@@ -50,8 +50,9 @@ TEST(FlViewTest, FirstFrameSignal) {
   fl_view_redraw(view);
 
   // Signal is emitted in idle, clear the main loop.
-  while (g_main_context_iteration(g_main_context_default(), FALSE))
-    ;
+  while (g_main_context_iteration(g_main_context_default(), FALSE)) {
+    // Repeat until nothing to iterate on.
+  }
 
   // Check view has detected frame.
   EXPECT_TRUE(first_frame_emitted);
