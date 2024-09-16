@@ -89,8 +89,6 @@ public class FlutterViewTest {
     // ShadowLog.stream = System.out;
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
@@ -103,9 +101,6 @@ public class FlutterViewTest {
     verify(platformViewsController, times(1)).attachToView(flutterView);
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void flutterView_importantForAutofillDoesNotExcludeDescendants() {
     FlutterView flutterView = new FlutterView(ctx);
@@ -115,9 +110,6 @@ public class FlutterViewTest {
     assertEquals(View.IMPORTANT_FOR_AUTOFILL_YES, flutterView.getImportantForAutofill());
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_alertsPlatformViews() {
     FlutterView flutterView = new FlutterView(ctx);
@@ -130,9 +122,6 @@ public class FlutterViewTest {
     verify(platformViewsController, times(1)).detachFromView();
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_turnsOffA11y() {
     FlutterView flutterView = new FlutterView(ctx);
@@ -229,9 +218,6 @@ public class FlutterViewTest {
     mockFlutterJni.onFirstFrame();
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
     FlutterView flutterView = new FlutterView(ctx);
@@ -267,9 +253,6 @@ public class FlutterViewTest {
         .updateDisplayMetrics(any(Float.class), any(Float.class), any(Float.class));
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void itSendsTextHidePasswordToFrameworkOnAttach() {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
@@ -305,8 +288,7 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity, getSystemUiVisibility
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // getSystemUiVisibility
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
@@ -347,8 +329,7 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity, getSystemUiVisibility
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // getSystemUiVisibility
   // This test uses the pre-API 30 Algorithm for window insets.
   @Test
   @TargetApi(28)
@@ -886,8 +867,6 @@ public class FlutterViewTest {
     assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
   @Test
   public void itSendsTextShowPasswordToFrameworkOnAttach() {
     // Setup test.
@@ -941,9 +920,6 @@ public class FlutterViewTest {
     assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
@@ -980,8 +956,7 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // SYSTEM_UI_FLAG_FULLSCREEN, getWindowSystemUiVisibility
   // This test uses the pre-API 30 Algorithm for window insets.
   @Test
   @TargetApi(28)
@@ -1027,9 +1002,6 @@ public class FlutterViewTest {
     validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
   @Test
   public void itSendsDarkPlatformBrightnessToFlutter() {
@@ -1084,8 +1056,7 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // SYSTEM_UI_FLAG_FULLSCREEN, getWindowSystemUiVisibility
   // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
   @Test
   public void itSendsLightPlatformBrightnessToFlutter() {
