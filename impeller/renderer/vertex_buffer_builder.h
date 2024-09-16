@@ -24,10 +24,11 @@ template <class VertexType, size_t size>
 VertexBuffer CreateVertexBuffer(std::array<VertexType, size> input,
                                 HostBuffer& host_buffer) {
   return VertexBuffer{
-      .vertex_buffer = host_buffer.Emplace(input, sizeof(VertexType) * size,
-                                           alignof(VertexType)),  //
-      .vertex_count = size,                                       //
-      .index_type = IndexType::kNone,                             //
+      .vertex_buffer =
+          host_buffer.Emplace(input.data(), sizeof(VertexType) * size,
+                              alignof(VertexType)),  //
+      .vertex_count = size,                          //
+      .index_type = IndexType::kNone,                //
   };
 }
 
