@@ -159,6 +159,9 @@ constexpr MTLPrimitiveType ToMTLPrimitiveType(PrimitiveType type) {
       return MTLPrimitiveTypeLineStrip;
     case PrimitiveType::kPoint:
       return MTLPrimitiveTypePoint;
+    case PrimitiveType::kTriangleFan:
+      // UNSUPPORTED
+      return MTLPrimitiveTypePoint;
   }
   return MTLPrimitiveTypePoint;
 }
