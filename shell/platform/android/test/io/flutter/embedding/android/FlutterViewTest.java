@@ -94,7 +94,7 @@ public class FlutterViewTest {
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
 
@@ -108,7 +108,7 @@ public class FlutterViewTest {
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void flutterView_importantForAutofillDoesNotExcludeDescendants() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
 
     // Value should not exclude descendants because platform views are added as child views and
     // can be eligible for autofill (e.g. a WebView).
@@ -120,7 +120,7 @@ public class FlutterViewTest {
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
 
@@ -135,7 +135,7 @@ public class FlutterViewTest {
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_turnsOffA11y() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
@@ -234,7 +234,7 @@ public class FlutterViewTest {
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
 
     Configuration configuration = ctx.getResources().getConfiguration();
@@ -274,7 +274,7 @@ public class FlutterViewTest {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
 
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     Settings.System.putInt(
         flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 0);
@@ -314,7 +314,7 @@ public class FlutterViewTest {
   @Config(sdk = 30)
   public void reportSystemInsetWhenNotFullscreen() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -355,7 +355,7 @@ public class FlutterViewTest {
   @Config(sdk = 28)
   public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -893,7 +893,7 @@ public class FlutterViewTest {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
 
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     Settings.System.putInt(
         flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1);
@@ -950,7 +950,7 @@ public class FlutterViewTest {
   @TargetApi(30)
   @Config(sdk = 30)
   public void setPaddingTopToZeroForFullscreenMode() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
@@ -1037,7 +1037,7 @@ public class FlutterViewTest {
     AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
         new AtomicReference<>();
 
-    Context spiedContext = spy(Robolectric.setupActivity(Activity.class));
+    Context spiedContext = spy(ctx);
 
     Resources spiedResources = spy(spiedContext.getResources());
     when(spiedContext.getResources()).thenReturn(spiedResources);
@@ -1094,7 +1094,7 @@ public class FlutterViewTest {
         new AtomicReference<>();
 
     // FYI - The default brightness is LIGHT, which is why we don't need to configure it.
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
 
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
