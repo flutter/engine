@@ -9,6 +9,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -83,6 +84,8 @@ public class FlutterViewTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     when(mockFlutterJni.isAttached()).thenReturn(true);
+    // Uncomment the following line to enable logging output in test.
+    // ShadowLog.stream = System.out;
   }
 
   @SuppressWarnings("deprecation")
@@ -987,7 +990,7 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenView.class,
       })
   public void setPaddingTopToZeroForFullscreenModeLegacy() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = spy(new FlutterView(ctx));
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
@@ -1000,14 +1003,26 @@ public class FlutterViewTest {
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-
+    clearInvocations(flutterRenderer);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     flutterView.onApplyWindowInsets(windowInsets);
 
     // Verify.
-    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    verify(flutterRenderer, times(1)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 0);
+    clearInvocations(flutterRenderer);
+
+    // Validation when fullscreen
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    // Then we simulate the system applying a window inset.
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
   }
 
