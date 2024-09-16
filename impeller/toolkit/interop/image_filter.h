@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_TOOLKIT_IMAGE_FILTER_H_
-#define FLUTTER_IMPELLER_TOOLKIT_IMAGE_FILTER_H_
+#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMAGE_FILTER_H_
+#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMAGE_FILTER_H_
 
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "impeller/toolkit/interop/formats.h"
@@ -47,4 +47,4 @@ class ImageFilter final
 
 }  // namespace impeller::interop
 
-#endif  // FLUTTER_IMPELLER_TOOLKIT_IMAGE_FILTER_H_
+#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMAGE_FILTER_H_

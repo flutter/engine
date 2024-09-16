@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_PLAYGROUND_H_
-#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_PLAYGROUND_H_
+#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_PLAYGROUND_TEST_H_
 
 #include <functional>
 
@@ -45,4 +45,4 @@ class PlaygroundTest : public ::impeller::PlaygroundTest {
 
 }  // namespace impeller::interop::testing
 
-#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_PLAYGROUND_H_
+#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_PLAYGROUND_TEST_H_

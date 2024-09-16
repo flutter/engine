@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_TOOLKIT_COLOR_SOURCE_H_
-#define FLUTTER_IMPELLER_TOOLKIT_COLOR_SOURCE_H_
+#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_COLOR_SOURCE_H_
+#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_COLOR_SOURCE_H_
 
 #include <vector>
 
@@ -74,4 +74,4 @@ class ColorSource final
 
 }  // namespace impeller::interop
 
-#endif  // FLUTTER_IMPELLER_TOOLKIT_COLOR_SOURCE_H_
+#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_COLOR_SOURCE_H_

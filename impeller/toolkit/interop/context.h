@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_CONTEXT_H_
-#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_CONTEXT_H_
+#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_CONTEXT_H_
+#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_CONTEXT_H_
 
 #include <functional>
 
@@ -44,4 +44,4 @@ class Context final
 
 }  // namespace impeller::interop
 
-#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_CONTEXT_H_
+#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_CONTEXT_H_

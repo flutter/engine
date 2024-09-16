@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_H_
-#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_H_
+#ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_OBJECT_H_
+#define FLUTTER_IMPELLER_TOOLKIT_INTEROP_OBJECT_H_
 
 #include <atomic>
 #include <utility>
@@ -162,4 +162,4 @@ ScopedObject<Object> Create(CtorArgs&&... args) {
 
 }  // namespace impeller::interop
 
-#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_INTEROP_H_
+#endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_OBJECT_H_
