@@ -16,7 +16,7 @@ namespace impeller::interop {
 class Texture final
     : public Object<Texture, IMPELLER_INTERNAL_HANDLE_NAME(ImpellerTexture)> {
  public:
-  Texture(const Context& context, const TextureDescriptor& descriptor);
+  explicit Texture(const Context& context, const TextureDescriptor& descriptor);
 
   ~Texture() override;
 

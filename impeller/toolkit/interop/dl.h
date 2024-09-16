@@ -15,7 +15,7 @@ class DisplayList final
     : public Object<DisplayList,
                     IMPELLER_INTERNAL_HANDLE_NAME(ImpellerDisplayList)> {
  public:
-  DisplayList(sk_sp<flutter::DisplayList> display_list);
+  explicit DisplayList(sk_sp<flutter::DisplayList> display_list);
 
   ~DisplayList() override;
 

@@ -13,7 +13,8 @@ IMPELLER_DEFINE_HANDLE(FlagHandle);
 class FlagObject final
     : public Object<FlagObject, IMPELLER_INTERNAL_HANDLE_NAME(FlagHandle)> {
  public:
-  FlagObject(bool& destruction_flag) : destruction_flag_(destruction_flag) {
+  explicit FlagObject(bool& destruction_flag)
+      : destruction_flag_(destruction_flag) {
     FML_CHECK(!destruction_flag_) << "Destruction flag must be cleared.";
   }
 
@@ -75,17 +76,17 @@ TEST(InteropObjectTest, CanCopyAssignMove) {
   auto o = Create<TestObject>(1, 2.3, 'd');
   ASSERT_EQ(o->GetRefCountForTests(), 1u);
   {
-    auto o1 = o;
+    auto o1 = o;  // NOLINT(performance-unnecessary-copy-initialization)
     ASSERT_EQ(o->GetRefCountForTests(), 2u);
-    auto o2 = o;
+    auto o2 = o;  // NOLINT(performance-unnecessary-copy-initialization)
     ASSERT_EQ(o->GetRefCountForTests(), 3u);
-    auto o3 = o1;
+    auto o3 = o1;  // NOLINT(performance-unnecessary-copy-initialization)
     ASSERT_EQ(o->GetRefCountForTests(), 4u);
   }
   ASSERT_EQ(o->GetRefCountForTests(), 1u);
 
   {
-    auto o1(o);
+    auto o1(o);  // NOLINT(performance-unnecessary-copy-initialization)
     ASSERT_EQ(o->GetRefCountForTests(), 2u);
     ASSERT_EQ(o1->GetRefCountForTests(), 2u);
   }

@@ -66,7 +66,7 @@ ScopedObject<Context> Context::CreateOpenGLES(
     std::function<void*(const char* gl_proc_name)> proc_address_callback) {
 #if IMPELLER_ENABLE_OPENGLES
   auto proc_table = std::make_unique<ProcTableGLES>(
-      impeller::ProcTableGLES(proc_address_callback));
+      impeller::ProcTableGLES(std::move(proc_address_callback)));
   if (!proc_table || !proc_table->IsValid()) {
     VALIDATION_LOG << "Could not create valid OpenGL ES proc. table.";
     return {};

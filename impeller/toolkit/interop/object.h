@@ -68,7 +68,8 @@ class ScopedObject final {
  public:
   ScopedObject() = default;
 
-  ScopedObject(std::nullptr_t) {}
+  ScopedObject(std::nullptr_t)  // NOLINT(google-explicit-constructor)
+  {}
 
   explicit ScopedObject(Object* ptr, AdoptTag) : object_(ptr) {}
 
@@ -133,6 +134,7 @@ class ScopedObject final {
 
   void Release() {
     if (object_) {
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDelete)
       object_->Release();
       object_ = nullptr;
     }

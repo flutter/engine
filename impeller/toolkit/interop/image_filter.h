@@ -31,7 +31,7 @@ class ImageFilter final
   static ScopedObject<ImageFilter> MakeCompose(const ImageFilter& outer,
                                                const ImageFilter& inner);
 
-  ImageFilter(std::shared_ptr<const flutter::DlImageFilter> filter);
+  explicit ImageFilter(std::shared_ptr<const flutter::DlImageFilter> filter);
 
   ~ImageFilter() override;
 

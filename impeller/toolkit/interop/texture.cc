@@ -35,7 +35,7 @@ bool Texture::SetContents(std::shared_ptr<const fml::Mapping> contents) {
   if (!IsValid()) {
     return false;
   }
-  return texture_->SetContents(contents);
+  return texture_->SetContents(std::move(contents));
 }
 
 sk_sp<DlImageImpeller> Texture::MakeImage() const {

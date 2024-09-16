@@ -15,7 +15,7 @@ namespace impeller::interop {
 class Path final
     : public Object<Path, IMPELLER_INTERNAL_HANDLE_NAME(ImpellerPath)> {
  public:
-  Path(SkPath path);
+  explicit Path(const SkPath& path);
 
   ~Path();
 

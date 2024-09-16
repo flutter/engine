@@ -24,7 +24,7 @@ class DisplayListBuilder final
     : public Object<DisplayListBuilder,
                     IMPELLER_INTERNAL_HANDLE_NAME(ImpellerDisplayListBuilder)> {
  public:
-  DisplayListBuilder(const ImpellerRect* rect);
+  explicit DisplayListBuilder(const ImpellerRect* rect);
 
   ~DisplayListBuilder() override;
 

@@ -6,7 +6,7 @@
 
 namespace impeller::interop {
 
-Path::Path(SkPath path) : path_(std::move(path)) {}
+Path::Path(const SkPath& path) : path_(path) {}
 
 Path::~Path() = default;
 

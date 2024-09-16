@@ -18,7 +18,7 @@ class MaskFilter final
   static ScopedObject<MaskFilter> MakeBlur(flutter::DlBlurStyle style,
                                            float sigma);
 
-  MaskFilter(std::shared_ptr<flutter::DlMaskFilter> mask_filter);
+  explicit MaskFilter(std::shared_ptr<flutter::DlMaskFilter> mask_filter);
 
   ~MaskFilter() override;
 

@@ -56,7 +56,7 @@ class ColorSource final
       flutter::DlTileMode tile_mode,
       const Matrix& transformation);
 
-  ColorSource(std::shared_ptr<flutter::DlColorSource> source);
+  explicit ColorSource(std::shared_ptr<flutter::DlColorSource> source);
 
   ~ColorSource() override;
 

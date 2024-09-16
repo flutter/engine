@@ -20,7 +20,7 @@ class ColorFilter final
 
   static ScopedObject<ColorFilter> MakeMatrix(const float matrix[20]);
 
-  ColorFilter(std::shared_ptr<flutter::DlColorFilter> filter);
+  explicit ColorFilter(std::shared_ptr<flutter::DlColorFilter> filter);
 
   ~ColorFilter() override;
 

@@ -22,8 +22,8 @@ class Context final
   static ScopedObject<Context> CreateOpenGLES(
       std::function<void*(const char* gl_proc_name)> proc_address_callback);
 
-  Context(std::shared_ptr<impeller::Context> context,
-          std::shared_ptr<BackendData> backend_data);
+  explicit Context(std::shared_ptr<impeller::Context> context,
+                   std::shared_ptr<BackendData> backend_data);
 
   ~Context() override;
 
