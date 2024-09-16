@@ -23,6 +23,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -1024,6 +1025,109 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
+  }
+
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
+  @Test
+  public void itSendsDarkPlatformBrightnessToFlutter() {
+    // Setup test.
+    AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
+        new AtomicReference<>();
+
+    Context spiedContext = spy(Robolectric.setupActivity(Activity.class));
+
+    Resources spiedResources = spy(spiedContext.getResources());
+    when(spiedContext.getResources()).thenReturn(spiedResources);
+
+    Configuration spiedConfiguration = spy(spiedResources.getConfiguration());
+    spiedConfiguration.uiMode =
+        (spiedResources.getConfiguration().uiMode | Configuration.UI_MODE_NIGHT_YES)
+            & ~Configuration.UI_MODE_NIGHT_NO;
+    when(spiedResources.getConfiguration()).thenReturn(spiedConfiguration);
+
+    FlutterView flutterView = new FlutterView(spiedContext);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any(DisplayMetrics.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedBrightness.set(
+                    (SettingsChannel.PlatformBrightness) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    // Execute behavior under test.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    flutterView.sendUserSettingsToFlutter();
+
+    // Verify results.
+    assertEquals(SettingsChannel.PlatformBrightness.dark, reportedBrightness.get());
+  }
+
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
+  @Test
+  public void itSendsLightPlatformBrightnessToFlutter() {
+    // Setup test.
+    AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
+        new AtomicReference<>();
+
+    // FYI - The default brightness is LIGHT, which is why we don't need to configure it.
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any(DisplayMetrics.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedBrightness.set(
+                    (SettingsChannel.PlatformBrightness) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    // Execute behavior under test.
+    flutterView.sendUserSettingsToFlutter();
+
+    // Verify results.
+    assertEquals(SettingsChannel.PlatformBrightness.light, reportedBrightness.get());
   }
 
   @SuppressWarnings("deprecation")
