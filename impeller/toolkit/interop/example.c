@@ -9,7 +9,9 @@
 #include "impeller.h"
 
 void GLFWErrorCallback(int error, const char* description) {
+  // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
   fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
+  fflush(stderr);
 }
 
 void* ProcAddressCallback(const char* proc_name, void* user_data) {
