@@ -926,8 +926,8 @@ class EmbedderFrameContext {
   ///
   /// These picture recorders will be "claimed" in the paint phase by platform
   /// views being composited into the scene.
-  final List<CkPictureRecorder> pictureRecordersCreatedDuringPreroll =
-      <CkPictureRecorder>[];
+  final Map<CkPicture, CkPictureRecorder> pictureRecordersCreatedDuringPreroll =
+      <CkPicture, CkPictureRecorder>{};
 
   /// Picture recorders which were actually used in the paint phase.
   ///

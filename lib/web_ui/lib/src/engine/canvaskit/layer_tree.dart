@@ -38,6 +38,25 @@ class LayerTree {
     rootLayer.preroll(context, Matrix4.identity());
   }
 
+  /// Performs a paint pass with a recording canvas for each picture in the
+  /// tree. This paint pass is just used to measure the bounds for each picture
+  /// so we can optimize the total number of canvases required.
+  void measure(Frame frame, {bool ignoreRasterCache = false}) {
+    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
+    final Iterable<CkCanvas> overlayCanvases =
+        frame.viewEmbedder!.getPictureCanvases();
+    overlayCanvases.forEach(internalNodesCanvas.addCanvas);
+    final PaintContext context = PaintContext(
+      internalNodesCanvas,
+      frame.viewEmbedder?.getBaseCanvas(),
+      ignoreRasterCache ? null : frame.rasterCache,
+      frame.viewEmbedder,
+    );
+    if (rootLayer.needsPainting) {
+      rootLayer.paint(context);
+    }
+  }
+
   /// Paints the layer tree into the given [frame].
   ///
   /// If [ignoreRasterCache] is `true`, then the raster cache will
