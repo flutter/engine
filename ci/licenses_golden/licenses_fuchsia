@@ -1,4 +1,4 @@
-Signature: 690f466d17b39efe3160975b9b6e9d97
+Signature: dada635d47c610bc960c9f117785a831
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -7271,7 +7271,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/allocator.fidl + ../../..
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/collection.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/collections_deprecated.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/constraints.fidl + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/driver_connector.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/format_modifier.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/formats_deprecated.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/image_formats.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -7660,7 +7659,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/allocator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/collection.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/collections_deprecated.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/constraints.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/driver_connector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/format_modifier.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/formats_deprecated.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/image_formats.fidl
