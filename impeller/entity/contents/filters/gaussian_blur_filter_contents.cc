@@ -524,14 +524,10 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                             const Entity& entity, RenderPass& pass) mutable {
         bool result = true;
         clipper.SetClipDepth(entity.GetClipDepth());
-        clipper.SetTransform(entity.GetTransform() *
-                             Matrix::MakeScale(1.f / source_space_scalar) *
-                             entity_transform);
+        clipper.SetTransform(entity.GetTransform() * entity_transform);
         result = clipper.Render(renderer, pass) && result;
         blur_entity.SetClipDepth(entity.GetClipDepth());
-        blur_entity.SetTransform(entity.GetTransform() *
-                                 Matrix::MakeScale(1.f / source_space_scalar) *
-                                 blur_transform);
+        blur_entity.SetTransform(entity.GetTransform() * blur_transform);
         result = blur_entity.Render(renderer, pass) && result;
         return result;
       });
@@ -572,17 +568,21 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       Matrix blurred_transform = blur_entity.GetTransform();
       Matrix snapshot_transform =
           entity.GetTransform() * snapshot_entity.GetTransform();
+      Matrix foo = Matrix::MakeScale({1 / source_space_scalar.x,
+                                      1 / source_space_scalar.y, 1}) *
+                   entity.GetTransform();
       result.SetContents(Contents::MakeAnonymous(
           fml::MakeCopyable(
               [blur_entity = blur_entity.Clone(), blurred_transform,
-               source_space_scalar, snapshot_transform,
+               source_space_scalar, snapshot_transform, foo,
                snapshot_entity = std::move(snapshot_entity)](
                   const ContentContext& renderer, const Entity& entity,
                   RenderPass& pass) mutable {
+                (void)source_space_scalar;
                 bool result = true;
                 snapshot_entity.SetTransform(
                     entity.GetTransform() *
-                    Matrix::MakeScale(1.f / source_space_scalar) *
+                    Matrix::MakeScale(1.f / source_space_scalar) * foo *
                     snapshot_transform);
                 snapshot_entity.SetClipDepth(entity.GetClipDepth());
                 result = result && snapshot_entity.Render(renderer, pass);
