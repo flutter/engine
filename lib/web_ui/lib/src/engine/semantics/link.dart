@@ -16,9 +16,6 @@ class SemanticLink extends SemanticRole {
   }
 
   @override
-  bool get acceptsPointerEvents => true;
-
-  @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
     element.style.display = 'block';

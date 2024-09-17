@@ -17,9 +17,6 @@ class SemanticButton extends SemanticRole {
   }
 
   @override
-  bool get acceptsPointerEvents => true;
-
-  @override
   bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 
   @override
@@ -55,6 +52,9 @@ class Tappable extends SemanticBehavior {
     });
     owner.element.addEventListener('click', _clickListener);
   }
+
+  @override
+  bool get acceptsPointerEvents => true;
 
   DomEventListener? _clickListener;
   bool _isListening = false;
