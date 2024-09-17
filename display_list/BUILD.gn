@@ -12,10 +12,6 @@ if (is_fuchsia) {
 
 config("display_list_config") {
   defines = []
-
-  if (impeller_enable_3d) {
-    defines += [ "IMPELLER_ENABLE_3D" ]
-  }
 }
 
 source_set("display_list") {
@@ -60,6 +56,8 @@ source_set("display_list") {
     "effects/dl_runtime_effect.cc",
     "effects/dl_runtime_effect.h",
     "geometry/dl_geometry_types.h",
+    "geometry/dl_path.cc",
+    "geometry/dl_path.h",
     "geometry/dl_region.cc",
     "geometry/dl_region.h",
     "geometry/dl_rtree.cc",
@@ -119,6 +117,7 @@ if (enable_unittests) {
       "effects/dl_image_filter_unittests.cc",
       "effects/dl_mask_filter_unittests.cc",
       "geometry/dl_geometry_types_unittests.cc",
+      "geometry/dl_path_unittests.cc",
       "geometry/dl_region_unittests.cc",
       "geometry/dl_rtree_unittests.cc",
       "skia/dl_sk_conversions_unittests.cc",
