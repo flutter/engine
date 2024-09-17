@@ -9,17 +9,16 @@ namespace impeller::interop {
 ScopedObject<ColorSource> ColorSource::MakeLinearGradient(
     const Point& start_point,
     const Point& end_point,
-    const std::vector<Color>& colors,
+    const std::vector<flutter::DlColor>& colors,
     const std::vector<Scalar>& stops,
     flutter::DlTileMode tile_mode,
     const Matrix& transformation) {
-  const auto dl_colors = ToDisplayListType<flutter::DlColor, Color>(colors);
   const auto sk_transformation = ToSkMatrix(transformation);
   auto dl_filter =
       flutter::DlColorSource::MakeLinear(ToSkiaType(start_point),  //
                                          ToSkiaType(end_point),    //
                                          stops.size(),             //
-                                         dl_colors.data(),         //
+                                         colors.data(),            //
                                          stops.data(),             //
                                          tile_mode,                //
                                          &sk_transformation        //
@@ -33,16 +32,15 @@ ScopedObject<ColorSource> ColorSource::MakeLinearGradient(
 ScopedObject<ColorSource> ColorSource::MakeRadialGradient(
     const Point& center,
     Scalar radius,
-    const std::vector<Color>& colors,
+    const std::vector<flutter::DlColor>& colors,
     const std::vector<Scalar>& stops,
     flutter::DlTileMode tile_mode,
     const Matrix& transformation) {
-  const auto dl_colors = ToDisplayListType<flutter::DlColor, Color>(colors);
   const auto sk_transformation = ToSkMatrix(transformation);
   auto dl_filter = flutter::DlColorSource::MakeRadial(ToSkiaType(center),  //
                                                       radius,              //
                                                       stops.size(),        //
-                                                      dl_colors.data(),    //
+                                                      colors.data(),       //
                                                       stops.data(),        //
                                                       tile_mode,           //
                                                       &sk_transformation   //
@@ -58,11 +56,10 @@ ScopedObject<ColorSource> ColorSource::MakeConicalGradient(
     Scalar start_radius,
     const Point& end_center,
     Scalar end_radius,
-    const std::vector<Color>& colors,
+    const std::vector<flutter::DlColor>& colors,
     const std::vector<Scalar>& stops,
     flutter::DlTileMode tile_mode,
     const Matrix& transformation) {
-  const auto dl_colors = ToDisplayListType<flutter::DlColor, Color>(colors);
   const auto sk_transformation = ToSkMatrix(transformation);
   auto dl_filter =
       flutter::DlColorSource::MakeConical(ToSkiaType(start_center),  //
@@ -70,7 +67,7 @@ ScopedObject<ColorSource> ColorSource::MakeConicalGradient(
                                           ToSkiaType(end_center),    //
                                           end_radius,                //
                                           stops.size(),              //
-                                          dl_colors.data(),          //
+                                          colors.data(),             //
                                           stops.data(),              //
                                           tile_mode,                 //
                                           &sk_transformation         //
@@ -85,17 +82,16 @@ ScopedObject<ColorSource> ColorSource::MakeSweepGradient(
     const Point& center,
     Scalar start,
     Scalar end,
-    const std::vector<Color>& colors,
+    const std::vector<flutter::DlColor>& colors,
     const std::vector<Scalar>& stops,
     flutter::DlTileMode tile_mode,
     const Matrix& transformation) {
-  const auto dl_colors = ToDisplayListType<flutter::DlColor, Color>(colors);
   const auto sk_transformation = ToSkMatrix(transformation);
   auto dl_filter = flutter::DlColorSource::MakeSweep(ToSkiaType(center),  //
                                                      start,               //
                                                      end,                 //
                                                      stops.size(),        //
-                                                     dl_colors.data(),    //
+                                                     colors.data(),       //
                                                      stops.data(),        //
                                                      tile_mode,           //
                                                      &sk_transformation   //

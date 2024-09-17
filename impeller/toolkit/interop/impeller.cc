@@ -334,7 +334,7 @@ void ImpellerPaintRelease(ImpellerPaint paint) {
 
 IMPELLER_EXTERN_C
 void ImpellerPaintSetColor(ImpellerPaint paint, const ImpellerColor* color) {
-  GetPeer(paint)->SetColor(ToImpellerType(*color));
+  GetPeer(paint)->SetColor(ToDisplayListType(*color));
 }
 
 IMPELLER_EXTERN_C
@@ -598,18 +598,18 @@ void ImpellerColorSourceRelease(ImpellerColorSource color_source) {
   ObjectBase::SafeRelease(color_source);
 }
 
-static std::pair<std::vector<Color>, std::vector<Scalar>> ParseColorsAndStops(
-    uint32_t stop_count,
-    const ImpellerColor* colors,
-    const float* stops) {
+static std::pair<std::vector<flutter::DlColor>, std::vector<Scalar>>
+ParseColorsAndStops(uint32_t stop_count,
+                    const ImpellerColor* colors,
+                    const float* stops) {
   if (stop_count == 0) {
     return {};
   }
-  std::pair<std::vector<Color>, std::vector<Scalar>> result;
+  std::pair<std::vector<flutter::DlColor>, std::vector<Scalar>> result;
   result.first.reserve(stop_count);
   result.second.reserve(stop_count);
   for (size_t i = 0; i < stop_count; i++) {
-    result.first.emplace_back(ToImpellerType(colors[i]));
+    result.first.emplace_back(ToDisplayListType(colors[i]));
     result.second.emplace_back(stops[i]);
   }
   return result;

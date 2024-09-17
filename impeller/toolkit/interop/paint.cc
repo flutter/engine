@@ -14,8 +14,8 @@ const flutter::DlPaint& Paint::GetPaint() const {
   return paint_;
 }
 
-void Paint::SetColor(Color color) {
-  paint_.setColor(ToDisplayListType(color));
+void Paint::SetColor(flutter::DlColor color) {
+  paint_.setColor(color);
 }
 
 void Paint::SetBlendMode(BlendMode mode) {

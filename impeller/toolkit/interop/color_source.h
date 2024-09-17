@@ -24,7 +24,7 @@ class ColorSource final
   static ScopedObject<ColorSource> MakeLinearGradient(
       const Point& start_point,
       const Point& end_point,
-      const std::vector<Color>& colors,
+      const std::vector<flutter::DlColor>& colors,
       const std::vector<Scalar>& stops,
       flutter::DlTileMode tile_mode,
       const Matrix& transformation);
@@ -32,7 +32,7 @@ class ColorSource final
   static ScopedObject<ColorSource> MakeRadialGradient(
       const Point& center,
       Scalar radius,
-      const std::vector<Color>& colors,
+      const std::vector<flutter::DlColor>& colors,
       const std::vector<Scalar>& stops,
       flutter::DlTileMode tile_mode,
       const Matrix& transformation);
@@ -42,7 +42,7 @@ class ColorSource final
       Scalar start_radius,
       const Point& end_center,
       Scalar end_radius,
-      const std::vector<Color>& colors,
+      const std::vector<flutter::DlColor>& colors,
       const std::vector<Scalar>& stops,
       flutter::DlTileMode tile_mode,
       const Matrix& transformation);
@@ -51,7 +51,7 @@ class ColorSource final
       const Point& center,
       Scalar start,
       Scalar end,
-      const std::vector<Color>& colors,
+      const std::vector<flutter::DlColor>& colors,
       const std::vector<Scalar>& stops,
       flutter::DlTileMode tile_mode,
       const Matrix& transformation);

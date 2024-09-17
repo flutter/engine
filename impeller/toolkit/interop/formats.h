@@ -396,6 +396,28 @@ constexpr ISize ToImpellerType(const ImpellerISize& size) {
   return ISize::MakeWH(size.width, size.height);
 }
 
+constexpr flutter::DlColorSpace ToDisplayListType(
+    ImpellerColorSpace color_space) {
+  switch (color_space) {
+    case kImpellerColorSpaceSRGB:
+      return flutter::DlColorSpace::kSRGB;
+    case kImpellerColorSpaceExtendedSRGB:
+      return flutter::DlColorSpace::kExtendedSRGB;
+    case kImpellerColorSpaceDisplayP3:
+      return flutter::DlColorSpace::kDisplayP3;
+  }
+  return flutter::DlColorSpace::kSRGB;
+}
+
+constexpr flutter::DlColor ToDisplayListType(ImpellerColor color) {
+  return flutter::DlColor(color.alpha,                          //
+                          color.red,                            //
+                          color.green,                          //
+                          color.blue,                           //
+                          ToDisplayListType(color.color_space)  //
+  );
+}
+
 }  // namespace impeller::interop
 
 #endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_FORMATS_H_

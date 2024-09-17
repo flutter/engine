@@ -179,6 +179,12 @@ typedef enum ImpellerBlurStyle {
   kImpellerBlurStyleInner,
 } ImpellerBlurStyle;
 
+typedef enum ImpellerColorSpace {
+  kImpellerColorSpaceSRGB,
+  kImpellerColorSpaceExtendedSRGB,
+  kImpellerColorSpaceDisplayP3,
+} ImpellerColorSpace;
+
 //------------------------------------------------------------------------------
 // Non-opaque structs
 //------------------------------------------------------------------------------
@@ -224,6 +230,7 @@ typedef struct ImpellerColor {
   float green;
   float blue;
   float alpha;
+  ImpellerColorSpace color_space;
 } ImpellerColor;
 
 typedef struct ImpellerTextureDescriptor {

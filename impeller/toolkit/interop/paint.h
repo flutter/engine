@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_PAINT_H_
 #define FLUTTER_IMPELLER_TOOLKIT_INTEROP_PAINT_H_
 
+#include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
 #include "impeller/geometry/color.h"
 #include "impeller/toolkit/interop/color_filter.h"
@@ -30,7 +31,7 @@ class Paint final
 
   const flutter::DlPaint& GetPaint() const;
 
-  void SetColor(Color color);
+  void SetColor(flutter::DlColor color);
 
   void SetBlendMode(BlendMode mode);
 
