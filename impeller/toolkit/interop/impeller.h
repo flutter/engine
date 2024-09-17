@@ -26,12 +26,16 @@
 #ifdef __clang__
 #define IMPELLER_NULLABLE _Nullable
 #define IMPELLER_NONNULL _Nonnull
-#define IMPELLER_NODISCARD [[nodiscard]]
 #else  // __clang__
 #define IMPELLER_NULLABLE
 #define IMPELLER_NONNULL
-#define IMPELLER_NODISCARD
 #endif  // __clang__
+
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202000L)
+#define IMPELLER_NODISCARD [[nodiscard]]
+#else  // defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202000L)
+#define IMPELLER_NODISCARD
+#endif  // defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 202000L)
 
 IMPELLER_EXTERN_C_BEGIN
 
