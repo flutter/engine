@@ -6,18 +6,31 @@ import 'dart:ui';
 
 import 'package:test/test.dart';
 
-/// Positive result when the Colors will map to the same argb8888 color.
-Matcher colorMatches(dynamic o) => (v) {
-  Expect.isTrue(o is Color);
-  Expect.isTrue(v is Color);
-  if (o is Color && v is Color) {
-    Expect.equals(o.colorSpace, v.colorSpace);
-    Expect.approxEquals(o.a, v.a, 1 / 255);
-    Expect.approxEquals(o.r, v.r, 1 / 255);
-    Expect.approxEquals(o.g, v.g, 1 / 255);
-    Expect.approxEquals(o.b, v.b, 1 / 255);
+class _ColorMatcher extends Matcher {
+  _ColorMatcher(this._target, this._threshold);
+
+  final Color _target;
+  final double _threshold;
+
+  @override
+  Description describe(Description description) {
+    return description.add('matches color "$_target" with threshold "$_threshold".');
   }
-};
+
+  @override
+  bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
+    return item is Color &&
+        item.colorSpace == _target.colorSpace &&
+        (item.a - _target.a).abs() <= _threshold &&
+        (item.r - _target.r).abs() <= _threshold &&
+        (item.g - _target.g).abs() <= _threshold &&
+        (item.b - _target.b).abs() <= _threshold;
+  }
+}
+
+Matcher colorMatches(Color color, {double threshold = 1/255}) {
+  return _ColorMatcher(color, threshold);
+}
 
 class NotAColor extends Color {
   const NotAColor(super.value);
