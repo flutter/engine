@@ -146,6 +146,33 @@
         }
       }
     ],
+    "testMate.cpp.debug.configTemplate": {
+      "type": "cppvsdbg",
+      "linux": {
+        "type": "cppdbg",
+        "MIMode": "gdb"
+      },
+      "darwin": {
+        "type": "cppdbg",
+        "MIMode": "lldb",
+        "setupCommands": [
+          {
+            "description": "Source map",
+            "text": "settings set target.source-map \"flutter/\" \"${workspaceFolder}\"",
+            "ignoreFailures": false
+          }
+        ],
+      },
+      "win32": {
+        "type": "cppvsdbg"
+      },
+      "program": "${exec}",
+      "args": "${argsArray}",
+      "cwd": "${cwd}",
+      "env": "${envObj}",
+      "environment": "${envObjArray}",
+      "sourceFileMap": "${sourceFileMapObj}",
+    }
   },
   "tasks": {
     "version": "2.0.0",
