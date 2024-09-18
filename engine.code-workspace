@@ -216,6 +216,11 @@
             "description": "Enable pretty-printing for lldb",
             "text": "settings set target.pretty-printing true",
             "ignoreFailures": true
+          },
+          {
+            "description": "Source map",
+            "text": "settings set target.source-map \"flutter/\" \"${workspaceFolder}\"",
+            "ignoreFailures": false
           }
         ],
         "preLaunchTask": "impeller_unittests_arm64",
