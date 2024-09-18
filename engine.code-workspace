@@ -132,6 +132,7 @@
     "dart.showTodos": false,
     "testMate.cpp.test.advancedExecutables": [
       {
+        "name": "impeller_unittests_arm64",
         "pattern": "../out/host_debug_unopt_arm64/impeller_unittests",
         "runTask": {
           "before": [
