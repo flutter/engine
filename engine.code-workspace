@@ -135,7 +135,7 @@
         "pattern": "../out/host_debug_unopt_arm64/impeller_unittests",
         "runTask": {
           "before": [
-            "impeller_unittests"
+            "impeller_unittests_arm64"
           ]
         },
         "gtest": {
@@ -150,7 +150,7 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "impeller_unittests",
+        "label": "impeller_unittests_arm64",
         "type": "shell",
         "command": "./flutter/bin/et",
         "args": [
@@ -193,5 +193,33 @@
       // https://github.com/flutter/engine/blob/main/CONTRIBUTING.md#cc
       "xaver.clang-format",
     ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "impeller_unittests_arm64",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/../out/host_debug_unopt_arm64/impeller_unittests",
+        "args": [
+          "--enable_playground",
+        ],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/../out/host_debug_unopt_arm64",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "lldb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for lldb",
+            "text": "settings set target.pretty-printing true",
+            "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "impeller_unittests_arm64",
+      }
+    ],
+    "compounds": []
   }
 }
