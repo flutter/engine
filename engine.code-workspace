@@ -135,7 +135,7 @@
         "pattern": "../out/host_debug_unopt_arm64/impeller_unittests",
         "runTask": {
           "before": [
-            "impeller_unittests_arm64"
+            "impeller_unittests"
           ]
         },
         "gtest": {
@@ -150,7 +150,7 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "impeller_unittests_arm64",
+        "label": "impeller_unittests",
         "type": "shell",
         "command": "./flutter/bin/et",
         "args": [
