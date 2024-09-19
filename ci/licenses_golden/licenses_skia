@@ -1,4 +1,4 @@
-Signature: 2fa664c67115c88fd2595c904de30d96
+Signature: a3035ca347646f848c4710dea820aa2c
 
 ====================================================================================================
 LIBRARY: etc1
@@ -399,6 +399,14 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
+FILE: ../../../flutter/third_party/skia/relnotes/android-codec-gainmap.md
+FILE: ../../../flutter/third_party/skia/relnotes/filter-color.md
+FILE: ../../../flutter/third_party/skia/relnotes/fourbytetag.md
+FILE: ../../../flutter/third_party/skia/relnotes/ganesh-move.md
+FILE: ../../../flutter/third_party/skia/relnotes/grglconfig.md
+FILE: ../../../flutter/third_party/skia/relnotes/macro.md
+FILE: ../../../flutter/third_party/skia/relnotes/skmsec.md
+FILE: ../../../flutter/third_party/skia/relnotes/skslbuilders.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
