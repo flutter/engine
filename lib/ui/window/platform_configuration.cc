@@ -377,7 +377,18 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
   }
   tonic::DartState::Scope scope(dart_state);
 
-  int64_t microseconds = (frameTime - fml::TimePoint()).ToMicroseconds();
+  int64_t microseconds = frameTime.ToEpochDelta().ToMicroseconds();
+
+  static int64_t last_microseconds = 0;
+  if (last_microseconds > microseconds) {
+    // Do not allow time traveling frametimes
+    // github.com/flutter/flutter/issues/106277
+    FML_LOG(ERROR)
+        << "Reported frame time is older than the last one; clamping. "
+        << microseconds << " < " << last_microseconds
+        << " ~= " << last_microseconds - microseconds;
+    microseconds = last_microseconds;
+  }
 
   tonic::CheckAndHandleError(
       tonic::DartInvoke(begin_frame_.Get(), {
