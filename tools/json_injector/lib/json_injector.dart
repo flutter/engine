@@ -38,6 +38,7 @@ dynamic _applyTemplate(dynamic item, Map<dynamic, dynamic>? templates) {
       return item;
     }
   } else if (item is List) {
+    return item;
   } else {
     return item;
   }

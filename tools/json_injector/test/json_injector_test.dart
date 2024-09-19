@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:json_injector/json_injector.dart';
 import 'package:test/test.dart';
 
@@ -134,6 +136,34 @@ void main() {
     const templates = {
       'super': {'y': 2, 'z': 3}
     };
+
+    expect(
+        inject(json, injector, nameKey: 'name', templates: templates),
+        _isDeepEquals({
+          'configurations': [
+            {'name': 'foo', 'x': 1, 'y': 2, 'z': 3},
+          ],
+        }));
+  });
+
+    test('simple template - json', () {
+    dynamic json = <String, Object>{
+      'configurations': [
+        {'name': 'foo', 'x': 1},
+      ],
+    };
+    dynamic injector = {
+      'configurations': [
+        {'name': 'foo', 'json_injector:template': 'super'},
+      ],
+    };
+    Map<dynamic, dynamic> templates = {
+      'super': {'y': 2, 'z': 3}
+    };
+
+    json = jsonDecode(jsonEncode(json));
+    injector = jsonDecode(jsonEncode(injector));
+    templates = jsonDecode(jsonEncode(templates)) as Map<dynamic, dynamic>;
 
     expect(
         inject(json, injector, nameKey: 'name', templates: templates),
