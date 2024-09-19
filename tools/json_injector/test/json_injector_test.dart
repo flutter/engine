@@ -143,4 +143,29 @@ void main() {
           ],
         }));
   });
+
+  test('new list item template', () {
+    const json = {
+      'configurations': [
+        {'name': 'foo', 'x': 1},
+      ],
+    };
+    const injector = {
+      'configurations': [
+        {'name': 'bar', 'json_injector:template': 'super'},
+      ],
+    };
+    const templates = {
+      'super': {'y': 2, 'z': 3}
+    };
+
+    expect(
+        inject(json, injector, nameKey: 'name', templates: templates),
+        _isDeepEquals({
+          'configurations': [
+            {'name': 'foo', 'x': 1},
+            {'name': 'bar', 'y': 2, 'z': 3},
+          ],
+        }));
+  });
 }

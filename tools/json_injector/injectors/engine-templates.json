@@ -1,1 +1,23 @@
-{}
+{
+  "et-task": {
+    "type": "shell",
+    "command": "./flutter/bin/et",
+    "options": {
+      "cwd": "${workspaceFolder}/.."
+    },
+    "problemMatcher": [
+      "$gcc"
+    ],
+    "presentation": {
+      "echo": true,
+      "reveal": "always",
+      "focus": false,
+      "panel": "shared",
+      "clear": true
+    },
+    "group": {
+      "kind": "build",
+      "isDefault": true
+    }
+  }
+}

@@ -1,34 +1,15 @@
 {
   "tasks": {
-    "version": "2.0.0",
     "tasks": [
       {
         "label": "display_list_unittests_arm64",
-        "type": "shell",
-        "command": "./flutter/bin/et",
+        "json_injector:template": "et-task",
         "args": [
           "build",
           "-c",
           "host_debug_unopt_arm64",
           "//flutter/display_list:display_list_unittests"
-        ],
-        "options": {
-          "cwd": "${workspaceFolder}/.."
-        },
-        "problemMatcher": [
-          "$gcc"
-        ],
-        "presentation": {
-          "echo": true,
-          "reveal": "always",
-          "focus": false,
-          "panel": "shared",
-          "clear": true
-        },
-        "group": {
-          "kind": "build",
-          "isDefault": true
-        }
+        ]
       }
     ]
   }

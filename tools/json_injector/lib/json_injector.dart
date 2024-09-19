@@ -13,8 +13,38 @@ bool _isListOf<T>(List<dynamic> list) {
   return list.isNotEmpty;
 }
 
+dynamic _applyTemplate(dynamic item, Map<dynamic, dynamic>? templates) {
+  if (item is Map) {
+    if (item.containsKey(_templateKey)) {
+      final String templateName = item[_templateKey] as String;
+      final Map<dynamic, dynamic>? template =
+          templates?[templateName] as Map<dynamic, dynamic>?;
+
+      if (template == null) {
+        throw StateError('unknown template: $templateName');
+      }
+
+      final Map<dynamic, dynamic> result = {};
+      for (final x in item.keys) {
+        if (x != _templateKey) {
+          result[x] = item[x];
+        }
+      }
+      for (final x in template.keys) {
+        result[x] = template[x];
+      }
+      return result;
+    } else {
+      return item;
+    }
+  } else if (item is List) {
+  } else {
+    return item;
+  }
+}
+
 Object? inject(Object? json, Object? injector,
-    {String? nameKey, Map<String, Map<dynamic, dynamic>>? templates}) {
+    {String? nameKey, Map<dynamic, dynamic>? templates}) {
   Object? recurse(Object? x, Object? y) =>
       inject(x, y, nameKey: nameKey, templates: templates);
   if (json is Map && injector is Map) {
@@ -27,7 +57,8 @@ Object? inject(Object? json, Object? injector,
     for (final key in injector.keys) {
       if (key == _templateKey) {
         final String templateName = injector[key] as String;
-        final Map<dynamic, dynamic>? template = templates?[templateName];
+        final Map<dynamic, dynamic>? template =
+            templates?[templateName] as Map<dynamic, dynamic>?;
         if (template == null) {
           throw StateError('unknown template: $templateName');
         }
@@ -37,7 +68,7 @@ Object? inject(Object? json, Object? injector,
       } else if (json.containsKey(key)) {
         result[key] = recurse(json[key], injector[key]);
       } else {
-        result[key] = injector[key];
+        result[key] = _applyTemplate(injector[key], templates);
       }
     }
     return result;

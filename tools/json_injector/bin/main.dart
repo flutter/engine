@@ -38,11 +38,11 @@ void main(List<String> arguments) {
   }
 
   final String? nameKey = argResults['name-key'] as String?;
-  Map<String, Map<dynamic, dynamic>>? templates;
+  Map<dynamic, dynamic>? templates;
   final String? templatesPath = argResults['templates'] as String?;
   if (templatesPath != null) {
     final templateJson = File(templatesPath).readAsStringSync();
-    templates = jsonDecode(templateJson) as Map<String, Map<dynamic, dynamic>>?;
+    templates = jsonDecode(templateJson) as Map<dynamic, dynamic>?;
   }
 
   late final dynamic input;
