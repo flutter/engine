@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:convert' show JsonEncoder, jsonDecode, jsonEncode;
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -45,10 +45,25 @@ void main(List<String> arguments) {
     templates = jsonDecode(templateJson) as Map<String, Map<dynamic, dynamic>>?;
   }
 
-  final dynamic input = jsonDecode(inputJson);
-  final dynamic injector = jsonDecode(injectorJson);
+  late final dynamic input;
+  try {
+    input = jsonDecode(inputJson);
+  } catch (ex) {
+    print('failed to parse: ${argResults['input']}');
+    print('Error: $ex');
+    return;
+  }
+  late final dynamic injector;
+  try {
+    injector = jsonDecode(injectorJson);
+  } catch (ex) {
+    print('failed to parse: ${argResults['injector']}');
+    print('Error: $ex');
+    return;
+  }
 
   final dynamic result =
       inject(input, injector, nameKey: nameKey, templates: templates);
-  File(outputPath).writeAsStringSync(jsonEncode(result));
+  File(outputPath)
+      .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(result));
 }
