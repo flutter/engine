@@ -450,6 +450,25 @@ void ExperimentalCanvas::SaveLayer(
             : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
   }
 
+  // If the BDF save layer has no other properties, we can elide the
+  // subpass and apply the filter output directly to the flipped backdrop.
+  if (Paint::CanApplyOpacityPeephole(paint) &&
+      transform_stack_.back().distributed_opacity >= 1.0) {
+    Entity backdrop_entity;
+    backdrop_filter_contents->SetCoverageHint(subpass_coverage);
+    backdrop_entity.SetContents(std::move(backdrop_filter_contents));
+    backdrop_entity.SetTransform(
+        Matrix::MakeTranslation(-GetGlobalPassPosition()));
+    backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
+
+    backdrop_entity.Render(
+        renderer_,
+        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+
+    Save(0);
+    return;
+  }
+
   // When applying a save layer, absorb any pending distributed opacity.
   Paint paint_copy = paint;
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
