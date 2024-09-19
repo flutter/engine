@@ -108,7 +108,7 @@ void main() {
     };
 
     expect(
-        inject(json, injector),
+        inject(json, injector, nameKey: 'name'),
         _isDeepEquals({
           'configurations': [
             {'name': 'foo', 'x': 1, 'y': 1},

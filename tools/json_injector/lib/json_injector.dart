@@ -1,6 +1,4 @@
-import 'dart:convert' show jsonDecode;
-
-Object? inject(Object? json, Object? injector) {
+Object? inject(Object? json, Object? injector, {String? nameKey}) {
   if (json is Map && injector is Map) {
     final result = <dynamic, dynamic>{};
     for (final key in json.keys) {
@@ -10,22 +8,22 @@ Object? inject(Object? json, Object? injector) {
     }
     for (final key in injector.keys) {
       if (json.containsKey(key)) {
-        result[key] = inject(json[key], injector[key]);
+        result[key] = inject(json[key], injector[key], nameKey: nameKey);
       } else {
         result[key] = injector[key];
       }
     }
     return result;
-  } if (json is List<Map> && injector is List<Map>) {
+  } if (json is List<Map> && injector is List<Map> && nameKey != null) {
     final Map<String, Object?> jsonList = {};
     final Map<String, Object?> injectorList = {};
     for (final item in json) {
-      jsonList['name'] = item;
+      jsonList[nameKey] = item;
     }
     for (final item in injector) {
-      injectorList['name'] = item;
+      injectorList[nameKey] = item;
     }
-    final joined = inject(jsonList, injectorList) as Map?;
+    final joined = inject(jsonList, injectorList, nameKey: nameKey) as Map?;
     return joined?.values.toList();
   }
 
