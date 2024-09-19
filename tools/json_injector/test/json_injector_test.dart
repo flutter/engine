@@ -19,7 +19,7 @@ bool _deepEquals(dynamic x, dynamic y) {
     }
 
     for (int i = 0; i < x.length; i++) {
-      if (_deepEquals(x[i], y[i])) {
+      if (!_deepEquals(x[i], y[i])) {
         return false;
       }
     }
@@ -92,6 +92,27 @@ void main() {
             'foo': 1,
             'bar': 2,
           },
+        }));
+  });
+
+  test('simple list', () {
+    const json = {
+      'configurations': [
+        {'name': 'foo', 'x': 1},
+      ],
+    };
+    const injector = {
+      'configurations': [
+        {'name': 'foo', 'y': 1},
+      ],
+    };
+
+    expect(
+        inject(json, injector),
+        _isDeepEquals({
+          'configurations': [
+            {'name': 'foo', 'x': 1, 'y': 1},
+          ],
         }));
   });
 }

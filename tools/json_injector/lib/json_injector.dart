@@ -16,6 +16,17 @@ Object? inject(Object? json, Object? injector) {
       }
     }
     return result;
+  } if (json is List<Map> && injector is List<Map>) {
+    final Map<String, Object?> jsonList = {};
+    final Map<String, Object?> injectorList = {};
+    for (final item in json) {
+      jsonList['name'] = item;
+    }
+    for (final item in injector) {
+      injectorList['name'] = item;
+    }
+    final joined = inject(jsonList, injectorList) as Map?;
+    return joined?.values.toList();
   }
 
   return json;
