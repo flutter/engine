@@ -21,20 +21,23 @@ void main(List<String> arguments) {
     ..addOption('name-key',
         abbr: 'n', help: 'Name key for processing', mandatory: false);
 
+  late final String inputJson;
+  late final String injectorJson;
+  late final String outputPath;
+
   ArgResults argResults;
   try {
     argResults = parser.parse(arguments);
+    inputJson = File(argResults['input'] as String).readAsStringSync();
+    injectorJson = File(argResults['injector'] as String).readAsStringSync();
+    outputPath = argResults['output'] as String;
   } catch (e) {
     print('Error: $e\n');
     print('Usage:\n${parser.usage}');
     return;
   }
 
-  final String inputJson = File(argResults['input'] as String).readAsStringSync();
-  final String injectorJson = File(argResults['injector'] as String).readAsStringSync();
   final String? nameKey = argResults['name-key'] as String?;
-  final String outputPath = argResults['output'] as String;
-  
   Map<String, Map<dynamic, dynamic>>? templates;
   final String? templatesPath = argResults['templates'] as String?;
   if (templatesPath != null) {
@@ -45,6 +48,7 @@ void main(List<String> arguments) {
   final dynamic input = jsonDecode(inputJson);
   final dynamic injector = jsonDecode(injectorJson);
 
-  final dynamic result = inject(input, injector, nameKey: nameKey, templates: templates);
+  final dynamic result =
+      inject(input, injector, nameKey: nameKey, templates: templates);
   File(outputPath).writeAsStringSync(jsonEncode(result));
 }
