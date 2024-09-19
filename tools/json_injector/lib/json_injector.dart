@@ -4,6 +4,15 @@
 
 const String _templateKey = 'json_injector:template';
 
+bool _isListOf<T>(List<dynamic> list) {
+  for (final item in list) {
+    if (item is! T) {
+      return false;
+    }
+  }
+  return list.isNotEmpty;
+}
+
 Object? inject(Object? json, Object? injector,
     {String? nameKey, Map<String, Map<dynamic, dynamic>>? templates}) {
   Object? recurse(Object? x, Object? y) =>
@@ -33,14 +42,21 @@ Object? inject(Object? json, Object? injector,
     }
     return result;
   }
-  if (json is List<Map> && injector is List<Map> && nameKey != null) {
+  if (json is List<dynamic> &&
+      injector is List<dynamic> &&
+      nameKey != null &&
+      _isListOf<Map<dynamic, dynamic>>(json) &&
+      _isListOf<Map<dynamic, dynamic>>(injector)) {
     final Map<String, Object?> jsonList = {};
     final Map<String, Object?> injectorList = {};
+
     for (final item in json) {
-      jsonList[nameKey] = item;
+      final Map<dynamic, dynamic> map = item as Map;
+      jsonList[map[nameKey] as String] = item;
     }
     for (final item in injector) {
-      injectorList[nameKey] = item;
+      final Map<dynamic, dynamic> map = item as Map;
+      injectorList[map[nameKey] as String] = item;
     }
     final joined = recurse(jsonList, injectorList) as Map?;
     return joined?.values.toList();
