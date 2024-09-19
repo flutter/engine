@@ -10,6 +10,16 @@
           "host_debug_unopt_arm64",
           "//flutter/display_list:display_list_unittests"
         ]
+      },
+      {
+        "label": "impeller_unittests_arm64",
+        "json_injector:template": "et-task",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64",
+          "//flutter/impeller:impeller_unittests"
+        ]
       }
     ]
   }
