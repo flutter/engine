@@ -1,7 +1,7 @@
 import 'package:json_injector/json_injector.dart';
 import 'package:test/test.dart';
 
-bool _deepEquals(Object? x, Object? y) {
+bool _deepEquals(dynamic x, dynamic y) {
   if (x is Map && y is Map) {
     if (x.length != y.length) {
       return false;
@@ -29,6 +29,24 @@ bool _deepEquals(Object? x, Object? y) {
   }
 }
 
+class _DeepMatcher extends Matcher {
+  _DeepMatcher(this._target);
+
+  final dynamic _target;
+
+  @override
+  Description describe(Description description) {
+    description.add('equals $_target');
+    return description;
+  }
+
+  @override
+  bool matches(dynamic item, Map<dynamic, dynamic> matchState) =>
+      _deepEquals(item, _target);
+}
+
+Matcher _isDeepEquals(dynamic x) => _DeepMatcher(x);
+
 void main() {
   test('noop', () {
     const json = {
@@ -36,7 +54,7 @@ void main() {
     };
     final result = inject(json, {});
 
-    expect(_deepEquals(json, result), isTrue);
+    expect(result, _isDeepEquals(json));
   });
 
   test('simple inject', () {
@@ -48,11 +66,11 @@ void main() {
     };
 
     expect(
-        _deepEquals(inject(json, injector), {
+        inject(json, injector),
+        _isDeepEquals({
           'configurations': <Object?>[],
           'bar': <Object?>[],
-        }),
-        isTrue);
+        }));
   });
 
   test('simple recurse', () {
@@ -68,12 +86,12 @@ void main() {
     };
 
     expect(
-        _deepEquals(inject(json, injector), {
+        inject(json, injector),
+        _isDeepEquals({
           'configurations': {
             'foo': 1,
             'bar': 2,
           },
-        }),
-        isTrue);
+        }));
   });
 }
