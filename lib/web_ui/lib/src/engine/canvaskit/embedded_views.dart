@@ -84,6 +84,7 @@ class HtmlViewEmbedder {
   /// during the paint step.
   Iterable<CkCanvas> getPictureCanvases() {
     return _context.pictureRecordersCreatedDuringPreroll
+        .values
         .map((CkPictureRecorder r) => r.recordingCanvas!);
   }
 
@@ -93,7 +94,8 @@ class HtmlViewEmbedder {
   /// pictures in the scene.
   CkCanvas? getBaseCanvas() {
     return _context
-        .pictureRecordersCreatedDuringPreroll.firstOrNull?.recordingCanvas;
+        .pictureRecordersCreatedDuringPreroll.values.firstOrNull
+        ?.recordingCanvas;
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
@@ -111,18 +113,18 @@ class HtmlViewEmbedder {
   }
 
   /// Record that another picture recorder is needed.
-  void prerollPicture() {
+  void prerollPicture(CkPicture picture) {
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
+    _context.pictureRecordersCreatedDuringPreroll[picture] = pictureRecorder;
   }
 
   /// Finalize the given canvas and add it to the unoptimized scene.
   ///
   /// Returns the next canvas to draw pictures into.
-  CkCanvas? finalizePicture() {
+  CkCanvas? finalizePicture(CkPicture picture) {
     final CkPictureRecorder currentRecorder = _context
-        .pictureRecordersCreatedDuringPreroll[_context.pictureRecorderIndex++];
+        .pictureRecordersCreatedDuringPreroll[picture]!;
     _context.sceneElements.add(currentRecorder);
     // If this is the last picture, return null for the next canvas.
     if (_context.pictureRecorderIndex >=
@@ -130,7 +132,7 @@ class HtmlViewEmbedder {
       return null;
     }
     return _context
-        .pictureRecordersCreatedDuringPreroll[_context.pictureRecorderIndex]
+        .pictureRecordersCreatedDuringPreroll[picture]!
         .recordingCanvas!;
   }
 
@@ -398,7 +400,7 @@ class HtmlViewEmbedder {
     }
 
     for (final CkPictureRecorder recorder
-        in _context.pictureRecordersCreatedDuringPreroll) {
+        in _context.pictureRecordersCreatedDuringPreroll.values) {
       if (recorder.isRecording) {
         recorder.endRecording();
       }

@@ -10,6 +10,7 @@ import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views.dart';
 import 'layer.dart';
+import 'layer_visitor.dart';
 import 'n_way_canvas.dart';
 import 'picture_recorder.dart';
 import 'raster_cache.dart';
@@ -31,11 +32,8 @@ class LayerTree {
   /// to raster. If [ignoreRasterCache] is `true`, then there will be no
   /// attempt to register pictures to cache.
   void preroll(Frame frame, {bool ignoreRasterCache = false}) {
-    final PrerollContext context = PrerollContext(
-      ignoreRasterCache ? null : frame.rasterCache,
-      frame.viewEmbedder,
-    );
-    rootLayer.preroll(context, Matrix4.identity());
+    final PrerollVisitor prerollVisitor = PrerollVisitor(frame.viewEmbedder);
+    rootLayer.accept(prerollVisitor, Matrix4.identity());
   }
 
   /// Performs a paint pass with a recording canvas for each picture in the
@@ -46,14 +44,13 @@ class LayerTree {
     final Iterable<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getPictureCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
-    final PaintContext context = PaintContext(
+    final PaintVisitor paintVisitor = PaintVisitor(
       internalNodesCanvas,
       frame.viewEmbedder?.getBaseCanvas(),
-      ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
     if (rootLayer.needsPainting) {
-      rootLayer.paint(context);
+      rootLayer.accept(paintVisitor, null);
     }
   }
 
@@ -66,14 +63,13 @@ class LayerTree {
     final Iterable<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getPictureCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
-    final PaintContext context = PaintContext(
+    final PaintVisitor paintVisitor = PaintVisitor(
       internalNodesCanvas,
       frame.viewEmbedder?.getBaseCanvas(),
-      ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
     if (rootLayer.needsPainting) {
-      rootLayer.paint(context);
+      rootLayer.accept(paintVisitor, null);
     }
   }
 
@@ -83,8 +79,8 @@ class LayerTree {
   ui.Picture flatten(ui.Size size) {
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(ui.Offset.zero & size);
-    final PrerollContext prerollContext = PrerollContext(null, null);
-    rootLayer.preroll(prerollContext, Matrix4.identity());
+    final PrerollVisitor prerollVisitor = PrerollVisitor(null);
+    rootLayer.accept(prerollVisitor, Matrix4.identity());
 
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
