@@ -158,7 +158,7 @@ settings:
       MIMode: lldb
       setupCommands:
         - description: Source map
-          text: settings set target.source-map "flutter/" "${workspaceFolder}"
+          text: &source-map-cmd settings set target.source-map "flutter/" "${workspaceFolder}"
           ignoreFailures: false
     win32:
       type: cppvsdbg
@@ -238,7 +238,7 @@ launch:
           text: settings set target.pretty-printing true
           ignoreFailures: true
         - description: Source map
-          text: settings set target.source-map "flutter/" "${workspaceFolder}"
+          text: *source-map-cmd
           ignoreFailures: false
       preLaunchTask: display_list_unittests_arm64
     - <<: *launch
