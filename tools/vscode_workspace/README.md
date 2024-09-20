@@ -19,11 +19,8 @@ If something is accidentally introduced into //engine.code-workspace without edi
 the YAML file here there are tools that can be used to more easily fix that.
 
 ```sh
-# Convert VSCode's JSONC to JSON
-json5 ../../engine.code-workspace -s 2 -o engine.code-workspace
-# Convert JSON to YAML
-yq eval -P engine.code-workspace > engine-workspace.yaml
+./merge.sh
 ```
 
-`yq` can be used to merge YAML files too, but I haven't need to to do it so it
-isn't documented.
+Since JSON doesn't support anchors some work may be needed to resolve any
+conflicts that happen when merging.
