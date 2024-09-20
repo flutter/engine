@@ -154,11 +154,6 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type, api_lev
   source_root = os.path.join(_out_dir, source)
   far_base = os.path.join(source_root, far_dir_name)
   CreateMetaPackage(far_base, runner_name)
-  pm_bin = GetPMBinPath()
-  key_path = os.path.join(_script_dir, 'development.key')
-
-  destination = os.path.join(_bucket_directory, destination, mode)
-  CreateFarPackage(pm_bin, far_base, key_path, destination, api_level)
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
   dest_sdk_path = os.path.join(destination, patched_sdk_dirname)
