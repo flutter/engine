@@ -2,7 +2,6 @@ WORKSPACE=../../engine.code-workspace
 cleaned_temp_file=$(mktemp)
 json5 "$WORKSPACE" -s 2 -o "$cleaned_temp_file"
 yaml_temp_file=$(mktemp)
-echo $yaml_temp_file
 yq eval -P "$cleaned_temp_file" > "$yaml_temp_file"
 merged_temp_file=$(mktemp)
 yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' \
