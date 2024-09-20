@@ -174,7 +174,7 @@ tasks:
     - &et-task
       label: impeller_unittests_arm64
       type: shell
-      command: ./flutter/bin/et
+      command: &et-cmd ./flutter/bin/et
       args:
         - build
         - -c
@@ -206,6 +206,17 @@ tasks:
         - -c
         - host_debug_unopt_arm64
         - //flutter/impeller/golden_tests:impeller_golden_tests
+    - <<: *et-task
+      label: ios_debug_unopt_arm64
+      args:
+        - build
+        - -c
+        - host_debug_unopt_arm64
+        - "&&"
+        - *et-cmd
+        - build
+        - -c
+        - ios_debug_unopt
 extensions:
   recommendations:
     # C++ TestMate
