@@ -377,7 +377,7 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
   }
   tonic::DartState::Scope scope(dart_state);
 
-  int64_t microseconds = frameTime.ToEpochDelta().ToMicroseconds();
+  const int64_t microseconds = frameTime.ToEpochDelta().ToMicroseconds();
 
   static int64_t last_microseconds = 0;
   if (last_microseconds > microseconds) {

@@ -27,7 +27,7 @@ VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
 // |VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
-  static bool use_choreographer =
+  const static bool use_choreographer =
       impeller::android::Choreographer::IsAvailableOnPlatform();
   if (use_choreographer) {
     auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
