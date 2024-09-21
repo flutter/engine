@@ -1070,24 +1070,36 @@ MakeRenderTargetFromBackingStoreImpeller(
 
   const auto& gl_context =
       impeller::ContextGLES::Cast(*aiks_context->GetContext());
+  const bool implicit_msaa = aiks_context->GetContext()
+                                 ->GetCapabilities()
+                                 ->SupportsImplicitResolvingMSAA();
   const auto size = impeller::ISize(config.size.width, config.size.height);
 
   impeller::TextureDescriptor color0_tex;
-  color0_tex.type = impeller::TextureType::kTexture2DMultisample;
+  if (implicit_msaa) {
+    color0_tex.type = impeller::TextureType::kTexture2DMultisample;
+    color0_tex.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    color0_tex.type = impeller::TextureType::kTexture2D;
+    color0_tex.sample_count = impeller::SampleCount::kCount1;
+  }
   color0_tex.format = format.value();
   color0_tex.size = size;
   color0_tex.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
-  color0_tex.sample_count = impeller::SampleCount::kCount4;
   color0_tex.storage_mode = impeller::StorageMode::kDevicePrivate;
 
   impeller::ColorAttachment color0;
   color0.texture = impeller::TextureGLES::WrapFBO(
       gl_context.GetReactor(), color0_tex, framebuffer->name);
-  color0.resolve_texture = color0.texture;
   color0.clear_color = impeller::Color::DarkSlateGray();
   color0.load_action = impeller::LoadAction::kClear;
-  color0.store_action = impeller::StoreAction::kMultisampleResolve;
+  if (implicit_msaa) {
+    color0.store_action = impeller::StoreAction::kMultisampleResolve;
+    color0.resolve_texture = color0.texture;
+  } else {
+    color0.store_action = impeller::StoreAction::kStore;
+  }
 
   impeller::TextureDescriptor depth_stencil_texture_desc;
   depth_stencil_texture_desc.type =
@@ -1096,7 +1108,11 @@ MakeRenderTargetFromBackingStoreImpeller(
   depth_stencil_texture_desc.size = size;
   depth_stencil_texture_desc.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
-  depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount4;
+  if (implicit_msaa) {
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
+  }
 
   auto depth_stencil_tex = std::make_shared<impeller::TextureGLES>(
       gl_context.GetReactor(), depth_stencil_texture_desc,

@@ -51,24 +51,31 @@ bool CompositorOpenGL::CreateBackingStore(
                   GL_UNSIGNED_BYTE, nullptr);
   gl_->BindTexture(GL_TEXTURE_2D, 0);
 
-  gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                            store->texture_id, 0);
+  if (enable_impeller_) {
+    gl_->FramebufferTexture2DMultisampleEXT(GL_FRAMEBUFFER,
+                                            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                            store->texture_id, 0, 4);
+  } else {
+    gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_TEXTURE_2D, store->texture_id, 0);
+  }
 
   // Set up depth/stencil attachment for impeller renderer.
   if (enable_impeller_) {
-    GLuint tex_id;
-    gl_->GenTextures(1, &tex_id);
-    gl_->BindTexture(GL_TEXTURE_2D, tex_id);
-    gl_->TexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, config.size.width,
-                    config.size.height, 0, GL_DEPTH_STENCIL,
-                    GL_UNSIGNED_INT_24_8, nullptr);
-    gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                              GL_TEXTURE_2D, tex_id, 0);
-    gl_->BindTexture(GL_TEXTURE_2D, 0);
+    GLuint depth_stencil;
+    gl_->GenRenderbuffers(1, &depth_stencil);
+    gl_->BindRenderbuffer(GL_RENDERBUFFER, depth_stencil);
+    gl_->RenderbufferStorageMultisampleEXT(
+        GL_RENDERBUFFER,      // target
+        4,                    // samples
+        GL_DEPTH24_STENCIL8,  // internal format
+        config.size.width,    // width
+        config.size.height    // height
+    );
+    gl_->FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                 GL_RENDERBUFFER, depth_stencil);
+    gl_->FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
+                                 GL_RENDERBUFFER, depth_stencil);
   }
 
   result->type = kFlutterBackingStoreTypeOpenGL;
