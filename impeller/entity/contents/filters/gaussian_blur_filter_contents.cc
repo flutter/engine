@@ -399,7 +399,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-          frame_info.texture_sampler_y_coord_scale = 1.0;
+          frame_info.texture_sampler_y_coord_scale =
+              input_texture->GetYCoordScale();
 
           TextureDownsampleFragmentShader::FragInfo frag_info;
           frag_info.edge = edge;
@@ -928,16 +929,21 @@ GaussianBlurPipeline::FragmentShader::BlurInfo LerpHackKernelSamples(
 
   for (int i = 0; i < result.sample_count; i++) {
     if (i == middle) {
-      result.coefficients[i] = parameters.samples[j].coefficient;
-      result.uv_offsets[i] = parameters.samples[j++].uv_offset;
+      result.sample_data[i].x = parameters.samples[j].uv_offset.x;
+      result.sample_data[i].y = parameters.samples[j].uv_offset.y;
+      result.sample_data[i].z = parameters.samples[j].coefficient;
+      j++;
     } else {
       KernelSample left = parameters.samples[j];
       KernelSample right = parameters.samples[j + 1];
 
-      result.coefficients[i] = left.coefficient + right.coefficient;
-      result.uv_offsets[i] = (left.uv_offset * left.coefficient +
-                              right.uv_offset * right.coefficient) /
-                             (left.coefficient + right.coefficient);
+      result.sample_data[i].z = left.coefficient + right.coefficient;
+
+      auto uv = (left.uv_offset * left.coefficient +
+                 right.uv_offset * right.coefficient) /
+                (left.coefficient + right.coefficient);
+      result.sample_data[i].x = uv.x;
+      result.sample_data[i].y = uv.y;
       j += 2;
     }
   }

@@ -517,15 +517,15 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesSimple) {
   //////////////////////////////////////////////////////////////////////////////
   // Check output kernel.
 
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[0].value.x, -1.3333333);
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[0].value.y, 0);
-  EXPECT_FLOAT_EQ(blur_info.coefficients[0].value, 0.3);
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[1].value.x, 0);
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[1].value.y, 0);
-  EXPECT_FLOAT_EQ(blur_info.coefficients[1].value, 0.4);
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[2].value.x, 1.3333333);
-  EXPECT_FLOAT_EQ(blur_info.uv_offsets[2].value.y, 0);
-  EXPECT_FLOAT_EQ(blur_info.coefficients[2].value, 0.3);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[0].x, -1.3333333);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[0].y, 0);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[0].z, 0.3);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[1].x, 0);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[1].y, 0);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[1].z, 0.4);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[2].x, 1.3333333);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[2].y, 0);
+  EXPECT_FLOAT_EQ(blur_info.sample_data[2].z, 0.3);
 
   //////////////////////////////////////////////////////////////////////////////
   // Check output of fast kernel versus original kernel.
@@ -546,11 +546,11 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesSimple) {
     }
   };
   Scalar fast_output =
-      /*1st*/ lerp(blur_info.uv_offsets[0].value, data[0], data[1]) *
-          blur_info.coefficients[0].value +
-      /*2nd*/ data[2] * blur_info.coefficients[1].value +
-      /*3rd*/ lerp(blur_info.uv_offsets[2].value, data[3], data[4]) *
-          blur_info.coefficients[2].value;
+      /*1st*/ lerp(blur_info.sample_data[0].xy(), data[0], data[1]) *
+          blur_info.sample_data[0].z +
+      /*2nd*/ data[2] * blur_info.sample_data[1].z +
+      /*3rd*/ lerp(blur_info.sample_data[2].xy(), data[3], data[4]) *
+          blur_info.sample_data[2].z;
 
   EXPECT_NEAR(original_output, fast_output, 0.01);
 }
@@ -602,8 +602,8 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
 
   Scalar fast_output = 0.0;
   for (int i = 0; i < fast_kernel_samples.sample_count; i++) {
-    fast_output += fast_kernel_samples.coefficients[i].value *
-                   sampler(fast_kernel_samples.uv_offsets[i].value);
+    fast_output += fast_kernel_samples.sample_data[i].z *
+                   sampler(fast_kernel_samples.sample_data[i].xy());
   }
 
   EXPECT_NEAR(output, fast_output, 0.1);

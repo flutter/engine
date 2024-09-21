@@ -183,8 +183,6 @@ struct Padded {
   Padding<Size> _PADDING_;
 
   Padded(T p_value) : value(p_value){};  // NOLINT(google-explicit-constructor)
-
-  Padded(){};  // NOLINT(google-explicit-constructor)
 };
 
 inline constexpr Vector4 ToVector(Color color) {

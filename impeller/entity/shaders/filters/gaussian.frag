@@ -13,8 +13,9 @@ layout(constant_id = 0) const float supports_decal = 1.0;
 
 uniform BlurInfo {
   float sample_count;
-  vec2 uv_offsets[50];
-  float coefficients[50];
+
+  // X, Y are uv offset and Z is Coefficient. W is padding.
+  vec4 sample_data[50];
 }
 blur_info;
 
@@ -33,10 +34,10 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
 
   for (int i = 0; i < int(blur_info.sample_count); i++) {
-    float16_t coefficient = float16_t(blur_info.coefficients[i]);
+    float16_t coefficient = float16_t(blur_info.sample_data[i].z);
     total_color +=
         coefficient *
-        Sample(texture_sampler, v_texture_coords + blur_info.uv_offsets[i]);
+        Sample(texture_sampler, v_texture_coords + blur_info.sample_data[i].xy);
   }
 
   frag_color = total_color;

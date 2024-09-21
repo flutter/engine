@@ -57,6 +57,7 @@ class BufferBindingsGLES {
   std::vector<VertexAttribPointer> vertex_attrib_arrays_;
 
   std::unordered_map<std::string, GLint> uniform_locations_;
+  std::vector<uint8_t> array_element_buffer_;
 
   using BindingMap = std::unordered_map<std::string, std::vector<GLint>>;
   BindingMap binding_map_ = {};
