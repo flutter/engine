@@ -35,8 +35,8 @@ void main() {
   for (int i = 0; i < int(blur_info.sample_count); i++) {
     float16_t coefficient = float16_t(blur_info.coefficients[i]);
     total_color +=
-        coefficient * Sample(texture_sampler,
-                             v_texture_coords + blur_info.uv_offsets[i]);
+        coefficient *
+        Sample(texture_sampler, v_texture_coords + blur_info.uv_offsets[i]);
   }
 
   frag_color = total_color;
