@@ -22,6 +22,11 @@ struct BlurParameters {
   int step_size;
 };
 
+struct KernelSample {
+  Vector2 uv_offset;
+  float coefficient;
+};
+
 /// A larger mirror of GaussianBlurPipeline::FragmentShader::KernelSamples.
 ///
 /// This is a mirror of GaussianBlurPipeline::FragmentShader::KernelSamples that
@@ -30,14 +35,14 @@ struct BlurParameters {
 struct KernelSamples {
   static constexpr int kMaxKernelSize = kGaussianBlurMaxKernelSize * 2;
   int sample_count;
-  GaussianBlurPipeline::FragmentShader::KernelSample samples[kMaxKernelSize];
+  KernelSample samples[kMaxKernelSize];
 };
 
 KernelSamples GenerateBlurInfo(BlurParameters parameters);
 
 /// This will shrink the size of a kernel by roughly half by sampling between
 /// samples and relying on linear interpolation between the samples.
-GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
+GaussianBlurPipeline::FragmentShader::BlurInfo LerpHackKernelSamples(
     KernelSamples samples);
 
 /// Performs a bidirectional Gaussian blur.
