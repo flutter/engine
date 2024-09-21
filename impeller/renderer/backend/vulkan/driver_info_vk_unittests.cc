@@ -61,19 +61,12 @@ TEST(DriverInfoVKTest, DriverParsingMali) {
 }
 
 TEST(DriverInfoVKTest, DriverParsingArm) {
-  EXPECT_EQ(GetMaliVersion("Adreno (TM) 540"), AdrenoGPU::kAdreno540);
-  EXPECT_EQ(GetMaliVersion("Foo Bar"), AdrenoGPU::kUnknown);
+  EXPECT_EQ(GetAdrenoVersion("Adreno (TM) 540"), AdrenoGPU::kAdreno540);
+  EXPECT_EQ(GetAdrenoVersion("Foo Bar"), AdrenoGPU::kUnknown);
 }
 
 TEST(DriverInfoVKTest, DisabledDevices) {
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 540"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 530"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 512"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 509"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 508"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 506"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 505"));
-  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 504"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 630"));
 }
 
 TEST(DriverInfoVKTest, EnabledDevicesMali) {
@@ -90,6 +83,13 @@ TEST(DriverInfoVKTest, EnabledDevicesAdreno) {
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 720"));
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 710"));
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 702"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 530"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 512"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 509"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 508"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 506"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 505"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 504"));
 }
 
 }  // namespace impeller::testing

@@ -329,20 +329,20 @@ bool DriverInfoVK::IsEmulator() const {
 }
 
 bool DriverInfoVK::IsKnownBadDriver() const {
-  if (adreno_gpu_.has_value() && adreno_gpu_.value() >= AdrenoGPU::kAdreno630) {
-    // Treat all Adreno's less than 630 as non-functional Vulkan drivers:
-
-    // see:
-    // https://github.com/flutter/flutter/issues/154103
-    //
-    // Reports "VK_INCOMPLETE" when compiling certain entity shader with
-    // vkCreateGraphicsPipelines, which is not a valid return status.
-    // See https://github.com/flutter/flutter/issues/155185
-
-    // There might be workarounds possible for some of these, but as a
-    // conservative choice we can disable these GPUs and let them fall back to
-    // GLES>
-    return true;
+  if (adreno_gpu_.has_value()) {
+    auto adreno = adreno_gpu_.value();
+    switch (adreno) {
+      // see:
+      // https://github.com/flutter/flutter/issues/154103
+      //
+      // Reports "VK_INCOMPLETE" when compiling certain entity shader with
+      // vkCreateGraphicsPipelines, which is not a valid return status.
+      // See https://github.com/flutter/flutter/issues/155185 .
+      case AdrenoGPU::kAdreno630:
+        return true;
+      default:
+        return false;
+    }
   }
   return false;
 }
