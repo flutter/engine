@@ -9,7 +9,6 @@
 
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
-#include "impeller/base/validation.h"
 
 namespace impeller {
 
@@ -59,7 +58,8 @@ bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
 
 void DeviceBufferGLES::Flush(std::optional<Range> range) const {
   if (!range.has_value()) {
-    dirty_range_ = Range{0, backing_store_->GetLength().GetByteSize()};
+    dirty_range_ = Range{
+        0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())};
   } else {
     if (dirty_range_.has_value()) {
       dirty_range_ = dirty_range_->Merge(range.value());
@@ -132,7 +132,8 @@ void DeviceBufferGLES::UpdateBufferData(
   if (update_buffer_data) {
     update_buffer_data(backing_store_->GetBuffer(),
                        backing_store_->GetLength().GetByteSize());
-    dirty_range_ = Range{0, backing_store_->GetLength().GetByteSize()};
+    Flush(Range{
+        0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())});
   }
 }
 
