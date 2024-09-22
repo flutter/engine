@@ -9,6 +9,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
+#include "fml/mapping.h"
+#include "impeller/renderer/context.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -144,10 +146,28 @@ MultiFrameCodec::State::GetNextFrameImage(
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
-    // This is safe regardless of whether the GPU is available or not because
-    // without mipmap creation there is no command buffer encoding done.
-    return ImageDecoderImpeller::UploadTextureToStorage(
-        impeller_context, std::make_shared<SkBitmap>(bitmap));
+    sk_sp<DlImage> image_result;
+    std::string error_message;
+    auto bitmap_shared = std::make_shared<SkBitmap>(bitmap);
+    auto info = bitmap.info();
+    auto mapping = fml::NonOwnedMapping(
+        reinterpret_cast<const uint8_t*>(bitmap_shared->getAddr(0, 0)),  // data
+        info.width() * info.height() * info.bytesPerPixel(),             // size
+        [bitmap_shared](auto, auto) mutable { bitmap_shared.reset(); }   // proc
+    );
+    auto buffer =
+        impeller_context->GetResourceAllocator()->CreateBufferWithCopy(mapping);
+    if (!buffer) {
+      return {nullptr, "Failed to copy to staging buffer"};
+    }
+    ImageDecoderImpeller::UploadTextureToPrivate(
+        [&](sk_sp<DlImage> image, std::string message) {
+          image_result = std::move(image);
+          error_message = std::move(message);
+        },
+        impeller_context, buffer, bitmap.info(), std::nullopt,
+        gpu_disable_sync_switch);
+    return {image_result, error_message};
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
