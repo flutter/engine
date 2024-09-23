@@ -94,12 +94,17 @@ AndroidShellHolder::AndroidShellHolder(
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
+
+  auto ui_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::kUi, thread_label),
+      fml::Thread::ThreadPriority::kDisplay);
   if (!settings.merged_platform_ui_thread) {
-    host_config.ui_config = fml::Thread::ThreadConfig(
-        flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-            flutter::ThreadHost::Type::kUi, thread_label),
-        fml::Thread::ThreadPriority::kDisplay);
+    host_config.ui_config = ui_config;
+  } else {
+    fml::Thread::SetCurrentThreadName(ui_config);
   }
+
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
           flutter::ThreadHost::Type::kRaster, thread_label),
