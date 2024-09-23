@@ -167,8 +167,8 @@ template("_fuchsia_archive") {
 # An archive combines an ELF binary and a component manifest to create
 # a packaged Fuchsia program that can be deployed to a Fuchsia device.
 #
-# binary (required):
-#   The ELF binary for the archive's program.
+# binary (optional):
+#   The ELF binary for the archive's program, or target_name if unspecified.
 # deps (optional):
 #   The code dependencies for the archive.
 # inputs (optional):
@@ -219,8 +219,8 @@ template("fuchsia_archive") {
 # Creates a Fuchsia archive (.far) file containing a generated test root
 # component and test driver component, using PM from the Fuchsia SDK.
 #
-# binary (required):
-#   The binary for the test.
+# binary (optional):
+#   The binary for the test, or target_name if unspecified.
 # deps (required):
 #   Dependencies for the test archive.
 # libraries (optional):
@@ -229,6 +229,11 @@ template("fuchsia_archive") {
 #   Files that should be placed into the `data/` directory of the archive.
 template("fuchsia_test_archive") {
   assert(defined(invoker.deps), "package must define deps")
+  if (!defined(invoker.binary)) {
+    _binary = "${target_name}"
+  } else {
+    _binary = invoker.binary
+  }
   _deps = []
   if (defined(invoker.deps)) {
     _deps += invoker.deps
@@ -269,9 +274,9 @@ template("fuchsia_test_archive") {
 
   _fuchsia_archive(target_name) {
     testonly = true
+    binary = _binary
     forward_variables_from(invoker,
                            [
-                             "binary",
                              "resources",
                            ])
 

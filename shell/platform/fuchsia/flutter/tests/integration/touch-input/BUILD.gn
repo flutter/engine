@@ -55,7 +55,6 @@ executable("touch-input-test-bin") {
 }
 
 fuchsia_test_archive("touch-input-test") {
-  testonly = true
   deps = [
     ":touch-input-test-bin",
 
