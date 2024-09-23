@@ -246,7 +246,7 @@ template("fuchsia_test_archive") {
     _cml_file = "$root_out_dir/${target_name}.cml"
     _interpolate_cml_target = "${target_name}_interpolate_cml"
     action(_interpolate_cml_target) {
-      forward_variables_from(invoker, [ "testonly" ])
+      testonly = true
       script = "//flutter/tools/fuchsia/interpolate_test_suite.py"
       sources = [ "//flutter/testing/fuchsia/meta/test_suite.cml" ]
       args = [
@@ -268,7 +268,7 @@ template("fuchsia_test_archive") {
   _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
   _compile_cml(_compile_cml_target) {
-    forward_variables_from(invoker, [ "testonly" ])
+    testonly = true
 
     manifest = _cml_file
     output = "$_far_base_dir/meta/${_cml_file_name}.cm"
