@@ -96,8 +96,7 @@ def main() -> int:
   logging.info('Running tests in %s', OUT_DIR)
   force_running_unattended()
   sys.argv.append('--out-dir=' + OUT_DIR)
-
-    if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
+  if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
     sys.argv.append('--product=terminal.qemu-arm64')
 
   sys.argv.append('--logs-dir=' + os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log'))
