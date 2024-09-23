@@ -23,4 +23,15 @@ the YAML file here there are tools that can be used to more easily fix that.
 ```
 
 Since JSON doesn't support anchors some work may be needed to resolve any
-conflicts that happen when merging.
+conflicts that happen when merging. These aren't necessary to use the VSCode
+workspace, just to edit them.
+
+## Requirements
+
+The `refresh.sh` and `merge.sh` tools require certain tools to be present on
+your PATH. They can be installed on macos with homebrew.
+
+- `json5` - A variant of JSON that is a superset of the JSON variant that VSCode
+  uses. It's used to strip away comments and trailing commas.
+- `yq` - This is a tool for manipulating yaml files. It can convert back and
+  forth from YAML to YAML and merge YAML files.
