@@ -181,7 +181,7 @@ template("_fuchsia_archive") {
 #   Set this to true for archives that are only used for tests.
 template("fuchsia_archive") {
   if (!defined(invoker.binary)) {
-    _binary = "${target_name}"
+    _binary = target_name
   } else {
     _binary = invoker.binary
   }
@@ -230,7 +230,7 @@ template("fuchsia_archive") {
 template("fuchsia_test_archive") {
   assert(defined(invoker.deps), "package must define deps")
   if (!defined(invoker.binary)) {
-    _binary = "${target_name}"
+    _binary = target_name
   } else {
     _binary = invoker.binary
   }
