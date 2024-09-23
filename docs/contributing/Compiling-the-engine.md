@@ -214,7 +214,7 @@ solutions = [
 ]
 ```
 
-> You may ignore `"run_fuchsia_emu": True` If you won't run tests locally.
+> You may ignore `"run_fuchsia_emu": True` if you won't run tests locally.
 
 Run `gclient sync`.
 
