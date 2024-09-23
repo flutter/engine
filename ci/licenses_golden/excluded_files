@@ -18,7 +18,6 @@
 ../../../flutter/.github
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
-../../../flutter/.vscode
 ../../../flutter/AUTHORS
 ../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
@@ -50,6 +49,7 @@
 ../../../flutter/display_list/utils/dl_accumulation_rect_unittests.cc
 ../../../flutter/display_list/utils/dl_matrix_clip_tracker_unittests.cc
 ../../../flutter/docs
+../../../flutter/engine.code-workspace
 ../../../flutter/examples
 ../../../flutter/flow/README.md
 ../../../flutter/flow/diff_context_unittests.cc
@@ -219,6 +219,8 @@
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
 ../../../flutter/impeller/toolkit/glvk/README.md
+../../../flutter/impeller/toolkit/interop/impeller_unittests.cc
+../../../flutter/impeller/toolkit/interop/object_unittests.cc
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/metal_library.py
@@ -1486,6 +1488,7 @@
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/flow_graph_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/il_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/inliner_test.cc
+../../../flutter/third_party/dart/runtime/vm/compiler/backend/linearscan_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/locations_helpers_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/loops_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/memory_copy_test.cc
@@ -2698,7 +2701,6 @@
 ../../../flutter/third_party/skia/include/effects/BUILD.bazel
 ../../../flutter/third_party/skia/include/encode/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
@@ -2711,11 +2713,9 @@
 ../../../flutter/third_party/skia/include/gpu/ganesh/mock/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/vk/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/mock/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/pathops/BUILD.bazel
@@ -2973,7 +2973,6 @@
 ../../../flutter/third_party/swiftshader/third_party
 ../../../flutter/third_party/swiftshader/tools/cmake_generate_graphviz/CMakeGraphVizOptions.cmake
 ../../../flutter/third_party/test_shaders
-../../../flutter/third_party/tinygltf
 ../../../flutter/third_party/tonic/.clang-format
 ../../../flutter/third_party/tonic/AUTHORS
 ../../../flutter/third_party/tonic/PATENTS
