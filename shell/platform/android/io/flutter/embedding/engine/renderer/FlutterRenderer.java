@@ -215,7 +215,9 @@ public class FlutterRenderer implements TextureRegistry {
     // version that is
     // running Vulkan, so we don't have to worry about it not being supported.
     final SurfaceProducer entry;
-    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
+    if (!debugForceSurfaceProducerGlTextures
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_29
+        && !flutterJNI.ShouldDisableAHB()) {
       final long id = nextTextureId.getAndIncrement();
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
@@ -1073,10 +1075,6 @@ public class FlutterRenderer implements TextureRegistry {
       // In the non-swap case we are creating a new surface to render to.
       flutterJNI.onSurfaceCreated(surface);
     }
-  }
-
-  public void applyRendering() {
-    flutterJNI.applyRendering();
   }
 
   /**

@@ -126,8 +126,6 @@ void AndroidExternalViewEmbedder::SubmitFlutterView(
   }
 }
 
-void AndroidExternalViewEmbedder::ApplyRendering() {}
-
 // |ExternalViewEmbedder|
 std::unique_ptr<SurfaceFrame>
 AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,

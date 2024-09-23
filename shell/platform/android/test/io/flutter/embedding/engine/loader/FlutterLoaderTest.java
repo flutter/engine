@@ -58,7 +58,7 @@ public class FlutterLoaderTest {
     flutterLoader.ensureInitializationComplete(ctx, null);
     shadowOf(getMainLooper()).idle();
     assertTrue(flutterLoader.initialized());
-    verify(mockFlutterJNI, times(1)).loadLibrary();
+    verify(mockFlutterJNI, times(1)).loadLibrary(ctx);
     verify(mockFlutterJNI, times(1)).updateRefreshRate();
   }
 
@@ -70,7 +70,7 @@ public class FlutterLoaderTest {
 
     Mockito.doThrow(new UnsatisfiedLinkError("couldn't find \"libflutter.so\""))
         .when(mockFlutterJNI)
-        .loadLibrary();
+        .loadLibrary(ctx);
     try {
       flutterLoader.startInitialization(ctx);
     } catch (UnsupportedOperationException e) {
@@ -234,6 +234,28 @@ public class FlutterLoaderTest {
         .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
     List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
     assertTrue(arguments.contains(enableImpellerArg));
+  }
+
+  @Test
+  public void itSetsDisableSurfaceControlFromMetaData() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+    Bundle metaData = new Bundle();
+    metaData.putBoolean("io.flutter.embedding.android.DisableSurfaceControl", true);
+    ctx.getApplicationInfo().metaData = metaData;
+
+    FlutterLoader.Settings settings = new FlutterLoader.Settings();
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(ctx, settings);
+    flutterLoader.ensureInitializationComplete(ctx, null);
+    shadowOf(getMainLooper()).idle();
+
+    final String disabledControlArg = "--disable-surface-control";
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains(disabledControlArg));
   }
 
   @Test

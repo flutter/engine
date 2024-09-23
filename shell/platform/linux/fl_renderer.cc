@@ -42,6 +42,15 @@ typedef struct {
   // Engine we are rendering.
   GWeakRef engine;
 
+  // Flag to track lazy initialization.
+  gboolean initialized;
+
+  // The pixel format passed to the engine.
+  GLint sized_format;
+
+  // The format used to create textures.
+  GLint general_format;
+
   // Views being rendered.
   GHashTable* views;
 
@@ -62,8 +71,8 @@ typedef struct {
   // Shader program.
   GLuint program;
 
-  // Framebuffers to render.
-  GPtrArray* framebuffers;
+  // Framebuffers to render keyed by view ID.
+  GHashTable* framebuffers_by_view_id;
 } FlRendererPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(FlRenderer, fl_renderer, G_TYPE_OBJECT)
@@ -103,6 +112,25 @@ static gchar* get_program_log(GLuint program) {
 /// Converts a pixel co-ordinate from 0..pixels to OpenGL -1..1.
 static GLfloat pixels_to_gl_coords(GLfloat position, GLfloat pixels) {
   return (2.0 * position / pixels) - 1.0;
+}
+
+// Perform single run OpenGL initialization.
+static void initialize(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  if (priv->initialized) {
+    return;
+  }
+  priv->initialized = TRUE;
+
+  if (epoxy_has_gl_extension("GL_EXT_texture_format_BGRA8888")) {
+    priv->sized_format = GL_BGRA8_EXT;
+    priv->general_format = GL_BGRA_EXT;
+  } else {
+    priv->sized_format = GL_RGBA8;
+    priv->general_format = GL_RGBA;
+  }
 }
 
 static void fl_renderer_unblock_main_thread(FlRenderer* self) {
@@ -158,18 +186,15 @@ static void setup_shader(FlRenderer* self) {
   glDeleteShader(fragment_shader);
 }
 
-static void render_with_blit(FlRenderer* self) {
-  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
-      fl_renderer_get_instance_private(self));
-
+static void render_with_blit(FlRenderer* self, GPtrArray* framebuffers) {
   // Disable the scissor test as it can affect blit operations.
   // Prevents regressions like: https://github.com/flutter/flutter/issues/140828
   // See OpenGL specification version 4.6, section 18.3.1.
   glDisable(GL_SCISSOR_TEST);
 
-  for (guint i = 0; i < priv->framebuffers->len; i++) {
+  for (guint i = 0; i < framebuffers->len; i++) {
     FlFramebuffer* framebuffer =
-        FL_FRAMEBUFFER(g_ptr_array_index(priv->framebuffers, i));
+        FL_FRAMEBUFFER(g_ptr_array_index(framebuffers, i));
 
     GLuint framebuffer_id = fl_framebuffer_get_id(framebuffer);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);
@@ -181,7 +206,10 @@ static void render_with_blit(FlRenderer* self) {
   glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 
-static void render_with_textures(FlRenderer* self, int width, int height) {
+static void render_with_textures(FlRenderer* self,
+                                 GPtrArray* framebuffers,
+                                 int width,
+                                 int height) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 
@@ -200,9 +228,9 @@ static void render_with_textures(FlRenderer* self, int width, int height) {
 
   glUseProgram(priv->program);
 
-  for (guint i = 0; i < priv->framebuffers->len; i++) {
+  for (guint i = 0; i < framebuffers->len; i++) {
     FlFramebuffer* framebuffer =
-        FL_FRAMEBUFFER(g_ptr_array_index(priv->framebuffers, i));
+        FL_FRAMEBUFFER(g_ptr_array_index(framebuffers, i));
 
     GLuint texture_id = fl_framebuffer_get_texture_id(framebuffer);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -255,7 +283,7 @@ static void fl_renderer_dispose(GObject* object) {
 
   g_weak_ref_clear(&priv->engine);
   g_clear_pointer(&priv->views, g_hash_table_unref);
-  g_clear_pointer(&priv->framebuffers, g_ptr_array_unref);
+  g_clear_pointer(&priv->framebuffers_by_view_id, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_renderer_parent_class)->dispose(object);
 }
@@ -269,7 +297,9 @@ static void fl_renderer_init(FlRenderer* self) {
       fl_renderer_get_instance_private(self));
   priv->views =
       g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
-  priv->framebuffers = g_ptr_array_new_with_free_func(g_object_unref);
+  priv->framebuffers_by_view_id =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
+                            (GDestroyNotify)g_ptr_array_unref);
 }
 
 void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
@@ -326,13 +356,18 @@ guint32 fl_renderer_get_fbo(FlRenderer* self) {
 }
 
 gboolean fl_renderer_create_backing_store(
-    FlRenderer* renderer,
+    FlRenderer* self,
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
-  fl_renderer_make_current(renderer);
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
 
-  FlFramebuffer* framebuffer =
-      fl_framebuffer_new(config->size.width, config->size.height);
+  fl_renderer_make_current(self);
+
+  initialize(self);
+
+  FlFramebuffer* framebuffer = fl_framebuffer_new(
+      priv->general_format, config->size.width, config->size.height);
   if (!framebuffer) {
     g_warning("Failed to create backing store");
     return FALSE;
@@ -343,8 +378,7 @@ gboolean fl_renderer_create_backing_store(
   backing_store_out->open_gl.framebuffer.user_data = framebuffer;
   backing_store_out->open_gl.framebuffer.name =
       fl_framebuffer_get_id(framebuffer);
-  backing_store_out->open_gl.framebuffer.target =
-      fl_framebuffer_get_format(framebuffer);
+  backing_store_out->open_gl.framebuffer.target = priv->sized_format;
   backing_store_out->open_gl.framebuffer.destruction_callback = [](void* p) {
     // Backing store destroyed in fl_renderer_collect_backing_store(), set
     // on FlutterCompositor.collect_backing_store_callback during engine start.
@@ -398,14 +432,21 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
       layers[0]->offset.x == 0 && layers[0]->offset.y == 0 &&
       (layers[0]->size.width != priv->target_width ||
        layers[0]->size.height != priv->target_height)) {
-    return true;
+    return TRUE;
   }
 
   priv->had_first_frame = true;
 
   fl_renderer_unblock_main_thread(self);
 
-  g_ptr_array_set_size(priv->framebuffers, 0);
+  GPtrArray* framebuffers = reinterpret_cast<GPtrArray*>((g_hash_table_lookup(
+      priv->framebuffers_by_view_id, GINT_TO_POINTER(view_id))));
+  if (framebuffers == nullptr) {
+    framebuffers = g_ptr_array_new_with_free_func(g_object_unref);
+    g_hash_table_insert(priv->framebuffers_by_view_id, GINT_TO_POINTER(view_id),
+                        framebuffers);
+  }
+  g_ptr_array_set_size(framebuffers, 0);
   for (size_t i = 0; i < layers_count; ++i) {
     const FlutterLayer* layer = layers[i];
     switch (layer->type) {
@@ -413,7 +454,7 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
         const FlutterBackingStore* backing_store = layer->backing_store;
         FlFramebuffer* framebuffer =
             FL_FRAMEBUFFER(backing_store->open_gl.framebuffer.user_data);
-        g_ptr_array_add(priv->framebuffers, g_object_ref(framebuffer));
+        g_ptr_array_add(framebuffers, g_object_ref(framebuffer));
       } break;
       case kFlutterLayerContentTypePlatformView: {
         // TODO(robert-ancell) Not implemented -
@@ -449,6 +490,7 @@ void fl_renderer_setup(FlRenderer* self) {
 }
 
 void fl_renderer_render(FlRenderer* self,
+                        FlutterViewId view_id,
                         int width,
                         int height,
                         const GdkRGBA* background_color) {
@@ -461,10 +503,14 @@ void fl_renderer_render(FlRenderer* self,
                background_color->blue, background_color->alpha);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  if (priv->has_gl_framebuffer_blit) {
-    render_with_blit(self);
-  } else {
-    render_with_textures(self, width, height);
+  GPtrArray* framebuffers = reinterpret_cast<GPtrArray*>((g_hash_table_lookup(
+      priv->framebuffers_by_view_id, GINT_TO_POINTER(view_id))));
+  if (framebuffers != nullptr) {
+    if (priv->has_gl_framebuffer_blit) {
+      render_with_blit(self, framebuffers);
+    } else {
+      render_with_textures(self, framebuffers, width, height);
+    }
   }
 
   glFlush();

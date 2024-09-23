@@ -10,6 +10,7 @@
 
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
@@ -142,10 +143,6 @@ namespace flutter {
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType {
   FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE)
-
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_TO_ENUM_VALUE(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
 
   // empty comment to make formatter happy
   kInvalidOp,
@@ -320,6 +317,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() const { return bounds_; }
+  const DlRect& GetBounds() const { return ToDlRect(bounds_); }
 
   bool has_rtree() const { return rtree_ != nullptr; }
   sk_sp<const DlRTree> rtree() const { return rtree_; }

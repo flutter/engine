@@ -71,7 +71,7 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
   SkColorFilter _initRawColorFilter();
 
   @override
-  void imageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow) {
     // Since ColorFilter has a const constructor it cannot store dynamically
     // created Skia objects. Therefore a new SkImageFilter is created every time
     // it's used. However, once used it's no longer needed, so it's deleted
@@ -266,7 +266,5 @@ CkColorFilter? createCkColorFilter(EngineColorFilter colorFilter) {
         return const CkLinearToSrgbGammaColorFilter();
       case ColorFilterType.srgbToLinearGamma:
         return const CkSrgbToLinearGammaColorFilter();
-      default:
-        throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
     }
 }

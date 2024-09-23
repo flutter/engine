@@ -21,9 +21,8 @@
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -72,7 +71,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
@@ -101,6 +100,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_VULKAN
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 #endif  // SHELL_ENABLE_VULKAN
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -463,7 +463,7 @@ InferOpenGLPlatformViewCreationCallback(
   } else {
 #if FML_OS_LINUX || FML_OS_WIN
     gl_proc_resolver = DefaultGLProcResolver;
-#endif
+#endif  // FML_OS_LINUX || FML_OS_WIN
   }
 
   bool fbo_reset_after_present =
@@ -508,9 +508,10 @@ InferOpenGLPlatformViewCreationCallback(
             view_embedder             // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_GL
+  FML_LOG(ERROR) << "This Flutter Engine does not support OpenGL rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_GL
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -601,9 +602,10 @@ InferMetalPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_METAL
+  FML_LOG(ERROR) << "This Flutter Engine does not support Metal rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_METAL
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -688,9 +690,10 @@ InferVulkanPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_VULKAN
+  FML_LOG(ERROR) << "This Flutter Engine does not support Vulkan rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_VULKAN
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>

@@ -105,8 +105,6 @@ class AndroidShellHolder {
 
   void UpdateDisplayMetrics();
 
-  void ApplyRendering();
-
   // Visible for testing.
   const std::unique_ptr<Shell>& GetShellForTesting() const { return shell_; }
 

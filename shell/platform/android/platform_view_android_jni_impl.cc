@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "impeller/toolkit/android/proc_table.h"
+#include "impeller/toolkit/android/shadow_realm.h"
 #include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
 
@@ -363,10 +364,6 @@ static void SetViewportMetrics(JNIEnv* env,
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(
       kFlutterImplicitViewId, metrics);
-}
-
-static void ApplyRendering(JNIEnv* env, jobject jcaller, jlong shell_holder) {
-  ANDROID_SHELL_HOLDER->GetPlatformView();
 }
 
 static void UpdateDisplayMetrics(JNIEnv* env,
@@ -861,9 +858,10 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&UpdateDisplayMetrics),
       },
       {
-          .name = "nativeApplyRendering",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&ApplyRendering),
+          .name = "nativeShouldDisableAHB",
+          .signature = "()Z",
+          .fnPtr = reinterpret_cast<void*>(
+              &impeller::android::ShadowRealm::ShouldDisableAHB),
       }};
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,

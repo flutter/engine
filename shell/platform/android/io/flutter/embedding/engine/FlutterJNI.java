@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import com.getkeepsafe.relinker.ReLinker;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
@@ -141,12 +142,11 @@ public class FlutterJNI {
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
-  public void loadLibrary() {
+  public void loadLibrary(Context context) {
     if (FlutterJNI.loadLibraryCalled) {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
-
-    System.loadLibrary("flutter");
+    ReLinker.loadLibrary(context, "flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -876,7 +876,13 @@ public class FlutterJNI {
   @UiThread
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setSemanticsEnabledInNative(enabled);
+    }
+  }
+
+  @VisibleForTesting
+  public void setSemanticsEnabledInNative(boolean enabled) {
     nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
   }
 
@@ -888,7 +894,13 @@ public class FlutterJNI {
   @UiThread
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setAccessibilityFeaturesInNative(flags);
+    }
+  }
+
+  @VisibleForTesting
+  public void setAccessibilityFeaturesInNative(int flags) {
     nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
   }
 
@@ -1176,12 +1188,6 @@ public class FlutterJNI {
     } finally {
       shellHolderLock.readLock().unlock();
     }
-  }
-
-  private native void nativeApplyRendering(long nativeShellHolderId);
-
-  public void applyRendering() {
-    nativeApplyRendering(nativeShellHolderId);
   }
 
   // Send a data-carrying response to a platform message received from Dart.
@@ -1546,4 +1552,14 @@ public class FlutterJNI {
   public interface AsyncWaitForVsyncDelegate {
     void asyncWaitForVsync(final long cookie);
   }
+
+  /**
+   * Whether Android Hardware Buffer import is known to not work on this particular vendor + API
+   * level and should be disabled.
+   */
+  public boolean ShouldDisableAHB() {
+    return nativeShouldDisableAHB();
+  }
+
+  private native boolean nativeShouldDisableAHB();
 }

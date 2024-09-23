@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "flutter/flow/surface.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
@@ -92,10 +93,10 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
   display_list->Dispatch(dispatcher);
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
 
-  std::shared_ptr<impeller::Image> image =
+  std::shared_ptr<impeller::Texture> image =
       picture.ToImage(*context, render_target_size);
   if (image) {
-    return impeller::DlImageImpeller::Make(image->GetTexture(),
+    return impeller::DlImageImpeller::Make(image,
                                            DlImage::OwningContext::kRaster);
   }
 #endif  // EXPERIMENTAL_CANVAS
@@ -126,7 +127,6 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize picture_size,
     std::function<void(const sk_sp<DlImage>&)> callback) {
-  sk_sp<DlImage> result;
   std::shared_ptr<const fml::SyncSwitch> sync_switch =
       GetDelegate().GetIsGpuDisabledSyncSwitch();
   sync_switch->Execute(
@@ -137,15 +137,31 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
             if (context) {
               context->GetContext()->StoreTaskForGPU(
                   [context, sync_switch, display_list = std::move(display_list),
-                   picture_size, callback = std::move(callback)] {
+                   picture_size, callback] {
                     callback(DoMakeRasterSnapshot(display_list, picture_size,
                                                   sync_switch, context));
-                  });
+                  },
+                  [callback]() { callback(nullptr); });
             } else {
+#if FML_OS_IOS_SIMULATOR
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+#else
               callback(nullptr);
+
+#endif  // FML_OS_IOS_SIMULATOR
             }
           })
           .SetIfFalse([&] {
+#if FML_OS_IOS_SIMULATOR
+            if (!GetDelegate().GetAiksContext()) {
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+              return;
+            }
+#endif
             callback(DoMakeRasterSnapshot(display_list, picture_size,
                                           GetDelegate().GetAiksContext()));
           }));

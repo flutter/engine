@@ -38,7 +38,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 #if !IMPELLER_SUPPORTS_RENDERING
 namespace impeller {
@@ -739,8 +739,6 @@ class Rasterizer final : public SnapshotDelegate,
       std::optional<fml::TimePoint> presentation_time);
 
   ViewRecord& EnsureViewRecord(int64_t view_id);
-
-  void ApplyRendering();
 
   void FireNextFrameCallbackIfPresent();
 

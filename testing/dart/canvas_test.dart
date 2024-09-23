@@ -8,8 +8,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
+import 'package:test/test.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 import 'goldens.dart';
@@ -38,12 +38,13 @@ Future<Image> createImage(int width, int height) {
 void testCanvas(CanvasCallback callback) {
   try {
     callback(Canvas(PictureRecorder(), Rect.zero));
-  } catch (error) { } // ignore: empty_catches
+  } catch (error) {} // ignore: empty_catches
 }
 
 Future<Image> toImage(CanvasCallback callback, int width, int height) {
   final PictureRecorder recorder = PictureRecorder();
-  final Canvas canvas = Canvas(recorder, Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
+  final Canvas canvas = Canvas(
+      recorder, Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
   callback(canvas);
   final Picture picture = recorder.endRecording();
   return picture.toImage(width, height);
@@ -52,7 +53,8 @@ Future<Image> toImage(CanvasCallback callback, int width, int height) {
 void testNoCrashes() {
   test('canvas APIs should not crash', () async {
     final Paint paint = Paint();
-    const Rect rect = Rect.fromLTRB(double.nan, double.nan, double.nan, double.nan);
+    const Rect rect =
+        Rect.fromLTRB(double.nan, double.nan, double.nan, double.nan);
     final RRect rrect = RRect.fromRectAndCorners(rect);
     const Offset offset = Offset(double.nan, double.nan);
     final Path path = Path();
@@ -65,41 +67,54 @@ void testNoCrashes() {
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(1, 1);
 
-    try { Canvas(PictureRecorder()); } catch (error) { } // ignore: empty_catches
-    try { Canvas(PictureRecorder(), rect); } catch (error) { } // ignore: empty_catches
+    try {
+      Canvas(PictureRecorder());
+    } catch (error) {} // ignore: empty_catches
+    try {
+      Canvas(PictureRecorder(), rect);
+    } catch (error) {} // ignore: empty_catches
 
     try {
       PictureRecorder()
         ..endRecording()
         ..endRecording()
         ..endRecording();
-    } catch (error) { } // ignore: empty_catches
+    } catch (error) {} // ignore: empty_catches
 
     testCanvas((Canvas canvas) => canvas.clipPath(path));
     testCanvas((Canvas canvas) => canvas.clipRect(rect));
     testCanvas((Canvas canvas) => canvas.clipRRect(rrect));
     testCanvas((Canvas canvas) => canvas.drawArc(rect, 0.0, 0.0, false, paint));
-    testCanvas((Canvas canvas) => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, paint));
+    testCanvas((Canvas canvas) => canvas.drawAtlas(image, <RSTransform>[],
+        <Rect>[], <Color>[], BlendMode.src, rect, paint));
     testCanvas((Canvas canvas) => canvas.drawCircle(offset, double.nan, paint));
     testCanvas((Canvas canvas) => canvas.drawColor(color, BlendMode.src));
     testCanvas((Canvas canvas) => canvas.drawDRRect(rrect, rrect, paint));
     testCanvas((Canvas canvas) => canvas.drawImage(image, offset, paint));
-    testCanvas((Canvas canvas) => canvas.drawImageNine(image, rect, rect, paint));
-    testCanvas((Canvas canvas) => canvas.drawImageRect(image, rect, rect, paint));
+    testCanvas(
+        (Canvas canvas) => canvas.drawImageNine(image, rect, rect, paint));
+    testCanvas(
+        (Canvas canvas) => canvas.drawImageRect(image, rect, rect, paint));
     testCanvas((Canvas canvas) => canvas.drawLine(offset, offset, paint));
     testCanvas((Canvas canvas) => canvas.drawOval(rect, paint));
     testCanvas((Canvas canvas) => canvas.drawPaint(paint));
     testCanvas((Canvas canvas) => canvas.drawParagraph(paragraph, offset));
     testCanvas((Canvas canvas) => canvas.drawPath(path, paint));
     testCanvas((Canvas canvas) => canvas.drawPicture(picture));
-    testCanvas((Canvas canvas) => canvas.drawPoints(PointMode.points, <Offset>[], paint));
-    testCanvas((Canvas canvas) => canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint));
-    testCanvas((Canvas canvas) => canvas.drawRawPoints(PointMode.points, Float32List(0), paint));
+    testCanvas((Canvas canvas) =>
+        canvas.drawPoints(PointMode.points, <Offset>[], paint));
+    testCanvas((Canvas canvas) => canvas.drawRawAtlas(image, Float32List(0),
+        Float32List(0), Int32List(0), BlendMode.src, rect, paint));
+    testCanvas((Canvas canvas) =>
+        canvas.drawRawPoints(PointMode.points, Float32List(0), paint));
     testCanvas((Canvas canvas) => canvas.drawRect(rect, paint));
     testCanvas((Canvas canvas) => canvas.drawRRect(rrect, paint));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, false));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, true));
-    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[]), BlendMode.screen, paint));
+    testCanvas(
+        (Canvas canvas) => canvas.drawShadow(path, color, double.nan, false));
+    testCanvas(
+        (Canvas canvas) => canvas.drawShadow(path, color, double.nan, true));
+    testCanvas((Canvas canvas) => canvas.drawVertices(
+        Vertices(VertexMode.triangles, <Offset>[]), BlendMode.screen, paint));
     testCanvas((Canvas canvas) => canvas.getSaveCount());
     testCanvas((Canvas canvas) => canvas.restore());
     testCanvas((Canvas canvas) => canvas.rotate(double.nan));
@@ -110,17 +125,25 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.skew(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.transform(Float64List(16)));
     testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));
-    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[],
-                                                               indices: <int>[]), BlendMode.screen, paint));
-    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[])..dispose(), BlendMode.screen, paint));
+    testCanvas((Canvas canvas) => canvas.drawVertices(
+        Vertices(VertexMode.triangles, <Offset>[], indices: <int>[]),
+        BlendMode.screen,
+        paint));
+    testCanvas((Canvas canvas) => canvas.drawVertices(
+        Vertices(VertexMode.triangles, <Offset>[])..dispose(),
+        BlendMode.screen,
+        paint));
 
     // Regression test for https://github.com/flutter/flutter/issues/115143
-    testCanvas((Canvas canvas) => canvas.drawPaint(Paint()..imageFilter = const ColorFilter.mode(Color(0x00000000), BlendMode.xor)));
+    testCanvas((Canvas canvas) => canvas.drawPaint(Paint()
+      ..imageFilter =
+          const ColorFilter.mode(Color(0x00000000), BlendMode.xor)));
 
     // Regression test for https://github.com/flutter/flutter/issues/120278
-    testCanvas((Canvas canvas) => canvas.drawPaint(Paint()..imageFilter = ImageFilter.compose(
-      outer: ImageFilter.matrix(Matrix4.identity().storage),
-      inner: ImageFilter.blur())));
+    testCanvas((Canvas canvas) => canvas.drawPaint(Paint()
+      ..imageFilter = ImageFilter.compose(
+          outer: ImageFilter.matrix(Matrix4.identity().storage),
+          inner: ImageFilter.blur())));
   });
 }
 
@@ -181,15 +204,26 @@ void main() async {
     final RSTransform transform = RSTransform(1, 0, 0, 0);
     const Color color = Color(0x00000000);
     final Paint paint = Paint();
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, null, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
-    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
-    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, null, paint);
-    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), null, null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect],
+        <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect],
+        <Color>[color], BlendMode.src, null, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[],
+        null, rect, paint);
+    canvas.drawAtlas(
+        image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0),
+        BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0),
+        BlendMode.src, null, paint);
+    canvas.drawRawAtlas(
+        image, Float32List(0), Float32List(0), null, null, rect, paint);
 
-    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], null, rect, paint));
+    expect(
+      () => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect],
+          <Color>[color], null, rect, paint),
+      throwsA(isA<AssertionError>()),
+    );
   });
 
   test('Data lengths must match for drawAtlas methods', () async {
@@ -200,28 +234,62 @@ void main() async {
     final RSTransform transform = RSTransform(1, 0, 0, 0);
     const Color color = Color(0x00000000);
     final Paint paint = Paint();
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect, rect], <Color>[color, color], BlendMode.src, rect, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
-    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
-    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
-    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(1), BlendMode.src, rect, paint);
-    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), null, null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect],
+        <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform, transform],
+        <Rect>[rect, rect], <Color>[color, color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[],
+        null, rect, paint);
+    canvas.drawAtlas(
+        image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0),
+        BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(1),
+        BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(
+        image, Float32List(4), Float32List(4), null, null, rect, paint);
 
-    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[], <Color>[color], BlendMode.src, rect, paint));
-    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
-    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color, color], BlendMode.src, rect, paint));
-    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect, rect], <Color>[color], BlendMode.src, rect, paint));
-    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
-    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(3), Float32List(3), null, null, rect, paint));
-    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
-    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
-    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
+    expect(
+        () => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[],
+            <Color>[color], BlendMode.src, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[rect],
+            <Color>[color], BlendMode.src, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect],
+            <Color>[color, color], BlendMode.src, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawAtlas(image, <RSTransform>[transform],
+            <Rect>[rect, rect], <Color>[color], BlendMode.src, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawAtlas(image, <RSTransform>[transform, transform],
+            <Rect>[rect], <Color>[color], BlendMode.src, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawRawAtlas(
+            image, Float32List(3), Float32List(3), null, null, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawRawAtlas(
+            image, Float32List(4), Float32List(0), null, null, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawRawAtlas(
+            image, Float32List(0), Float32List(4), null, null, rect, paint),
+        throwsArgumentError);
+    expect(
+        () => canvas.drawRawAtlas(image, Float32List(4), Float32List(4),
+            Int32List(2), BlendMode.src, rect, paint),
+        throwsArgumentError);
   });
 
   test('Canvas preserves perspective data in Matrix4', () async {
-    const double rotateAroundX = pi / 6;  // 30 degrees
-    const double rotateAroundY = pi / 9;  // 20 degrees
+    const double rotateAroundX = pi / 6; // 30 degrees
+    const double rotateAroundY = pi / 9; // 20 degrees
     const int width = 150;
     const int height = 150;
     const Color black = Color.fromARGB(255, 0, 0, 0);
@@ -232,9 +300,12 @@ void main() async {
       const double width3 = width / 3.0;
       const double width5 = width / 5.0;
       const double width10 = width / 10.0;
-      canvas.drawRect(const Rect.fromLTRB(-width3, -width3, width3, width3), Paint()..color = green);
-      canvas.drawRect(const Rect.fromLTRB(-width5, -width5, -width10, width5), Paint()..color = black);
-      canvas.drawRect(const Rect.fromLTRB(-width5, -width5, width5, -width10), Paint()..color = black);
+      canvas.drawRect(const Rect.fromLTRB(-width3, -width3, width3, width3),
+          Paint()..color = green);
+      canvas.drawRect(const Rect.fromLTRB(-width5, -width5, -width10, width5),
+          Paint()..color = black);
+      canvas.drawRect(const Rect.fromLTRB(-width5, -width5, width5, -width10),
+          Paint()..color = black);
     }
 
     final Image incrementalMatrixImage = await toImage((Canvas canvas) {
@@ -258,12 +329,14 @@ void main() async {
       });
     }, width, height);
 
-    final bool areEqual = await comparer.fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
+    final bool areEqual = await comparer.fuzzyCompareImages(
+        incrementalMatrixImage, combinedMatrixImage);
 
     expect(areEqual, true);
   });
 
-  test('Path effects from Paragraphs do not affect further rendering', () async {
+  test('Path effects from Paragraphs do not affect further rendering',
+      () async {
     void drawText(Canvas canvas, String content, Offset offset,
         {TextDecorationStyle style = TextDecorationStyle.solid}) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
@@ -287,20 +360,29 @@ void main() async {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5;
       drawText(canvas, 'Hello World', const Offset(20, 10));
-      canvas.drawCircle(const Offset(150, 25), 15, paint..color = const Color(0xFF00FF00));
+      canvas.drawCircle(
+          const Offset(150, 25), 15, paint..color = const Color(0xFF00FF00));
       drawText(canvas, 'Regular text', const Offset(20, 60));
-      canvas.drawCircle(const Offset(150, 75), 15, paint..color = const Color(0xFFFFFF00));
-      drawText(canvas, 'Dotted text', const Offset(20, 110), style: TextDecorationStyle.dotted);
-      canvas.drawCircle(const Offset(150, 125), 15, paint..color = const Color(0xFFFF0000));
-      drawText(canvas, 'Dashed text', const Offset(20, 160), style: TextDecorationStyle.dashed);
-      canvas.drawCircle(const Offset(150, 175), 15, paint..color = const Color(0xFFFF0000));
-      drawText(canvas, 'Wavy text', const Offset(20, 210), style: TextDecorationStyle.wavy);
-      canvas.drawCircle(const Offset(150, 225), 15, paint..color = const Color(0xFFFF0000));
+      canvas.drawCircle(
+          const Offset(150, 75), 15, paint..color = const Color(0xFFFFFF00));
+      drawText(canvas, 'Dotted text', const Offset(20, 110),
+          style: TextDecorationStyle.dotted);
+      canvas.drawCircle(
+          const Offset(150, 125), 15, paint..color = const Color(0xFFFF0000));
+      drawText(canvas, 'Dashed text', const Offset(20, 160),
+          style: TextDecorationStyle.dashed);
+      canvas.drawCircle(
+          const Offset(150, 175), 15, paint..color = const Color(0xFFFF0000));
+      drawText(canvas, 'Wavy text', const Offset(20, 210),
+          style: TextDecorationStyle.wavy);
+      canvas.drawCircle(
+          const Offset(150, 225), 15, paint..color = const Color(0xFFFF0000));
     }, 200, 250);
     expect(image.width, equals(200));
     expect(image.height, equals(250));
 
-    await comparer.addGoldenImage(image, 'dotted_path_effect_mixed_with_stroked_geometry.png');
+    await comparer.addGoldenImage(
+        image, 'dotted_path_effect_mixed_with_stroked_geometry.png');
   });
 
   test('Gradients with matrices in Paragraphs render correctly', () async {
@@ -384,7 +466,8 @@ void main() async {
         caughtException = true;
         expect(
           e.message,
-          contains('unable to create bitmap render target at specified size ${image.width}x${image.height}'),
+          contains(
+              'unable to create bitmap render target at specified size ${image.width}x${image.height}'),
         );
         break;
       }
@@ -401,7 +484,8 @@ void main() async {
       throwsException,
     );
     expect(
-      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      () => canvas.drawAtlas(
+          image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
       throwsException,
     );
   });
@@ -432,7 +516,8 @@ void main() async {
       returnsNormally,
     );
     expect(
-      () => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
+      () => canvas.drawAtlas(
+          image, <RSTransform>[], <Rect>[], null, null, null, Paint()),
       returnsNormally,
     );
   });
@@ -489,33 +574,20 @@ void main() async {
 
     final ByteData dataSync = await drawOnCanvas(toImageImage);
     final ByteData data = await drawOnCanvas(toImageSyncImage);
-    expect(data, listEquals(dataSync));
+    expect(data.buffer.asUint8List(), equals(dataSync.buffer.asUint8List()));
   });
 
-  test('Canvas.drawParagraph throws when Paragraph.layout was not called', () async {
+  test('Canvas.drawParagraph throws when Paragraph.layout was not called',
+      () async {
     // Regression test for https://github.com/flutter/flutter/issues/97172
-    bool assertsEnabled = false;
-    assert(() {
-      assertsEnabled = true;
-      return true;
-    }());
-
-    Object? error;
-    try {
-      await toImage((Canvas canvas) {
+    expect(() {
+      toImage((Canvas canvas) {
         final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
         builder.addText('Woodstock!');
         final Paragraph woodstock = builder.build();
         canvas.drawParagraph(woodstock, const Offset(0, 50));
       }, 100, 100);
-    } catch (e) {
-      error = e;
-    }
-    if (assertsEnabled) {
-      expect(error, isNotNull);
-    } else {
-      expect(error, isNull);
-    }
+    }, throwsA(isA<AssertionError>()));
   });
 
   Future<Image> drawText(String text) {
@@ -540,7 +612,8 @@ void main() async {
     // Skia renders a tofu if the font does not have a glyph for a character.
     // However, Flutter opts-in to a Skia feature to render tabs as a single space.
     // See: https://github.com/flutter/flutter/issues/79153
-    final File file = File(path.join(_flutterBuildPath, 'flutter', 'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
+    final File file = File(path.join(_flutterBuildPath, 'flutter',
+        'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
     final Uint8List fontData = await file.readAsBytes();
     await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
 
@@ -550,14 +623,17 @@ void main() async {
     final Image tofuImage = await drawText('>\b<');
 
     // The tab's image should be identical to the space's image but not the tofu's image.
-    final bool tabToSpaceComparison = await comparer.fuzzyCompareImages(tabImage, spaceImage);
-    final bool tabToTofuComparison = await comparer.fuzzyCompareImages(tabImage, tofuImage);
+    final bool tabToSpaceComparison =
+        await comparer.fuzzyCompareImages(tabImage, spaceImage);
+    final bool tabToTofuComparison =
+        await comparer.fuzzyCompareImages(tabImage, tofuImage);
 
     expect(tabToSpaceComparison, isTrue);
     expect(tabToTofuComparison, isFalse);
   });
 
-  test('drawRect, drawOval, and clipRect render with unsorted rectangles', () async {
+  test('drawRect, drawOval, and clipRect render with unsorted rectangles',
+      () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
@@ -639,45 +715,13 @@ void main() async {
     draw(const Rect.fromLTRB(10, 10, 40, 40), 50, 50, const Color(0xFF2196F3));
     draw(const Rect.fromLTRB(40, 10, 10, 40), 250, 50, const Color(0xFF4CAF50));
     draw(const Rect.fromLTRB(10, 40, 40, 10), 50, 250, const Color(0xFF9C27B0));
-    draw(const Rect.fromLTRB(40, 40, 10, 10), 250, 250, const Color(0xFFFF9800));
+    draw(
+        const Rect.fromLTRB(40, 40, 10, 10), 250, 250, const Color(0xFFFF9800));
 
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(450, 450);
     await comparer.addGoldenImage(image, 'render_unordered_rects.png');
   });
-
-  Matcher closeToTransform(Float64List expected) => (dynamic v) {
-    Expect.type<Float64List>(v);
-    final Float64List value = v as Float64List;
-    expect(expected.length, equals(16));
-    expect(value.length, equals(16));
-    for (int r = 0; r < 4; r++) {
-      for (int c = 0; c < 4; c++) {
-        final double vActual = value[r*4 + c];
-        final double vExpected = expected[r*4 + c];
-        if ((vActual - vExpected).abs() > 1e-10) {
-          Expect.fail('matrix mismatch at $r, $c, $vActual not close to $vExpected');
-        }
-      }
-    }
-  };
-
-  Matcher notCloseToTransform(Float64List expected) => (dynamic v) {
-    Expect.type<Float64List>(v);
-    final Float64List value = v as Float64List;
-    expect(expected.length, equals(16));
-    expect(value.length, equals(16));
-    for (int r = 0; r < 4; r++) {
-      for (int c = 0; c < 4; c++) {
-        final double vActual = value[r*4 + c];
-        final double vExpected = expected[r*4 + c];
-        if ((vActual - vExpected).abs() > 1e-10) {
-          return;
-        }
-      }
-    }
-    Expect.fail('$value is too close to $expected');
-  };
 
   test('Canvas.translate affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
@@ -688,7 +732,7 @@ void main() async {
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
-    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(newCurMatrix, isNot(closeToTransform(matrix)));
     expect(curMatrix, closeToTransform(matrix));
   });
 
@@ -701,7 +745,7 @@ void main() async {
     expect(curMatrix, closeToTransform(matrix));
     canvas.scale(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
-    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(newCurMatrix, isNot(closeToTransform(matrix)));
     expect(curMatrix, closeToTransform(matrix));
   });
 
@@ -714,7 +758,7 @@ void main() async {
     expect(curMatrix, closeToTransform(matrix));
     canvas.rotate(pi / 2);
     final Float64List newCurMatrix = canvas.getTransform();
-    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(newCurMatrix, isNot(closeToTransform(matrix)));
     expect(curMatrix, closeToTransform(matrix));
   });
 
@@ -722,48 +766,33 @@ void main() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.skew(12, 14.5);
-    final Float64List matrix = (Matrix4.identity()..setEntry(0, 1, 12)..setEntry(1, 0, 14.5)).storage;
+    final Float64List matrix = (Matrix4.identity()
+          ..setEntry(0, 1, 12)
+          ..setEntry(1, 0, 14.5))
+        .storage;
     final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.skew(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
-    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(newCurMatrix, isNot(closeToTransform(matrix)));
     expect(curMatrix, closeToTransform(matrix));
   });
 
   test('Canvas.transform affects canvas.getTransform', () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    final Float64List matrix = (Matrix4.identity()..translate(12.0, 14.5)..scale(12.0, 14.5)).storage;
+    final Float64List matrix = (Matrix4.identity()
+          ..translate(12.0, 14.5)
+          ..scale(12.0, 14.5))
+        .storage;
     canvas.transform(matrix);
     final Float64List curMatrix = canvas.getTransform();
     expect(curMatrix, closeToTransform(matrix));
     canvas.translate(10, 10);
     final Float64List newCurMatrix = canvas.getTransform();
-    expect(newCurMatrix, notCloseToTransform(matrix));
+    expect(newCurMatrix, isNot(closeToTransform(matrix)));
     expect(curMatrix, closeToTransform(matrix));
   });
-
-  Matcher closeToRect(Rect expected) => (dynamic v) {
-    Expect.type<Rect>(v);
-    final Rect value = v as Rect;
-    expect(value.left,   closeTo(expected.left,   1e-6));
-    expect(value.top,    closeTo(expected.top,    1e-6));
-    expect(value.right,  closeTo(expected.right,  1e-6));
-    expect(value.bottom, closeTo(expected.bottom, 1e-6));
-  };
-
-  Matcher notCloseToRect(Rect expected) => (dynamic v) {
-    Expect.type<Rect>(v);
-    final Rect value = v as Rect;
-    if ((value.left - expected.left).abs() > 1e-6 ||
-        (value.top - expected.top).abs() > 1e-6 ||
-        (value.right - expected.right).abs() > 1e-6 ||
-        (value.bottom - expected.bottom).abs() > 1e-6) {
-      return;
-    }
-    Expect.fail('$value is too close to $expected');
-  };
 
   test('Canvas.clipRect affects canvas.getClipBounds', () async {
     void testRect(Rect clipRect, bool doAA) {
@@ -798,8 +827,10 @@ void main() async {
       canvas.save();
       canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
       // Both clip bounds have changed
-      expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
-      expect(canvas.getDestinationClipBounds(), notCloseToRect(clipExpandedBounds));
+      expect(
+          canvas.getLocalClipBounds(), isNot(closeToRect(clipExpandedBounds)));
+      expect(canvas.getDestinationClipBounds(),
+          isNot(closeToRect(clipExpandedBounds)));
       // Previous return values have not changed
       expect(initialLocalBounds, closeToRect(clipExpandedBounds));
       expect(initialDestinationBounds, closeToRect(clipExpandedBounds));
@@ -819,7 +850,8 @@ void main() async {
       );
       expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
       // Destination bounds are unaffected by transform
-      expect(canvas.getDestinationClipBounds(), closeToRect(clipExpandedBounds));
+      expect(
+          canvas.getDestinationClipBounds(), closeToRect(clipExpandedBounds));
       canvas.restore();
 
       // save/restore returned the values to their original values
@@ -869,7 +901,8 @@ void main() async {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
-    final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
+    final RRect clip =
+        RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
     canvas.clipRRect(clip);
 
     // Save initial return values for testing restored values
@@ -881,8 +914,9 @@ void main() async {
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
-    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getLocalClipBounds(), isNot(closeToRect(clipExpandedBounds)));
+    expect(canvas.getDestinationClipBounds(),
+        isNot(closeToRect(clipExpandedBounds)));
     // Previous return values have not changed
     expect(initialLocalBounds, closeToRect(clipExpandedBounds));
     expect(initialDestinationBounds, closeToRect(clipExpandedBounds));
@@ -909,7 +943,8 @@ void main() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
+    final RRect clip =
+        RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
     canvas.clipRRect(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
@@ -921,8 +956,8 @@ void main() async {
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipBounds));
-    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
+    expect(canvas.getLocalClipBounds(), isNot(closeToRect(clipBounds)));
+    expect(canvas.getDestinationClipBounds(), isNot(closeToRect(clipBounds)));
     // Previous return values have not changed
     expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
@@ -950,8 +985,10 @@ void main() async {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds1 = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
     const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
-    final RRect clip1 = RRect.fromRectAndRadius(clipBounds1, const Radius.circular(3));
-    final RRect clip2 = RRect.fromRectAndRadius(clipBounds2, const Radius.circular(3));
+    final RRect clip1 =
+        RRect.fromRectAndRadius(clipBounds1, const Radius.circular(3));
+    final RRect clip2 =
+        RRect.fromRectAndRadius(clipBounds2, const Radius.circular(3));
 
     canvas.save();
     canvas.clipRRect(clip1, doAntiAlias: false);
@@ -973,7 +1010,9 @@ void main() async {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
-    final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
+    final Path clip = Path()
+      ..addRect(clipBounds)
+      ..addOval(clipBounds);
     canvas.clipPath(clip);
 
     // Save initial return values for testing restored values
@@ -985,8 +1024,9 @@ void main() async {
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
-    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getLocalClipBounds(), isNot(closeToRect(clipExpandedBounds)));
+    expect(canvas.getDestinationClipBounds(),
+        isNot(closeToRect(clipExpandedBounds)));
     // Previous return values have not changed
     expect(initialLocalBounds, closeToRect(clipExpandedBounds));
     expect(initialDestinationBounds, closeToRect(clipExpandedBounds));
@@ -1013,7 +1053,9 @@ void main() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
+    final Path clip = Path()
+      ..addRect(clipBounds)
+      ..addOval(clipBounds);
     canvas.clipPath(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
@@ -1025,8 +1067,8 @@ void main() async {
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipBounds));
-    expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
+    expect(canvas.getLocalClipBounds(), isNot(closeToRect(clipBounds)));
+    expect(canvas.getDestinationClipBounds(), isNot(closeToRect(clipBounds)));
     // Previous return values have not changed
     expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
@@ -1054,8 +1096,12 @@ void main() async {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds1 = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
     const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
-    final Path clip1 = Path()..addRect(clipBounds1)..addOval(clipBounds1);
-    final Path clip2 = Path()..addRect(clipBounds2)..addOval(clipBounds2);
+    final Path clip1 = Path()
+      ..addRect(clipBounds1)
+      ..addOval(clipBounds1);
+    final Path clip2 = Path()
+      ..addRect(clipBounds2)
+      ..addOval(clipBounds2);
 
     canvas.save();
     canvas.clipPath(clip1, doAntiAlias: false);
@@ -1084,7 +1130,8 @@ void main() async {
     expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
-    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference, doAntiAlias: false);
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15),
+        clipOp: ClipOp.difference, doAntiAlias: false);
     expect(canvas.getLocalClipBounds(), initialLocalBounds);
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });
@@ -1117,7 +1164,9 @@ void main() async {
     expect(canvas.getSaveCount(), equals(1));
   });
 
-  test('RestoreToCount count greater than current [getSaveCount], nothing would happend', () async {
+  test(
+      'RestoreToCount count greater than current [getSaveCount], nothing would happend',
+      () async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.save();
@@ -1131,14 +1180,16 @@ void main() async {
   });
 
   test('TextDecoration renders non-solid lines', () async {
-    final File file = File(path.join(_flutterBuildPath, 'flutter', 'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
+    final File file = File(path.join(_flutterBuildPath, 'flutter',
+        'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
     final Uint8List fontData = await file.readAsBytes();
     await loadFontFromList(fontData, fontFamily: 'RobotoSlab');
 
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    for (final (int index, TextDecorationStyle style) in TextDecorationStyle.values.indexed) {
+    for (final (int index, TextDecorationStyle style)
+        in TextDecorationStyle.values.indexed) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
       builder.pushStyle(TextStyle(
         decoration: TextDecoration.underline,
@@ -1183,10 +1234,13 @@ void main() async {
     expect(paintCopy.strokeJoin, equals(StrokeJoin.round));
     expect(paintCopy.style, equals(PaintingStyle.stroke));
     expect(paintCopy.blendMode, equals(BlendMode.srcOver));
-    expect(paintCopy.maskFilter, equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
+    expect(paintCopy.maskFilter,
+        equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
     expect(paintCopy.filterQuality, equals(FilterQuality.high));
-    expect(paintCopy.colorFilter, equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
-    expect(paintCopy.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
+    expect(paintCopy.colorFilter,
+        equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
+    expect(paintCopy.imageFilter,
+        equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
   });
 
   test('Paint, when copied, does not mutate the original instance', () {
@@ -1212,7 +1266,8 @@ void main() async {
       ..blendMode = BlendMode.srcIn
       ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 20.0)
       ..filterQuality = FilterQuality.none
-      ..colorFilter = const ColorFilter.mode(Color(0xFFFF0000), BlendMode.modulate)
+      ..colorFilter =
+          const ColorFilter.mode(Color(0xFFFF0000), BlendMode.modulate)
       ..imageFilter = ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0);
 
     // The original paint should not have changed.
@@ -1222,13 +1277,17 @@ void main() async {
     expect(paint.strokeJoin, equals(StrokeJoin.round));
     expect(paint.style, equals(PaintingStyle.stroke));
     expect(paint.blendMode, equals(BlendMode.srcOver));
-    expect(paint.maskFilter, equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
+    expect(paint.maskFilter,
+        equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
     expect(paint.filterQuality, equals(FilterQuality.high));
-    expect(paint.colorFilter, equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
-    expect(paint.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
+    expect(paint.colorFilter,
+        equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
+    expect(paint.imageFilter,
+        equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
   });
 
-  test('Paint, when copied, the original changing does not mutate the copy', () {
+  test('Paint, when copied, the original changing does not mutate the copy',
+      () {
     final Paint paint = Paint()
       ..color = const Color(0xFF0000FF)
       ..strokeWidth = 10.0
@@ -1252,7 +1311,8 @@ void main() async {
       ..blendMode = BlendMode.srcIn
       ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 20.0)
       ..filterQuality = FilterQuality.none
-      ..colorFilter = const ColorFilter.mode(Color(0xFFFF0000), BlendMode.modulate)
+      ..colorFilter =
+          const ColorFilter.mode(Color(0xFFFF0000), BlendMode.modulate)
       ..imageFilter = ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0);
 
     // The copy should not have changed.
@@ -1262,18 +1322,106 @@ void main() async {
     expect(paintCopy.strokeJoin, equals(StrokeJoin.round));
     expect(paintCopy.style, equals(PaintingStyle.stroke));
     expect(paintCopy.blendMode, equals(BlendMode.srcOver));
-    expect(paintCopy.maskFilter, equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
+    expect(paintCopy.maskFilter,
+        equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
     expect(paintCopy.filterQuality, equals(FilterQuality.high));
-    expect(paintCopy.colorFilter, equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
-    expect(paintCopy.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
+    expect(paintCopy.colorFilter,
+        equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
+    expect(paintCopy.imageFilter,
+        equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
+  });
+
+  test('DrawAtlas correctly copies color values into display list format',
+      () async {
+    final Image testImage = await createTestImage();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // Make a drawAtlas call that should be solid red.
+    canvas.drawAtlas(
+      testImage,
+      [
+        RSTransform.fromComponents(
+          rotation: 0,
+          scale: 10,
+          anchorX: 0,
+          anchorY: 0,
+          translateX: 0,
+          translateY: 0,
+        ),
+      ],
+      [const Rect.fromLTWH(0, 0, 1, 1)],
+      [const Color.fromARGB(255, 255, 0, 0)],
+      BlendMode.dst,
+      null,
+      Paint(),
+    );
+
+    final Image resultImage = await recorder.endRecording().toImage(1, 1);
+    final ByteData? data = await resultImage.toByteData();
+    if (data == null) {
+      fail('Expected non-null byte data');
+    }
+    final int rgba = data.buffer.asUint32List()[0];
+    expect(rgba, 0xFF0000FF);
   });
 }
 
-Matcher listEquals(ByteData expected) => (dynamic v) {
-  Expect.type<ByteData>(v);
-  final ByteData value = v as ByteData;
-  expect(value.lengthInBytes, expected.lengthInBytes);
-  for (int i = 0; i < value.lengthInBytes; i++) {
-    expect(value.getUint8(i), expected.getUint8(i));
+Future<Image> createTestImage() async {
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas recorderCanvas = Canvas(recorder);
+  recorderCanvas.scale(1.0, 1.0);
+  final Picture picture = recorder.endRecording();
+  return picture.toImage(1, 1);
+}
+
+Matcher closeToRect(Rect rect) => _CloseToRectMatcher(rect);
+
+final class _CloseToRectMatcher extends Matcher {
+  const _CloseToRectMatcher(this._expectedRect);
+  final Rect _expectedRect;
+
+  @override
+  bool matches(Object? item, Map<Object?, Object?> matchState) {
+    if (item is! Rect) {
+      return false;
+    }
+    return (item.left - _expectedRect.left).abs() < 1e-6 &&
+        (item.top - _expectedRect.top).abs() < 1e-6 &&
+        (item.right - _expectedRect.right).abs() < 1e-6 &&
+        (item.bottom - _expectedRect.bottom).abs() < 1e-6;
   }
-};
+
+  @override
+  Description describe(Description description) {
+    return description.add('Rect is close (within 1e-6) to $_expectedRect');
+  }
+}
+
+Matcher closeToTransform(Float64List expected) =>
+    _CloseToTransformMatcher(expected);
+
+final class _CloseToTransformMatcher extends Matcher {
+  _CloseToTransformMatcher(this._expected);
+  final Float64List _expected;
+
+  @override
+  bool matches(Object? item, Map<Object?, Object?> matchState) {
+    if (item is! Float64List) {
+      return false;
+    }
+    if (item.length != 16 || _expected.length != 16) {
+      return false;
+    }
+    for (int i = 0; i < 16; i++) {
+      if ((item[i] - _expected[i]).abs() > 1e-10) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  Description describe(Description description) {
+    return description.add('Transform is close (within 1e-10) to $_expected');
+  }
+}

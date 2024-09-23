@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/experimental_canvas.h"
+
+#include <limits>
+#include <optional>
+
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/aiks/canvas.h"
@@ -10,10 +14,13 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
+#include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_target.h"
 
@@ -135,7 +142,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   auto& replay_entities = clip_coverage_stack.GetReplayEntities();
   for (const auto& replay : replay_entities) {
     SetClipScissor(
-        clip_coverage_stack.CurrentClipCoverage(),
+        replay.clip_coverage,
         *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
         global_pass_position);
     if (!replay.entity.Render(
@@ -286,47 +293,43 @@ void ExperimentalCanvas::SetupRenderPass() {
   }
 }
 
+void ExperimentalCanvas::SkipUntilMatchingRestore(size_t total_content_depth) {
+  auto entry = CanvasStackEntry{};
+  entry.skipping = true;
+  entry.clip_depth = current_depth_ + total_content_depth;
+  transform_stack_.push_back(entry);
+}
+
 void ExperimentalCanvas::Save(uint32_t total_content_depth) {
+  if (IsSkipping()) {
+    return SkipUntilMatchingRestore(total_content_depth);
+  }
+
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
   entry.distributed_opacity = transform_stack_.back().distributed_opacity;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+  FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
-  transform_stack_.emplace_back(entry);
+  transform_stack_.push_back(entry);
 }
 
-void ExperimentalCanvas::SaveLayer(
-    const Paint& paint,
-    std::optional<Rect> bounds,
-    const std::shared_ptr<ImageFilter>& backdrop_filter,
-    ContentBoundsPromise bounds_promise,
-    uint32_t total_content_depth,
-    bool can_distribute_opacity,
-    bool bounds_from_caller) {
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
-
-  if (bounds.has_value() && bounds->IsEmpty()) {
-    Save(total_content_depth);
-    return;
-  }
-
+std::optional<Rect> ExperimentalCanvas::ComputeCoverageLimit() const {
   if (!clip_coverage_stack_.HasCoverage()) {
     // The current clip is empty. This means the pass texture won't be
     // visible, so skip it.
-    Save(total_content_depth);
-    return;
+    return std::nullopt;
   }
 
   auto maybe_current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
   if (!maybe_current_clip_coverage.has_value()) {
-    Save(total_content_depth);
-    return;
+    return std::nullopt;
   }
+
   auto current_clip_coverage = maybe_current_clip_coverage.value();
 
   // The maximum coverage of the subpass. Subpasses textures should never
@@ -338,16 +341,29 @@ void ExperimentalCanvas::SaveLayer(
                                     ->GetSize()))
           .Intersection(current_clip_coverage);
 
-  if (!maybe_coverage_limit.has_value()) {
-    Save(total_content_depth);
-    return;
-  }
-  maybe_coverage_limit = maybe_coverage_limit->Intersection(
-      Rect::MakeSize(render_target_.GetRenderTargetSize()));
-
   if (!maybe_coverage_limit.has_value() || maybe_coverage_limit->IsEmpty()) {
-    Save(total_content_depth);
-    return;
+    return std::nullopt;
+  }
+
+  return maybe_coverage_limit->Intersection(
+      Rect::MakeSize(render_target_.GetRenderTargetSize()));
+}
+
+void ExperimentalCanvas::SaveLayer(
+    const Paint& paint,
+    std::optional<Rect> bounds,
+    const std::shared_ptr<ImageFilter>& backdrop_filter,
+    ContentBoundsPromise bounds_promise,
+    uint32_t total_content_depth,
+    bool can_distribute_opacity) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  if (IsSkipping()) {
+    return SkipUntilMatchingRestore(total_content_depth);
+  }
+
+  auto maybe_coverage_limit = ComputeCoverageLimit();
+  if (!maybe_coverage_limit.has_value()) {
+    return SkipUntilMatchingRestore(total_content_depth);
   }
   auto coverage_limit = maybe_coverage_limit.value();
 
@@ -359,12 +375,51 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
+  std::shared_ptr<FilterContents> filter_contents = paint.WithImageFilter(
+      Rect(), transform_stack_.back().transform,
+      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
+
+  std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
+      bounds.value_or(Rect::MakeMaximum()),
+      transform_stack_.back().transform,  //
+      coverage_limit,                     //
+      filter_contents,                    //
+      /*flood_output_coverage=*/
+      Entity::IsBlendModeDestructive(paint.blend_mode),  //
+      /*flood_input_coverage=*/!!backdrop_filter         //
+  );
+
+  if (!maybe_subpass_coverage.has_value()) {
+    return SkipUntilMatchingRestore(total_content_depth);
+  }
+
+  auto subpass_coverage = maybe_subpass_coverage.value();
+
+  // When an image filter is present, clamp to avoid flicking due to nearest
+  // sampled image. For other cases, round out to ensure than any geometry is
+  // not cut off.
+  //
+  // See also this bug: https://github.com/flutter/flutter/issues/144213
+  //
+  // TODO(jonahwilliams): this could still round out for filters that use decal
+  // sampling mode.
+  ISize subpass_size;
+  bool did_round_out = false;
+  if (paint.image_filter) {
+    subpass_size = ISize(subpass_coverage.GetSize());
+  } else {
+    did_round_out = true;
+    subpass_size = ISize(IRect::RoundOut(subpass_coverage).GetSize());
+  }
+  if (subpass_size.IsEmpty()) {
+    return SkipUntilMatchingRestore(total_content_depth);
+  }
+
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
-    local_position =
-        current_clip_coverage.GetOrigin() - GetGlobalPassPosition();
+    local_position = subpass_coverage.GetOrigin() - GetGlobalPassPosition();
     EntityPass::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
@@ -375,8 +430,11 @@ void ExperimentalCanvas::SaveLayer(
           return filter;
         };
 
-    auto input_texture = FlipBackdrop(render_passes_, GetGlobalPassPosition(),
-                                      clip_coverage_stack_, renderer_);
+    auto input_texture = FlipBackdrop(render_passes_,           //
+                                      GetGlobalPassPosition(),  //
+                                      clip_coverage_stack_,     //
+                                      renderer_                 //
+    );
     if (!input_texture) {
       // Validation failures are logged in FlipBackdrop.
       return;
@@ -397,39 +455,31 @@ void ExperimentalCanvas::SaveLayer(
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
   transform_stack_.back().distributed_opacity = 1.0;
 
-  // Backdrop Filter must expand bounds to at least the clip stack, otherwise
-  // the coverage of the parent render pass.
-  Rect subpass_coverage;
-  if (backdrop_filter_contents ||
-      Entity::IsBlendModeDestructive(paint.blend_mode) || !bounds.has_value()) {
-    subpass_coverage = coverage_limit;
-    // TODO(jonahwilliams): if we have tight bounds we should be able to reduce
-    // this size here. if (bounds.has_value() && bounds_from_caller) {
-    //   subpass_coverage =
-    //       coverage_limit.Intersection(bounds.value()).value_or(bounds.value());
-    // }
-  } else {
-    subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
-  }
-
-  render_passes_.push_back(LazyRenderingConfig(
-      renderer_,                                             //
-      CreateRenderTarget(renderer_,                          //
-                         ISize(subpass_coverage.GetSize()),  //
-                         Color::BlackTransparent()           //
-                         )));
+  render_passes_.push_back(
+      LazyRenderingConfig(renderer_,                                    //
+                          CreateRenderTarget(renderer_,                 //
+                                             subpass_size,              //
+                                             Color::BlackTransparent()  //
+                                             )));
   save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+  FML_DCHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpassAppendSnapshotTransform;
+  entry.did_round_out = did_round_out;
   transform_stack_.emplace_back(entry);
+
+  // The current clip aiks clip culling can not handle image filters.
+  // Remove this once we've migrated to exp canvas and removed it.
+  if (paint.image_filter) {
+    transform_stack_.back().cull_rect = std::nullopt;
+  }
 
   // Start non-collapsed subpasses with a fresh clip coverage stack limited by
   // the subpass coverage. This is important because image filters applied to
@@ -471,9 +521,14 @@ bool ExperimentalCanvas::Restore() {
   // to be overly conservative, but we need to jump the depth to
   // the clip depth so that the next rendering op will get a
   // larger depth (it will pre-increment the current_depth_ value).
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   current_depth_ = transform_stack_.back().clip_depth;
+
+  if (IsSkipping()) {
+    transform_stack_.pop_back();
+    return true;
+  }
 
   if (transform_stack_.back().rendering_mode ==
           Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
@@ -486,12 +541,13 @@ bool ExperimentalCanvas::Restore() {
 
     SaveLayerState save_layer_state = save_layer_state_.back();
     save_layer_state_.pop_back();
+    auto global_pass_position = GetGlobalPassPosition();
 
     std::shared_ptr<Contents> contents =
         PaintPassDelegate(save_layer_state.paint)
             .CreateContentsForSubpassTarget(
                 lazy_render_pass.inline_pass_context->GetTexture(),
-                Matrix::MakeTranslation(Vector3{-GetGlobalPassPosition()}) *
+                Matrix::MakeTranslation(Vector3{-global_pass_position}) *
                     transform_stack_.back().transform);
 
     lazy_render_pass.inline_pass_context->EndPass();
@@ -501,16 +557,19 @@ bool ExperimentalCanvas::Restore() {
     // sampling, so aligning here is important for avoiding visual nearest
     // sampling errors caused by limited floating point precision when
     // straddling a half pixel boundary.
-    //
-    // We do this in lieu of expanding/rounding out the subpass coverage in
-    // order to keep the bounds wrapping consistently tight around subpass
-    // elements. Which is necessary to avoid intense flickering in cases
-    // where a subpass texture has a large blur filter with clamp sampling.
-    //
-    // See also this bug: https://github.com/flutter/flutter/issues/144213
-    Point subpass_texture_position =
-        (save_layer_state.coverage.GetOrigin() - GetGlobalPassPosition())
-            .Round();
+    Point subpass_texture_position;
+    if (transform_stack_.back().did_round_out) {
+      // Subpass coverage was rounded out, origin potentially moved "down" by
+      // as much as a pixel.
+      subpass_texture_position =
+          (save_layer_state.coverage.GetOrigin() - global_pass_position)
+              .Floor();
+    } else {
+      // Subpass coverage was truncated. Pick the closest phyiscal pixel.
+      subpass_texture_position =
+          (save_layer_state.coverage.GetOrigin() - global_pass_position)
+              .Round();
+    }
 
     Entity element_entity;
     element_entity.SetClipDepth(++current_depth_);
@@ -657,12 +716,16 @@ void ExperimentalCanvas::DrawTextFrame(
 
 void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                                       bool reuse_depth) {
+  if (IsSkipping()) {
+    return;
+  }
+
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
       entity.GetTransform());
   entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
   if (entity.GetBlendMode() == BlendMode::kSourceOver &&
-      entity.GetContents()->IsOpaque()) {
+      entity.GetContents()->IsOpaque(entity.GetTransform())) {
     entity.SetBlendMode(BlendMode::kSource);
   }
 
@@ -695,7 +758,7 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   // We can render at a depth up to and including the depth of the currently
   // active clips and we will still be clipped out, but we cannot render at
   // a depth that is greater than the current clips or we will not be clipped.
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(current_depth_);
 
@@ -749,9 +812,14 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
 }
 
 void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
+  if (IsSkipping()) {
+    return;
+  }
+
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+
   // Ideally the clip depth would be greater than the current rendering
   // depth because any rendering calls that follow this clip operation will
   // pre-increment the depth and then be rendering above our clip depth,
@@ -762,7 +830,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   // to know if a clip will actually be used in advance of storing it in
   // the DisplayList buffer.
   // See https://github.com/flutter/flutter/issues/147021
-  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(transform_stack_.back().clip_depth);
 

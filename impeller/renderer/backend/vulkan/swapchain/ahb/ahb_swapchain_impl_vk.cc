@@ -16,6 +16,7 @@
 #include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
 #include "impeller/toolkit/android/surface_transaction.h"
 #include "impeller/toolkit/android/surface_transaction_stats.h"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
@@ -115,19 +116,20 @@ std::unique_ptr<Surface> AHBSwapchainImplVK::AcquireNextDrawable() {
     return nullptr;
   }
 
-  auto context = transients_->GetContext().lock();
-  if (context) {
-    ContextVK::Cast(*context).GetGPUTracer()->MarkFrameStart();
-  }
-
   // Ask the GPU to wait for the render ready semaphore to be signaled before
   // performing rendering operations.
   if (!SubmitWaitForRenderReady(pool_entry.render_ready_fence,
                                 pool_entry.texture)) {
-    VALIDATION_LOG << "Could not submit a command to the GPU to wait on render "
-                      "readiness.";
+    VALIDATION_LOG << "Could wait on render ready fence.";
     return nullptr;
   }
+
+#if IMPELLER_DEBUG
+  auto context = transients_->GetContext().lock();
+  if (context) {
+    ContextVK::Cast(*context).GetGPUTracer()->MarkFrameStart();
+  }
+#endif  // IMPELLER_DEBUG
 
   auto surface = SurfaceVK::WrapSwapchainImage(
       transients_, pool_entry.texture,
@@ -158,10 +160,12 @@ bool AHBSwapchainImplVK::Present(
     return false;
   }
 
+#if IMPELLER_DEBUG
   auto context = transients_->GetContext().lock();
   if (context) {
     ContextVK::Cast(*context).GetGPUTracer()->MarkFrameEnd();
   }
+#endif  // IMPELLER_DEBUG
 
   if (!texture) {
     return false;
@@ -313,8 +317,8 @@ bool AHBSwapchainImplVK::SubmitWaitForRenderReady(
   );
 
   if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
-    VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
-                      "down the waiter thread.";
+    VALIDATION_LOG << "Encountered error while waiting on swapchain image: "
+                   << vk::to_string(result);
     return false;
   }
 

@@ -29,10 +29,6 @@ config("impeller_public_config") {
   if (impeller_enable_vulkan) {
     defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
   }
-
-  if (impeller_enable_3d) {
-    defines += [ "IMPELLER_ENABLE_3D" ]
-  }
 }
 
 group("impeller") {
@@ -67,9 +63,9 @@ impeller_component("impeller_unittests") {
     "geometry:geometry_unittests",
     "renderer/backend/metal:metal_unittests",
     "runtime_stage:runtime_stage_unittests",
-    "scene/importer:importer_unittests",
     "shader_archive:shader_archive_unittests",
     "tessellator:tessellator_unittests",
+    "toolkit/interop:interop_unittests",
   ]
 
   if (impeller_supports_rendering) {
@@ -81,7 +77,6 @@ impeller_component("impeller_unittests") {
       "geometry:geometry_unittests",
       "playground",
       "renderer:renderer_unittests",
-      "scene:scene_unittests",
       "typographer:typographer_unittests",
     ]
   }

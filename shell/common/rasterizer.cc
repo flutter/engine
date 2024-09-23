@@ -32,9 +32,9 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
@@ -153,10 +153,6 @@ std::optional<DrawSurfaceStatus> Rasterizer::GetLastDrawStatus(
   } else {
     return std::optional<DrawSurfaceStatus>();
   }
-}
-
-void Rasterizer::ApplyRendering() {
-  external_view_embedder_->ApplyRendering();
 }
 
 void Rasterizer::EnableThreadMergerIfNeeded() {
@@ -939,10 +935,9 @@ ScreenshotLayerTreeAsImageImpeller(
   impeller::DlDispatcher dispatcher;
   builder.Build()->Dispatch(dispatcher);
   const auto& picture = dispatcher.EndRecordingAsPicture();
-  const auto& image = picture.ToImage(
+  texture = picture.ToImage(
       *aiks_context,
       impeller::ISize(tree->frame_size().fWidth, tree->frame_size().fHeight));
-  texture = image->GetTexture();
 #endif  // EXPERIMENTAL_CANVAS
 
   impeller::DeviceBufferDescriptor buffer_desc;
