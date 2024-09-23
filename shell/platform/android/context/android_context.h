@@ -9,7 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/impeller/renderer/context.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
 
@@ -21,6 +21,13 @@ class AndroidContext {
   explicit AndroidContext(AndroidRenderingAPI rendering_api);
 
   virtual ~AndroidContext();
+
+  struct ContextSettings {
+    bool enable_validation = false;
+    bool enable_gpu_tracing = false;
+    bool disable_surface_control = false;
+    bool quiet = false;
+  };
 
   AndroidRenderingAPI RenderingApi() const;
 

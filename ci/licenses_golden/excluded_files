@@ -18,7 +18,6 @@
 ../../../flutter/.github
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
-../../../flutter/.vscode
 ../../../flutter/AUTHORS
 ../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
@@ -41,6 +40,7 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/geometry/dl_geometry_types_unittests.cc
+../../../flutter/display_list/geometry/dl_path_unittests.cc
 ../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
@@ -49,6 +49,7 @@
 ../../../flutter/display_list/utils/dl_accumulation_rect_unittests.cc
 ../../../flutter/display_list/utils/dl_matrix_clip_tracker_unittests.cc
 ../../../flutter/docs
+../../../flutter/engine.code-workspace
 ../../../flutter/examples
 ../../../flutter/flow/README.md
 ../../../flutter/flow/diff_context_unittests.cc
@@ -127,7 +128,6 @@
 ../../../flutter/impeller/.clang-format
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
-../../../flutter/impeller/aiks/aiks_blend_unittests.cc
 ../../../flutter/impeller/aiks/aiks_gradient_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.h
@@ -212,9 +212,6 @@
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/renderer/testing
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
-../../../flutter/impeller/scene/README.md
-../../../flutter/impeller/scene/importer/importer_unittests.cc
-../../../flutter/impeller/scene/scene_unittests.cc
 ../../../flutter/impeller/shader_archive/shader_archive_unittests.cc
 ../../../flutter/impeller/tessellator/dart/.dart_tool
 ../../../flutter/impeller/tessellator/dart/pubspec.yaml
@@ -222,6 +219,8 @@
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
 ../../../flutter/impeller/toolkit/glvk/README.md
+../../../flutter/impeller/toolkit/interop/impeller_unittests.cc
+../../../flutter/impeller/toolkit/interop/object_unittests.cc
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/metal_library.py
@@ -1489,6 +1488,7 @@
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/flow_graph_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/il_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/inliner_test.cc
+../../../flutter/third_party/dart/runtime/vm/compiler/backend/linearscan_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/locations_helpers_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/loops_test.cc
 ../../../flutter/third_party/dart/runtime/vm/compiler/backend/memory_copy_test.cc
@@ -1532,6 +1532,7 @@
 ../../../flutter/third_party/dart/runtime/vm/heap/freelist_test.cc
 ../../../flutter/third_party/dart/runtime/vm/heap/heap_test.cc
 ../../../flutter/third_party/dart/runtime/vm/heap/safepoint_test.cc
+../../../flutter/third_party/dart/runtime/vm/heap/splay_test.cc
 ../../../flutter/third_party/dart/runtime/vm/heap/weak_table_test.cc
 ../../../flutter/third_party/dart/runtime/vm/instructions_arm64_test.cc
 ../../../flutter/third_party/dart/runtime/vm/instructions_arm_test.cc
@@ -2643,6 +2644,7 @@
 ../../../flutter/third_party/skia/bench
 ../../../flutter/third_party/skia/codereview.settings
 ../../../flutter/third_party/skia/demos.skia.org
+../../../flutter/third_party/skia/dm/BUILD.bazel
 ../../../flutter/third_party/skia/docker/Makefile
 ../../../flutter/third_party/skia/docker/README.md
 ../../../flutter/third_party/skia/docker/binary-size/Dockerfile
@@ -2699,7 +2701,6 @@
 ../../../flutter/third_party/skia/include/effects/BUILD.bazel
 ../../../flutter/third_party/skia/include/encode/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
@@ -2708,14 +2709,13 @@
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/glx/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/ios/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/mac/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/win/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/mock/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/graphite/vk/BUILD.bazel
-../../../flutter/third_party/skia/include/gpu/mock/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/pathops/BUILD.bazel
@@ -2729,7 +2729,6 @@
 ../../../flutter/third_party/skia/include/private/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/include/private/gpu/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/sksl/BUILD.bazel
-../../../flutter/third_party/skia/include/sksl/OWNERS
 ../../../flutter/third_party/skia/include/svg/BUILD.bazel
 ../../../flutter/third_party/skia/include/third_party/vulkan/BUILD.bazel
 ../../../flutter/third_party/skia/include/utils/BUILD.bazel
@@ -2928,11 +2927,13 @@
 ../../../flutter/third_party/skia/toolchain/BUILD.bazel
 ../../../flutter/third_party/skia/toolchain/android_trampolines/gen_trampolines/BUILD.bazel
 ../../../flutter/third_party/skia/toolchain/clang_layering_check.bzl
+../../../flutter/third_party/skia/toolchain/download_ios_toolchain.bzl
 ../../../flutter/third_party/skia/toolchain/download_linux_amd64_toolchain.bzl
 ../../../flutter/third_party/skia/toolchain/download_mac_toolchain.bzl
 ../../../flutter/third_party/skia/toolchain/download_ndk_linux_amd64_toolchain.bzl
 ../../../flutter/third_party/skia/toolchain/download_toolchains.bzl
 ../../../flutter/third_party/skia/toolchain/download_windows_amd64_toolchain.bzl
+../../../flutter/third_party/skia/toolchain/ios_toolchain_config.bzl
 ../../../flutter/third_party/skia/toolchain/linux_amd64_toolchain_config.bzl
 ../../../flutter/third_party/skia/toolchain/mac_toolchain_config.bzl
 ../../../flutter/third_party/skia/toolchain/ndk_linux_arm64_toolchain_config.bzl
@@ -2972,7 +2973,6 @@
 ../../../flutter/third_party/swiftshader/third_party
 ../../../flutter/third_party/swiftshader/tools/cmake_generate_graphviz/CMakeGraphVizOptions.cmake
 ../../../flutter/third_party/test_shaders
-../../../flutter/third_party/tinygltf
 ../../../flutter/third_party/tonic/.clang-format
 ../../../flutter/third_party/tonic/AUTHORS
 ../../../flutter/third_party/tonic/PATENTS
@@ -3334,6 +3334,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.development/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.metadata/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.element/meta.json
@@ -3350,7 +3351,6 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.clock/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.clockimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpio/meta.json
-../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpioimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c.businfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/meta.json
@@ -3560,6 +3560,7 @@
 ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_logging_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_metadata_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_outgoing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_runtime/meta.json
@@ -3617,6 +3618,7 @@
 ../../../fuchsia/sdk/linux/pkg/sys_cpp_testing/meta.json
 ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/syslog/meta.json
+../../../fuchsia/sdk/linux/pkg/syslog_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/meta.json
 ../../../fuchsia/sdk/linux/pkg/sysroot/meta.json
 ../../../fuchsia/sdk/linux/pkg/trace-engine-headersonly/meta.json
