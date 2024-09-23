@@ -133,7 +133,7 @@ class AHBSwapchainImplVK final
   void OnTextureUpdatedOnSurfaceControl(
       const AutoSemaSignaler& signaler,
       std::shared_ptr<AHBTextureSourceVK> texture,
-      ASurfaceTransactionStats* stats);
+      int release_file_fd);
 };
 
 }  // namespace impeller

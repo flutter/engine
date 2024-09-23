@@ -63,6 +63,8 @@ class SurfaceTransaction {
 
   explicit SurfaceTransaction(ASurfaceTransaction* transaction);
 
+  using OnCompleteCallback = std::function<void(int release_fence_fd)>;
+
   bool IsValid() const;
 
   //----------------------------------------------------------------------------
@@ -81,7 +83,8 @@ class SurfaceTransaction {
   ///
   [[nodiscard]] bool SetContents(const SurfaceControl* control,
                                  const HardwareBuffer* buffer,
-                                 fml::UniqueFD acquire_fence = {});
+                                 fml::UniqueFD acquire_fence = {},
+                                 OnCompleteCallback callback = {});
 
   //----------------------------------------------------------------------------
   /// @brief      Encodes the updated background color of the surface control.
@@ -99,8 +102,6 @@ class SurfaceTransaction {
   [[nodiscard]] bool SetBackgroundColor(const SurfaceControl& control,
                                         const Color& color);
 
-  using OnCompleteCallback = std::function<void(ASurfaceTransactionStats*)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Applies the updated encoded in the transaction and invokes the
   ///             callback when the updated are complete.
@@ -117,7 +118,7 @@ class SurfaceTransaction {
   ///             indicate the application was completed however. Only the
   ///             invocation of the callback denotes transaction completion.
   ///
-  [[nodiscard]] bool Apply(OnCompleteCallback callback = nullptr);
+  [[nodiscard]] bool Apply();
 
   //----------------------------------------------------------------------------
   /// @brief      Set the new parent control of the given control. If the new

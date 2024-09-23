@@ -7,6 +7,7 @@
 #include "flutter/impeller/toolkit/android/hardware_buffer.h"
 #include "flutter/impeller/toolkit/android/surface_control.h"
 #include "impeller/base/validation.h"
+#include "impeller/toolkit/android/proc_table.h"
 
 namespace impeller::android {
 
@@ -27,27 +28,23 @@ struct TransactionInFlightData {
   SurfaceTransaction::OnCompleteCallback callback;
 };
 
-bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
+bool SurfaceTransaction::Apply() {
   if (!IsValid()) {
     return false;
   }
 
-  if (!callback) {
-    callback = [](auto) {};
-  }
-
   const auto& proc_table = GetProcTable();
 
-  auto data = std::make_unique<TransactionInFlightData>();
-  data->callback = callback;
-  proc_table.ASurfaceTransaction_setOnComplete(
-      transaction_.get().tx,  //
-      data.release(),         //
-      [](void* context, ASurfaceTransactionStats* stats) -> void {
-        auto data = reinterpret_cast<TransactionInFlightData*>(context);
-        data->callback(stats);
-        delete data;
-      });
+  // auto data = std::make_unique<TransactionInFlightData>();
+  // data->callback = callback;
+  // proc_table.ASurfaceTransaction_setOnComplete(
+  //     transaction_.get().tx,  //
+  //     data.release(),         //
+  //     [](void* context, ASurfaceTransactionStats* stats) -> void {
+  //       auto data = reinterpret_cast<TransactionInFlightData*>(context);
+  //       data->callback(stats);
+  //       delete data;
+  //     });
   if (!transaction_.get().owned) {
     transaction_.reset();
     return true;
@@ -62,17 +59,36 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
 
 bool SurfaceTransaction::SetContents(const SurfaceControl* control,
                                      const HardwareBuffer* buffer,
-                                     fml::UniqueFD acquire_fence) {
+                                     fml::UniqueFD acquire_fence,
+                                     OnCompleteCallback callback) {
   if (control == nullptr || buffer == nullptr) {
     VALIDATION_LOG << "Invalid control or buffer.";
     return false;
   }
-  GetProcTable().ASurfaceTransaction_setBuffer(
-      transaction_.get().tx,                                   //
-      control->GetHandle(),                                    //
-      buffer->GetHandle(),                                     //
-      acquire_fence.is_valid() ? acquire_fence.release() : -1  //
-  );
+
+  if (!callback) {
+    callback = [](auto) {};
+  }
+  // GetProcTable().ASurfaceTransaction_setBuffer(
+  //     transaction_.get().tx,                                   //
+  //     control->GetHandle(),                                    //
+  //     buffer->GetHandle(),                                     //
+  //     acquire_fence.is_valid() ? acquire_fence.release() : -1  //
+  // );
+
+  auto data = std::make_unique<TransactionInFlightData>();
+  data->callback = callback;
+
+  GetProcTable().ASurfaceTransaction_setBufferWithRelease(
+      transaction_.get().tx,                                    //
+      control->GetHandle(),                                     //
+      buffer->GetHandle(),                                      //
+      acquire_fence.is_valid() ? acquire_fence.release() : -1,  //
+      data.release(), [](void* context, int release_fence_fd) {
+        auto data = reinterpret_cast<TransactionInFlightData*>(context);
+        data->callback(release_fence_fd);
+        delete data;
+      });
   return true;
 }
 

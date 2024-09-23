@@ -24,6 +24,17 @@ namespace impeller::android {
 ASurfaceTransaction* ASurfaceTransaction_fromJava(JNIEnv* env,
                                                   jobject transaction);
 
+typedef void (*ASurfaceTransaction_OnBufferRelease)(void* context,
+                                                    int release_fence_fd);
+
+void ASurfaceTransaction_setBufferWithRelease(
+    ASurfaceTransaction* transaction,
+    ASurfaceControl* surface_control,
+    AHardwareBuffer* buffer,
+    int acquire_fence_fd,
+    void* context,
+    ASurfaceTransaction_OnBufferRelease func);
+
 //------------------------------------------------------------------------------
 /// @brief      The Android procs along with the device API level on which these
 ///             will be available. There is no checking of the actual API level
@@ -65,6 +76,7 @@ ASurfaceTransaction* ASurfaceTransaction_fromJava(JNIEnv* env,
   INVOKE(ASurfaceTransaction_setOnComplete, 29)                  \
   INVOKE(ASurfaceTransactionStats_getPreviousReleaseFenceFd, 29) \
   INVOKE(ASurfaceTransaction_fromJava, 34)                       \
+  INVOKE(ASurfaceTransaction_setBufferWithRelease, 36)           \
   INVOKE(ATrace_isEnabled, 23)                                   \
   INVOKE(eglGetNativeClientBufferANDROID, 0)
 
