@@ -40,17 +40,16 @@ class LayerTree {
   /// tree. This paint pass is just used to measure the bounds for each picture
   /// so we can optimize the total number of canvases required.
   void measure(Frame frame, {bool ignoreRasterCache = false}) {
-    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
-    final Iterable<CkCanvas> overlayCanvases =
+    final CkNWayCanvas nWayCanvas = CkNWayCanvas();
+    final Iterable<CkCanvas> recordingCanvases =
         frame.viewEmbedder!.getPictureCanvases();
-    overlayCanvases.forEach(internalNodesCanvas.addCanvas);
-    final PaintVisitor paintVisitor = PaintVisitor(
-      internalNodesCanvas,
-      frame.viewEmbedder?.getBaseCanvas(),
-      frame.viewEmbedder,
+    recordingCanvases.forEach(nWayCanvas.addCanvas);
+    final MeasureVisitor measureVisitor = MeasureVisitor(
+      nWayCanvas,
+      frame.viewEmbedder!,
     );
     if (rootLayer.needsPainting) {
-      rootLayer.accept(paintVisitor, null);
+      rootLayer.accept(measureVisitor, null);
     }
   }
 
@@ -61,12 +60,11 @@ class LayerTree {
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     final Iterable<CkCanvas> overlayCanvases =
-        frame.viewEmbedder!.getPictureCanvases();
+        frame.viewEmbedder!.getOptimizedCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
     final PaintVisitor paintVisitor = PaintVisitor(
       internalNodesCanvas,
-      frame.viewEmbedder?.getBaseCanvas(),
-      frame.viewEmbedder,
+      frame.viewEmbedder!,
     );
     if (rootLayer.needsPainting) {
       rootLayer.accept(paintVisitor, null);
@@ -84,10 +82,10 @@ class LayerTree {
 
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
-    final PaintContext paintContext =
-        PaintContext(internalNodesCanvas, canvas, null, null);
+    final PaintVisitor paintVisitor =
+        PaintVisitor.forToImage(internalNodesCanvas, canvas);
     if (rootLayer.needsPainting) {
-      rootLayer.paint(paintContext);
+      rootLayer.accept(paintVisitor, null);
     }
     return recorder.endRecording();
   }
@@ -107,6 +105,8 @@ class Frame {
   bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {
     timeAction<void>(kProfilePrerollFrame, () {
       layerTree.preroll(this, ignoreRasterCache: ignoreRasterCache);
+      layerTree.measure(this, ignoreRasterCache: ignoreRasterCache);
+      viewEmbedder?.optimizeRendering();
     });
     timeAction<void>(kProfileApplyFrame, () {
       layerTree.paint(this, ignoreRasterCache: ignoreRasterCache);
