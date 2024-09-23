@@ -223,10 +223,8 @@ template("fuchsia_archive") {
 #   The binary for the test, or target_name if unspecified.
 # deps (required):
 #   Dependencies for the test archive.
-# cml_file (optional):
-#   The path to the V2 component manifest (.cml file) for the test archive's component.
-#   Should include the file extension.
-#   If not defined, a generated .cml file for the test archive will be used instead.
+# gen_cml_file (optional):
+#   If is defined and true, an interpolate cml file will be generated.
 # libraries (optional):
 #   Paths to .so libraries that should be dynamically linked to the binary.
 # resources (optional):
@@ -243,10 +241,8 @@ template("fuchsia_test_archive") {
     _deps += invoker.deps
   }
 
-  if (defined(invoker.cml_file)) {
-    _cml_file = invoker.cml_file
-  } else {
-    # Generate cml file.
+  _generated_cml = defined(invoker.gen_cml_file) && invoker.gen_cml_file
+  if (_generated_cml) {
     _cml_file = "$root_out_dir/${target_name}.cml"
     _interpolate_cml_target = "${target_name}_interpolate_cml"
     action(_interpolate_cml_target) {
@@ -263,6 +259,8 @@ template("fuchsia_test_archive") {
       ]
       outputs = [ _cml_file ]
     }
+  } else {
+    _cml_file = rebase_path("meta/${_binary}.cml")
   }
 
   _far_base_dir = "$root_out_dir/${target_name}_far"
@@ -275,7 +273,7 @@ template("fuchsia_test_archive") {
     manifest = _cml_file
     output = "$_far_base_dir/meta/${_cml_file_name}.cm"
 
-    if (!defined(invoker.cml_file)) {
+    if (_generated_cml) {
       deps = [ ":$_interpolate_cml_target" ]
     }
   }
