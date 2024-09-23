@@ -291,6 +291,7 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
   builder.Scale(test_context.GetContentScale().x,
                 test_context.GetContentScale().y);
   builder.Scale(0.8f, 0.8f);
+  builder.Translate(50.f, 50.f);
 
   DlPaint draw_paint;
   draw_paint.setColor(
@@ -1076,6 +1077,7 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsTextureToTextureBlits);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultGlyphAtlasFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
   auto texture = DlImageImpeller::Make(CreateTextureForFixture("boston.jpg"));
