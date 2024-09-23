@@ -51,7 +51,7 @@ class DlVerticesGeometry final : public VerticesGeometry {
 
   const std::shared_ptr<const flutter::DlVertices> vertices_;
   std::vector<uint16_t> indices_;
-  bool performed_normalization_;
+  bool performed_normalization_ = false;
   Rect bounds_;
 };
 
