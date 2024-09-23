@@ -282,6 +282,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     // When binding uniform arrays, the elements must be contiguous. Copy
     // the uniforms to a temp buffer to eliminate any padding needed by the
     // other backends if the array elements have padding.
+    std::vector<uint8_t> array_element_buffer_;
     if (element_count > 1 && element_stride != member.size) {
       array_element_buffer_.resize(member.size * element_count);
       for (size_t element_i = 0; element_i < element_count; element_i++) {

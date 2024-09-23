@@ -9,11 +9,15 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
 // Comes from gaussian.frag.
 static constexpr int32_t kGaussianBlurMaxKernelSize = 50;
+
+static_assert(sizeof(GaussianBlurPipeline::FragmentShader::KernelSamples) ==
+              sizeof(Vector4) * kGaussianBlurMaxKernelSize + sizeof(Vector4));
 
 struct BlurParameters {
   Point blur_uv_offset;
@@ -42,7 +46,7 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters);
 
 /// This will shrink the size of a kernel by roughly half by sampling between
 /// samples and relying on linear interpolation between the samples.
-GaussianBlurPipeline::FragmentShader::BlurInfo LerpHackKernelSamples(
+GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelSamples samples);
 
 /// Performs a bidirectional Gaussian blur.

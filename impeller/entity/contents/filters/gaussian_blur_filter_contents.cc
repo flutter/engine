@@ -12,6 +12,7 @@
 #include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
@@ -485,7 +486,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
                 linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurFragmentShader::BindBlurInfo(
+        GaussianBlurFragmentShader::BindKernelSamples(
             pass, host_buffer.EmplaceUniform(
                       LerpHackKernelSamples(GenerateBlurInfo(blur_info))));
         return pass.Draw().ok();
@@ -919,13 +920,15 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters) {
 
 // This works by shrinking the kernel size by 2 and relying on lerp to read
 // between the samples.
-GaussianBlurPipeline::FragmentShader::BlurInfo LerpHackKernelSamples(
+GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelSamples parameters) {
-  GaussianBlurPipeline::FragmentShader::BlurInfo result = {};
+  GaussianBlurPipeline::FragmentShader::KernelSamples result = {};
   result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
   int32_t middle = result.sample_count / 2;
   int32_t j = 0;
   FML_DCHECK(result.sample_count <= kGaussianBlurMaxKernelSize);
+  static_assert(sizeof(result.sample_data) ==
+                sizeof(std::array<Vector4, kGaussianBlurMaxKernelSize>));
 
   for (int i = 0; i < result.sample_count; i++) {
     if (i == middle) {
@@ -939,9 +942,9 @@ GaussianBlurPipeline::FragmentShader::BlurInfo LerpHackKernelSamples(
 
       result.sample_data[i].z = left.coefficient + right.coefficient;
 
-      auto uv = (left.uv_offset * left.coefficient +
-                 right.uv_offset * right.coefficient) /
-                (left.coefficient + right.coefficient);
+      Point uv = (left.uv_offset * left.coefficient +
+                  right.uv_offset * right.coefficient) /
+                 (left.coefficient + right.coefficient);
       result.sample_data[i].x = uv.x;
       result.sample_data[i].y = uv.y;
       j += 2;
