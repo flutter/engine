@@ -33,10 +33,7 @@ template("_compile_cml") {
 #
 # binary (required):
 #   The ELF binary for the archive's program.
-# cmx_file (optional):
-#   The path to the V1 component manifest (.cmx file) for the archive's component.
-#   Should include the file extension.
-# cml_file (optional):
+# cml_file (required):
 #   The path to the V2 component manifest (.cml file) for the archive's component.
 #   Should include the file extension.
 # deps (optional):
@@ -99,20 +96,6 @@ template("_fuchsia_archive") {
   }
 
   pkg_dir_deps = pkg.deps
-
-  if (defined(invoker.cmx_file)) {
-    # cmx files are used for v1 components, only copy it if it is defined
-    cmx_file = invoker.cmx_file
-
-    cmx_target = "$pkg_target_name.copy_cmx"
-
-    copy("$cmx_target") {
-      sources = [ "$cmx_file" ]
-      outputs = [ "$far_base_dir/meta/${pkg_target_name}.cmx" ]
-    }
-
-    pkg_dir_deps += [ ":$cmx_target" ]
-  }
 
   write_file("${far_base_dir}/meta/package",
              {
@@ -189,9 +172,7 @@ template("_fuchsia_archive") {
 #
 # binary (required):
 #   The ELF binary for the archive's program.
-# cmx_file (required if cml_file is not set):
-#   The V1 component manifest for the Fuchsia component.
-# cml_file (required if cmx_file is not set):
+# cml_file (required):
 #   The V2 component manifest for the Fuchsia component.
 # deps (optional):
 #   The code dependencies for the archive.
@@ -204,8 +185,7 @@ template("_fuchsia_archive") {
 # testonly (optional):
 #   Set this to true for archives that are only used for tests.
 template("fuchsia_archive") {
-  assert(defined(invoker.cmx_file) || defined(invoker.cml_file),
-         "must specify either a cmx file, cml file or both")
+  assert(defined(invoker.cml_file), "must specify either a cml file.")
   _deps = []
   if (defined(invoker.deps)) {
     _deps += invoker.deps
@@ -230,7 +210,6 @@ template("fuchsia_archive") {
     forward_variables_from(invoker,
                            [
                              "binary",
-                             "cmx_file",
                              "inputs",
                              "libraries",
                              "resources",
@@ -246,10 +225,7 @@ template("fuchsia_archive") {
 #   The binary for the test.
 # deps (required):
 #   Dependencies for the test archive.
-# cmx_file (optional):
-#   A path to the .cmx file for the test archive.
-#   If not defined, a generated .cml file for the test archive will be used instead.
-# cml_file (optional):
+# cml_file (required):
 #   The path to the V2 component manifest (.cml file) for the test archive's component.
 #   Should include the file extension.
 #   If not defined, a generated .cml file for the test archive will be used instead.
