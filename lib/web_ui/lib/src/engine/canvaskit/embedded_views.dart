@@ -113,9 +113,6 @@ class HtmlViewEmbedder {
   void prerollPicture(PictureLayer picture) {
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    if (_context.pictureRecordersCreatedDuringPreroll.containsKey(picture)) {
-      print('PREROLLED PICTURE ALREADY EXISTS IN SCENE!!!');
-    }
     _context.pictureRecordersCreatedDuringPreroll[picture] = pictureRecorder;
   }
 
