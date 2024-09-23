@@ -87,21 +87,21 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitRoot(RootLayer root, Matrix4 matrix) {
-    prerollContainerLayer(root, matrix);
+  void visitRoot(RootLayer root, Matrix4 childData) {
+    prerollContainerLayer(root, childData);
   }
 
   @override
   void visitBackdropFilter(
-      BackdropFilterEngineLayer backdropFilter, Matrix4 matrix) {
-    final ui.Rect childBounds = prerollChildren(backdropFilter, matrix);
+      BackdropFilterEngineLayer backdropFilter, Matrix4 childData) {
+    final ui.Rect childBounds = prerollChildren(backdropFilter, childData);
     backdropFilter.paintBounds = childBounds.expandToInclude(cullRect);
   }
 
   @override
-  void visitClipPath(ClipPathEngineLayer clipPath, Matrix4 matrix) {
+  void visitClipPath(ClipPathEngineLayer clipPath, Matrix4 childData) {
     mutatorsStack.pushClipPath(clipPath.clipPath);
-    final ui.Rect childPaintBounds = prerollChildren(clipPath, matrix);
+    final ui.Rect childPaintBounds = prerollChildren(clipPath, childData);
     final ui.Rect clipBounds = clipPath.clipPath.getBounds();
     if (childPaintBounds.overlaps(clipBounds)) {
       clipPath.paintBounds = childPaintBounds.intersect(clipBounds);
@@ -110,9 +110,9 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitClipRRect(ClipRRectEngineLayer clipRRect, Matrix4 matrix) {
+  void visitClipRRect(ClipRRectEngineLayer clipRRect, Matrix4 childData) {
     mutatorsStack.pushClipRRect(clipRRect.clipRRect);
-    final ui.Rect childPaintBounds = prerollChildren(clipRRect, matrix);
+    final ui.Rect childPaintBounds = prerollChildren(clipRRect, childData);
     if (childPaintBounds.overlaps(clipRRect.clipRRect.outerRect)) {
       clipRRect.paintBounds =
           childPaintBounds.intersect(clipRRect.clipRRect.outerRect);
@@ -121,9 +121,9 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitClipRect(ClipRectEngineLayer clipRect, Matrix4 matrix) {
+  void visitClipRect(ClipRectEngineLayer clipRect, Matrix4 childData) {
     mutatorsStack.pushClipRect(clipRect.clipRect);
-    final ui.Rect childPaintBounds = prerollChildren(clipRect, matrix);
+    final ui.Rect childPaintBounds = prerollChildren(clipRect, childData);
     if (childPaintBounds.overlaps(clipRect.clipRect)) {
       clipRect.paintBounds = childPaintBounds.intersect(clipRect.clipRect);
     }
@@ -131,13 +131,13 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitColorFilter(ColorFilterEngineLayer colorFilter, Matrix4 matrix) {
-    prerollContainerLayer(colorFilter, matrix);
+  void visitColorFilter(ColorFilterEngineLayer colorFilter, Matrix4 childData) {
+    prerollContainerLayer(colorFilter, childData);
   }
 
   @override
-  void visitImageFilter(ImageFilterEngineLayer imageFilter, Matrix4 matrix) {
-    final Matrix4 childMatrix = Matrix4.copy(matrix);
+  void visitImageFilter(ImageFilterEngineLayer imageFilter, Matrix4 childData) {
+    final Matrix4 childMatrix = Matrix4.copy(childData);
     childMatrix.translate(imageFilter.offset.dx, imageFilter.offset.dy);
     mutatorsStack.pushTransform(Matrix4.translationValues(
         imageFilter.offset.dx, imageFilter.offset.dy, 0.0));
@@ -166,13 +166,13 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitOffset(OffsetEngineLayer offset, Matrix4 matrix) {
-    visitTransform(offset, matrix);
+  void visitOffset(OffsetEngineLayer offset, Matrix4 childData) {
+    visitTransform(offset, childData);
   }
 
   @override
-  void visitOpacity(OpacityEngineLayer opacity, Matrix4 matrix) {
-    final Matrix4 childMatrix = Matrix4.copy(matrix);
+  void visitOpacity(OpacityEngineLayer opacity, Matrix4 childData) {
+    final Matrix4 childMatrix = Matrix4.copy(childData);
     childMatrix.translate(opacity.offset.dx, opacity.offset.dy);
     mutatorsStack.pushTransform(
         Matrix4.translationValues(opacity.offset.dx, opacity.offset.dy, 0.0));
@@ -185,13 +185,13 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitPicture(PictureLayer picture, Matrix4 matrix) {
+  void visitPicture(PictureLayer picture, Matrix4 childData) {
     picture.paintBounds = picture.picture.cullRect.shift(picture.offset);
     viewEmbedder?.prerollPicture(picture);
   }
 
   @override
-  void visitPlatformView(PlatformViewLayer platformView, Matrix4 matrix) {
+  void visitPlatformView(PlatformViewLayer platformView, Matrix4 childData) {
     platformView.paintBounds = ui.Rect.fromLTWH(
       platformView.offset.dx,
       platformView.offset.dy,
@@ -212,13 +212,13 @@ class PrerollVisitor extends LayerVisitor<Matrix4> {
   }
 
   @override
-  void visitShaderMask(ShaderMaskEngineLayer shaderMask, Matrix4 matrix) {
-    shaderMask.paintBounds = prerollChildren(shaderMask, matrix);
+  void visitShaderMask(ShaderMaskEngineLayer shaderMask, Matrix4 childData) {
+    shaderMask.paintBounds = prerollChildren(shaderMask, childData);
   }
 
   @override
-  void visitTransform(TransformEngineLayer transform, Matrix4 matrix) {
-    final Matrix4 childMatrix = matrix.multiplied(transform.transform);
+  void visitTransform(TransformEngineLayer transform, Matrix4 childData) {
+    final Matrix4 childMatrix = childData.multiplied(transform.transform);
     mutatorsStack.pushTransform(transform.transform);
     final ui.Rect childPaintBounds = prerollChildren(transform, childMatrix);
     transform.paintBounds = transform.transform.transformRect(childPaintBounds);
@@ -254,17 +254,18 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitRoot(RootLayer root, _) {
+  void visitRoot(RootLayer root, void childData) {
     measureChildren(root);
   }
 
   @override
-  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter, _) {
+  void visitBackdropFilter(
+      BackdropFilterEngineLayer backdropFilter, void childData) {
     measureChildren(backdropFilter);
   }
 
   @override
-  void visitClipPath(ClipPathEngineLayer clipPath, _) {
+  void visitClipPath(ClipPathEngineLayer clipPath, void childData) {
     assert(clipPath.needsPainting);
 
     nWayCanvas.save();
@@ -282,7 +283,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitClipRect(ClipRectEngineLayer clipRect, _) {
+  void visitClipRect(ClipRectEngineLayer clipRect, void childData) {
     assert(clipRect.needsPainting);
 
     nWayCanvas.save();
@@ -302,7 +303,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitClipRRect(ClipRRectEngineLayer clipRRect, _) {
+  void visitClipRRect(ClipRRectEngineLayer clipRRect, void childData) {
     assert(clipRRect.needsPainting);
 
     nWayCanvas.save();
@@ -319,7 +320,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitOpacity(OpacityEngineLayer opacity, _) {
+  void visitOpacity(OpacityEngineLayer opacity, void childData) {
     assert(opacity.needsPainting);
 
     final CkPaint paint = CkPaint();
@@ -338,7 +339,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitTransform(TransformEngineLayer transform, _) {
+  void visitTransform(TransformEngineLayer transform, void childData) {
     assert(transform.needsPainting);
 
     nWayCanvas.save();
@@ -348,12 +349,12 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitOffset(OffsetEngineLayer offset, _) {
+  void visitOffset(OffsetEngineLayer offset, void childData) {
     visitTransform(offset, null);
   }
 
   @override
-  void visitImageFilter(ImageFilterEngineLayer imageFilter, _) {
+  void visitImageFilter(ImageFilterEngineLayer imageFilter, void childData) {
     assert(imageFilter.needsPainting);
     final ui.Rect offsetPaintBounds =
         imageFilter.paintBounds.shift(-imageFilter.offset);
@@ -369,32 +370,17 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitShaderMask(ShaderMaskEngineLayer shaderMask, _) {
+  void visitShaderMask(ShaderMaskEngineLayer shaderMask, void childData) {
     assert(shaderMask.needsPainting);
 
     nWayCanvas.saveLayer(shaderMask.paintBounds, null);
     measureChildren(shaderMask);
 
-    // final CkPaint paint = CkPaint();
-    // paint.shader = shaderMask.shader;
-    // paint.blendMode = shaderMask.blendMode;
-    // paint.filterQuality = shaderMask.filterQuality;
-
-    // pictureRecorderCanvas!.save();
-    // pictureRecorderCanvas!
-    //     .translate(shaderMask.maskRect.left, shaderMask.maskRect.top);
-
-    // pictureRecorderCanvas!.drawRect(
-    //     ui.Rect.fromLTWH(
-    //         0, 0, shaderMask.maskRect.width, shaderMask.maskRect.height),
-    //     paint);
-    // pictureRecorderCanvas!.restore();
-
     nWayCanvas.restore();
   }
 
   @override
-  void visitPicture(PictureLayer picture, _) {
+  void visitPicture(PictureLayer picture, void childData) {
     assert(picture.needsPainting);
 
     final CkCanvas pictureRecorderCanvas =
@@ -410,7 +396,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitColorFilter(ColorFilterEngineLayer colorFilter, _) {
+  void visitColorFilter(ColorFilterEngineLayer colorFilter, void childData) {
     assert(colorFilter.needsPainting);
 
     final CkPaint paint = CkPaint();
@@ -432,7 +418,7 @@ class MeasureVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitPlatformView(PlatformViewLayer platformView, _) {
+  void visitPlatformView(PlatformViewLayer platformView, void childData) {
     // TODO(harryterkelsen): Warn if we are a child of a backdrop filter or
     // shader mask.
     viewEmbedder.compositeEmbeddedView(platformView.viewId);
@@ -481,12 +467,13 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitRoot(RootLayer root, _) {
+  void visitRoot(RootLayer root, void childData) {
     paintChildren(root);
   }
 
   @override
-  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter, _) {
+  void visitBackdropFilter(
+      BackdropFilterEngineLayer backdropFilter, void childData) {
     final CkPaint paint = CkPaint()..blendMode = backdropFilter.blendMode;
 
     nWayCanvas.saveLayerWithFilter(
@@ -496,7 +483,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitClipPath(ClipPathEngineLayer clipPath, _) {
+  void visitClipPath(ClipPathEngineLayer clipPath, void childData) {
     assert(clipPath.needsPainting);
 
     nWayCanvas.save();
@@ -514,7 +501,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitClipRect(ClipRectEngineLayer clipRect, _) {
+  void visitClipRect(ClipRectEngineLayer clipRect, void childData) {
     assert(clipRect.needsPainting);
 
     nWayCanvas.save();
@@ -534,7 +521,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitClipRRect(ClipRRectEngineLayer clipRRect, _) {
+  void visitClipRRect(ClipRRectEngineLayer clipRRect, void childData) {
     assert(clipRRect.needsPainting);
 
     nWayCanvas.save();
@@ -551,7 +538,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitOpacity(OpacityEngineLayer opacity, _) {
+  void visitOpacity(OpacityEngineLayer opacity, void childData) {
     assert(opacity.needsPainting);
 
     final CkPaint paint = CkPaint();
@@ -570,7 +557,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitTransform(TransformEngineLayer transform, _) {
+  void visitTransform(TransformEngineLayer transform, void childData) {
     assert(transform.needsPainting);
 
     nWayCanvas.save();
@@ -580,12 +567,12 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitOffset(OffsetEngineLayer offset, _) {
+  void visitOffset(OffsetEngineLayer offset, void childData) {
     visitTransform(offset, null);
   }
 
   @override
-  void visitImageFilter(ImageFilterEngineLayer imageFilter, _) {
+  void visitImageFilter(ImageFilterEngineLayer imageFilter, void childData) {
     assert(imageFilter.needsPainting);
     final ui.Rect offsetPaintBounds =
         imageFilter.paintBounds.shift(-imageFilter.offset);
@@ -601,7 +588,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitShaderMask(ShaderMaskEngineLayer shaderMask, _) {
+  void visitShaderMask(ShaderMaskEngineLayer shaderMask, void childData) {
     assert(shaderMask.needsPainting);
 
     shaderMaskStack.add(shaderMask);
@@ -639,7 +626,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitPicture(PictureLayer picture, _) {
+  void visitPicture(PictureLayer picture, void childData) {
     assert(picture.needsPainting);
 
     // For each shader mask this picture is a child of, record that it needs
@@ -664,7 +651,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitColorFilter(ColorFilterEngineLayer colorFilter, _) {
+  void visitColorFilter(ColorFilterEngineLayer colorFilter, void childData) {
     assert(colorFilter.needsPainting);
 
     final CkPaint paint = CkPaint();
@@ -686,7 +673,7 @@ class PaintVisitor extends LayerVisitor<void> {
   }
 
   @override
-  void visitPlatformView(PlatformViewLayer platformView, _) {
+  void visitPlatformView(PlatformViewLayer platformView, void childData) {
     // Do nothing. The platform view was already measured and placed in the
     // optimized rendering in the measure step.
   }
