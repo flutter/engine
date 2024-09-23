@@ -1368,20 +1368,30 @@ TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
   cull_rect_state_.push_back(cull_rect);
 }
 
-void TextFrameDispatcher::save() {
+TextFrameDispatcher::~TextFrameDispatcher() {
+  FML_DCHECK(cull_rect_state_.size() == 1);
+}
+
+void TextFrameDispatcher::Save(bool push_cull_rect) {
   stack_.emplace_back(matrix_);
-  cull_rect_state_.push_back(cull_rect_state_.back());
+  if (push_cull_rect) {
+    cull_rect_state_.push_back(cull_rect_state_.back());
+  }
+}
+
+void TextFrameDispatcher::save() {
+  Save(/*push_cull_rect=*/true);
 }
 
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop) {
-  save();
+  Save(/*push_cull_rect=*/false);
 
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
-  if (paint_.image_filter) {
-    cull_rect_state_.push_back(bounds);
+  if (has_image_filter_) {
+    cull_rect_state_.push_back(Rect::MakeMaximum());
   } else {
     auto new_cull_rect = GetCurrentLocalCullingBounds().Intersection(bounds);
     if (new_cull_rect.has_value()) {
@@ -1484,11 +1494,13 @@ void TextFrameDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     DlScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
-  save();
+  Save(/*push_cull_rect=*/true);
   Paint old_paint = paint_;
   paint_ = Paint{};
+  bool old_has_image_filter = has_image_filter_;
 
-  auto cull_rect = IRect::RoundOut(GetCurrentLocalCullingBounds());
+  has_image_filter_ = false;
+  IRect cull_rect = IRect::RoundOut(GetCurrentLocalCullingBounds());
   display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
                                                   cull_rect.GetTop(),    //
                                                   cull_rect.GetRight(),  //
@@ -1496,6 +1508,7 @@ void TextFrameDispatcher::drawDisplayList(
                                                   ));
   restore();
   paint_ = old_paint;
+  has_image_filter_ = old_has_image_filter;
   FML_DCHECK(stack_depth == stack_.size());
 }
 
@@ -1546,6 +1559,15 @@ void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
     case flutter::DlStrokeJoin::kBevel:
       paint_.stroke_join = Join::kBevel;
       break;
+  }
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
+  if (filter == nullptr) {
+    has_image_filter_ = false;
+  } else {
+    has_image_filter_ = true;
   }
 }
 

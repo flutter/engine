@@ -329,6 +329,9 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   TextFrameDispatcher(const ContentContext& renderer,
                       const Matrix& initial_matrix,
                       const Rect cull_rect);
+
+  ~TextFrameDispatcher();
+
   void save() override;
 
   void saveLayer(const DlRect& bounds,
@@ -384,13 +387,19 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   // |flutter::DlOpReceiver|
   void setStrokeJoin(flutter::DlStrokeJoin join) override;
 
+  // |flutter::DlOpReceiver|
+  void setImageFilter(const flutter::DlImageFilter* filter) override;
+
  private:
   const Rect GetCurrentLocalCullingBounds() const;
+
+  void Save(bool push_cull_rect);
 
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
   std::vector<Rect> cull_rect_state_;
+  bool has_image_filter_ = false;
   Paint paint_;
 };
 

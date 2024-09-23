@@ -471,6 +471,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (new_glyphs.size() == 0) {
     return last_atlas;
   }
+  FML_LOG(ERROR) << "new_glyphs: " << new_glyphs.size();
 
   // ---------------------------------------------------------------------------
   // Step 2: Determine if the additional missing glyphs can be appended to the
