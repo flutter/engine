@@ -82,9 +82,12 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
     test = test[len('test run '):]
     if ' -- ' in test:
       package, args = test.split(' -- ', 1)
-      test_cases.append(TestCase(package=package, args=args))
     else:
-      test_cases.append(TestCase(package=test))
+      package = test
+      args = []
+    # TODO(zijiehe-google-com): Setup a flutter test realm.
+    args.append('--test-realm=/core/testing:system-tests')
+    test_cases.append(TestCase(package=package, args=args))
   return test_cases
 
 
@@ -93,9 +96,8 @@ def main() -> int:
   logging.info('Running tests in %s', OUT_DIR)
   force_running_unattended()
   sys.argv.append('--out-dir=' + OUT_DIR)
-  # TODO(zijiehe-google-com): Setup a flutter test realm.
-  sys.argv.append('--test-realm=/core/testing:system-tests')
-  if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
+
+    if VARIANT.endswith('_arm64') or VARIANT.endswith('_arm64_tester'):
     sys.argv.append('--product=terminal.qemu-arm64')
 
   sys.argv.append('--logs-dir=' + os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log'))
