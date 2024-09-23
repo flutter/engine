@@ -275,10 +275,7 @@ template("fuchsia_test_archive") {
   _fuchsia_archive(target_name) {
     testonly = true
     binary = _binary
-    forward_variables_from(invoker,
-                           [
-                             "resources",
-                           ])
+    forward_variables_from(invoker, [ "resources" ])
 
     libraries = common_libs
     if (defined(invoker.libraries)) {
