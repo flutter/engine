@@ -597,26 +597,35 @@ public class FlutterView extends FrameLayout
   // android may decide to place the software navigation bars on the side. When the nav
   // bar is hidden, the reported insets should be removed to prevent extra useless space
   // on the sides.
-  private enum ZeroSides {
+  @VisibleForTesting
+  public enum ZeroSides {
     NONE,
     LEFT,
     RIGHT,
     BOTH
   }
 
-  private ZeroSides calculateShouldZeroSides() {
+  /**
+   * This method can be run on APIs 30 and above but its intended use is for 30 and below.
+   *
+   * @return some ZeroSides enum
+   */
+  @androidx.annotation.DeprecatedSinceApi(api = API_LEVELS.API_30)
+  @VisibleForTesting
+  public ZeroSides calculateShouldZeroSides() {
     // We get both orientation and rotation because rotation is all 4
     // rotations relative to default rotation while orientation is portrait
     // or landscape. By combining both, we can obtain a more precise measure
     // of the rotation.
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
-    int rotation =
-        ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
-            .getDisplay(0)
-            .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+      int rotation =
+          ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
+              .getDisplay(0)
+              .getRotation();
+
       if (rotation == Surface.ROTATION_90) {
         return ZeroSides.RIGHT;
       } else if (rotation == Surface.ROTATION_270) {

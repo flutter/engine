@@ -8,6 +8,7 @@ package io.flutter;
 public class Build {
   /** For use in place of the Android Build.VERSION_CODES class. */
   public static class API_LEVELS {
+    public static final int FLUTTER_MIN = 21;
     public static final int API_21 = 21;
     public static final int API_22 = 22;
     public static final int API_23 = 23;
