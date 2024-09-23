@@ -320,8 +320,6 @@ template("jit_runner") {
 
     binary = "flutter_jit${product_suffix}_runner"
 
-    cml_file = rebase_path("meta/flutter_jit${product_suffix}_runner.cml")
-
     resources = [
       {
         path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
@@ -388,8 +386,6 @@ template("aot_runner") {
         observatory_target,
       ]
     }
-
-    cml_file = rebase_path("meta/flutter_aot${product_suffix}_runner.cml")
 
     binary = "flutter_aot${product_suffix}_runner"
 

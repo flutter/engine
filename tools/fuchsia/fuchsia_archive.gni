@@ -33,9 +33,6 @@ template("_compile_cml") {
 #
 # binary (required):
 #   The ELF binary for the archive's program.
-# cml_file (required):
-#   The path to the V2 component manifest (.cml file) for the archive's component.
-#   Should include the file extension.
 # deps (optional):
 #   The code dependencies for the archive.
 # inputs (optional):
@@ -172,8 +169,6 @@ template("_fuchsia_archive") {
 #
 # binary (required):
 #   The ELF binary for the archive's program.
-# cml_file (required):
-#   The V2 component manifest for the Fuchsia component.
 # deps (optional):
 #   The code dependencies for the archive.
 # inputs (optional):
@@ -185,31 +180,34 @@ template("_fuchsia_archive") {
 # testonly (optional):
 #   Set this to true for archives that are only used for tests.
 template("fuchsia_archive") {
-  assert(defined(invoker.cml_file), "must specify either a cml file.")
+  if (!defined(invoker.binary)) {
+    _binary = "${target_name}"
+  } else {
+    _binary = invoker.binary
+  }
   _deps = []
   if (defined(invoker.deps)) {
     _deps += invoker.deps
   }
 
-  if (defined(invoker.cml_file)) {
-    _far_base_dir = "$root_out_dir/${target_name}_far"
-    _cml_file_name = get_path_info(invoker.cml_file, "name")
-    _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
+  _cml_file = rebase_path("meta/${_binary}.cml")
+  _far_base_dir = "$root_out_dir/${target_name}_far"
+  _cml_file_name = get_path_info(_cml_file, "name")
+  _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
-    _compile_cml(_compile_cml_target) {
-      forward_variables_from(invoker, [ "testonly" ])
+  _compile_cml(_compile_cml_target) {
+    forward_variables_from(invoker, [ "testonly" ])
 
-      manifest = invoker.cml_file
-      output = "$_far_base_dir/meta/${_cml_file_name}.cm"
-    }
-    _deps += [ ":$_compile_cml_target" ]
+    manifest = _cml_file
+    output = "$_far_base_dir/meta/${_cml_file_name}.cm"
   }
+  _deps += [ ":$_compile_cml_target" ]
 
   _fuchsia_archive(target_name) {
     deps = _deps
+    binary = _binary
     forward_variables_from(invoker,
                            [
-                             "binary",
                              "inputs",
                              "libraries",
                              "resources",
@@ -225,10 +223,6 @@ template("fuchsia_archive") {
 #   The binary for the test.
 # deps (required):
 #   Dependencies for the test archive.
-# cml_file (required):
-#   The path to the V2 component manifest (.cml file) for the test archive's component.
-#   Should include the file extension.
-#   If not defined, a generated .cml file for the test archive will be used instead.
 # libraries (optional):
 #   Paths to .so libraries that should be dynamically linked to the binary.
 # resources (optional):
@@ -240,52 +234,38 @@ template("fuchsia_test_archive") {
     _deps += invoker.deps
   }
 
-  if (defined(invoker.cml_file)) {
-    _far_base_dir = "$root_out_dir/${target_name}_far"
-    _cml_file_name = get_path_info(invoker.cml_file, "name")
-    _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
-
-    _compile_cml(_compile_cml_target) {
-      forward_variables_from(invoker, [ "testonly" ])
-
-      manifest = invoker.cml_file
-      output = "$_far_base_dir/meta/${_cml_file_name}.cm"
-    }
-    _deps += [ ":$_compile_cml_target" ]
-  } else {
-    # Interpolate test_suite.cml template with the test suite's name.
-    test_suite = target_name
-    interpolate_cml_target = "${test_suite}_interpolate_cml"
-    generated_cml_file = "$root_out_dir/$test_suite.cml"
-    action(interpolate_cml_target) {
-      testonly = true
-      script = "//flutter/tools/fuchsia/interpolate_test_suite.py"
-      sources = [ "//flutter/testing/fuchsia/meta/test_suite.cml" ]
-      args = [
-        "--input",
-        rebase_path("//flutter/testing/fuchsia/meta/test_suite.cml"),
-        "--test-suite",
-        test_suite,
-        "--output",
-        rebase_path(generated_cml_file),
-      ]
-      outputs = [ generated_cml_file ]
-    }
-
-    far_base_dir = "$root_out_dir/${target_name}_far"
-
-    # Compile the resulting interpolated test suite's cml.
-    compile_test_suite_cml_target = "${test_suite}_test_suite_compile_cml"
-    _compile_cml(compile_test_suite_cml_target) {
-      testonly = true
-      deps = [ ":$interpolate_cml_target" ]
-
-      manifest = generated_cml_file
-      output = "$far_base_dir/meta/${test_suite}.cm"
-    }
-
-    _deps += [ ":$compile_test_suite_cml_target" ]
+  # Interpolate test_suite.cml template with the test suite's name.
+  test_suite = target_name
+  interpolate_cml_target = "${test_suite}_interpolate_cml"
+  generated_cml_file = "$root_out_dir/$test_suite.cml"
+  action(interpolate_cml_target) {
+    testonly = true
+    script = "//flutter/tools/fuchsia/interpolate_test_suite.py"
+    sources = [ "//flutter/testing/fuchsia/meta/test_suite.cml" ]
+    args = [
+      "--input",
+      rebase_path("//flutter/testing/fuchsia/meta/test_suite.cml"),
+      "--test-suite",
+      test_suite,
+      "--output",
+      rebase_path(generated_cml_file),
+    ]
+    outputs = [ generated_cml_file ]
   }
+
+  far_base_dir = "$root_out_dir/${target_name}_far"
+
+  # Compile the resulting interpolated test suite's cml.
+  compile_test_suite_cml_target = "${test_suite}_test_suite_compile_cml"
+  _compile_cml(compile_test_suite_cml_target) {
+    testonly = true
+    deps = [ ":$interpolate_cml_target" ]
+
+    manifest = generated_cml_file
+    output = "$far_base_dir/meta/${test_suite}.cm"
+  }
+
+  _deps += [ ":$compile_test_suite_cml_target" ]
 
   _fuchsia_archive(target_name) {
     testonly = true

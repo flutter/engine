@@ -178,8 +178,6 @@ template("aot_runner_package") {
 
     binary = "dart_aot${product_suffix}_runner"
 
-    cml_file = rebase_path("meta/dart_aot${product_suffix}_runner.cml")
-
     libraries = common_libs
 
     resources = []
@@ -237,8 +235,6 @@ template("jit_runner_package") {
     }
 
     binary = "dart_jit${product_suffix}_runner"
-
-    cml_file = rebase_path("meta/dart_jit${product_suffix}_runner.cml")
 
     libraries = common_libs
 
