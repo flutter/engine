@@ -268,9 +268,9 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 16.
+      // Available starting at Android SDK 4.1 (API 16).
       //
-      // If the Flutter Android app targets API 35 or later then the Android
+      // If the Flutter Android app targets Android SDK 15 (API 35) or later then the Android
       // system will ignore this value unless the app also follows the opt out
       // instructions found in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
@@ -288,9 +288,9 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at SDK 19.
+      // Available starting at Android SDK 4.4 (API 19).
       //
-      // If the Flutter Android app targets API 35 or later then the Android
+      // If the Flutter Android app targets Android SDK 15 (API 35) or later then the Android
       // system will ignore this value unless the app also follows the opt out
       // instructions found in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
@@ -309,9 +309,9 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at SDK 19.
+      // Available starting at Android SDK 4.4 (API 19).
       //
-      // If the Flutter Android app targets API 35 or later then the Android
+      // If the Flutter Android app targets Android SDK 15 (API 35) or later then the Android
       // system will ignore this value unless the app also follows the opt out
       // instructions found in
       // https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge.
@@ -331,10 +331,10 @@ public class PlatformPlugin {
         && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       // EDGE TO EDGE
       //
-      // Available starting at SDK 29.
+      // Available starting at Android SDK 10 (API 29).
       //
-      // If the Flutter app targets API 35 or later (Flutter does this by default), then this mode
-      // is used by default.
+      // If the Flutter app targets Android SDK 15 (API 35) or later (Flutter does this by default),
+      // then this mode is used by default.
       //
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
@@ -413,8 +413,8 @@ public class PlatformPlugin {
 
     if (Build.VERSION.SDK_INT < API_LEVELS.API_30) {
       // Flag set to specify that this window is responsible for drawing the background for the
-      // system bars. Must be set for all operations on API < 30 excluding enforcing system
-      // bar contrasts. Deprecated in API 30.
+      // system bars. Must be set for all operations on API < 30 (Android SDK < 11) excluding enforcing
+      // system bar contrasts. Deprecated in API 30.
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
       // Flag set to dismiss any requests for translucent system bars to be provided in lieu of what
