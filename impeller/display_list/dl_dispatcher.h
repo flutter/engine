@@ -403,6 +403,7 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  // note: cull rects are always in the global coordinate space.
   std::vector<Rect> cull_rect_state_;
   bool has_image_filter_ = false;
   Paint paint_;

@@ -1396,10 +1396,12 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
 
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
-  if (has_image_filter_) {
+  auto global_cull_rect = cull_rect_state_.back();
+  if (has_image_filter_ || global_cull_rect.IsMaximum()) {
     cull_rect_state_.push_back(Rect::MakeMaximum());
   } else {
-    auto new_cull_rect = GetCurrentLocalCullingBounds().Intersection(bounds);
+    auto global_save_bounds = bounds.TransformBounds(matrix_);
+    auto new_cull_rect = global_cull_rect.Intersection(global_save_bounds);
     if (new_cull_rect.has_value()) {
       cull_rect_state_.push_back(new_cull_rect.value());
     } else {
