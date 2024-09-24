@@ -1506,14 +1506,20 @@ void TextFrameDispatcher::drawDisplayList(
   Paint old_paint = paint_;
   paint_ = Paint{};
   bool old_has_image_filter = has_image_filter_;
-
   has_image_filter_ = false;
-  IRect cull_rect = IRect::RoundOut(GetCurrentLocalCullingBounds());
-  display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
-                                                  cull_rect.GetTop(),    //
-                                                  cull_rect.GetRight(),  //
-                                                  cull_rect.GetBottom()  //
-                                                  ));
+
+  auto local_cull_bounds = GetCurrentLocalCullingBounds();
+  if (!local_cull_bounds.IsMaximum()) {
+    IRect cull_rect = IRect::RoundOut(local_cull_bounds);
+    display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
+                                                    cull_rect.GetTop(),    //
+                                                    cull_rect.GetRight(),  //
+                                                    cull_rect.GetBottom()  //
+                                                    ));
+  } else {
+    display_list->Dispatch(*this);
+  }
+
   restore();
   paint_ = old_paint;
   has_image_filter_ = old_has_image_filter;
