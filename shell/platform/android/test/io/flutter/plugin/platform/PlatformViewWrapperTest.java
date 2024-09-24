@@ -93,7 +93,6 @@ public class PlatformViewWrapperTest {
 
     wrapper.draw(canvas);
 
-    // Verify.
     verify(canvas, times(1)).drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
   }
 
