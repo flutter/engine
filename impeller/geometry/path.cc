@@ -53,7 +53,9 @@ bool Path::IsConvex() const {
 }
 
 bool Path::IsEmpty() const {
-  return data_->points.empty();
+  return data_->points.empty() ||
+         (data_->components.size() == 1 &&
+          data_->components[0] == ComponentType::kContour);
 }
 
 void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {

@@ -23,6 +23,13 @@ TEST(PathTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   ASSERT_EQ(polyline.back().y, 40);
 }
 
+TEST(PathTest, EmptyPathWithContour) {
+  PathBuilder builder;
+  auto path = builder.TakePath();
+
+  EXPECT_TRUE(path.IsEmpty());
+}
+
 TEST(PathTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   PathBuilder builder;
   builder.MoveTo({10, 10});
