@@ -1378,34 +1378,28 @@ TextFrameDispatcher::~TextFrameDispatcher() {
   FML_DCHECK(cull_rect_state_.size() == 1);
 }
 
-void TextFrameDispatcher::Save(bool push_cull_rect) {
-  stack_.emplace_back(matrix_);
-  if (push_cull_rect) {
-    cull_rect_state_.push_back(cull_rect_state_.back());
-  }
-}
-
 void TextFrameDispatcher::save() {
-  Save(/*push_cull_rect=*/true);
+  stack_.emplace_back(matrix_);
+  cull_rect_state_.push_back(cull_rect_state_.back());
 }
 
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop) {
-  Save(/*push_cull_rect=*/false);
+  save();
 
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
   auto global_cull_rect = cull_rect_state_.back();
   if (has_image_filter_ || global_cull_rect.IsMaximum()) {
-    cull_rect_state_.push_back(Rect::MakeMaximum());
+    cull_rect_state_.back() = Rect::MakeMaximum();
   } else {
     auto global_save_bounds = bounds.TransformBounds(matrix_);
     auto new_cull_rect = global_cull_rect.Intersection(global_save_bounds);
     if (new_cull_rect.has_value()) {
-      cull_rect_state_.push_back(new_cull_rect.value());
+      cull_rect_state_.back() = new_cull_rect.value();
     } else {
-      cull_rect_state_.push_back(Rect::MakeLTRB(0, 0, 0, 0));
+      cull_rect_state_.back() = Rect::MakeLTRB(0, 0, 0, 0);
     }
   }
 }
@@ -1502,22 +1496,22 @@ void TextFrameDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     DlScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
-  Save(/*push_cull_rect=*/true);
+  save();
   Paint old_paint = paint_;
   paint_ = Paint{};
   bool old_has_image_filter = has_image_filter_;
   has_image_filter_ = false;
 
-  auto local_cull_bounds = GetCurrentLocalCullingBounds();
-  if (!local_cull_bounds.IsMaximum()) {
+  Rect local_cull_bounds = GetCurrentLocalCullingBounds();
+  if (local_cull_bounds.IsMaximum()) {
+    display_list->Dispatch(*this);
+  } else if (!local_cull_bounds.IsEmpty()) {
     IRect cull_rect = IRect::RoundOut(local_cull_bounds);
     display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
                                                     cull_rect.GetTop(),    //
                                                     cull_rect.GetRight(),  //
                                                     cull_rect.GetBottom()  //
                                                     ));
-  } else {
-    display_list->Dispatch(*this);
   }
 
   restore();

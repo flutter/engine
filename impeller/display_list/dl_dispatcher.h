@@ -398,8 +398,6 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
  private:
   const Rect GetCurrentLocalCullingBounds() const;
 
-  void Save(bool push_cull_rect);
-
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
