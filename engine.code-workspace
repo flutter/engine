@@ -249,6 +249,33 @@
           "clear": true
         },
         "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "label": "host_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
           "kind": "build"
         },
         "label": "display_list_unittests_arm64",
@@ -284,6 +311,68 @@
           "-c",
           "host_debug_unopt_arm64",
           "//flutter/impeller/golden_tests:impeller_golden_tests"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
+        },
+        "label": "ios_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64",
+          "&&",
+          "./flutter/bin/et",
+          "build",
+          "-c",
+          "ios_debug_unopt"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
+        },
+        "label": "android_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64",
+          "&&",
+          "./flutter/bin/et",
+          "build",
+          "-c",
+          "android_debug_unopt_arm64"
         ]
       }
     ]
@@ -374,7 +463,8 @@
         "name": "impeller_golden_tests_arm64",
         "program": "${workspaceFolder}/../out/host_debug_unopt_arm64/impeller_golden_tests",
         "args": [
-          "--working_dir=~/Desktop"
+          "--working_dir=~/Desktop",
+          "--gtest_filter=*/Metal"
         ],
         "preLaunchTask": "impeller_golden_tests_arm64"
       }
