@@ -157,7 +157,7 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
 ///
 /// [paramsForViews] is required to compute the bounds of the platform views.
 Rendering createOptimizedRendering(
-  List<Object> renderObjects,
+  Iterable<SceneElement> renderObjects,
   Map<int, EmbeddedViewParams> paramsForViews,
 ) {
   final Map<int, ui.Rect> cachedComputedRects = <int, ui.Rect>{};
@@ -167,13 +167,13 @@ Rendering createOptimizedRendering(
   // The first picture is added to the rendering in a new render canvas.
   RenderingRenderCanvas tentativeCanvas = RenderingRenderCanvas();
 
-  for (final Object renderObject in renderObjects) {
-    if (renderObject is int) {
-      final RenderingPlatformView platformView =
-          RenderingPlatformView(renderObject);
-      if (PlatformViewManager.instance.isVisible(renderObject)) {
-        final ui.Rect platformViewBounds = cachedComputedRects[renderObject] =
-            computePlatformViewBounds(paramsForViews[renderObject]!);
+  for (final SceneElement renderObject in renderObjects) {
+    if (renderObject is PlatformViewSceneElement) {
+      final int viewId = renderObject.viewId;
+      final RenderingPlatformView platformView = RenderingPlatformView(viewId);
+      if (PlatformViewManager.instance.isVisible(viewId)) {
+        final ui.Rect platformViewBounds = cachedComputedRects[viewId] =
+            computePlatformViewBounds(paramsForViews[viewId]!);
 
         if (debugOverlayOptimizationBounds) {
           platformView.debugComputedBounds = platformViewBounds;
@@ -190,8 +190,9 @@ Rendering createOptimizedRendering(
         }
       }
       result.add(platformView);
-    } else if (renderObject is CkPicture) {
-      if (renderObject.cullRect.isEmpty) {
+    } else if (renderObject is PictureSceneElement) {
+      final CkPicture scenePicture = renderObject.scenePicture!;
+      if (scenePicture.cullRect.isEmpty) {
         continue;
       }
 
@@ -204,8 +205,8 @@ Rendering createOptimizedRendering(
       // when it is eventually added.
       bool addedToTentativeCanvas = false;
       for (final CkPicture picture in tentativeCanvas.pictures) {
-        if (!picture.cullRect.intersect(renderObject.cullRect).isEmpty) {
-          tentativeCanvas.add(renderObject);
+        if (!picture.cullRect.intersect(scenePicture.cullRect).isEmpty) {
+          tentativeCanvas.add(scenePicture);
           addedToTentativeCanvas = true;
           break;
         }
@@ -221,14 +222,14 @@ Rendering createOptimizedRendering(
           if (PlatformViewManager.instance.isVisible(entity.viewId)) {
             final ui.Rect platformViewBounds =
                 cachedComputedRects[entity.viewId]!;
-            if (!platformViewBounds.intersect(renderObject.cullRect).isEmpty) {
+            if (!platformViewBounds.intersect(scenePicture.cullRect).isEmpty) {
               // The next picture intersects with a platform view already in the
               // result. Add this picture to the first render canvas which comes
               // after this platform view or create one if none exists.
               if (lastCanvasSeen != null) {
-                lastCanvasSeen.add(renderObject);
+                lastCanvasSeen.add(scenePicture);
               } else {
-                tentativeCanvas.add(renderObject);
+                tentativeCanvas.add(scenePicture);
               }
               addedPictureToRendering = true;
               break;
@@ -238,8 +239,8 @@ Rendering createOptimizedRendering(
           lastCanvasSeen = entity;
           // Check if we intersect with any pictures in this render canvas.
           for (final CkPicture picture in entity.pictures) {
-            if (!picture.cullRect.intersect(renderObject.cullRect).isEmpty) {
-              lastCanvasSeen.add(renderObject);
+            if (!picture.cullRect.intersect(scenePicture.cullRect).isEmpty) {
+              lastCanvasSeen.add(scenePicture);
               addedPictureToRendering = true;
               break;
             }
@@ -249,9 +250,9 @@ Rendering createOptimizedRendering(
       if (!addedPictureToRendering) {
         if (lastCanvasSeen != null) {
           // Add it to the last canvas seen in the rendering, if any.
-          lastCanvasSeen.add(renderObject);
+          lastCanvasSeen.add(scenePicture);
         } else {
-          tentativeCanvas.add(renderObject);
+          tentativeCanvas.add(scenePicture);
         }
       }
     }

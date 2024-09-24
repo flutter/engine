@@ -384,7 +384,7 @@ class MeasureVisitor extends LayerVisitor<void> {
     assert(picture.needsPainting);
 
     final CkCanvas pictureRecorderCanvas =
-        viewEmbedder.getPictureRecorderFor(picture);
+        viewEmbedder.getMeasuringCanvasFor(picture);
 
     pictureRecorderCanvas.save();
     pictureRecorderCanvas.translate(picture.offset.dx, picture.offset.dy);
