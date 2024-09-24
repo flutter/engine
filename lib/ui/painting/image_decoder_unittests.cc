@@ -361,9 +361,9 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
   auto cb = [&invoked](const sk_sp<DlImage>& image,
                        const std::string& message) { invoked = true; };
 
-  ImageDecoderImpeller::UploadTextureToPrivate(
-      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
-      gpu_disabled_switch);
+  ImageDecoderImpeller::UploadTextureToPrivate(cb, no_gpu_access_context,
+                                               buffer, info, std::nullopt,
+                                               gpu_disabled_switch);
 
   EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   EXPECT_FALSE(invoked);
@@ -405,9 +405,9 @@ TEST_F(ImageDecoderFixtureTest,
     message = std::move(p_message);
   };
 
-  ImageDecoderImpeller::UploadTextureToPrivate(
-      cb, no_gpu_access_context, buffer, info, bitmap, std::nullopt,
-      gpu_disabled_switch);
+  ImageDecoderImpeller::UploadTextureToPrivate(cb, no_gpu_access_context,
+                                               buffer, info, std::nullopt,
+                                               gpu_disabled_switch);
 
   EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   EXPECT_FALSE(invoked);
