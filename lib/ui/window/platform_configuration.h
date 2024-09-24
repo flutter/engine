@@ -543,8 +543,8 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue draw_frame_;
   tonic::DartPersistentValue report_timings_;
 
-  uint64_t last_frame_number_;
-  int64_t last_microseconds_;
+  uint64_t last_frame_number_ = 0;
+  int64_t last_microseconds_ = 0;
 
   // All current views' view metrics mapped from view IDs.
   std::unordered_map<int64_t, ViewportMetrics> metrics_;
