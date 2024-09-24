@@ -91,7 +91,6 @@ public class PlatformViewWrapperTest {
     when(surface.lockHardwareCanvas()).thenReturn(canvas);
     final PlatformViewWrapper wrapper = new PlatformViewWrapper(ctx, renderTarget);
 
-    // Test.
     wrapper.draw(canvas);
 
     // Verify.
