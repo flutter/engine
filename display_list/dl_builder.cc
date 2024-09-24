@@ -1227,6 +1227,24 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   drawDRRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const DlPath& path) {
+  if (!path.IsInverseFillType()) {
+    SkRect rect;
+    bool is_closed;
+    if (path.IsSkRect(&rect, &is_closed) &&
+        (is_closed || current_.getDrawStyle() == DlDrawStyle::kFill)) {
+      drawRect(ToDlRect(rect));
+      return;
+    }
+    if (path.IsSkOval(&rect)) {
+      drawOval(ToDlRect(rect));
+      return;
+    }
+    SkRRect rrect;
+    if (path.IsSkRRect(&rrect)) {
+      drawRRect(rrect);
+      return;
+    }
+  }
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect) {
