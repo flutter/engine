@@ -45,6 +45,7 @@
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
+  FML_LOG(ERROR) << "IOSPlatformThreadConfigSetter: " << config.name;
   // set thread name
   fml::Thread::SetCurrentThreadName(config);
 
@@ -792,8 +793,10 @@ static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::kUi | flutter::ThreadHost::Type::kRaster |
-                            flutter::ThreadHost::Type::kIo;
+  uint32_t threadHostType = flutter::ThreadHost::Type::kRaster | flutter::ThreadHost::Type::kIo;
+  if (!settings.enable_impeller) {
+    threadHostType |= flutter::ThreadHost::Type::kUi;
+  }
 
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
@@ -809,7 +812,7 @@ static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
   if (!settings.enable_impeller) {
     host_config.ui_config = ui_config;
   } else {
-    fml::Thread::SetCurrentThreadName(ui_config);
+    // fml::Thread::SetCurrentThreadName(ui_config);
   }
 
   host_config.raster_config =

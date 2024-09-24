@@ -89,8 +89,10 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  auto mask =
-      ThreadHost::Type::kUi | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  auto mask = ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  if (!settings.merged_platform_ui_thread) {
+    mask |= ThreadHost::Type::kUi;
+  }
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);

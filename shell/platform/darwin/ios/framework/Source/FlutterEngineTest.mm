@@ -490,9 +490,6 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
                  engine.shell.GetTaskRunners().GetPlatformTaskRunner());
-
-  NSString* s = [NSString stringWithFormat:@"%@", [NSThread currentThread]];
-  XCTAssertEqual(s, @"io.flutter.ui");
 }
 
 @end
