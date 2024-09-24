@@ -77,7 +77,6 @@ public class PlatformViewWrapperTest {
     final Canvas canvas = mock(Canvas.class);
     wrapper.draw(canvas);
 
-    // Verify.
     verify(canvas, times(0)).drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
   }
 
