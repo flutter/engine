@@ -5094,9 +5094,162 @@ TEST_F(DisplayListTest, DrawRectPathPromoteToDrawRect) {
   expected.DrawRect(rect, DlPaint());
   auto expect_dl = expected.Build();
 
-  // Support for this will be re-added soon, until then verify that we
-  // do not promote.
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, FillCompleteUnclosedRectPathPromoteToDrawRect) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kFill);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  path.lineTo(10.0f, 10.0f);
+  // No explicit close
+  // path.close();
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, FillIncompleteUnclosedRectPathPromoteToDrawRect) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kFill);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  // Leave last segment for fill operation to infer
+  // path.lineTo(10.0f, 10.0f);
+  // No explicit close
+  // path.close();
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, FillBarelyUnclosedRectPathPromoteToDrawPath) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kFill);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  path.lineTo(10.0f, 11.0f);  // One pixel short of closed
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, StrokeBarelyUnclosedRectPathPromoteToDrawPath) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kStroke);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  path.lineTo(10.0f, 11.0f);  // One pixel short of closed
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
   ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, StrokeCompleteUnclosedRectPathNotPromoteToDrawPath) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kStroke);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  path.lineTo(10.0f, 10.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, StrokeIncompleteClosedRectPathPromoteToDrawRect) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kStroke);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  // Leave last segment for close to fill in
+  // path.lineTo(10.0f, 10.0f);
+  path.close();
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
+}
+
+TEST_F(DisplayListTest, StrokeCompleteClosedRectPathPromoteToDrawRect) {
+  DlPaint paint = DlPaint().setDrawStyle(DlDrawStyle::kStroke);
+
+  SkPath path;
+  path.moveTo(10.0f, 10.0f);
+  path.lineTo(20.0f, 10.0f);
+  path.lineTo(20.0f, 20.0f);
+  path.lineTo(10.0f, 20.0f);
+  path.lineTo(10.0f, 10.0f);
+  path.close();
+
+  DisplayListBuilder builder;
+  builder.DrawPath(path, paint);
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(path.getBounds(), paint);
+  auto expect_dl = expected.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
 }
 
 TEST_F(DisplayListTest, DrawOvalPathPromoteToDrawOval) {
@@ -5110,9 +5263,7 @@ TEST_F(DisplayListTest, DrawOvalPathPromoteToDrawOval) {
   expected.DrawOval(rect, DlPaint());
   auto expect_dl = expected.Build();
 
-  // Support for this will be re-added soon, until then verify that we
-  // do not promote.
-  ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
 }
 
 TEST_F(DisplayListTest, DrawRRectPathPromoteToDrawRRect) {
@@ -5127,9 +5278,7 @@ TEST_F(DisplayListTest, DrawRRectPathPromoteToDrawRRect) {
   expected.DrawRRect(rrect, DlPaint());
   auto expect_dl = expected.Build();
 
-  // Support for this will be re-added soon, until then verify that we
-  // do not promote.
-  ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
 }
 
 TEST_F(DisplayListTest, DrawRectRRectPathPromoteToDrawRect) {
@@ -5144,9 +5293,7 @@ TEST_F(DisplayListTest, DrawRectRRectPathPromoteToDrawRect) {
   expected.DrawRect(rect, DlPaint());
   auto expect_dl = expected.Build();
 
-  // Support for this will be re-added soon, until then verify that we
-  // do not promote.
-  ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
 }
 
 TEST_F(DisplayListTest, DrawOvalRRectPathPromoteToDrawOval) {
@@ -5161,9 +5308,7 @@ TEST_F(DisplayListTest, DrawOvalRRectPathPromoteToDrawOval) {
   expected.DrawOval(rect, DlPaint());
   auto expect_dl = expected.Build();
 
-  // Support for this will be re-added soon, until then verify that we
-  // do not promote.
-  ASSERT_TRUE(DisplayListsNE_Verbose(dl, expect_dl));
+  ASSERT_TRUE(DisplayListsEQ_Verbose(dl, expect_dl));
 }
 
 TEST_F(DisplayListTest, ClipRectRRectPromoteToClipRect) {
