@@ -413,7 +413,8 @@ public class PlatformPlugin {
 
     if (Build.VERSION.SDK_INT < API_LEVELS.API_30) {
       // Flag set to specify that this window is responsible for drawing the background for the
-      // system bars. Must be set for all operations on API < 30 (Android SDK < 11) excluding enforcing
+      // system bars. Must be set for all operations on API < 30 (Android SDK < 11) excluding
+      // enforcing
       // system bar contrasts. Deprecated in API 30.
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
