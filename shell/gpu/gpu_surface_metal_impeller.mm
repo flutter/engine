@@ -8,6 +8,7 @@
 #import <QuartzCore/QuartzCore.h>
 #include "flow/surface.h"
 #include "flow/surface_frame.h"
+#include "impeller/aiks/aiks_context.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
@@ -21,14 +22,13 @@ static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
 namespace flutter {
 
-GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 const std::shared_ptr<impeller::Context>& context,
-                                                 bool render_to_surface)
+GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(
+    GPUSurfaceMetalDelegate* delegate,
+    const std::shared_ptr<impeller::AiksContext>& context,
+    bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
-      aiks_context_(
-          std::make_shared<impeller::AiksContext>(context,
-                                                  impeller::TypographerContextSkia::Make())),
+      aiks_context_(context),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
@@ -170,6 +170,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
         surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
 
+        const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
 #if EXPERIMENTAL_CANVAS
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
@@ -182,7 +183,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         impeller_dispatcher.FinishRecording();
         aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-        aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+        if (reset_host_buffer) {
+          aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+        }
 
         if (!surface->PreparePresent()) {
           return false;
@@ -193,7 +196,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
-        auto result = aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
+        auto result = aiks_context->Render(picture, render_target, reset_host_buffer);
 
         if (!surface->PreparePresent()) {
           return false;
