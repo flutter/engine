@@ -74,7 +74,6 @@ public class PlatformViewWrapperTest {
     when(renderTarget.getSurface()).thenReturn(surface);
 
     final PlatformViewWrapper wrapper = new PlatformViewWrapper(ctx, renderTarget);
-    // Test.
     final Canvas canvas = mock(Canvas.class);
     wrapper.draw(canvas);
 
