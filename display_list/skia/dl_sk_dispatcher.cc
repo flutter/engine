@@ -133,10 +133,11 @@ void DlSkCanvasDispatcher::clipRRect(const SkRRect& rrect,
                                      bool is_aa) {
   canvas_->clipRRect(rrect, ToSk(clip_op), is_aa);
 }
-void DlSkCanvasDispatcher::clipPath(const SkPath& path,
+void DlSkCanvasDispatcher::clipPath(const DlPath& path,
                                     ClipOp clip_op,
                                     bool is_aa) {
-  canvas_->clipPath(path, ToSk(clip_op), is_aa);
+  path.WillRenderSkPath();
+  canvas_->clipPath(path.GetSkPath(), ToSk(clip_op), is_aa);
 }
 
 void DlSkCanvasDispatcher::drawPaint() {
@@ -184,8 +185,9 @@ void DlSkCanvasDispatcher::drawDRRect(const SkRRect& outer,
                                       const SkRRect& inner) {
   canvas_->drawDRRect(outer, inner, paint());
 }
-void DlSkCanvasDispatcher::drawPath(const SkPath& path) {
-  canvas_->drawPath(path, paint());
+void DlSkCanvasDispatcher::drawPath(const DlPath& path) {
+  path.WillRenderSkPath();
+  canvas_->drawPath(path.GetSkPath(), paint());
 }
 void DlSkCanvasDispatcher::drawArc(const DlRect& bounds,
                                    DlScalar start,
@@ -328,12 +330,14 @@ void DlSkCanvasDispatcher::DrawShadow(SkCanvas* canvas,
       ambient_color, spot_color, flags);
 }
 
-void DlSkCanvasDispatcher::drawShadow(const SkPath& path,
+void DlSkCanvasDispatcher::drawShadow(const DlPath& path,
                                       const DlColor color,
                                       const DlScalar elevation,
                                       bool transparent_occluder,
                                       DlScalar dpr) {
-  DrawShadow(canvas_, path, color, elevation, transparent_occluder, dpr);
+  path.WillRenderSkPath();
+  DrawShadow(canvas_, path.GetSkPath(), color, elevation, transparent_occluder,
+             dpr);
 }
 
 }  // namespace flutter

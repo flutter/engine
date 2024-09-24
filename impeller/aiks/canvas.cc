@@ -21,6 +21,7 @@
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/superellipse_geometry.h"
@@ -109,12 +110,6 @@ struct GetTextureColorSourceDataVisitor {
   std::optional<ImageData> operator()(const std::monostate& data) {
     return std::nullopt;
   }
-
-#if IMPELLER_ENABLE_3D
-  std::optional<ImageData> operator()(const SceneData& data) {
-    return std::nullopt;
-  }
-#endif  // IMPELLER_ENABLE_3D
 };
 
 static std::optional<ImageData> GetImageColorSourceData(
@@ -746,6 +741,24 @@ void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
   auto size = image->GetSize();
 
   if (size.IsEmpty()) {
+    return;
+  }
+
+  if (image->GetTextureDescriptor().type == TextureType::kTextureExternalOES) {
+    auto texture_contents = std::make_shared<TiledTextureContents>();
+    texture_contents->SetTexture(image);
+    texture_contents->SetGeometry(Geometry::MakeRect(dest));
+    texture_contents->SetSamplerDescriptor(std::move(sampler));
+    texture_contents->SetInheritedOpacity(paint.color.alpha);
+
+    std::shared_ptr<Contents> contents = texture_contents;
+
+    Entity entity;
+    entity.SetBlendMode(paint.blend_mode);
+    entity.SetContents(paint.WithFilters(contents));
+    entity.SetTransform(GetCurrentTransform());
+
+    AddRenderEntityToCurrentPass(std::move(entity));
     return;
   }
 
