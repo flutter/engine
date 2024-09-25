@@ -58,6 +58,10 @@ bool Path::IsEmpty() const {
           data_->components[0] == ComponentType::kContour);
 }
 
+bool Path::IsSingleContour() const {
+  return data_->single_countour;
+}
+
 void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
   auto& path_components = data_->components;
   auto& path_points = data_->points;
