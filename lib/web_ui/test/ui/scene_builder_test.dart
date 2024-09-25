@@ -373,7 +373,7 @@ Future<void> testMain() async {
       await matchGoldenFile(
           'scene_builder_picture_clipped_out_then_clipped_in.png',
           region: region);
-    });
+    }, skip: isHtml); // https://github.com/flutter/flutter/issues/155717
   });
 }
 
