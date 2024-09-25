@@ -610,7 +610,6 @@ public class FlutterView extends FrameLayout
    *
    * @return some ZeroSides enum
    */
-  @SuppressWarnings("deprecated")
   @androidx.annotation.DeprecatedSinceApi(api = API_LEVELS.API_30)
   @VisibleForTesting
   public ZeroSides calculateShouldZeroSides() {
