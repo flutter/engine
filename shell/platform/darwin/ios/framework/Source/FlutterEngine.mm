@@ -45,7 +45,6 @@
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
-  FML_LOG(ERROR) << "IOSPlatformThreadConfigSetter: " << config.name;
   // set thread name
   fml::Thread::SetCurrentThreadName(config);
 
