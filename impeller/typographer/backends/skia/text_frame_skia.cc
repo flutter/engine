@@ -54,7 +54,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     }
 
     AxisAlignment alignment = AxisAlignment::kNone;
-    if (run.font().isSubpixel() && !run.font().isBaselineSnap() && !has_color) {
+    if (run.font().isSubpixel() && run.font().isBaselineSnap() && !has_color) {
       alignment = AxisAlignment::kX;
     }
 
