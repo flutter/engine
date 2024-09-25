@@ -5,7 +5,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
@@ -34,21 +34,12 @@ void main() {
   });
 
   test('Vertices.raw checks', () {
-    bool assertsEnabled = false;
-    assert(() {
-      assertsEnabled = true;
-      return true;
-    }());
-
-    try {
+    expect(() {
       Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(const <double>[0.0]),
       );
-      throw 'Vertices.raw did not throw the expected error.';
-    } on ArgumentError catch (e) {
-      expect('$e', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).');
-    }
+    }, throwsA(isA<ArgumentError>().having((ArgumentError e) => '$e', 'message', 'Invalid argument(s): "positions" must have an even number of entries (each coordinate is an x,y pair).')));
 
     Object? indicesError;
     try {
@@ -61,11 +52,7 @@ void main() {
     } on ArgumentError catch (e) {
       indicesError = e;
     }
-    if (assertsEnabled) {
-      expect('$indicesError', 'Invalid argument(s): "indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.');
-    } else {
-      expect(indicesError, null);
-    }
+    expect('$indicesError', 'Invalid argument(s): "indices" values must be valid indices in the positions list (i.e. numbers in the range 0..2), but indices[2] is 5, which is too big.');
 
     Vertices.raw( // This one does not throw.
       VertexMode.triangles,
@@ -89,6 +76,7 @@ void main() {
     final SceneBuilder sceneBuilder = SceneBuilder();
 
     final Picture redClippedPicture = makePicture((Canvas canvas) {
+      canvas.drawPaint(Paint()..color = const Color(0xFFFFFFFF));
       canvas.clipRect(const Rect.fromLTRB(10, 10, 200, 200));
       canvas.clipRect(const Rect.fromLTRB(11, 10, 300, 200));
       canvas.drawPaint(Paint()..color = const Color(0xFFFF0000));

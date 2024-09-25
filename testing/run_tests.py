@@ -23,11 +23,15 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path
 import tempfile
 import time
 import typing
 import xvfb
+
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys_path.insert(0, os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib'))
+import yaml  # pylint: disable=import-error, wrong-import-position
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
@@ -65,8 +69,9 @@ def is_asan(build_dir):
   return False
 
 
-def run_cmd(
+def run_cmd( # pylint: disable=too-many-arguments
     cmd: typing.List[str],
+    cwd: str = None,
     forbidden_output: typing.List[str] = None,
     expect_failure: bool = False,
     env: typing.Dict[str, str] = None,
@@ -81,12 +86,13 @@ def run_cmd(
   command_string = ' '.join(cmd)
 
   print_divider('>')
-  logger.info('Running command "%s"', command_string)
+  logger.info('Running command "%s" in "%s"', command_string, cwd)
 
   start_time = time.time()
 
   process = subprocess.Popen(
       cmd,
+      cwd=cwd,
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
       env=env,
@@ -118,7 +124,9 @@ def run_cmd(
         allowed_failure = True
 
     if not allowed_failure:
-      raise RuntimeError('Command "%s" exited with code %s.' % (command_string, process.returncode))
+      raise RuntimeError(
+          'Command "%s" (in %s) exited with code %s.' % (command_string, cwd, process.returncode)
+      )
 
   for forbidden_string in forbidden_output:
     if forbidden_string in output:
@@ -127,7 +135,10 @@ def run_cmd(
       )
 
   print_divider('<')
-  logger.info('Command run successfully in %.2f seconds: %s', end_time - start_time, command_string)
+  logger.info(
+      'Command run successfully in %.2f seconds: %s (in %s)', end_time - start_time, command_string,
+      cwd
+  )
 
 
 def is_mac():
@@ -904,15 +915,46 @@ def gather_dart_smoke_test(build_dir, test_filter):
     )
 
 
-def gather_dart_package_tests(build_dir, package_path, extra_opts):
-  dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
-  if not dart_tests:
-    raise Exception('No tests found for Dart package at %s' % package_path)
-  for dart_test_file in dart_tests:
-    opts = ['--disable-dart-dev', dart_test_file] + extra_opts
+def gather_dart_package_tests(build_dir, package_path):
+  if uses_package_test_runner(package_path):
+    opts = ['test', '--reporter=expanded']
     yield EngineExecutableTask(
-        build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
+        build_dir,
+        os.path.join('dart-sdk', 'bin', 'dart'),
+        None,
+        flags=opts,
+        cwd=package_path,
     )
+  else:
+    dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
+    if not dart_tests:
+      raise Exception('No tests found for Dart package at %s' % package_path)
+    for dart_test_file in dart_tests:
+      opts = [dart_test_file]
+      yield EngineExecutableTask(
+          build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
+      )
+
+
+# Returns whether the given package path should be tested with `dart test`.
+#
+# Inferred by a dependency on the `package:test` package in the pubspec.yaml.
+def uses_package_test_runner(package):
+  pubspec = os.path.join(package, 'pubspec.yaml')
+  if not os.path.exists(pubspec):
+    return False
+  with open(pubspec, 'r') as file:
+    # Check if either "dependencies" or "dev_dependencies" contains "test".
+    data = yaml.safe_load(file)
+    if data is None:
+      return False
+    deps = data.get('dependencies', {})
+    if 'test' in deps:
+      return True
+    dev_deps = data.get('dev_dependencies', {})
+    if 'test' in dev_deps:
+      return True
+  return False
 
 
 # Returns a list of Dart packages to test.
@@ -925,48 +967,24 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
 # arguments to pass to each of the packages tests.
 def build_dart_host_test_list(build_dir):
   dart_host_tests = [
-      (
-          os.path.join('flutter', 'ci'),
-          [os.path.join(BUILDROOT_DIR, 'flutter')],
-      ),
-      (
-          os.path.join('flutter', 'flutter_frontend_server'),
-          [
-              build_dir,
-              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
-              os.path.join(build_dir, 'flutter_patched_sdk')
-          ],
-      ),
-      (os.path.join('flutter', 'testing', 'litetest'), []),
-      (os.path.join('flutter', 'testing', 'pkg_test_demo'), []),
-      (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
-      (os.path.join('flutter', 'testing', 'scenario_app'), []),
-      (
-          os.path.join('flutter', 'tools', 'api_check'),
-          [os.path.join(BUILDROOT_DIR, 'flutter')],
-      ),
-      (os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'), []),
-      (os.path.join('flutter', 'tools', 'clang_tidy'), []),
-      (
-          os.path.join('flutter', 'tools', 'const_finder'),
-          [
-              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
-              os.path.join(build_dir, 'flutter_patched_sdk'),
-              os.path.join(build_dir, 'dart-sdk', 'lib', 'libraries.json'),
-          ],
-      ),
-      (os.path.join('flutter', 'tools', 'dir_contents_diff'), []),
-      (os.path.join('flutter', 'tools', 'engine_tool'), []),
-      (os.path.join('flutter', 'tools', 'githooks'), []),
-      (os.path.join('flutter', 'tools', 'header_guard_check'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'), []),
+      os.path.join('flutter', 'ci'),
+      os.path.join('flutter', 'flutter_frontend_server'),
+      os.path.join('flutter', 'testing', 'skia_gold_client'),
+      os.path.join('flutter', 'testing', 'scenario_app'),
+      os.path.join('flutter', 'tools', 'api_check'),
+      os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'),
+      os.path.join('flutter', 'tools', 'clang_tidy'),
+      os.path.join('flutter', 'tools', 'const_finder'),
+      os.path.join('flutter', 'tools', 'dir_contents_diff'),
+      os.path.join('flutter', 'tools', 'engine_tool'),
+      os.path.join('flutter', 'tools', 'githooks'),
+      os.path.join('flutter', 'tools', 'header_guard_check'),
+      os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'),
+      os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'),
+      os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'),
   ]
   if not is_asan(build_dir):
-    dart_host_tests += [
-        (os.path.join('flutter', 'tools', 'path_ops', 'dart'), []),
-    ]
+    dart_host_tests += [os.path.join('flutter', 'tools', 'path_ops', 'dart')]
 
   return dart_host_tests
 
@@ -975,7 +993,7 @@ def run_benchmark_tests(build_dir):
   test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'benchmark')
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
-    opts = ['--disable-dart-dev', dart_test_file]
+    opts = [dart_test_file]
     run_engine_executable(
         build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir
     )
@@ -1073,7 +1091,7 @@ def run_impeller_golden_tests(build_dir: str, require_skia_gold: bool = False):
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'{dart_bin} --disable-dart-dev {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1113,7 +1131,7 @@ for more information.
 
     with DirectoryChange(harvester_path):
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd([dart_bin, '--disable-dart-dev', str(bin_path), temp_dir])
+      run_cmd([dart_bin, str(bin_path), temp_dir])
 
 
 def main():
@@ -1264,6 +1282,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
   else:
     types = args.type.split(',')
 
+  if 'android' in args.variant:
+    print('Warning: using "android" in variant. Did you mean to use --android-variant?')
+
   build_dir = os.path.join(OUT_DIR, args.variant)
   if args.type != 'java' and args.type != 'android':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
@@ -1300,8 +1321,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           engine_filter,
           repeat_flags,
           coverage=args.coverage,
+          gtest=True,
           extra_env=extra_env,
-          gtest=True
       )
     finally:
       xvfb.stop_virtual_x(build_name)
@@ -1316,13 +1337,12 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     dart_filter = args.dart_host_filter.split(',') if args.dart_host_filter else None
     dart_host_packages = build_dart_host_test_list(build_dir)
     tasks = []
-    for dart_host_package, extra_opts in dart_host_packages:
+    for dart_host_package in dart_host_packages:
       if dart_filter is None or dart_host_package in dart_filter:
         tasks += list(
             gather_dart_package_tests(
                 build_dir,
                 os.path.join(BUILDROOT_DIR, dart_host_package),
-                extra_opts,
             )
         )
 

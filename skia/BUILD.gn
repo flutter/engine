@@ -99,6 +99,11 @@ skia_library_configs = [
   ":skia_library",
 ]
 
+config("our_vulkan_headers") {
+  include_dirs = [ "include/third_party/vulkan" ]
+  defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
+}
+
 # Use for CPU-specific Skia code that needs particular compiler flags.
 template("opts") {
   if (invoker.enabled) {
@@ -351,6 +356,7 @@ optional("fontmgr_win") {
 optional("gpu_shared") {
   enabled = skia_enable_ganesh
 
+  configs = []
   deps = []
   libs = []
   public_defines = []
@@ -364,6 +370,7 @@ optional("gpu_shared") {
   if (skia_use_vulkan) {
     public_defines += [ "SK_VULKAN" ]
     sources += skia_shared_vk_sources
+    configs += [ ":our_vulkan_headers" ]
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }
@@ -380,6 +387,8 @@ optional("gpu_shared") {
 
 optional("gpu") {
   enabled = skia_enable_ganesh
+
+  configs = []
   deps = [ ":gpu_shared" ]
   public_defines = []
   public_configs = []
@@ -431,10 +440,9 @@ optional("gpu") {
     } else if (is_win) {
       sources += [
         "$_skia_root/src/gpu/ganesh/gl/win/GrGLMakeNativeInterface_win.cpp",
+        "$_skia_root/src/gpu/ganesh/gl/win/GrGLMakeWinInterface.cpp",
       ]
-      if (target_cpu != "arm64") {
-        libs += [ "OpenGL32.lib" ]
-      }
+      libs += [ "OpenGL32.lib" ]
     } else {
       sources +=
           [ "$_skia_root/src/gpu/ganesh/gl/GrGLMakeNativeInterface_none.cpp" ]
@@ -446,6 +454,7 @@ optional("gpu") {
   if (skia_use_vulkan) {
     public += skia_gpu_vk_public
     sources += skia_gpu_vk_private
+    configs += [ ":our_vulkan_headers" ]
     if (is_fuchsia) {
       public_deps += [ "${fuchsia_sdk}/pkg/vulkan" ]
     }
@@ -528,10 +537,8 @@ optional("png_decode") {
   ]
 
   deps = [ "//flutter/third_party/libpng" ]
-  sources = [
-    "$_skia_root/src/codec/SkIcoCodec.cpp",
-    "$_skia_root/src/codec/SkPngCodec.cpp",
-  ]
+  sources = [ "$_skia_root/src/codec/SkIcoCodec.cpp" ]
+  sources += skia_codec_png
 }
 
 optional("png_encode") {
@@ -638,7 +645,7 @@ skia_component("skia") {
   sources += skia_effects_sources
   sources += skia_colorfilters_sources
   sources += skia_effects_imagefilter_sources
-  sources += skia_codec_core
+  sources += skia_codec_shared
   sources += skia_codec_decode_bmp
   sources += skia_encode_srcs
   sources += skia_sksl_core_sources
@@ -649,8 +656,6 @@ skia_component("skia") {
     "$_skia_root/src/android/SkAnimatedImage.cpp",
     "$_skia_root/src/codec/SkAndroidCodec.cpp",
     "$_skia_root/src/codec/SkAndroidCodecAdapter.cpp",
-    "$_skia_root/src/codec/SkEncodedInfo.cpp",
-    "$_skia_root/src/codec/SkParseEncodedOrigin.cpp",
     "$_skia_root/src/codec/SkSampledCodec.cpp",
     "$_skia_root/src/ports/SkDiscardableMemory_none.cpp",
     "$_skia_root/src/ports/SkMemory_malloc.cpp",
@@ -676,7 +681,6 @@ skia_component("skia") {
     sources += [
       "$_skia_root/src/ports/SkDebug_win.cpp",
       "$_skia_root/src/ports/SkImageGeneratorWIC.cpp",
-      "$_skia_root/src/ports/SkOSLibrary_win.cpp",
     ]
     libs += [
       "Ole32.lib",
@@ -691,10 +695,7 @@ skia_component("skia") {
       ]
     }
   } else {
-    sources += [
-      "$_skia_root/src/ports/SkOSFile_posix.cpp",
-      "$_skia_root/src/ports/SkOSLibrary_posix.cpp",
-    ]
+    sources += [ "$_skia_root/src/ports/SkOSFile_posix.cpp" ]
     libs += [ "dl" ]
   }
 

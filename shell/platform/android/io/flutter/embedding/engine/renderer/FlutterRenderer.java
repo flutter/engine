@@ -108,8 +108,9 @@ public class FlutterRenderer implements TextureRegistry {
               public void onResume(@NonNull LifecycleOwner owner) {
                 Log.v(TAG, "onResume called; notifying SurfaceProducers");
                 for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
-                  if (producer.callback != null) {
-                    producer.callback.onSurfaceCreated();
+                  if (producer.callback != null && producer.notifiedDestroy) {
+                    producer.notifiedDestroy = false;
+                    producer.callback.onSurfaceAvailable();
                   }
                 }
               }
@@ -211,7 +212,9 @@ public class FlutterRenderer implements TextureRegistry {
     // version that is
     // running Vulkan, so we don't have to worry about it not being supported.
     final SurfaceProducer entry;
-    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
+    if (!debugForceSurfaceProducerGlTextures
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_29
+        && !flutterJNI.ShouldDisableAHB()) {
       final long id = nextTextureId.getAndIncrement();
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
@@ -460,6 +463,13 @@ public class FlutterRenderer implements TextureRegistry {
     // will be produced at that size.
     private boolean createNewReader = true;
 
+    /**
+     * Stores whether {@link Callback#onSurfaceDestroyed()} was previously invoked.
+     *
+     * <p>Used to avoid signaling {@link Callback#onSurfaceAvailable()} unnecessarily.
+     */
+    private boolean notifiedDestroy = false;
+
     // State held to track latency of various stages.
     private long lastDequeueTime = 0;
     private long lastQueueTime = 0;
@@ -687,6 +697,7 @@ public class FlutterRenderer implements TextureRegistry {
       cleanup();
       createNewReader = true;
       if (this.callback != null) {
+        notifiedDestroy = true;
         this.callback.onSurfaceDestroyed();
       }
     }
@@ -1271,6 +1282,9 @@ public class FlutterRenderer implements TextureRegistry {
     public float devicePixelRatio = 1.0f;
     public int width = 0;
     public int height = 0;
+    // The fields prefixed with viewPadding and viewInset are used to calculate the padding,
+    // viewPadding, and viewInsets of ViewConfiguration in Dart. This calculation is performed at
+    // https://github.com/flutter/engine/blob/main/lib/ui/hooks.dart#L139-L155.
     public int viewPaddingTop = 0;
     public int viewPaddingRight = 0;
     public int viewPaddingBottom = 0;

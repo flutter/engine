@@ -62,7 +62,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   auto cull_rect =
       surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
 
-  const impeller::RenderTarget& render_target =
+  impeller::RenderTarget render_target =
       surface->GetTargetRenderPassDescriptor();
 
   SurfaceFrame::EncodeCallback encode_callback = [aiks_context =
@@ -81,8 +81,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     }
 
 #if EXPERIMENTAL_CANVAS
-    impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
-                                            impeller::Matrix());
+    impeller::TextFrameDispatcher collector(
+        aiks_context->GetContentContext(), impeller::Matrix(),
+        impeller::Rect::MakeSize(cull_rect));
     display_list->Dispatch(collector,
                            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
     impeller::ExperimentalDlDispatcher impeller_dispatcher(
@@ -93,8 +94,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     display_list->Dispatch(impeller_dispatcher,
                            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
     impeller_dispatcher.FinishRecording();
-    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
     aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
     return true;
 #else
     impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
@@ -102,8 +103,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     display_list->Dispatch(impeller_dispatcher,
                            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
     auto picture = impeller_dispatcher.EndRecordingAsPicture();
-    const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
-    return aiks_context->Render(picture, render_target, reset_host_buffer);
+    return aiks_context->Render(picture, render_target,
+                                /*reset_host_buffer=*/true);
 #endif
   };
 

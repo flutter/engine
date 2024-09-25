@@ -11,7 +11,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
-#include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/toolkit/android/choreographer.h"
 
@@ -28,7 +27,9 @@ VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
 // |VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
-  if (impeller::android::Choreographer::IsAvailableOnPlatform()) {
+  const static bool use_choreographer =
+      impeller::android::Choreographer::IsAvailableOnPlatform();
+  if (use_choreographer) {
     auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
     fml::TaskRunner::RunNowOrPostTask(
         task_runners_.GetUITaskRunner(), [weak_this]() {
@@ -145,7 +146,7 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
       g_vsync_waiter_class->obj(), "asyncWaitForVsync", "(J)V");
   FML_CHECK(g_async_wait_for_vsync_method_ != nullptr);
 
-  return env->RegisterNatives(clazz, methods, fml::size(methods)) == 0;
+  return env->RegisterNatives(clazz, methods, std::size(methods)) == 0;
 }
 
 }  // namespace flutter

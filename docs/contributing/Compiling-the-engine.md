@@ -60,7 +60,7 @@ Run the following steps, from the `src` directory created in [Setting up the Eng
 > 💡 **TIP**: When developing on a Mac with ARM (M CPU), prefer `host_debug_unopt_arm64`.
 >
 > You can continue to use `host_debug_unopt` (required for Intel Macs), but the engine will be run under Rosetta
-> which may be slower. See [Developing with Flutter on Apple Silicon](../../platforms/desktop/macos/Developing-with-Flutter-on-Apple-Silicon.md)
+> which may be slower. See [Developing with Flutter on Apple Silicon](https://github.com/flutter/flutter/blob/master/docs/platforms/desktop/macos/Developing-with-Flutter-on-Apple-Silicon.md)
 > for more information.
 
 4. Build your executables
@@ -80,11 +80,11 @@ If you're going to be debugging crashes in the engine, make sure you add
 `android/AndroidManifest.xml` file for the Flutter app you are using
 to test the engine.
 
-See [The flutter tool](../../tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
+See [The flutter tool](https://github.com/flutter/flutter/blob/master/docs/tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
 You will typically use the `android_debug_unopt` build to debug the engine on a device, and
 `android_debug_unopt_x64` to debug in on a simulator. Modifying dart sources in the engine will
 require adding a `dependency_override` section in you app's `pubspec.yaml` as detailed
-[here](../../tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
+[here](https://github.com/flutter/flutter/blob/master/docs/tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
 
 Note that if you use particular android or ios engine build, you will need to have corresponding
 host build available next to it: if you use `android_debug_unopt`, you should have built `host_debug_unopt`,
@@ -133,11 +133,11 @@ Run the following steps, from the `src` directory created in the steps above:
 
 5. `ninja -C out/ios_debug_unopt && ninja -C out/host_debug_unopt` to build all artifacts (use `out/ios_debug_sim_unopt` for Simulator).
 
-See [The flutter tool](../../tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
+See [The flutter tool](https://github.com/flutter/flutter/blob/master/docs/tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
 You will typically use the `ios_debug_unopt` build to debug the engine on a device, and
 `ios_debug_sim_unopt` to debug in on a simulator. Modifying dart sources in the engine will
 require adding a `dependency_override` section in you app's `pubspec.yaml` as detailed
-[here](../../tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
+[here](https://github.com/flutter/flutter/blob/master/docs/tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
 
 See also [instructions for debugging the engine in a Flutter app in Xcode](../Debugging-the-engine.md#debugging-ios-builds-with-xcode).
 
@@ -155,10 +155,10 @@ These steps build the desktop embedding, and the engine used by `flutter test` o
 4. `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
     * If you skipped `--unoptimized`, use `ninja -C out/host_debug` instead.
 
-See [The flutter tool](../../tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
+See [The flutter tool](https://github.com/flutter/flutter/blob/master/docs/tool/README.md) for instructions on how to use the `flutter` tool with a local engine.
 You will typically use the `host_debug_unopt` build in this setup. Modifying dart sources in the engine will
 require adding a `dependency_override` section in you app's `pubspec.yaml` as detailed
-[here](../../tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
+[here](https://github.com/flutter/flutter/blob/master/docs/tool/README.md#using-a-locally-built-engine-with-the-flutter-tool).
 
 
 ## Compiling for Windows
@@ -200,18 +200,28 @@ Also, be sure that Python27 is before any other python in your Path.
 
 ### Build components for Fuchsia
 
-1. Building fuchsia is only supported on linux. You need to run `gclient config --custom-var=download_fuchsia_deps=True` then `gclient sync`.
+1. Building fuchsia is only supported on linux. You need to update `engine/.gclient`, or `../.gclient` if current directory is `engine/src`, with `custom_vars`.
 
-It will set `"download_fuchsia_deps": True` in `"custom_vars"` section in `.gclient` file, and download necessary binaries to build fuchsia components.
+```
+solutions = [
+  {
+    # ...
+    "custom_vars": {
+      "download_fuchsia_deps": True,
+      "run_fuchsia_emu": True,
+    },
+  },
+]
+```
 
-2. If you'd like to run tests locally, also run `gclient config --custom-var=run_fuchsia_emu=True` then `gclient sync`.
+> You may ignore `"run_fuchsia_emu": True` if you won't run tests locally.
 
-It will set `"run_fuchsia_emu": True` in `"custom_vars"` section in `.gclient` file, and download necessary binaries and images to run tests on fuchsia emulators.
-You can set both `custom_vars` and run `gclient sync` only once.
+Run `gclient sync`.
 
-You will also need kvm enabled, or nested virtualization on the gcloud VMs. Fuchsia and the tests will all be executed on the qemu.
+> [!WARNING]
+> When running tests locally, you will also need kvm enabled, or nested virtualization on the gcloud VMs. Fuchsia and the tests will all be executed on the qemu.
 
-3. Prepare and build
+2. Prepare and build
 
 ```
 ./flutter/tools/gn --fuchsia --no-lto
@@ -238,7 +248,7 @@ fuchsia_tests
   * Use `autoninja` if it's available.
   * `-C out/fuchsia_release_x64` for release build; other configurations are similar with a different folder name in `out/`.
 
-4. Run all tests locally
+3. Run all tests locally
 
 ```
 python3 flutter/tools/fuchsia/with_envs.py flutter/testing/fuchsia/run_tests.py
@@ -246,6 +256,10 @@ python3 flutter/tools/fuchsia/with_envs.py flutter/testing/fuchsia/run_tests.py
 
   * It runs the tests in `out/fuchsia_debug_x64` by default. According to the configuration, it may take 5 minutes with regular gtest output to the terminal.
   * Add `fuchsia_release_x64` at the end of the command for release build; other configurations are similar with a different folder name in `out/`.
+
+```
+python3 flutter/tools/fuchsia/with_envs.py flutter/testing/fuchsia/run_tests.py fuchsia_release_x64
+```
 
 ## Compiling for the Web
 

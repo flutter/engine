@@ -62,6 +62,12 @@ class MockBlitPass : public BlitPass {
   MOCK_METHOD(void, OnSetLabel, (std::string label), (override));
 
   MOCK_METHOD(bool,
+              ResizeTexture,
+              (const std::shared_ptr<Texture>& source,
+               const std::shared_ptr<Texture>& destination),
+              (override));
+
+  MOCK_METHOD(bool,
               OnCopyTextureToTextureCommand,
               (std::shared_ptr<Texture> source,
                std::shared_ptr<Texture> destination,
@@ -202,6 +208,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsReadFromResolve, (), (const, override));
   MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
   MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
+  MOCK_METHOD(bool, SupportsTriangleFan, (), (const override));
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));

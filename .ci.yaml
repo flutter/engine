@@ -45,9 +45,6 @@ platform_properties:
       device_type: none
       os: Windows-10
 
-# The current android emulator config names can be found here:
-# https://chromium.googlesource.com/chromium/src.git/+/HEAD/tools/android/avd/proto
-# You may use those names for the android_virtual_device version.
 targets:
   - name: Linux local_engine_builds
     enabled_branches:
@@ -57,6 +54,7 @@ targets:
       config_name: local_engine
 
   - name: Linux linux_android_emulator_tests
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
@@ -76,12 +74,76 @@ targets:
       - testing/scenario_app/**
       - testing/skia_gold_client/**
 
-  - name: Linux linux_android_emulator_skia_tests
+  - name: Linux linux_android_emulator_tests_34
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
     properties:
+      config_name: linux_android_emulator_34
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 90
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+      - testing/skia_gold_client/**
+
+  - name: Linux linux_android_emulator_opengles_tests_34
+    bringup: true
+    enabled_branches:
+      - main
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: linux_android_emulator_opengles_34
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 90
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator_opengles_34.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+      - testing/skia_gold_client/**
+
+  - name: Linux linux_android_emulator_skia_tests
+    bringup: true
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    properties:
       config_name: linux_android_emulator_skia
+      kvm: "1"
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 90
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+      - testing/skia_gold_client/**
+
+  - name: Linux linux_android_emulator_skia_tests_34
+    enabled_branches:
+      - main
+    recipe: engine_v2/builder
+    properties:
+      config_name: linux_android_emulator_skia_34
+      kvm: "1"
       dependencies: >-
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
@@ -111,7 +173,8 @@ targets:
       gclient_variables: >-
         {
           "download_emsdk": "true",
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -129,7 +192,8 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -152,7 +216,8 @@ targets:
         ]
       gclient_variables: >-
         {
-          "download_android_deps": "true"
+          "download_android_deps": "true",
+          "download_jdk": "true"
         }
     timeout: 60
 
@@ -171,6 +236,22 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_fuchsia
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
+    drone_dimensions:
+      - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
+
+  - name: Linux linux_fuchsia_tests
+    recipe: engine_v2/engine_v2
+    timeout: 90
+    properties:
+      config_name: linux_fuchsia_tests
     # Do not remove(https://github.com/flutter/flutter/issues/144644)
     # Scheduler will fail to get the platform
     drone_dimensions:
@@ -203,8 +284,16 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_arm_host_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
@@ -217,8 +306,16 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Linux linux_host_desktop_engine
     recipe: engine_v2/engine_v2
@@ -227,8 +324,16 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_desktop_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
@@ -237,8 +342,16 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_aot_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
@@ -247,8 +360,16 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_debug_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Linux linux_license
     recipe: engine_v2/builder
@@ -264,8 +385,16 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_web_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
     runIf:
       - DEPS
       - .ci.yaml
@@ -276,7 +405,7 @@ targets:
       - flutter_frontend_server/**
 
   - name: Linux clangd
-    recipe: engine_v2/engine_v2
+    recipe: engine_v2/builder
     properties:
       config_name: linux_unopt_debug_no_rbe
 
@@ -323,8 +452,16 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_android_aot_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      # This is needed so that orchestrators that only spawn subbuilds are not
+      # assigned to the large 32 core workers when doing release builds.
+      # For more details see the issue
+      # at https://github.com/flutter/flutter/issues/152186.
+      cores: "8"
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
@@ -362,12 +499,16 @@ targets:
         {
           "sdk_version": "15a240d"
         }
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Mac-13|Mac-14
 
+  # Avoid using a Mac orchestrator to save ~5 minutes of Mac host time.
   - name: Linux mac_clangd
     recipe: engine_v2/engine_v2
-    # Avoid using a Mac orchestrator to save ~5 minutes of Mac host time.
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
     properties:
@@ -391,17 +532,11 @@ targets:
         {
           "sdk_version": "15a240d"
         }
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Mac-13|Mac-14
       - cpu=x86
-
-  - name: Mac impeller-cmake-example
-    bringup: true
-    recipe: engine_v2/engine_v2
-    timeout: 60
-    properties:
-      cpu: arm64
-      config_name: mac_impeller_cmake_example
 
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
@@ -410,6 +545,8 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_android_aot_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Windows
 
@@ -420,6 +557,8 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_host_engine
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Windows
 

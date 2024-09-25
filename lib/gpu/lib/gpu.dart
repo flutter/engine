@@ -2,13 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// The Flutter GPU library.
+/// Flutter GPU is a low level API for building rendering packages from scratch.
 ///
-/// To use, import `package:flutter_gpu/gpu.dart`.
+/// To use, first add an SDK dependency in your `pubspec.yaml` file:
+/// ```
+/// dependencies:
+///   flutter_gpu:
+///     sdk: flutter
+/// ```
+/// And then add an import statement in your Dart files:
+/// ```dart
+/// import `package:flutter_gpu/gpu.dart`;
+/// ```
 ///
 /// See also:
 ///
-///  * [Flutter GPU Wiki page](https://github.com/flutter/flutter/wiki/Flutter-GPU).
+///  * [Flutter GPU documentation](https://github.com/flutter/engine/blob/main/docs/impeller/Flutter-GPU.md).
 library flutter_gpu;
 
 import 'dart:ffi';
@@ -17,7 +26,7 @@ import 'dart:typed_data';
 // ignore: uri_does_not_exist
 import 'dart:ui' as ui;
 
-export 'src/smoketest.dart';
+import 'package:vector_math/vector_math.dart' as vm;
 
 part 'src/buffer.dart';
 part 'src/command_buffer.dart';

@@ -25,6 +25,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/buildtools', // only used by build
   r'flutter/ci',
   r'flutter/docs',
+  r'flutter/engine.code-workspace',
   r'flutter/flutter_frontend_server',
   r'flutter/impeller/docs',
   r'flutter/lib/web_ui/build', // this is compiler-generated output
@@ -173,9 +174,8 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/skia/third_party/vello', // not linked in
   r'flutter/third_party/skia/tools', // contains nothing that ends up in the binary executable
   r'flutter/third_party/stb',
-  r'flutter/third_party/swiftshader', // only used on hosts for tests
+  r'flutter/third_party/swiftshader/third_party', // See: https://github.com/flutter/flutter/issues/145726
   r'flutter/third_party/test_shaders', // for tests only
-  r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
   r'flutter/third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
   r'flutter/third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files

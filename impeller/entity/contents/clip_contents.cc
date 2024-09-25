@@ -7,6 +7,7 @@
 
 #include "fml/logging.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -53,8 +54,11 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
     case Entity::ClipOperation::kDifference:
       // This can be optimized further by considering cases when the bounds of
       // the current stencil will shrink.
-      return {.type = ClipCoverage::Type::kAppend,
-              .coverage = current_clip_coverage};
+      return {
+          .type = ClipCoverage::Type::kAppend,  //
+          .is_difference_or_non_square = true,  //
+          .coverage = current_clip_coverage     //
+      };
     case Entity::ClipOperation::kIntersect:
       if (!geometry_) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
@@ -64,8 +68,9 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
       return {
-          .type = ClipCoverage::Type::kAppend,
-          .coverage = current_clip_coverage->Intersection(coverage.value()),
+          .type = ClipCoverage::Type::kAppend,                                //
+          .is_difference_or_non_square = !geometry_->IsAxisAlignedRect(),     //
+          .coverage = current_clip_coverage->Intersection(coverage.value()),  //
       };
   }
   FML_UNREACHABLE();
@@ -90,19 +95,6 @@ bool ClipContents::Render(const ContentContext& renderer,
   }
 
   using VS = ClipPipeline::VertexShader;
-
-  if (clip_op_ == Entity::ClipOperation::kIntersect &&
-      geometry_->IsAxisAlignedRect() &&
-      entity.GetTransform().IsTranslationScaleOnly()) {
-    std::optional<Rect> coverage =
-        geometry_->GetCoverage(entity.GetTransform());
-    if (coverage.has_value() &&
-        coverage->Contains(Rect::MakeSize(pass.GetRenderTargetSize()))) {
-      // Skip axis-aligned intersect clips that cover the whole render target
-      // since they won't draw anything to the depth buffer.
-      return true;
-    }
-  }
 
   VS::FrameInfo info;
   info.depth = GetShaderClipDepth(entity);
@@ -169,11 +161,8 @@ bool ClipContents::Render(const ContentContext& renderer,
       break;
   }
   auto points = cover_area.GetPoints();
-  auto vertices =
-      VertexBufferBuilder<VS::PerVertexData>{}
-          .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
-          .CreateVertexBuffer(renderer.GetTransientsBuffer());
-  pass.SetVertexBuffer(std::move(vertices));
+  pass.SetVertexBuffer(
+      CreateVertexBuffer(points, renderer.GetTransientsBuffer()));
 
   pass.SetPipeline(renderer.GetClipPipeline(options));
 
@@ -246,15 +235,15 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   auto ltrb =
       restore_coverage_.value_or(Rect::MakeSize(pass.GetRenderTargetSize()))
           .GetLTRB();
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  vtx_builder.AddVertices({
-      {Point(ltrb[0], ltrb[1])},
-      {Point(ltrb[2], ltrb[1])},
-      {Point(ltrb[0], ltrb[3])},
-      {Point(ltrb[2], ltrb[3])},
-  });
+
+  std::array<VS::PerVertexData, 4> vertices = {
+      VS::PerVertexData{Point(ltrb[0], ltrb[1])},
+      VS::PerVertexData{Point(ltrb[2], ltrb[1])},
+      VS::PerVertexData{Point(ltrb[0], ltrb[3])},
+      VS::PerVertexData{Point(ltrb[2], ltrb[3])},
+  };
   pass.SetVertexBuffer(
-      vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
+      CreateVertexBuffer(vertices, renderer.GetTransientsBuffer()));
 
   VS::FrameInfo info;
   info.depth = GetShaderClipDepth(entity);

@@ -22,7 +22,7 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
@@ -612,6 +612,84 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false, sampling);
 
   EXPECT_TRUE(resolve_called);
+}
+
+TEST_F(EmbedderTest, CanRenderWithImpellerMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_test.png", rendered_scene));
+}
+
+TEST_F(EmbedderTest, CanRenderTextWithImpellerMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_text_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_text_test.png", rendered_scene));
+}
+
+TEST_F(EmbedderTest, CanRenderTextWithImpellerAndCompositorMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_text_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+
+  builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_text_test.png", rendered_scene));
 }
 
 }  // namespace testing

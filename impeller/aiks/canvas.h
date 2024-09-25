@@ -11,7 +11,6 @@
 #include <optional>
 #include <vector>
 
-#include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
@@ -38,6 +37,11 @@ struct CanvasStackEntry {
   size_t num_clips = 0u;
   Scalar distributed_opacity = 1.0f;
   Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
+  // Whether all entities in the current save should be skipped.
+  bool skipping = false;
+  // Whether subpass coverage was rounded out to pixel coverage, or if false
+  // truncated.
+  bool did_round_out = false;
 };
 
 enum class PointStyle {
@@ -128,13 +132,13 @@ class Canvas {
                   const Paint& paint,
                   PointStyle point_style);
 
-  void DrawImage(const std::shared_ptr<Image>& image,
+  void DrawImage(const std::shared_ptr<Texture>& image,
                  Point offset,
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
   void DrawImageRect(
-      const std::shared_ptr<Image>& image,
+      const std::shared_ptr<Texture>& image,
       Rect source,
       Rect dest,
       const Paint& paint,
@@ -166,7 +170,7 @@ class Canvas {
                     BlendMode blend_mode,
                     const Paint& paint);
 
-  void DrawAtlas(const std::shared_ptr<Image>& atlas,
+  void DrawAtlas(const std::shared_ptr<Texture>& atlas,
                  std::vector<Matrix> transforms,
                  std::vector<Rect> texture_coordinates,
                  std::vector<Color> colors,
@@ -176,6 +180,9 @@ class Canvas {
                  const Paint& paint);
 
   Picture EndRecordingAsPicture();
+
+  uint64_t GetOpDepth() const { return current_depth_; }
+  uint64_t GetMaxOpDepth() const { return transform_stack_.back().clip_depth; }
 
  protected:
   std::deque<CanvasStackEntry> transform_stack_;

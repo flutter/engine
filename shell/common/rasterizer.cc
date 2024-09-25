@@ -32,9 +32,9 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
@@ -743,9 +743,17 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     // when leaf layer tracing is enabled we wish to repaint the whole frame
     // for accurate performance metrics.
     if (frame->framebuffer_info().supports_partial_repaint) {
+      // Disable partial repaint if external_view_embedder_ SubmitFlutterView is
+      // involved - ExternalViewEmbedder unconditionally clears the entire
+      // surface and also partial repaint with platform view present is
+      // something that still need to be figured out.
+      bool force_full_repaint =
+          external_view_embedder_ &&
+          (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+
       damage = std::make_unique<FrameDamage>();
       auto existing_damage = frame->framebuffer_info().existing_damage;
-      if (existing_damage.has_value()) {
+      if (existing_damage.has_value() && !force_full_repaint) {
         damage->SetPreviousLayerTree(GetLastLayerTree(view_id));
         damage->AddAdditionalDamage(existing_damage.value());
         damage->SetClipAlignment(
@@ -917,13 +925,21 @@ ScreenshotLayerTreeAsImageImpeller(
   RenderFrameForScreenshot(compositor_context, &builder, tree, nullptr,
                            aiks_context);
 
+  std::shared_ptr<impeller::Texture> texture;
+#if EXPERIMENTAL_CANVAS
+  texture = impeller::DisplayListToTexture(
+      builder.Build(),
+      impeller::ISize(tree->frame_size().fWidth, tree->frame_size().fHeight),
+      *aiks_context);
+#else
   impeller::DlDispatcher dispatcher;
   builder.Build()->Dispatch(dispatcher);
   const auto& picture = dispatcher.EndRecordingAsPicture();
-  const auto& image = picture.ToImage(
+  texture = picture.ToImage(
       *aiks_context,
       impeller::ISize(tree->frame_size().fWidth, tree->frame_size().fHeight));
-  const auto& texture = image->GetTexture();
+#endif  // EXPERIMENTAL_CANVAS
+
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
   buffer_desc.size =

@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine.renderer;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
@@ -758,7 +762,7 @@ public class FlutterRendererTest {
     TextureRegistry.SurfaceProducer.Callback callback =
         new TextureRegistry.SurfaceProducer.Callback() {
           @Override
-          public void onSurfaceCreated() {
+          public void onSurfaceAvailable() {
             latch.countDown();
           }
 
@@ -766,6 +770,9 @@ public class FlutterRendererTest {
           public void onSurfaceDestroyed() {}
         };
     producer.setCallback(callback);
+
+    // Trim memory.
+    ((FlutterRenderer.ImageReaderSurfaceProducer) producer).onTrimMemory(40);
 
     // Trigger a resume.
     ((LifecycleRegistry) ProcessLifecycleOwner.get().getLifecycle())

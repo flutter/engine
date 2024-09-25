@@ -31,6 +31,12 @@ struct LazyRenderingConfig {
     inline_pass_context =
         std::make_unique<InlinePassContext>(renderer, *entity_pass_target, 0);
   }
+
+  LazyRenderingConfig(ContentContext& renderer,
+                      std::unique_ptr<EntityPassTarget> entity_pass_target,
+                      std::unique_ptr<InlinePassContext> inline_pass_context)
+      : entity_pass_target(std::move(entity_pass_target)),
+        inline_pass_context(std::move(inline_pass_context)) {}
 };
 
 /// This Canvas attempts to translate from display lists to draw calls directly.
@@ -81,6 +87,10 @@ class ExperimentalCanvas : public Canvas {
   };
 
  private:
+  /// @brief Compute the current coverage limit in screen space, or
+  /// std::nullopt.
+  std::optional<Rect> ComputeCoverageLimit() const;
+
   // clip depth of the previous save or 0.
   size_t GetClipHeightFloor() const {
     if (transform_stack_.size() > 1) {
@@ -88,6 +98,13 @@ class ExperimentalCanvas : public Canvas {
     }
     return 0;
   }
+
+  /// @brief Whether all entites should be skipped until a corresponding
+  ///        restore.
+  bool IsSkipping() { return transform_stack_.back().skipping; }
+
+  /// @brief Skip all rendering/clipping entities until next restore.
+  void SkipUntilMatchingRestore(size_t total_content_depth);
 
   ContentContext& renderer_;
   RenderTarget& render_target_;
@@ -102,7 +119,7 @@ class ExperimentalCanvas : public Canvas {
   void AddClipEntityToCurrentPass(Entity entity) override;
   bool BlitToOnscreen();
 
-  Point GetGlobalPassPosition() {
+  Point GetGlobalPassPosition() const {
     if (save_layer_state_.empty()) {
       return Point(0, 0);
     }

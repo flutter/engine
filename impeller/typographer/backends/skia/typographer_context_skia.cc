@@ -208,7 +208,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const ScaledFont& scaled_font,
                       const SubpixelGlyph& glyph,
                       const Rect& scaled_bounds,
-                      const GlyphProperties& prop,
+                      const std::optional<GlyphProperties>& prop,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
   SkGlyphID glyph_id = glyph.glyph.index;
@@ -222,18 +222,17 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setSubpixel(true);
   sk_font.setSize(sk_font.getSize() * scaled_font.scale);
 
-  auto glyph_color =
-      has_color ? glyph.properties.color.ToARGB() : SK_ColorBLACK;
+  auto glyph_color = prop.has_value() ? prop->color.ToARGB() : SK_ColorBLACK;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   glyph_paint.setBlendMode(SkBlendMode::kSrc);
-  if (prop.stroke) {
+  if (prop.has_value() && prop->stroke) {
     glyph_paint.setStroke(true);
-    glyph_paint.setStrokeWidth(prop.stroke_width * scaled_font.scale);
-    glyph_paint.setStrokeCap(ToSkiaCap(glyph.properties.stroke_cap));
-    glyph_paint.setStrokeJoin(ToSkiaJoin(glyph.properties.stroke_join));
-    glyph_paint.setStrokeMiter(prop.stroke_miter * scaled_font.scale);
+    glyph_paint.setStrokeWidth(prop->stroke_width * scaled_font.scale);
+    glyph_paint.setStrokeCap(ToSkiaCap(prop->stroke_cap));
+    glyph_paint.setStrokeJoin(ToSkiaJoin(prop->stroke_join));
+    glyph_paint.setStrokeMiter(prop->stroke_miter * scaled_font.scale);
   }
   canvas->save();
   canvas->translate(glyph.subpixel_offset.x, glyph.subpixel_offset.y);
@@ -384,12 +383,12 @@ static Rect ComputeGlyphSize(const SkFont& font,
                              Scalar scale) {
   SkRect scaled_bounds;
   SkPaint glyph_paint;
-  if (glyph.properties.stroke) {
+  if (glyph.properties.has_value() && glyph.properties->stroke) {
     glyph_paint.setStroke(true);
-    glyph_paint.setStrokeWidth(glyph.properties.stroke_width * scale);
-    glyph_paint.setStrokeCap(ToSkiaCap(glyph.properties.stroke_cap));
-    glyph_paint.setStrokeJoin(ToSkiaJoin(glyph.properties.stroke_join));
-    glyph_paint.setStrokeMiter(glyph.properties.stroke_miter * scale);
+    glyph_paint.setStrokeWidth(glyph.properties->stroke_width * scale);
+    glyph_paint.setStrokeCap(ToSkiaCap(glyph.properties->stroke_cap));
+    glyph_paint.setStrokeJoin(ToSkiaJoin(glyph.properties->stroke_join));
+    glyph_paint.setStrokeMiter(glyph.properties->stroke_miter * scale);
   }
   font.getBounds(&glyph.glyph.index, 1, &scaled_bounds, &glyph_paint);
 
@@ -403,34 +402,14 @@ static Rect ComputeGlyphSize(const SkFont& font,
                         scaled_bounds.fBottom);
 };
 
-std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
-    Context& context,
-    GlyphAtlas::Type type,
-    HostBuffer& host_buffer,
-    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-    const FontGlyphMap& font_glyph_map) const {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!IsValid()) {
-    return nullptr;
-  }
-  std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
-  FML_DCHECK(last_atlas->GetType() == type);
-
-  if (font_glyph_map.empty()) {
-    return last_atlas;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 1: Determine if the atlas type and font glyph pairs are compatible
-  //         with the current atlas and reuse if possible. For each new font and
-  //         glyph pair, compute the glyph size at scale.
-  // ---------------------------------------------------------------------------
-  std::vector<Rect> glyph_sizes;
-  std::vector<FontGlyphPair> new_glyphs;
+static void CollectNewGlyphs(const std::shared_ptr<GlyphAtlas>& atlas,
+                             const FontGlyphMap& font_glyph_map,
+                             std::vector<FontGlyphPair>& new_glyphs,
+                             std::vector<Rect>& glyph_sizes) {
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
     const FontGlyphAtlas* font_glyph_atlas =
-        last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
+        atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
 
     auto metrics = scaled_font.font.GetMetrics();
 
@@ -462,6 +441,33 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       }
     }
   }
+}
+
+std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
+    Context& context,
+    GlyphAtlas::Type type,
+    HostBuffer& host_buffer,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    const FontGlyphMap& font_glyph_map) const {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!IsValid()) {
+    return nullptr;
+  }
+  std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
+  FML_DCHECK(last_atlas->GetType() == type);
+
+  if (font_glyph_map.empty()) {
+    return last_atlas;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Step 1: Determine if the atlas type and font glyph pairs are compatible
+  //         with the current atlas and reuse if possible. For each new font and
+  //         glyph pair, compute the glyph size at scale.
+  // ---------------------------------------------------------------------------
+  std::vector<FontGlyphPair> new_glyphs;
+  std::vector<Rect> glyph_sizes;
+  CollectNewGlyphs(last_atlas, font_glyph_map, new_glyphs, glyph_sizes);
   if (new_glyphs.size() == 0) {
     return last_atlas;
   }
@@ -528,10 +534,16 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (atlas_context->GetAtlasSize().height >= max_texture_height ||
       context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
-    first_missing_index = 0;
-    glyph_positions.clear();
-    height_adjustment = 0;
     new_atlas = std::make_shared<GlyphAtlas>(type);
+
+    new_glyphs.clear();
+    glyph_sizes.clear();
+    CollectNewGlyphs(new_atlas, font_glyph_map, new_glyphs, glyph_sizes);
+    glyph_positions.clear();
+    glyph_positions.reserve(new_glyphs.size());
+    first_missing_index = 0;
+
+    height_adjustment = 0;
     atlas_context->UpdateRectPacker(nullptr);
     atlas_context->UpdateGlyphAtlas(new_atlas, {0, 0}, 0);
   }

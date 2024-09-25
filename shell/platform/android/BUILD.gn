@@ -228,6 +228,7 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
   "io/flutter/embedding/android/FlutterView.java",
+  "io/flutter/embedding/android/FlutterViewDelegate.java",
   "io/flutter/embedding/android/KeyChannelResponder.java",
   "io/flutter/embedding/android/KeyData.java",
   "io/flutter/embedding/android/KeyEmbedderResponder.java",
@@ -393,6 +394,7 @@ embedding_dependencies_jars = [
   "//flutter/third_party/android_embedding_dependencies/lib/viewpager-1.0.0.jar",
   "//flutter/third_party/android_embedding_dependencies/lib/window-1.2.0.jar",
   "//flutter/third_party/android_embedding_dependencies/lib/window-java-1.2.0.jar",
+  "//flutter/third_party/android_embedding_dependencies/lib/relinker-1.4.5.jar",
 ]
 
 action("check_imports") {

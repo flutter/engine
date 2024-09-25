@@ -17,30 +17,99 @@ void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   }
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha(engine.clampInt((a.alpha * factor).round(), 0, 255));
+Color _scaleAlpha(Color x, double factor) {
+  return x.withValues(alpha: (x.a * factor).clamp(0, 1));
 }
 
 class Color {
-  const Color(int value) : value = value & 0xFFFFFFFF;
+  const Color(int value)
+      : this._fromARGBC(
+            value >> 24, value >> 16, value >> 8, value, ColorSpace.sRGB);
+
+  const Color.from(
+      {required double alpha,
+      required double red,
+      required double green,
+      required double blue,
+      this.colorSpace = ColorSpace.sRGB})
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
+
   const Color.fromARGB(int a, int r, int g, int b)
-      : value = (((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
+      : this._fromARGBC(a, r, g, b, ColorSpace.sRGB);
+
+  const Color._fromARGBC(
+      int alpha, int red, int green, int blue, ColorSpace colorSpace)
+      : this._fromRGBOC(
+            red, green, blue, (alpha & 0xff) / 255, colorSpace);
+
   const Color.fromRGBO(int r, int g, int b, double opacity)
-      : value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF;
-  final int value;
+      : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
+
+  const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
+
+  final double a;
+
+  final double r;
+
+  final double g;
+
+  final double b;
+
+  final ColorSpace colorSpace;
+
+  static int _floatToInt8(double x) {
+    return (x * 255.0).round() & 0xff;
+  }
+
+  int get value {
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
+  }
+
+
   int get alpha => (0xff000000 & value) >> 24;
+
   double get opacity => alpha / 0xFF;
+
   int get red => (0x00ff0000 & value) >> 16;
+
   int get green => (0x0000ff00 & value) >> 8;
+
   int get blue => (0x000000ff & value) >> 0;
+
+  Color withValues(
+      {double? alpha,
+      double? red,
+      double? green,
+      double? blue,
+      ColorSpace? colorSpace}) {
+    Color? updatedComponents;
+    if (alpha != null || red != null || green != null || blue != null) {
+      updatedComponents = Color.from(
+          alpha: alpha ?? a,
+          red: red ?? r,
+          green: green ?? g,
+          blue: blue ?? b,
+          colorSpace: this.colorSpace);
+    }
+    if (colorSpace != null && colorSpace != this.colorSpace) {
+      final _ColorTransform transform =
+          _getColorTransform(this.colorSpace, colorSpace);
+      return transform.transform(updatedComponents ?? this, colorSpace);
+    } else {
+      return updatedComponents ?? this;
+    }
+  }
+
   Color withAlpha(int a) {
     return Color.fromARGB(a, red, green, blue);
   }
@@ -72,59 +141,64 @@ class Color {
 
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
-  static Color? lerp(Color? a, Color? b, double t) {
-    if (b == null) {
-      if (a == null) {
+  static Color? lerp(Color? x, Color? y, double t) {
+    assert(x?.colorSpace != ColorSpace.extendedSRGB);
+    assert(y?.colorSpace != ColorSpace.extendedSRGB);
+    if (y == null) {
+      if (x == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleAlpha(x, 1.0 - t);
       }
     } else {
-      if (a == null) {
-        return _scaleAlpha(b, t);
+      if (x == null) {
+        return _scaleAlpha(y, t);
       } else {
-        return Color.fromARGB(
-          engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        assert(x.colorSpace == y.colorSpace);
+        return Color.from(
+          alpha: _lerpDouble(x.a, y.a, t).clamp(0, 1),
+          red: _lerpDouble(x.r, y.r, t).clamp(0, 1),
+          green: _lerpDouble(x.g, y.g, t).clamp(0, 1),
+          blue: _lerpDouble(x.b, y.b, t).clamp(0, 1),
+          colorSpace: x.colorSpace,
         );
       }
     }
   }
 
   static Color alphaBlend(Color foreground, Color background) {
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) {
-      // Foreground completely transparent.
+    assert(foreground.colorSpace == background.colorSpace);
+    assert(foreground.colorSpace != ColorSpace.extendedSRGB);
+    final double alpha = foreground.a;
+    if (alpha == 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
-    if (backAlpha == 0xff) {
-      // Opaque background case
-      return Color.fromARGB(
-        0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+    final double invAlpha = 1 - alpha;
+    double backAlpha = background.a;
+    if (backAlpha == 1) { // Opaque background case
+      return Color.from(
+        alpha: 1,
+        red: alpha * foreground.r + invAlpha * background.r,
+        green: alpha * foreground.g + invAlpha * background.g,
+        blue: alpha * foreground.b + invAlpha * background.b,
+        colorSpace: foreground.colorSpace,
       );
-    } else {
-      // General case
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color.fromARGB(
-        outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+    } else { // General case
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0);
+      return Color.from(
+        alpha: outAlpha,
+        red: (foreground.r * alpha + background.r * backAlpha) / outAlpha,
+        green: (foreground.g * alpha + background.g * backAlpha) / outAlpha,
+        blue: (foreground.b * alpha + background.b * backAlpha) / outAlpha,
+        colorSpace: foreground.colorSpace,
       );
     }
   }
@@ -141,16 +215,20 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is Color && other.value == value;
+    return other is Color &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
+        other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => value.hashCode;
+  int get hashCode => Object.hash(a, r, g, b, colorSpace);
 
   @override
-  String toString() {
-    return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-  }
+  String toString() =>
+      'Color(alpha: ${a.toStringAsFixed(4)}, red: ${r.toStringAsFixed(4)}, green: ${g.toStringAsFixed(4)}, blue: ${b.toStringAsFixed(4)}, colorSpace: $colorSpace)';
 }
 
 enum StrokeCap {
@@ -219,14 +297,6 @@ abstract class Paint {
   factory Paint() => engine.renderer.createPaint();
 
   factory Paint.from(Paint other) {
-    // This is less efficient than copying the underlying buffer or object but
-    // it's a reasonable default, as if a user wanted to implement a copy of a
-    // paint object themselves they are unable to do much better than this.
-    //
-    // TODO(matanlurey): Web team, if important to optimize, could:
-    // 1. Add a `engine.renderer.copyPaint` method.
-    // 2. Use the below code as the default implementation.
-    // 3. Have renderer-specific implementations override with optimized code.
     final Paint paint = Paint();
     paint
       ..blendMode = other.blendMode
@@ -414,6 +484,101 @@ class MaskFilter {
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
 
+abstract class _ColorTransform {
+  Color transform(Color color, ColorSpace resultColorSpace);
+}
+
+class _IdentityColorTransform implements _ColorTransform {
+  const _IdentityColorTransform();
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) => color;
+}
+
+class _ClampTransform implements _ColorTransform {
+  const _ClampTransform(this.child);
+  final _ColorTransform child;
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+      alpha: clampDouble(color.a, 0, 1),
+      red: clampDouble(color.r, 0, 1),
+      green: clampDouble(color.g, 0, 1),
+      blue: clampDouble(color.b, 0, 1),
+      colorSpace: resultColorSpace);
+  }
+}
+
+class _MatrixColorTransform implements _ColorTransform {
+  const _MatrixColorTransform(this.values);
+
+  final List<double> values;
+
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+        alpha: color.a,
+        red: values[0] * color.r +
+            values[1] * color.g +
+            values[2] * color.b +
+            values[3],
+        green: values[4] * color.r +
+            values[5] * color.g +
+            values[6] * color.b +
+            values[7],
+        blue: values[8] * color.r +
+            values[9] * color.g +
+            values[10] * color.b +
+            values[11],
+        colorSpace: resultColorSpace);
+  }
+}
+
+_ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
+  const _MatrixColorTransform srgbToP3 = _MatrixColorTransform(<double>[
+    0.808052267214446, 0.220292047628890, -0.139648846160100,
+    0.145738111193222, //
+    0.096480880462996, 0.916386732581291, -0.086093928394828,
+    0.089490172325882, //
+    -0.127099563510240, -0.068983484963878, 0.735426667591299, 0.233655661600230
+  ]);
+  const _ColorTransform p3ToSrgb = _MatrixColorTransform(<double>[
+    1.306671048092539, -0.298061942172353, 0.213228303487995,
+    -0.213580156254466, //
+    -0.117390025596251, 1.127722006101976, 0.109727644608938,
+    -0.109450321455370, //
+    0.214813187718391, 0.054268702864647, 1.406898424029350, -0.364892765879631
+  ]);
+  switch (source) {
+    case ColorSpace.sRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return srgbToP3;
+      }
+    case ColorSpace.extendedSRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(_IdentityColorTransform());
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return const _ClampTransform(srgbToP3);
+      }
+    case ColorSpace.displayP3:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(p3ToSrgb);
+        case ColorSpace.extendedSRGB:
+          return p3ToSrgb;
+        case ColorSpace.displayP3:
+          return const _IdentityColorTransform();
+      }
+  }
+}
+
 // This needs to be kept in sync with the "_FilterQuality" enum in skwasm's canvas.cpp
 enum FilterQuality {
   none,
@@ -453,6 +618,7 @@ class ImageFilter {
 enum ColorSpace {
   sRGB,
   extendedSRGB,
+  displayP3,
 }
 
 // This must be kept in sync with the `ImageByteFormat` enum in Skwasm's surface.cpp.

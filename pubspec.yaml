@@ -86,8 +86,6 @@ workspace:
   - shell/vmservice
   - testing/benchmark
   - testing/dart
-  - testing/litetest
-  - testing/pkg_test_demo
   - testing/scenario_app
   - testing/skia_gold_client
   - testing/smoke_test_failure
@@ -139,8 +137,6 @@ dependencies:
   smith: any
 
 dev_dependencies:
-  litetest:
-    path: ./testing/litetest
   process_fakes:
     path: ./tools/pkg/process_fakes
   skia_gold_client:
@@ -236,7 +232,7 @@ dependency_overrides:
   metrics_center:
     path: ./third_party/pkg/flutter_packages/packages/metrics_center
   mime:
-    path: ./third_party/dart/third_party/pkg/mime
+    path: ./third_party/dart/third_party/pkg/tools/pkgs/mime
   node_preamble:
     path: ./third_party/pkg/node_preamble
   package_config:
@@ -263,10 +259,12 @@ dependency_overrides:
     path: ./third_party/dart/third_party/pkg/shelf/pkgs/shelf_static
   shelf_web_socket:
     path: ./third_party/dart/third_party/pkg/shelf/pkgs/shelf_web_socket
+  sky_engine:
+    path: ./sky/packages/sky_engine
   smith:
     path: ./third_party/dart/pkg/smith
   source_map_stack_trace:
-    path: ./third_party/dart/third_party/pkg/source_map_stack_trace
+    path: ./third_party/dart/third_party/pkg/tools/pkgs/source_map_stack_trace
   source_maps:
     path: ./third_party/dart/third_party/pkg/source_maps
   source_span:
@@ -296,7 +294,7 @@ dependency_overrides:
   watcher:
     path: ./third_party/dart/third_party/pkg/watcher
   web:
-    path: ./third_party/dart/third_party/pkg/web
+    path: ./third_party/dart/third_party/pkg/web/web
   web_socket:
     path: ./third_party/dart/third_party/pkg/http/pkgs/web_socket
   web_socket_channel:

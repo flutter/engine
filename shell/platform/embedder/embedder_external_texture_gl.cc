@@ -12,11 +12,11 @@
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 
 namespace flutter {
 
@@ -38,6 +38,7 @@ void EmbedderExternalTextureGL::Paint(PaintContext& context,
     last_image_ =
         ResolveTexture(Id(),                                           //
                        context.gr_context,                             //
+                       context.aiks_context,                           //
                        SkISize::Make(bounds.width(), bounds.height())  //
         );
   }
@@ -58,6 +59,7 @@ void EmbedderExternalTextureGL::Paint(PaintContext& context,
 sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
     int64_t texture_id,
     GrDirectContext* context,
+    impeller::AiksContext* aiks_context,
     const SkISize& size) {
   context->flushAndSubmit();
   context->resetContext(kAll_GrBackendState);

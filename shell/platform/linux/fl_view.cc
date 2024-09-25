@@ -40,11 +40,20 @@ struct _FlView {
   // Engine this view is showing.
   FlEngine* engine;
 
+  // Handler for engine restart signal.
+  guint on_pre_engine_restart_handler;
+
   // ID for this view.
   FlutterViewId view_id;
 
   // Rendering output.
   FlRendererGdk* renderer;
+
+  // Background color.
+  GdkRGBA* background_color;
+
+  // TRUE if have got the first frame to render.
+  gboolean have_first_frame;
 
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
@@ -76,7 +85,9 @@ struct _FlView {
   FlViewAccessible* view_accessible;
 };
 
-enum { kPropFlutterProject = 1, kPropLast };
+enum { kSignalFirstFrame, kSignalLastSignal };
+
+static guint fl_view_signals[kSignalLastSignal];
 
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
@@ -102,6 +113,15 @@ G_DEFINE_TYPE_WITH_CODE(
                                   fl_view_scrolling_delegate_iface_init)
                 G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
                                       fl_view_text_input_delegate_iface_init))
+
+// Emit the first frame signal in the main thread.
+static gboolean first_frame_idle_cb(gpointer user_data) {
+  FlView* self = FL_VIEW(user_data);
+
+  g_signal_emit(self, fl_view_signals[kSignalFirstFrame], 0);
+
+  return FALSE;
+}
 
 // Signal handler for GtkWidget::delete-event
 static gboolean window_delete_event_cb(FlView* self) {
@@ -271,9 +291,7 @@ static void update_semantics_cb(FlEngine* engine,
 // This method should reset states to be as if the engine had just been started,
 // which usually indicates the user has requested a hot restart (Shift-R in the
 // Flutter CLI.)
-static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
-  FlView* self = FL_VIEW(user_data);
-
+static void on_pre_engine_restart_cb(FlView* self) {
   init_keyboard(self);
   init_scrolling(self);
 }
@@ -606,8 +624,9 @@ static gboolean render_cb(FlView* self, GdkGLContext* context) {
   int width = gtk_widget_get_allocated_width(GTK_WIDGET(self->gl_area));
   int height = gtk_widget_get_allocated_height(GTK_WIDGET(self->gl_area));
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self->gl_area));
-  fl_renderer_render(FL_RENDERER(self->renderer), width * scale_factor,
-                     height * scale_factor);
+  fl_renderer_render(FL_RENDERER(self->renderer), self->view_id,
+                     width * scale_factor, height * scale_factor,
+                     self->background_color);
 
   return TRUE;
 }
@@ -648,12 +667,17 @@ static void fl_view_dispose(GObject* object) {
   if (self->engine != nullptr) {
     fl_engine_set_update_semantics_handler(self->engine, nullptr, nullptr,
                                            nullptr);
-    fl_engine_set_on_pre_engine_restart_handler(self->engine, nullptr, nullptr,
-                                                nullptr);
+  }
+
+  if (self->on_pre_engine_restart_handler != 0) {
+    g_signal_handler_disconnect(self->engine,
+                                self->on_pre_engine_restart_handler);
+    self->on_pre_engine_restart_handler = 0;
   }
 
   g_clear_object(&self->engine);
   g_clear_object(&self->renderer);
+  g_clear_pointer(&self->background_color, gdk_rgba_free);
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->keyboard_handler);
@@ -666,6 +690,16 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->view_accessible);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
+}
+
+// Implements GtkWidget::realize.
+static void fl_view_realize(GtkWidget* widget) {
+  FlView* self = FL_VIEW(widget);
+
+  GTK_WIDGET_CLASS(fl_view_parent_class)->realize(widget);
+
+  // Realize the child widgets.
+  gtk_widget_realize(GTK_WIDGET(self->gl_area));
 }
 
 // Implements GtkWidget::key_press_event.
@@ -692,8 +726,13 @@ static void fl_view_class_init(FlViewClass* klass) {
   object_class->dispose = fl_view_dispose;
 
   GtkWidgetClass* widget_class = GTK_WIDGET_CLASS(klass);
+  widget_class->realize = fl_view_realize;
   widget_class->key_press_event = fl_view_key_press_event;
   widget_class->key_release_event = fl_view_key_release_event;
+
+  fl_view_signals[kSignalFirstFrame] =
+      g_signal_new("first-frame", fl_view_get_type(), G_SIGNAL_RUN_LAST, 0,
+                   NULL, NULL, NULL, G_TYPE_NONE, 0);
 
   gtk_widget_class_set_accessible_type(GTK_WIDGET_CLASS(klass),
                                        fl_socket_accessible_get_type());
@@ -705,6 +744,10 @@ static void fl_view_init(FlView* self) {
   // When we support multiple views this will become variable.
   // https://github.com/flutter/flutter/issues/138178
   self->view_id = flutter::kFlutterImplicitViewId;
+
+  GdkRGBA default_background = {
+      .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  self->background_color = gdk_rgba_copy(&default_background);
 
   self->event_box = gtk_event_box_new();
   gtk_widget_set_hexpand(self->event_box, TRUE);
@@ -743,6 +786,7 @@ static void fl_view_init(FlView* self) {
                            self);
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
+  gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
   gtk_widget_show(GTK_WIDGET(self->gl_area));
   gtk_container_add(GTK_CONTAINER(self->event_box), GTK_WIDGET(self->gl_area));
 
@@ -774,8 +818,9 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
 
   fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
                                          self, nullptr);
-  fl_engine_set_on_pre_engine_restart_handler(
-      self->engine, on_pre_engine_restart_cb, self, nullptr);
+  self->on_pre_engine_restart_handler =
+      g_signal_connect_swapped(engine, "on-pre-engine-restart",
+                               G_CALLBACK(on_pre_engine_restart_cb), self);
 
   return self;
 }
@@ -785,9 +830,24 @@ G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* self) {
   return self->engine;
 }
 
+G_MODULE_EXPORT void fl_view_set_background_color(FlView* self,
+                                                  const GdkRGBA* color) {
+  g_return_if_fail(FL_IS_VIEW(self));
+  gdk_rgba_free(self->background_color);
+  self->background_color = gdk_rgba_copy(color);
+}
+
 void fl_view_redraw(FlView* self) {
   g_return_if_fail(FL_IS_VIEW(self));
+
   gtk_widget_queue_draw(GTK_WIDGET(self->gl_area));
+
+  if (!self->have_first_frame) {
+    self->have_first_frame = TRUE;
+    // This is not the main thread, so the signal needs to be done via an idle
+    // callback.
+    g_idle_add(first_frame_idle_cb, self);
+  }
 }
 
 GHashTable* fl_view_get_keyboard_state(FlView* self) {

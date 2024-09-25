@@ -176,20 +176,21 @@ static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
 static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
 static const DlBlurMaskFilter kTestMaskFilter4(DlBlurStyle::kInner, 3.0);
 static const DlBlurMaskFilter kTestMaskFilter5(DlBlurStyle::kOuter, 3.0);
-constexpr SkRect kTestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
-static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestBounds, 5, 5);
-static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestBounds);
+constexpr DlRect kTestBounds = DlRect::MakeLTRB(10, 10, 50, 60);
+constexpr SkRect kTestSkBounds = SkRect::MakeLTRB(10, 10, 50, 60);
+static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestSkBounds, 5, 5);
+static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestSkBounds);
 static const SkRRect kTestInnerRRect =
-    SkRRect::MakeRectXY(kTestBounds.makeInset(5, 5), 2, 2);
-static const SkPath kTestPathRect = SkPath::Rect(kTestBounds);
-static const SkPath kTestPathOval = SkPath::Oval(kTestBounds);
-static const SkPath kTestPathRRect = SkPath::RRect(kTestRRect);
-static const SkPath kTestPath1 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
-static const SkPath kTestPath2 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {0, 10}, {10, 0}}, true);
-static const SkPath kTestPath3 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
+    SkRRect::MakeRectXY(kTestSkBounds.makeInset(5, 5), 2, 2);
+static const DlPath kTestPathRect = DlPath(SkPath::Rect(kTestSkBounds));
+static const DlPath kTestPathOval = DlPath(SkPath::Oval(kTestSkBounds));
+static const DlPath kTestPathRRect = DlPath(SkPath::RRect(kTestRRect));
+static const DlPath kTestPath1 =
+    DlPath(SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true));
+static const DlPath kTestPath2 =
+    DlPath(SkPath::Polygon({{0, 0}, {10, 10}, {0, 10}, {10, 0}}, true));
+static const DlPath kTestPath3 =
+    DlPath(SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false));
 static const SkMatrix kTestMatrix1 = SkMatrix::Scale(2, 2);
 static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
 

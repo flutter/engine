@@ -26,7 +26,6 @@ Make sure you have the following dependencies available:
  * On macOS:
    - Install the latest Xcode.
    - On Apple Silicon arm64 Macs, install the Rosetta translation environment by running `softwareupdate --install-rosetta`.
-   - Install Oracle's Java JDK, version 1.8 or later.
 
 You do not need to install [Dart](https://www.dartlang.org/downloads/linux.html).
 A Dart toolchain is automatically downloaded as part of the "Getting the source"
@@ -92,8 +91,8 @@ gclient sync
 ## Next steps:
 
  * [Compiling the engine](Compiling-the-engine.md) explains how to actually get builds, now that you have the code.
- * [The flutter tool](../../tool/README.md) has a section explaining how to use custom engine builds.
- * [Signing commits](../../contributing/Signing-commits.md), to configure your environment to securely sign your commits.
+ * [The flutter tool](https://github.com/flutter/flutter/blob/master/docs/tool/README.md) has a section explaining how to use custom engine builds.
+ * [Signing commits](https://github.com/flutter/flutter/blob/master/docs/contributing/Signing-commits.md), to configure your environment to securely sign your commits.
 
 ## Editor autocomplete support
 

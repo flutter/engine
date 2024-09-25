@@ -9,7 +9,7 @@ import 'dart:math' as math show sqrt;
 import 'dart:math' show pi;
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('OffsetBase.>=', () {
@@ -47,8 +47,8 @@ void main() {
 
   test('OffsetBase.==', () {
     expect(const Offset(0, 0), equals(const Offset(0, 0)));
-    expect(const Offset(0, 0), notEquals(const Offset(1, 0)));
-    expect(const Offset(0, 0), notEquals(const Offset(0, 1)));
+    expect(const Offset(0, 0), isNot(const Offset(1, 0)));
+    expect(const Offset(0, 0), isNot(const Offset(0, 1)));
   });
 
   test('Offset.direction', () {
@@ -378,42 +378,33 @@ void main() {
   });
 
   test('RRect asserts when corner radii are negative', () {
-    bool assertsEnabled = false;
-    assert(() {
-      assertsEnabled = true;
-      return true;
-    }());
-    if (!assertsEnabled) {
-      return;
-    }
-
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topLeft: const Radius.circular(-1),
       );
-    }, throwsA(isInstanceOf<AssertionError>()));
+    }, throwsA(const isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         topRight: const Radius.circular(-2),
       );
-    }, throwsA(isInstanceOf<AssertionError>()));
+    }, throwsA(const isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomLeft: const Radius.circular(-3),
       );
-    }, throwsA(isInstanceOf<AssertionError>()));
+    }, throwsA(const isInstanceOf<AssertionError>()));
 
     expect(() {
       RRect.fromRectAndCorners(
         const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
         bottomRight: const Radius.circular(-4),
       );
-    }, throwsA(isInstanceOf<AssertionError>()));
+    }, throwsA(const isInstanceOf<AssertionError>()));
   });
 
   test('RRect.inflate clamps when deflating past zero', () {
@@ -463,6 +454,18 @@ void main() {
     expect(rrect.blRadiusY, 0);
     expect(rrect.brRadiusX, 0);
     expect(rrect.brRadiusY, 0);
+  });
+
+  test('infinity lerp', (){
+    const Offset a = Offset(double.infinity, double.infinity);
+    const Offset b = Offset(4, 4);
+    final Offset? result = Offset.lerp(a, b, 0.5);
+    if (result == null) {
+      expect(result != null, true);
+    } else {
+      expect(result.dx, double.infinity);
+      expect(result.dy, double.infinity);
+    }
   });
 
   test('RRect.deflate clamps when deflating past zero', () {

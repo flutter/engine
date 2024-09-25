@@ -39,6 +39,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -118,71 +119,8 @@ auto CreatePassWithRectPath(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
-  subpass->SetBoundsLimit(bounds_hint, bounds_promise);
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
-}
-
-TEST_P(EntityTest, EntityPassRespectsUntrustedSubpassBoundsLimit) {
-  EntityPass pass;
-
-  auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
-                                         Rect::MakeLTRB(50, 50, 150, 150));
-  auto subpass1 = CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
-                                         Rect::MakeLTRB(800, 800, 900, 900));
-
-  auto subpass0_coverage =
-      pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
-  ASSERT_TRUE(subpass0_coverage.has_value());
-  ASSERT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(50, 50, 100, 100));
-
-  auto subpass1_coverage =
-      pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
-  ASSERT_TRUE(subpass1_coverage.has_value());
-  ASSERT_RECT_NEAR(subpass1_coverage.value(),
-                   Rect::MakeLTRB(800, 800, 900, 900));
-
-  pass.AddSubpass(std::move(subpass0));
-  pass.AddSubpass(std::move(subpass1));
-
-  auto coverage = pass.GetElementsCoverage(std::nullopt);
-  ASSERT_TRUE(coverage.has_value());
-  ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
-}
-
-TEST_P(EntityTest, EntityPassTrustsSnugSubpassBoundsLimit) {
-  EntityPass pass;
-
-  auto subpass0 =  //
-      CreatePassWithRectPath(Rect::MakeLTRB(10, 10, 90, 90),
-                             Rect::MakeLTRB(5, 5, 95, 95),
-                             ContentBoundsPromise::kContainsContents);
-  auto subpass1 =  //
-      CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
-                             Rect::MakeLTRB(495, 495, 1005, 1005),
-                             ContentBoundsPromise::kContainsContents);
-
-  auto subpass0_coverage =
-      pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
-  EXPECT_TRUE(subpass0_coverage.has_value());
-  // Result should be the overridden bounds
-  // (we lied about them being snug, but the property is respected)
-  EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(5, 5, 95, 95));
-
-  auto subpass1_coverage =
-      pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
-  EXPECT_TRUE(subpass1_coverage.has_value());
-  // Result should be the overridden bounds
-  // (we lied about them being snug, but the property is respected)
-  EXPECT_RECT_NEAR(subpass1_coverage.value(),
-                   Rect::MakeLTRB(495, 495, 1005, 1005));
-
-  pass.AddSubpass(std::move(subpass0));
-  pass.AddSubpass(std::move(subpass1));
-
-  auto coverage = pass.GetElementsCoverage(std::nullopt);
-  EXPECT_TRUE(coverage.has_value());
-  // This result should be the union of the overridden bounds
-  EXPECT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(5, 5, 1005, 1005));
 }
 
 TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
@@ -205,36 +143,6 @@ TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
   pass.AddEntity(std::move(entity));
 
   ASSERT_TRUE(OpenPlaygroundHere(pass));
-}
-
-TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
-  // Rect is drawn entirely in negative area.
-  auto pass = CreatePassWithRectPath(Rect::MakeLTRB(-200, -200, -100, -100),
-                                     std::nullopt);
-
-  // Without coverage limit.
-  {
-    auto pass_coverage = pass->GetElementsCoverage(std::nullopt);
-    ASSERT_TRUE(pass_coverage.has_value());
-    ASSERT_RECT_NEAR(pass_coverage.value(),
-                     Rect::MakeLTRB(-200, -200, -100, -100));
-  }
-
-  // With limit that doesn't overlap.
-  {
-    auto pass_coverage =
-        pass->GetElementsCoverage(Rect::MakeLTRB(0, 0, 100, 100));
-    ASSERT_FALSE(pass_coverage.has_value());
-  }
-
-  // With limit that partially overlaps.
-  {
-    auto pass_coverage =
-        pass->GetElementsCoverage(Rect::MakeLTRB(-150, -150, 0, 0));
-    ASSERT_TRUE(pass_coverage.has_value());
-    ASSERT_RECT_NEAR(pass_coverage.value(),
-                     Rect::MakeLTRB(-150, -150, -100, -100));
-  }
 }
 
 TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
@@ -2274,62 +2182,118 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
 }
 
 TEST_P(EntityTest, SolidColorContentsIsOpaque) {
+  Matrix matrix;
   SolidColorContents contents;
+  contents.SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 10, 10)));
+
   contents.SetColor(Color::CornflowerBlue());
-  ASSERT_TRUE(contents.IsOpaque());
+  EXPECT_TRUE(contents.IsOpaque(matrix));
   contents.SetColor(Color::CornflowerBlue().WithAlpha(0.5));
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
+
+  // Create stroked path that required alpha coverage.
+  contents.SetGeometry(Geometry::MakeStrokePath(
+      PathBuilder{}.AddLine({0, 0}, {100, 100}).TakePath(),
+      /*stroke_width=*/0.05));
+  contents.SetColor(Color::CornflowerBlue());
+
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, ConicalGradientContentsIsOpaque) {
+  Matrix matrix;
   ConicalGradientContents contents;
+  contents.SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 10, 10)));
+
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
+
+  // Create stroked path that required alpha coverage.
+  contents.SetGeometry(Geometry::MakeStrokePath(
+      PathBuilder{}.AddLine({0, 0}, {100, 100}).TakePath(),
+      /*stroke_width=*/0.05));
+  contents.SetColors({Color::CornflowerBlue()});
+
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, LinearGradientContentsIsOpaque) {
+  Matrix matrix;
   LinearGradientContents contents;
+  contents.SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 10, 10)));
+
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_TRUE(contents.IsOpaque());
+  EXPECT_TRUE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue()});
   contents.SetTileMode(Entity::TileMode::kDecal);
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
+
+  // Create stroked path that required alpha coverage.
+  contents.SetGeometry(Geometry::MakeStrokePath(
+      PathBuilder{}.AddLine({0, 0}, {100, 100}).TakePath(),
+      /*stroke_width=*/0.05));
+  contents.SetColors({Color::CornflowerBlue()});
+
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
+  Matrix matrix;
   RadialGradientContents contents;
+  contents.SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 10, 10)));
+
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_TRUE(contents.IsOpaque());
+  EXPECT_TRUE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue()});
   contents.SetTileMode(Entity::TileMode::kDecal);
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
+
+  // Create stroked path that required alpha coverage.
+  contents.SetGeometry(Geometry::MakeStrokePath(
+      PathBuilder{}.AddLine({0, 0}, {100, 100}).TakePath(),
+      /*stroke_width=*/0.05));
+  contents.SetColors({Color::CornflowerBlue()});
+
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
+  Matrix matrix;
   RadialGradientContents contents;
+  contents.SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 10, 10)));
+
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_TRUE(contents.IsOpaque());
+  EXPECT_TRUE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
   contents.SetColors({Color::CornflowerBlue()});
   contents.SetTileMode(Entity::TileMode::kDecal);
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
+
+  // Create stroked path that required alpha coverage.
+  contents.SetGeometry(Geometry::MakeStrokePath(
+      PathBuilder{}.AddLine({0, 0}, {100, 100}).TakePath(),
+      /*stroke_width=*/0.05));
+  contents.SetColors({Color::CornflowerBlue()});
+
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
+  Matrix matrix;
   auto bay_bridge = CreateTextureForFixture("bay_bridge.jpg");
   TiledTextureContents contents;
   contents.SetTexture(bay_bridge);
   // This is a placeholder test. Images currently never decompress as opaque
   // (whether in Flutter or the playground), and so this should currently always
   // return false in practice.
-  ASSERT_FALSE(contents.IsOpaque());
+  EXPECT_FALSE(contents.IsOpaque(matrix));
 }
 
 TEST_P(EntityTest, PointFieldGeometryCoverage) {
@@ -2585,6 +2549,37 @@ TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
   entity.SetContents(contents);
 
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
+}
+
+TEST_P(EntityTest, DrawSuperEllipse) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // UI state.
+    static float alpha = 10;
+    static float beta = 10;
+    static float radius = 40;
+    static int degree = 4;
+    static Color color = Color::Red();
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Alpha", &alpha, 0, 100);
+    ImGui::SliderFloat("Beta", &beta, 0, 100);
+    ImGui::SliderInt("Degreee", &degree, 1, 20);
+    ImGui::SliderFloat("Radius", &radius, 0, 400);
+    ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
+    ImGui::End();
+
+    auto contents = std::make_shared<SolidColorContents>();
+    contents->SetColor(color);
+    contents->SetGeometry(std::make_shared<SuperellipseGeometry>(
+        Point{400, 400}, radius, degree, alpha, beta));
+
+    Entity entity;
+    entity.SetContents(contents);
+
+    return entity.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing
