@@ -466,7 +466,7 @@ public class FlutterRenderer implements TextureRegistry {
     /**
      * Stores whether {@link Callback#onSurfaceDestroyed()} was previously invoked.
      *
-     * <p>Used to avoid signaling {@link Callback#onSurfaceAvailable()} unnecessarily.</p>
+     * <p>Used to avoid signaling {@link Callback#onSurfaceAvailable()} unnecessarily.
      */
     private boolean notifiedDestroy = false;
 
