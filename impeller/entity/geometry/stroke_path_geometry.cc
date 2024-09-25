@@ -564,8 +564,9 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
 
   // This is a harline stroke and can be drawn directly with line primitives,
   // which avoids extra tessellation work, cap/joins, and overdraw prevention.
-  if (is_hairline) {
-    // TODO: this requires a means of identifying single contour paths.
+  if (is_hairline && path_.IsSingleContour()) {
+    // TODO(jonahwilliams): this could apply to multi contour paths if we add
+    // support for primitive restart.
     auto vertex_buffer = renderer.GetTessellator()->TessellateConvex(
         path_, host_buffer, max_basis, /*line_strip=*/true);
     return GeometryResult{
