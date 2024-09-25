@@ -24,7 +24,7 @@ abstract class Layer implements ui.EngineLayer {
   bool get needsPainting => !paintBounds.isEmpty;
 
   /// Implement layer visitor.
-  void accept<T>(LayerVisitor<T> visitor, T childData);
+  void accept(LayerVisitor visitor);
 
   // TODO(dnfield): Implement ui.EngineLayer.dispose for CanvasKit.
   // https://github.com/flutter/flutter/issues/82878
@@ -54,8 +54,8 @@ abstract class ContainerLayer extends Layer {
 /// to [LayerSceneBuilder] without requiring a [ContainerLayer].
 class RootLayer extends ContainerLayer {
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitRoot(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitRoot(this);
   }
 }
 
@@ -67,8 +67,8 @@ class BackdropFilterEngineLayer extends ContainerLayer
   final ui.BlendMode blendMode;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitBackdropFilter(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitBackdropFilter(this);
   }
 
   // TODO(dnfield): dispose of the _filter
@@ -86,8 +86,8 @@ class ClipPathEngineLayer extends ContainerLayer
   final ui.Clip clipBehavior;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitClipPath(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitClipPath(this);
   }
 }
 
@@ -102,8 +102,8 @@ class ClipRectEngineLayer extends ContainerLayer
   final ui.Clip clipBehavior;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitClipRect(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitClipRect(this);
   }
 }
 
@@ -118,8 +118,8 @@ class ClipRRectEngineLayer extends ContainerLayer
   final ui.Clip? clipBehavior;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitClipRRect(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitClipRRect(this);
   }
 }
 
@@ -132,8 +132,8 @@ class OpacityEngineLayer extends ContainerLayer
   final ui.Offset offset;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitOpacity(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitOpacity(this);
   }
 }
 
@@ -146,8 +146,8 @@ class TransformEngineLayer extends ContainerLayer
   final Matrix4 transform;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitTransform(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitTransform(this);
   }
 }
 
@@ -162,8 +162,8 @@ class OffsetEngineLayer extends TransformEngineLayer
       : super(Matrix4.translationValues(dx, dy, 0.0));
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitOffset(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitOffset(this);
   }
 }
 
@@ -176,8 +176,8 @@ class ImageFilterEngineLayer extends ContainerLayer
   final ui.ImageFilter filter;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitImageFilter(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitImageFilter(this);
   }
 
   // TODO(dnfield): dispose of the _filter
@@ -195,8 +195,8 @@ class ShaderMaskEngineLayer extends ContainerLayer
   final ui.FilterQuality filterQuality;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitShaderMask(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitShaderMask(this);
   }
 }
 
@@ -216,10 +216,17 @@ class PictureLayer extends Layer {
   /// A hint to the compositor that this picture is likely to change.
   final bool willChange;
 
+  /// Whether or not this picture is culled in the final scene. We compute this
+  /// when we optimize the scene.
+  bool isCulled = false;
+
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitPicture(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitPicture(this);
   }
+
+  @override
+  bool get needsPainting => super.needsPainting && !isCulled;
 }
 
 /// A layer which contains a [ui.ColorFilter].
@@ -230,8 +237,8 @@ class ColorFilterEngineLayer extends ContainerLayer
   final ui.ColorFilter filter;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitColorFilter(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitColorFilter(this);
   }
 }
 
@@ -245,7 +252,7 @@ class PlatformViewLayer extends Layer {
   final double height;
 
   @override
-  void accept<T>(LayerVisitor<T> visitor, T childData) {
-    visitor.visitPlatformView(this, childData);
+  void accept(LayerVisitor visitor) {
+    visitor.visitPlatformView(this);
   }
 }

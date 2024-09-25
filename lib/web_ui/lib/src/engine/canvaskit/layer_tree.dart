@@ -6,7 +6,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
 import '../profiler.dart';
-import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views.dart';
 import 'layer.dart';
@@ -33,7 +32,7 @@ class LayerTree {
   /// attempt to register pictures to cache.
   void preroll(Frame frame, {bool ignoreRasterCache = false}) {
     final PrerollVisitor prerollVisitor = PrerollVisitor(frame.viewEmbedder);
-    rootLayer.accept(prerollVisitor, Matrix4.identity());
+    rootLayer.accept(prerollVisitor);
   }
 
   /// Performs a paint pass with a recording canvas for each picture in the
@@ -49,7 +48,7 @@ class LayerTree {
       frame.viewEmbedder!,
     );
     if (rootLayer.needsPainting) {
-      rootLayer.accept(measureVisitor, null);
+      rootLayer.accept(measureVisitor);
     }
   }
 
@@ -67,7 +66,7 @@ class LayerTree {
       frame.viewEmbedder!,
     );
     if (rootLayer.needsPainting) {
-      rootLayer.accept(paintVisitor, null);
+      rootLayer.accept(paintVisitor);
     }
   }
 
@@ -78,14 +77,14 @@ class LayerTree {
     final CkPictureRecorder recorder = CkPictureRecorder();
     final CkCanvas canvas = recorder.beginRecording(ui.Offset.zero & size);
     final PrerollVisitor prerollVisitor = PrerollVisitor(null);
-    rootLayer.accept(prerollVisitor, Matrix4.identity());
+    rootLayer.accept(prerollVisitor);
 
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
     final PaintVisitor paintVisitor =
         PaintVisitor.forToImage(internalNodesCanvas, canvas);
     if (rootLayer.needsPainting) {
-      rootLayer.accept(paintVisitor, null);
+      rootLayer.accept(paintVisitor);
     }
     return recorder.endRecording();
   }

@@ -372,6 +372,9 @@ class HtmlViewEmbedder {
         _context.sceneElements.map<SceneElement>((SceneElement element) {
       if (element is PictureSceneElement) {
         final CkPicture scenePicture = element.pictureRecorder.endRecording();
+        if (scenePicture.cullRect.isEmpty) {
+          element.picture.isCulled = true;
+        }
         element.scenePicture = scenePicture;
         scenePictureToRawPicture[scenePicture] = element.picture;
         return element;
