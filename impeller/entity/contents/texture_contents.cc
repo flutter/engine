@@ -113,7 +113,6 @@ bool TextureContents::Render(const ContentContext& renderer,
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
   using FSStrict = TextureFillStrictSrcFragmentShader;
-  using FSExternal = TiledTextureFillExternalFragmentShader;
 
   if (destination_rect_.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
@@ -121,6 +120,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
+  using FSExternal = TiledTextureFillExternalFragmentShader;
   bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 #endif  // IMPELLER_ENABLE_OPENGLES
