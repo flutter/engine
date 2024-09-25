@@ -120,8 +120,10 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;  // Nothing to render.
   }
 
+#ifdef IMPELLER_ENABLE_OPENGLES
   bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
+#endif  // IMPELLER_ENABLE_OPENGLES
 
   auto texture_coords =
       Rect::MakeSize(texture_->GetSize()).Project(source_rect_);
