@@ -17,6 +17,7 @@
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
+#include "vm/os_thread.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
@@ -1183,6 +1184,66 @@ TEST_F(DartIsolateTest, PlatformIsolateMainThrowsError) {
   epilogue_latch.Wait();
 
   // root isolate will be auto-shutdown
+}
+
+TEST_F(DartIsolateTest, DartPlatformThreadNameIsSetWithMergedThreads) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto platform_thread = CreateNewThread();
+  auto other_thread = CreateNewThread();
+  // Set platform and UI thread runner to the same thread.
+  TaskRunners task_runners("io.flutter",     //
+                           platform_thread,  //
+                           other_thread,     //
+                           platform_thread,  //
+                           other_thread      //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetDefaultKernelFilePath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+
+  fml::AutoResetWaitableEvent latch;
+  std::string thread_name;
+  platform_thread->PostTask([&latch, &thread_name]() {
+    dart::OSThread* thread = dart::OSThread::Current();
+    thread_name = std::string(thread->name());
+    latch.Signal();
+  });
+  latch.Wait();
+
+  EXPECT_EQ(thread_name, "io.flutter.ui");
+}
+
+TEST_F(DartIsolateTest, DartPlatformThreadNameIsSet) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  // Set platform and UI thread runner to the same thread.
+  TaskRunners task_runners("io.flutter",       //
+                           CreateNewThread(),  //
+                           CreateNewThread(),  //
+                           CreateNewThread(),  //
+                           CreateNewThread()   //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetDefaultKernelFilePath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+
+  fml::AutoResetWaitableEvent latch;
+  std::string thread_name;
+  task_runners.GetPlatformTaskRunner()->PostTask([&latch, &thread_name]() {
+    dart::OSThread* thread = dart::OSThread::Current();
+    thread_name = std::string(thread->name());
+    latch.Signal();
+  });
+  latch.Wait();
+
+  EXPECT_EQ(thread_name, "io.flutter.platform");
 }
 
 }  // namespace testing

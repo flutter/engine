@@ -805,16 +805,10 @@ static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
   flutter::ThreadHost::ThreadHostConfig host_config(thread_label.UTF8String, threadHostType,
                                                     IOSPlatformThreadConfigSetter);
 
-  auto ui_config =
+  host_config.ui_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::kUi, thread_label.UTF8String),
                                 fml::Thread::ThreadPriority::kDisplay);
-  if (!settings.enable_impeller) {
-    host_config.ui_config = ui_config;
-  } else {
-    // fml::Thread::SetCurrentThreadName(ui_config);
-  }
-
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::kRaster, thread_label.UTF8String),
