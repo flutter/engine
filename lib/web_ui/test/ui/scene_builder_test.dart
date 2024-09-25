@@ -359,7 +359,6 @@ Future<void> testMain() async {
       sceneBuilder2.pushClipRect(const ui.Rect.fromLTRB(150, 0, 300, 300));
       sceneBuilder2.addRetained(offsetLayer);
       sceneBuilder2.pop();
-      sceneBuilder2.pop();
       await renderScene(sceneBuilder2.build());
 
       // Frame 3: Clip out the right circle again
@@ -367,13 +366,13 @@ Future<void> testMain() async {
       sceneBuilder3.pushClipRect(const ui.Rect.fromLTRB(0, 0, 125, 300));
       sceneBuilder3.addRetained(offsetLayer);
       sceneBuilder3.pop();
-      sceneBuilder3.pop();
       await renderScene(sceneBuilder3.build());
 
       await matchGoldenFile(
           'scene_builder_picture_clipped_out_then_clipped_in.png',
           region: region);
-    }, skip: isHtml); // https://github.com/flutter/flutter/issues/155717
+    });
+    // }, skip: isHtml); // https://github.com/flutter/flutter/issues/155717
   });
 }
 
