@@ -334,6 +334,46 @@ Future<void> testMain() async {
       await matchGoldenFile('scene_builder_picture_clipped_out.png',
           region: region);
     });
+
+    test('picture clipped but scrolls back in', () async {
+      // Frame 1: Clip out the right circle
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      sceneBuilder.pushClipRect(const ui.Rect.fromLTRB(0, 0, 125, 300));
+      // Save this offsetLayer to add back in so we are using the same
+      // picture layers on the next scene.
+      final ui.OffsetEngineLayer offsetLayer = sceneBuilder.pushOffset(0, 0);
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(const ui.Offset(50, 150), 50,
+            ui.Paint()..color = const ui.Color(0xFFFF0000));
+      }));
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(const ui.Offset(200, 150), 50,
+            ui.Paint()..color = const ui.Color(0xFFFF0000));
+      }));
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      await renderScene(sceneBuilder.build());
+
+      // Frame 2: Clip out the left circle
+      final ui.SceneBuilder sceneBuilder2 = ui.SceneBuilder();
+      sceneBuilder2.pushClipRect(const ui.Rect.fromLTRB(150, 0, 300, 300));
+      sceneBuilder2.addRetained(offsetLayer);
+      sceneBuilder2.pop();
+      sceneBuilder2.pop();
+      await renderScene(sceneBuilder2.build());
+
+      // Frame 3: Clip out the right circle again
+      final ui.SceneBuilder sceneBuilder3 = ui.SceneBuilder();
+      sceneBuilder3.pushClipRect(const ui.Rect.fromLTRB(0, 0, 125, 300));
+      sceneBuilder3.addRetained(offsetLayer);
+      sceneBuilder3.pop();
+      sceneBuilder3.pop();
+      await renderScene(sceneBuilder3.build());
+
+      await matchGoldenFile(
+          'scene_builder_picture_clipped_out_then_clipped_in.png',
+          region: region);
+    });
   });
 }
 

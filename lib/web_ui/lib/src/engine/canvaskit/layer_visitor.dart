@@ -17,8 +17,7 @@ import 'painting.dart';
 
 abstract class LayerVisitor {
   void visitRoot(RootLayer root);
-  void visitBackdropFilter(
-      BackdropFilterEngineLayer backdropFilter);
+  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter);
   void visitClipPath(ClipPathEngineLayer clipPath);
   void visitClipRect(ClipRectEngineLayer clipRect);
   void visitClipRRect(ClipRRectEngineLayer clipRRect);
@@ -92,8 +91,7 @@ class PrerollVisitor extends LayerVisitor {
   }
 
   @override
-  void visitBackdropFilter(
-      BackdropFilterEngineLayer backdropFilter) {
+  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter) {
     final ui.Rect childBounds = prerollChildren(backdropFilter);
     backdropFilter.paintBounds = childBounds.expandToInclude(cullRect);
   }
@@ -183,6 +181,9 @@ class PrerollVisitor extends LayerVisitor {
   @override
   void visitPicture(PictureLayer picture) {
     picture.paintBounds = picture.picture.cullRect.shift(picture.offset);
+    // The picture may have been culled on a previous frame, but has since
+    // scrolled back into the clip region. Reset the `isCulled` flag.
+    picture.isCulled = false;
     viewEmbedder?.prerollPicture(picture);
   }
 
@@ -254,8 +255,7 @@ class MeasureVisitor extends LayerVisitor {
   }
 
   @override
-  void visitBackdropFilter(
-      BackdropFilterEngineLayer backdropFilter) {
+  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter) {
     measureChildren(backdropFilter);
   }
 
@@ -467,8 +467,7 @@ class PaintVisitor extends LayerVisitor {
   }
 
   @override
-  void visitBackdropFilter(
-      BackdropFilterEngineLayer backdropFilter) {
+  void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter) {
     final CkPaint paint = CkPaint()..blendMode = backdropFilter.blendMode;
 
     nWayCanvas.saveLayerWithFilter(
