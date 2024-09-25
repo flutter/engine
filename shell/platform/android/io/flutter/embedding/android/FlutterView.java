@@ -22,6 +22,7 @@ import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -623,7 +624,7 @@ public class FlutterView extends FrameLayout
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       int rotation =
           ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
-              .getDisplay(0)
+              .getDisplay(Display.DEFAULT_DISPLAY)
               .getRotation();
 
       if (rotation == Surface.ROTATION_90) {
