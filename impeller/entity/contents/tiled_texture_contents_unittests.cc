@@ -7,6 +7,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/test/recording_render_pass.h"
+#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/playground/playground_test.h"
@@ -73,10 +74,10 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
   texture_desc.storage_mode = StorageMode::kDevicePrivate;
   auto texture =
       GetContext()->GetResourceAllocator()->CreateTexture(texture_desc);
-
-  TiledTextureContents contents;
-  contents.SetTexture(texture);
-  contents.SetGeometry(Geometry::MakeCover());
+  auto contents = TextureContents::MakeRect(Rect::MakeSize(texture->GetSize()));
+  contents->SetTexture(texture);
+  contents->SetSourceRect(Rect::MakeSize(texture->GetSize()));
+  contents->SetStrictSourceRect(false);
 
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
@@ -86,7 +87,7 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
           /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
 
-  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
+  ASSERT_TRUE(contents->Render(*GetContentContext(), {}, *render_pass));
   const std::vector<Command>& commands = render_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
