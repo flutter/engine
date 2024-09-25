@@ -62,8 +62,22 @@ RenderPass::GetDepthAttachmentDescriptor() {
   return depth_desc_;
 }
 
+impeller::StencilAttachmentDescriptor&
+RenderPass::GetStencilFrontAttachmentDescriptor() {
+  return stencil_front_desc_;
+}
+
+impeller::StencilAttachmentDescriptor&
+RenderPass::GetStencilBackAttachmentDescriptor() {
+  return stencil_back_desc_;
+}
+
 impeller::VertexBuffer& RenderPass::GetVertexBuffer() {
   return vertex_buffer_;
+}
+
+impeller::PipelineDescriptor& RenderPass::GetPipelineDescriptor() {
+  return pipeline_descriptor_;
 }
 
 bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
@@ -509,6 +523,51 @@ void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
   auto& depth = wrapper->GetDepthAttachmentDescriptor();
   depth.depth_compare =
       flutter::gpu::ToImpellerCompareFunction(compare_operation);
+}
+
+void InternalFlutterGpu_RenderPass_SetStencilReference(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_reference) {
+  auto& command = wrapper->GetCommand();
+  command.stencil_reference = static_cast<uint32_t>(stencil_reference);
+}
+
+void InternalFlutterGpu_RenderPass_SetStencilConfig(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_compare_operation,
+    int stencil_fail_operation,
+    int depth_fail_operation,
+    int depth_stencil_pass_operation,
+    int read_mask,
+    int write_mask,
+    int target_face) {
+  impeller::StencilAttachmentDescriptor desc;
+  desc.stencil_compare =
+      flutter::gpu::ToImpellerCompareFunction(stencil_compare_operation);
+  desc.stencil_failure =
+      flutter::gpu::ToImpellerStencilOperation(stencil_fail_operation);
+  desc.depth_failure =
+      flutter::gpu::ToImpellerStencilOperation(depth_fail_operation);
+  desc.depth_stencil_pass =
+      flutter::gpu::ToImpellerStencilOperation(depth_stencil_pass_operation);
+  desc.read_mask = static_cast<uint32_t>(read_mask);
+  desc.write_mask = static_cast<uint32_t>(write_mask);
+
+  // Corresponds to the `StencilFace` enum in `gpu/lib/src/render_pass.dart`.
+  if (target_face != 2 /* both or front */) {
+    wrapper->GetStencilFrontAttachmentDescriptor() = desc;
+  }
+  if (target_face != 1 /* both or back */) {
+    wrapper->GetStencilBackAttachmentDescriptor() = desc;
+  }
+}
+
+void InternalFlutterGpu_RenderPass_SetCullMode(
+    flutter::gpu::RenderPass* wrapper,
+    int cull_mode) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetCullMode(flutter::gpu::ToImpellerCullMode(cull_mode));
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

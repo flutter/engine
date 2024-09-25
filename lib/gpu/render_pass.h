@@ -46,7 +46,13 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   impeller::DepthAttachmentDescriptor& GetDepthAttachmentDescriptor();
 
+  impeller::StencilAttachmentDescriptor& GetStencilFrontAttachmentDescriptor();
+
+  impeller::StencilAttachmentDescriptor& GetStencilBackAttachmentDescriptor();
+
   impeller::VertexBuffer& GetVertexBuffer();
+
+  impeller::PipelineDescriptor& GetPipelineDescriptor();
 
   bool Begin(flutter::gpu::CommandBuffer& command_buffer);
 
@@ -220,6 +226,27 @@ FLUTTER_GPU_EXPORT
 extern void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
     flutter::gpu::RenderPass* wrapper,
     int compare_operation);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetStencilReference(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_reference);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetStencilConfig(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_compare_operation,
+    int stencil_fail_operation,
+    int depth_fail_operation,
+    int depth_stencil_pass_operation,
+    int read_mask,
+    int write_mask,
+    int target);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetCullMode(
+    flutter::gpu::RenderPass* wrapper,
+    int cull_mode);
 
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_Draw(

@@ -14,6 +14,7 @@
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -233,7 +234,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   virtual Canvas& GetCanvas() = 0;
 
- private:
+ protected:
   Paint paint_;
   Matrix initial_matrix_;
 
@@ -272,8 +273,13 @@ class CanvasDlDispatcher : public DlDispatcherBase {
 
   void FinishRecording() { canvas_.EndReplay(); }
 
+  // |flutter::DlOpReceiver|
+  void drawVertices(const std::shared_ptr<flutter::DlVertices>& vertices,
+                    flutter::DlBlendMode dl_mode) override;
+
  private:
   Canvas canvas_;
+  const ContentContext& renderer_;
 
   Canvas& GetCanvas() override;
 };
@@ -284,7 +290,11 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
                             public flutter::IgnoreDrawDispatchHelper {
  public:
   TextFrameDispatcher(const ContentContext& renderer,
-                      const Matrix& initial_matrix);
+                      const Matrix& initial_matrix,
+                      const Rect cull_rect);
+
+  ~TextFrameDispatcher();
+
   void save() override;
 
   void saveLayer(const DlRect& bounds,
@@ -340,10 +350,18 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   // |flutter::DlOpReceiver|
   void setStrokeJoin(flutter::DlStrokeJoin join) override;
 
+  // |flutter::DlOpReceiver|
+  void setImageFilter(const flutter::DlImageFilter* filter) override;
+
  private:
+  const Rect GetCurrentLocalCullingBounds() const;
+
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  // note: cull rects are always in the global coordinate space.
+  std::vector<Rect> cull_rect_state_;
+  bool has_image_filter_ = false;
   Paint paint_;
 };
 
@@ -355,7 +373,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
     bool reset_host_buffer = true);
 
 /// Render the provided display list to the render target.
-bool RenderToOnscreen(AiksContext& context, RenderTarget render_target,
+bool RenderToOnscreen(ContentContext& context, RenderTarget render_target,
                          const sk_sp<flutter::DisplayList>& display_list,
                          SkIRect cull_rect,
                          bool reset_host_buffer);

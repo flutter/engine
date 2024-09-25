@@ -167,13 +167,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
         surface->SetFrameBoundary(surface_frame.submit_info().frame_boundary);
-        auto render_result =
-            impeller::RenderToOnscreen(*aiks_context,                             //
-                                       surface->GetTargetRenderPassDescriptor(),  //
-                                       display_list,                              //
-                                       sk_cull_rect,                              //
-                                       /*reset_host_buffer=*/true                 //
-            );
+        auto render_result = impeller::RenderToOnscreen(
+            aiks_context->GetContentContext(),                                //
+            surface->GetTargetRenderPassDescriptor(),                         //
+            display_list,                                                     //
+            sk_cull_rect,                                                     //
+            /*reset_host_buffer=*/surface_frame.submit_info().frame_boundary  //
+        );
         if (!render_result) {
           return false;
         }
@@ -280,13 +280,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
-        auto render_result =
-            impeller::RenderToOnscreen(*aiks_context,                             //
-                                       surface->GetTargetRenderPassDescriptor(),  //
-                                       display_list,                              //
-                                       sk_cull_rect,                              //
-                                       /*reset_host_buffer=*/true                 //
-            );
+        auto render_result = impeller::RenderToOnscreen(
+            aiks_context->GetContentContext(),                                //
+            surface->GetTargetRenderPassDescriptor(),                         //
+            display_list,                                                     //
+            sk_cull_rect,                                                     //
+            /*reset_host_buffer=*/surface_frame.submit_info().frame_boundary  //
+        );
         if (!render_result) {
           FML_LOG(ERROR) << "Failed to render Impeller frame";
           return false;

@@ -9,6 +9,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -22,6 +23,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -36,7 +38,6 @@ import android.util.DisplayMetrics;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -69,6 +70,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowDisplay;
+import org.robolectric.shadows.ShadowViewGroup;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
@@ -83,14 +85,13 @@ public class FlutterViewTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     when(mockFlutterJni.isAttached()).thenReturn(true);
+    // Uncomment the following line to enable logging output in test.
+    // ShadowLog.stream = System.out;
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
 
@@ -99,24 +100,18 @@ public class FlutterViewTest {
     verify(platformViewsController, times(1)).attachToView(flutterView);
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void flutterView_importantForAutofillDoesNotExcludeDescendants() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
 
     // Value should not exclude descendants because platform views are added as child views and
     // can be eligible for autofill (e.g. a WebView).
     assertEquals(View.IMPORTANT_FOR_AUTOFILL_YES, flutterView.getImportantForAutofill());
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
 
@@ -126,12 +121,9 @@ public class FlutterViewTest {
     verify(platformViewsController, times(1)).detachFromView();
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void detachFromFlutterEngine_turnsOffA11y() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
@@ -225,12 +217,9 @@ public class FlutterViewTest {
     mockFlutterJni.onFirstFrame();
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
 
     Configuration configuration = ctx.getResources().getConfiguration();
@@ -263,14 +252,11 @@ public class FlutterViewTest {
         .updateDisplayMetrics(any(Float.class), any(Float.class), any(Float.class));
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void itSendsTextHidePasswordToFrameworkOnAttach() {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
 
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     Settings.System.putInt(
         flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 0);
@@ -301,8 +287,7 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity, getSystemUiVisibility
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // getSystemUiVisibility
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
   // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
@@ -310,7 +295,7 @@ public class FlutterViewTest {
   @Config(sdk = 30)
   public void reportSystemInsetWhenNotFullscreen() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -343,15 +328,14 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity, getSystemUiVisibility
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+  // getSystemUiVisibility
   // This test uses the pre-API 30 Algorithm for window insets.
   @Test
   @TargetApi(28)
   @Config(sdk = 28)
   public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
@@ -882,14 +866,12 @@ public class FlutterViewTest {
     assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
   }
 
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity
   @Test
   public void itSendsTextShowPasswordToFrameworkOnAttach() {
     // Setup test.
     AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
 
-    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView flutterView = new FlutterView(ctx);
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     Settings.System.putInt(
         flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1);
@@ -937,6 +919,187 @@ public class FlutterViewTest {
     assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
   }
 
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void setPaddingTopToZeroForFullscreenMode() {
+    FlutterView flutterView = new FlutterView(ctx);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets =
+        new WindowInsets.Builder()
+            .setInsets(
+                android.view.WindowInsets.Type.navigationBars()
+                    | android.view.WindowInsets.Type.statusBars(),
+                Insets.of(100, 100, 100, 100))
+            .build();
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 100);
+  }
+
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_FULLSCREEN, getWindowSystemUiVisibility
+  // This test uses the pre-API 30 Algorithm for window insets.
+  @Test
+  @TargetApi(28)
+  @Config(
+      sdk = 28,
+      shadows = {
+        FlutterViewTest.ShadowFullscreenView.class,
+      })
+  public void setPaddingTopToZeroForFullscreenModeLegacy() {
+    FlutterView flutterView = spy(new FlutterView(ctx));
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+    clearInvocations(flutterRenderer);
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(1)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 0);
+    clearInvocations(flutterRenderer);
+
+    // Validation when fullscreen
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    // Then we simulate the system applying a window inset.
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(1)).setViewportMetrics(viewportMetricsCaptor.capture());
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
+  }
+
+  // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
+  @Test
+  public void itSendsDarkPlatformBrightnessToFlutter() {
+    // Setup test.
+    AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
+        new AtomicReference<>();
+
+    Context spiedContext = spy(ctx);
+
+    Resources spiedResources = spy(spiedContext.getResources());
+    when(spiedContext.getResources()).thenReturn(spiedResources);
+
+    Configuration spiedConfiguration = spy(spiedResources.getConfiguration());
+    spiedConfiguration.uiMode =
+        (spiedResources.getConfiguration().uiMode | Configuration.UI_MODE_NIGHT_YES)
+            & ~Configuration.UI_MODE_NIGHT_NO;
+    when(spiedResources.getConfiguration()).thenReturn(spiedConfiguration);
+
+    FlutterView flutterView = new FlutterView(spiedContext);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any(DisplayMetrics.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedBrightness.set(
+                    (SettingsChannel.PlatformBrightness) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    // Execute behavior under test.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    flutterView.sendUserSettingsToFlutter();
+
+    // Verify results.
+    assertEquals(SettingsChannel.PlatformBrightness.dark, reportedBrightness.get());
+  }
+
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_FULLSCREEN, getWindowSystemUiVisibility
+  // TODO(mattcarroll): turn this into an e2e test. GitHub #42990
+  @Test
+  public void itSendsLightPlatformBrightnessToFlutter() {
+    // Setup test.
+    AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
+        new AtomicReference<>();
+
+    // FYI - The default brightness is LIGHT, which is why we don't need to configure it.
+    FlutterView flutterView = new FlutterView(ctx);
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any(DisplayMetrics.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedBrightness.set(
+                    (SettingsChannel.PlatformBrightness) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    // Execute behavior under test.
+    flutterView.sendUserSettingsToFlutter();
+
+    // Verify results.
+    assertEquals(SettingsChannel.PlatformBrightness.light, reportedBrightness.get());
+  }
+
   @SuppressWarnings("deprecation")
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
@@ -976,17 +1139,12 @@ public class FlutterViewTest {
   /*
    * A custom shadow that reports fullscreen flag for system UI visibility
    */
-  @Implements(View.class)
+  @Implements(FrameLayout.class)
   @SuppressWarnings("deprecation")
-  public static class ShadowFullscreenView {
+  public static class ShadowFullscreenView extends ShadowViewGroup {
     @Implementation
     public int getWindowSystemUiVisibility() {
       return View.SYSTEM_UI_FLAG_FULLSCREEN;
     }
   }
-
-  // ViewGroup is the first shadow in the type hierarchy for FlutterView. Shadows need to mimic
-  // production classes' view hierarchy.
-  @Implements(ViewGroup.class)
-  public static class ShadowFullscreenViewGroup extends ShadowFullscreenView {}
 }

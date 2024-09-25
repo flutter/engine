@@ -45,6 +45,32 @@ base class DepthStencilAttachment {
   Texture texture;
 }
 
+base class StencilConfig {
+  StencilConfig({
+    this.compareFunction = CompareFunction.always,
+    this.stencilFailureOperation = StencilOperation.keep,
+    this.depthFailureOperation = StencilOperation.keep,
+    this.depthStencilPassOperation = StencilOperation.keep,
+    this.readMask = 0xFFFFFFFF,
+    this.writeMask = 0xFFFFFFFF,
+  });
+
+  CompareFunction compareFunction;
+  StencilOperation stencilFailureOperation;
+  StencilOperation depthFailureOperation;
+  StencilOperation depthStencilPassOperation;
+  int readMask;
+  int writeMask;
+}
+
+// Note: When modifying this enum, also update
+//       `InternalFlutterGpu_RenderPass_SetStencilConfig` in `gpu/render_pass.cc`.
+enum StencilFace {
+  both,
+  front,
+  back,
+}
+
 base class ColorBlendEquation {
   ColorBlendEquation({
     this.colorBlendOperation = BlendOperation.add,
@@ -212,6 +238,36 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     _setDepthCompareOperation(compareFunction.index);
   }
 
+  void setStencilReference(int referenceValue) {
+    if (referenceValue < 0 || referenceValue > 0xFFFFFFFF) {
+      throw Exception(
+          "The stencil reference value must be in the range [0, 2^32 - 1]");
+    }
+    _setStencilReference(referenceValue);
+  }
+
+  void setStencilConfig(StencilConfig configuration,
+      {StencilFace targetFace = StencilFace.both}) {
+    if (configuration.readMask < 0 || configuration.readMask > 0xFFFFFFFF) {
+      throw Exception("The stencil read mask must be in the range [0, 255]");
+    }
+    if (configuration.writeMask < 0 || configuration.writeMask > 0xFFFFFFFF) {
+      throw Exception("The stencil write mask must be in the range [0, 255]");
+    }
+    _setStencilConfig(
+        configuration.compareFunction.index,
+        configuration.stencilFailureOperation.index,
+        configuration.depthFailureOperation.index,
+        configuration.depthStencilPassOperation.index,
+        configuration.readMask,
+        configuration.writeMask,
+        targetFace.index);
+  }
+
+  void setCullMode(CullMode cullMode) {
+    _setCullMode(cullMode.index);
+  }
+
   void draw() {
     if (!_draw()) {
       throw Exception("Failed to append draw");
@@ -334,6 +390,25 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   @Native<Void Function(Pointer<Void>, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetDepthCompareOperation')
   external void _setDepthCompareOperation(int compareOperation);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetStencilReference')
+  external void _setStencilReference(int referenceValue);
+
+  @Native<Void Function(Pointer<Void>, Int, Int, Int, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetStencilConfig')
+  external void _setStencilConfig(
+      int compareFunction,
+      int stencilFailureOperation,
+      int depthFailureOperation,
+      int depthStencilPassOperation,
+      int readMask,
+      int writeMask,
+      int target_face);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetCullMode')
+  external void _setCullMode(int cullMode);
 
   @Native<Bool Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Draw')

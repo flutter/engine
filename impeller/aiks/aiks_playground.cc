@@ -50,7 +50,10 @@ bool AiksPlayground::OpenPlaygroundHere(
   return Playground::OpenPlaygroundHere(
       [&renderer, &callback](RenderTarget& render_target) -> bool {
         auto display_list = callback();
-        TextFrameDispatcher collector(renderer.GetContentContext(), Matrix());
+        TextFrameDispatcher collector(renderer.GetContentContext(),  //
+                                      Matrix(),                      //
+                                      Rect::MakeMaximum()            //
+        );
         display_list->Dispatch(collector);
 
         CanvasDlDispatcher impeller_dispatcher(

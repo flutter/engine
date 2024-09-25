@@ -47,7 +47,8 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
         }
 
         auto list = callback();
-        TextFrameDispatcher collector(context.GetContentContext(), Matrix());
+        TextFrameDispatcher collector(context.GetContentContext(), Matrix(),
+                                      Rect::MakeMaximum());
         list->Dispatch(collector);
 
         CanvasDlDispatcher impeller_dispatcher(
