@@ -74,6 +74,10 @@ FLUTTER_GPU_EXPORT
 extern int InternalFlutterGpu_Context_GetMinimumUniformByteAlignment(
     flutter::gpu::Context* wrapper);
 
+FLUTTER_GPU_EXPORT
+extern bool InternalFlutterGpu_Context_GetSupportsOffscreenMSAA(
+    flutter::gpu::Context* wrapper);
+
 }  // extern "C"
 
 #endif  // FLUTTER_LIB_GPU_CONTEXT_H_
