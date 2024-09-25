@@ -44,8 +44,14 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
   const std::vector<Command>& commands = recording_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
+#ifdef IMPELLER_DEBUG
   EXPECT_TRUE(commands[0].pipeline->GetDescriptor().GetLabel().find(
                   "TextureFill Pipeline") != std::string::npos);
+#endif  // IMPELLER_DEBUG
+  auto options = OptionsFromPassAndEntity(*recording_pass, {});
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  EXPECT_EQ(commands[0].pipeline,
+            GetContentContext()->GetTiledTexturePipeline(options));
 
   if (GetParam() == PlaygroundBackend::kMetal) {
     recording_pass->EncodeCommands();

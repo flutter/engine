@@ -128,10 +128,9 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       Rect::MakeSize(texture_size).GetNormalizingTransform() *
       GetInverseEffectTransform();
 
-  PipelineBuilderMethod pipeline_method;
   PipelineBuilderCallback pipeline_callback =
-      [&renderer, &pipeline_method](ContentContextOptions options) {
-        return (renderer.*pipeline_method)(options);
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetTiledTexturePipeline(options);
       };
   return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
