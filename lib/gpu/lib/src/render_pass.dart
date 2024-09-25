@@ -10,7 +10,6 @@ base class ColorAttachment {
   ColorAttachment({
     this.loadAction = LoadAction.clear,
     this.storeAction = StoreAction.store,
-    // TODO(bdero): Why can't vm.Vector4 constructors be const?
     vm.Vector4? clearValue = null,
     required this.texture,
     this.resolveTexture = null,
