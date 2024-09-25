@@ -131,8 +131,8 @@ public interface TextureRegistry {
      * <p>On most newer Android devices (API 29+), a {@link android.media.ImageReader} backend is
      * used, which has more features, works in new graphic backends directly (such as Impeller's
      * Vulkan backend), and is the Android recommended solution. However, crop and rotation metadata
-     * are <strong>not</strong> handled automatically, and require plugin authors to make appropriate
-     * changes ({@see https://github.com/flutter/flutter/issues/144407}).
+     * are <strong>not</strong> handled automatically, and require plugin authors to make
+     * appropriate changes ({@see https://github.com/flutter/flutter/issues/144407}).
      *
      * <pre>{@code
      * void example(SurfaceProducer producer) {
