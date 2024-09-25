@@ -195,7 +195,7 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
 }
 
 // Compare results with https://api.flutter.dev/flutter/dart-ui/BlendMode.html
-TEST_P(AiksTest, ImageFilterBlend) {
+TEST_P(AiksTest, ColorFilterBlend) {
   bool has_color_filter = true;
   auto callback = [&]() -> sk_sp<DisplayList> {
     if (AiksTest::ImGuiBegin("Controls", nullptr,
@@ -246,7 +246,7 @@ TEST_P(AiksTest, ImageFilterBlend) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(AiksTest, ImageFilterAdvancedBlend) {
+TEST_P(AiksTest, ColorFilterAdvancedBlend) {
   bool has_color_filter = true;
   auto callback = [&]() -> sk_sp<DisplayList> {
     if (AiksTest::ImGuiBegin("Controls", nullptr,
