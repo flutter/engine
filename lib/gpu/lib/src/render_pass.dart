@@ -21,6 +21,32 @@ base class ColorAttachment {
 
   Texture texture;
   Texture? resolveTexture;
+
+  void _assertValid() {
+    if (resolveTexture != null) {
+      assert(resolveTexture!.format == texture.format,
+          "ColorAttachment MSAA resolve texture must have the same format as the texture");
+      assert(
+          resolveTexture!.width == texture.width &&
+              resolveTexture!.height == texture.height,
+          "ColorAttachment MSAA resolve texture must have the same dimensions as the texture");
+      assert(resolveTexture!.sampleCount == 1,
+          "ColorAttachment MSAA resolve texture must have a sample count of 1");
+      assert(texture.sampleCount > 1,
+          "ColorAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
+      assert(
+          storeAction == StoreAction.multisampleResolve ||
+              storeAction == StoreAction.storeAndMultisampleResolve,
+          "ColorAttachment StoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      assert(resolveTexture!.storageMode != StorageMode.deviceTransient,
+          "ColorAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+    }
+
+    assert(
+        texture.storageMode != StorageMode.deviceTransient ||
+            loadAction != LoadAction.load,
+        "ColorAttachment loadAction must not be load when the texture has a storage mode of deviceTransient");
+  }
 }
 
 base class DepthStencilAttachment {
@@ -43,6 +69,43 @@ base class DepthStencilAttachment {
   int stencilClearValue;
 
   Texture texture;
+  Texture? resolveTexture;
+
+  void _assertValid() {
+    if (resolveTexture != null) {
+      assert(resolveTexture!.format == texture.format,
+          "DepthStencilAttachment MSAA resolve texture must have the same format as the texture");
+      assert(
+          resolveTexture!.width == texture.width &&
+              resolveTexture!.height == texture.height,
+          "DepthStencilAttachment MSAA resolve texture must have the same dimensions as the texture");
+      assert(resolveTexture!.sampleCount == 1,
+          "DepthStencilAttachment MSAA resolve texture must have a sample count of 1");
+      assert(texture.sampleCount > 1,
+          "DepthStencilAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
+      assert(
+          depthStoreAction == StoreAction.multisampleResolve ||
+              depthStoreAction == StoreAction.storeAndMultisampleResolve,
+          "DepthStencilAttachment depthStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      assert(
+          stencilStoreAction == StoreAction.multisampleResolve ||
+              stencilStoreAction == StoreAction.storeAndMultisampleResolve,
+          "DepthStencilAttachment stencilStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      assert(resolveTexture!.storageMode != StorageMode.deviceTransient,
+          "DepthStencilAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+    }
+
+    if (texture.storageMode == StorageMode.deviceTransient) {
+      assert(
+          texture.storageMode != StorageMode.deviceTransient ||
+              depthLoadAction != LoadAction.load,
+          "DepthStencilAttachment depthLoadAction must not be load when the texture has a storage mode of deviceTransient");
+      assert(
+          texture.storageMode != StorageMode.deviceTransient ||
+              stencilLoadAction != LoadAction.load,
+          "DepthStencilAttachment stencilLoadAction must not be load when the texture has a storage mode of deviceTransient");
+    }
+  }
 }
 
 base class StencilConfig {
@@ -117,13 +180,25 @@ base class RenderTarget {
             colorAttachments: [colorAttachment],
             depthStencilAttachment: depthStencilAttachment);
 
+  _assertValid() {
+    for (final color in colorAttachments) {
+      color._assertValid();
+    }
+    if (depthStencilAttachment != null) {
+      depthStencilAttachment!._assertValid();
+    }
+  }
+
   final List<ColorAttachment> colorAttachments;
   final DepthStencilAttachment? depthStencilAttachment;
 }
 
 base class RenderPass extends NativeFieldWrapperClass1 {
   /// Creates a new RenderPass.
-  RenderPass._(CommandBuffer commandBuffer, RenderTarget renderTarget) {
+  RenderPass._(GpuContext gpuContext, CommandBuffer commandBuffer,
+      RenderTarget renderTarget) {
+    renderTarget._assertValid();
+
     _initialize();
     String? error;
     for (final (index, color) in renderTarget.colorAttachments.indexed) {
@@ -150,7 +225,8 @@ base class RenderPass extends NativeFieldWrapperClass1 {
           ds.stencilLoadAction.index,
           ds.stencilStoreAction.index,
           ds.stencilClearValue,
-          ds.texture);
+          ds.texture,
+          ds.resolveTexture);
       if (error != null) {
         throw Exception(error);
       }
@@ -309,8 +385,8 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       Texture? resolveTexture);
 
   @Native<
-          Handle Function(
-              Pointer<Void>, Int, Int, Float, Int, Int, Int, Pointer<Void>)>(
+          Handle Function(Pointer<Void>, Int, Int, Float, Int, Int, Int,
+              Pointer<Void>, Handle)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetDepthStencilAttachment')
   external String? _setDepthStencilAttachment(
       int depthLoadAction,
@@ -319,7 +395,8 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int stencilLoadAction,
       int stencilStoreAction,
       int stencilClearValue,
-      Texture texture);
+      Texture texture,
+      Texture? resolveTexture);
 
   @Native<Handle Function(Pointer<Void>, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Begin')

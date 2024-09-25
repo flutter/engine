@@ -111,3 +111,8 @@ extern int InternalFlutterGpu_Context_GetMinimumUniformByteAlignment(
     flutter::gpu::Context* wrapper) {
   return impeller::DefaultUniformAlignment();
 }
+
+extern bool InternalFlutterGpu_Context_GetSupportsOffscreenMSAA(
+    flutter::gpu::Context* wrapper) {
+  return wrapper->GetContext()->GetCapabilities()->SupportsOffscreenMSAA();
+}
