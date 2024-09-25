@@ -246,6 +246,7 @@ TEST_P(AiksTest, ColorFilterBlend) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+// Verification for: https://github.com/flutter/flutter/issues/155691
 TEST_P(AiksTest, ColorFilterAdvancedBlend) {
   bool has_color_filter = true;
   auto callback = [&]() -> sk_sp<DisplayList> {
