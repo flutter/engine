@@ -140,7 +140,8 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   lazy_atlas.AddTextFrame(*frame, 1.0f, {0, 0}, {});
 
   frame = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("😀 ", emoji_font));
+      SkTextBlob::MakeFromString("😀 ", emoji_font),
+      /*contains_color_glyphs=*/true);
 
   ASSERT_TRUE(frame->GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
@@ -305,9 +306,11 @@ TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
   // Create two frames with the same character and a different color, expect
   // that it adds a character.
   auto frame = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("😂", emoji_font));
+      SkTextBlob::MakeFromString("😂", emoji_font),
+      /*contains_color_glyphs=*/true);
   auto frame_2 = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("😂", emoji_font));
+      SkTextBlob::MakeFromString("😂", emoji_font),
+      /*contains_color_glyphs=*/true);
   auto properties = {
       GlyphProperties{.color = Color::Red()},
       GlyphProperties{.color = Color::Blue()},

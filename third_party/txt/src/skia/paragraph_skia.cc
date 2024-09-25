@@ -67,10 +67,13 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   ///             See https://github.com/flutter/flutter/issues/126673. It
   ///             probably makes sense to eventually make this a compile-time
   ///             decision (i.e. with `#ifdef`) instead of a runtime option.
-  DisplayListParagraphPainter(DisplayListBuilder* builder,
-                              const std::vector<DlPaint>& dl_paints,
-                              bool impeller_enabled)
+  DisplayListParagraphPainter(
+      DisplayListBuilder* builder,
+      const std::unique_ptr<skia::textlayout::Paragraph>& paragraph,
+      const std::vector<DlPaint>& dl_paints,
+      bool impeller_enabled)
       : builder_(builder),
+        paragraph_(paragraph),
         dl_paints_(dl_paints),
         impeller_enabled_(impeller_enabled) {}
 
@@ -92,7 +95,10 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         // If there is no path, this is an emoji and should be drawn as is,
         // ignoring the color source.
         if (path.isEmpty()) {
-          builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob),
+          auto contains_color_glyphs =
+              paragraph_->containsColorFontOrBitmap(blob.get());
+          builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(
+                                      blob, contains_color_glyphs),
                                   x, y, dl_paints_[paint_id]);
 
           return;
@@ -103,8 +109,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         builder_->DrawPath(transformed, dl_paints_[paint_id]);
         return;
       }
-      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
-                              y, dl_paints_[paint_id]);
+      auto contains_color_glyphs =
+          paragraph_->containsColorFontOrBitmap(blob.get());
+      builder_->DrawTextFrame(
+          impeller::MakeTextFrameFromTextBlobSkia(blob, contains_color_glyphs),
+          x, y, dl_paints_[paint_id]);
       return;
     }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -126,8 +135,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       paint.setMaskFilter(&filter);
     }
     if (impeller_enabled_) {
-      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
-                              y, paint);
+      auto contains_color_glyphs =
+          paragraph_->containsColorFontOrBitmap(blob.get());
+      builder_->DrawTextFrame(
+          impeller::MakeTextFrameFromTextBlobSkia(blob, contains_color_glyphs),
+          x, y, paint);
       return;
     }
     builder_->DrawTextBlob(blob, x, y, paint);
@@ -207,6 +219,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   }
 
   DisplayListBuilder* builder_;
+  const std::unique_ptr<skia::textlayout::Paragraph>& paragraph_;
   const std::vector<DlPaint>& dl_paints_;
   const bool impeller_enabled_;
 };
@@ -303,7 +316,8 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
+  DisplayListParagraphPainter painter(builder, paragraph_, dl_paints_,
+                                      impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
 }

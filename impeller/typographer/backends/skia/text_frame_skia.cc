@@ -14,29 +14,9 @@
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkRect.h"
-#include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
-
-/// @brief Convert a Skia axis alignment into an Impeller alignment.
-///
-///        This does not include a case for AxisAlignment::kNone, that should
-///        be used if SkFont::isSubpixel is false.
-static AxisAlignment ToAxisAligment(SkAxisAlignment aligment) {
-  switch (aligment) {
-    case SkAxisAlignment::kNone:
-      // Skia calls this case none, meaning alignment in both X and Y.
-      // Impeller will call it "all" since that is less confusing. "none"
-      // is reserved for no subpixel alignment.
-      return AxisAlignment::kAll;
-    case SkAxisAlignment::kX:
-      return AxisAlignment::kX;
-    case SkAxisAlignment::kY:
-      return AxisAlignment::kY;
-  }
-  FML_UNREACHABLE();
-}
 
 static Font ToFont(const SkTextBlobRunIterator& run, AxisAlignment alignment) {
   auto& font = run.font();
@@ -59,18 +39,21 @@ static Rect ToRect(const SkRect& rect) {
 }
 
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob) {
-  bool has_color = false;
+    const sk_sp<SkTextBlob>& blob,
+    bool contains_color_glyphs) {
+  Glyph::Type type =
+      contains_color_glyphs ? Glyph::Type::kBitmap : Glyph::Type::kPath;
   std::vector<TextRun> runs;
+
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    // TODO(112005): Ask Skia for a public API to look this up. This is using a
-    // private API today.
-    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
-    SkBulkGlyphMetricsAndPaths paths{strikeSpec};
     AxisAlignment alignment = AxisAlignment::kNone;
     if (run.font().isSubpixel()) {
-      alignment = ToAxisAligment(
-          strikeSpec.createScalerContext()->computeAxisAlignmentForHText());
+      // If baseline snap or color glyphs, then no axis alignment
+      if (run.font().isBaselineSnap() || contains_color_glyphs) {
+        alignment = AxisAlignment::kNone;
+      } else {
+        alignment = AxisAlignment::kX;
+      }
     }
 
     const auto glyph_count = run.glyphCount();
@@ -83,10 +66,6 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const SkPoint* point = glyph_points + i;
-          Glyph::Type type = paths.glyph(glyphs[i])->isColor()
-                                 ? Glyph::Type::kBitmap
-                                 : Glyph::Type::kPath;
-          has_color |= type == Glyph::Type::kBitmap;
           positions.emplace_back(
               TextRun::GlyphPosition{Glyph{glyphs[i], type}, Point{
                                                                  point->x(),
@@ -102,7 +81,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         continue;
     }
   }
-  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color);
+  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()),
+                                     contains_color_glyphs);
 }
 
 }  // namespace impeller
