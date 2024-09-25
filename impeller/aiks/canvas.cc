@@ -21,6 +21,7 @@
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
@@ -108,12 +109,6 @@ struct GetTextureColorSourceDataVisitor {
   std::optional<ImageData> operator()(const std::monostate& data) {
     return std::nullopt;
   }
-
-#if IMPELLER_ENABLE_3D
-  std::optional<ImageData> operator()(const SceneData& data) {
-    return std::nullopt;
-  }
-#endif  // IMPELLER_ENABLE_3D
 };
 
 static std::optional<ImageData> GetImageColorSourceData(

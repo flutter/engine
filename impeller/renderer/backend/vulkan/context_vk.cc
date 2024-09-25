@@ -445,6 +445,7 @@ void ContextVK::Setup(Settings settings) {
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
   command_queue_vk_ = std::make_shared<CommandQueueVK>(weak_from_this());
+  should_disable_surface_control_ = settings.disable_surface_control;
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
@@ -607,6 +608,10 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   auto pass = builder.Build(GetDevice());
 }
 
+void ContextVK::DisposeThreadLocalCachedResources() {
+  command_pool_recycler_->Dispose();
+}
+
 const std::shared_ptr<YUVConversionLibraryVK>&
 ContextVK::GetYUVConversionLibrary() const {
   return yuv_conversion_library_;
@@ -614,6 +619,10 @@ ContextVK::GetYUVConversionLibrary() const {
 
 const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
   return driver_info_;
+}
+
+bool ContextVK::GetShouldDisableSurfaceControlSwapchain() const {
+  return should_disable_surface_control_;
 }
 
 }  // namespace impeller

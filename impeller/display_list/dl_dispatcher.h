@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/display_list/geometry/dl_geometry_types.h"
+#include "flutter/display_list/geometry/dl_path.h"
 #include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
@@ -14,6 +15,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -21,13 +23,11 @@ using DlScalar = flutter::DlScalar;
 using DlPoint = flutter::DlPoint;
 using DlRect = flutter::DlRect;
 using DlIRect = flutter::DlIRect;
+using DlPath = flutter::DlPath;
 
 class DlDispatcherBase : public flutter::DlOpReceiver {
  public:
   Picture EndRecordingAsPicture();
-
-  // |flutter::DlOpReceiver|
-  bool PrefersImpellerPaths() const override { return true; }
 
   // |flutter::DlOpReceiver|
   void setAntiAlias(bool aa) override;
@@ -132,12 +132,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
-
-  // |flutter::DlOpReceiver|
-  void clipPath(const CacheablePath& cache,
-                ClipOp clip_op,
-                bool is_aa) override;
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
   void drawColor(flutter::DlColor color, flutter::DlBlendMode mode) override;
@@ -170,10 +165,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
 
   // |flutter::DlOpReceiver|
-  void drawPath(const SkPath& path) override;
-
-  // |flutter::DlOpReceiver|
-  void drawPath(const CacheablePath& cache) override;
+  void drawPath(const DlPath& path) override;
 
   // |flutter::DlOpReceiver|
   void drawArc(const DlRect& oval_bounds,
@@ -237,14 +229,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                      DlScalar y) override;
 
   // |flutter::DlOpReceiver|
-  void drawShadow(const SkPath& path,
-                  const flutter::DlColor color,
-                  const DlScalar elevation,
-                  bool transparent_occluder,
-                  DlScalar dpr) override;
-
-  // |flutter::DlOpReceiver|
-  void drawShadow(const CacheablePath& cache,
+  void drawShadow(const DlPath& path,
                   const flutter::DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,
@@ -252,14 +237,12 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
 
   virtual Canvas& GetCanvas() = 0;
 
- private:
+ protected:
   Paint paint_;
   Matrix initial_matrix_;
 
-  static const Path& GetOrCachePath(const CacheablePath& cache);
-
   static void SimplifyOrDrawPath(Canvas& canvas,
-                                 const CacheablePath& cache,
+                                 const DlPath& cache,
                                  const Paint& paint);
 };
 
@@ -332,7 +315,12 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
 
   void FinishRecording() { canvas_.EndReplay(); }
 
+  // |flutter::DlOpReceiver|
+  void drawVertices(const std::shared_ptr<flutter::DlVertices>& vertices,
+                    flutter::DlBlendMode dl_mode) override;
+
  private:
+  const ContentContext& renderer_;
   ExperimentalCanvas canvas_;
 
   Canvas& GetCanvas() override;
@@ -344,7 +332,11 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
                             public flutter::IgnoreDrawDispatchHelper {
  public:
   TextFrameDispatcher(const ContentContext& renderer,
-                      const Matrix& initial_matrix);
+                      const Matrix& initial_matrix,
+                      const Rect cull_rect);
+
+  ~TextFrameDispatcher();
+
   void save() override;
 
   void saveLayer(const DlRect& bounds,
@@ -400,10 +392,18 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   // |flutter::DlOpReceiver|
   void setStrokeJoin(flutter::DlStrokeJoin join) override;
 
+  // |flutter::DlOpReceiver|
+  void setImageFilter(const flutter::DlImageFilter* filter) override;
+
  private:
+  const Rect GetCurrentLocalCullingBounds() const;
+
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  // note: cull rects are always in the global coordinate space.
+  std::vector<Rect> cull_rect_state_;
+  bool has_image_filter_ = false;
   Paint paint_;
 };
 
