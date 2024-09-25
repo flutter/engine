@@ -90,8 +90,11 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
   const std::vector<Command>& commands = render_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
-  EXPECT_TRUE(commands[0].pipeline->GetDescriptor().GetLabel().find(
-                  "TiledTextureFillExternal Pipeline") != std::string::npos);
+
+  auto options = OptionsFromPassAndEntity(*render_pass, {});
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  EXPECT_EQ(commands[0].pipeline,
+            GetContentContext()->GetTiledTextureExternalPipeline(options));
 }
 #endif
 
