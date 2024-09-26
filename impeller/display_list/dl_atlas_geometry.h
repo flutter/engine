@@ -14,7 +14,7 @@
 
 namespace impeller {
 
-/// @brief A geometry that is created from a DlVertices object.
+/// @brief A wrapper around data provided by a drawAtlas call.
 class DlAtlasGeometry : public AtlasGeometry {
  public:
   DlAtlasGeometry(const std::shared_ptr<Texture>& atlas,
@@ -28,6 +28,7 @@ class DlAtlasGeometry : public AtlasGeometry {
 
   ~DlAtlasGeometry();
 
+  /// @brief Whether the blend shader should be used.
   bool ShouldUseBlend() const override;
 
   bool ShouldSkip() const override;
