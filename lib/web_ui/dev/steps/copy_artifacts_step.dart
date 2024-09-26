@@ -260,21 +260,21 @@ class CopyArtifactsStep implements PipelineStep {
     final io.Directory targetDir = io.Directory(pathlib.join(
       environment.webTestsArtifactsDir.path,
       'canvaskit',
-      'skwasm_st',
+      // 'skwasm_st',
     ));
 
     await targetDir.create(recursive: true);
 
     for (final String fileName in <String>[
-      'skwasm.wasm',
-      'skwasm.wasm.map',
-      'skwasm.js',
+      'skwasm_st.wasm',
+      'skwasm_st.wasm.map',
+      'skwasm_st.js',
     ]) {
       final io.File sourceFile = io.File(pathlib.join(
         outBuildPath,
         'flutter_web_sdk',
         'canvaskit',
-        'skwasm_st',
+        // 'skwasm_st',
         fileName,
       ));
       if (!sourceFile.existsSync()) {

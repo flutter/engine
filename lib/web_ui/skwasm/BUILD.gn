@@ -48,10 +48,8 @@ template("skwasm_variant") {
       "-sALLOW_TABLE_GROWTH",
       "-lexports.js",
       "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-      "-sEXPORTED_RUNTIME_METHODS=[addFunction,wasmExports,wasmMemory]",
-      "-sSHARED_MEMORY",
-      "--js-library",
-      rebase_path("library_skwasm_multi_threaded.js"),
+      "-sEXPORTED_RUNTIME_METHODS=[addFunction,wasmExports,wasmMemory,stackAlloc]",
+      "-sSHARED_MEMORY=1",
       "--js-library",
       rebase_path("library_skwasm_support.js"),
     ]
