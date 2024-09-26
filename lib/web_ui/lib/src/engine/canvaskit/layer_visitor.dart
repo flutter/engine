@@ -600,7 +600,7 @@ class PaintVisitor extends LayerVisitor {
       final List<PictureLayer>? pictureChildren =
           picturesUnderShaderMask[shaderMask];
       if (pictureChildren != null) {
-        for (final PictureLayer picture in pictureChildren!) {
+        for (final PictureLayer picture in pictureChildren) {
           canvases.add(viewEmbedder!.getOptimizedCanvasFor(picture));
         }
       }

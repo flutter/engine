@@ -400,7 +400,9 @@ Future<void> testMain() async {
 
       await matchGoldenFile('scene_builder_shader_mask_clipped_out.png',
           region: region);
-    });
+    },
+        skip: isFirefox &&
+            isHtml); // https://github.com/flutter/flutter/issues/86623
   });
 }
 
