@@ -28,6 +28,7 @@ class DlAtlasGeometry : public AtlasGeometry {
 
   ~DlAtlasGeometry();
 
+  /// @brief Whether the blend shader should be used.
   bool ShouldUseBlend() const override;
 
   bool ShouldSkip() const override;
