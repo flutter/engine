@@ -7,6 +7,7 @@
 
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_generator.h"
+#include "impeller/core/device_buffer.h"
 
 #include <utility>
 
