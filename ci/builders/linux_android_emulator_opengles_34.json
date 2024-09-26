@@ -17,7 +17,7 @@
                 "--rbe",
                 "--no-goma",
                 "--target-dir",
-                "ci/android_emulator_skia_debug_x64"
+                "ci/android_emulator_debug_x64"
             ],
             "dependencies": [
                 {
@@ -25,10 +25,10 @@
                     "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
                 }
             ],
-            "name": "ci/android_emulator_skia_debug_x64",
-            "description": "Build for debug mode x64 Android Skia scenario app tests.",
+            "name": "ci/android_emulator_debug_x64",
+            "description": "Build for debug mode x64 Android emulator tests, and Impeller scenario app tests.",
             "ninja": {
-                "config": "ci/android_emulator_skia_debug_x64",
+                "config": "ci/android_emulator_debug_x64",
                 "targets": [
                     "flutter/impeller/toolkit/android:unittests",
                     "flutter/shell/platform/android:flutter_shell_native_unittests",
@@ -37,10 +37,8 @@
             },
             "tests": [
                 {
-                    "language": "dart",
-                    "name": "Android Scenario App Integration Tests (Skia)",
-                    "test_timeout_secs": 900,
-                    "max_attempts": 2,
+                    "language": "python3",
+                    "name": "Android Unit Tests",
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
@@ -54,15 +52,23 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
-                        "--out-dir=../out/ci/android_emulator_skia_debug_x64",
-                        "--no-enable-impeller"
+                        "--android-variant",
+                        "ci/android_emulator_debug_x64",
+                        "--type",
+                        "android"
                     ]
                 },
                 {
                     "language": "dart",
-                    "name": "Android Scenario App Integration Tests (Skia, SurfaceTexture)",
+                    "name": "skia_gold_client/e2e_test",
+                    "script": "flutter/testing/skia_gold_client/tool/e2e_test.dart",
+                    "max_attempts": 1
+                },
+                {
+                    "language": "dart",
+                    "name": "Android Scenario App Integration Tests (Impeller/GLES)",
                     "test_timeout_secs": 900,
                     "max_attempts": 2,
                     "test_dependencies": [
@@ -80,9 +86,9 @@
                     ],
                     "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                        "--out-dir=../out/ci/android_emulator_skia_debug_x64",
-                        "--no-enable-impeller",
-                        "--force-surface-producer-surface-texture"
+                        "--out-dir=../out/ci/android_emulator_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=opengles"
                     ]
                 }
             ]
