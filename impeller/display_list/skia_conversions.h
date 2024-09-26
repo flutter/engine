@@ -48,7 +48,7 @@ Size ToSize(const SkPoint& point);
 
 Color ToColor(const flutter::DlColor& color);
 
-std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
+Matrix ToRSXForm(const SkRSXform& form);
 
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 
