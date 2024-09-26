@@ -372,6 +372,35 @@ Future<void> testMain() async {
           'scene_builder_picture_clipped_out_then_clipped_in.png',
           region: region);
     });
+
+    test('shader mask parent of clipped out picture', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final ui.Shader shader = ui.Gradient.linear(
+          ui.Offset.zero, const ui.Offset(50, 50), <ui.Color>[
+        const ui.Color(0xFFFFFFFF),
+        const ui.Color(0x00000000),
+      ]);
+      sceneBuilder.pushClipRect(const ui.Rect.fromLTRB(0, 0, 125, 300));
+      sceneBuilder.pushShaderMask(shader,
+          const ui.Rect.fromLTRB(25, 125, 75, 175), ui.BlendMode.srcATop);
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(const ui.Offset(50, 150), 50,
+            ui.Paint()..color = const ui.Color(0xFFFF0000));
+      }));
+      sceneBuilder.pop();
+      sceneBuilder.pushShaderMask(shader,
+          const ui.Rect.fromLTRB(175, 125, 225, 175), ui.BlendMode.srcATop);
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(const ui.Offset(200, 150), 50,
+            ui.Paint()..color = const ui.Color(0xFFFF0000));
+      }));
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      await renderScene(sceneBuilder.build());
+
+      await matchGoldenFile('scene_builder_shader_mask_clipped_out.png',
+          region: region);
+    });
   });
 }
 

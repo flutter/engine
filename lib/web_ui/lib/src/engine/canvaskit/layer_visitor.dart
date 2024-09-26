@@ -597,8 +597,12 @@ class PaintVisitor extends LayerVisitor {
     late List<CkCanvas> canvasesToApplyShaderMask;
     if (viewEmbedder != null) {
       final Set<CkCanvas> canvases = <CkCanvas>{};
-      for (final PictureLayer picture in picturesUnderShaderMask[shaderMask]!) {
-        canvases.add(viewEmbedder!.getOptimizedCanvasFor(picture));
+      final List<PictureLayer>? pictureChildren =
+          picturesUnderShaderMask[shaderMask];
+      if (pictureChildren != null) {
+        for (final PictureLayer picture in pictureChildren!) {
+          canvases.add(viewEmbedder!.getOptimizedCanvasFor(picture));
+        }
       }
       canvasesToApplyShaderMask = canvases.toList();
     } else {
