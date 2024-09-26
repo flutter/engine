@@ -1,0 +1,50 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Generates an executable that runs a static command and set of arguments.
+#
+# Parameters:
+#   command (required):
+#     The command to run, which is typically an absolute path to an executable.
+#
+#   args (optional):
+#     Arguments to pass to the command.
+#
+#   output (optional):
+#     Overrides the full output path.
+template("command_executable") {
+  assert(defined(invoker.command), "Must specify 'command'")
+
+  # The command to run.
+  command = invoker.command
+
+  # The arguments to pass to the command
+  cmd_args = []
+  if (defined(invoker.args)) {
+    cmd_args += invoker.args
+  }
+
+  # The output path.
+  output = "$root_gen_dir/$target_name"
+  if (defined(invoker.output)) {
+    output = invoker.output
+  }
+
+  # Concatenate the arguments.
+  flat_args = join(" ", cmd_args)
+
+  # Run build_cmd.py to generate the file and make it executable.
+  action(target_name) {
+    script = "//flutter/build/dart/internal/command_executable.py"
+    outputs = [ output ]
+    args = [
+      "--output",
+      output,
+      "--command",
+      command,
+      "--args",
+      flat_args,
+    ]
+  }
+}
