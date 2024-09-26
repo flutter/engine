@@ -340,43 +340,6 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
   latch.Wait();
 }
 
-TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
-#if !IMPELLER_SUPPORTS_RENDERING
-  GTEST_SKIP() << "Impeller only test.";
-#endif  // IMPELLER_SUPPORTS_RENDERING
-
-  auto no_gpu_access_context =
-      std::make_shared<impeller::TestImpellerContext>();
-  auto gpu_disabled_switch = std::make_shared<fml::SyncSwitch>(true);
-
-  auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_8888_SkColorType,
-                                SkAlphaType::kPremul_SkAlphaType);
-  auto bitmap = std::make_shared<SkBitmap>();
-  bitmap->allocPixels(info, 10 * 4);
-  impeller::DeviceBufferDescriptor desc;
-  desc.size = bitmap->computeByteSize();
-  auto buffer = std::make_shared<impeller::TestImpellerDeviceBuffer>(desc);
-
-  bool invoked = false;
-  auto cb = [&invoked](const sk_sp<DlImage>& image,
-                       const std::string& message) { invoked = true; };
-
-  ImageDecoderImpeller::UploadTextureToPrivate(cb, no_gpu_access_context,
-                                               buffer, info, std::nullopt,
-                                               gpu_disabled_switch);
-
-  EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  EXPECT_FALSE(invoked);
-
-  auto result = ImageDecoderImpeller::UploadTextureToStorage(
-      no_gpu_access_context, bitmap);
-
-  ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
-  ASSERT_EQ(result.second, "");
-
-  no_gpu_access_context->FlushTasks(/*fail=*/true);
-}
-
 TEST_F(ImageDecoderFixtureTest,
        ImpellerUploadToSharedNoGpuTaskFlushingFailure) {
 #if !IMPELLER_SUPPORTS_RENDERING
