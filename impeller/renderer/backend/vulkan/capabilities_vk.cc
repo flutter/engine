@@ -280,7 +280,7 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
   auto for_each_android_extension = [&](RequiredAndroidDeviceExtensionVK ext) {
 #ifdef FML_OS_ANDROID
     auto name = GetExtensionName(ext);
-    if (exts->find(name) == exts->end()) {
+    if (exts.find(name) == exts.end()) {
       VALIDATION_LOG << "Device does not support required Android extension: "
                      << name;
       return false;
