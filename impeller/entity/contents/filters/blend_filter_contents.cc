@@ -454,15 +454,16 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
                                  BlendModeToString(blend_mode)));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
-    auto options = OptionsFromPass(pass);
+    auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
     pass.SetPipeline(renderer.GetPorterDuffBlendPipeline(options));
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
 
-    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
-                                                pass, dst_snapshot->transform);
+    frame_info.mvp = Entity::GetShaderTransform(
+        entity.GetShaderClipDepth(), pass,
+        entity.GetTransform() * dst_snapshot->transform);
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -505,6 +506,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
+  sub_entity.SetBlendMode(entity.GetBlendMode());
 
   return sub_entity;
 }
