@@ -61,7 +61,7 @@ class BackdropFilterOperation implements LayerOperation {
 
   @override
   void pre(SceneCanvas canvas) {
-    canvas.saveLayerWithFilter(null, ui.Paint()..blendMode = mode, filter);
+    canvas.saveLayerWithFilter(ui.Rect.largest, ui.Paint()..blendMode = mode, filter);
   }
 
   @override
@@ -103,7 +103,7 @@ class ClipPathOperation implements LayerOperation {
     canvas.save();
     canvas.clipPath(path, doAntiAlias: clip != ui.Clip.hardEdge);
     if (clip == ui.Clip.antiAliasWithSaveLayer) {
-      canvas.saveLayer(null, ui.Paint());
+      canvas.saveLayer(path.getBounds(), ui.Paint());
     }
   }
 
@@ -237,7 +237,7 @@ class ColorFilterOperation implements LayerOperation {
 
   @override
   void pre(SceneCanvas canvas) {
-    canvas.saveLayer(null, ui.Paint()..colorFilter = filter);
+    canvas.saveLayer(ui.Rect.largest, ui.Paint()..colorFilter = filter);
   }
 
   @override
@@ -278,7 +278,7 @@ class ImageFilterOperation implements LayerOperation {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
     }
-    canvas.saveLayer(null, ui.Paint()..imageFilter = filter);
+    canvas.saveLayer(ui.Rect.largest, ui.Paint()..imageFilter = filter);
   }
 
   @override
@@ -380,7 +380,7 @@ class OpacityOperation implements LayerOperation {
       canvas.translate(offset.dx, offset.dy);
     }
     canvas.saveLayer(
-      null,
+      ui.Rect.largest,
       ui.Paint()..color = ui.Color.fromARGB(alpha, 0, 0, 0)
     );
   }
@@ -469,7 +469,7 @@ class ShaderMaskOperation implements LayerOperation {
   @override
   void pre(SceneCanvas canvas) {
     canvas.saveLayer(
-      null,
+      maskRect,
       ui.Paint(),
     );
   }

@@ -186,6 +186,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool willChangeHint = false
   }) {
     final int sliceIndex = _placePicture(offset, picture as ScenePicture);
+    print('adding picture to sliceIndex: $sliceIndex');
     currentBuilder.addPicture(
       offset,
       picture,
