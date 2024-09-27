@@ -504,7 +504,7 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
   // The glyph position in the atlas was not known when this value
   // was recorded. It is marked as a placeholder.
   EXPECT_TRUE(frame->IsFrameComplete());
-  EXPECT_TRUE(frame->GetFrameBounds(0).placeholder);
+  EXPECT_TRUE(frame->GetFrameBounds(0).is_placeholder);
 
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
                            GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
@@ -512,7 +512,7 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
 
   // The second time the glyph is rendered, the bounds are correcly known.
   EXPECT_TRUE(frame->IsFrameComplete());
-  EXPECT_FALSE(frame->GetFrameBounds(0).placeholder);
+  EXPECT_FALSE(frame->GetFrameBounds(0).is_placeholder);
 }
 
 }  // namespace testing
