@@ -10,13 +10,14 @@ import argparse
 import os
 import string
 
+
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument('--output', required=True, help='Output file')
   parser.add_argument('--command', required=True, help='Command to run')
   parser.add_argument('--cwd', required=False, help='Working directory')
   parser.add_argument('rest', nargs='*', help='Arguments to pass to the command')
-  
+
   # Rest of the arguments are passed to the command.
   args = parser.parse_args()
 
@@ -24,7 +25,8 @@ def main():
   if not os.path.exists(out_path):
     os.makedirs(out_path)
 
-  script = string.Template('''#!/bin/sh
+  script = string.Template(
+      '''#!/bin/sh
 
 set -e
 
@@ -43,15 +45,16 @@ if [ -n "$$CD_PATH" ]; then
 fi
 
 $command "$args"
-''')
+'''
+  )
 
   # Convert args into an escaped string.
   escaped = [arg.replace('"', '\\"') for arg in args.rest]
 
   params = {
-    'command': args.command,
-    'args': '" "'.join(escaped),
-    'cwd': args.cwd if args.cwd else '',
+      'command': args.command,
+      'args': '" "'.join(escaped),
+      'cwd': args.cwd if args.cwd else '',
   }
 
   with open(args.output, 'w') as f:
@@ -59,6 +62,7 @@ $command "$args"
 
   # Make the script executable.
   os.chmod(args.output, 0o755)
+
 
 if __name__ == '__main__':
   main()
