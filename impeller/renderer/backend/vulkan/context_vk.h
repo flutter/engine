@@ -43,6 +43,15 @@ class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
  public:
+  /// Embedder Stuff
+  struct EmbedderData {
+    VkInstance instance;
+    VkPhysicalDevice physical_device;
+    VkDevice device;
+    uint32_t queue_family_index;
+    VkQueue queue;
+  };
+
   struct Settings {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
@@ -52,6 +61,8 @@ class ContextVK final : public Context,
     bool disable_surface_control = false;
     /// If validations are requested but cannot be enabled, log a fatal error.
     bool fatal_missing_validations = false;
+
+    std::optional<EmbedderData> embedder_data;
 
     Settings() = default;
 

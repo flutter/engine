@@ -223,7 +223,7 @@ void ContextVK::Setup(Settings settings) {
   instance_info.setFlags(instance_flags);
 
   auto device_holder = std::make_shared<DeviceHolderImpl>();
-  {
+  if (!settings.embedder_data.has_value()) {
     auto instance = vk::createInstanceUnique(instance_info);
     if (instance.result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not create Vulkan instance: "
@@ -231,6 +231,8 @@ void ContextVK::Setup(Settings settings) {
       return;
     }
     device_holder->instance = std::move(instance.value);
+  } else {
+    device_holder->instance.reset(settings.embedder_data->instance);
   }
   dispatcher.init(device_holder->instance.get());
 
@@ -251,7 +253,7 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Pick the physical device.
   ///
-  {
+  if (!settings.embedder_data.has_value()) {
     auto physical_device =
         PickPhysicalDevice(*caps, device_holder->instance.get());
     if (!physical_device.has_value()) {
@@ -259,6 +261,8 @@ void ContextVK::Setup(Settings settings) {
       return;
     }
     device_holder->physical_device = physical_device.value();
+  } else {
+    device_holder->physical_device = settings.embedder_data->physical_device;
   }
 
   //----------------------------------------------------------------------------
@@ -317,7 +321,7 @@ void ContextVK::Setup(Settings settings) {
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
   // Device layers are deprecated and ignored.
 
-  {
+  if (!settings.embedder_data.has_value()) {
     auto device_result =
         device_holder->physical_device.createDeviceUnique(device_info);
     if (device_result.result != vk::Result::eSuccess) {
@@ -325,6 +329,8 @@ void ContextVK::Setup(Settings settings) {
       return;
     }
     device_holder->device = std::move(device_result.value);
+  } else {
+    device_holder->device.reset(settings.embedder_data->device);
   }
 
   if (!caps->SetPhysicalDevice(device_holder->physical_device,
