@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:math' as math;
-import 'dart:math';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -244,7 +243,7 @@ Future<void> testMain() async {
       final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushOffset(50.0, 50.0);
 
-      final Matrix4 matrix = Matrix4.rotationZ(pi / 18);
+      final Matrix4 matrix = Matrix4.rotationZ(math.pi / 18);
       final ui.ImageFilter matrixFilter = ui.ImageFilter.matrix(toMatrix64(matrix.storage));
       sceneBuilder.pushImageFilter(matrixFilter);
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
