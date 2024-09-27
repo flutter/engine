@@ -28,7 +28,7 @@
 #include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_surface_vulkan_impeller.h"
-#endif // IMPELLER_SUPPORTS_RENDERING
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #endif
 
 namespace flutter {
