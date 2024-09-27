@@ -68,7 +68,7 @@ void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
                                                    Rect position,
                                                    Rect bounds) {
   font_atlas_map_[pair.scaled_font].positions_[pair.glyph] =
-      FrameBounds{position, bounds, /*placeholder=*/false};
+      FrameBounds{position, bounds, /*is_placeholder=*/false};
 }
 
 std::optional<FrameBounds> GlyphAtlas::FindFontGlyphBounds(

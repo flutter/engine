@@ -13,7 +13,6 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -52,12 +51,7 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
 
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 
-Path ToPath(const SkPath& path, Point shift = Point(0, 0));
-
 Path ToPath(const SkRRect& rrect);
-
-Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob,
-                          Point shift = Point(0, 0));
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);
 

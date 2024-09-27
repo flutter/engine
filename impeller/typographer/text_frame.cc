@@ -120,8 +120,8 @@ bool TextFrame::IsFrameComplete() const {
   return bound_values_.size() == run_size;
 }
 
-FrameBounds TextFrame::GetFrameBounds(size_t index) {
-  return bound_values_[index];
+const FrameBounds& TextFrame::GetFrameBounds(size_t index) const {
+  return bound_values_.at(index);
 }
 
 }  // namespace impeller

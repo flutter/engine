@@ -31,11 +31,9 @@ class TypographerContextSkia : public TypographerContext {
       const override;
 
  private:
-  static void CollectNewGlyphs(
-      const std::shared_ptr<GlyphAtlas>& atlas,
-      const std::vector<std::shared_ptr<TextFrame>>& text_frames,
-      std::vector<FontGlyphPair>& new_glyphs,
-      std::vector<Rect>& glyph_sizes);
+  static std::pair<std::vector<FontGlyphPair>, std::vector<Rect>>
+  CollectNewGlyphs(const std::shared_ptr<GlyphAtlas>& atlas,
+                   const std::vector<std::shared_ptr<TextFrame>>& text_frames);
 
   TypographerContextSkia(const TypographerContextSkia&) = delete;
 

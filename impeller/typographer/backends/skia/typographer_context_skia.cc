@@ -405,11 +405,12 @@ static Rect ComputeGlyphSize(const SkFont& font,
                         scaled_bounds.fBottom);
 };
 
-void TypographerContextSkia::CollectNewGlyphs(
+std::pair<std::vector<FontGlyphPair>, std::vector<Rect>>
+TypographerContextSkia::CollectNewGlyphs(
     const std::shared_ptr<GlyphAtlas>& atlas,
-    const std::vector<std::shared_ptr<TextFrame>>& text_frames,
-    std::vector<FontGlyphPair>& new_glyphs,
-    std::vector<Rect>& glyph_sizes) {
+    const std::vector<std::shared_ptr<TextFrame>>& text_frames) {
+  std::vector<FontGlyphPair> new_glyphs;
+  std::vector<Rect> glyph_sizes;
   for (const auto& frame : text_frames) {
     // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
     // we could probably guarantee that a text frame that is complete does not
@@ -469,6 +470,7 @@ void TypographerContextSkia::CollectNewGlyphs(
       }
     }
   }
+  return {std::move(new_glyphs), std::move(glyph_sizes)};
 }
 
 std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
@@ -493,9 +495,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   //         with the current atlas and reuse if possible. For each new font and
   //         glyph pair, compute the glyph size at scale.
   // ---------------------------------------------------------------------------
-  std::vector<FontGlyphPair> new_glyphs;
-  std::vector<Rect> glyph_sizes;
-  CollectNewGlyphs(last_atlas, text_frames, new_glyphs, glyph_sizes);
+  auto [new_glyphs, glyph_sizes] = CollectNewGlyphs(last_atlas, text_frames);
   if (new_glyphs.size() == 0) {
     return last_atlas;
   }
@@ -564,9 +564,11 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     blit_old_atlas = false;
     new_atlas = std::make_shared<GlyphAtlas>(type);
 
-    new_glyphs.clear();
-    glyph_sizes.clear();
-    CollectNewGlyphs(new_atlas, text_frames, new_glyphs, glyph_sizes);
+    auto [update_glyphs, update_sizes] =
+        CollectNewGlyphs(new_atlas, text_frames);
+    new_glyphs = std::move(update_glyphs);
+    glyph_sizes = std::move(update_sizes);
+
     glyph_positions.clear();
     glyph_positions.reserve(new_glyphs.size());
     first_missing_index = 0;

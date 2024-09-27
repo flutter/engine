@@ -26,7 +26,7 @@ struct FrameBounds {
   Rect glyph_bounds;
   /// Whether [atlas_bounds] are still a placeholder and have
   /// not yet been computed.
-  bool placeholder;
+  bool is_placeholder = true;
 };
 
 //------------------------------------------------------------------------------
@@ -242,8 +242,6 @@ class FontGlyphAtlas {
       positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
-
-  // FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller

@@ -76,7 +76,7 @@ class TextFrame {
   /// @brief Retrieve the frame bounds for the glyph at [index].
   ///
   /// This method is only valid if [IsFrameComplete] returns true.
-  FrameBounds GetFrameBounds(size_t index);
+  const FrameBounds& GetFrameBounds(size_t index) const;
 
   /// @brief Store text frame scale, offset, and properties for hashing in th
   /// glyph atlas.
@@ -107,11 +107,12 @@ class TextFrame {
   Rect bounds_;
   bool has_color_;
 
-  // per frame data.
+  // Data that is cached when rendering the text frame and is only
+  // valid for a single frame.
   std::vector<FrameBounds> bound_values_;
-  Scalar scale_;
+  Scalar scale_ = 0;
   Point offset_;
-  std::optional<GlyphProperties> properties_ = std::nullopt;
+  std::optional<GlyphProperties> properties_;
 };
 
 }  // namespace impeller
