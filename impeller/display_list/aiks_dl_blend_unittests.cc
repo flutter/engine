@@ -308,6 +308,14 @@ TEST_P(AiksTest, ColorFilterAdvancedBlend) {
 // uses an advanced blend in the color filter and disables framebuffer fetch
 // to force usage of BlendFilterContents::CreateForegroundAdvancedBlend.
 TEST_P(AiksTest, ColorFilterAdvancedBlendNoFbFetch) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP()
+        << "This backend doesn't yet support setting device capabilities.";
+  }
+  if (!WillRenderSomething()) {
+    GTEST_SKIP() << "This test requires playgrounds.";
+  }
+
   std::shared_ptr<const Capabilities> old_capabilities =
       GetContext()->GetCapabilities();
   auto mock_capabilities = std::make_shared<MockCapabilities>();
