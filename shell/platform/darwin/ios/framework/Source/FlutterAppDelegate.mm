@@ -31,13 +31,6 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   return self;
 }
 
-- (void)dealloc {
-  [_lifeCycleDelegate release];
-  [_rootFlutterViewControllerGetter release];
-  [_window release];
-  [super dealloc];
-}
-
 - (BOOL)application:(UIApplication*)application
     willFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   return [_lifeCycleDelegate application:application willFinishLaunchingWithOptions:launchOptions];
@@ -286,7 +279,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)logCapabilityConfigurationWarningIfNeeded:(SEL)selector {
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
-  NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
+  NSSet* backgroundModesSet = [[NSSet alloc] initWithArray:backgroundModesArray];
   if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
     if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
       NSLog(
