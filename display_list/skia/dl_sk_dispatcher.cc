@@ -260,8 +260,9 @@ void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
       sk_colors.push_back(colors[i].argb());
     }
   }
-  canvas_->drawAtlas(skia_atlas.get(), xform, ToSkRects(tex), sk_colors.data(),
-                     count, ToSk(mode), ToSk(sampling), ToSkRect(cullRect),
+  canvas_->drawAtlas(skia_atlas.get(), xform, ToSkRects(tex),
+                     colors == nullptr ? nullptr : sk_colors.data(), count,
+                     ToSk(mode), ToSk(sampling), ToSkRect(cullRect),
                      safe_paint(render_with_attributes));
 }
 void DlSkCanvasDispatcher::drawDisplayList(
