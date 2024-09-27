@@ -20,11 +20,10 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
+@property(nonatomic, strong) FlutterPluginAppLifeCycleDelegate* lifeCycleDelegate;
 @end
 
-@implementation FlutterAppDelegate {
-  FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
-}
+@implementation FlutterAppDelegate
 
 - (instancetype)init {
   if (self = [super init]) {
