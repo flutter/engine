@@ -659,6 +659,7 @@ InferVulkanPlatformViewCreationCallback(
   std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
       std::move(external_view_embedder);
 
+#if IMPELLER_SUPPORTS_RENDERING
   if (enable_impeller) {
     flutter::EmbedderSurfaceVulkanImpeller::VulkanDispatchTable
         vulkan_dispatch_table = {
@@ -730,6 +731,40 @@ InferVulkanPlatformViewCreationCallback(
           );
         });
   }
+#else
+  flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
+      .get_instance_proc_address =
+          reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc_addr),
+      .get_next_image = vulkan_get_next_image,
+      .present_image = vulkan_present_image_callback,
+  };
+
+  std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
+      std::make_unique<flutter::EmbedderSurfaceVulkan>(
+          config->vulkan.version, vk_instance,
+          config->vulkan.enabled_instance_extension_count,
+          config->vulkan.enabled_instance_extensions,
+          config->vulkan.enabled_device_extension_count,
+          config->vulkan.enabled_device_extensions,
+          static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
+          static_cast<VkDevice>(config->vulkan.device),
+          config->vulkan.queue_family_index,
+          static_cast<VkQueue>(config->vulkan.queue), vulkan_dispatch_table,
+          view_embedder);
+
+  return fml::MakeCopyable(
+      [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
+       external_view_embedder =
+           std::move(view_embedder)](flutter::Shell& shell) mutable {
+        return std::make_unique<flutter::PlatformViewEmbedder>(
+            shell,                             // delegate
+            shell.GetTaskRunners(),            // task runners
+            std::move(embedder_surface),       // embedder surface
+            platform_dispatch_table,           // platform dispatch table
+            std::move(external_view_embedder)  // external view embedder
+        );
+      });
+#endif  //  // IMPELLER_SUPPORTS_RENDERING
 #else   // SHELL_ENABLE_VULKAN
   FML_LOG(ERROR) << "This Flutter Engine does not support Vulkan rendering.";
   return nullptr;
