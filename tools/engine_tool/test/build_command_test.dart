@@ -42,8 +42,10 @@ void main() {
   };
 
   final cannedProcesses = [
-    CannedProcess((List command) => command.contains('desc'),
-        stdout: fixtures.gnDescOutput()),
+    CannedProcess(
+      (command) => command.contains('desc'),
+      stdout: fixtures.gnDescOutput(),
+    ),
   ];
 
   test('can find host runnable build', () async {
