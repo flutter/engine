@@ -469,7 +469,7 @@ class ShaderMaskOperation implements LayerOperation {
   @override
   void pre(SceneCanvas canvas) {
     canvas.saveLayer(
-      maskRect,
+      ui.Rect.largest,
       ui.Paint(),
     );
   }
