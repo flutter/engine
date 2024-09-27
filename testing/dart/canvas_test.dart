@@ -1392,9 +1392,7 @@ void main() async {
 
     final Image resultImage = await recorder.endRecording().toImage(1, 1);
     final ByteData? data = await resultImage.toByteData();
-    if (data == null) {
-      fail('Expected non-null byte data');
-    }
+    expect(data, isNotNull);
   });
 }
 
