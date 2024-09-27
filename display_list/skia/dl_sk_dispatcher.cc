@@ -254,9 +254,11 @@ void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
     return;
   }
   std::vector<SkColor> sk_colors;
-  sk_colors.reserve(count);
-  for (int i = 0; i < count; ++i) {
-    sk_colors.push_back(colors[i].argb());
+  if (colors != nullptr) {
+    sk_colors.reserve(count);
+    for (int i = 0; i < count; ++i) {
+      sk_colors.push_back(colors[i].argb());
+    }
   }
   canvas_->drawAtlas(skia_atlas.get(), xform, ToSkRects(tex), sk_colors.data(),
                      count, ToSk(mode), ToSk(sampling), ToSkRect(cullRect),
