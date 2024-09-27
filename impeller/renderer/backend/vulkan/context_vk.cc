@@ -427,11 +427,18 @@ void ContextVK::Setup(Settings settings) {
   //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
-  QueuesVK queues(device_holder->device.get(),  //
-                  graphics_queue.value(),       //
-                  compute_queue.value(),        //
-                  transfer_queue.value()        //
-  );
+  QueuesVK queues;
+  if (settings.embedder_data.has_value()) {
+    queues = QueuesVK::FromQueueIndices(device_holder->device.get(),  //
+                                        graphics_queue.value(),       //
+                                        compute_queue.value(),        //
+                                        transfer_queue.value()        //
+    );
+  } else {
+    queues =
+        QueuesVK::FromEmbedderQueue(settings.embedder_data->queue,
+                                    settings.embedder_data->queue_family_index);
+  }
   if (!queues.IsValid()) {
     VALIDATION_LOG << "Could not fetch device queues.";
     return;
