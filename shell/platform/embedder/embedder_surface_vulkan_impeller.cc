@@ -60,6 +60,14 @@ EmbedderSurfaceVulkanImpeller::EmbedderSurfaceVulkanImpeller(
   data.device = device;
   data.queue = queue;
   data.queue_family_index = queue_family_index;
+  data.instance_extensions.reserve(instance_extension_count);
+  for (auto i = 0u; i < instance_extension_count; i++) {
+    data.instance_extensions.push_back(std::string{instance_extensions[i]});
+  }
+  data.device_extensions.reserve(device_extension_count);
+  for (auto i = 0u; i < device_extension_count; i++) {
+    data.device_extensions.push_back(std::string{device_extensions[i]});
+  }
   settings.embedder_data = data;
 
   context_ = impeller::ContextVK::Create(std::move(settings));
@@ -104,7 +112,6 @@ bool EmbedderSurfaceVulkanImpeller::IsValid() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceVulkanImpeller::CreateGPUSurface() {
-  const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<GPUSurfaceVulkanImpeller>(this, context_);
 }
 

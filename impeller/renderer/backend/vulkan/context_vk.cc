@@ -157,8 +157,19 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
+  std::vector<std::string> embedder_instance_extensions;
+  std::vector<std::string> embedder_device_extensions;
+  if (settings.embedder_data.has_value()) {
+    embedder_instance_extensions = settings.embedder_data->instance_extensions;
+    embedder_device_extensions = settings.embedder_data->device_extensions;
+  }
   auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(
-      settings.enable_validation, settings.fatal_missing_validations));
+      settings.enable_validation,                                      //
+      settings.fatal_missing_validations,                              //
+      /*use_embedder_extensions=*/settings.embedder_data.has_value(),  //
+      embedder_instance_extensions,                                    //
+      embedder_device_extensions                                       //
+      ));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";

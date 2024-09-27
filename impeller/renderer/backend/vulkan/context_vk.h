@@ -50,6 +50,8 @@ class ContextVK final : public Context,
     VkDevice device;
     uint32_t queue_family_index;
     VkQueue queue;
+    std::vector<std::string> instance_extensions;
+    std::vector<std::string> device_extensions;
   };
 
   struct Settings {

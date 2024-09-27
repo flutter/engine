@@ -12,6 +12,8 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
@@ -224,9 +226,44 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     };
 
     SurfaceFrame::SubmitCallback submit_callback =
-        [image = flutter_image,
-         delegate = delegate_](const SurfaceFrame&) -> bool {
+        [image = flutter_image, delegate = delegate_,
+         impeller_context = impeller_context_,
+         wrapped_onscreen](const SurfaceFrame&) -> bool {
       TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
+
+      {
+        const auto& context = impeller::ContextVK::Cast(*impeller_context);
+
+        //----------------------------------------------------------------------------
+        /// Transition the image to color-attachment-optimal.
+        ///
+        auto cmd_buffer = context.CreateCommandBuffer();
+
+        auto vk_final_cmd_buffer = impeller::CommandBufferVK::Cast(*cmd_buffer)
+                                       .GetEncoder()
+                                       ->GetCommandBuffer();
+        {
+          impeller::BarrierVK barrier;
+          barrier.new_layout =
+              impeller::vk::ImageLayout::eColorAttachmentOptimal;
+          barrier.cmd_buffer = vk_final_cmd_buffer;
+          barrier.src_access =
+              impeller::vk::AccessFlagBits::eColorAttachmentWrite;
+          barrier.src_stage =
+              impeller::vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          barrier.dst_access = {};
+          barrier.dst_stage =
+              impeller::vk::PipelineStageFlagBits::eBottomOfPipe;
+
+          if (!wrapped_onscreen->SetLayout(barrier).ok()) {
+            return false;
+          }
+        }
+        if (!context.GetCommandQueue()->Submit({cmd_buffer}).ok()) {
+          return false;
+        }
+      }
+
       return delegate->PresentImage(reinterpret_cast<VkImage>(image.image),
                                     static_cast<VkFormat>(image.format));
     };
