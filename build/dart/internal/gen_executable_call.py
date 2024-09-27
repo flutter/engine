@@ -30,19 +30,9 @@ def main():
 
 set -e
 
-# Needed because if it is set, cd may print the path it changed to.
-unset CDPATH
-
-# Store the current working directory.
-prev_cwd=$$(pwd)
-
 # Set a trap to restore the working directory.
-trap 'cd "$$prev_cwd"' EXIT
-
-CD_PATH="$cwd"
-if [ -n "$$CD_PATH" ]; then
-  cd "$$CD_PATH"
-fi
+trap "popd > /dev/null" EXIT
+pushd "$cwd" > /dev/null
 
 $command "$args"
 '''
