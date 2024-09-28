@@ -13,7 +13,7 @@ FLUTTER_ASSERT_ARC
 @interface FlutterEngineGroup ()
 @property(nonatomic, copy) NSString* name;
 @property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
-@property(nonatomic, strong) FlutterDartProject* project;
+@property(nonatomic, copy) FlutterDartProject* project;
 @property(nonatomic, assign) int enginesCreatedCount;
 @end
 
