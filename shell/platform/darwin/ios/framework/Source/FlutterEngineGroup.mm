@@ -14,7 +14,7 @@ FLUTTER_ASSERT_ARC
 @property(nonatomic, copy) NSString* name;
 @property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
 @property(nonatomic, copy) FlutterDartProject* project;
-@property(nonatomic, assign) int enginesCreatedCount;
+@property(nonatomic, assign) NSUInteger enginesCreatedCount;
 @end
 
 @implementation FlutterEngineGroup
@@ -77,7 +77,7 @@ FLUTTER_ASSERT_ARC
 
 - (FlutterEngine*)makeEngine {
   NSString* engineName =
-      [NSString stringWithFormat:@"%@.%d", self.name, ++self.enginesCreatedCount];
+      [NSString stringWithFormat:@"%@.%lu", self.name, ++self.enginesCreatedCount];
   return [[FlutterEngine alloc] initWithName:engineName project:self.project];
 }
 
