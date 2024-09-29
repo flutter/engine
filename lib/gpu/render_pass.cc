@@ -567,6 +567,15 @@ void InternalFlutterGpu_RenderPass_SetCullMode(
   pipeline_descriptor.SetCullMode(flutter::gpu::ToImpellerCullMode(cull_mode));
 }
 
+void InternalFlutterGpu_RenderPass_SetPrimitiveType(
+    flutter::gpu::RenderPass* wrapper,
+    int primitive_type) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetPrimitiveType(
+      flutter::gpu::ToImpellerPrimitiveType(primitive_type));
+}
+
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {
   return wrapper->Draw();
 }
