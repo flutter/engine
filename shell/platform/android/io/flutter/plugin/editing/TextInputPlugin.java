@@ -44,7 +44,6 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
 
 /** Android implementation of the text input plugin. */
@@ -358,14 +357,35 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
 
     EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
-    outAttrs.setSupportedHandwritingGestures(Arrays.asList(SelectGesture.class, SelectRangeGesture.class, InsertGesture.class, InsertModeGesture.class, DeleteGesture.class, DeleteRangeGesture.class, SelectRangeGesture.class, JoinOrSplitGesture.class, RemoveSpaceGesture.class));
-    outAttrs.setSupportedHandwritingGesturePreviews(Set.of(SelectGesture.class, SelectRangeGesture.class, DeleteGesture.class, DeleteRangeGesture.class));
+    outAttrs.setSupportedHandwritingGestures(
+        Arrays.asList(
+            SelectGesture.class,
+            SelectRangeGesture.class,
+            InsertGesture.class,
+            InsertModeGesture.class,
+            DeleteGesture.class,
+            DeleteRangeGesture.class,
+            SelectRangeGesture.class,
+            JoinOrSplitGesture.class,
+            RemoveSpaceGesture.class));
+    outAttrs.setSupportedHandwritingGesturePreviews(
+        Set.of(
+            SelectGesture.class,
+            SelectRangeGesture.class,
+            DeleteGesture.class,
+            DeleteRangeGesture.class));
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
             // TODO(justinmc): scribeChannel could be part of textInputChannel
             // instead of adding a new parameter here.
-            view, inputTarget.id, textInputChannel, scribeChannel, keyboardManager, mEditable, outAttrs);
+            view,
+            inputTarget.id,
+            textInputChannel,
+            scribeChannel,
+            keyboardManager,
+            mEditable,
+            outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 

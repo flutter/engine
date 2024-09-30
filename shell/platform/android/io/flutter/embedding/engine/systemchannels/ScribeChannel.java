@@ -13,12 +13,12 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.util.HashMap;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
- * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate
- * the Scribe handwriting text input feature.
+ * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate the
+ * Scribe handwriting text input feature.
  */
 public class ScribeChannel {
   private static final String TAG = "ScribeChannel";
@@ -32,9 +32,7 @@ public class ScribeChannel {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (scribeMethodHandler == null) {
-            Log.v(
-                TAG,
-                "No ScribeMethodHandler registered, call not forwarded to spell check API.");
+            Log.v(TAG, "No ScribeMethodHandler registered, call not forwarded to spell check API.");
             return;
           }
           String method = call.method;
@@ -62,19 +60,17 @@ public class ScribeChannel {
   }
 
   /**
-   * Sets the {@link ScribeMethodHandler} which receives all requests for scribe
-   * sent through this channel.
+   * Sets the {@link ScribeMethodHandler} which receives all requests for scribe sent through this
+   * channel.
    */
-  public void setScribeMethodHandler(
-      @Nullable ScribeMethodHandler scribeMethodHandler) {
+  public void setScribeMethodHandler(@Nullable ScribeMethodHandler scribeMethodHandler) {
     this.scribeMethodHandler = scribeMethodHandler;
   }
 
   public interface ScribeMethodHandler {
     /**
-     * Requests to start Scribe stylus handwriting, which will respond to the
-     * {@code result} with either success if handwriting input has started or
-     * error otherwise.
+     * Requests to start Scribe stylus handwriting, which will respond to the {@code result} with
+     * either success if handwriting input has started or error otherwise.
      */
     void startStylusHandwriting();
   }

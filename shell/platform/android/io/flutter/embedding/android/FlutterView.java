@@ -24,6 +24,7 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.Display;
 import android.view.DisplayCutout;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
@@ -40,7 +41,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.TextServicesManager;
-import android.view.InputDevice;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -853,8 +853,8 @@ public class FlutterView extends FrameLayout
     // Maybe have to do this in the framework and show a Flutter icon?
     final int toolType = event.getToolType(pointerIndex);
     if (!event.isFromSource(InputDevice.SOURCE_MOUSE)
-      && event.isFromSource(InputDevice.SOURCE_STYLUS)
-      && toolType == MotionEvent.TOOL_TYPE_STYLUS) {
+        && event.isFromSource(InputDevice.SOURCE_STYLUS)
+        && toolType == MotionEvent.TOOL_TYPE_STYLUS) {
       return PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HANDWRITING);
     }
     return super.onResolvePointerIcon(event, pointerIndex);
@@ -1158,7 +1158,8 @@ public class FlutterView extends FrameLayout
 
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
       scribePlugin =
-          new ScribePlugin(this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
+          new ScribePlugin(
+              this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
     }
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
