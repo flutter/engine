@@ -64,6 +64,7 @@ FLUTTER_ASSERT_ARC
                              initialRoute:initialRoute
                            entrypointArgs:entrypointArgs];
   }
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/155943
   [self.engines addObject:[NSValue valueWithPointer:(__bridge void*)engine]];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -82,6 +83,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)onEngineWillBeDealloced:(NSNotification*)notification {
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/155943
   [self.engines removeObject:[NSValue valueWithPointer:(__bridge void*)notification.object]];
 }
 
