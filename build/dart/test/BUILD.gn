@@ -26,7 +26,7 @@ gen_executable_call("gen_executable_call_with_cwd") {
 }
 
 # ninja -C ../out/host_debug flutter/build/dart/test:gen_dartcli_call
-# ../out/host_debug/gen/flutter/build/dart/test/gen_executable_call
+# ../out/host_debug/gen/flutter/build/dart/test/gen_dartcli_call
 #
 # Expected output: Dart SDK version: 3.6.0-273.0.dev (dev)
 #

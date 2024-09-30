@@ -34,16 +34,13 @@ set -e
 trap "popd > /dev/null" EXIT
 pushd "$cwd" > /dev/null
 
-$command "$args"
+$command $args
 '''
   )
 
-  # Convert args into an escaped string.
-  escaped = [arg.replace('"', '\\"') for arg in args.rest]
-
   params = {
       'command': args.command,
-      'args': '" "'.join(escaped),
+      'args': ' '.join(args.rest),
       'cwd': args.cwd if args.cwd else '',
   }
 

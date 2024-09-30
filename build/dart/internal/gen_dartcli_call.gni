@@ -26,12 +26,19 @@ template("gen_dartcli_call") {
   }
   dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext")
 
+  # Add default arguments to the Dart CLI.
+  dart_args = []
+  if (defined(invoker.args)) {
+    dart_args += invoker.args
+  }
+  dart_args += [ "--suppress-analytics" ]
+
   # Actually generate the shell script.
   gen_executable_call(target_name) {
     command = rebase_path(dart)
+    args = dart_args
     forward_variables_from(invoker,
                            [
-                             "args",
                              "cwd",
                              "output",
                            ])
