@@ -87,14 +87,9 @@ sk_sp<DlPixelData> DlMetalSurfaceProvider::ImpellerSnapshot(
     const sk_sp<DisplayList>& list,
     int width,
     int height) const {
-  InitScreenShotter();
-  impeller::DlDispatcher dispatcher;
-  dispatcher.drawColor(flutter::DlColor::kTransparent(),
-                       flutter::DlBlendMode::kSrc);
-  list->Dispatch(dispatcher);
-  auto picture = dispatcher.EndRecordingAsPicture();
-  return sk_make_sp<DlMetalPixelData>(snapshotter_->MakeScreenshot(
-      *aiks_context_, picture, {width, height}, false));
+  auto texture = DisplayListToTexture(list, {width, height}, *aiks_context_);
+  return sk_make_sp<DlMetalPixelData>(
+      snapshotter_->MakeScreenshot(*aiks_context_, texture));
 }
 
 sk_sp<DlImage> DlMetalSurfaceProvider::MakeImpellerImage(
@@ -102,15 +97,8 @@ sk_sp<DlImage> DlMetalSurfaceProvider::MakeImpellerImage(
     int width,
     int height) const {
   InitScreenShotter();
-  impeller::DlDispatcher dispatcher;
-  dispatcher.drawColor(flutter::DlColor::kTransparent(),
-                       flutter::DlBlendMode::kSrc);
-  list->Dispatch(dispatcher);
-  auto picture = dispatcher.EndRecordingAsPicture();
-  std::shared_ptr<impeller::Image> image =
-      picture.ToImage(*aiks_context_, {width, height});
-  std::shared_ptr<impeller::Texture> texture = image->GetTexture();
-  return impeller::DlImageImpeller::Make(texture);
+  return impeller::DlImageImpeller::Make(
+      DisplayListToTexture(list, {width, height}, *aiks_context_));
 }
 
 void DlMetalSurfaceProvider::InitScreenShotter() const {

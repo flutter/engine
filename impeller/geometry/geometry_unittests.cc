@@ -19,6 +19,7 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/separated_vector.h"
 #include "impeller/geometry/size.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -956,6 +957,36 @@ TEST(GeometryTest, PointAbs) {
   ASSERT_POINT_NEAR(a_abs, expected);
 }
 
+TEST(GeometryTest, PointRotate) {
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPiOver2});
+    auto expected = Point(0, 1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{-kPiOver2});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi});
+    auto expected = Point(-1, 0);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi * 1.5});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+}
+
 TEST(GeometryTest, PointAngleTo) {
   // Negative result in the CCW (with up = -Y) direction.
   {
@@ -1109,6 +1140,56 @@ TEST(GeometryTest, Vector4Lerp) {
   Vector4 result = p.Lerp({5, 10, 15, 20}, 0.75);
   Vector4 expected(4, 8, 12, 16);
   ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, SeparatedVector2NormalizesWithConstructor) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.direction, Vector2(1, 0));
+  ASSERT_NEAR(v.magnitude, 10, kEhCloseEnough);
+}
+
+TEST(GeometryTest, SeparatedVector2GetVector) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.GetVector(), Vector2(10, 0));
+}
+
+TEST(GeometryTest, SeparatedVector2GetAlignment) {
+  // Parallel
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(5, 0)));
+    ASSERT_NEAR(actual, 1, kEhCloseEnough);
+  }
+
+  // Perpendicular
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, 5)));
+    ASSERT_NEAR(actual, 0, kEhCloseEnough);
+  }
+
+  // Opposite parallel
+  {
+    SeparatedVector2 v(Vector2(0, 10));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, -5)));
+    ASSERT_NEAR(actual, -1, kEhCloseEnough);
+  }
+}
+
+TEST(GeometryTest, SeparatedVector2AngleTo) {
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(5, 0)));
+    Radians expected = Radians{0};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
+
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(0, -5)));
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
 }
 
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {

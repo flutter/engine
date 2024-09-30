@@ -44,10 +44,10 @@ struct Vector3 {
    *
    *  @return the calculated length.
    */
-  constexpr Scalar Length() const { return sqrt(x * x + y * y + z * z); }
+  constexpr Scalar GetLength() const { return sqrt(x * x + y * y + z * z); }
 
   constexpr Vector3 Normalize() const {
-    const auto len = Length();
+    const auto len = GetLength();
     return {x / len, y / len, z / len};
   }
 
@@ -309,6 +309,8 @@ struct Vector4 {
   constexpr Vector4 Lerp(const Vector4& v, Scalar t) const {
     return *this + (v - *this) * t;
   }
+
+  constexpr Vector2 xy() const { return Vector2(x, y); }
 
   std::string ToString() const;
 };

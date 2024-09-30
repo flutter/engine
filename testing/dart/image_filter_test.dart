@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 import 'goldens.dart';
 import 'impeller_enabled.dart';
@@ -43,7 +43,7 @@ const List<double> halvesBrightnessColorMatrix = <double>[
   0,   0,   0,   1, 0,
 ];
 
-void main() {
+void main() async {
   Future<Uint32List> getBytesForPaint(Paint paint, {int width = 3, int height = 3}) async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas recorderCanvas = Canvas(recorder);
@@ -133,9 +133,9 @@ void main() {
           expect(a[i].hashCode, equals(b[j].hashCode));
           expect(a[i].toString(), equals(b[j].toString()));
         } else {
-          expect(a[i], notEquals(b[j]));
+          expect(a[i], isNot(b[j]));
           // No expectations on hashCode if objects are not equal
-          expect(a[i].toString(), notEquals(b[j].toString()));
+          expect(a[i].toString(), isNot(b[j].toString()));
         }
       }
     }
@@ -293,7 +293,7 @@ void main() {
       ).toString(),
       contains(
         'matrix([10.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.0, -0.0, 0.0, 1.0], FilterQuality.low) -> '
-        'ColorFilter.mode(Color(0xffabcdef), BlendMode.color) -> '
+        'ColorFilter.mode(${const Color(0xFFABCDEF)}, BlendMode.color) -> '
         'blur(20.0, 20.0, repeated) -> '
         'blur(30.0, 30.0, mirror)'
       ),
@@ -301,9 +301,7 @@ void main() {
   });
 
   // Tests that FilterQuality.<value> produces the expected golden file.
-  group('ImageFilter|FilterQuality', () async {
-    final ImageComparer comparer = await ImageComparer.create();
-
+  group('ImageFilter|FilterQuality', () {
     /// Draw a red-green checkerboard pattern with 1x1 squares (pixels).
     Future<Image> drawCheckerboard({
       int width = 100,
@@ -354,6 +352,7 @@ void main() {
     }
 
     test('Scaling a checkerboard of 1x1 red-green pixels with FilterQuality.none', () async {
+      final ImageComparer comparer = await ImageComparer.create();
       final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.none);
       await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_none_scale_1x1_red_green_checkerboard.png');

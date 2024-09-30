@@ -12,6 +12,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 
@@ -88,18 +89,12 @@ class ColorSourceContents : public Contents {
   ///
   /// @note   If set, the output of this method factors factors in the inherited
   ///         opacity of this `Contents`.
-  ///
-  /// @see    `Contents::CanInheritOpacity`
-  ///
   Scalar GetOpacityFactor() const;
 
   virtual bool IsSolidColor() const;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
@@ -111,6 +106,23 @@ class ColorSourceContents : public Contents {
   using PipelineBuilderCallback =
       std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>(
           ContentContextOptions)>;
+  using CreateGeometryCallback =
+      std::function<GeometryResult(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass,
+                                   const Geometry& geom)>;
+
+  static GeometryResult DefaultCreateGeometryCallback(
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass,
+      const Geometry& geom) {
+    return geom.GetPositionBuffer(renderer, entity, pass);
+  }
+
+  /// @brief Whether the entity should be treated as non-opaque due to stroke
+  ///        geometry requiring alpha for coverage.
+  bool AppliesAlphaForStrokeCoverage(const Matrix& transform) const;
 
   template <typename VertexShaderT>
   bool DrawGeometry(const ContentContext& renderer,
@@ -118,15 +130,23 @@ class ColorSourceContents : public Contents {
                     RenderPass& pass,
                     const PipelineBuilderCallback& pipeline_callback,
                     typename VertexShaderT::FrameInfo frame_info,
-                    const BindFragmentCallback& bind_fragment_callback) const {
+                    const BindFragmentCallback& bind_fragment_callback,
+                    bool force_stencil = false,
+                    const CreateGeometryCallback& create_geom_callback =
+                        DefaultCreateGeometryCallback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
     Geometry& geometry = *GetGeometry();
 
-    const bool is_stencil_then_cover =
+    bool is_stencil_then_cover =
         geometry_mode == GeometryResult::Mode::kNonZero ||
         geometry_mode == GeometryResult::Mode::kEvenOdd;
+    if (!is_stencil_then_cover && force_stencil) {
+      geometry_mode = GeometryResult::Mode::kNonZero;
+      is_stencil_then_cover = true;
+    }
+
     if (is_stencil_then_cover) {
       pass.SetStencilReference(0);
 
@@ -153,6 +173,12 @@ class ColorSourceContents : public Contents {
               ContentContextOptions::StencilMode::kStencilEvenOddFill;
           break;
         default:
+          if (force_stencil) {
+            pass.SetCommandLabel("Stencil preparation (NonZero)");
+            options.stencil_mode =
+                ContentContextOptions::StencilMode::kStencilNonZeroFill;
+            break;
+          }
           FML_UNREACHABLE();
       }
       pass.SetPipeline(renderer.GetClipPipeline(options));
@@ -178,12 +204,17 @@ class ColorSourceContents : public Contents {
     }
 
     GeometryResult geometry_result =
-        geometry.GetPositionBuffer(renderer, entity, pass);
+        create_geom_callback(renderer, entity, pass, geometry);
     if (geometry_result.vertex_buffer.vertex_count == 0u) {
       return true;
     }
     pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
     options.primitive_type = geometry_result.type;
+
+    // Enable depth writing for all opaque entities in order to allow
+    // reordering. Opaque entities are coerced to source blending by
+    // `EntityPass::AddEntity`.
+    options.depth_write_enabled = options.blend_mode == BlendMode::kSource;
 
     // Take the pre-populated vertex shader uniform struct and set managed
     // values.

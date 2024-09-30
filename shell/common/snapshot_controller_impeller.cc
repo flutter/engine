@@ -7,11 +7,13 @@
 #include <algorithm>
 
 #include "flutter/flow/surface.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/size.h"
 #include "flutter/shell/common/snapshot_controller.h"
+#include "impeller/renderer/render_target.h"
 
 namespace flutter {
 
@@ -21,39 +23,33 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
     SkISize size,
     const std::shared_ptr<impeller::AiksContext>& context) {
   TRACE_EVENT0("flutter", __FUNCTION__);
-  impeller::DlDispatcher dispatcher;
-  display_list->Dispatch(dispatcher);
-  impeller::Picture picture = dispatcher.EndRecordingAsPicture();
-  if (context) {
-    auto max_size = context->GetContext()
-                        ->GetResourceAllocator()
-                        ->GetMaxTextureSizeSupported();
-    double scale_factor_x =
-        static_cast<double>(max_size.width) / static_cast<double>(size.width());
-    double scale_factor_y = static_cast<double>(max_size.height) /
-                            static_cast<double>(size.height());
-    double scale_factor =
-        std::min(1.0, std::min(scale_factor_x, scale_factor_y));
+  if (!context) {
+    return nullptr;
+  }
+  // Determine render target size.
+  auto max_size = context->GetContext()
+                      ->GetResourceAllocator()
+                      ->GetMaxTextureSizeSupported();
+  double scale_factor_x =
+      static_cast<double>(max_size.width) / static_cast<double>(size.width());
+  double scale_factor_y =
+      static_cast<double>(max_size.height) / static_cast<double>(size.height());
+  double scale_factor = std::min({1.0, scale_factor_x, scale_factor_y});
 
-    auto render_target_size = impeller::ISize(size.width(), size.height());
+  auto render_target_size = impeller::ISize(size.width(), size.height());
 
-    // Scale down the render target size to the max supported by the
-    // GPU if necessary. Exceeding the max would otherwise cause a
-    // null result.
-    if (scale_factor < 1.0) {
-      render_target_size.width *= scale_factor;
-      render_target_size.height *= scale_factor;
-    }
-
-    std::shared_ptr<impeller::Image> image =
-        picture.ToImage(*context, render_target_size);
-    if (image) {
-      return impeller::DlImageImpeller::Make(image->GetTexture(),
-                                             DlImage::OwningContext::kRaster);
-    }
+  // Scale down the render target size to the max supported by the
+  // GPU if necessary. Exceeding the max would otherwise cause a
+  // null result.
+  if (scale_factor < 1.0) {
+    render_target_size.width *= scale_factor;
+    render_target_size.height *= scale_factor;
   }
 
-  return nullptr;
+  return impeller::DlImageImpeller::Make(
+      impeller::DisplayListToTexture(display_list, render_target_size, *context,
+                                     /*reset_host_buffer=*/false),
+      DlImage::OwningContext::kRaster);
 }
 
 sk_sp<DlImage> DoMakeRasterSnapshot(
@@ -79,7 +75,6 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize picture_size,
     std::function<void(const sk_sp<DlImage>&)> callback) {
-  sk_sp<DlImage> result;
   std::shared_ptr<const fml::SyncSwitch> sync_switch =
       GetDelegate().GetIsGpuDisabledSyncSwitch();
   sync_switch->Execute(
@@ -90,15 +85,31 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
             if (context) {
               context->GetContext()->StoreTaskForGPU(
                   [context, sync_switch, display_list = std::move(display_list),
-                   picture_size, callback = std::move(callback)] {
+                   picture_size, callback] {
                     callback(DoMakeRasterSnapshot(display_list, picture_size,
                                                   sync_switch, context));
-                  });
+                  },
+                  [callback]() { callback(nullptr); });
             } else {
+#if FML_OS_IOS_SIMULATOR
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+#else
               callback(nullptr);
+
+#endif  // FML_OS_IOS_SIMULATOR
             }
           })
           .SetIfFalse([&] {
+#if FML_OS_IOS_SIMULATOR
+            if (!GetDelegate().GetAiksContext()) {
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+              return;
+            }
+#endif
             callback(DoMakeRasterSnapshot(display_list, picture_size,
                                           GetDelegate().GetAiksContext()));
           }));

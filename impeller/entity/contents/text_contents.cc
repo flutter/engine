@@ -37,16 +37,6 @@ Color TextContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * inherited_opacity_);
 }
 
-bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  // Computing whether or not opacity can be inherited requires determining if
-  // any glyphs can overlap exactly. While this was previously implemented
-  // via TextFrame::MaybeHasOverlapping, this code relied on scaling up text
-  // bounds for a size specified at 1.0 DPR, which was not accurate at
-  // higher or lower DPRs. Rather than re-implement the checks to compute exact
-  // glyph bounds, for now this optimization has been disabled for Text.
-  return false;
-}
-
 void TextContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
 }
@@ -63,11 +53,24 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   return frame_->GetBounds().TransformBounds(entity.GetTransform());
 }
 
-void TextContents::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_);
-  scale_ = scale;
+void TextContents::SetTextProperties(Color color,
+                                     bool stroke,
+                                     Scalar stroke_width,
+                                     Cap stroke_cap,
+                                     Join stroke_join,
+                                     Scalar stroke_miter) {
+  if (frame_->HasColor()) {
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties_.color = color.WithAlpha(1.0);
+  }
+  if (stroke) {
+    properties_.stroke = true;
+    properties_.stroke_width = stroke_width;
+    properties_.stroke_cap = stroke_cap;
+    properties_.stroke_join = stroke_join;
+    properties_.stroke_miter = stroke_miter;
+  }
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -171,7 +174,7 @@ bool TextContents::Render(const ContentContext& renderer,
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
           const FontGlyphAtlas* font_atlas =
-              atlas->GetFontGlyphAtlas(font, rounded_scale, frame_->GetColor());
+              atlas->GetFontGlyphAtlas(font, rounded_scale);
           if (!font_atlas) {
             VALIDATION_LOG << "Could not find font in the atlas.";
             continue;
@@ -202,8 +205,11 @@ bool TextContents::Render(const ContentContext& renderer,
             Point subpixel = TextFrame::ComputeSubpixelPosition(
                 glyph_position, font.GetAxisAlignment(), offset_, scale_);
             std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
-                font_atlas->FindGlyphBounds(
-                    SubpixelGlyph{glyph_position.glyph, subpixel});
+                font_atlas->FindGlyphBounds(SubpixelGlyph{
+                    glyph_position.glyph, subpixel,
+                    (properties_.stroke || frame_->HasColor())
+                        ? std::optional<GlyphProperties>(properties_)
+                        : std::nullopt});
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
@@ -211,6 +217,7 @@ bool TextContents::Render(const ContentContext& renderer,
             const Rect& atlas_glyph_bounds =
                 maybe_atlas_glyph_bounds.value().first;
             Rect glyph_bounds = maybe_atlas_glyph_bounds.value().second;
+            Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
             // For each glyph, we compute two rectangles. One for the vertex
             // positions and one for the texture coordinates (UVs). The atlas
             // glyph bounds are used to compute UVs in cases where the
@@ -223,19 +230,20 @@ bool TextContents::Render(const ContentContext& renderer,
                 (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
 
             Point unrounded_glyph_position =
-                (basis_transform * glyph_position.position) +
-                glyph_bounds.GetLeftTop();
+                basis_transform *
+                (glyph_position.position + scaled_bounds.GetLeftTop());
+
             Point screen_glyph_position =
                 (screen_offset + unrounded_glyph_position + subpixel_adjustment)
                     .Floor();
 
-            Size scaled_size = glyph_bounds.GetSize();
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
-                position = screen_glyph_position + (point * scaled_size);
+                position = (screen_glyph_position +
+                            (basis_transform * point * scaled_bounds.GetSize()))
+                               .Round();
               } else {
-                Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
                 position = entity_transform * (glyph_position.position +
                                                scaled_bounds.GetLeftTop() +
                                                point * scaled_bounds.GetSize());

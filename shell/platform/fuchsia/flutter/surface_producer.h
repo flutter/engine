@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_SURFACE_PRODUCER_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_SURFACE_PRODUCER_H_
 
+#include <fuchsia/sysmem2/cpp/fidl.h>
 #include <fuchsia/ui/composition/cpp/fidl.h>
 #include <lib/zx/event.h>
 
@@ -14,7 +15,7 @@
 
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter_runner {
 

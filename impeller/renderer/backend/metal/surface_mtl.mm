@@ -222,12 +222,18 @@ IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
 
-// |Surface|
-bool SurfaceMTL::Present() const {
+bool SurfaceMTL::PreparePresent() const {
   auto context = context_.lock();
   if (!context) {
     return false;
   }
+
+#ifdef IMPELLER_DEBUG
+  context->GetResourceAllocator()->DebugTraceMemoryStatistics();
+  if (frame_boundary_) {
+    ContextMTL::Cast(context.get())->GetCaptureManager()->FinishCapture();
+  }
+#endif  // IMPELLER_DEBUG
 
   if (requires_blit_) {
     if (!(source_texture_ && destination_texture_)) {
@@ -253,6 +259,19 @@ bool SurfaceMTL::Present() const {
 #ifdef IMPELLER_DEBUG
   ContextMTL::Cast(context.get())->GetGPUTracer()->MarkFrameEnd();
 #endif  // IMPELLER_DEBUG
+  prepared_ = true;
+  return true;
+}
+
+// |Surface|
+bool SurfaceMTL::Present() const {
+  if (!prepared_) {
+    PreparePresent();
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
 
   if (drawable_) {
     id<MTLCommandBuffer> command_buffer =
@@ -266,14 +285,29 @@ bool SurfaceMTL::Present() const {
           flutterPrepareForPresent:command_buffer];
     }
 
+    // Intel iOS simulators do not seem to give backpressure on Metal drawable
+    // aquisition, which can result in Impeller running head of the GPU
+    // workload by dozens of frames. Slow this process down by blocking
+    // on submit until the last command buffer is at least scheduled.
+#if defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
+    constexpr bool alwaysWaitForScheduling = true;
+#else
+    constexpr bool alwaysWaitForScheduling = false;
+#endif  // defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
+
     // If the threads have been merged, or there is a pending frame capture,
     // then block on cmd buffer scheduling to ensure that the
     // transaction/capture work correctly.
-    if ([[NSThread currentThread] isMainThread] ||
-        [[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+    if (present_with_transaction_ || [[NSThread currentThread] isMainThread] ||
+        [[MTLCaptureManager sharedCaptureManager] isCapturing] ||
+        alwaysWaitForScheduling) {
       TRACE_EVENT0("flutter", "waitUntilScheduled");
       [command_buffer commit];
+#if defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
+      [command_buffer waitUntilCompleted];
+#else
       [command_buffer waitUntilScheduled];
+#endif  // defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
       [drawable_ present];
     } else {
       // The drawable may come from a FlutterMetalLayer, so it can't be

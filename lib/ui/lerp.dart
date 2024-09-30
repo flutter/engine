@@ -26,6 +26,8 @@ double? lerpDouble(num? a, num? b, double t) {
 ///
 /// Same as [lerpDouble] but specialized for non-null `double` type.
 double _lerpDouble(double a, double b, double t) {
+  // This doesn't match _lerpInt to preserve specific behaviors when dealing
+  // with infinity and nan.
   return a * (1.0 - t) + b * t;
 }
 
@@ -34,16 +36,4 @@ double _lerpDouble(double a, double b, double t) {
 /// Same as [lerpDouble] but specialized for non-null `int` type.
 double _lerpInt(int a, int b, double t) {
   return a + (b - a) * t;
-}
-
-/// Same as [num.clamp] but specialized for non-null [int].
-int _clampInt(int value, int min, int max) {
-  assert(min <= max);
-  if (value < min) {
-    return min;
-  } else if (value > max) {
-    return max;
-  } else {
-    return value;
-  }
 }

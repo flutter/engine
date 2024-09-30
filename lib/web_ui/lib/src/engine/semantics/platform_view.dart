@@ -20,13 +20,20 @@ import 'semantics.dart';
 /// See also:
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-owns
 ///   * https://bugs.webkit.org/show_bug.cgi?id=223798
-class PlatformViewRoleManager extends PrimaryRoleManager {
-  PlatformViewRoleManager(SemanticsObject semanticsObject)
+class SemanticPlatformView extends SemanticRole {
+  SemanticPlatformView(SemanticsObject semanticsObject)
       : super.withBasics(
-          PrimaryRole.platformView,
+          SemanticRoleKind.platformView,
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         );
+
+  /// Ignores pointer events on all platform view nodes.
+  ///
+  /// This is so that the platform views are not obscured by semantic elements
+  /// and can be reached by inspecting the web page.
+  @override
+  bool get acceptsPointerEvents => false;
 
   @override
   void update() {

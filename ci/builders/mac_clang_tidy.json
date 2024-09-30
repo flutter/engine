@@ -3,11 +3,12 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "gn": [
@@ -15,7 +16,6 @@
                 "debug",
                 "--prebuilt-dart-sdk",
                 "--no-lto",
-                "--force-mac-arm64",
                 "--target-dir",
                 "ci/host_debug_clang_tidy",
                 "--rbe",
@@ -31,11 +31,12 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "gn": [
@@ -44,7 +45,6 @@
                 "debug",
                 "--simulator",
                 "--no-lto",
-                "--force-mac-arm64",
                 "--target-dir",
                 "ci/ios_debug_sim_clang_tidy",
                 "--rbe",
@@ -64,11 +64,12 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -87,7 +88,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -114,11 +114,12 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -137,7 +138,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -164,11 +164,12 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -187,7 +188,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -214,11 +214,12 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -237,7 +238,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -264,11 +264,12 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13",
+                "os=Mac-13|Mac-14",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
+                "download_jdk": false,
                 "use_rbe": true
             },
             "dependencies": [
@@ -288,7 +289,6 @@
                         "debug",
                         "--prebuilt-dart-sdk",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/host_debug_clang_tidy",
                         "--rbe",
@@ -306,7 +306,6 @@
                         "debug",
                         "--simulator",
                         "--no-lto",
-                        "--force-mac-arm64",
                         "--target-dir",
                         "ci/ios_debug_sim_clang_tidy",
                         "--rbe",

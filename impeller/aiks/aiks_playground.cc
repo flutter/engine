@@ -5,7 +5,6 @@
 #include "impeller/aiks/aiks_playground.h"
 
 #include <memory>
-#include <optional>
 
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
@@ -28,44 +27,6 @@ void AiksPlayground::TearDown() {
   PlaygroundTest::TearDown();
 }
 
-bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
-  if (!switches_.enable_playground) {
-    return true;
-  }
-
-  AiksContext renderer(GetContext(), typographer_context_);
-
-  if (!renderer.IsValid()) {
-    return false;
-  }
-
-  return Playground::OpenPlaygroundHere(
-      [&renderer, &picture](RenderTarget& render_target) -> bool {
-        return renderer.Render(picture, render_target, true);
-      });
-}
-
-bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
-  if (!switches_.enable_playground) {
-    return true;
-  }
-
-  AiksContext renderer(GetContext(), typographer_context_);
-
-  if (!renderer.IsValid()) {
-    return false;
-  }
-
-  return Playground::OpenPlaygroundHere(
-      [&renderer, &callback](RenderTarget& render_target) -> bool {
-        std::optional<Picture> picture = callback(renderer);
-        if (!picture.has_value()) {
-          return false;
-        }
-        return renderer.Render(*picture, render_target, true);
-      });
-}
-
 bool AiksPlayground::ImGuiBegin(const char* name,
                                 bool* p_open,
                                 ImGuiWindowFlags flags) {
@@ -75,10 +36,36 @@ bool AiksPlayground::ImGuiBegin(const char* name,
 
 bool AiksPlayground::OpenPlaygroundHere(
     const sk_sp<flutter::DisplayList>& list) {
-  DlDispatcher dispatcher;
-  list->Dispatch(dispatcher);
-  Picture picture = dispatcher.EndRecordingAsPicture();
-  return OpenPlaygroundHere(std::move(picture));
+  return OpenPlaygroundHere([list]() { return list; });
+}
+
+bool AiksPlayground::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  if (!renderer.IsValid()) {
+    return false;
+  }
+
+  return Playground::OpenPlaygroundHere(
+      [&renderer, &callback](RenderTarget& render_target) -> bool {
+        auto display_list = callback();
+        TextFrameDispatcher collector(renderer.GetContentContext(),  //
+                                      Matrix(),                      //
+                                      Rect::MakeMaximum()            //
+        );
+        display_list->Dispatch(collector);
+
+        CanvasDlDispatcher impeller_dispatcher(
+            renderer.GetContentContext(), render_target,
+            display_list->root_has_backdrop_filter(),
+            display_list->max_root_blend_mode(), IRect::MakeMaximum());
+        display_list->Dispatch(impeller_dispatcher);
+        impeller_dispatcher.FinishRecording();
+        renderer.GetContentContext().GetTransientsBuffer().Reset();
+        renderer.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+        return true;
+      });
 }
 
 }  // namespace impeller

@@ -12,7 +12,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
-#include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
@@ -42,6 +41,8 @@ Entity::~Entity() = default;
 Entity::Entity(Entity&&) = default;
 
 Entity::Entity(const Entity&) = default;
+
+Entity& Entity::operator=(Entity&&) = default;
 
 const Matrix& Entity::GetTransform() const {
   return transform_;
@@ -79,14 +80,6 @@ Contents::ClipCoverage Entity::GetClipCoverage(
   return contents_->GetClipCoverage(*this, current_clip_coverage);
 }
 
-bool Entity::ShouldRender(const std::optional<Rect>& clip_coverage) const {
-#ifdef IMPELLER_CONTENT_CULLING
-  return contents_->ShouldRender(*this, clip_coverage);
-#else
-  return true;
-#endif  // IMPELLER_CONTENT_CULLING
-}
-
 void Entity::SetContents(std::shared_ptr<Contents> contents) {
   contents_ = std::move(contents);
 }
@@ -120,22 +113,12 @@ BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 
-bool Entity::CanInheritOpacity() const {
-  if (!contents_) {
-    return false;
-  }
-  if (!((blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) ||
-        blend_mode_ == BlendMode::kSourceOver)) {
-    return false;
-  }
-  return contents_->CanInheritOpacity(*this);
-}
-
 bool Entity::SetInheritedOpacity(Scalar alpha) {
-  if (!CanInheritOpacity()) {
-    return false;
+  if (alpha >= 1.0) {
+    return true;
   }
-  if (blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) {
+  if (blend_mode_ == BlendMode::kSource &&
+      contents_->IsOpaque(GetTransform())) {
     blend_mode_ = BlendMode::kSourceOver;
   }
   contents_->SetInheritedOpacity(alpha);
@@ -182,10 +165,6 @@ bool Entity::Render(const ContentContext& renderer,
   }
 
   return contents_->Render(renderer, *this, parent_pass);
-}
-
-Scalar Entity::DeriveTextScale() const {
-  return GetTransform().GetMaxBasisLengthXY();
 }
 
 Entity Entity::Clone() const {

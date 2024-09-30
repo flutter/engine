@@ -10,11 +10,9 @@
 #include <vector>
 
 #include "flutter/common/settings.h"
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
-#include "flutter/fml/size.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/dart_ui.h"
@@ -71,12 +69,12 @@ static const char* kSerialGCArgs[] = {
     // clang-format on
 };
 
-FML_ALLOW_UNUSED_TYPE
+[[maybe_unused]]
 static const char* kDartWriteProtectCodeArgs[] = {
     "--no_write_protect_code",
 };
 
-FML_ALLOW_UNUSED_TYPE
+[[maybe_unused]]
 static const char* kDartDisableIntegerDivisionArgs[] = {
     "--no_use_integer_division",
 };
@@ -105,7 +103,7 @@ static std::string DartFileRecorderArgs(const std::string& path) {
   return oss.str();
 }
 
-FML_ALLOW_UNUSED_TYPE
+[[maybe_unused]]
 static const char* kDartDefaultTraceStreamsArgs[]{
     "--timeline_streams=Dart,Embedder,GC",
 };
@@ -335,11 +333,11 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
     args.push_back(profiler_flag);
   }
 
-  PushBackAll(&args, kDartAllConfigsArgs, fml::size(kDartAllConfigsArgs));
+  PushBackAll(&args, kDartAllConfigsArgs, std::size(kDartAllConfigsArgs));
 
   if (IsRunningPrecompiledCode()) {
     PushBackAll(&args, kDartPrecompilationArgs,
-                fml::size(kDartPrecompilationArgs));
+                std::size(kDartPrecompilationArgs));
   }
 
   // Enable Dart assertions if we are not running precompiled code. We run non-
@@ -357,7 +355,7 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
-              fml::size(kDartWriteProtectCodeArgs));
+              std::size(kDartWriteProtectCodeArgs));
 #else
   const bool tracing_result = EnableTracingIfNecessary(settings_);
   // This check should only trip if the embedding made no attempts to enable
@@ -371,38 +369,38 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
   // TODO(dnfield): Remove this code
   // https://github.com/dart-lang/sdk/issues/24743
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
-              fml::size(kDartDisableIntegerDivisionArgs));
+              std::size(kDartDisableIntegerDivisionArgs));
 #endif  // TARGET_CPU_ARM
 #endif  // !FML_OS_IOS && !FML_OS_MACOSX
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
-    PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
+    PushBackAll(&args, kDartAssertArgs, std::size(kDartAssertArgs));
   }
 
   // On low power devices with lesser number of cores, using concurrent
   // marking or sweeping causes contention for the UI thread leading to
   // Jank, this option can be used to turn off all concurrent GC activities.
   if (settings_.enable_serial_gc) {
-    PushBackAll(&args, kSerialGCArgs, fml::size(kSerialGCArgs));
+    PushBackAll(&args, kSerialGCArgs, std::size(kSerialGCArgs));
   }
 
   if (settings_.start_paused) {
-    PushBackAll(&args, kDartStartPausedArgs, fml::size(kDartStartPausedArgs));
+    PushBackAll(&args, kDartStartPausedArgs, std::size(kDartStartPausedArgs));
   }
 
   if (settings_.endless_trace_buffer || settings_.trace_startup) {
     // If we are tracing startup, make sure the trace buffer is endless so we
     // don't lose early traces.
     PushBackAll(&args, kDartEndlessTraceBufferArgs,
-                fml::size(kDartEndlessTraceBufferArgs));
+                std::size(kDartEndlessTraceBufferArgs));
   }
 
   if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
-                fml::size(kDartSystraceTraceBufferArgs));
+                std::size(kDartSystraceTraceBufferArgs));
     PushBackAll(&args, kDartSystraceTraceStreamsArgs,
-                fml::size(kDartSystraceTraceStreamsArgs));
+                std::size(kDartSystraceTraceStreamsArgs));
   }
 
   std::string file_recorder_args;
@@ -410,23 +408,23 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
     file_recorder_args = DartFileRecorderArgs(settings_.trace_to_file);
     args.push_back(file_recorder_args.c_str());
     PushBackAll(&args, kDartSystraceTraceStreamsArgs,
-                fml::size(kDartSystraceTraceStreamsArgs));
+                std::size(kDartSystraceTraceStreamsArgs));
   }
 
   if (settings_.trace_startup) {
     PushBackAll(&args, kDartStartupTraceStreamsArgs,
-                fml::size(kDartStartupTraceStreamsArgs));
+                std::size(kDartStartupTraceStreamsArgs));
   }
 
 #if defined(OS_FUCHSIA)
   PushBackAll(&args, kDartSystraceTraceBufferArgs,
-              fml::size(kDartSystraceTraceBufferArgs));
+              std::size(kDartSystraceTraceBufferArgs));
   PushBackAll(&args, kDartSystraceTraceStreamsArgs,
-              fml::size(kDartSystraceTraceStreamsArgs));
+              std::size(kDartSystraceTraceStreamsArgs));
 #else
   if (!settings_.trace_systrace && !settings_.trace_startup) {
     PushBackAll(&args, kDartDefaultTraceStreamsArgs,
-                fml::size(kDartDefaultTraceStreamsArgs));
+                std::size(kDartDefaultTraceStreamsArgs));
   }
 #endif  // defined(OS_FUCHSIA)
 

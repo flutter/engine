@@ -13,9 +13,9 @@
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrRecordingContext.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -806,7 +806,7 @@ void BM_DrawVertices(benchmark::State& state,
     std::shared_ptr<DlVertices> vertices =
         GetTestVertices(p, radius, 50, mode, vertex_count);
     total_vertex_count += vertex_count;
-    builder.DrawVertices(vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(vertices, DlBlendMode::kSrc, paint);
   }
 
   state.counters["VertexCount"] = total_vertex_count;

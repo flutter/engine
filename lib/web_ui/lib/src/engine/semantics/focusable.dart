@@ -12,9 +12,9 @@ import 'semantics.dart';
 /// Supplies generic accessibility focus features to semantics nodes that have
 /// [ui.SemanticsFlag.isFocusable] set.
 ///
-/// Assumes that the element being focused on is [SemanticsObject.element]. Role
-/// managers with special needs can implement custom focus management and
-/// exclude this role manager.
+/// Assumes that the element being focused on is [SemanticsObject.element].
+/// Semantic roles with special needs can implement custom focus management and
+/// exclude this behavior.
 ///
 /// `"tab-index=0"` is used because `<flt-semantics>` is not intrinsically
 /// focusable. Examples of intrinsically focusable elements include:
@@ -27,10 +27,9 @@ import 'semantics.dart';
 /// See also:
 ///
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
-class Focusable extends RoleManager {
-  Focusable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
-        super(Role.focusable, semanticsObject, owner);
+class Focusable extends SemanticBehavior {
+  Focusable(super.semanticsObject, super.owner)
+      : _focusManager = AccessibilityFocusManager(semanticsObject.owner);
 
   final AccessibilityFocusManager _focusManager;
 
@@ -44,11 +43,12 @@ class Focusable extends RoleManager {
   /// programmatically, simulating the screen reader choosing a default element
   /// to focus on.
   ///
-  /// Returns `true` if the role manager took the focus. Returns `false` if
-  /// this role manager did not take the focus. The return value can be used to
-  /// decide whether to stop searching for a node that should take focus.
+  /// Returns `true` if the node took the focus. Returns `false` if the node did
+  /// not take the focus. The return value can be used to decide whether to stop
+  /// searching for a node that should take focus.
   bool focusAsRouteDefault() {
-    owner.element.focus();
+    _focusManager._lastEvent = AccessibilityFocusManagerEvent.requestedFocus;
+    owner.element.focusWithoutScroll();
     return true;
   }
 
@@ -86,14 +86,29 @@ typedef _FocusTarget = ({
   DomEventListener domBlurListener,
 });
 
+enum AccessibilityFocusManagerEvent {
+  /// No event has happend for the target element.
+  nothing,
+
+  /// The engine requested focus on the DOM element, possibly because the
+  /// framework requested it.
+  requestedFocus,
+
+  /// Received the DOM "focus" event.
+  receivedDomFocus,
+
+  /// Received the DOM "blur" event.
+  receivedDomBlur,
+}
+
 /// Implements accessibility focus management for arbitrary elements.
 ///
 /// Unlike [Focusable], which implements focus features on [SemanticsObject]s
 /// whose [SemanticsObject.element] is directly focusable, this class can help
-/// implementing focus features on custom elements. For example, [Incrementable]
-/// uses a custom `<input>` tag internally while its root-level element is not
-/// focusable. However, it can still use this class to manage the focus of the
-/// internal element.
+/// implementing focus features on custom elements. For example,
+/// [SemanticIncrementable] uses a custom `<input>` tag internally while its
+/// root-level element is not focusable. However, it can still use this class to
+/// manage the focus of the internal element.
 class AccessibilityFocusManager {
   /// Creates a focus manager tied to a specific [EngineSemanticsOwner].
   AccessibilityFocusManager(this._owner);
@@ -101,6 +116,8 @@ class AccessibilityFocusManager {
   final EngineSemanticsOwner _owner;
 
   _FocusTarget? _target;
+
+  AccessibilityFocusManagerEvent _lastEvent = AccessibilityFocusManagerEvent.nothing;
 
   // The last focus value set by this focus manager, used to prevent requesting
   // focus on the same element repeatedly. Requesting focus on DOM elements is
@@ -148,10 +165,11 @@ class AccessibilityFocusManager {
     final _FocusTarget newTarget = (
       semanticsNodeId: semanticsNodeId,
       element: element,
-      domFocusListener: createDomEventListener((_) => _setFocusFromDom(true)),
-      domBlurListener: createDomEventListener((_) => _setFocusFromDom(false)),
+      domFocusListener: createDomEventListener((_) => _didReceiveDomFocus()),
+      domBlurListener: createDomEventListener((_) => _didReceiveDomBlur()),
     );
     _target = newTarget;
+    _lastEvent = AccessibilityFocusManagerEvent.nothing;
 
     element.tabIndex = 0;
     element.addEventListener('focus', newTarget.domFocusListener);
@@ -173,7 +191,7 @@ class AccessibilityFocusManager {
     target.element.removeEventListener('blur', target.domBlurListener);
   }
 
-  void _setFocusFromDom(bool acquireFocus) {
+  void _didReceiveDomFocus() {
     final _FocusTarget? target = _target;
 
     if (target == null) {
@@ -182,13 +200,23 @@ class AccessibilityFocusManager {
       return;
     }
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-      target.semanticsNodeId,
-      acquireFocus
-        ? ui.SemanticsAction.didGainAccessibilityFocus
-        : ui.SemanticsAction.didLoseAccessibilityFocus,
-      null,
-    );
+    // Do not notify the framework if DOM focus was acquired as a result of
+    // requesting it programmatically. Only notify the framework if the DOM
+    // focus was initiated by the browser, e.g. as a result of the screen reader
+    // shifting focus.
+    if (_lastEvent != AccessibilityFocusManagerEvent.requestedFocus) {
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        target.semanticsNodeId,
+        ui.SemanticsAction.focus,
+        null,
+      );
+    }
+
+    _lastEvent = AccessibilityFocusManagerEvent.receivedDomFocus;
+  }
+
+  void _didReceiveDomBlur() {
+    _lastEvent = AccessibilityFocusManagerEvent.receivedDomBlur;
   }
 
   /// Requests focus or blur on the DOM element.
@@ -226,14 +254,14 @@ class AccessibilityFocusManager {
       // as it is subject to non-local effects. Let's say the framework decides
       // that a semantics node is currently not focused. That would lead to
       // changeFocus(false) to be called. However, what if this node is inside
-      // a dialog, and nothing else in the dialog is focused. The Flutter
+      // a route, and nothing else in the route is focused? The Flutter
       // framework expects that the screen reader will focus on the first (in
-      // traversal order) focusable element inside the dialog and send a
-      // didGainAccessibilityFocus action. Screen readers on the web do not do
+      // traversal order) focusable element inside the route and send a
+      // SemanticsAction.focus action. Screen readers on the web do not do
       // that, and so the web engine has to implement this behavior directly. So
-      // the dialog will look for a focusable element and request focus on it,
+      // the route will look for a focusable element and request focus on it,
       // but now there may be a race between this method unsetting the focus and
-      // the dialog requesting focus on the same element.
+      // the route requesting focus on the same element.
       return;
     }
 
@@ -249,7 +277,8 @@ class AccessibilityFocusManager {
         return;
       }
 
-      target.element.focus();
+      _lastEvent = AccessibilityFocusManagerEvent.requestedFocus;
+      target.element.focusWithoutScroll();
     });
   }
 }

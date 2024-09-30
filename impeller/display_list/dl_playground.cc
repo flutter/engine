@@ -15,8 +15,6 @@
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/platform.h"
 
-#define ENABLE_EXPERIMENTAL_CANVAS false
-
 namespace impeller {
 
 DlPlayground::DlPlayground() = default;
@@ -49,26 +47,25 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
         }
 
         auto list = callback();
-
-#if ENABLE_EXPERIMENTAL_CANVAS
-        TextFrameDispatcher collector(context.GetContentContext(), Matrix());
+        TextFrameDispatcher collector(context.GetContentContext(), Matrix(),
+                                      Rect::MakeMaximum());
         list->Dispatch(collector);
 
-        ExperimentalDlDispatcher impeller_dispatcher(
-            context.GetContentContext(), render_target, IRect::MakeMaximum());
+        CanvasDlDispatcher impeller_dispatcher(
+            context.GetContentContext(), render_target,
+            list->root_has_backdrop_filter(), list->max_root_blend_mode(),
+            IRect::MakeMaximum());
         list->Dispatch(impeller_dispatcher);
         impeller_dispatcher.FinishRecording();
         context.GetContentContext().GetTransientsBuffer().Reset();
         context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
         return true;
-#else
-        DlDispatcher dispatcher;
-        list->Dispatch(dispatcher);
-        auto picture = dispatcher.EndRecordingAsPicture();
-
-        return context.Render(picture, render_target, true);
-#endif
       });
+}
+
+std::unique_ptr<testing::Screenshot> DlPlayground::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
 }
 
 SkFont DlPlayground::CreateTestFontOfSize(SkScalar scalar) {

@@ -20,16 +20,51 @@ using DlScalar = impeller::Scalar;
 using DlDegrees = impeller::Degrees;
 using DlRadians = impeller::Radians;
 
-using DlISize = impeller::ISize32;
+using DlPoint = impeller::Point;
+using DlIPoint = impeller::IPoint32;
 using DlSize = impeller::Size;
+using DlISize = impeller::ISize32;
 using DlRect = impeller::Rect;
 using DlIRect = impeller::IRect32;
 using DlMatrix = impeller::Matrix;
 
+static_assert(sizeof(SkPoint) == sizeof(DlPoint));
+static_assert(sizeof(SkIPoint) == sizeof(DlIPoint));
+static_assert(sizeof(SkSize) == sizeof(DlSize));
+static_assert(sizeof(SkISize) == sizeof(DlISize));
 static_assert(sizeof(SkRect) == sizeof(DlRect));
+static_assert(sizeof(SkIRect) == sizeof(DlIRect));
+
+inline const DlPoint& ToDlPoint(const SkPoint& point) {
+  return *reinterpret_cast<const DlPoint*>(&point);
+}
+
+inline const DlPoint* ToDlPoints(const SkPoint* points) {
+  return points == nullptr ? nullptr : reinterpret_cast<const DlPoint*>(points);
+}
 
 inline const DlRect& ToDlRect(const SkRect& rect) {
   return *reinterpret_cast<const DlRect*>(&rect);
+}
+
+inline const DlIRect& ToDlIRect(const SkIRect& rect) {
+  return *reinterpret_cast<const DlIRect*>(&rect);
+}
+
+inline DlRect* ToDlRect(SkRect* rect) {
+  return rect == nullptr ? nullptr : reinterpret_cast<DlRect*>(rect);
+}
+
+inline const DlRect* ToDlRect(const SkRect* rect) {
+  return rect == nullptr ? nullptr : reinterpret_cast<const DlRect*>(rect);
+}
+
+inline const DlRect* ToDlRects(const SkRect* rects) {
+  return rects == nullptr ? nullptr : reinterpret_cast<const DlRect*>(rects);
+}
+
+inline const DlISize& ToDlISize(const SkISize& size) {
+  return *reinterpret_cast<const DlISize*>(&size);
 }
 
 inline constexpr DlMatrix ToDlMatrix(const SkMatrix& matrix) {
@@ -49,8 +84,32 @@ inline constexpr DlMatrix ToDlMatrix(const SkM44& matrix) {
   return dl_matrix;
 }
 
+inline const SkPoint& ToSkPoint(const DlPoint& point) {
+  return *reinterpret_cast<const SkPoint*>(&point);
+}
+
+inline const SkPoint* ToSkPoints(const DlPoint* points) {
+  return points == nullptr ? nullptr : reinterpret_cast<const SkPoint*>(points);
+}
+
 inline const SkRect& ToSkRect(const DlRect& rect) {
   return *reinterpret_cast<const SkRect*>(&rect);
+}
+
+inline const SkIRect& ToSkIRect(const DlIRect& rect) {
+  return *reinterpret_cast<const SkIRect*>(&rect);
+}
+
+inline const SkRect* ToSkRect(const DlRect* rect) {
+  return rect == nullptr ? nullptr : reinterpret_cast<const SkRect*>(rect);
+}
+
+inline SkRect* ToSkRect(DlRect* rect) {
+  return rect == nullptr ? nullptr : reinterpret_cast<SkRect*>(rect);
+}
+
+inline const SkRect* ToSkRects(const DlRect* rects) {
+  return rects == nullptr ? nullptr : reinterpret_cast<const SkRect*>(rects);
 }
 
 inline const SkISize& ToSkISize(const DlISize& size) {

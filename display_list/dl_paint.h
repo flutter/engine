@@ -13,7 +13,6 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
-#include "flutter/display_list/effects/dl_path_effect.h"
 
 namespace flutter {
 
@@ -75,8 +74,8 @@ class DlPaint {
 
   uint8_t getAlpha() const { return color_.argb() >> 24; }
   DlPaint& setAlpha(uint8_t alpha) { return setColor(color_.withAlpha(alpha)); }
-  SkScalar getOpacity() const { return color_.getAlphaF(); }
-  DlPaint& setOpacity(SkScalar opacity) {
+  DlScalar getOpacity() const { return color_.getAlphaF(); }
+  DlPaint& setOpacity(DlScalar opacity) {
     setAlpha(SkScalarRoundToInt(opacity * 0xff));
     return *this;
   }
@@ -177,19 +176,6 @@ class DlPaint {
     return *this;
   }
 
-  std::shared_ptr<const DlPathEffect> getPathEffect() const {
-    return path_effect_;
-  }
-  const DlPathEffect* getPathEffectPtr() const { return path_effect_.get(); }
-  DlPaint& setPathEffect(const std::shared_ptr<DlPathEffect>& pathEffect) {
-    path_effect_ = pathEffect;
-    return *this;
-  }
-  DlPaint& setPathEffect(const DlPathEffect* effect) {
-    path_effect_ = effect ? effect->shared() : nullptr;
-    return *this;
-  }
-
   bool isDefault() const { return *this == kDefault; }
 
   bool operator==(DlPaint const& other) const;
@@ -228,7 +214,6 @@ class DlPaint {
   std::shared_ptr<const DlColorFilter> color_filter_;
   std::shared_ptr<const DlImageFilter> image_filter_;
   std::shared_ptr<const DlMaskFilter> mask_filter_;
-  std::shared_ptr<const DlPathEffect> path_effect_;
 };
 
 }  // namespace flutter

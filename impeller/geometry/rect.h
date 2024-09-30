@@ -137,6 +137,10 @@ struct TRect {
     return TRect(x, y, saturated::Add(x, width), saturated::Add(y, height));
   }
 
+  constexpr static TRect MakeWH(Type width, Type height) {
+    return TRect(0, 0, width, height);
+  }
+
   constexpr static TRect MakeOriginSize(const TPoint<Type>& origin,
                                         const TSize<Type>& size) {
     return MakeXYWH(origin.x, origin.y, size.width, size.height);
@@ -185,6 +189,10 @@ struct TRect {
            bottom_ == r.bottom_;
   }
 
+  [[nodiscard]] constexpr bool operator!=(const TRect& r) const {
+    return !(*this == r);
+  }
+
   [[nodiscard]] constexpr TRect Scale(Type scale) const {
     return TRect(left_ * scale,   //
                  top_ * scale,    //
@@ -220,6 +228,25 @@ struct TRect {
            p.y >= top_ &&       //
            p.x < right_ &&      //
            p.y < bottom_;
+  }
+
+  /// @brief  Returns true iff the provided point |p| is inside the
+  ///         closed-range interior of this rectangle.
+  ///
+  ///         Unlike the regular |Contains(TPoint)| method, this method
+  ///         considers all points along the boundary of the rectangle
+  ///         to be contained within the rectangle - useful for testing
+  ///         if vertices that define a filled shape would carry the
+  ///         interior of that shape outside the bounds of the rectangle.
+  ///         Since both geometries are defining half-open spaces, their
+  ///         defining geometry needs to consider their boundaries to
+  ///         be equivalent with respect to interior and exterior.
+  [[nodiscard]] constexpr bool ContainsInclusive(const TPoint<Type>& p) const {
+    return !this->IsEmpty() &&  //
+           p.x >= left_ &&      //
+           p.y >= top_ &&       //
+           p.x <= right_ &&     //
+           p.y <= bottom_;
   }
 
   /// @brief  Returns true iff this rectangle is not empty and it also
@@ -341,8 +368,7 @@ struct TRect {
 
   /// @brief  Get the area of the rectangle, equivalent to |GetSize().Area()|
   [[nodiscard]] constexpr T Area() const {
-    // TODO(flutter/flutter#141710) - Use saturated math to avoid overflow
-    // https://github.com/flutter/flutter/issues/141710
+    // TODO(141710): Use saturated math to avoid overflow.
     return IsEmpty() ? 0 : (right_ - left_) * (bottom_ - top_);
   }
 
@@ -505,6 +531,10 @@ struct TRect {
     } else {
       return std::nullopt;
     }
+  }
+
+  [[nodiscard]] constexpr TRect IntersectionOrEmpty(const TRect& o) const {
+    return Intersection(o).value_or(TRect());
   }
 
   [[nodiscard]] constexpr bool IntersectsWithRect(const TRect& o) const {

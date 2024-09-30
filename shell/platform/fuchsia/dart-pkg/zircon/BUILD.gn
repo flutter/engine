@@ -61,12 +61,11 @@ dart_library("zircon_lib") {
 dart_library("zircon_tests_lib") {
   testonly = true
   package_name = "zircon_tests"
-  language_version = "2.12"
   source_dir = "."
   package_root = "test"
 
   sources = [ "zircon_tests.dart" ]
-  deps = [ "//flutter/shell/platform/fuchsia/dart:litetest" ]
+  deps = [ "//flutter/shell/platform/fuchsia/dart:async_helper" ]
 }
 
 flutter_component("zircon_tests_component") {

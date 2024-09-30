@@ -72,8 +72,13 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   SkMatrix GetTransform() const override;
 
   void ClipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void ClipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void ClipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void ClipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override {
+    path.WillRenderSkPath();
+    ClipPath(path.GetSkPath(), clip_op, is_aa);
+  }
 
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
@@ -94,6 +99,11 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void DrawLine(const SkPoint& p0,
                 const SkPoint& p1,
                 const DlPaint& paint) override;
+  void DrawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length,
+                      const DlPaint& paint) override;
   void DrawRect(const SkRect& rect, const DlPaint& paint) override;
   void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
   void DrawCircle(const SkPoint& center,
@@ -104,6 +114,10 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                   const SkRRect& inner,
                   const DlPaint& paint) override;
   void DrawPath(const SkPath& path, const DlPaint& paint) override;
+  void DrawPath(const DlPath& path, const DlPaint& paint) override {
+    path.WillRenderSkPath();
+    DrawPath(path.GetSkPath(), paint);
+  }
   void DrawArc(const SkRect& bounds,
                SkScalar start,
                SkScalar sweep,
@@ -113,11 +127,11 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                   uint32_t count,
                   const SkPoint pts[],
                   const DlPaint& paint) override;
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
   void DrawImage(const sk_sp<DlImage>& image,
-                 const SkPoint point,
+                 const SkPoint& point,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr) override;
   void DrawImageRect(
@@ -156,6 +170,14 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
+  void DrawShadow(const DlPath& path,
+                  const DlColor color,
+                  const SkScalar elevation,
+                  bool transparent_occluder,
+                  SkScalar dpr) override {
+    path.WillRenderSkPath();
+    DrawShadow(path.GetSkPath(), color, elevation, transparent_occluder, dpr);
+  }
 
   void Flush() override;
 

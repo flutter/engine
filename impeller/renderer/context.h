@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "fml/closure.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/capabilities.h"
@@ -176,10 +177,14 @@ class Context {
   /// being available or that the task has been canceled. The task should
   /// operate with the `SyncSwitch` to make sure the GPU is accessible.
   ///
+  /// If the queue of pending tasks is cleared without GPU access, then the
+  /// failure callback will be invoked and the primary task function will not
+  ///
   /// Threadsafe.
   ///
   /// `task` will be executed on the platform thread.
-  virtual void StoreTaskForGPU(const std::function<void()>& task) {
+  virtual void StoreTaskForGPU(const fml::closure& task,
+                               const fml::closure& failure) {
     FML_CHECK(false && "not supported in this context");
   }
 
@@ -190,6 +195,13 @@ class Context {
   /// The workload includes initializing commonly used but not default
   /// shader variants, as well as forcing driver initialization.
   virtual void InitializeCommonlyUsedShadersIfNeeded() const {}
+
+  /// Dispose resources that are cached on behalf of the current thread.
+  ///
+  /// Some backends such as Vulkan may cache resources that can be reused while
+  /// executing a rendering operation.  This API can be called after the
+  /// operation completes in order to clear the cache.
+  virtual void DisposeThreadLocalCachedResources() {}
 
  protected:
   Context();

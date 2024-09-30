@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -57,8 +58,27 @@ public class FlutterLoaderTest {
     flutterLoader.ensureInitializationComplete(ctx, null);
     shadowOf(getMainLooper()).idle();
     assertTrue(flutterLoader.initialized());
-    verify(mockFlutterJNI, times(1)).loadLibrary();
+    verify(mockFlutterJNI, times(1)).loadLibrary(ctx);
     verify(mockFlutterJNI, times(1)).updateRefreshRate();
+  }
+
+  @Test
+  public void unsatisfiedLinkErrorPathDoesNotExist() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    ctx.getApplicationInfo().nativeLibraryDir = "/path/that/doesnt/exist";
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    Mockito.doThrow(new UnsatisfiedLinkError("couldn't find \"libflutter.so\""))
+        .when(mockFlutterJNI)
+        .loadLibrary(ctx);
+    try {
+      flutterLoader.startInitialization(ctx);
+    } catch (UnsupportedOperationException e) {
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "and the native libraries directory (with path /path/that/doesnt/exist) does not exist."));
+    }
   }
 
   @Test
@@ -208,12 +228,34 @@ public class FlutterLoaderTest {
     flutterLoader.ensureInitializationComplete(ctx, null);
     shadowOf(getMainLooper()).idle();
 
-    final String enableImpellerArg = "--enable-impeller";
+    final String enableImpellerArg = "--enable-impeller=true";
     ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
     verify(mockFlutterJNI, times(1))
         .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
     List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
     assertTrue(arguments.contains(enableImpellerArg));
+  }
+
+  @Test
+  public void itSetsDisableSurfaceControlFromMetaData() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+    Bundle metaData = new Bundle();
+    metaData.putBoolean("io.flutter.embedding.android.DisableSurfaceControl", true);
+    ctx.getApplicationInfo().metaData = metaData;
+
+    FlutterLoader.Settings settings = new FlutterLoader.Settings();
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(ctx, settings);
+    flutterLoader.ensureInitializationComplete(ctx, null);
+    shadowOf(getMainLooper()).idle();
+
+    final String disabledControlArg = "--disable-surface-control";
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
+    verify(mockFlutterJNI, times(1))
+        .init(eq(ctx), shellArgsCaptor.capture(), anyString(), anyString(), anyString(), anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains(disabledControlArg));
   }
 
   @Test

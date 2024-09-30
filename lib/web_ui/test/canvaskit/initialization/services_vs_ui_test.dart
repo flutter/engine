@@ -54,17 +54,9 @@ Future<JsFlutterConfiguration?> bootstrapAndExtractConfig() {
   final Completer<JsFlutterConfiguration?> configCompleter = Completer<JsFlutterConfiguration?>();
   final AppBootstrap bootstrap = AppBootstrap(
     initializeEngine: ([JsFlutterConfiguration? config]) async => configCompleter.complete(config),
-    runApp: () {}
+    runApp: () async {}
   );
-  final FlutterLoader? loader = flutter?.loader;
-  if (loader == null || loader.isAutoStart) {
-    // TODO(jacksongardner): Unit tests under dart2wasm still use the old way which
-    // doesn't invoke flutter.js directly, so we autostart here. Once dart2wasm tests
-    // work with flutter.js, we can remove this code path.
-    bootstrap.autoStart();
-  } else {
-    loader.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
-  }
+  flutter!.loader!.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
 
   return configCompleter.future;
 }

@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "impeller/aiks/aiks_context.h"
-#include "impeller/aiks/picture.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/typographer_context.h"
 #include "third_party/imgui/imgui.h"
@@ -16,8 +15,7 @@ namespace impeller {
 
 class AiksPlayground : public PlaygroundTest {
  public:
-  using AiksPlaygroundCallback =
-      std::function<std::optional<Picture>(AiksContext& renderer)>;
+  using AiksDlPlaygroundCallback = std::function<sk_sp<flutter::DisplayList>()>;
 
   AiksPlayground();
 
@@ -28,9 +26,7 @@ class AiksPlayground : public PlaygroundTest {
   void SetTypographerContext(
       std::shared_ptr<TypographerContext> typographer_context);
 
-  bool OpenPlaygroundHere(Picture picture);
-
-  bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+  bool OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 

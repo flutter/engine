@@ -42,7 +42,6 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace impeller {
 
-// TODO(csg): Fix this after caps are reworked.
 static bool gHasValidationLayers = false;
 
 bool HasValidationLayers() {
@@ -158,18 +157,8 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  // Enable Vulkan validation if either:
-  // 1. The user has explicitly enabled it.
-  // 2. We are in a combination of debug mode, and running on Android.
-  // (It's possible 2 is overly conservative and we can simplify this)
-  auto enable_validation = settings.enable_validation;
-
-#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
-  enable_validation = true;
-#endif
-
   auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(
-      enable_validation, settings.fatal_missing_validations));
+      settings.enable_validation, settings.fatal_missing_validations));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -287,7 +276,6 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
   if (!transfer_queue.has_value()) {
-    FML_LOG(INFO) << "Dedicated transfer queue not avialable.";
     transfer_queue = graphics_queue.value();
   }
   if (!compute_queue.has_value()) {
@@ -339,7 +327,8 @@ void ContextVK::Setup(Settings settings) {
     device_holder->device = std::move(device_result.value);
   }
 
-  if (!caps->SetPhysicalDevice(device_holder->physical_device)) {
+  if (!caps->SetPhysicalDevice(device_holder->physical_device,
+                               *enabled_features)) {
     VALIDATION_LOG << "Capabilities could not be updated.";
     return;
   }
@@ -456,6 +445,7 @@ void ContextVK::Setup(Settings settings) {
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
   command_queue_vk_ = std::make_shared<CommandQueueVK>(weak_from_this());
+  should_disable_surface_control_ = settings.disable_surface_control;
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
@@ -618,6 +608,10 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   auto pass = builder.Build(GetDevice());
 }
 
+void ContextVK::DisposeThreadLocalCachedResources() {
+  command_pool_recycler_->Dispose();
+}
+
 const std::shared_ptr<YUVConversionLibraryVK>&
 ContextVK::GetYUVConversionLibrary() const {
   return yuv_conversion_library_;
@@ -625,6 +619,10 @@ ContextVK::GetYUVConversionLibrary() const {
 
 const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
   return driver_info_;
+}
+
+bool ContextVK::GetShouldDisableSurfaceControlSwapchain() const {
+  return should_disable_surface_control_;
 }
 
 }  // namespace impeller

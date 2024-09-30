@@ -24,7 +24,6 @@ tags
 Thumbs.db
 .idea
 pubspec.lock
-.vscode/
 docs/doxygen/
 xcuserdata
 
@@ -67,6 +66,7 @@ flutter_*.png
 linked_*.ds
 unlinked.ds
 unlinked_spec.ds
+*.dill.deps
 
 # Android related
 **/android/**/gradle-wrapper.jar

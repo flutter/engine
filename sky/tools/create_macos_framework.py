@@ -5,22 +5,12 @@
 # found in the LICENSE file.
 
 import argparse
-import platform
-import subprocess
 import shutil
 import sys
 import os
 
 from create_xcframework import create_xcframework  # pylint: disable=import-error
-
-buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..', '..'))
-
-ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
-DSYMUTIL = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin', 'dsymutil'
-)
-
-out_dir = os.path.join(buildroot_dir, 'out')
+import sky_utils  # pylint: disable=import-error
 
 
 def main():
@@ -33,218 +23,137 @@ def main():
   parser.add_argument('--x64-out-dir', type=str, required=True)
   parser.add_argument('--strip', action='store_true', default=False)
   parser.add_argument('--dsym', action='store_true', default=False)
-  # TODO(godofredoc): Remove after recipes v2 have landed.
   parser.add_argument('--zip', action='store_true', default=False)
 
   args = parser.parse_args()
 
-  dst = (args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst))
+  dst = args.dst if os.path.isabs(args.dst) else sky_utils.buildroot_relative_path(args.dst)
+
   arm64_out_dir = (
-      args.arm64_out_dir
-      if os.path.isabs(args.arm64_out_dir) else os.path.join(buildroot_dir, args.arm64_out_dir)
+      args.arm64_out_dir if os.path.isabs(args.arm64_out_dir) else
+      sky_utils.buildroot_relative_path(args.arm64_out_dir)
   )
+
   x64_out_dir = (
       args.x64_out_dir
-      if os.path.isabs(args.x64_out_dir) else os.path.join(buildroot_dir, args.x64_out_dir)
+      if os.path.isabs(args.x64_out_dir) else sky_utils.buildroot_relative_path(args.x64_out_dir)
   )
 
-  fat_framework_bundle = os.path.join(dst, 'FlutterMacOS.framework')
   arm64_framework = os.path.join(arm64_out_dir, 'FlutterMacOS.framework')
-  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
-
-  arm64_dylib = os.path.join(arm64_framework, 'FlutterMacOS')
-  x64_dylib = os.path.join(x64_framework, 'FlutterMacOS')
-
   if not os.path.isdir(arm64_framework):
     print('Cannot find macOS arm64 Framework at %s' % arm64_framework)
     return 1
 
+  x64_framework = os.path.join(x64_out_dir, 'FlutterMacOS.framework')
   if not os.path.isdir(x64_framework):
     print('Cannot find macOS x64 Framework at %s' % x64_framework)
     return 1
 
+  arm64_dylib = sky_utils.get_mac_framework_dylib_path(arm64_framework)
   if not os.path.isfile(arm64_dylib):
     print('Cannot find macOS arm64 dylib at %s' % arm64_dylib)
     return 1
 
+  x64_dylib = sky_utils.get_mac_framework_dylib_path(x64_framework)
   if not os.path.isfile(x64_dylib):
     print('Cannot find macOS x64 dylib at %s' % x64_dylib)
     return 1
 
-  if not os.path.isfile(DSYMUTIL):
-    print('Cannot find dsymutil at %s' % DSYMUTIL)
-    return 1
-
-  shutil.rmtree(fat_framework_bundle, True)
-  shutil.copytree(arm64_framework, fat_framework_bundle, symlinks=True)
-
-  regenerate_symlinks(fat_framework_bundle)
-
-  fat_framework_binary = os.path.join(fat_framework_bundle, 'Versions', 'A', 'FlutterMacOS')
-
-  # Create the arm64/x64 fat framework.
-  subprocess.check_call([
-      'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
-  ])
-  # Make the framework readable and executable: u=rwx,go=rx.
-  subprocess.check_call(['chmod', '755', fat_framework_bundle])
-
-  # Add group and other readability to all files.
-  versions_path = os.path.join(fat_framework_bundle, 'Versions')
-  subprocess.check_call(['chmod', '-R', 'og+r', versions_path])
-  # Find all the files below the target dir with owner execute permission
-  find_subprocess = subprocess.Popen(['find', versions_path, '-perm', '-100', '-print0'],
-                                     stdout=subprocess.PIPE)
-  # Add execute permission for other and group for all files that had it for owner.
-  xargs_subprocess = subprocess.Popen(['xargs', '-0', 'chmod', 'og+x'],
-                                      stdin=find_subprocess.stdout)
-  find_subprocess.wait()
-  xargs_subprocess.wait()
-
-  process_framework(dst, args, fat_framework_bundle, fat_framework_binary)
+  fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
+  sky_utils.create_fat_macos_framework(args, dst, fat_framework, arm64_framework, x64_framework)
 
   # Create XCFramework from the arm64 and x64 fat framework.
-  xcframeworks = [fat_framework_bundle]
-  create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks)
+  xcframeworks = [fat_framework]
+  dsyms = {fat_framework: fat_framework + '.dSYM'} if args.dsym else None
+  create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks, dsyms=dsyms)
 
-  zip_framework(dst, args)
+  if args.zip:
+    zip_framework(dst, args)
 
   return 0
 
 
-def regenerate_symlinks(fat_framework_bundle):
-  """Regenerates the symlinks structure.
-
-  Recipes V2 upload artifacts in CAS before integration and CAS follows symlinks.
-  This logic regenerates the symlinks in the expected structure.
-  """
-  if os.path.islink(os.path.join(fat_framework_bundle, 'FlutterMacOS')):
-    return
-  os.remove(os.path.join(fat_framework_bundle, 'FlutterMacOS'))
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Headers'), True)
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Modules'), True)
-  shutil.rmtree(os.path.join(fat_framework_bundle, 'Resources'), True)
-  current_version_path = os.path.join(fat_framework_bundle, 'Versions', 'Current')
-  shutil.rmtree(current_version_path, True)
-  os.symlink('A', current_version_path)
-  os.symlink(
-      os.path.join('Versions', 'Current', 'FlutterMacOS'),
-      os.path.join(fat_framework_bundle, 'FlutterMacOS')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Headers'), os.path.join(fat_framework_bundle, 'Headers')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Modules'), os.path.join(fat_framework_bundle, 'Modules')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Resources'),
-      os.path.join(fat_framework_bundle, 'Resources')
-  )
-
-
-def embed_codesign_configuration(config_path, content):
-  with open(config_path, 'w') as file:
-    file.write(content)
-
-
-def process_framework(dst, args, fat_framework_bundle, fat_framework_binary):
-  if args.dsym:
-    dsym_out = os.path.splitext(fat_framework_bundle)[0] + '.dSYM'
-    subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
-    if args.zip:
-      dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'], cwd=dsym_dst)
-      # Double zip to make it consistent with legacy artifacts.
-      # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-      subprocess.check_call([
-          'zip',
-          '-y',
-          'FlutterMacOS.dSYM_.zip',
-          'FlutterMacOS.dSYM.zip',
-      ],
-                            cwd=dsym_dst)
-      # Use doubled zipped file.
-      dsym_final_src_path = os.path.join(dsym_dst, 'FlutterMacOS.dSYM_.zip')
-      dsym_final_dst_path = os.path.join(dst, 'FlutterMacOS.dSYM.zip')
-      shutil.move(dsym_final_src_path, dsym_final_dst_path)
-
-  if args.strip:
-    # copy unstripped
-    unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
-    shutil.copyfile(fat_framework_binary, unstripped_out)
-
-    subprocess.check_call(['strip', '-x', '-S', fat_framework_binary])
-
-
 def zip_framework(dst, args):
-  # Zip FlutterMacOS.framework.
-  if args.zip:
-    filepath_with_entitlements = ''
-
-    framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
-    # TODO(xilaizhang): Remove the zip file from the path when outer zip is removed.
-    filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
-
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'entitlements.txt'), filepath_with_entitlements
-    )
-
-    embed_codesign_configuration(
-        os.path.join(framework_dst, 'without_entitlements.txt'), filepath_without_entitlements
-    )
-    subprocess.check_call([
-        'zip',
-        '-r',
-        '-y',
-        'FlutterMacOS.framework.zip',
-        '.',
-    ],
-                          cwd=framework_dst)
-    # Double zip to make it consistent with legacy artifacts.
-    # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
-    subprocess.check_call(
-        [
-            'zip',
-            '-y',
-            'FlutterMacOS.framework_.zip',
-            'FlutterMacOS.framework.zip',
-            # TODO(xilaizhang): Move these files to inner zip before removing the outer zip.
-            'entitlements.txt',
-            'without_entitlements.txt',
-        ],
-        cwd=framework_dst
-    )
-    # Use doubled zipped file.
-    final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
-    final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
-    shutil.move(final_src_path, final_dst_path)
-
-    zip_xcframework_archive(dst)
-
-
-def zip_xcframework_archive(dst):
-  filepath_with_entitlements = ''
-  filepath_without_entitlements = (
-      'FlutterMacOS.xcframework/macos-arm64_x86_64/'
-      'FlutterMacOS.framework/Versions/A/FlutterMacOS'
+  # pylint: disable=line-too-long
+  # When updating with_entitlements and without_entitlements,
+  # `binariesWithoutEntitlements` and `signedXcframeworks` should be updated in
+  # the framework's `verifyCodeSignedTestRunner`.
+  #
+  # See: https://github.com/flutter/flutter/blob/62382c7b83a16b3f48dc06c19a47f6b8667005a5/dev/bots/suite_runners/run_verify_binaries_codesigned_tests.dart#L82-L130
+  framework_dst = os.path.join(dst, 'FlutterMacOS.framework')
+  sky_utils.write_codesign_config(os.path.join(framework_dst, 'entitlements.txt'), [])
+  sky_utils.write_codesign_config(
+      os.path.join(framework_dst, 'without_entitlements.txt'),
+      [
+          # TODO(cbracken): Remove the zip file from the path when outer zip is removed.
+          'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
+      ]
   )
-  embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)
+  sky_utils.create_zip(framework_dst, 'FlutterMacOS.framework.zip', ['.'])
+  # pylint: enable=line-too-long
 
-  embed_codesign_configuration(
-      os.path.join(dst, 'without_entitlements.txt'), filepath_without_entitlements
+  # Double zip to make it consistent with legacy artifacts.
+  # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
+  sky_utils.create_zip(
+      framework_dst,
+      'FlutterMacOS.framework_.zip',
+      [
+          'FlutterMacOS.framework.zip',
+          # TODO(cbracken): Move these files to inner zip before removing the outer zip.
+          'entitlements.txt',
+          'without_entitlements.txt',
+      ]
   )
 
-  subprocess.check_call([
-      'zip',
-      '-r',
-      '-y',
-      'framework.zip',
+  # Overwrite the FlutterMacOS.framework.zip with the double-zipped archive.
+  final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
+  final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
+  shutil.move(final_src_path, final_dst_path)
+
+  zip_xcframework_archive(dst, args)
+
+
+def zip_xcframework_archive(dst, args):
+  # pylint: disable=line-too-long
+
+  # When updating with_entitlements and without_entitlements,
+  # `binariesWithoutEntitlements` and `signedXcframeworks` should be updated in
+  # the framework's `verifyCodeSignedTestRunner`.
+  #
+  # See: https://github.com/flutter/flutter/blob/62382c7b83a16b3f48dc06c19a47f6b8667005a5/dev/bots/suite_runners/run_verify_binaries_codesigned_tests.dart#L82-L130
+
+  # Binaries that must be codesigned and require entitlements for particular APIs.
+  with_entitlements = []
+  with_entitlements_file = os.path.join(dst, 'entitlements.txt')
+  sky_utils.write_codesign_config(with_entitlements_file, with_entitlements)
+
+  # Binaries that must be codesigned and DO NOT require entitlements.
+  without_entitlements = [
+      'FlutterMacOS.xcframework/macos-arm64_x86_64/FlutterMacOS.framework/Versions/A/FlutterMacOS',
+  ]
+  without_entitlements_file = os.path.join(dst, 'without_entitlements.txt')
+  sky_utils.write_codesign_config(without_entitlements_file, without_entitlements)
+
+  # Binaries that will not be codesigned.
+  unsigned_binaries = []
+  if args.dsym:
+    unsigned_binaries.extend([
+        'FlutterMacOS.xcframework/macos-arm64_x86_64/dSYMs/FlutterMacOS.framework.dSYM/Contents/Resources/DWARF/FlutterMacOS',
+    ])
+  unsigned_binaries_file = os.path.join(dst, 'unsigned_binaries.txt')
+  sky_utils.write_codesign_config(unsigned_binaries_file, unsigned_binaries)
+  # pylint: enable=line-too-long
+
+  zip_contents = [
       'FlutterMacOS.xcframework',
       'entitlements.txt',
       'without_entitlements.txt',
-  ],
-                        cwd=dst)
+      'unsigned_binaries.txt',
+  ]
+  sky_utils.assert_valid_codesign_config(
+      dst, zip_contents, with_entitlements, without_entitlements, unsigned_binaries
+  )
+  sky_utils.create_zip(dst, 'framework.zip', zip_contents)
 
 
 if __name__ == '__main__':

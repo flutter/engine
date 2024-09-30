@@ -8,11 +8,11 @@
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
-#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 
 #include "vulkan_backbuffer.h"
 #include "vulkan_device.h"
@@ -155,7 +155,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
 
   swapchain_ = VulkanHandle<VkSwapchainKHR>{
       swapchain, [this](VkSwapchainKHR swapchain) {
-        FML_ALLOW_UNUSED_LOCAL(device_.WaitIdle());
+        [[maybe_unused]] auto result = device_.WaitIdle();
         vk.DestroySwapchainKHR(device_.GetHandle(), swapchain, nullptr);
       }};
 

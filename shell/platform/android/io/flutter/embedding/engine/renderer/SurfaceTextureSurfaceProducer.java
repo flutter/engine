@@ -56,6 +56,16 @@ final class SurfaceTextureSurfaceProducer
   }
 
   @Override
+  public void setCallback(Callback callback) {
+    // Intentionally blank: SurfaceTextures don't get platform notifications or cleanup.
+  }
+
+  @Override
+  public boolean handlesCropAndRotation() {
+    return true;
+  }
+
+  @Override
   @NonNull
   public SurfaceTexture getSurfaceTexture() {
     return texture.surfaceTexture();

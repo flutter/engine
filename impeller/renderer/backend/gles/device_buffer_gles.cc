@@ -7,10 +7,8 @@
 #include <cstring>
 #include <memory>
 
-#include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
-#include "impeller/base/validation.h"
 
 namespace impeller {
 
@@ -46,19 +44,29 @@ bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
     return false;
   }
 
-  if (offset + source_range.length > backing_store_->GetLength()) {
+  if (offset + source_range.length >
+      backing_store_->GetLength().GetByteSize()) {
     return false;
   }
 
   std::memmove(backing_store_->GetBuffer() + offset,
                source + source_range.offset, source_range.length);
-  ++generation_;
+  Flush(Range{offset, source_range.length});
 
   return true;
 }
 
 void DeviceBufferGLES::Flush(std::optional<Range> range) const {
-  generation_++;
+  if (!range.has_value()) {
+    dirty_range_ = Range{
+        0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())};
+  } else {
+    if (dirty_range_.has_value()) {
+      dirty_range_ = dirty_range_->Merge(range.value());
+    } else {
+      dirty_range_ = range.value();
+    }
+  }
 }
 
 static GLenum ToTarget(DeviceBufferGLES::BindingType type) {
@@ -85,13 +93,17 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
   const auto& gl = reactor_->GetProcTable();
 
   gl.BindBuffer(target_type, buffer.value());
+  if (!initialized_) {
+    gl.BufferData(target_type, backing_store_->GetLength().GetByteSize(),
+                  nullptr, GL_DYNAMIC_DRAW);
+    initialized_ = true;
+  }
 
-  if (upload_generation_ != generation_) {
-    TRACE_EVENT1("impeller", "BufferData", "Bytes",
-                 std::to_string(backing_store_->GetLength()).c_str());
-    gl.BufferData(target_type, backing_store_->GetLength(),
-                  backing_store_->GetBuffer(), GL_STATIC_DRAW);
-    upload_generation_ = generation_;
+  if (dirty_range_.has_value()) {
+    auto range = dirty_range_.value();
+    gl.BufferSubData(target_type, range.offset, range.length,
+                     backing_store_->GetBuffer() + range.offset);
+    dirty_range_ = std::nullopt;
   }
 
   return true;
@@ -119,8 +131,9 @@ void DeviceBufferGLES::UpdateBufferData(
         update_buffer_data) {
   if (update_buffer_data) {
     update_buffer_data(backing_store_->GetBuffer(),
-                       backing_store_->GetLength());
-    ++generation_;
+                       backing_store_->GetLength().GetByteSize());
+    Flush(Range{
+        0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())});
   }
 }
 

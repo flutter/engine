@@ -182,6 +182,27 @@ TEST(DlOpSpy, DrawLine) {
   }
 }
 
+TEST(DlOpSpy, DrawDashedLine) {
+  {  // black
+    DisplayListBuilder builder;
+    DlPaint paint(DlColor::kBlack());
+    builder.DrawDashedLine(DlPoint(0, 1), DlPoint(1, 2), 1.0f, 1.0f, paint);
+    sk_sp<DisplayList> dl = builder.Build();
+    DlOpSpy dl_op_spy;
+    dl->Dispatch(dl_op_spy);
+    ASSERT_DID_DRAW(dl_op_spy, dl);
+  }
+  {  // transparent
+    DisplayListBuilder builder;
+    DlPaint paint(DlColor::kTransparent());
+    builder.DrawDashedLine(DlPoint(0, 1), DlPoint(1, 2), 1.0f, 1.0f, paint);
+    sk_sp<DisplayList> dl = builder.Build();
+    DlOpSpy dl_op_spy;
+    dl->Dispatch(dl_op_spy);
+    ASSERT_NO_DRAW(dl_op_spy, dl);
+  }
+}
+
 TEST(DlOpSpy, DrawRect) {
   {  // black
     DisplayListBuilder builder;
@@ -369,7 +390,7 @@ TEST(DlOpSpy, DrawVertices) {
     };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
-    builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(dl_vertices, DlBlendMode::kSrc, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -395,7 +416,7 @@ TEST(DlOpSpy, DrawVertices) {
     };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
-    builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(dl_vertices, DlBlendMode::kSrc, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);

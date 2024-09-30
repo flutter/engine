@@ -5,6 +5,7 @@
 #include "vertices_contents.h"
 
 #include "fml/logging.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
@@ -12,7 +13,6 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/size.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -89,6 +89,10 @@ void VerticesSimpleBlendContents::SetLazyTexture(
   lazy_texture_ = lazy_texture;
 }
 
+void VerticesSimpleBlendContents::SetLazyTextureCoverage(Rect rect) {
+  lazy_texture_coverage_ = rect;
+}
+
 bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
                                          const Entity& entity,
                                          RenderPass& pass) const {
@@ -109,6 +113,10 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   } else {
     texture = renderer.GetEmptyTexture();
   }
+  if (!texture) {
+    VALIDATION_LOG << "Missing texture for VerticesSimpleBlendContents";
+    return false;
+  }
 
   auto dst_sampler_descriptor = descriptor_;
   dst_sampler_descriptor.width_address_mode =
@@ -123,8 +131,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
           dst_sampler_descriptor);
 
   GeometryResult geometry_result = geometry_->GetPositionUVColorBuffer(
-      (!!texture) ? Rect::MakeSize(texture->GetSize())
-                  : Rect::MakeSize(ISize{1, 1}),
+      lazy_texture_coverage_.has_value() ? lazy_texture_coverage_.value()
+                                         : Rect::MakeSize(texture->GetSize()),
       inverse_matrix_, renderer, entity, pass);
   if (geometry_result.vertex_buffer.vertex_count == 0) {
     return true;

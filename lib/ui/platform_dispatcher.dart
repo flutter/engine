@@ -1883,7 +1883,7 @@ class FrameTiming {
 ///   provides state transition callbacks.
 /// * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
 ///   from the widgets layer.
-/// * iOS's [IOKit activity
+/// * iOS's [UIKit activity
 ///   lifecycle](https://developer.apple.com/documentation/uikit/app_and_environment/managing_your_app_s_life_cycle?language=objc)
 ///   documentation.
 /// * Android's [activity
@@ -2195,6 +2195,8 @@ class ViewConstraints {
 /// [DisplayFeatureState.postureHalfOpened]. For [DisplayFeatureType.cutout],
 /// the state is not used and has the [DisplayFeatureState.unknown] value.
 class DisplayFeature {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   const DisplayFeature({
     required this.bounds,
     required this.type,

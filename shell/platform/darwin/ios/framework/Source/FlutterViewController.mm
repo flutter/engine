@@ -1863,6 +1863,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self.keyboardManager handlePress:press nextAction:next];
 }
 
+- (void)sendDeepLinkToFramework:(NSURL*)url completionHandler:(void (^)(BOOL success))completion {
+  [_engine.get()
+      waitForFirstFrame:3.0
+               callback:^(BOOL didTimeout) {
+                 if (didTimeout) {
+                   FML_LOG(ERROR) << "Timeout waiting for the first frame when launching an URL.";
+                   completion(NO);
+                 } else {
+                   // invove the method and get the result
+                   [[_engine.get() navigationChannel]
+                       invokeMethod:@"pushRouteInformation"
+                          arguments:@{
+                            @"location" : url.absoluteString ?: [NSNull null],
+                          }
+                             result:^(id _Nullable result) {
+                               BOOL success =
+                                   [result isKindOfClass:[NSNumber class]] && [result boolValue];
+                               if (!success) {
+                                 // Logging the error if the result is not successful
+                                 FML_LOG(ERROR) << "Failed to handle route information in Flutter.";
+                               }
+                               completion(success);
+                             }];
+                 }
+               }];
+}
+
 // The documentation for presses* handlers (implemented below) is entirely
 // unclear about how to handle the case where some, but not all, of the presses
 // are handled here. I've elected to call super separately for each of the
@@ -2131,7 +2158,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)onUserSettingsChanged:(NSNotification*)notification {
   [[_engine.get() settingsChannel] sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
-    @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
+    @"alwaysUse24HourFormat" : @([FlutterHourFormat isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
     @"nativeSpellCheckServiceDefined" : @true,
@@ -2203,24 +2230,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return NO;
   }
-}
-
-- (BOOL)isAlwaysUse24HourFormat {
-  // iOS does not report its "24-Hour Time" user setting in the API. Instead, it applies
-  // it automatically to NSDateFormatter when used with [NSLocale currentLocale]. It is
-  // essential that [NSLocale currentLocale] is used. Any custom locale, even the one
-  // that's the same as [NSLocale currentLocale] will ignore the 24-hour option (there
-  // must be some internal field that's not exposed to developers).
-  //
-  // Therefore this option behaves differently across Android and iOS. On Android this
-  // setting is exposed standalone, and can therefore be applied to all locales, whether
-  // the "current system locale" or a custom one. On iOS it only applies to the current
-  // system locale. Widget implementors must take this into account in order to provide
-  // platform-idiomatic behavior in their widgets.
-  NSString* dateFormat = [NSDateFormatter dateFormatFromTemplate:@"j"
-                                                         options:0
-                                                          locale:[NSLocale currentLocale]];
-  return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
 
 // The brightness mode of the platform, e.g., light or dark, expressed as a string that
@@ -2296,7 +2305,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Platform views
 
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return [_engine.get() platformViewsController];
 }
 
@@ -2403,7 +2412,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
-- (flutter::PointerData)generatePointerDataAtLastMouseLocation API_AVAILABLE(ios(13.4)) {
+- (flutter::PointerData)updateMousePointerDataFrom:(UIGestureRecognizer*)gestureRecognizer
+    API_AVAILABLE(ios(13.4)) {
+  CGPoint location = [gestureRecognizer locationInView:self.view];
+  CGFloat scale = [self flutterScreenIfViewLoaded].scale;
+  _mouseState.location = {location.x * scale, location.y * scale};
   flutter::PointerData pointer_data;
   pointer_data.Clear();
   pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
@@ -2423,7 +2436,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (gestureRecognizer == _continuousScrollingPanGestureRecognizer &&
       event.type == UIEventTypeScroll) {
     // Events with type UIEventTypeScroll are only received when running on macOS under emulation.
-    flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+    flutter::PointerData pointer_data = [self updateMousePointerDataFrom:gestureRecognizer];
     pointer_data.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
@@ -2442,13 +2455,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return YES;
 }
 
-- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  CGPoint location = [recognizer locationInView:self.view];
-  CGFloat scale = [self flutterScreenIfViewLoaded].scale;
+- (void)hoverEvent:(UIHoverGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint oldLocation = _mouseState.location;
-  _mouseState.location = {location.x * scale, location.y * scale};
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.view_id = self.viewIdentifier;
@@ -2508,7 +2518,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   translation.x *= scale;
   translation.y *= scale;
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
@@ -2535,7 +2545,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [self flutterScreenIfViewLoaded].scale;
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
   pointer_data.view_id = self.viewIdentifier;
@@ -2584,7 +2594,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
   pointer_data.view_id = self.viewIdentifier;

@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_CORE_ALLOCATOR_H_
 
 #include "flutter/fml/mapping.h"
+#include "impeller/base/allocation_size.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/core/texture_descriptor.h"
@@ -47,8 +48,11 @@ class Allocator {
   /// @brief Write debug memory usage information to the dart timeline in debug
   ///        and profile modes.
   ///
-  ///        This is only supported on the Vulkan backend.
+  ///        This is supported on both the Metal and Vulkan backends.
   virtual void DebugTraceMemoryStatistics() const {};
+
+  // Visible for testing.
+  virtual Bytes DebugGetHeapUsage() const { return Bytes{0}; }
 
  protected:
   Allocator();

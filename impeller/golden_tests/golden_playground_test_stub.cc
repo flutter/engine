@@ -4,8 +4,6 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
-#include "impeller/aiks/picture.h"
-
 namespace impeller {
 
 GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
@@ -20,20 +18,15 @@ void GoldenPlaygroundTest::SetTypographerContext(
 void GoldenPlaygroundTest::TearDown() {}
 
 void GoldenPlaygroundTest::SetUp() {
-  GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
+  GTEST_SKIP() << "GoldenPlaygroundTest doesn't support this backend type.";
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
-  return false;
-}
-
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    AiksPlaygroundCallback
-        callback) {  // NOLINT(performance-unnecessary-value-param)
+    const AiksDlPlaygroundCallback& callback) {
   return false;
 }
 
@@ -82,6 +75,11 @@ fml::Status GoldenPlaygroundTest::SetCapabilities(
   return fml::Status(
       fml::StatusCode::kUnimplemented,
       "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
 }
 
 }  // namespace impeller

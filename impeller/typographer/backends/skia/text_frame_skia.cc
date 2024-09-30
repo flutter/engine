@@ -6,7 +6,6 @@
 
 #include <vector>
 
-#include "display_list/dl_color.h"
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/font.h"
@@ -19,34 +18,6 @@
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
-
-/// @brief Convert a Skia axis alignment into an Impeller alignment.
-///
-///        This does not include a case for AxisAlignment::kNone, that should
-///        be used if SkFont::isSubpixel is false.
-static AxisAlignment ToAxisAligment(SkAxisAlignment aligment) {
-  switch (aligment) {
-    case SkAxisAlignment::kNone:
-      // Skia calls this case none, meaning alignment in both X and Y.
-      // Impeller will call it "all" since that is less confusing. "none"
-      // is reserved for no subpixel alignment.
-      return AxisAlignment::kAll;
-    case SkAxisAlignment::kX:
-      return AxisAlignment::kX;
-    case SkAxisAlignment::kY:
-      return AxisAlignment::kY;
-  }
-  FML_UNREACHABLE();
-}
-
-static Color ToColor(const flutter::DlColor& color) {
-  return {
-      static_cast<Scalar>(color.getRedF()),    //
-      static_cast<Scalar>(color.getGreenF()),  //
-      static_cast<Scalar>(color.getBlueF()),   //
-      static_cast<Scalar>(color.getAlphaF())   //
-  };
-}
 
 static Font ToFont(const SkTextBlobRunIterator& run, AxisAlignment alignment) {
   auto& font = run.font();
@@ -69,41 +40,39 @@ static Rect ToRect(const SkRect& rect) {
 }
 
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob,
-    flutter::DlColor dl_color) {
+    const sk_sp<SkTextBlob>& blob) {
   bool has_color = false;
-  Color color = ToColor(dl_color);
   std::vector<TextRun> runs;
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    // TODO(jonahwilliams): ask Skia for a public API to look this up.
-    // https://github.com/flutter/flutter/issues/112005
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
-    AxisAlignment alignment = AxisAlignment::kNone;
-    if (run.font().isSubpixel()) {
-      alignment = ToAxisAligment(
-          strikeSpec.createScalerContext()->computeAxisAlignmentForHText());
+    SkSpan<const SkGlyph*> glyphs =
+        paths.glyphs(SkSpan(run.glyphs(), run.glyphCount()));
+
+    for (const auto& glyph : glyphs) {
+      has_color |= glyph->isColor();
     }
 
-    const auto glyph_count = run.glyphCount();
-    const auto* glyphs = run.glyphs();
+    AxisAlignment alignment = AxisAlignment::kNone;
+    if (run.font().isSubpixel() && run.font().isBaselineSnap() && !has_color) {
+      alignment = AxisAlignment::kX;
+    }
+
     switch (run.positioning()) {
       case SkTextBlobRunIterator::kFull_Positioning: {
         std::vector<TextRun::GlyphPosition> positions;
-        positions.reserve(glyph_count);
-        for (auto i = 0u; i < glyph_count; i++) {
+        positions.reserve(run.glyphCount());
+        for (auto i = 0u; i < run.glyphCount(); i++) {
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const SkPoint* point = glyph_points + i;
-          Glyph::Type type = paths.glyph(glyphs[i])->isColor()
-                                 ? Glyph::Type::kBitmap
-                                 : Glyph::Type::kPath;
-          has_color |= type == Glyph::Type::kBitmap;
-          positions.emplace_back(
-              TextRun::GlyphPosition{Glyph{glyphs[i], type}, Point{
-                                                                 point->x(),
-                                                                 point->y(),
-                                                             }});
+          Glyph::Type type =
+              glyphs[i]->isColor() ? Glyph::Type::kBitmap : Glyph::Type::kPath;
+          positions.emplace_back(TextRun::GlyphPosition{
+              Glyph{glyphs[i]->getGlyphID(), type}, Point{
+                                                        point->x(),
+                                                        point->y(),
+                                                    }});
         }
         TextRun text_run(ToFont(run, alignment), positions);
         runs.emplace_back(text_run);
@@ -114,8 +83,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         continue;
     }
   }
-  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color,
-                                     has_color ? color : Color::Black());
+  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color);
 }
 
 }  // namespace impeller

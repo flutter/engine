@@ -10,7 +10,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendContext.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h"
 
@@ -65,7 +65,11 @@ FLUTTER_ASSERT_ARC
       return nil;
     }
 
+    // Only log this message on iOS where the default is Impeller. On macOS
+    // desktop, Skia is still the default and this log is unecessary.
+#if defined(FML_OS_IOS) || defined(FML_OS_IOS_SIM)
     FML_LOG(IMPORTANT) << "Using the Skia rendering backend (Metal).";
+#endif  // defined(FML_OS_IOS) || defined(FML_OS_IOS_SIM)
 
     _resourceContext->setResourceCacheLimit(0u);
   }

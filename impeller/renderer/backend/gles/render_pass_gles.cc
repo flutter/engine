@@ -241,6 +241,7 @@ struct RenderPassData {
   gl.Disable(GL_STENCIL_TEST);
   gl.Disable(GL_CULL_FACE);
   gl.Disable(GL_BLEND);
+  gl.Disable(GL_DITHER);
   gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
   gl.DepthMask(GL_TRUE);
   gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
@@ -475,9 +476,9 @@ struct RenderPassData {
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
-    // TODO(jonahwilliams): discarding stencil or depth on the default fbo
-    // causes Angle to discard the entire render target. Until we know the
-    // reason, default to storing.
+    // TODO(130048): discarding stencil or depth on the default fbo causes Angle
+    // to discard the entire render target. Until we know the reason, default to
+    // storing.
     bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
 
     if (pass_data.discard_color_attachment) {

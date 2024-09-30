@@ -11,6 +11,7 @@
 
 #if FML_OS_ANDROID
 #include "impeller/renderer/backend/vulkan/swapchain/ahb/ahb_swapchain_vk.h"
+#include "impeller/toolkit/android/shadow_realm.h"
 #endif  // FML_OS_ANDROID
 
 namespace impeller {
@@ -55,29 +56,28 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     return nullptr;
   }
 
-  // TODO(148139): https://github.com/flutter/flutter/issues/148139 sync issues
-  // on present.
-  if constexpr (false) {
-    // TODO(147533): AHB swapchains on emulators are not functional.
-    const auto emulator =
-        ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
+  // TODO(147533): AHB swapchains on emulators are not functional.
+  auto& context_vk = ContextVK::Cast(*context);
+  const auto emulator = context_vk.GetDriverInfo()->IsEmulator();
+  const auto should_disable_sc =
+      context_vk.GetShouldDisableSurfaceControlSwapchain();
 
-    // Try AHB swapchains first.
-    if (!emulator && AHBSwapchainVK::IsAvailableOnPlatform()) {
-      auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
-          context,             //
-          window.GetHandle(),  //
-          surface,             //
-          window.GetSize(),    //
-          enable_msaa          //
-          ));
+  // Try AHB swapchains first.
+  if (!emulator && AHBSwapchainVK::IsAvailableOnPlatform() &&
+      !android::ShadowRealm::ShouldDisableAHB() && !should_disable_sc) {
+    auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
+        context,             //
+        window.GetHandle(),  //
+        surface,             //
+        window.GetSize(),    //
+        enable_msaa          //
+        ));
 
-      if (ahb_swapchain->IsValid()) {
-        return ahb_swapchain;
-      } else {
-        VALIDATION_LOG
-            << "Could not create AHB swapchain. Falling back to KHR variant.";
-      }
+    if (ahb_swapchain->IsValid()) {
+      return ahb_swapchain;
+    } else {
+      VALIDATION_LOG
+          << "Could not create AHB swapchain. Falling back to KHR variant.";
     }
   }
 

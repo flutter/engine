@@ -16,6 +16,10 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
 
+#define FLT_FORWARD(mock, real, method) \
+  EXPECT_CALL(*mock, method())          \
+      .WillRepeatedly(::testing::Return(real->method()));
+
 namespace impeller {
 namespace testing {
 
@@ -60,6 +64,12 @@ class MockBlitPass : public BlitPass {
               (const std::shared_ptr<Allocator>& transients_allocator),
               (const, override));
   MOCK_METHOD(void, OnSetLabel, (std::string label), (override));
+
+  MOCK_METHOD(bool,
+              ResizeTexture,
+              (const std::shared_ptr<Texture>& source,
+               const std::shared_ptr<Texture>& destination),
+              (override));
 
   MOCK_METHOD(bool,
               OnCopyTextureToTextureCommand,
@@ -202,6 +212,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsReadFromResolve, (), (const, override));
   MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
   MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
+  MOCK_METHOD(bool, SupportsTriangleFan, (), (const override));
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));

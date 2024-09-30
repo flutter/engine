@@ -4,7 +4,7 @@
 
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 // The body of this file is the same as ../../lib/web_ui/test/engine/semantics/semantics_api_test.dart
 // Please keep them in sync.
@@ -22,7 +22,7 @@ void main() {
   });
 
   // This must match the number of actions in lib/ui/semantics.dart
-  const int numSemanticsActions = 22;
+  const int numSemanticsActions = 23;
   test('SemanticsAction.values refers to all actions.', () async {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
     for (int index = 0; index < numSemanticsActions; ++index) {

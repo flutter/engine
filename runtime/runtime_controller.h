@@ -17,7 +17,6 @@
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
@@ -49,7 +48,8 @@ class Window;
 /// `RuntimeController` and flushed to the Dart VM when the isolate becomes
 /// ready before the entrypoint function. See `PlatformData`.
 ///
-class RuntimeController : public PlatformConfigurationClient {
+class RuntimeController : public PlatformConfigurationClient,
+                          PointerDataPacketConverter::Delegate {
  public:
   /// A callback that's invoked after this `RuntimeController` attempts to
   /// add a view to the Dart isolate.
@@ -451,7 +451,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     True if root isolate running, False otherwise.
   ///
-  virtual bool IsRootIsolateRunning();
+  virtual bool IsRootIsolateRunning() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the specified platform message to running root
@@ -722,6 +722,9 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
+
+  // |PointerDataPacketConverter::Delegate|
+  bool ViewExists(int64_t view_id) const override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

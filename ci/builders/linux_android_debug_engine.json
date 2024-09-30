@@ -36,26 +36,9 @@
                 "targets": [
                     "flutter",
                     "flutter/shell/platform/android:embedding_jars",
-                    "flutter/shell/platform/android:abi_jars",
-                    "flutter/shell/platform/android:robolectric_tests"
+                    "flutter/shell/platform/android:abi_jars"
                 ]
-            },
-            "tests": [
-                {
-                    "language": "python3",
-                    "name": "Host Tests for android_jit_release_x86",
-                    "script": "flutter/testing/run_tests.py",
-                    "parameters": [
-                        "--variant",
-                        "ci/android_jit_release_x86",
-                        "--type",
-                        "java",
-                        "--engine-capture-core-dump",
-                        "--android-variant",
-                        "ci/android_jit_release_x86"
-                    ]
-                }
-            ]
+            }
         },
         {
             "archives": [
@@ -68,7 +51,8 @@
                         "out/ci/android_debug/zip_archives/android-arm/symbols.zip",
                         "out/ci/android_debug/zip_archives/download.flutter.io",
                         "out/ci/android_debug/zip_archives/sky_engine.zip",
-                        "out/ci/android_debug/zip_archives/android-javadoc.zip"
+                        "out/ci/android_debug/zip_archives/android-javadoc.zip",
+                        "out/ci/android_debug/zip_archives/flutter_gpu.zip"
                     ],
                     "realm": "production"
                 }
@@ -96,27 +80,11 @@
                 "targets": [
                     "flutter",
                     "flutter/sky/dist:zip_old_location",
+                    "flutter/lib/gpu/dist:zip_old_location",
                     "flutter/shell/platform/android:embedding_jars",
-                    "flutter/shell/platform/android:abi_jars",
-                    "flutter/shell/platform/android:robolectric_tests"
+                    "flutter/shell/platform/android:abi_jars"
                 ]
-            },
-            "tests": [
-                {
-                    "language": "python3",
-                    "name": "Host Tests for android_debug",
-                    "script": "flutter/testing/run_tests.py",
-                    "parameters": [
-                        "--variant",
-                        "ci/android_debug",
-                        "--type",
-                        "java",
-                        "--engine-capture-core-dump",
-                        "--android-variant",
-                        "ci/android_debug"
-                    ]
-                }
-            ]
+            }
         },
         {
             "archives": [

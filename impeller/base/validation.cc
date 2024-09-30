@@ -12,9 +12,14 @@ namespace impeller {
 
 static std::atomic_int32_t sValidationLogsDisabledCount = 0;
 static std::atomic_int32_t sValidationLogsAreFatal = 0;
+static ValidationFailureCallback sValidationFailureCallback;
 
 void ImpellerValidationErrorsSetFatal(bool fatal) {
   sValidationLogsAreFatal = fatal;
+}
+
+void ImpellerValidationErrorsSetCallback(ValidationFailureCallback callback) {
+  sValidationFailureCallback = std::move(callback);
 }
 
 ScopedValidationDisable::ScopedValidationDisable() {
@@ -33,11 +38,12 @@ ScopedValidationFatal::~ScopedValidationFatal() {
   sValidationLogsAreFatal--;
 }
 
-ValidationLog::ValidationLog() = default;
+ValidationLog::ValidationLog(const char* file, int line)
+    : file_(file), line_(line) {}
 
 ValidationLog::~ValidationLog() {
   if (sValidationLogsDisabledCount <= 0) {
-    ImpellerValidationBreak(stream_.str().c_str());
+    ImpellerValidationBreak(stream_.str().c_str(), file_, line_);
   }
 }
 
@@ -45,19 +51,21 @@ std::ostream& ValidationLog::GetStream() {
   return stream_;
 }
 
-void ImpellerValidationBreak(const char* message) {
-  std::stringstream stream;
-#if FLUTTER_RELEASE
-  stream << "Impeller validation: " << message;
-#else
-  stream << "Break on '" << __FUNCTION__
-         << "' to inspect point of failure: " << message;
-#endif
-  if (sValidationLogsAreFatal > 0) {
-    FML_LOG(FATAL) << stream.str();
-  } else {
-    FML_LOG(ERROR) << stream.str();
+void ImpellerValidationBreak(const char* message, const char* file, int line) {
+  if (sValidationFailureCallback &&
+      sValidationFailureCallback(message, file, line)) {
+    return;
   }
+  const auto severity =
+      ImpellerValidationErrorsAreFatal() ? fml::LOG_FATAL : fml::LOG_ERROR;
+  auto fml_log = fml::LogMessage{severity, file, line, nullptr};
+  fml_log.stream() <<
+#if FLUTTER_RELEASE
+      "Impeller validation: " << message;
+#else   // FLUTTER_RELEASE
+      "Break on '" << __FUNCTION__
+                   << "' to inspect point of failure: " << message;
+#endif  // FLUTTER_RELEASE
 }
 
 bool ImpellerValidationErrorsAreFatal() {

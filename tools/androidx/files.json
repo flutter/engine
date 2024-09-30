@@ -13,17 +13,19 @@
     "url": "https://maven.google.com/androidx/lifecycle/lifecycle-common-java8/2.8.0/lifecycle-common-java8-2.7.0.jar",
     "out_file_name": "androidx_lifecycle_common_java8.jar",
     "maven_dependency": "androidx.lifecycle:lifecycle-common-java8:2.7.0",
-    "provides": [
-      "androidx.lifecycle.DefaultLifecycleObserver"
-    ]
+    "provides": ["androidx.lifecycle.DefaultLifecycleObserver"]
+  },
+  {
+    "url": "https://maven.google.com/androidx/lifecycle/lifecycle-process/2.7.0/lifecycle-process-2.7.0.aar",
+    "out_file_name": "androidx_lifecycle_process.aar",
+    "maven_dependency": "androidx.lifecycle:lifecycle-process:2.7.0",
+    "provides": ["androidx.lifecycle.ProcessLifecycleOwner"]
   },
   {
     "url": "https://maven.google.com/androidx/lifecycle/lifecycle-runtime/2.8.0/lifecycle-runtime-2.7.0.aar",
     "out_file_name": "androidx_lifecycle_runtime.aar",
     "maven_dependency": "androidx.lifecycle:lifecycle-runtime:2.7.0",
-    "provides": [
-      "androidx.lifecycle.LifecycleRegistry"
-    ]
+    "provides": ["androidx.lifecycle.LifecycleRegistry"]
   },
   {
     "url": "https://maven.google.com/androidx/fragment/fragment/1.7.1/fragment-1.7.1.aar",
@@ -54,9 +56,7 @@
     "url": "https://maven.google.com/androidx/tracing/tracing/1.2.0/tracing-1.2.0.aar",
     "out_file_name": "androidx_tracing.aar",
     "maven_dependency": "androidx.tracing:tracing:1.2.0",
-    "provides": [
-      "androidx.tracing.Trace"
-    ]
+    "provides": ["androidx.tracing.Trace"]
   },
   {
     "url": "https://dl.google.com/android/maven2/androidx/core/core/1.13.1/core-1.13.1.aar",
@@ -86,5 +86,11 @@
     "out_file_name": "core-1.10.3.aar",
     "maven_dependency": "com.google.android.play:core:1.10.3",
     "provides": []
+  },
+  {
+    "url": "https://repo1.maven.org/maven2/com/getkeepsafe/relinker/relinker/1.4.5/relinker-1.4.5.aar",
+    "out_file_name": "relinker-1.4.5.aar",
+    "maven_dependency": "com.getkeepsafe.relinker:relinker:1.4.5",
+    "provides": ["com.getkeepsafe.relinker.ReLinker"]
   }
 ]

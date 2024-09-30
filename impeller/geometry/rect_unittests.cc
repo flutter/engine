@@ -130,6 +130,37 @@ TEST(RectTest, IRectSimpleXYWH) {
   EXPECT_FALSE(rect.IsEmpty());
 }
 
+TEST(RectTest, RectSimpleWH) {
+  // Using fractional-power-of-2 friendly values for equality tests
+  Rect rect = Rect::MakeWH(15.5f, 15.125f);
+
+  EXPECT_EQ(rect.GetLeft(), 0.0f);
+  EXPECT_EQ(rect.GetTop(), 0.0f);
+  EXPECT_EQ(rect.GetRight(), 15.5f);
+  EXPECT_EQ(rect.GetBottom(), 15.125f);
+  EXPECT_EQ(rect.GetX(), 0.0f);
+  EXPECT_EQ(rect.GetY(), 0.0f);
+  EXPECT_EQ(rect.GetWidth(), 15.5f);
+  EXPECT_EQ(rect.GetHeight(), 15.125f);
+  EXPECT_FALSE(rect.IsEmpty());
+  EXPECT_TRUE(rect.IsFinite());
+}
+
+TEST(RectTest, IRectSimpleWH) {
+  // Using fractional-power-of-2 friendly values for equality tests
+  IRect rect = IRect::MakeWH(15, 25);
+
+  EXPECT_EQ(rect.GetLeft(), 0);
+  EXPECT_EQ(rect.GetTop(), 0);
+  EXPECT_EQ(rect.GetRight(), 15);
+  EXPECT_EQ(rect.GetBottom(), 25);
+  EXPECT_EQ(rect.GetX(), 0);
+  EXPECT_EQ(rect.GetY(), 0);
+  EXPECT_EQ(rect.GetWidth(), 15);
+  EXPECT_EQ(rect.GetHeight(), 25);
+  EXPECT_FALSE(rect.IsEmpty());
+}
+
 TEST(RectTest, RectOverflowXYWH) {
   auto min = std::numeric_limits<Scalar>::lowest();
   auto max = std::numeric_limits<Scalar>::max();
@@ -1604,18 +1635,28 @@ TEST(RectTest, RectIntersection) {
 
     // unflipped a vs flipped (empty) b yields a
     EXPECT_FALSE(a.Intersection(flip_lr(b)).has_value()) << label;
+    EXPECT_TRUE(a.IntersectionOrEmpty(flip_lr(b)).IsEmpty()) << label;
     EXPECT_FALSE(a.Intersection(flip_tb(b)).has_value()) << label;
+    EXPECT_TRUE(a.IntersectionOrEmpty(flip_tb(b)).IsEmpty()) << label;
     EXPECT_FALSE(a.Intersection(flip_lrtb(b)).has_value()) << label;
+    EXPECT_TRUE(a.IntersectionOrEmpty(flip_lrtb(b)).IsEmpty()) << label;
 
     // flipped (empty) a vs unflipped b yields b
     EXPECT_FALSE(flip_lr(a).Intersection(b).has_value()) << label;
+    EXPECT_TRUE(flip_lr(a).IntersectionOrEmpty(b).IsEmpty()) << label;
     EXPECT_FALSE(flip_tb(a).Intersection(b).has_value()) << label;
+    EXPECT_TRUE(flip_tb(a).IntersectionOrEmpty(b).IsEmpty()) << label;
     EXPECT_FALSE(flip_lrtb(a).Intersection(b).has_value()) << label;
+    EXPECT_TRUE(flip_lrtb(a).IntersectionOrEmpty(b).IsEmpty()) << label;
 
     // flipped (empty) a vs flipped (empty) b yields empty
     EXPECT_FALSE(flip_lr(a).Intersection(flip_lr(b)).has_value()) << label;
+    EXPECT_TRUE(flip_lr(a).IntersectionOrEmpty(flip_lr(b)).IsEmpty()) << label;
     EXPECT_FALSE(flip_tb(a).Intersection(flip_tb(b)).has_value()) << label;
+    EXPECT_TRUE(flip_tb(a).IntersectionOrEmpty(flip_tb(b)).IsEmpty()) << label;
     EXPECT_FALSE(flip_lrtb(a).Intersection(flip_lrtb(b)).has_value()) << label;
+    EXPECT_TRUE(flip_lrtb(a).IntersectionOrEmpty(flip_lrtb(b)).IsEmpty())
+        << label;
   };
 
   auto test_non_empty = [&check_nans, &check_empty_flips](
@@ -1645,7 +1686,9 @@ TEST(RectTest, RectIntersection) {
     auto label = stream.str();
 
     EXPECT_FALSE(a.Intersection(b).has_value()) << label;
+    EXPECT_TRUE(a.IntersectionOrEmpty(b).IsEmpty()) << label;
     EXPECT_FALSE(b.Intersection(a).has_value()) << label;
+    EXPECT_TRUE(b.IntersectionOrEmpty(a).IsEmpty()) << label;
     check_empty_flips(a, b, label);
     check_nans(a, b, label);
   };
@@ -2235,6 +2278,175 @@ TEST(RectTest, IRectContainsIPoint) {
     // Size is exclusive
     auto r = IRect::MakeXYWH(100, 100, 100, 100);
     auto p = IPoint(200, 200);
+
+    test_outside(r, p);
+  }
+  {
+    auto r = IRect::MakeXYWH(100, 100, 100, 100);
+    auto p = IPoint(99, 99);
+
+    test_outside(r, p);
+  }
+  {
+    auto r = IRect::MakeXYWH(100, 100, 100, 100);
+    auto p = IPoint(199, 199);
+
+    test_inside(r, p);
+  }
+
+  {
+    auto r = IRect::MakeMaximum();
+    auto p = IPoint(199, 199);
+
+    test_inside(r, p);
+  }
+}
+
+TEST(RectTest, RectContainsInclusivePoint) {
+  auto check_nans = [](const Rect& rect, const Point& point,
+                       const std::string& label) {
+    ASSERT_TRUE(rect.IsFinite()) << label;
+    ASSERT_TRUE(point.IsFinite()) << label;
+
+    for (int i = 1; i < 16; i++) {
+      EXPECT_FALSE(swap_nan(rect, i).ContainsInclusive(point))
+          << label << ", index = " << i;
+      for (int j = 1; j < 4; j++) {
+        EXPECT_FALSE(swap_nan(rect, i).ContainsInclusive(swap_nan(point, j)))
+            << label << ", indices = " << i << ", " << j;
+      }
+    }
+  };
+
+  auto check_empty_flips = [](const Rect& rect, const Point& point,
+                              const std::string& label) {
+    ASSERT_FALSE(rect.IsEmpty());
+
+    EXPECT_FALSE(flip_lr(rect).ContainsInclusive(point)) << label;
+    EXPECT_FALSE(flip_tb(rect).ContainsInclusive(point)) << label;
+    EXPECT_FALSE(flip_lrtb(rect).ContainsInclusive(point)) << label;
+  };
+
+  auto test_inside = [&check_nans, &check_empty_flips](const Rect& rect,
+                                                       const Point& point) {
+    ASSERT_FALSE(rect.IsEmpty()) << rect;
+
+    std::stringstream stream;
+    stream << rect << " contains " << point;
+    auto label = stream.str();
+
+    EXPECT_TRUE(rect.ContainsInclusive(point)) << label;
+    check_empty_flips(rect, point, label);
+    check_nans(rect, point, label);
+  };
+
+  auto test_outside = [&check_nans, &check_empty_flips](const Rect& rect,
+                                                        const Point& point) {
+    ASSERT_FALSE(rect.IsEmpty()) << rect;
+
+    std::stringstream stream;
+    stream << rect << " contains " << point;
+    auto label = stream.str();
+
+    EXPECT_FALSE(rect.ContainsInclusive(point)) << label;
+    check_empty_flips(rect, point, label);
+    check_nans(rect, point, label);
+  };
+
+  {
+    // Origin is inclusive
+    auto r = Rect::MakeXYWH(100, 100, 100, 100);
+    auto p = Point(100, 100);
+
+    test_inside(r, p);
+  }
+  {
+    // Size is inclusive
+    auto r = Rect::MakeXYWH(100, 100, 100, 100);
+    auto p = Point(200, 200);
+
+    test_inside(r, p);
+  }
+  {
+    // Size + epsilon is exclusive
+    auto r = Rect::MakeXYWH(100, 100, 100, 100);
+    auto p = Point(200 + kEhCloseEnough, 200 + kEhCloseEnough);
+
+    test_outside(r, p);
+  }
+  {
+    auto r = Rect::MakeXYWH(100, 100, 100, 100);
+    auto p = Point(99, 99);
+
+    test_outside(r, p);
+  }
+  {
+    auto r = Rect::MakeXYWH(100, 100, 100, 100);
+    auto p = Point(199, 199);
+
+    test_inside(r, p);
+  }
+
+  {
+    auto r = Rect::MakeMaximum();
+    auto p = Point(199, 199);
+
+    test_inside(r, p);
+  }
+}
+
+TEST(RectTest, IRectContainsInclusiveIPoint) {
+  auto check_empty_flips = [](const IRect& rect, const IPoint& point,
+                              const std::string& label) {
+    ASSERT_FALSE(rect.IsEmpty());
+
+    EXPECT_FALSE(flip_lr(rect).ContainsInclusive(point)) << label;
+    EXPECT_FALSE(flip_tb(rect).ContainsInclusive(point)) << label;
+    EXPECT_FALSE(flip_lrtb(rect).ContainsInclusive(point)) << label;
+  };
+
+  auto test_inside = [&check_empty_flips](const IRect& rect,
+                                          const IPoint& point) {
+    ASSERT_FALSE(rect.IsEmpty()) << rect;
+
+    std::stringstream stream;
+    stream << rect << " contains " << point;
+    auto label = stream.str();
+
+    EXPECT_TRUE(rect.ContainsInclusive(point)) << label;
+    check_empty_flips(rect, point, label);
+  };
+
+  auto test_outside = [&check_empty_flips](const IRect& rect,
+                                           const IPoint& point) {
+    ASSERT_FALSE(rect.IsEmpty()) << rect;
+
+    std::stringstream stream;
+    stream << rect << " contains " << point;
+    auto label = stream.str();
+
+    EXPECT_FALSE(rect.ContainsInclusive(point)) << label;
+    check_empty_flips(rect, point, label);
+  };
+
+  {
+    // Origin is inclusive
+    auto r = IRect::MakeXYWH(100, 100, 100, 100);
+    auto p = IPoint(100, 100);
+
+    test_inside(r, p);
+  }
+  {
+    // Size is inclusive
+    auto r = IRect::MakeXYWH(100, 100, 100, 100);
+    auto p = IPoint(200, 200);
+
+    test_inside(r, p);
+  }
+  {
+    // Size + "epsilon" is exclusive
+    auto r = IRect::MakeXYWH(100, 100, 100, 100);
+    auto p = IPoint(201, 201);
 
     test_outside(r, p);
   }

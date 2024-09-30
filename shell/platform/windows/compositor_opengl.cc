@@ -20,24 +20,12 @@ struct FramebufferBackingStore {
   uint32_t texture_id;
 };
 
-// Based off Skia's logic:
-// https://github.com/google/skia/blob/4738ed711e03212aceec3cd502a4adb545f38e63/src/gpu/ganesh/gl/GrGLCaps.cpp#L1963-L2116
-int GetSupportedTextureFormat(const impeller::DescriptionGLES* description) {
-  if (description->HasExtension("GL_EXT_texture_format_BGRA8888")) {
-    return GL_BGRA8_EXT;
-  } else if (description->HasExtension("GL_APPLE_texture_format_BGRA8888") &&
-             description->GetGlVersion().IsAtLeast(impeller::Version(3, 0))) {
-    return GL_BGRA8_EXT;
-  } else {
-    return GL_RGBA8;
-  }
-}
-
 }  // namespace
 
 CompositorOpenGL::CompositorOpenGL(FlutterWindowsEngine* engine,
-                                   impeller::ProcTableGLES::Resolver resolver)
-    : engine_(engine), resolver_(resolver) {}
+                                   impeller::ProcTableGLES::Resolver resolver,
+                                   bool enable_impeller)
+    : engine_(engine), resolver_(resolver), enable_impeller_(enable_impeller) {}
 
 bool CompositorOpenGL::CreateBackingStore(
     const FlutterBackingStoreConfig& config,
@@ -58,17 +46,43 @@ bool CompositorOpenGL::CreateBackingStore(
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  gl_->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, config.size.width,
-                  config.size.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+  gl_->TexImage2D(GL_TEXTURE_2D, 0, format_.general_format, config.size.width,
+                  config.size.height, 0, format_.general_format,
+                  GL_UNSIGNED_BYTE, nullptr);
   gl_->BindTexture(GL_TEXTURE_2D, 0);
 
-  gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT,
-                            GL_TEXTURE_2D, store->texture_id, 0);
+  if (enable_impeller_) {
+    // Impeller requries that its onscreen surface is Multisampled and already
+    // has depth/stencil attached in order for anti-aliasing to work.
+    gl_->FramebufferTexture2DMultisampleEXT(GL_FRAMEBUFFER,
+                                            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                            store->texture_id, 0, 4);
+
+    // Set up depth/stencil attachment for impeller renderer.
+    GLuint depth_stencil;
+    gl_->GenRenderbuffers(1, &depth_stencil);
+    gl_->BindRenderbuffer(GL_RENDERBUFFER, depth_stencil);
+    gl_->RenderbufferStorageMultisampleEXT(
+        GL_RENDERBUFFER,      // target
+        4,                    // samples
+        GL_DEPTH24_STENCIL8,  // internal format
+        config.size.width,    // width
+        config.size.height    // height
+    );
+    gl_->FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                 GL_RENDERBUFFER, depth_stencil);
+    gl_->FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
+                                 GL_RENDERBUFFER, depth_stencil);
+
+  } else {
+    gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_TEXTURE_2D, store->texture_id, 0);
+  }
 
   result->type = kFlutterBackingStoreTypeOpenGL;
   result->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
   result->open_gl.framebuffer.name = store->framebuffer_id;
-  result->open_gl.framebuffer.target = format_;
+  result->open_gl.framebuffer.target = format_.sized_format;
   result->open_gl.framebuffer.user_data = store.release();
   result->open_gl.framebuffer.destruction_callback = [](void* user_data) {
     // Backing store destroyed in `CompositorOpenGL::CollectBackingStore`, set
@@ -143,7 +157,6 @@ bool CompositorOpenGL::Present(FlutterWindowsView* view,
   // Prevents regressions like: https://github.com/flutter/flutter/issues/140828
   // See OpenGL specification version 4.6, section 18.3.1.
   gl_->Disable(GL_SCISSOR_TEST);
-
   gl_->BindFramebuffer(GL_READ_FRAMEBUFFER, source_id);
   gl_->BindFramebuffer(GL_DRAW_FRAMEBUFFER, kWindowFrameBufferId);
 
@@ -185,7 +198,14 @@ bool CompositorOpenGL::Initialize() {
     return false;
   }
 
-  format_ = GetSupportedTextureFormat(gl_->GetDescription());
+  if (gl_->GetDescription()->HasExtension("GL_EXT_texture_format_BGRA8888")) {
+    format_.sized_format = GL_BGRA8_EXT;
+    format_.general_format = GL_BGRA_EXT;
+  } else {
+    format_.sized_format = GL_RGBA8;
+    format_.general_format = GL_RGBA;
+  }
+
   is_initialized_ = true;
   return true;
 }

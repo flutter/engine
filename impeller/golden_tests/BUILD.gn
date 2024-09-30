@@ -12,6 +12,8 @@ impeller_component("golden_playground_test") {
 
   deps = [
     ":digest",
+    ":screenshot",
+    "//flutter/display_list",
     "//flutter/fml",
     "//flutter/impeller/aiks",
     "//flutter/impeller/display_list:display_list",
@@ -44,6 +46,11 @@ impeller_component("digest") {
   deps = [ "//flutter/fml" ]
 }
 
+impeller_component("screenshot") {
+  testonly = true
+  sources = [ "screenshot.h" ]
+}
+
 if (is_mac) {
   impeller_component("metal_screenshot") {
     testonly = true
@@ -53,13 +60,14 @@ if (is_mac) {
       "metal_screenshot.mm",
       "metal_screenshotter.h",
       "metal_screenshotter.mm",
-      "screenshot.h",
       "screenshotter.h",
       "vulkan_screenshotter.h",
       "vulkan_screenshotter.mm",
     ]
 
     deps = [
+      ":screenshot",
+      "//flutter/display_list",
       "//flutter/impeller/aiks",
       "//flutter/impeller/display_list",
       "//flutter/impeller/playground",
@@ -81,6 +89,7 @@ if (is_mac) {
     deps = [
       ":digest",
       ":metal_screenshot",
+      "//flutter/display_list",
       "//flutter/impeller/aiks",
       "//flutter/impeller/aiks:aiks_unittests_golden",
       "//flutter/impeller/display_list:display_list_unittests_golden",

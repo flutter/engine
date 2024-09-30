@@ -470,4 +470,26 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(engine.ensureSemanticsEnabledCalled);
 }
 
+- (void)testCanMergePlatformAndUIThread {
+  auto settings = FLTDefaultSettingsForBundle();
+  settings.enable_impeller = true;
+  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine run];
+
+  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+}
+
+- (void)testCanNotUnMergePlatformAndUIThread {
+  auto settings = FLTDefaultSettingsForBundle();
+  settings.enable_impeller = true;
+  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine run];
+
+  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+}
+
 @end

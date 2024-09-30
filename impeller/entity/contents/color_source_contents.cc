@@ -46,12 +46,13 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
   return geometry_->GetCoverage(entity.GetTransform());
 };
 
-bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
-
 void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
+}
+
+bool ColorSourceContents::AppliesAlphaForStrokeCoverage(
+    const Matrix& transform) const {
+  return GetGeometry() && GetGeometry()->ComputeAlphaCoverage(transform) < 1.0;
 }
 
 }  // namespace impeller

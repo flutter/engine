@@ -48,6 +48,9 @@ impeller_shaders("entity_shaders") {
     "shaders/filters/linear_to_srgb_filter.frag",
     "shaders/filters/morphology_filter.frag",
     "shaders/blending/vertices_uber.frag",
+    "shaders/gradients/fast_gradient.vert",
+    "shaders/gradients/fast_gradient.frag",
+    "shaders/texture_downsample.frag",
   ]
 }
 
@@ -163,14 +166,12 @@ impeller_component("entity") {
     "contents/tiled_texture_contents.h",
     "contents/vertices_contents.cc",
     "contents/vertices_contents.h",
+    "draw_order_resolver.cc",
+    "draw_order_resolver.h",
     "entity.cc",
     "entity.h",
-    "entity_pass.cc",
-    "entity_pass.h",
     "entity_pass_clip_stack.cc",
     "entity_pass_clip_stack.h",
-    "entity_pass_delegate.cc",
-    "entity_pass_delegate.h",
     "entity_pass_target.cc",
     "entity_pass_target.h",
     "geometry/circle_geometry.cc",
@@ -193,12 +194,16 @@ impeller_component("entity") {
     "geometry/round_rect_geometry.h",
     "geometry/stroke_path_geometry.cc",
     "geometry/stroke_path_geometry.h",
+    "geometry/superellipse_geometry.cc",
+    "geometry/superellipse_geometry.h",
     "geometry/vertices_geometry.cc",
     "geometry/vertices_geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
     "render_target_cache.cc",
     "render_target_cache.h",
+    "save_layer_utils.cc",
+    "save_layer_utils.h",
   ]
 
   public_deps = [
@@ -208,14 +213,6 @@ impeller_component("entity") {
     "../renderer",
     "../typographer",
   ]
-
-  if (impeller_enable_3d) {
-    sources += [
-      "contents/scene_contents.cc",
-      "contents/scene_contents.h",
-    ]
-    public_deps += [ "../scene" ]
-  }
 
   deps = [ "//flutter/fml" ]
   defines = [ "_USE_MATH_DEFINES" ]
@@ -239,11 +236,13 @@ impeller_component("entity_unittests") {
 
   sources = [
     "contents/clip_contents_unittests.cc",
+    "contents/filters/blend_filter_contents_unittests.cc",
     "contents/filters/gaussian_blur_filter_contents_unittests.cc",
     "contents/filters/inputs/filter_input_unittests.cc",
     "contents/filters/matrix_filter_contents_unittests.cc",
     "contents/host_buffer_unittests.cc",
     "contents/tiled_texture_contents_unittests.cc",
+    "draw_order_resolver_unittests.cc",
     "entity_pass_target_unittests.cc",
     "entity_pass_unittests.cc",
     "entity_playground.cc",
@@ -251,6 +250,7 @@ impeller_component("entity_unittests") {
     "entity_unittests.cc",
     "geometry/geometry_unittests.cc",
     "render_target_cache_unittests.cc",
+    "save_layer_utils_unittests.cc",
   ]
 
   deps = [

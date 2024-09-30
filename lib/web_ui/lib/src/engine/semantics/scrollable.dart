@@ -22,13 +22,18 @@ import 'package:ui/ui.dart' as ui;
 /// contents is less than the size of the viewport the browser snaps
 /// "scrollTop" back to zero. If there is more content than available in the
 /// viewport "scrollTop" may take positive values.
-class Scrollable extends PrimaryRoleManager {
-  Scrollable(SemanticsObject semanticsObject)
+class SemanticScrollable extends SemanticRole {
+  SemanticScrollable(SemanticsObject semanticsObject)
       : super.withBasics(
-          PrimaryRole.scrollable,
+          SemanticRoleKind.scrollable,
           semanticsObject,
           preferredLabelRepresentation: LabelRepresentation.ariaLabel,
-        );
+        ) {
+    // Mark as group to prevent the browser from merging this element along with
+    // all the children into one giant node. This is what happened with the
+    // repro provided in https://github.com/flutter/flutter/issues/130950.
+    setAriaRole('group');
+  }
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;

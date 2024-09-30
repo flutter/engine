@@ -302,7 +302,7 @@ class HtmlRenderer implements Renderer {
       CanvasParagraphBuilder(style as EngineParagraphStyle);
 
   @override
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
+  Future<void> renderScene(ui.Scene scene, EngineFlutterView view) async {
     final EngineFlutterView implicitView =
         EnginePlatformDispatcher.instance.implicitView!;
     scene as SurfaceScene;
@@ -370,5 +370,10 @@ class HtmlRenderer implements Renderer {
     imageElement.addEventListener('error', errorListener);
     imageElement.src = await canvas.toDataUrl();
     return completer.future;
+  }
+
+  @override
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,  { required int width, required int height, required bool transferOwnership }) {
+    throw Exception('Not implemented for HTML renderer');
   }
 }

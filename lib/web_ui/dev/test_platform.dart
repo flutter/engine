@@ -562,6 +562,7 @@ class BrowserPlatform extends PlatformPlugin {
 </script>
 <script>
   _flutter.buildConfig = {
+    useLocalCanvaskit: true,
     builds: [
       $buildConfigsString
     ]
@@ -571,10 +572,10 @@ class BrowserPlatform extends PlatformPlugin {
 <script>
   _flutter.loader.load({
     config: {
-      canvasKitBaseUrl: "/canvaskit/",
       // Some of our tests rely on color emoji
       useColorEmoji: true,
       canvasKitVariant: "${getCanvasKitVariant()}",
+      canvasKitBaseUrl: "/canvaskit",
     },
   });
 </script>
@@ -1058,7 +1059,18 @@ class BrowserManager {
         }
 
         _controllers.add(controller!);
-        return await controller!.suite;
+
+        final List<Future<RunnerSuite>> futures = <Future<RunnerSuite>>[
+          controller!.suite
+        ];
+        if (_browser.onUncaughtException != null) {
+          futures.add(_browser.onUncaughtException!.then<RunnerSuite>(
+              (String error) =>
+                  throw Exception('Exception while loading suite: $error')));
+        }
+
+        final RunnerSuite suite = await Future.any(futures);
+        return suite;
       } catch (_) {
         closeIframe();
         rethrow;
@@ -1103,7 +1115,6 @@ class BrowserManager {
       default:
         // Unreachable.
         assert(false);
-        break;
     }
   }
 

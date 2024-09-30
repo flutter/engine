@@ -63,7 +63,7 @@ DisplayListMetalComplexityCalculator::MetalHelper::BatchedComplexity() {
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
-    const SkRect& bounds,
+    const DlRect& bounds,
     const SaveLayerOptions options,
     const DlImageFilter* backdrop) {
   if (IsComplex()) {
@@ -79,8 +79,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
-    const SkPoint& p0,
-    const SkPoint& p1) {
+    const DlPoint& p0,
+    const DlPoint& p1) {
   if (IsComplex()) {
     return;
   }
@@ -100,7 +100,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
 
   // Use an approximation for the distance to avoid floating point or
   // sqrt() calls.
-  SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
+  DlScalar distance = abs(p0.x - p1.x) + abs(p0.y - p1.y);
 
   // The baseline complexity is for a hairline stroke with no AA.
   // m = 1/45
@@ -111,8 +111,18 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
   AccumulateComplexity(complexity);
 }
 
+void DisplayListMetalComplexityCalculator::MetalHelper::drawDashedLine(
+    const DlPoint& p0,
+    const DlPoint& p1,
+    DlScalar on_length,
+    DlScalar off_length) {
+  // Dashing is slightly more complex than a regular drawLine, but this
+  // op is so rare it is not worth measuring the difference.
+  drawLine(p0, p1);
+}
+
 void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
-    const SkRect& rect) {
+    const DlRect& rect) {
   if (IsComplex()) {
     return;
   }
@@ -130,14 +140,14 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
   // currently use it anywhere in Flutter.
   if (DrawStyle() == DlDrawStyle::kFill) {
     // No real difference for AA with filled styles.
-    unsigned int area = rect.width() * rect.height();
+    unsigned int area = rect.GetWidth() * rect.GetHeight();
 
     // m = 1/9000
     // c = 0
     complexity = area / 225;
   } else {
     // Take the average of the width and height.
-    unsigned int length = (rect.width() + rect.height()) / 2;
+    unsigned int length = (rect.GetWidth() + rect.GetHeight()) / 2;
 
     // There is a penalty for AA being *disabled*.
     if (IsAntiAliased()) {
@@ -155,7 +165,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
-    const SkRect& bounds) {
+    const DlRect& bounds) {
   if (IsComplex()) {
     return;
   }
@@ -164,7 +174,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
   //
   // Filled styles and stroked styles with AA scale linearly with the bounding
   // box area.
-  unsigned int area = bounds.width() * bounds.height();
+  unsigned int area = bounds.GetWidth() * bounds.GetHeight();
 
   unsigned int complexity;
 
@@ -182,7 +192,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
       complexity = area * 2 / 75;
     } else {
       // Take the average of the width and height.
-      unsigned int length = (bounds.width() + bounds.height()) / 2;
+      unsigned int length = (bounds.GetWidth() + bounds.GetHeight()) / 2;
 
       // m = 1/80
       // c = 0
@@ -194,8 +204,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
-    const SkPoint& center,
-    SkScalar radius) {
+    const DlPoint& center,
+    DlScalar radius) {
   if (IsComplex()) {
     return;
   }
@@ -319,7 +329,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
-    const SkPath& path) {
+    const DlPath& path) {
   if (IsComplex()) {
     return;
   }
@@ -352,9 +362,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
-    const SkRect& oval_bounds,
-    SkScalar start_degrees,
-    SkScalar sweep_degrees,
+    const DlRect& oval_bounds,
+    DlScalar start_degrees,
+    DlScalar sweep_degrees,
     bool use_center) {
   if (IsComplex()) {
     return;
@@ -363,8 +373,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
   // Stroked styles without AA scale linearly with the diameter.
   // Stroked styles with AA scale linearly with the area except for small
   // values. Filled styles scale linearly with the area.
-  unsigned int diameter = (oval_bounds.width() + oval_bounds.height()) / 2;
-  unsigned int area = oval_bounds.width() * oval_bounds.height();
+  unsigned int diameter =
+      (oval_bounds.GetWidth() + oval_bounds.GetHeight()) / 2;
+  unsigned int area = oval_bounds.GetWidth() * oval_bounds.GetHeight();
 
   unsigned int complexity;
 
@@ -402,7 +413,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
 void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
     DlCanvas::PointMode mode,
     uint32_t count,
-    const SkPoint points[]) {
+    const DlPoint points[]) {
   if (IsComplex()) {
     return;
   }
@@ -436,7 +447,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
-    const DlVertices* vertices,
+    const std::shared_ptr<DlVertices>& vertices,
     DlBlendMode mode) {
   // There is currently no way for us to get the VertexMode from the SkVertices
   // object, but for future reference:
@@ -456,7 +467,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
     const sk_sp<DlImage> image,
-    const SkPoint point,
+    const DlPoint& point,
     DlImageSampling sampling,
     bool render_with_attributes) {
   if (IsComplex()) {
@@ -533,8 +544,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
     const sk_sp<DlImage> image,
-    const SkIRect& center,
-    const SkRect& dst,
+    const DlIRect& center,
+    const DlRect& dst,
     DlFilterMode filter,
     bool render_with_attributes) {
   if (IsComplex()) {
@@ -553,13 +564,13 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
     const sk_sp<DisplayList> display_list,
-    SkScalar opacity) {
+    DlScalar opacity) {
   if (IsComplex()) {
     return;
   }
   MetalHelper helper(Ceiling() - CurrentComplexityScore());
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
-    auto bounds = display_list->bounds();
+    auto bounds = display_list->GetBounds();
     helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr);
   }
   display_list->Dispatch(helper);
@@ -568,8 +579,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
     const sk_sp<SkTextBlob> blob,
-    SkScalar x,
-    SkScalar y) {
+    DlScalar x,
+    DlScalar y) {
   if (IsComplex()) {
     return;
   }
@@ -584,15 +595,15 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
-    SkScalar x,
-    SkScalar y) {}
+    DlScalar x,
+    DlScalar y) {}
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
-    const SkPath& path,
+    const DlPath& path,
     const DlColor color,
-    const SkScalar elevation,
+    const DlScalar elevation,
     bool transparent_occluder,
-    SkScalar dpr) {
+    DlScalar dpr) {
   if (IsComplex()) {
     return;
   }

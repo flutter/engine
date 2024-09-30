@@ -21,7 +21,7 @@ class LinearGradientContents final : public ColorSourceContents {
   ~LinearGradientContents() override;
 
   // |Contents|
-  bool IsOpaque() const override;
+  bool IsOpaque(const Matrix& transform) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -52,6 +52,12 @@ class LinearGradientContents final : public ColorSourceContents {
   bool RenderSSBO(const ContentContext& renderer,
                   const Entity& entity,
                   RenderPass& pass) const;
+
+  bool FastLinearGradient(const ContentContext& renderer,
+                          const Entity& entity,
+                          RenderPass& pass) const;
+
+  bool CanApplyFastGradient() const;
 
   Point start_point_;
   Point end_point_;

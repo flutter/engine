@@ -21,7 +21,7 @@
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
@@ -71,7 +71,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
@@ -100,6 +100,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_VULKAN
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 #endif  // SHELL_ENABLE_VULKAN
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -278,6 +279,26 @@ static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
                   static_cast<int32_t>(flutter_rect.bottom)};
   return rect;
 }
+
+// We need GL_BGRA8_EXT for creating SkSurfaces from FlutterOpenGLSurfaces
+// below.
+#ifndef GL_BGRA8_EXT
+#define GL_BGRA8_EXT 0x93A1
+#endif
+
+static std::optional<SkColorType> FlutterFormatToSkColorType(uint32_t format) {
+  switch (format) {
+    case GL_BGRA8_EXT:
+      return kBGRA_8888_SkColorType;
+    case GL_RGBA8:
+      return kRGBA_8888_SkColorType;
+    default:
+      FML_LOG(ERROR) << "Cannot convert format " << format
+                     << " to SkColorType.";
+      return std::nullopt;
+  }
+}
+
 #endif
 
 static inline flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -442,7 +463,7 @@ InferOpenGLPlatformViewCreationCallback(
   } else {
 #if FML_OS_LINUX || FML_OS_WIN
     gl_proc_resolver = DefaultGLProcResolver;
-#endif
+#endif  // FML_OS_LINUX || FML_OS_WIN
   }
 
   bool fbo_reset_after_present =
@@ -487,9 +508,10 @@ InferOpenGLPlatformViewCreationCallback(
             view_embedder             // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_GL
+  FML_LOG(ERROR) << "This Flutter Engine does not support OpenGL rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_GL
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -580,9 +602,10 @@ InferMetalPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_METAL
+  FML_LOG(ERROR) << "This Flutter Engine does not support Metal rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_METAL
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -667,9 +690,10 @@ InferVulkanPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
-#else
+#else   // SHELL_ENABLE_VULKAN
+  FML_LOG(ERROR) << "This Flutter Engine does not support Vulkan rendering.";
   return nullptr;
-#endif
+#endif  // SHELL_ENABLE_VULKAN
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -761,12 +785,18 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
+  std::optional<SkColorType> color_type =
+      FlutterFormatToSkColorType(texture->format);
+  if (!color_type) {
+    return nullptr;
+  }
+
   auto surface = SkSurfaces::WrapBackendTexture(
       context,                      // context
       backend_texture,              // back-end texture
       kBottomLeft_GrSurfaceOrigin,  // surface origin
       1,                            // sample count
-      kN32_SkColorType,             // color type
+      color_type.value(),           // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
       static_cast<SkSurfaces::TextureReleaseProc>(
@@ -804,11 +834,17 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
+  std::optional<SkColorType> color_type =
+      FlutterFormatToSkColorType(framebuffer->target);
+  if (!color_type) {
+    return nullptr;
+  }
+
   auto surface = SkSurfaces::WrapBackendRenderTarget(
       context,                      //  context
       backend_render_target,        // backend render target
       kBottomLeft_GrSurfaceOrigin,  // surface origin
-      kN32_SkColorType,             // color type
+      color_type.value(),           // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
       static_cast<SkSurfaces::RenderTargetReleaseProc>(
@@ -821,6 +857,53 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   return surface;
+#else
+  return nullptr;
+#endif
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterOpenGLSurface* surface) {
+#ifdef SHELL_ENABLE_GL
+  GrGLFramebufferInfo framebuffer_info = {};
+  framebuffer_info.fFormat = SAFE_ACCESS(surface, format, GL_BGRA8_EXT);
+  framebuffer_info.fFBOID = 0;
+
+  auto backend_render_target =
+      GrBackendRenderTargets::MakeGL(config.size.width,   // width
+                                     config.size.height,  // height
+                                     1,                   // sample count
+                                     0,                   // stencil bits
+                                     framebuffer_info     // framebuffer info
+      );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  std::optional<SkColorType> color_type =
+      FlutterFormatToSkColorType(surface->format);
+  if (!color_type) {
+    return nullptr;
+  }
+
+  auto sk_surface = SkSurfaces::WrapBackendRenderTarget(
+      context,                      //  context
+      backend_render_target,        // backend render target
+      kBottomLeft_GrSurfaceOrigin,  // surface origin
+      color_type.value(),           // color type
+      SkColorSpace::MakeSRGB(),     // color space
+      &surface_properties,          // surface properties
+      static_cast<SkSurfaces::RenderTargetReleaseProc>(
+          surface->destruction_callback),  // release proc
+      surface->user_data                   // release context
+  );
+
+  if (!sk_surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied frame-buffer.";
+    return nullptr;
+  }
+  return sk_surface;
 #else
   return nullptr;
 #endif
@@ -961,6 +1044,23 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #endif
 }
 
+#if defined(SHELL_ENABLE_GL) && defined(IMPELLER_SUPPORTS_RENDERING)
+static std::optional<impeller::PixelFormat> FlutterFormatToImpellerPixelFormat(
+    uint32_t format) {
+  switch (format) {
+    case GL_BGRA8_EXT:
+      return impeller::PixelFormat::kB8G8R8A8UNormInt;
+    case GL_RGBA8:
+      return impeller::PixelFormat::kR8G8B8A8UNormInt;
+    default:
+      FML_LOG(ERROR) << "Cannot convert format " << format
+                     << " to impeller::PixelFormat.";
+      return std::nullopt;
+  }
+}
+
+#endif  // defined(SHELL_ENABLE_GL) && defined(IMPELLER_SUPPORTS_RENDERING)
+
 static std::unique_ptr<flutter::EmbedderRenderTarget>
 MakeRenderTargetFromBackingStoreImpeller(
     FlutterBackingStore backing_store,
@@ -969,18 +1069,30 @@ MakeRenderTargetFromBackingStoreImpeller(
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLFramebuffer* framebuffer) {
 #if defined(SHELL_ENABLE_GL) && defined(IMPELLER_SUPPORTS_RENDERING)
+  auto format = FlutterFormatToImpellerPixelFormat(framebuffer->target);
+  if (!format.has_value()) {
+    return nullptr;
+  }
 
   const auto& gl_context =
       impeller::ContextGLES::Cast(*aiks_context->GetContext());
+  const bool implicit_msaa = aiks_context->GetContext()
+                                 ->GetCapabilities()
+                                 ->SupportsImplicitResolvingMSAA();
   const auto size = impeller::ISize(config.size.width, config.size.height);
 
   impeller::TextureDescriptor color0_tex;
-  color0_tex.type = impeller::TextureType::kTexture2D;
-  color0_tex.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+  if (implicit_msaa) {
+    color0_tex.type = impeller::TextureType::kTexture2DMultisample;
+    color0_tex.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    color0_tex.type = impeller::TextureType::kTexture2D;
+    color0_tex.sample_count = impeller::SampleCount::kCount1;
+  }
+  color0_tex.format = format.value();
   color0_tex.size = size;
   color0_tex.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
-  color0_tex.sample_count = impeller::SampleCount::kCount1;
   color0_tex.storage_mode = impeller::StorageMode::kDevicePrivate;
 
   impeller::ColorAttachment color0;
@@ -988,15 +1100,25 @@ MakeRenderTargetFromBackingStoreImpeller(
       gl_context.GetReactor(), color0_tex, framebuffer->name);
   color0.clear_color = impeller::Color::DarkSlateGray();
   color0.load_action = impeller::LoadAction::kClear;
-  color0.store_action = impeller::StoreAction::kStore;
+  if (implicit_msaa) {
+    color0.store_action = impeller::StoreAction::kMultisampleResolve;
+    color0.resolve_texture = color0.texture;
+  } else {
+    color0.store_action = impeller::StoreAction::kStore;
+  }
 
   impeller::TextureDescriptor depth_stencil_texture_desc;
-  depth_stencil_texture_desc.type = impeller::TextureType::kTexture2D;
-  depth_stencil_texture_desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+  depth_stencil_texture_desc.type =
+      impeller::TextureType::kTexture2DMultisample;
+  depth_stencil_texture_desc.format = impeller::PixelFormat::kD24UnormS8Uint;
   depth_stencil_texture_desc.size = size;
   depth_stencil_texture_desc.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
-  depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
+  if (implicit_msaa) {
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
+  }
 
   auto depth_stencil_tex = std::make_shared<impeller::TextureGLES>(
       gl_context.GetReactor(), depth_stencil_texture_desc,
@@ -1153,14 +1275,27 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
-MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
-                              sk_sp<SkSurface> skia_surface,
-                              fml::closure on_release) {
+MakeRenderTargetFromSkSurface(
+    FlutterBackingStore backing_store,
+    sk_sp<SkSurface> skia_surface,
+    fml::closure on_release,
+    flutter::EmbedderRenderTarget::MakeOrClearCurrentCallback on_make_current,
+    flutter::EmbedderRenderTarget::MakeOrClearCurrentCallback
+        on_clear_current) {
   if (!skia_surface) {
     return nullptr;
   }
   return std::make_unique<flutter::EmbedderRenderTargetSkia>(
-      backing_store, std::move(skia_surface), std::move(on_release));
+      backing_store, std::move(skia_surface), std::move(on_release),
+      std::move(on_make_current), std::move(on_clear_current));
+}
+
+static std::unique_ptr<flutter::EmbedderRenderTarget>
+MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
+                              sk_sp<SkSurface> skia_surface,
+                              fml::closure on_release) {
+  return MakeRenderTargetFromSkSurface(backing_store, std::move(skia_surface),
+                                       std::move(on_release), nullptr, nullptr);
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -1232,9 +1367,45 @@ CreateEmbedderRenderTarget(
             break;
           }
         }
+
+        case kFlutterOpenGLTargetTypeSurface: {
+          auto on_make_current =
+              [callback = backing_store.open_gl.surface.make_current_callback,
+               context = backing_store.open_gl.surface.user_data]()
+              -> flutter::EmbedderRenderTarget::SetCurrentResult {
+            bool invalidate_api_state = false;
+            bool ok = callback(context, &invalidate_api_state);
+            return {ok, invalidate_api_state};
+          };
+
+          auto on_clear_current =
+              [callback = backing_store.open_gl.surface.clear_current_callback,
+               context = backing_store.open_gl.surface.user_data]()
+              -> flutter::EmbedderRenderTarget::SetCurrentResult {
+            bool invalidate_api_state = false;
+            bool ok = callback(context, &invalidate_api_state);
+            return {ok, invalidate_api_state};
+          };
+
+          if (enable_impeller) {
+            // TODO(https://github.com/flutter/flutter/issues/151670): Implement
+            //  GL Surface backing stores for Impeller.
+            FML_LOG(ERROR) << "Unimplemented";
+            break;
+          } else {
+            auto skia_surface = MakeSkSurfaceFromBackingStore(
+                context, config, &backing_store.open_gl.surface);
+
+            render_target = MakeRenderTargetFromSkSurface(
+                backing_store, std::move(skia_surface),
+                collect_callback.Release(), on_make_current, on_clear_current);
+            break;
+          }
+        }
       }
       break;
     }
+
     case kFlutterBackingStoreTypeSoftware: {
       auto skia_surface = MakeSkSurfaceFromBackingStore(
           context, config, &backing_store.software);

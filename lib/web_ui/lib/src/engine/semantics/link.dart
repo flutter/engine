@@ -6,9 +6,9 @@ import '../dom.dart';
 import '../semantics.dart';
 
 /// Provides accessibility for links.
-class Link extends PrimaryRoleManager {
-  Link(SemanticsObject semanticsObject) : super.withBasics(
-    PrimaryRole.link,
+class SemanticLink extends SemanticRole {
+  SemanticLink(SemanticsObject semanticsObject) : super.withBasics(
+    SemanticRoleKind.link,
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.domText,
   ) {
@@ -18,11 +18,21 @@ class Link extends PrimaryRoleManager {
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO(chunhtai): Fill in the real link once the framework sends entire uri.
-    // https://github.com/flutter/flutter/issues/102535.
-    element.setAttribute('href', '#');
     element.style.display = 'block';
     return element;
+  }
+
+  @override
+  void update() {
+    super.update();
+
+    if (semanticsObject.isLinkUrlDirty) {
+      if (semanticsObject.hasLinkUrl) {
+        element.setAttribute('href', semanticsObject.linkUrl!);
+      } else {
+        element.removeAttribute('href');
+      }
+    }
   }
 
   @override

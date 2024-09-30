@@ -59,29 +59,6 @@ struct _FlRendererClass {
   void (*clear_current)(FlRenderer* renderer);
 
   /**
-   * Virtual method called when Flutter needs a backing store for a specific
-   * #FlutterLayer.
-   * @renderer: an #FlRenderer.
-   * @config: backing store config.
-   * @backing_store_out: saves created backing store.
-   *
-   * Returns %TRUE if successful.
-   */
-  gboolean (*create_backing_store)(FlRenderer* renderer,
-                                   const FlutterBackingStoreConfig* config,
-                                   FlutterBackingStore* backing_store_out);
-
-  /**
-   * Virtual method called when Flutter wants to release the backing store.
-   * @renderer: an #FlRenderer.
-   * @backing_store: backing store to be released.
-   *
-   * Returns %TRUE if successful.
-   */
-  gboolean (*collect_backing_store)(FlRenderer* renderer,
-                                    const FlutterBackingStore* backing_store);
-
-  /**
    * Virtual method called when Flutter wants to get the refresh rate of the
    * renderer.
    * @renderer: an #FlRenderer.
@@ -93,15 +70,25 @@ struct _FlRendererClass {
 };
 
 /**
- * fl_renderer_start:
+ * fl_renderer_set_engine:
  * @renderer: an #FlRenderer.
+ * @engine: an #FlEngine.
+ *
+ * Called when the renderer is connected to an engine.
+ */
+void fl_renderer_set_engine(FlRenderer* renderer, FlEngine* engine);
+
+/**
+ * fl_renderer_add_view:
+ * @renderer: an #FlRenderer.
+ * @view_id: the ID of the view.
  * @view: the view Flutter is renderering to.
  *
- * Start the renderer.
- *
- * Returns: %TRUE if successfully started.
+ * Add a view to render on.
  */
-gboolean fl_renderer_start(FlRenderer* renderer, FlView* view);
+void fl_renderer_add_view(FlRenderer* renderer,
+                          FlutterViewId view_id,
+                          FlView* view);
 
 /**
  * fl_renderer_get_proc_address:
@@ -180,6 +167,7 @@ gboolean fl_renderer_collect_backing_store(
 /**
  * fl_renderer_present_layers:
  * @renderer: an #FlRenderer.
+ * @view_id: view to present.
  * @layers: layers to be composited.
  * @layers_count: number of layers.
  *
@@ -189,6 +177,7 @@ gboolean fl_renderer_collect_backing_store(
  * Returns %TRUE if successful.
  */
 gboolean fl_renderer_present_layers(FlRenderer* renderer,
+                                    FlutterViewId view_id,
                                     const FlutterLayer** layers,
                                     size_t layers_count);
 
@@ -218,12 +207,18 @@ void fl_renderer_setup(FlRenderer* renderer);
 /**
  * fl_renderer_render:
  * @renderer: an #FlRenderer.
+ * @view_id: view to render.
  * @width: width of the window in pixels.
  * @height: height of the window in pixels.
+ * @background_color: color to use for background.
  *
  * Performs OpenGL commands to render current Flutter view.
  */
-void fl_renderer_render(FlRenderer* renderer, int width, int height);
+void fl_renderer_render(FlRenderer* renderer,
+                        FlutterViewId view_id,
+                        int width,
+                        int height,
+                        const GdkRGBA* background_color);
 
 /**
  * fl_renderer_cleanup:

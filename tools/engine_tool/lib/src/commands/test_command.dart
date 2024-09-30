@@ -31,6 +31,7 @@ final class TestCommand extends CommandBase {
       argParser,
       builds,
     );
+    addConcurrencyOption(argParser);
     argParser.addFlag(
       rbeFlag,
       defaultsTo: environment.hasRbeConfigInTree(),
@@ -68,6 +69,13 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       return 1;
     }
 
+    final String dashJ = argResults![concurrencyFlag] as String;
+    final int? concurrency = int.tryParse(dashJ);
+    if (concurrency == null || concurrency < 0) {
+      environment.logger.error('-j must specify a positive integer.');
+      return 1;
+    }
+
     if (!await ensureBuildDir(environment, build, enableRbe: useRbe)) {
       return 1;
     }
@@ -86,6 +94,11 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       buildTargets.addAll(found);
     }
 
+    if (buildTargets.isEmpty) {
+      environment.logger.error('No targets found, nothing to test.');
+      return 1;
+    }
+
     // Make sure there is at least one test target.
     final List<ExecutableBuildTarget> testTargets = buildTargets
         .whereType<ExecutableBuildTarget>()
@@ -99,6 +112,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
     final int buildExitCode = await runBuild(
       environment,
       build,
+      concurrency: concurrency,
       targets: testTargets.map((BuildTarget target) => target.label).toList(),
       enableRbe: useRbe,
     );

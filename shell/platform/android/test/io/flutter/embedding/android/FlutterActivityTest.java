@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.android;
 
 import static io.flutter.Build.API_LEVELS;
@@ -332,8 +336,8 @@ public class FlutterActivityTest {
     Bundle bundle = new Bundle();
     FlutterActivity spyFlutterActivity = spy(flutterActivity);
     when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
-    // Empty bundle should return false.
-    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
+    // Empty bundle should return true.
+    assertTrue(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test

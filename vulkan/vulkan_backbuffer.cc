@@ -7,7 +7,7 @@
 #include <limits>
 
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
-#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 #include "vulkan/vulkan.h"
 
 namespace vulkan {
@@ -39,7 +39,7 @@ VulkanBackbuffer::VulkanBackbuffer(const VulkanProcTable& p_vk,
 }
 
 VulkanBackbuffer::~VulkanBackbuffer() {
-  FML_ALLOW_UNUSED_LOCAL(WaitFences());
+  [[maybe_unused]] auto result = WaitFences();
 }
 
 bool VulkanBackbuffer::IsValid() const {

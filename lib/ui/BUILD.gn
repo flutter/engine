@@ -132,8 +132,6 @@ source_set("ui") {
     "text/paragraph_builder.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
-    "volatile_path_tracker.cc",
-    "volatile_path_tracker.h",
     "window/key_data.cc",
     "window/key_data.h",
     "window/key_data_packet.cc",
@@ -209,17 +207,6 @@ source_set("ui") {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
   }
-  if (impeller_enable_3d) {
-    defines += [ "IMPELLER_ENABLE_3D" ]
-    sources += [
-      "painting/scene/scene_node.cc",
-      "painting/scene/scene_node.h",
-      "painting/scene/scene_shader.cc",
-      "painting/scene/scene_shader.h",
-    ]
-
-    deps += [ "//flutter/impeller/scene" ]
-  }
 }
 
 if (enable_unittests) {
@@ -237,6 +224,7 @@ if (enable_unittests) {
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
+      "fixtures/unmultiplied_alpha.png",
       "fixtures/WideGamutIndexed.png",
       "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
@@ -294,6 +282,7 @@ if (enable_unittests) {
       "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:fixture_test",
+      "//flutter/third_party/libpng",
       "//flutter/third_party/tonic",
     ]
 

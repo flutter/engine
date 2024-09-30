@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart' if (dart.library.html) 'package:ui/src/engine/skwasm/skwasm_stub.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -129,6 +130,9 @@ abstract class Renderer {
 
   FutureOr<ui.Image> createImageFromImageBitmap(DomImageBitmap imageSource);
 
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
+      {required int width, required int height, required bool transferOwnership});
+
   void decodeImageFromPixels(
     Uint8List pixels,
     int width,
@@ -221,5 +225,5 @@ abstract class Renderer {
 
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style);
 
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view);
+  Future<void> renderScene(ui.Scene scene, EngineFlutterView view);
 }

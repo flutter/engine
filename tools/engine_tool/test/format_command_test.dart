@@ -11,11 +11,11 @@ import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/commands/flags.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:engine_tool/src/logger.dart';
-import 'package:litetest/litetest.dart';
 import 'package:logging/logging.dart' as log;
 import 'package:platform/platform.dart';
 import 'package:process_fakes/process_fakes.dart';
 import 'package:process_runner/process_runner.dart';
+import 'package:test/test.dart';
 
 void main() {
   final Engine engine;
@@ -159,7 +159,7 @@ void main() {
     final FakeProcessManager manager = _formatProcessManager(
       expectedFlags: <String>['--fix'],
       stdout: <String>[
-        'To fix, run `et format` or:',
+        'To fix, run `et format --all` or:',
         'many',
         'lines',
         'of',
@@ -185,7 +185,7 @@ void main() {
     final FakeProcessManager manager = _formatProcessManager(
       expectedFlags: <String>[],
       stdout: <String>[
-        'To fix, run `et format` or:',
+        'To fix, run `et format --all` or:',
         'many',
         'lines',
         'of',
@@ -206,7 +206,7 @@ void main() {
     expect(
         stringsFromLogs(testLogs),
         equals(<String>[
-          'To fix, run `et format` or:\n',
+          'To fix, run `et format --all` or:\n',
           'many\n',
           'lines\n',
           'of\n',

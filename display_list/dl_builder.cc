@@ -42,17 +42,17 @@ static constexpr inline bool is_power_of_two(int value) {
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
-  FML_DCHECK(size < (1 << 24));
+  FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
     static_assert(is_power_of_two(DL_BUILDER_PAGE),
                   "This math needs updating for non-pow2.");
     // Next greater multiple of DL_BUILDER_PAGE.
     allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
     storage_.realloc(allocated_);
-    FML_DCHECK(storage_.get());
+    FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
   }
-  FML_DCHECK(used_ + size <= allocated_);
+  FML_CHECK(used_ + size <= allocated_);
   auto op = reinterpret_cast<T*>(storage_.get() + used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
@@ -74,9 +74,12 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
   uint32_t total_depth = depth_;
-  bool compatible = current_info().is_group_opacity_compatible();
+  bool opacity_compatible = current_layer().is_group_opacity_compatible();
   bool is_safe = is_ui_thread_safe_;
-  bool affects_transparency = current_info().affects_transparent_layer;
+  bool affects_transparency = current_layer().affects_transparent_layer;
+  bool root_has_backdrop_filter = current_layer().contains_backdrop_filter;
+  bool root_is_unbounded = current_layer().is_unbounded;
+  DlBlendMode max_root_blend_mode = current_layer().max_blend_mode;
 
   sk_sp<DlRTree> rtree;
   SkRect bounds;
@@ -91,7 +94,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
     bounds = rtree->bounds();
     rtree_data_.reset();
   } else {
-    bounds = current_info().global_space_accumulator->bounds();
+    bounds = current_layer().global_space_accumulator.bounds();
   }
 
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
@@ -103,19 +106,14 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   current_ = DlPaint();
 
   save_stack_.pop_back();
-  save_stack_.emplace_back(original_cull_rect_);
-  current_info().is_nop = original_cull_rect_.IsEmpty();
-  if (rtree) {
-    rtree_data_.emplace();
-  } else {
-    current_info().global_space_accumulator.reset(new AccumulationRect());
-  }
+  Init(rtree != nullptr);
 
   storage_.realloc(bytes);
-  return sk_sp<DisplayList>(
-      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
-                      nested_count, total_depth, bounds, compatible, is_safe,
-                      affects_transparency, std::move(rtree)));
+  return sk_sp<DisplayList>(new DisplayList(
+      std::move(storage_), bytes, count, nested_bytes, nested_count,
+      total_depth, bounds, opacity_compatible, is_safe, affects_transparency,
+      max_root_blend_mode, root_has_backdrop_filter, root_is_unbounded,
+      std::move(rtree)));
 }
 
 static constexpr DlRect kEmpty = DlRect();
@@ -128,12 +126,17 @@ static const DlRect& ProtectEmpty(const SkRect& rect) {
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
                                        bool prepare_rtree)
     : original_cull_rect_(ProtectEmpty(cull_rect)) {
+  Init(prepare_rtree);
+}
+
+void DisplayListBuilder::Init(bool prepare_rtree) {
+  FML_DCHECK(save_stack_.empty());
+  FML_DCHECK(!rtree_data_.has_value());
+
   save_stack_.emplace_back(original_cull_rect_);
   current_info().is_nop = original_cull_rect_.IsEmpty();
   if (prepare_rtree) {
     rtree_data_.emplace();
-  } else {
-    current_info().global_space_accumulator.reset(new AccumulationRect());
   }
 }
 
@@ -247,14 +250,6 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         Push<SetRuntimeEffectColorSourceOp>(0, effect);
         break;
       }
-#ifdef IMPELLER_ENABLE_3D
-      case DlColorSourceType::kScene: {
-        const DlSceneColorSource* scene = source->asScene();
-        FML_DCHECK(scene);
-        Push<SetSceneColorSourceOp>(0, scene);
-        break;
-      }
-#endif  // IMPELLER_ENABLE_3D
     }
   }
 }
@@ -337,22 +332,6 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   }
   UpdateCurrentOpacityCompatibility();
 }
-void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
-  if (effect == nullptr) {
-    current_.setPathEffect(nullptr);
-    Push<ClearPathEffectOp>(0);
-  } else {
-    current_.setPathEffect(effect->shared());
-    switch (effect->type()) {
-      case DlPathEffectType::kDash: {
-        const DlDashPathEffect* dash_effect = effect->asDash();
-        void* pod = Push<SetPodPathEffectOp>(dash_effect->size());
-        new (pod) DlDashPathEffect(dash_effect);
-        break;
-      }
-    }
-  }
-}
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
     current_.setMaskFilter(nullptr);
@@ -404,9 +383,6 @@ void DisplayListBuilder::SetAttributesFromPaint(
   if (flags.applies_image_filter()) {
     setImageFilter(paint.getImageFilter().get());
   }
-  if (flags.applies_path_effect()) {
-    setPathEffect(paint.getPathEffect().get());
-  }
   if (flags.applies_mask_filter()) {
     setMaskFilter(paint.getMaskFilter().get());
   }
@@ -431,7 +407,7 @@ void DisplayListBuilder::Save() {
   FML_DCHECK(current_info().has_deferred_save_op);
 }
 
-void DisplayListBuilder::saveLayer(const SkRect& bounds,
+void DisplayListBuilder::saveLayer(const DlRect& bounds,
                                    const SaveLayerOptions in_options,
                                    const DlImageFilter* backdrop) {
   SaveLayerOptions options = in_options.without_optimizations();
@@ -451,6 +427,10 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
     return;
   }
 
+  if (backdrop != nullptr) {
+    current_layer().contains_backdrop_filter = true;
+  }
+
   // Snapshot these values before we do any work as we need the values
   // from before the method was called, but some of the operations below
   // might update them.
@@ -468,8 +448,10 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
     }
     filter = current_.getImageFilter();
     CheckLayerOpacityCompatibility(true);
+    UpdateLayerResult(result, true);
   } else {
     CheckLayerOpacityCompatibility(false);
+    UpdateLayerResult(result, false);
   }
 
   // The actual flood of the outer layer clip will occur after the
@@ -495,23 +477,11 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
         rtree_data_.has_value() ? rtree_data_->rects.size() : 0u;
 
     save_stack_.emplace_back(&current_info(), filter, rtree_index);
-    current_info().is_nop = false;
+    FML_DCHECK(current_info().is_save_layer);
+    FML_DCHECK(!current_info().is_nop);
     FML_DCHECK(!current_info().has_deferred_save_op);
     current_info().save_offset = save_offset;
     current_info().save_depth = save_depth;
-
-    if (filter && !rtree_data_.has_value()) {
-      // By default the new SaveInfo shares the global accumulation rect with
-      // the parent layer and will only have one if the rtree_data is not
-      // being accumulated.
-      //
-      // But, if we have a filter and we are not accumulating rtree data,
-      // then we'll need to adjust all of the bounds accumulated via this
-      // new layer by the filter so we need to use a separate global
-      // accumulation rect for this layer and adjust it during RestoreLayer()
-      // before accumulating it into the parent layer.
-      current_info().global_space_accumulator.reset(new AccumulationRect());
-    }
 
     // If we inherit some culling bounds and we have a filter then we need
     // to adjust them so that we cull for the correct input space for the
@@ -545,12 +515,12 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
 
   // Accumulate options to store in the SaveLayer op record.
   {
-    SkRect record_bounds;
+    DlRect record_bounds;
     if (in_options.bounds_from_caller()) {
       options = options.with_bounds_from_caller();
       record_bounds = bounds;
     } else {
-      FML_DCHECK(record_bounds.isEmpty());
+      FML_DCHECK(record_bounds.IsEmpty());
     }
 
     if (backdrop) {
@@ -569,19 +539,17 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
       UpdateLayerOpacityCompatibility(false);
     }
   }
-  // REMIND: NEEDED?
-  UpdateLayerResult(result);
 }
 void DisplayListBuilder::SaveLayer(const SkRect* bounds,
                                    const DlPaint* paint,
                                    const DlImageFilter* backdrop) {
   SaveLayerOptions options;
-  SkRect temp_bounds;
+  DlRect temp_bounds;
   if (bounds) {
     options = options.with_bounds_from_caller();
-    temp_bounds = *bounds;
+    temp_bounds = ToDlRect(*bounds);
   } else {
-    temp_bounds.setEmpty();
+    FML_DCHECK(temp_bounds.IsEmpty());
   }
   if (paint != nullptr) {
     options = options.with_renders_with_attributes();
@@ -596,98 +564,79 @@ void DisplayListBuilder::Restore() {
     return;
   }
 
-  {
-    // The current_info will have a lifetime that does not extend past the
-    // pop_back() method below.
-    auto& current_info = this->current_info();
+  if (!current_info().has_deferred_save_op) {
+    SaveOpBase* op = reinterpret_cast<SaveOpBase*>(storage_.get() +
+                                                   current_info().save_offset);
+    FML_CHECK(op->type == DisplayListOpType::kSave ||
+              op->type == DisplayListOpType::kSaveLayer ||
+              op->type == DisplayListOpType::kSaveLayerBackdrop);
 
-    if (!current_info.has_deferred_save_op) {
-      SaveOpBase* op = reinterpret_cast<SaveOpBase*>(storage_.get() +
-                                                     current_info.save_offset);
-      FML_DCHECK(op->type == DisplayListOpType::kSave ||
-                 op->type == DisplayListOpType::kSaveLayer ||
-                 op->type == DisplayListOpType::kSaveLayerBackdrop);
+    op->restore_index = op_index_;
+    op->total_content_depth = depth_ - current_info().save_depth;
 
-      op->restore_index = op_index_;
-      op->total_content_depth = depth_ - current_info.save_depth;
-
-      if (current_info.is_save_layer) {
-        RestoreLayer(current_info, parent_info(), op);
-      } else {
-        // No need to propagate bounds as we do with layers...
-
-        // global accumulator is either the same object or both nullptr
-        FML_DCHECK(current_info.global_space_accumulator.get() ==
-                   parent_info().global_space_accumulator.get());
-
-        // layer accumulators are both the same object
-        FML_DCHECK(current_info.layer_local_accumulator.get() ==
-                   parent_info().layer_local_accumulator.get());
-        FML_DCHECK(current_info.layer_local_accumulator.get() != nullptr);
-
-        // We only propagate these values through a regular save()
-        if (current_info.opacity_incompatible_op_detected) {
-          parent_info().opacity_incompatible_op_detected = true;
-        }
-      }
-
-      // Wait until all outgoing bounds information for the saveLayer is
-      // recorded before pushing the record to the buffer so that any rtree
-      // bounds will be attributed to the op_index of the restore op.
-      Push<RestoreOp>(0);
-    } else {
-      FML_DCHECK(!current_info.is_save_layer);
+    if (current_info().is_save_layer) {
+      RestoreLayer();
     }
+
+    // Wait until all outgoing bounds information for the saveLayer is
+    // recorded before pushing the record to the buffer so that any rtree
+    // bounds will be attributed to the op_index of the restore op.
+    Push<RestoreOp>(0);
+  } else {
+    FML_DCHECK(!current_info().is_save_layer);
   }
 
   save_stack_.pop_back();
 }
 
-void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
-                                      SaveInfo& parent_info,
-                                      void* base_op) {
+void DisplayListBuilder::RestoreLayer() {
   FML_DCHECK(save_stack_.size() > 1);
-  FML_DCHECK(!current_info.has_deferred_save_op);
+  FML_DCHECK(current_info().is_save_layer);
+  FML_DCHECK(!current_info().has_deferred_save_op);
 
   // A saveLayer will usually do a final copy to the main buffer in
   // addition to its content, but that is accounted for outside of
   // the total content depth computed above in Restore.
   depth_ += render_op_depth_cost_;
 
-  SkRect content_bounds = current_info.layer_local_accumulator->bounds();
+  SkRect content_bounds = current_layer().layer_local_accumulator.bounds();
 
-  SaveLayerOpBase* layer_op = reinterpret_cast<SaveLayerOpBase*>(base_op);
-  FML_DCHECK(layer_op->type == DisplayListOpType::kSaveLayer ||
-             layer_op->type == DisplayListOpType::kSaveLayerBackdrop);
+  SaveLayerOpBase* layer_op = reinterpret_cast<SaveLayerOpBase*>(
+      storage_.get() + current_info().save_offset);
+  FML_CHECK(layer_op->type == DisplayListOpType::kSaveLayer ||
+            layer_op->type == DisplayListOpType::kSaveLayerBackdrop);
 
-  switch (layer_op->type) {
-    case DisplayListOpType::kSaveLayer:
-    case DisplayListOpType::kSaveLayerBackdrop: {
-      if (layer_op->options.bounds_from_caller()) {
-        if (!content_bounds.isEmpty() &&
-            !layer_op->rect.contains(content_bounds)) {
-          layer_op->options = layer_op->options.with_content_is_clipped();
-          content_bounds.intersect(layer_op->rect);
-        }
+  if (layer_op->options.bounds_from_caller()) {
+    SkRect user_bounds = ToSkRect(layer_op->rect);
+    if (!content_bounds.isEmpty() && !user_bounds.contains(content_bounds)) {
+      layer_op->options = layer_op->options.with_content_is_clipped();
+      if (!content_bounds.intersect(user_bounds)) {
+        // Should never happen because we prune ops that don't intersect the
+        // supplied bounds so content_bounds would already be empty and we
+        // wouldn't come into this control block due to the empty test above.
+        content_bounds.setEmpty();
       }
-      layer_op->rect = content_bounds;
-      break;
     }
-    default:
-      FML_UNREACHABLE();
+  }
+  layer_op->rect = ToDlRect(content_bounds);
+  layer_op->max_blend_mode = current_layer().max_blend_mode;
+
+  if (current_layer().contains_backdrop_filter) {
+    layer_op->options = layer_op->options.with_contains_backdrop_filter();
   }
 
-  if (current_info.is_group_opacity_compatible()) {
-    // We are now going to go back and modify the matching saveLayer
-    // call to add the option indicating it can distribute an opacity
-    // value to its children.
+  if (current_layer().is_group_opacity_compatible()) {
     layer_op->options = layer_op->options.with_can_distribute_opacity();
+  }
+
+  if (current_layer().is_unbounded) {
+    layer_op->options = layer_op->options.with_content_is_unbounded();
   }
 
   // Ensure that the bounds transferred in the following call will be
   // attributed to the index of the restore op.
   FML_DCHECK(layer_op->restore_index == op_index_);
-  TransferLayerBounds(current_info, parent_info, content_bounds);
+  TransferLayerBounds(content_bounds);
 }
 
 // There are a few different conditions and corresponding operations to
@@ -721,26 +670,18 @@ void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
 //
 // Finally, we will have to adjust the layer's content bounds by the filter
 // and accumulate those into the parent layer's local bounds.
-void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
-                                             SaveInfo& parent_info,
-                                             const SkRect& content_bounds) {
-  auto& filter = current_info.filter;
+void DisplayListBuilder::TransferLayerBounds(const SkRect& content_bounds) {
+  auto& filter = current_layer().filter;
 
   if (!filter) {
-    // One or the other of the rtree data or the global space accumulator
-    // must be non-null, and the other must be null.
-    FML_DCHECK(rtree_data_.has_value() !=
-               static_cast<bool>(current_info.global_space_accumulator));
+    // We either accumulate global bounds into the rtree_data if there
+    // is one, or into the global_space_accumulator, but not both.
+    FML_DCHECK(!rtree_data_.has_value() ||
+               current_layer().global_space_accumulator.is_empty());
 
-    // The current and parent global space accumulators either must both be
-    // null, or they must both point to the same accumulator.
-    FML_DCHECK(current_info.global_space_accumulator.get() ==
-               parent_info.global_space_accumulator.get());
-
-    // If we have no filter then the global bounds were already accumulated
-    // into the parent's global accumulator, but we need to update the local
-    // bounds of the parent for the results of the saveLayer call.
-    parent_info.AccumulateBoundsLocal(content_bounds);
+    parent_info().AccumulateBoundsLocal(content_bounds);
+    parent_layer().global_space_accumulator.accumulate(
+        current_layer().global_space_accumulator);
     return;
   }
 
@@ -752,13 +693,14 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
   // Matrix and Clip for the filter adjustment are the global values from
   // just before our saveLayer and should still be the current values
   // present in the parent layer.
-  const SkRect clip = parent_info.global_state.device_cull_rect();
-  const SkMatrix matrix = parent_info.global_state.matrix_3x3();
+  const SkRect clip = parent_info().global_state.device_cull_rect();
+  const SkMatrix matrix = parent_info().global_state.matrix_3x3();
 
   if (rtree_data_.has_value()) {
-    // Neither current or parent layer should have a global space accumulator
-    FML_DCHECK(!current_info.global_space_accumulator);
-    FML_DCHECK(!parent_info.global_space_accumulator);
+    // Neither current or parent layer should have any global bounds in
+    // their accumulator
+    FML_DCHECK(current_layer().global_space_accumulator.is_empty());
+    FML_DCHECK(parent_layer().global_space_accumulator.is_empty());
 
     // The rtree rects were accumulated without the bounds modification of
     // the filter applied to the layer so they may fail to trigger on a
@@ -770,24 +712,12 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
     // revisit all of the RTree rects accumulated during the current layer
     // (indicated by rtree_rects_start_index) and expand them by the filter.
 
-    // Starting rect index was snapshotted to this layer's data during
-    // saveLayer.
-    auto rect_start_index = current_info.rtree_rects_start_index;
-
     if (AdjustRTreeRects(rtree_data_.value(), *filter, matrix, clip,
-                         rect_start_index)) {
+                         current_layer().rtree_rects_start_index)) {
       parent_is_flooded = true;
     }
   } else {
-    // Both current and parent layer should have a global space accumulator
-    FML_DCHECK(current_info.global_space_accumulator);
-    FML_DCHECK(parent_info.global_space_accumulator);
-
-    // And they should not be the same accumulator
-    FML_DCHECK(current_info.global_space_accumulator.get() !=
-               parent_info.global_space_accumulator.get());
-
-    SkRect global_bounds = current_info.global_space_accumulator->bounds();
+    SkRect global_bounds = current_layer().global_space_accumulator.bounds();
     if (!global_bounds.isEmpty()) {
       SkIRect global_ibounds = global_bounds.roundOut();
       if (!filter->map_device_bounds(global_ibounds, matrix, global_ibounds)) {
@@ -795,7 +725,7 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
       } else {
         global_bounds.set(global_ibounds);
         if (global_bounds.intersect(clip)) {
-          parent_info.global_space_accumulator->accumulate(global_bounds);
+          parent_layer().global_space_accumulator.accumulate(global_bounds);
         }
       }
     }
@@ -827,9 +757,9 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
     // rare case that there are no rendering ops in it, or somehow none
     // of them were chosen by the rtree search (unlikely). The saveLayer
     // must be processed for the parent flood to happen.
-    AccumulateUnbounded(parent_info);
+    AccumulateUnbounded(parent_info());
   } else {
-    parent_info.AccumulateBoundsLocal(bounds_for_parent);
+    parent_info().AccumulateBoundsLocal(bounds_for_parent);
   }
 }
 
@@ -870,7 +800,7 @@ void DisplayListBuilder::RestoreToCount(int restore_count) {
   }
 }
 
-void DisplayListBuilder::Translate(SkScalar tx, SkScalar ty) {
+void DisplayListBuilder::Translate(DlScalar tx, DlScalar ty) {
   if (std::isfinite(tx) && std::isfinite(ty) && (tx != 0.0 || ty != 0.0)) {
     checkForDeferredSave();
     Push<TranslateOp>(0, tx, ty);
@@ -878,7 +808,7 @@ void DisplayListBuilder::Translate(SkScalar tx, SkScalar ty) {
     layer_local_state().translate(tx, ty);
   }
 }
-void DisplayListBuilder::Scale(SkScalar sx, SkScalar sy) {
+void DisplayListBuilder::Scale(DlScalar sx, DlScalar sy) {
   if (std::isfinite(sx) && std::isfinite(sy) && (sx != 1.0 || sy != 1.0)) {
     checkForDeferredSave();
     Push<ScaleOp>(0, sx, sy);
@@ -886,7 +816,7 @@ void DisplayListBuilder::Scale(SkScalar sx, SkScalar sy) {
     layer_local_state().scale(sx, sy);
   }
 }
-void DisplayListBuilder::Rotate(SkScalar degrees) {
+void DisplayListBuilder::Rotate(DlScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
     checkForDeferredSave();
     Push<RotateOp>(0, degrees);
@@ -894,7 +824,7 @@ void DisplayListBuilder::Rotate(SkScalar degrees) {
     layer_local_state().rotate(degrees);
   }
 }
-void DisplayListBuilder::Skew(SkScalar sx, SkScalar sy) {
+void DisplayListBuilder::Skew(DlScalar sx, DlScalar sy) {
   if (std::isfinite(sx) && std::isfinite(sy) && (sx != 0.0 || sy != 0.0)) {
     checkForDeferredSave();
     Push<SkewOp>(0, sx, sy);
@@ -907,8 +837,8 @@ void DisplayListBuilder::Skew(SkScalar sx, SkScalar sy) {
 
 // 2x3 2D affine subset of a 4x4 transform in row major order
 void DisplayListBuilder::Transform2DAffine(
-    SkScalar mxx, SkScalar mxy, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myt) {
   if (std::isfinite(mxx) && std::isfinite(myx) &&
       std::isfinite(mxy) && std::isfinite(myy) &&
       std::isfinite(mxt) && std::isfinite(myt)) {
@@ -929,10 +859,10 @@ void DisplayListBuilder::Transform2DAffine(
 }
 // full 4x4 transform in row major order
 void DisplayListBuilder::TransformFullPerspective(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+    DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+    DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) {
   if (                        mxz == 0 &&
                               myz == 0 &&
       mzx == 0 && mzy == 0 && mzz == 1 && mzt == 0 &&
@@ -1011,20 +941,61 @@ void DisplayListBuilder::ClipRect(const SkRect& rect,
   if (!rect.isFinite()) {
     return;
   }
+  if (current_info().is_nop) {
+    return;
+  }
+  if (current_info().has_valid_clip &&
+      clip_op == DlCanvas::ClipOp::kIntersect &&
+      layer_local_state().rect_covers_cull(rect)) {
+    return;
+  }
   global_state().clipRect(rect, clip_op, is_aa);
-  if (current_info().is_nop ||
-      current_info().global_state.is_cull_rect_empty()) {
+  layer_local_state().clipRect(rect, clip_op, is_aa);
+  if (global_state().is_cull_rect_empty() ||
+      layer_local_state().is_cull_rect_empty()) {
     current_info().is_nop = true;
     return;
   }
-  layer_local_state().clipRect(rect, clip_op, is_aa);
+  current_info().has_valid_clip = true;
   checkForDeferredSave();
   switch (clip_op) {
     case ClipOp::kIntersect:
-      Push<ClipIntersectRectOp>(0, rect, is_aa);
+      Push<ClipIntersectRectOp>(0, ToDlRect(rect), is_aa);
       break;
     case ClipOp::kDifference:
-      Push<ClipDifferenceRectOp>(0, rect, is_aa);
+      Push<ClipDifferenceRectOp>(0, ToDlRect(rect), is_aa);
+      break;
+  }
+}
+void DisplayListBuilder::ClipOval(const SkRect& bounds,
+                                  ClipOp clip_op,
+                                  bool is_aa) {
+  if (!bounds.isFinite()) {
+    return;
+  }
+  if (current_info().is_nop) {
+    return;
+  }
+  if (current_info().has_valid_clip &&
+      clip_op == DlCanvas::ClipOp::kIntersect &&
+      layer_local_state().oval_covers_cull(bounds)) {
+    return;
+  }
+  global_state().clipOval(bounds, clip_op, is_aa);
+  layer_local_state().clipOval(bounds, clip_op, is_aa);
+  if (global_state().is_cull_rect_empty() ||
+      layer_local_state().is_cull_rect_empty()) {
+    current_info().is_nop = true;
+    return;
+  }
+  current_info().has_valid_clip = true;
+  checkForDeferredSave();
+  switch (clip_op) {
+    case ClipOp::kIntersect:
+      Push<ClipIntersectOvalOp>(0, ToDlRect(bounds), is_aa);
+      break;
+    case ClipOp::kDifference:
+      Push<ClipDifferenceOvalOp>(0, ToDlRect(bounds), is_aa);
       break;
   }
 }
@@ -1032,53 +1003,69 @@ void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
                                    ClipOp clip_op,
                                    bool is_aa) {
   if (rrect.isRect()) {
-    clipRect(rrect.rect(), clip_op, is_aa);
-  } else {
-    global_state().clipRRect(rrect, clip_op, is_aa);
-    if (current_info().is_nop ||
-        current_info().global_state.is_cull_rect_empty()) {
-      current_info().is_nop = true;
-      return;
-    }
-    layer_local_state().clipRRect(rrect, clip_op, is_aa);
-    checkForDeferredSave();
-    switch (clip_op) {
-      case ClipOp::kIntersect:
-        Push<ClipIntersectRRectOp>(0, rrect, is_aa);
-        break;
-      case ClipOp::kDifference:
-        Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
-        break;
-    }
+    ClipRect(rrect.rect(), clip_op, is_aa);
+    return;
   }
-}
-void DisplayListBuilder::ClipPath(const SkPath& path,
-                                  ClipOp clip_op,
-                                  bool is_aa) {
-  if (!path.isInverseFillType()) {
-    SkRect rect;
-    if (path.isRect(&rect)) {
-      this->clipRect(rect, clip_op, is_aa);
-      return;
-    }
-    SkRRect rrect;
-    if (path.isOval(&rect)) {
-      rrect.setOval(rect);
-      this->clipRRect(rrect, clip_op, is_aa);
-      return;
-    }
-    if (path.isRRect(&rrect)) {
-      this->clipRRect(rrect, clip_op, is_aa);
-      return;
-    }
+  if (rrect.isOval()) {
+    ClipOval(rrect.rect(), clip_op, is_aa);
+    return;
   }
-  global_state().clipPath(path, clip_op, is_aa);
-  if (current_info().is_nop ||
-      current_info().global_state.is_cull_rect_empty()) {
+  if (current_info().is_nop) {
+    return;
+  }
+  if (current_info().has_valid_clip &&
+      clip_op == DlCanvas::ClipOp::kIntersect &&
+      layer_local_state().rrect_covers_cull(rrect)) {
+    return;
+  }
+  global_state().clipRRect(rrect, clip_op, is_aa);
+  layer_local_state().clipRRect(rrect, clip_op, is_aa);
+  if (global_state().is_cull_rect_empty() ||
+      layer_local_state().is_cull_rect_empty()) {
     current_info().is_nop = true;
     return;
   }
-  layer_local_state().clipPath(path, clip_op, is_aa);
+  current_info().has_valid_clip = true;
+  checkForDeferredSave();
+  switch (clip_op) {
+    case ClipOp::kIntersect:
+      Push<ClipIntersectRRectOp>(0, rrect, is_aa);
+      break;
+    case ClipOp::kDifference:
+      Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
+      break;
+  }
+}
+void DisplayListBuilder::ClipPath(const DlPath& path,
+                                  ClipOp clip_op,
+                                  bool is_aa) {
+  if (current_info().is_nop) {
+    return;
+  }
+  if (!path.IsInverseFillType()) {
+    SkRect rect;
+    if (path.IsSkRect(&rect)) {
+      ClipRect(rect, clip_op, is_aa);
+      return;
+    }
+    if (path.IsSkOval(&rect)) {
+      ClipOval(rect, clip_op, is_aa);
+      return;
+    }
+    SkRRect rrect;
+    if (path.IsSkRRect(&rrect)) {
+      ClipRRect(rrect, clip_op, is_aa);
+      return;
+    }
+  }
+  global_state().clipPath(path.GetSkPath(), clip_op, is_aa);
+  layer_local_state().clipPath(path.GetSkPath(), clip_op, is_aa);
+  if (global_state().is_cull_rect_empty() ||
+      layer_local_state().is_cull_rect_empty()) {
+    current_info().is_nop = true;
+    return;
+  }
+  current_info().has_valid_clip = true;
   checkForDeferredSave();
   switch (clip_op) {
     case ClipOp::kIntersect:
@@ -1111,11 +1098,11 @@ void DisplayListBuilder::DrawColor(DlColor color, DlBlendMode mode) {
   if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
     Push<DrawColorOp>(0, color, mode);
     CheckLayerOpacityCompatibility(mode);
-    UpdateLayerResult(result);
+    UpdateLayerResult(result, mode);
   }
 }
-void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  SkRect bounds = SkRect::MakeLTRB(p0.fX, p0.fY, p1.fX, p1.fY).makeSorted();
+void DisplayListBuilder::drawLine(const DlPoint& p0, const DlPoint& p1) {
+  SkRect bounds = SkRect::MakeLTRB(p0.x, p0.y, p1.x, p1.y).makeSorted();
   DisplayListAttributeFlags flags =
       (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
                                                         : kDrawHVLineFlags;
@@ -1130,13 +1117,36 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
                                   const SkPoint& p1,
                                   const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
-  drawLine(p0, p1);
+  drawLine(ToDlPoint(p0), ToDlPoint(p1));
 }
-void DisplayListBuilder::drawRect(const SkRect& rect) {
+void DisplayListBuilder::drawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length) {
+  SkRect bounds = SkRect::MakeLTRB(p0.x, p0.y, p1.x, p1.y).makeSorted();
+  DisplayListAttributeFlags flags =
+      (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
+                                                        : kDrawHVLineFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
+    Push<DrawDashedLineOp>(0, p0, p1, on_length, off_length);
+    CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
+  }
+}
+void DisplayListBuilder::DrawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length,
+                                        const DlPaint& paint) {
+  SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
+  drawDashedLine(p0, p1, on_length, off_length);
+}
+void DisplayListBuilder::drawRect(const DlRect& rect) {
   DisplayListAttributeFlags flags = kDrawRectFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(rect.makeSorted(), flags)) {
+      AccumulateOpBounds(ToSkRect(rect.GetPositive()), flags)) {
     Push<DrawRectOp>(0, rect);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1144,13 +1154,13 @@ void DisplayListBuilder::drawRect(const SkRect& rect) {
 }
 void DisplayListBuilder::DrawRect(const SkRect& rect, const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawRectFlags);
-  drawRect(rect);
+  drawRect(ToDlRect(rect));
 }
-void DisplayListBuilder::drawOval(const SkRect& bounds) {
+void DisplayListBuilder::drawOval(const DlRect& bounds) {
   DisplayListAttributeFlags flags = kDrawOvalFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(bounds.makeSorted(), flags)) {
+      AccumulateOpBounds(ToSkRect(bounds.GetPositive()), flags)) {
     Push<DrawOvalOp>(0, bounds);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1158,14 +1168,14 @@ void DisplayListBuilder::drawOval(const SkRect& bounds) {
 }
 void DisplayListBuilder::DrawOval(const SkRect& bounds, const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawOvalFlags);
-  drawOval(bounds);
+  drawOval(ToDlRect(bounds));
 }
-void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
+void DisplayListBuilder::drawCircle(const DlPoint& center, DlScalar radius) {
   DisplayListAttributeFlags flags = kDrawCircleFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect) {
-    SkRect bounds = SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
-                                     center.fX + radius, center.fY + radius);
+    SkRect bounds = SkRect::MakeLTRB(center.x - radius, center.y - radius,
+                                     center.x + radius, center.y + radius);
     if (AccumulateOpBounds(bounds, flags)) {
       Push<DrawCircleOp>(0, center, radius);
       CheckLayerOpacityCompatibility();
@@ -1174,16 +1184,16 @@ void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
   }
 }
 void DisplayListBuilder::DrawCircle(const SkPoint& center,
-                                    SkScalar radius,
+                                    DlScalar radius,
                                     const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawCircleFlags);
-  drawCircle(center, radius);
+  drawCircle(ToDlPoint(center), radius);
 }
 void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   if (rrect.isRect()) {
-    drawRect(rrect.rect());
+    drawRect(ToDlRect(rrect.rect()));
   } else if (rrect.isOval()) {
-    drawOval(rrect.rect());
+    drawOval(ToDlRect(rrect.rect()));
   } else {
     DisplayListAttributeFlags flags = kDrawRRectFlags;
     OpResult result = PaintResult(current_, flags);
@@ -1216,13 +1226,14 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawDRRectFlags);
   drawDRRect(outer, inner);
 }
-void DisplayListBuilder::drawPath(const SkPath& path) {
+void DisplayListBuilder::drawPath(const DlPath& path) {
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect) {
-    bool is_visible = path.isInverseFillType()
-                          ? AccumulateUnbounded()
-                          : AccumulateOpBounds(path.getBounds(), flags);
+    bool is_visible =
+        path.IsInverseFillType()
+            ? AccumulateUnbounded()
+            : AccumulateOpBounds(ToSkRect(path.GetBounds()), flags);
     if (is_visible) {
       Push<DrawPathOp>(0, path);
       CheckLayerOpacityHairlineCompatibility();
@@ -1232,12 +1243,17 @@ void DisplayListBuilder::drawPath(const SkPath& path) {
 }
 void DisplayListBuilder::DrawPath(const SkPath& path, const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawPathFlags);
+  DlPath dl_path(path);
+  drawPath(dl_path);
+}
+void DisplayListBuilder::DrawPath(const DlPath& path, const DlPaint& paint) {
+  SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawPathFlags);
   drawPath(path);
 }
 
-void DisplayListBuilder::drawArc(const SkRect& bounds,
-                                 SkScalar start,
-                                 SkScalar sweep,
+void DisplayListBuilder::drawArc(const DlRect& bounds,
+                                 DlScalar start,
+                                 DlScalar sweep,
                                  bool useCenter) {
   DisplayListAttributeFlags flags =  //
       useCenter                      //
@@ -1247,7 +1263,8 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
   // This could be tighter if we compute where the start and end
   // angles are and then also consider the quadrants swept and
   // the center if specified.
-  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(ToSkRect(bounds), flags)) {
     Push<DrawArcOp>(0, bounds, start, sweep, useCenter);
     if (useCenter) {
       CheckLayerOpacityHairlineCompatibility();
@@ -1258,13 +1275,13 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
   }
 }
 void DisplayListBuilder::DrawArc(const SkRect& bounds,
-                                 SkScalar start,
-                                 SkScalar sweep,
+                                 DlScalar start,
+                                 DlScalar sweep,
                                  bool useCenter,
                                  const DlPaint& paint) {
   SetAttributesFromPaint(
       paint, useCenter ? kDrawArcWithCenterFlags : kDrawArcNoCenterFlags);
-  drawArc(bounds, start, sweep, useCenter);
+  drawArc(ToDlRect(bounds), start, sweep, useCenter);
 }
 
 DisplayListAttributeFlags DisplayListBuilder::FlagsForPointMode(
@@ -1281,7 +1298,7 @@ DisplayListAttributeFlags DisplayListBuilder::FlagsForPointMode(
 }
 void DisplayListBuilder::drawPoints(PointMode mode,
                                     uint32_t count,
-                                    const SkPoint pts[]) {
+                                    const DlPoint pts[]) {
   if (count == 0) {
     return;
   }
@@ -1323,7 +1340,7 @@ void DisplayListBuilder::drawPoints(PointMode mode,
   // distribution of group opacity without analyzing the mode and the
   // bounds of every sub-primitive.
   // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
-  current_info().layer_local_accumulator->record_overlapping_bounds();
+  current_layer().layer_local_accumulator.record_overlapping_bounds();
   // Even though we've eliminated the possibility of opacity peephole
   // optimizations above, we still set the appropriate flags based on
   // the rendering attributes in case we solve the overlapping points
@@ -1336,16 +1353,16 @@ void DisplayListBuilder::DrawPoints(PointMode mode,
                                     const SkPoint pts[],
                                     const DlPaint& paint) {
   SetAttributesFromPaint(paint, FlagsForPointMode(mode));
-  drawPoints(mode, count, pts);
+  drawPoints(mode, count, ToDlPoints(pts));
 }
-void DisplayListBuilder::drawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode) {
+void DisplayListBuilder::drawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode) {
   DisplayListAttributeFlags flags = kDrawVerticesFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(vertices->bounds(), flags)) {
-    void* pod = Push<DrawVerticesOp>(vertices->size(), mode);
-    new (pod) DlVertices(vertices);
+    Push<DrawVerticesOp>(0, vertices, mode);
     // DrawVertices applies its colors to the paint so we have no way
     // of controlling opacity using the current paint attributes.
     // Although, examination of the |mode| might find some predictable
@@ -1360,18 +1377,19 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
     // colors above - both conditions must be analyzed sufficiently
     // and implemented accordingly before drawVertices is compatible with
     // opacity peephole optimizations.
-    current_info().layer_local_accumulator->record_overlapping_bounds();
+    current_layer().layer_local_accumulator.record_overlapping_bounds();
   }
 }
-void DisplayListBuilder::DrawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode,
-                                      const DlPaint& paint) {
+void DisplayListBuilder::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawVerticesFlags);
   drawVertices(vertices, mode);
 }
 
 void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
-                                   const SkPoint point,
+                                   const DlPoint& point,
                                    DlImageSampling sampling,
                                    bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes  //
@@ -1381,32 +1399,32 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
   if (result == OpResult::kNoEffect) {
     return;
   }
-  SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
+  SkRect bounds = SkRect::MakeXYWH(point.x, point.y,  //
                                    image->width(), image->height());
   if (AccumulateOpBounds(bounds, flags)) {
     render_with_attributes
         ? Push<DrawImageWithAttrOp>(0, image, point, sampling)
         : Push<DrawImageOp>(0, image, point, sampling);
     CheckLayerOpacityCompatibility(render_with_attributes);
-    UpdateLayerResult(result);
+    UpdateLayerResult(result, render_with_attributes);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
 void DisplayListBuilder::DrawImage(const sk_sp<DlImage>& image,
-                                   const SkPoint point,
+                                   const SkPoint& point,
                                    DlImageSampling sampling,
                                    const DlPaint* paint) {
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawImageWithPaintFlags);
-    drawImage(image, point, sampling, true);
+    drawImage(image, ToDlPoint(point), sampling, true);
   } else {
-    drawImage(image, point, sampling, false);
+    drawImage(image, ToDlPoint(point), sampling, false);
   }
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
-                                       const SkRect& src,
-                                       const SkRect& dst,
+                                       const DlRect& src,
+                                       const DlRect& dst,
                                        DlImageSampling sampling,
                                        bool render_with_attributes,
                                        SrcRectConstraint constraint) {
@@ -1414,11 +1432,12 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                         ? kDrawImageRectWithPaintFlags
                                         : kDrawImageRectFlags;
   OpResult result = PaintResult(current_, flags);
-  if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(ToSkRect(dst), flags)) {
     Push<DrawImageRectOp>(0, image, src, dst, sampling, render_with_attributes,
                           constraint);
     CheckLayerOpacityCompatibility(render_with_attributes);
-    UpdateLayerResult(result);
+    UpdateLayerResult(result, render_with_attributes);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
@@ -1431,26 +1450,29 @@ void DisplayListBuilder::DrawImageRect(const sk_sp<DlImage>& image,
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawImageRectWithPaintFlags);
-    drawImageRect(image, src, dst, sampling, true, constraint);
+    drawImageRect(image, ToDlRect(src), ToDlRect(dst), sampling, true,
+                  constraint);
   } else {
-    drawImageRect(image, src, dst, sampling, false, constraint);
+    drawImageRect(image, ToDlRect(src), ToDlRect(dst), sampling, false,
+                  constraint);
   }
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
-                                       const SkIRect& center,
-                                       const SkRect& dst,
+                                       const DlIRect& center,
+                                       const DlRect& dst,
                                        DlFilterMode filter,
                                        bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
                                         : kDrawImageNineFlags;
   OpResult result = PaintResult(current_, flags);
-  if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
+  if (result != OpResult::kNoEffect &&
+      AccumulateOpBounds(ToSkRect(dst), flags)) {
     render_with_attributes
         ? Push<DrawImageNineWithAttrOp>(0, image, center, dst, filter)
         : Push<DrawImageNineOp>(0, image, center, dst, filter);
     CheckLayerOpacityCompatibility(render_with_attributes);
-    UpdateLayerResult(result);
+    UpdateLayerResult(result, render_with_attributes);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
   }
 }
@@ -1462,19 +1484,19 @@ void DisplayListBuilder::DrawImageNine(const sk_sp<DlImage>& image,
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawImageNineWithPaintFlags);
-    drawImageNine(image, center, dst, filter, true);
+    drawImageNine(image, ToDlIRect(center), ToDlRect(dst), filter, true);
   } else {
-    drawImageNine(image, center, dst, filter, false);
+    drawImageNine(image, ToDlIRect(center), ToDlRect(dst), filter, false);
   }
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
                                    const SkRSXform xform[],
-                                   const SkRect tex[],
+                                   const DlRect tex[],
                                    const DlColor colors[],
                                    int count,
                                    DlBlendMode mode,
                                    DlImageSampling sampling,
-                                   const SkRect* cull_rect,
+                                   const DlRect* cull_rect,
                                    bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes  //
                                         ? kDrawAtlasWithPaintFlags
@@ -1486,7 +1508,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   SkPoint quad[4];
   AccumulationRect accumulator;
   for (int i = 0; i < count; i++) {
-    const SkRect& src = tex[i];
+    const SkRect& src = ToSkRect(tex[i]);
     xform[i].toQuad(src.width(), src.height(), quad);
     for (int j = 0; j < 4; j++) {
       accumulator.accumulate(quad[j]);
@@ -1507,7 +1529,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // independently it might expand the bounds on one corner and then flag
   // the condition when the next corner is added.
   if (accumulator.overlap_detected()) {
-    current_info().layer_local_accumulator->record_overlapping_bounds();
+    current_layer().layer_local_accumulator.record_overlapping_bounds();
   }
 
   int bytes = count * (sizeof(SkRSXform) + sizeof(SkRect));
@@ -1538,7 +1560,7 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
   // on it to distribute the opacity without overlap without checking all
   // of the transforms and texture rectangles.
   UpdateLayerOpacityCompatibility(false);
-  UpdateLayerResult(result);
+  UpdateLayerResult(result, render_with_attributes);
   is_ui_thread_safe_ = is_ui_thread_safe_ && atlas->isUIThreadSafe();
 }
 void DisplayListBuilder::DrawAtlas(const sk_sp<DlImage>& atlas,
@@ -1553,16 +1575,16 @@ void DisplayListBuilder::DrawAtlas(const sk_sp<DlImage>& atlas,
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawAtlasWithPaintFlags);
-    drawAtlas(atlas, xform, tex, colors, count, mode, sampling, cull_rect,
-              true);
+    drawAtlas(atlas, xform, ToDlRects(tex), colors, count, mode, sampling,
+              ToDlRect(cull_rect), true);
   } else {
-    drawAtlas(atlas, xform, tex, colors, count, mode, sampling, cull_rect,
-              false);
+    drawAtlas(atlas, xform, ToDlRects(tex), colors, count, mode, sampling,
+              ToDlRect(cull_rect), false);
   }
 }
 
 void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
-                                         SkScalar opacity) {
+                                         DlScalar opacity) {
   if (!std::isfinite(opacity) || opacity <= SK_ScalarNearlyZero ||
       display_list->op_count() == 0 || display_list->bounds().isEmpty() ||
       current_info().is_nop) {
@@ -1571,7 +1593,9 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   const SkRect bounds = display_list->bounds();
   bool accumulated;
   sk_sp<const DlRTree> rtree;
-  if (!rtree_data_.has_value() || !(rtree = display_list->rtree())) {
+  if (display_list->root_is_unbounded()) {
+    accumulated = AccumulateUnbounded();
+  } else if (!rtree_data_.has_value() || !(rtree = display_list->rtree())) {
     accumulated = AccumulateOpBounds(bounds, kDrawDisplayListFlags);
   } else {
     std::list<SkRect> rects =
@@ -1623,11 +1647,15 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   // pixels or we do not. We should not have [kNoEffect].
   UpdateLayerResult(display_list->modifies_transparent_black()
                         ? OpResult::kAffectsAll
-                        : OpResult::kPreservesTransparency);
+                        : OpResult::kPreservesTransparency,
+                    display_list->max_root_blend_mode());
+  if (display_list->root_has_backdrop_filter()) {
+    current_layer().contains_backdrop_filter = true;
+  }
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                                      SkScalar x,
-                                      SkScalar y) {
+                                      DlScalar x,
+                                      DlScalar y) {
   DisplayListAttributeFlags flags = kDrawTextBlobFlags;
   OpResult result = PaintResult(current_, flags);
   if (result == OpResult::kNoEffect) {
@@ -1653,8 +1681,8 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
   }
 }
 void DisplayListBuilder::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
-                                      SkScalar x,
-                                      SkScalar y,
+                                      DlScalar x,
+                                      DlScalar y,
                                       const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawTextBlobFlags);
   drawTextBlob(blob, x, y);
@@ -1662,8 +1690,8 @@ void DisplayListBuilder::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
 
 void DisplayListBuilder::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
-    SkScalar x,
-    SkScalar y) {
+    DlScalar x,
+    DlScalar y) {
   DisplayListAttributeFlags flags = kDrawTextBlobFlags;
   OpResult result = PaintResult(current_, flags);
   if (result == OpResult::kNoEffect) {
@@ -1694,29 +1722,29 @@ void DisplayListBuilder::drawTextFrame(
 
 void DisplayListBuilder::DrawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
-    SkScalar x,
-    SkScalar y,
+    DlScalar x,
+    DlScalar y,
     const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawTextBlobFlags);
   drawTextFrame(text_frame, x, y);
 }
 
-void DisplayListBuilder::DrawShadow(const SkPath& path,
+void DisplayListBuilder::DrawShadow(const DlPath& path,
                                     const DlColor color,
-                                    const SkScalar elevation,
+                                    const DlScalar elevation,
                                     bool transparent_occluder,
-                                    SkScalar dpr) {
+                                    DlScalar dpr) {
   OpResult result = PaintResult(DlPaint(color));
   if (result != OpResult::kNoEffect) {
-    SkRect shadow_bounds =
-        DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
+    SkRect shadow_bounds = DlCanvas::ComputeShadowBounds(
+        path.GetSkPath(), elevation, dpr, GetTransform());
     if (AccumulateOpBounds(shadow_bounds, kDrawShadowFlags)) {
       transparent_occluder  //
           ? Push<DrawShadowTransparentOccluderOp>(0, path, color, elevation,
                                                   dpr)
           : Push<DrawShadowOp>(0, path, color, elevation, dpr);
       UpdateLayerOpacityCompatibility(false);
-      UpdateLayerResult(result);
+      UpdateLayerResult(result, DlBlendMode::kSrcOver);
     }
   }
 }
@@ -1732,18 +1760,11 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(current_.getPathEffectPtr(), is_stroked);
-    if (current_.getPathEffect()) {
-      auto effect_bounds = current_.getPathEffect()->effect_bounds(bounds);
-      if (!effect_bounds.has_value()) {
-        return false;
-      }
-      bounds = effect_bounds.value();
-    }
+        flags.GeometryFlags(is_stroked);
 
     if (is_stroked) {
       // Determine the max multiplier to the stroke width first.
-      SkScalar pad = 1.0f;
+      DlScalar pad = 1.0f;
       if (current_.getStrokeJoin() == DlStrokeJoin::kMiter &&
           special_flags.may_have_acute_joins()) {
         pad = std::max(pad, current_.getStrokeMiter());
@@ -1752,7 +1773,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
           special_flags.may_have_diagonal_caps()) {
         pad = std::max(pad, SK_ScalarSqrt2);
       }
-      SkScalar min_stroke_width = 0.01;
+      DlScalar min_stroke_width = 0.01;
       pad *= std::max(current_.getStrokeWidth() * 0.5f, min_stroke_width);
       bounds.outset(pad, pad);
     }
@@ -1764,7 +1785,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
       switch (filter->type()) {
         case DlMaskFilterType::kBlur: {
           FML_DCHECK(filter->asBlur());
-          SkScalar mask_sigma_pad = filter->asBlur()->sigma() * 3.0;
+          DlScalar mask_sigma_pad = filter->asBlur()->sigma() * 3.0;
           bounds.outset(mask_sigma_pad, mask_sigma_pad);
         }
       }
@@ -1786,22 +1807,23 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
   return true;
 }
 
-bool DisplayListBuilder::AccumulateUnbounded(SaveInfo& layer) {
-  SkRect global_clip = layer.global_state.device_cull_rect();
-  SkRect layer_clip = layer.global_state.local_cull_rect();
-  if (global_clip.isEmpty() || !layer.layer_state.mapAndClipRect(&layer_clip)) {
+bool DisplayListBuilder::AccumulateUnbounded(const SaveInfo& save) {
+  if (!save.has_valid_clip) {
+    save.layer_info->is_unbounded = true;
+  }
+  SkRect global_clip = save.global_state.device_cull_rect();
+  SkRect layer_clip = save.global_state.local_cull_rect();
+  if (global_clip.isEmpty() || !save.layer_state.mapAndClipRect(&layer_clip)) {
     return false;
   }
   if (rtree_data_.has_value()) {
-    FML_DCHECK(!layer.global_space_accumulator);
+    FML_DCHECK(save.layer_info->global_space_accumulator.is_empty());
     rtree_data_->rects.push_back(global_clip);
     rtree_data_->indices.push_back(op_index_);
   } else {
-    FML_DCHECK(layer.global_space_accumulator);
-    layer.global_space_accumulator->accumulate(global_clip);
+    save.layer_info->global_space_accumulator.accumulate(global_clip);
   }
-  layer.layer_local_accumulator->accumulate(layer_clip);
-  layer.is_unbounded = true;
+  save.layer_info->layer_local_accumulator.accumulate(layer_clip);
   return true;
 }
 
@@ -1827,16 +1849,15 @@ bool DisplayListBuilder::AccumulateBounds(const SkRect& bounds,
     return false;
   }
   if (rtree_data_.has_value()) {
-    FML_DCHECK(!layer.global_space_accumulator);
+    FML_DCHECK(layer.layer_info->global_space_accumulator.is_empty());
     if (id >= 0) {
       rtree_data_->rects.push_back(global_bounds);
       rtree_data_->indices.push_back(id);
     }
   } else {
-    FML_DCHECK(layer.global_space_accumulator);
-    layer.global_space_accumulator->accumulate(global_bounds);
+    layer.layer_info->global_space_accumulator.accumulate(global_bounds);
   }
-  layer.layer_local_accumulator->accumulate(layer_bounds);
+  layer.layer_info->layer_local_accumulator.accumulate(layer_bounds);
   return true;
 }
 
@@ -1848,7 +1869,7 @@ bool DisplayListBuilder::SaveInfo::AccumulateBoundsLocal(const SkRect& bounds) {
   if (!layer_state.mapAndClipRect(bounds, &local_bounds)) {
     return false;
   }
-  layer_local_accumulator->accumulate(local_bounds);
+  layer_info->layer_local_accumulator.accumulate(local_bounds);
   return true;
 }
 

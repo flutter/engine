@@ -19,7 +19,8 @@ namespace flutter {
 class CompositorOpenGL : public Compositor {
  public:
   CompositorOpenGL(FlutterWindowsEngine* engine,
-                   impeller::ProcTableGLES::Resolver resolver);
+                   impeller::ProcTableGLES::Resolver resolver,
+                   bool enable_impeller);
 
   /// |Compositor|
   bool CreateBackingStore(const FlutterBackingStoreConfig& config,
@@ -38,6 +39,13 @@ class CompositorOpenGL : public Compositor {
   FlutterWindowsEngine* engine_;
 
  private:
+  struct TextureFormat {
+    // The format passed to the engine using `FlutterOpenGLFramebuffer.target`.
+    uint32_t sized_format = 0;
+    // The format used to create textures. Passed to `glTexImage2D`.
+    uint32_t general_format = 0;
+  };
+
   // The compositor initializes itself lazily once |CreateBackingStore| is
   // called. True if initialization completed successfully.
   bool is_initialized_ = false;
@@ -48,9 +56,12 @@ class CompositorOpenGL : public Compositor {
   // Table of resolved GLES functions. Null until the compositor is initialized.
   std::unique_ptr<impeller::ProcTableGLES> gl_ = nullptr;
 
-  // The OpenGL texture target format for backing stores. Invalid value until
+  // The OpenGL texture format for backing stores. Invalid value until
   // the compositor is initialized.
-  uint32_t format_ = 0;
+  TextureFormat format_;
+
+  // Whether the Impeller rendering backend is enabled.
+  bool enable_impeller_ = false;
 
   // Initialize the compositor. This must run on the raster thread.
   bool Initialize();

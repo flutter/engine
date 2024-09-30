@@ -30,6 +30,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
     ],
     'gclient_variables': <String, dynamic>{
       'download_android_deps': false,
+      'download_jdk': false,
       'download_emsdk': true,
     },
     'gn': <String>[
@@ -113,9 +114,6 @@ Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
       suite.runConfig.browser == BrowserName.chrome ||
       suite.runConfig.browser == BrowserName.firefox
     ),
-    // TODO(jacksongardner): Stop filtering to Mac-12 after macOS 13 issues are fixed:
-    // https://github.com/flutter/flutter/issues/136274,
-    // https://github.com/flutter/flutter/issues/136279
     ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13', cpu: 'arm64', (TestSuite suite) =>
       suite.runConfig.browser == BrowserName.safari
     ),
@@ -144,6 +142,7 @@ Iterable<dynamic> _getTestStepsForPlatform(
         ],
         'gclient_variables': <String, dynamic>{
           'download_android_deps': false,
+          'download_jdk': false,
         },
         'dependencies': <String>[
           'web_tests/artifacts',
@@ -157,7 +156,7 @@ Iterable<dynamic> _getTestStepsForPlatform(
           if (suite.runConfig.browser == BrowserName.chrome)
             <String, dynamic>{
               'dependency': 'chrome_and_driver',
-              'version': '119.0.6045.9',
+              'version': '125.0.6422.141',
             },
           if (suite.runConfig.browser == BrowserName.firefox)
             <String, dynamic>{

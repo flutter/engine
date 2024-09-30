@@ -28,12 +28,15 @@ class AccumulationRect {
 
   void accumulate(SkScalar x, SkScalar y);
   void accumulate(SkPoint p) { accumulate(p.fX, p.fY); }
+  void accumulate(DlPoint p) { accumulate(p.x, p.y); }
   void accumulate(SkRect r);
   void accumulate(DlRect r) { accumulate(ToSkRect(r)); }
+  void accumulate(AccumulationRect& ar);
 
   bool is_empty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
   bool is_not_empty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
 
+  DlRect GetBounds() const;
   SkRect bounds() const;
 
   void reset();

@@ -30,7 +30,7 @@ def main():
   create_xcframework(args.location, args.name, args.frameworks)
 
 
-def create_xcframework(location, name, frameworks):
+def create_xcframework(location, name, frameworks, dsyms=None):
   output_dir = os.path.abspath(location)
   output_xcframework = os.path.join(output_dir, '%s.xcframework' % name)
 
@@ -45,10 +45,12 @@ def create_xcframework(location, name, frameworks):
   #                  -framework bar/baz.framework -output output/
   command = ['xcrun', 'xcodebuild', '-quiet', '-create-xcframework']
 
+  command.extend(['-output', output_xcframework])
+
   for framework in frameworks:
     command.extend(['-framework', os.path.abspath(framework)])
-
-  command.extend(['-output', output_xcframework])
+    if dsyms and framework in dsyms:
+      command.extend(['-debug-symbols', os.path.abspath(dsyms[framework])])
 
   subprocess.check_call(command, stdout=open(os.devnull, 'w'))
 
