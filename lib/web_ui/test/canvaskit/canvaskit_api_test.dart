@@ -1432,6 +1432,10 @@ void _canvasTests() {
     ]);
   });
 
+  test('quickReject', () {
+    expect(canvas.quickReject(toSkRect(const ui.Rect.fromLTRB(1, 2, 3, 4))), isFalse);
+  });
+
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder

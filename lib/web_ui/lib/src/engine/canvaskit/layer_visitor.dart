@@ -7,17 +7,6 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../color_filter.dart';
-import '../vector_math.dart';
-import 'canvas.dart';
-import 'canvaskit_api.dart';
-import 'color_filter.dart';
-import 'embedded_views.dart';
-import 'image_filter.dart';
-import 'layer.dart';
-import 'n_way_canvas.dart';
-import 'painting.dart';
-
 abstract class LayerVisitor {
   void visitRoot(RootLayer root);
   void visitBackdropFilter(BackdropFilterEngineLayer backdropFilter);
@@ -187,7 +176,6 @@ class PrerollVisitor extends LayerVisitor {
     // The picture may have been culled on a previous frame, but has since
     // scrolled back into the clip region. Reset the `isCulled` flag.
     picture.isCulled = false;
-    viewEmbedder?.prerollPicture(picture);
   }
 
   @override
@@ -229,7 +217,6 @@ class PrerollVisitor extends LayerVisitor {
 /// prepares for them to be optimized into few canvases.
 class MeasureVisitor extends LayerVisitor {
   MeasureVisitor(
-    this.nWayCanvas,
     BitmapSize size,
     this.viewEmbedder,
   ) {
@@ -237,11 +224,6 @@ class MeasureVisitor extends LayerVisitor {
     measuringCanvas =
         measuringRecorder.beginRecording(ui.Offset.zero & size.toSize());
   }
-
-  /// A multi-canvas that applies clips, transforms, and opacity
-  /// operations to all canvases (root canvas and overlay canvases for the
-  /// platform views).
-  CkNWayCanvas nWayCanvas;
 
   /// A stack of image filters which apply their transforms to measured bounds.
   List<CkManagedSkImageFilterConvertible> imageFilterStack =
@@ -285,23 +267,17 @@ class MeasureVisitor extends LayerVisitor {
   void visitClipPath(ClipPathEngineLayer clipPath) {
     assert(clipPath.needsPainting);
 
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.clipPath(
-        clipPath.clipPath, clipPath.clipBehavior != ui.Clip.hardEdge);
     measuringCanvas.clipPath(
         clipPath.clipPath, clipPath.clipBehavior != ui.Clip.hardEdge);
 
     if (clipPath.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.saveLayer(clipPath.paintBounds, null);
       measuringCanvas.saveLayer(clipPath.paintBounds, null);
     }
     measureChildren(clipPath);
     if (clipPath.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.restore();
       measuringCanvas.restore();
     }
-    nWayCanvas.restore();
     measuringCanvas.restore();
   }
 
@@ -309,28 +285,19 @@ class MeasureVisitor extends LayerVisitor {
   void visitClipRect(ClipRectEngineLayer clipRect) {
     assert(clipRect.needsPainting);
 
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.clipRect(
-      clipRect.clipRect,
-      ui.ClipOp.intersect,
-      clipRect.clipBehavior != ui.Clip.hardEdge,
-    );
     measuringCanvas.clipRect(
       clipRect.clipRect,
       ui.ClipOp.intersect,
       clipRect.clipBehavior != ui.Clip.hardEdge,
     );
     if (clipRect.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.saveLayer(clipRect.clipRect, null);
       measuringCanvas.saveLayer(clipRect.clipRect, null);
     }
     measureChildren(clipRect);
     if (clipRect.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.restore();
       measuringCanvas.restore();
     }
-    nWayCanvas.restore();
     measuringCanvas.restore();
   }
 
@@ -338,22 +305,16 @@ class MeasureVisitor extends LayerVisitor {
   void visitClipRRect(ClipRRectEngineLayer clipRRect) {
     assert(clipRRect.needsPainting);
 
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.clipRRect(
-        clipRRect.clipRRect, clipRRect.clipBehavior != ui.Clip.hardEdge);
     measuringCanvas.clipRRect(
         clipRRect.clipRRect, clipRRect.clipBehavior != ui.Clip.hardEdge);
     if (clipRRect.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.saveLayer(clipRRect.paintBounds, null);
       measuringCanvas.saveLayer(clipRRect.paintBounds, null);
     }
     measureChildren(clipRRect);
     if (clipRRect.clipBehavior == ui.Clip.antiAliasWithSaveLayer) {
-      nWayCanvas.restore();
       measuringCanvas.restore();
     }
-    nWayCanvas.restore();
     measuringCanvas.restore();
   }
 
@@ -364,19 +325,14 @@ class MeasureVisitor extends LayerVisitor {
     final CkPaint paint = CkPaint();
     paint.color = ui.Color.fromARGB(opacity.alpha, 0, 0, 0);
 
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.translate(opacity.offset.dx, opacity.offset.dy);
     measuringCanvas.translate(opacity.offset.dx, opacity.offset.dy);
 
     final ui.Rect saveLayerBounds = opacity.paintBounds.shift(-opacity.offset);
 
-    nWayCanvas.saveLayer(saveLayerBounds, paint);
     measuringCanvas.saveLayer(saveLayerBounds, paint);
     measureChildren(opacity);
     // Restore twice: once for the translate and once for the saveLayer.
-    nWayCanvas.restore();
-    nWayCanvas.restore();
     measuringCanvas.restore();
     measuringCanvas.restore();
   }
@@ -385,12 +341,9 @@ class MeasureVisitor extends LayerVisitor {
   void visitTransform(TransformEngineLayer transform) {
     assert(transform.needsPainting);
 
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.transform(transform.transform.storage);
     measuringCanvas.transform(transform.transform.storage);
     measureChildren(transform);
-    nWayCanvas.restore();
     measuringCanvas.restore();
   }
 
@@ -404,15 +357,11 @@ class MeasureVisitor extends LayerVisitor {
     assert(imageFilter.needsPainting);
     final ui.Rect offsetPaintBounds =
         imageFilter.paintBounds.shift(-imageFilter.offset);
-    nWayCanvas.save();
     measuringCanvas.save();
-    nWayCanvas.translate(imageFilter.offset.dx, imageFilter.offset.dy);
     measuringCanvas.translate(imageFilter.offset.dx, imageFilter.offset.dy);
-    nWayCanvas.clipRect(offsetPaintBounds, ui.ClipOp.intersect, false);
     measuringCanvas.clipRect(offsetPaintBounds, ui.ClipOp.intersect, false);
     final CkPaint paint = CkPaint();
     paint.imageFilter = imageFilter.filter;
-    nWayCanvas.saveLayer(offsetPaintBounds, paint);
     measuringCanvas.saveLayer(offsetPaintBounds, paint);
     if (imageFilter.filter is! ui.ColorFilter) {
       imageFilterStack
@@ -422,8 +371,6 @@ class MeasureVisitor extends LayerVisitor {
     if (imageFilter.filter is! ui.ColorFilter) {
       imageFilterStack.removeLast();
     }
-    nWayCanvas.restore();
-    nWayCanvas.restore();
     measuringCanvas.restore();
     measuringCanvas.restore();
   }
@@ -432,11 +379,9 @@ class MeasureVisitor extends LayerVisitor {
   void visitShaderMask(ShaderMaskEngineLayer shaderMask) {
     assert(shaderMask.needsPainting);
 
-    nWayCanvas.saveLayer(shaderMask.paintBounds, null);
     measuringCanvas.saveLayer(shaderMask.paintBounds, null);
     measureChildren(shaderMask);
 
-    nWayCanvas.restore();
     measuringCanvas.restore();
   }
 
@@ -444,12 +389,7 @@ class MeasureVisitor extends LayerVisitor {
   void visitPicture(PictureLayer picture) {
     assert(picture.needsPainting);
 
-    final CkCanvas pictureRecorderCanvas =
-        viewEmbedder.getMeasuringCanvasFor(picture);
-
-    pictureRecorderCanvas.save();
     measuringCanvas.save();
-    pictureRecorderCanvas.translate(picture.offset.dx, picture.offset.dy);
     measuringCanvas.translate(picture.offset.dx, picture.offset.dy);
 
     // Get the picture bounds using the measuring canvas.
@@ -467,8 +407,8 @@ class MeasureVisitor extends LayerVisitor {
     }
     picture.sceneBounds = transformedBounds;
 
-    pictureRecorderCanvas.drawPicture(picture.picture);
-    pictureRecorderCanvas.restore();
+    picture.isCulled = measuringCanvas.quickReject(picture.picture.cullRect);
+
     measuringCanvas.restore();
 
     viewEmbedder.addPictureToUnoptimizedScene(picture);
@@ -485,19 +425,14 @@ class MeasureVisitor extends LayerVisitor {
     // then it will fill the entire `cullRect` of the picture, ignoring the
     // `paintBounds` passed to `saveLayer`. See:
     // https://github.com/flutter/flutter/issues/88866
-    nWayCanvas.save();
     measuringCanvas.save();
 
     // TODO(hterkelsen): Only clip if the ColorFilter affects transparent black.
-    nWayCanvas.clipRect(colorFilter.paintBounds, ui.ClipOp.intersect, false);
     measuringCanvas.clipRect(
         colorFilter.paintBounds, ui.ClipOp.intersect, false);
 
-    nWayCanvas.saveLayer(colorFilter.paintBounds, paint);
     measuringCanvas.saveLayer(colorFilter.paintBounds, paint);
     measureChildren(colorFilter);
-    nWayCanvas.restore();
-    nWayCanvas.restore();
     measuringCanvas.restore();
     measuringCanvas.restore();
   }
