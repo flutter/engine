@@ -5,9 +5,13 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.graphics.RectF;
+import android.os.CancellationSignal;
 import android.view.inputmethod.DeleteGesture;
+import android.view.inputmethod.DeleteRangeGesture;
 import android.view.inputmethod.HandwritingGesture;
+import android.view.inputmethod.PreviewableHandwritingGesture;
 import android.view.inputmethod.SelectGesture;
+import android.view.inputmethod.SelectRangeGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
@@ -76,6 +80,28 @@ public class ScribeChannel {
     void startStylusHandwriting();
   }
 
+  public void previewHandwritingGesture(PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
+    System.out.println("justin sending previewHandwritingGesture for gesture: " + gesture);
+    final HashMap<Object, Object> gestureMap = new HashMap<>();
+    if (gesture instanceof DeleteGesture) {
+      gestureMap.put("type", "delete");
+    } else if (gesture instanceof DeleteRangeGesture) {
+      gestureMap.put("type", "deleteRange");
+    } else if (gesture instanceof SelectGesture) {
+      gestureMap.put("type", "select");
+    } else if (gesture instanceof SelectRangeGesture) {
+      gestureMap.put("type", "selectRange");
+    } else {
+      return;
+    }
+
+    // TODO(justinmc): You'll need to provide some kind of API that allows users
+    // to cancel a previewed gesture. Maybe keep ahold of cancellationSignal
+    // here, then provide platform channel methods for cancel, isCanceled,
+    // setOnCancelListener, and throwIfCanceled.
+    channel.invokeMethod("ScribeClient.previewHandwritingGesture", gestureMap);
+  }
+
   public void performHandwritingGesture(HandwritingGesture gesture, MethodChannel.Result result) {
     System.out.println("justin sending performHandwritingGesture for gesture: " + gesture);
 
@@ -103,7 +129,7 @@ public class ScribeChannel {
       gestureMap.put("granularity", deleteGesture.getGranularity());
       gestureMap.put("deletionArea", deletionAreaMap);
     }
-    // TODO(justinmc): All other gestures.
+    // TODO(justinmc): All other gestures. https://developer.android.com/reference/android/view/inputmethod/HandwritingGesture#public-methods
 
     channel.invokeMethod("ScribeClient.performHandwritingGesture", gestureMap, result);
   }
