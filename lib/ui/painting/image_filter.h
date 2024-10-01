@@ -43,7 +43,7 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   ImageFilter();
 
   std::shared_ptr<const DlImageFilter> filter_;
-  bool dynamic_tile_mode_ = false;
+  bool is_dynamic_tile_mode_ = false;
 };
 
 }  // namespace flutter
