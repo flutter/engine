@@ -14,6 +14,11 @@ float IPGaussian(float x, float sigma) {
   return exp(-0.5f * x * x / variance) / (kSqrtTwoPi * sigma);
 }
 
+vec4 IPGaussian(vec4 x, float sigma) {
+  float variance = sigma * sigma;
+  return exp(-0.5f * x * x / variance) / (kSqrtTwoPi * sigma);
+}
+
 /// Gaussian distribution function.
 float16_t IPHalfGaussian(float16_t x, float16_t sigma) {
   float16_t variance = sigma * sigma;
