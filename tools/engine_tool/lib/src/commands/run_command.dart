@@ -132,11 +132,11 @@ See `flutter run --help` for a listing
   Future<String> _selectTargetConfig() async {
     final configName = argResults![configFlag] as String;
     if (configName.isNotEmpty) {
-      return demangleConfigName(environment, configName);
+      return configName;
     }
     final target = await _runTarget;
     if (target == null) {
-      return demangleConfigName(environment, 'host_debug');
+      return 'host_debug';
     }
 
     final result = target.buildConfigFor(_getMode());
@@ -149,8 +149,8 @@ See `flutter run --help` for a listing
     if (!environment.processRunner.processManager.canRun('flutter')) {
       throw FatalError('Cannot find the "flutter" command in your PATH');
     }
-    final configName = await _selectTargetConfig();
 
+    final configName = await _selectTargetConfig();
     final targetBuild = _findTargetBuild(configName);
     if (targetBuild == null) {
       throw FatalError('Could not find build $configName');
@@ -161,22 +161,23 @@ See `flutter run --help` for a listing
       throw FatalError('Could not find host build for $configName');
     }
 
-    final bool useRbe = argResults![rbeFlag] as bool;
+    final useRbe = argResults!.flag(rbeFlag);
     if (useRbe && !environment.hasRbeConfigInTree()) {
-      environment.logger.error('RBE was requested but no RBE config was found');
-      return 1;
+      throw FatalError('RBE was requested but no RBE config was found');
     }
-    final List<String> extraGnArgs = <String>[
+
+    final extraGnArgs = [
       if (!useRbe) '--no-rbe',
     ];
-    final RunTarget? target = await _runTarget;
+    final target = await _runTarget;
     final buildTargetsForShell = target?.buildTargetsForShell ?? [];
 
-    final String dashJ = argResults![concurrencyFlag] as String;
-    final int? concurrency = int.tryParse(dashJ);
-    if (concurrency == null || concurrency < 0) {
-      environment.logger.error('-j must specify a positive integer.');
-      return 1;
+    final dashJ = argResults![concurrencyFlag] as String;
+    final concurrency = int.tryParse(dashJ);
+    if (concurrency == null || concurrency <= 0) {
+      throw FatalError(
+        '--$concurrencyFlag (-j) must specify a positive integer.',
+      );
     }
 
     // First build the host.

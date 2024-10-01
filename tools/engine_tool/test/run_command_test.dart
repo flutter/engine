@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode;
-import 'dart:ffi';
+import 'dart:ffi' show Abi;
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
-import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:engine_tool/src/commands/run_command.dart';
 import 'package:engine_tool/src/environment.dart';
@@ -19,33 +17,9 @@ import 'package:process_fakes/process_fakes.dart';
 import 'package:process_runner/process_runner.dart';
 import 'package:test/test.dart';
 
-import 'fixtures.dart' as fixtures;
+import 'src/test_build_configs.dart';
 
 void main() {
-  final linuxTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/linux_test_config.json',
-    map: jsonDecode(fixtures.testConfig('Linux', Platform.linux))
-        as Map<String, Object?>,
-  );
-
-  final macTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/mac_test_config.json',
-    map: jsonDecode(fixtures.testConfig('Mac-12', Platform.macOS))
-        as Map<String, Object?>,
-  );
-
-  final winTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/win_test_config.json',
-    map: jsonDecode(fixtures.testConfig('Windows-11', Platform.windows))
-        as Map<String, Object?>,
-  );
-
-  final allTestConfigs = <String, BuilderConfig>{
-    'linux_test_config': linuxTestConfig,
-    'mac_test_config': macTestConfig,
-    'win_test_config': winTestConfig,
-  };
-
   late io.Directory tempRoot;
   late TestEngine testEngine;
 
@@ -69,7 +43,7 @@ void main() {
     );
 
     final testEnvironment = Environment(
-      abi: Abi.current(),
+      abi: Abi.macosArm64,
       engine: testEngine,
       logger: Logger.test((_) {}),
       platform: _fakePlatform(Platform.linux),
@@ -110,7 +84,7 @@ void main() {
     setUp(() {
       testLogs = [];
       testEnvironment = Environment(
-        abi: Abi.current(),
+        abi: Abi.linuxX64,
         engine: testEngine,
         logger: Logger.test(testLogs.add),
         platform: _fakePlatform(Platform.linux),
@@ -123,9 +97,19 @@ void main() {
     });
 
     test('fails if a target build could not be found', () async {
+      final builders = TestBuilderConfig();
+      builders.addBuild(
+        name: 'linux/android_debug_arm64',
+        dimension: TestDroneDimension.linux,
+      );
+
       final et = _engineTool(RunCommand(
         environment: testEnvironment,
-        configs: allTestConfigs,
+        configs: {
+          'linux_test_config': builders.buildConfig(
+            path: 'ci/builders/linux_test_config.json',
+          ),
+        },
         flutterTool: flutterTool,
       ));
 
@@ -142,9 +126,20 @@ void main() {
     });
 
     test('fails if a host build could not be found', () async {
+      final builders = TestBuilderConfig();
+      builders.addBuild(
+        name: 'linux/android_debug_arm64',
+        dimension: TestDroneDimension.linux,
+        targetDir: 'android_debug_arm64',
+      );
+
       final et = _engineTool(RunCommand(
         environment: testEnvironment,
-        configs: allTestConfigs,
+        configs: {
+          'linux_test_config': builders.buildConfig(
+            path: 'ci/builders/linux_test_config.json',
+          ),
+        },
         flutterTool: flutterTool,
       ));
 
@@ -154,10 +149,88 @@ void main() {
           isA<FatalError>().having(
             (a) => a.toString(),
             'toString()',
-            contains('Could not find build'),
+            contains('Could not find host build'),
           ),
         ),
       );
+    });
+
+    test('fails if RBE was requested but no RBE config was found', () async {
+      final builders = TestBuilderConfig();
+      builders.addBuild(
+        name: 'linux/android_debug_arm64',
+        dimension: TestDroneDimension.linux,
+        targetDir: 'android_debug_arm64',
+      );
+      builders.addBuild(
+        name: 'linux/host_debug',
+        dimension: TestDroneDimension.linux,
+        targetDir: 'host_debug',
+      );
+
+      final et = _engineTool(RunCommand(
+        environment: testEnvironment,
+        configs: {
+          'linux_test_config': builders.buildConfig(
+            path: 'ci/builders/linux_test_config.json',
+          ),
+        },
+        flutterTool: flutterTool,
+      ));
+
+      expect(
+        () => et.run(['run', '--rbe', '--config=android_debug_arm64']),
+        throwsA(
+          isA<FatalError>().having(
+            (a) => a.toString(),
+            'toString()',
+            contains('RBE was requested but no RBE config was found'),
+          ),
+        ),
+      );
+    });
+
+    group('fails if -j is not a positive integer', () {
+      for (final arg in ['-1', '0', 'foo']) {
+        test('fails if -j is $arg', () async {
+          final builders = TestBuilderConfig();
+          builders.addBuild(
+            name: 'linux/android_debug_arm64',
+            dimension: TestDroneDimension.linux,
+            targetDir: 'android_debug_arm64',
+          );
+          builders.addBuild(
+            name: 'linux/host_debug',
+            dimension: TestDroneDimension.linux,
+            targetDir: 'host_debug',
+          );
+
+          final et = _engineTool(RunCommand(
+            environment: testEnvironment,
+            configs: {
+              'linux_test_config': builders.buildConfig(
+                path: 'ci/builders/linux_test_config.json',
+              ),
+            },
+            flutterTool: flutterTool,
+          ));
+
+          expect(
+            () => et.run([
+              'run',
+              '--config=android_debug_arm64',
+              '--concurrency=$arg',
+            ]),
+            throwsA(
+              isA<FatalError>().having(
+                (a) => a.toString(),
+                'toString()',
+                contains('concurrency (-j) must specify a positive integer'),
+              ),
+            ),
+          );
+        });
+      }
     });
   });
 }
