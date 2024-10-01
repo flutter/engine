@@ -43,7 +43,22 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
     mScribeChannel.setScribeMethodHandler(null);
   }
 
-  /** Starts stylus handwriting input. */
+  /**
+   * Returns true if the InputMethodManager supports Scribe stylus handwriting input.
+   *
+   * <p>Call this before calling startStylusHandwriting to make sure it's available.
+   */
+  @Override
+  public boolean isStylusHandwritingAvailable() {
+    return mImm.isStylusHandwritingAvailable();
+  }
+
+  /**
+   * Starts stylus handwriting input.
+   *
+   * <p>Typically isStylusHandwritingAvailable should be called first to determine whether this is
+   * supported by the IME.
+   */
   @Override
   public void startStylusHandwriting() {
     if (!mImm.isStylusHandwritingAvailable()) {

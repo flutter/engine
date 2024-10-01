@@ -28,13 +28,21 @@ public class ScribeChannel {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (scribeMethodHandler == null) {
-            Log.v(TAG, "No ScribeMethodHandler registered, call not forwarded to spell check API.");
+            Log.v(TAG, "No ScribeMethodHandler registered. Scribe call not handled.");
             return;
           }
           String method = call.method;
           Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
+            case "Scribe.isStylusHandwritingAvailable":
+              try {
+                final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
+                result.success(isAvailable);
+              } catch (IllegalStateException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              break;
             case "Scribe.startStylusHandwriting":
               try {
                 scribeMethodHandler.startStylusHandwriting();
@@ -64,6 +72,12 @@ public class ScribeChannel {
   }
 
   public interface ScribeMethodHandler {
+    /**
+     * Responds to the {@code result} with success and a boolean indicating whether or not stylus
+     * hadnwriting is available.
+     */
+    boolean isStylusHandwritingAvailable();
+
     /**
      * Requests to start Scribe stylus handwriting, which will respond to the {@code result} with
      * either success if handwriting input has started or error otherwise.
