@@ -53,7 +53,8 @@ ImageFilter::~ImageFilter() {}
 
 const std::shared_ptr<const DlImageFilter> ImageFilter::filter(
     DlTileMode mode) const {
-  if (dynamic_tile_mode_) {
+  if (is_dynamic_tile_mode_) {
+    FML_DCHECK(filter_.get() != nullptr);
     const DlBlurImageFilter* blur_filter = filter_->asBlur();
     FML_DCHECK(blur_filter != nullptr);
     if (blur_filter->tile_mode() != mode) {
@@ -68,45 +69,49 @@ void ImageFilter::initBlur(double sigma_x,
                            double sigma_y,
                            int tile_mode_index) {
   DlTileMode tile_mode;
+  bool is_dynamic;
   if (tile_mode_index < 0) {
-    dynamic_tile_mode_ = true;
+    is_dynamic = true;
     tile_mode = DlTileMode::kClamp;
   } else {
-    dynamic_tile_mode_ = false;
+    is_dynamic = false;
     tile_mode = static_cast<DlTileMode>(tile_mode_index);
   }
   filter_ = DlBlurImageFilter::Make(SafeNarrow(sigma_x), SafeNarrow(sigma_y),
                                     tile_mode);
+  // If it was a NOP filter, don't bother processing dynamic substitutions
+  // (They'd fail the FML_DCHECK anyway)
+  is_dynamic_tile_mode_ = is_dynamic && filter_;
 }
 
 void ImageFilter::initDilate(double radius_x, double radius_y) {
-  dynamic_tile_mode_ = false;
+  is_dynamic_tile_mode_ = false;
   filter_ =
       DlDilateImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initErode(double radius_x, double radius_y) {
-  dynamic_tile_mode_ = false;
+  is_dynamic_tile_mode_ = false;
   filter_ =
       DlErodeImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
-  dynamic_tile_mode_ = false;
+  is_dynamic_tile_mode_ = false;
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   filter_ = DlMatrixImageFilter::Make(ToSkMatrix(matrix4), sampling);
 }
 
 void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
   FML_DCHECK(colorFilter);
-  dynamic_tile_mode_ = false;
+  is_dynamic_tile_mode_ = false;
   filter_ = DlColorFilterImageFilter::Make(colorFilter->filter());
 }
 
 void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
   FML_DCHECK(outer && inner);
-  dynamic_tile_mode_ = false;
+  is_dynamic_tile_mode_ = false;
   filter_ = DlComposeImageFilter::Make(outer->filter(DlTileMode::kClamp),
                                        inner->filter(DlTileMode::kClamp));
 }
