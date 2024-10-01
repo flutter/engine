@@ -354,8 +354,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            // TODO(justinmc): scribeChannel could be part of textInputChannel
-            // instead of adding a new parameter here.
             view,
             inputTarget.id,
             textInputChannel,

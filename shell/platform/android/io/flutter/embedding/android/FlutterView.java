@@ -1127,7 +1127,6 @@ public class FlutterView extends FrameLayout
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
-            // TODO(justinmc): This could just be part of TextInputChannel...
             this.flutterEngine.getScribeChannel(),
             this.flutterEngine.getPlatformViewsController());
 
