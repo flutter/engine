@@ -63,7 +63,11 @@ abstract class ViewRasterizer {
     viewEmbedder.frameSize = currentFrameSize;
     final Frame compositorFrame = context.acquireFrame(viewEmbedder);
 
-    compositorFrame.raster(layerTree, ignoreRasterCache: true);
+    compositorFrame.raster(
+      layerTree,
+      currentFrameSize,
+      ignoreRasterCache: true,
+    );
 
     await viewEmbedder.submitFrame();
   }
