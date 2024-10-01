@@ -4,14 +4,6 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
-import android.graphics.RectF;
-import android.os.CancellationSignal;
-import android.view.inputmethod.DeleteGesture;
-import android.view.inputmethod.DeleteRangeGesture;
-import android.view.inputmethod.HandwritingGesture;
-import android.view.inputmethod.PreviewableHandwritingGesture;
-import android.view.inputmethod.SelectGesture;
-import android.view.inputmethod.SelectRangeGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
@@ -19,7 +11,6 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.util.HashMap;
 
 /**
  * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate the
@@ -80,57 +71,6 @@ public class ScribeChannel {
     void startStylusHandwriting();
   }
 
-  public void previewHandwritingGesture(PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
-    System.out.println("justin sending previewHandwritingGesture for gesture: " + gesture);
-    final HashMap<Object, Object> gestureMap = new HashMap<>();
-    if (gesture instanceof DeleteGesture) {
-      gestureMap.put("type", "delete");
-    } else if (gesture instanceof DeleteRangeGesture) {
-      gestureMap.put("type", "deleteRange");
-    } else if (gesture instanceof SelectGesture) {
-      gestureMap.put("type", "select");
-    } else if (gesture instanceof SelectRangeGesture) {
-      gestureMap.put("type", "selectRange");
-    } else {
-      return;
-    }
-
-    // TODO(justinmc): You'll need to provide some kind of API that allows users
-    // to cancel a previewed gesture. Maybe keep ahold of cancellationSignal
-    // here, then provide platform channel methods for cancel, isCanceled,
-    // setOnCancelListener, and throwIfCanceled.
-    channel.invokeMethod("ScribeClient.previewHandwritingGesture", gestureMap);
-  }
-
-  public void performHandwritingGesture(HandwritingGesture gesture, MethodChannel.Result result) {
-    System.out.println("justin sending performHandwritingGesture for gesture: " + gesture);
-
-    final HashMap<Object, Object> gestureMap = new HashMap<>();
-    if (gesture instanceof SelectGesture) {
-      final SelectGesture selectGesture = (SelectGesture) gesture;
-      final HashMap<Object, Object> selectionAreaMap = new HashMap<>();
-      final RectF selectionArea = selectGesture.getSelectionArea();
-      selectionAreaMap.put("bottom", selectionArea.bottom);
-      selectionAreaMap.put("top", selectionArea.top);
-      selectionAreaMap.put("left", selectionArea.left);
-      selectionAreaMap.put("right", selectionArea.right);
-      gestureMap.put("type", "select");
-      gestureMap.put("granularity", selectGesture.getGranularity());
-      gestureMap.put("selectionArea", selectionAreaMap);
-    } else if (gesture instanceof DeleteGesture) {
-      final DeleteGesture deleteGesture = (DeleteGesture) gesture;
-      final HashMap<Object, Object> deletionAreaMap = new HashMap<>();
-      final RectF deletionArea = deleteGesture.getDeletionArea();
-      deletionAreaMap.put("bottom", deletionArea.bottom);
-      deletionAreaMap.put("top", deletionArea.top);
-      deletionAreaMap.put("left", deletionArea.left);
-      deletionAreaMap.put("right", deletionArea.right);
-      gestureMap.put("type", "delete");
-      gestureMap.put("granularity", deleteGesture.getGranularity());
-      gestureMap.put("deletionArea", deletionAreaMap);
-    }
-    // TODO(justinmc): All other gestures. https://developer.android.com/reference/android/view/inputmethod/HandwritingGesture#public-methods
-
-    channel.invokeMethod("ScribeClient.performHandwritingGesture", gestureMap, result);
-  }
+  // TODO(justinmc): Scribe stylus gestures should be supported here.
+  // https://github.com/flutter/flutter/issues/156018
 }
