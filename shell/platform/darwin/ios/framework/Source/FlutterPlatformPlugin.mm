@@ -74,7 +74,9 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
 @property(nonatomic, assign) BOOL enableViewControllerBasedStatusBarAppearance;
 @property(nonatomic, weak) FlutterEngine* engine;
 
-// Used to detect whether this device has live text input ability or not.
+/**
+ * @brief Used to detect whether or not this device supports live text input from the camera.
+ */
 @property(nonatomic, strong) UITextField* textField;
 @end
 
