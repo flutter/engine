@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.graphics.RectF;
+import android.view.inputmethod.DeleteGesture;
+import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.SelectGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,7 +15,6 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -75,17 +76,35 @@ public class ScribeChannel {
     void startStylusHandwriting();
   }
 
-  public void performHandwritingSelectGesture(SelectGesture gesture, MethodChannel.Result result) {
-    System.out.println("justin sending performSelectionGesture for gesture: " + gesture);
-    final HashMap<Object, Object> selectionAreaMap = new HashMap<>();
-    final RectF selectionArea = gesture.getSelectionArea();
-    selectionAreaMap.put("bottom", selectionArea.bottom);
-    selectionAreaMap.put("top", selectionArea.top);
-    selectionAreaMap.put("left", selectionArea.left);
-    selectionAreaMap.put("right", selectionArea.right);
-    // TODO(justinmc): Include granularity.
+  public void performHandwritingGesture(HandwritingGesture gesture, MethodChannel.Result result) {
+    System.out.println("justin sending performHandwritingGesture for gesture: " + gesture);
+
     final HashMap<Object, Object> gestureMap = new HashMap<>();
-    gestureMap.put("selectionArea", selectionAreaMap);
-    channel.invokeMethod("ScribeClient.performSelectionGesture", Arrays.asList(gestureMap), result);
+    if (gesture instanceof SelectGesture) {
+      final SelectGesture selectGesture = (SelectGesture) gesture;
+      final HashMap<Object, Object> selectionAreaMap = new HashMap<>();
+      final RectF selectionArea = selectGesture.getSelectionArea();
+      selectionAreaMap.put("bottom", selectionArea.bottom);
+      selectionAreaMap.put("top", selectionArea.top);
+      selectionAreaMap.put("left", selectionArea.left);
+      selectionAreaMap.put("right", selectionArea.right);
+      gestureMap.put("type", "select");
+      gestureMap.put("granularity", selectGesture.getGranularity());
+      gestureMap.put("selectionArea", selectionAreaMap);
+    } else if (gesture instanceof DeleteGesture) {
+      final DeleteGesture deleteGesture = (DeleteGesture) gesture;
+      final HashMap<Object, Object> deletionAreaMap = new HashMap<>();
+      final RectF deletionArea = deleteGesture.getDeletionArea();
+      deletionAreaMap.put("bottom", deletionArea.bottom);
+      deletionAreaMap.put("top", deletionArea.top);
+      deletionAreaMap.put("left", deletionArea.left);
+      deletionAreaMap.put("right", deletionArea.right);
+      gestureMap.put("type", "delete");
+      gestureMap.put("granularity", deleteGesture.getGranularity());
+      gestureMap.put("deletionArea", deletionAreaMap);
+    }
+    // TODO(justinmc): All other gestures.
+
+    channel.invokeMethod("ScribeClient.performHandwritingGesture", gestureMap, result);
   }
 }

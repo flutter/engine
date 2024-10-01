@@ -31,7 +31,6 @@ import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.PreviewableHandwritingGesture;
-import android.view.inputmethod.SelectGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.inputmethod.InputConnectionCompat;
@@ -286,6 +285,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
   public boolean previewHandwritingGesture(
       PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
     System.out.println("justin previewHandwritingGesture gesture: " + gesture);
+    // TODO(justinmc): Send via another methodchannel call.
     return true;
   }
 
@@ -294,29 +294,25 @@ public class InputConnectionAdaptor extends BaseInputConnection
       HandwritingGesture gesture, Executor executor, IntConsumer consumer) {
     System.out.println("justin performHandwritingGesture gesture: " + gesture);
 
-    if (gesture instanceof SelectGesture) {
-      final MethodChannel.Result result =
-          new MethodChannel.Result() {
-            @Override
-            public void success(Object result) {
-              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_SUCCESS));
-            }
+    final MethodChannel.Result result =
+        new MethodChannel.Result() {
+          @Override
+          public void success(Object result) {
+            executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_SUCCESS));
+          }
 
-            @Override
-            public void error(String errorCode, String errorMessage, Object errorDetails) {
-              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_FAILED));
-            }
+          @Override
+          public void error(String errorCode, String errorMessage, Object errorDetails) {
+            executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_FAILED));
+          }
 
-            @Override
-            public void notImplemented() {
-              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
-            }
-          };
-      scribeChannel.performHandwritingSelectGesture((SelectGesture) gesture, result);
-      return;
-    }
+          @Override
+          public void notImplemented() {
+            executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
+          }
+        };
 
-    executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
+    scribeChannel.performHandwritingGesture((HandwritingGesture) gesture, result);
     /*
     InputConnection#HANDWRITING_GESTURE_RESULT_SUCCESS
     InputConnection#HANDWRITING_GESTURE_RESULT_FAILED
