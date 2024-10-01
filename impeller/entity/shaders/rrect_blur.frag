@@ -84,17 +84,18 @@ float RRectBlur(vec2 sample_position, vec2 half_size) {
   float interval = (end_y - begin_y) / kSampleCount;
 
   // Sample the X blur kSampleCount times, weighted by the Gaussian function.
+  vec4 ys = vec4(0.5, 1.5, 2.5, 3.5) * interval + begin_y;
   vec4 blurx = vec4(
-    RRectBlurX(vec2(sample_position.x, sample_position.y - (begin_y + interval * 0.5)), half_size),
-    RRectBlurX(vec2(sample_position.x, sample_position.y - (begin_y + interval * 1.5)), half_size),
-    RRectBlurX(vec2(sample_position.x, sample_position.y - (begin_y + interval * 2.5)), half_size),
-    RRectBlurX(vec2(sample_position.x, sample_position.y - (begin_y + interval * 3.5)), half_size)
+    RRectBlurX(vec2(sample_position.x, sample_position.y - ys[0]), half_size),
+    RRectBlurX(vec2(sample_position.x, sample_position.y - ys[1]), half_size),
+    RRectBlurX(vec2(sample_position.x, sample_position.y - ys[2]), half_size),
+    RRectBlurX(vec2(sample_position.x, sample_position.y - ys[3]), half_size)
   );
   vec4 gaussian_y = vec4(
-    IPGaussian(begin_y + interval * 0.5, float(frag_info.blur_sigma)),
-    IPGaussian(begin_y + interval * 1.5, float(frag_info.blur_sigma)),
-    IPGaussian(begin_y + interval * 2.5, float(frag_info.blur_sigma)),
-    IPGaussian(begin_y + interval * 3.5, float(frag_info.blur_sigma))
+    IPGaussian(ys[0], float(frag_info.blur_sigma)),
+    IPGaussian(ys[1], float(frag_info.blur_sigma)),
+    IPGaussian(ys[2], float(frag_info.blur_sigma)),
+    IPGaussian(ys[3], float(frag_info.blur_sigma))
   );
   return dot(blurx, gaussian_y * interval);
 }
