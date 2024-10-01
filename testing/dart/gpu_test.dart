@@ -534,4 +534,3 @@ void main() async {
     await comparer.addGoldenImage(image, 'flutter_gpu_test_hexgon_line_strip.png');
   }, skip: !impellerEnabled);
 }
-
