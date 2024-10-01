@@ -9,6 +9,9 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
+#include "flutter/third_party/txt/src/txt/font_style.h"
+#include "flutter/third_party/txt/src/txt/font_weight.h"
+#include "flutter/third_party/txt/src/txt/paragraph_style.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
@@ -416,6 +419,68 @@ constexpr flutter::DlColor ToDisplayListType(ImpellerColor color) {
                           color.blue,                           //
                           ToDisplayListType(color.color_space)  //
   );
+}
+
+constexpr txt::FontWeight ToTxtType(ImpellerFontWeight weight) {
+  switch (weight) {
+    case ImpellerFontWeight100:
+      return txt::FontWeight::w100;
+    case ImpellerFontWeight200:
+      return txt::FontWeight::w200;
+    case ImpellerFontWeight300:
+      return txt::FontWeight::w300;
+    case ImpellerFontWeight400:
+      return txt::FontWeight::w400;
+    case ImpellerFontWeight500:
+      return txt::FontWeight::w500;
+    case ImpellerFontWeight600:
+      return txt::FontWeight::w600;
+    case ImpellerFontWeight700:
+      return txt::FontWeight::w700;
+    case ImpellerFontWeight800:
+      return txt::FontWeight::w800;
+    case ImpellerFontWeight900:
+      return txt::FontWeight::w900;
+  }
+  return txt::FontWeight::w400;
+}
+
+constexpr txt::FontStyle ToTxtType(ImpellerFontStyle style) {
+  switch (style) {
+    case ImpellerFontStyleNormal:
+      return txt::FontStyle::normal;
+    case ImpellerFontStyleItalic:
+      return txt::FontStyle::italic;
+  }
+  return txt::FontStyle::normal;
+}
+
+constexpr txt::TextAlign ToTxtType(ImpellerTextAlignment align) {
+  switch (align) {
+    case ImpellerTextAlignmentLeft:
+      return txt::TextAlign::left;
+    case ImpellerTextAlignmentRight:
+      return txt::TextAlign::right;
+    case ImpellerTextAlignmentCenter:
+      return txt::TextAlign::center;
+    case ImpellerTextAlignmentJustify:
+      return txt::TextAlign::justify;
+    case ImpellerTextAlignmentStart:
+      return txt::TextAlign::start;
+    case ImpellerTextAlignmentEnd:
+      return txt::TextAlign::end;
+  }
+  return txt::TextAlign::left;
+}
+
+constexpr txt::TextDirection ToTxtType(ImpellerTextDirection direction) {
+  switch (direction) {
+    case ImpellerTextDirectionRTL:
+      return txt::TextDirection::rtl;
+    case ImpellerTextDirectionLTR:
+      return txt::TextDirection::ltr;
+  }
+  return txt::TextDirection::ltr;
 }
 
 }  // namespace impeller::interop
