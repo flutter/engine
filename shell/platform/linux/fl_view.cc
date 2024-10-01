@@ -902,6 +902,11 @@ void fl_view_redraw(FlView* self) {
   }
 }
 
+void fl_view_make_current(FlView* self) {
+  g_return_if_fail(FL_IS_VIEW(self));
+  gtk_gl_area_make_current(self->gl_area);
+}
+
 GHashTable* fl_view_get_keyboard_state(FlView* self) {
   g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
   return fl_keyboard_handler_get_pressed_state(self->keyboard_handler);
