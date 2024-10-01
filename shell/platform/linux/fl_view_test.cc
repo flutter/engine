@@ -101,12 +101,7 @@ TEST(FlViewTest, SecondaryViewError) {
   embedder_api->AddView = MOCK_ENGINE_PROC(
       AddView, ([&view_id](auto engine, const FlutterAddViewInfo* info) {
         view_id = info->view_id;
-        FlutterAddViewResult result = {
-            .struct_size = sizeof(FlutterAddViewResult),
-            .added = false,
-            .user_data = info->user_data};
-        info->add_view_callback(&result);
-        return kSuccess;
+        return kInvalidArguments;
       }));
 
   FlView* secondary_view = fl_view_new_for_engine(engine);
