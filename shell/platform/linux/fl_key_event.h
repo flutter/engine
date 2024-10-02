@@ -68,6 +68,4 @@ uint64_t fl_key_event_hash(FlKeyEvent* event);
  */
 void fl_key_event_dispose(FlKeyEvent* event);
 
-FlKeyEvent* fl_key_event_clone(const FlKeyEvent* source);
-
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_
