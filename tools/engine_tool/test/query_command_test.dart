@@ -22,7 +22,6 @@ void main() {
       // Intentionally use the default parameter to make it explicit.
       // ignore: avoid_redundant_argument_values
       abi: Abi.linuxX64,
-      cannedProcesses: [],
     );
     addTearDown(testEnvironment.cleanup);
 
@@ -125,7 +124,6 @@ void main() {
       // Intentionally use the default parameter to make it explicit.
       // ignore: avoid_redundant_argument_values
       abi: Abi.linuxX64,
-      cannedProcesses: [],
     );
     addTearDown(testEnvironment.cleanup);
 
@@ -199,9 +197,7 @@ void main() {
   });
 
   test('query command with --all returns all builds.', () async {
-    final testEnvironment = TestEnvironment.withTestEngine(
-      cannedProcesses: [],
-    );
+    final testEnvironment = TestEnvironment.withTestEngine();
     addTearDown(testEnvironment.cleanup);
 
     final linuxBuilders1 = TestBuilderConfig();
