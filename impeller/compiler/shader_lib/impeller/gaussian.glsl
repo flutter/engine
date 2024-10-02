@@ -63,7 +63,7 @@ vec2 IPVec2FastGaussianIntegral(vec2 x, float sigma) {
 }
 
 /// Equivalent to `IPVec2FastGaussianIntegral(vec2 x, float sigma)` but operated
-/// 2x, from x.x to x.y and from x.z to x.w.
+/// 4x instead of 2x.
 vec4 IPVec2FastGaussianIntegral(vec4 x, float sigma) {
   return 1.0 / (1.0 + exp(-kSqrtThree / sigma * x));
 }
