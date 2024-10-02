@@ -75,8 +75,8 @@ vec4 RRectBlurX(float sample_position_x,
   // function at (X + rrect_distance) and integral.x contains the evaluation
   // of it at (X - rrect_distance). Subtracting the two produces the
   // integral result over the range from one to the other.
-  return vec4(integral_01.y - integral_01.x, integral_01.w - integral_01.z,
-              integral_23.y - integral_23.x, integral_23.w - integral_23.z);
+  return vec4(integral_01.y, integral_01.w, integral_23.y, integral_23.w) -
+         vec4(integral_01.x, integral_01.z, integral_23.x, integral_23.z);
 }
 
 float RRectBlur(vec2 sample_position, vec2 half_size) {
