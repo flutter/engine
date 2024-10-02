@@ -88,7 +88,6 @@ public class ScribePluginTest {
   }
 
   // TODO(justinmc): Maybe move the other tests to a ScribeChannel test file?
-  // TODO(justinmc): What happens when at another API level?
   @Config(sdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
