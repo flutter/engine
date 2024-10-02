@@ -232,7 +232,7 @@ class MeasureVisitor extends LayerVisitor {
 
   /// A Canvas which records the scene operations. Used to measure pictures
   /// in the scene.
-  late CkCanvas measuringCanvas;
+  late final CkCanvas measuringCanvas;
 
   /// A compositor for embedded HTML views.
   final HtmlViewEmbedder viewEmbedder;
