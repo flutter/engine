@@ -94,10 +94,10 @@ void debug_format_layout_data(std::string& debug_layout_data,
 
 }  // namespace
 
-static uint64_t get_logical_key_from_layout(const FlKeyEvent* event,
+static uint64_t get_logical_key_from_layout(FlKeyEvent* event,
                                             const DerivedLayout& layout) {
-  guint8 group = event->group;
-  guint16 keycode = event->keycode;
+  guint8 group = fl_key_event_get_group(event);
+  guint16 keycode = fl_key_event_get_keycode(event);
   if (keycode >= kLayoutSize) {
     return 0;
   }
@@ -398,11 +398,11 @@ static uint16_t convert_key_to_char(FlKeyboardViewDelegate* view_delegate,
 // Make sure that Flutter has derived the layout for the group of the event,
 // if the event contains a goal keycode.
 static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
-  guint8 group = event->group;
+  guint8 group = fl_key_event_get_group(event);
   if (self->derived_layout->find(group) != self->derived_layout->end()) {
     return;
   }
-  if (self->keycode_to_goals->find(event->keycode) ==
+  if (self->keycode_to_goals->find(fl_key_event_get_keycode(event)) ==
       self->keycode_to_goals->end()) {
     return;
   }

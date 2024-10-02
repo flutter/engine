@@ -359,10 +359,11 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->redispatch_event = [](FlKeyboardViewDelegate* view_delegate,
                                std::unique_ptr<FlKeyEvent> in_event) {
     FlKeyEvent* event = in_event.release();
-    GdkEventType event_type = gdk_event_get_event_type(event->origin);
+    GdkEventType event_type =
+        gdk_event_get_event_type(fl_key_event_get_origin(event));
     g_return_if_fail(event_type == GDK_KEY_PRESS ||
                      event_type == GDK_KEY_RELEASE);
-    gdk_event_put(event->origin);
+    gdk_event_put(fl_key_event_get_origin(event));
     fl_key_event_dispose(event);
   };
 

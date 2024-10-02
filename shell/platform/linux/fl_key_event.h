@@ -49,6 +49,20 @@ typedef struct _FlKeyEvent {
  */
 FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* event);
 
+guint32 fl_key_event_get_time(FlKeyEvent* event);
+
+gboolean fl_key_event_get_is_press(FlKeyEvent* event);
+
+guint16 fl_key_event_get_keycode(FlKeyEvent* event);
+
+guint fl_key_event_get_keyval(FlKeyEvent* event);
+
+GdkModifierType fl_key_event_get_state(FlKeyEvent* event);
+
+guint8 fl_key_event_get_group(FlKeyEvent* event);
+
+GdkEvent* fl_key_event_get_origin(FlKeyEvent* event);
+
 /**
  * fl_key_event_hash:
  * @event: an #FlKeyEvent.
