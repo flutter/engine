@@ -1,11 +1,17 @@
 package io.flutter.plugin.editing;
 
+import static io.flutter.Build.API_LEVELS;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -17,6 +23,7 @@ import java.nio.ByteBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
 public class ScribePluginTest {
@@ -58,7 +65,7 @@ public class ScribePluginTest {
   @SuppressWarnings("deprecation")
   // setMessageHandler is deprecated.
   @Test
-  public void respondsToisStylusHandwritingAvailable() {
+  public void respondsToIsStylusHandwritingAvailable() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
         ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
     DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
@@ -78,5 +85,22 @@ public class ScribePluginTest {
     verify(mockHandler).isStylusHandwritingAvailable();
 
     // TODO(justinmc): Ensure mImm.isStylusHandwritingAvailable was called.
+  }
+
+  // TODO(justinmc): Maybe move the other tests to a ScribeChannel test file?
+  // TODO(justinmc): What happens when at another API level?
+  @Config(sdk = API_LEVELS.API_34)
+  @TargetApi(API_LEVELS.API_34)
+  @Test
+  public void scribePluginIsStylusHandwritingAvailable() {
+    ScribeChannel mockScribeChannel = mock(ScribeChannel.class);
+    View testView = new View(ctx);
+    InputMethodManager mockImm = mock(InputMethodManager.class);
+    when(mockImm.isStylusHandwritingAvailable()).thenReturn(true);
+    ScribePlugin scribePlugin = new ScribePlugin(testView, mockImm, mockScribeChannel);
+
+    assertEquals(scribePlugin.isStylusHandwritingAvailable(), true);
+
+    verify(mockImm).isStylusHandwritingAvailable();
   }
 }
