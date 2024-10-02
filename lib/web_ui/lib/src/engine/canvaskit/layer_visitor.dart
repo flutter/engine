@@ -228,7 +228,7 @@ class MeasureVisitor extends LayerVisitor {
   List<CkManagedSkImageFilterConvertible> imageFilterStack =
       <CkManagedSkImageFilterConvertible>[];
 
-  CkPictureRecorder measuringRecorder;
+  final CkPictureRecorder measuringRecorder;
 
   /// A Canvas which records the scene operations. Used to measure pictures
   /// in the scene.
