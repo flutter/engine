@@ -299,60 +299,6 @@ struct _FlKeyboardHandler {
 
 G_DEFINE_TYPE(FlKeyboardHandler, fl_keyboard_handler, G_TYPE_OBJECT);
 
-static void fl_keyboard_handler_dispose(GObject* object);
-
-static void fl_keyboard_handler_class_init(FlKeyboardHandlerClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_handler_dispose;
-}
-
-static void fl_keyboard_handler_init(FlKeyboardHandler* self) {
-  self->derived_layout = std::make_unique<DerivedLayout>();
-
-  self->keycode_to_goals =
-      std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
-  self->logical_to_mandatory_goals =
-      std::make_unique<std::map<uint64_t, const LayoutGoal*>>();
-  for (const LayoutGoal& goal : layout_goals) {
-    (*self->keycode_to_goals)[goal.keycode] = &goal;
-    if (goal.mandatory) {
-      (*self->logical_to_mandatory_goals)[goal.logical_key] = &goal;
-    }
-  }
-
-  self->responder_list = g_ptr_array_new_with_free_func(g_object_unref);
-
-  self->pending_responds = g_ptr_array_new();
-  self->pending_redispatches = g_ptr_array_new_with_free_func(g_object_unref);
-
-  self->last_sequence_id = 1;
-}
-
-static void fl_keyboard_handler_dispose(GObject* object) {
-  FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(object);
-
-  if (self->view_delegate != nullptr) {
-    fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
-                                                         nullptr);
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->view_delegate),
-        reinterpret_cast<gpointer*>(&(self->view_delegate)));
-    self->view_delegate = nullptr;
-  }
-
-  self->derived_layout.reset();
-  self->keycode_to_goals.reset();
-  self->logical_to_mandatory_goals.reset();
-
-  g_ptr_array_free(self->responder_list, TRUE);
-  g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
-  g_ptr_array_free(self->pending_responds, TRUE);
-  g_ptr_array_free(self->pending_redispatches, TRUE);
-
-  G_OBJECT_CLASS(fl_keyboard_handler_parent_class)->dispose(object);
-}
-
-/* Implement FlKeyboardHandler */
-
 // This is an exact copy of g_ptr_array_find_with_equal_func.  Somehow CI
 // reports that can not find symbol g_ptr_array_find_with_equal_func, despite
 // the fact that it runs well locally.
@@ -582,6 +528,67 @@ static void method_call_handler(FlMethodChannel* channel,
   }
 }
 
+// The loop body to dispatch an event to a responder.
+static void dispatch_to_responder(gpointer responder_data,
+                                  gpointer foreach_data_ptr) {
+  DispatchToResponderLoopContext* context =
+      reinterpret_cast<DispatchToResponderLoopContext*>(foreach_data_ptr);
+  FlKeyResponder* responder = FL_KEY_RESPONDER(responder_data);
+  fl_key_responder_handle_event(
+      responder, context->event, responder_handle_event_callback,
+      context->user_data, context->specified_logical_key);
+}
+
+static void fl_keyboard_handler_dispose(GObject* object) {
+  FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(object);
+
+  if (self->view_delegate != nullptr) {
+    fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
+                                                         nullptr);
+    g_object_remove_weak_pointer(
+        G_OBJECT(self->view_delegate),
+        reinterpret_cast<gpointer*>(&(self->view_delegate)));
+    self->view_delegate = nullptr;
+  }
+
+  self->derived_layout.reset();
+  self->keycode_to_goals.reset();
+  self->logical_to_mandatory_goals.reset();
+
+  g_ptr_array_free(self->responder_list, TRUE);
+  g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
+  g_ptr_array_free(self->pending_responds, TRUE);
+  g_ptr_array_free(self->pending_redispatches, TRUE);
+
+  G_OBJECT_CLASS(fl_keyboard_handler_parent_class)->dispose(object);
+}
+
+static void fl_keyboard_handler_class_init(FlKeyboardHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_handler_dispose;
+}
+
+static void fl_keyboard_handler_init(FlKeyboardHandler* self) {
+  self->derived_layout = std::make_unique<DerivedLayout>();
+
+  self->keycode_to_goals =
+      std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
+  self->logical_to_mandatory_goals =
+      std::make_unique<std::map<uint64_t, const LayoutGoal*>>();
+  for (const LayoutGoal& goal : layout_goals) {
+    (*self->keycode_to_goals)[goal.keycode] = &goal;
+    if (goal.mandatory) {
+      (*self->logical_to_mandatory_goals)[goal.logical_key] = &goal;
+    }
+  }
+
+  self->responder_list = g_ptr_array_new_with_free_func(g_object_unref);
+
+  self->pending_responds = g_ptr_array_new();
+  self->pending_redispatches = g_ptr_array_new_with_free_func(g_object_unref);
+
+  self->last_sequence_id = 1;
+}
+
 FlKeyboardHandler* fl_keyboard_handler_new(
     FlBinaryMessenger* messenger,
     FlKeyboardViewDelegate* view_delegate) {
@@ -622,17 +629,6 @@ FlKeyboardHandler* fl_keyboard_handler_new(
   fl_method_channel_set_method_call_handler(self->channel, method_call_handler,
                                             self, nullptr);
   return self;
-}
-
-// The loop body to dispatch an event to a responder.
-static void dispatch_to_responder(gpointer responder_data,
-                                  gpointer foreach_data_ptr) {
-  DispatchToResponderLoopContext* context =
-      reinterpret_cast<DispatchToResponderLoopContext*>(foreach_data_ptr);
-  FlKeyResponder* responder = FL_KEY_RESPONDER(responder_data);
-  fl_key_responder_handle_event(
-      responder, context->event, responder_handle_event_callback,
-      context->user_data, context->specified_logical_key);
 }
 
 gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
