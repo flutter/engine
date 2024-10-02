@@ -210,6 +210,8 @@
             ]
         },
         {
+            "archives": [
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -234,9 +236,11 @@
             "ninja": {
                 "config": "ci/host_debug",
                 "targets": [
-                    "default",
+                    "default"
                 ]
             },
+            "tests": [
+            ]
         }
     ],
     "generators": {
