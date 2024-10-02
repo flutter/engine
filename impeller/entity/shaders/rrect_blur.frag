@@ -72,12 +72,11 @@ vec4 RRectBlurX(float sample_position_x,
   // of it at (X - rrect_distance). Subtracting the two produces the
   // integral result over the range from one to the other.
   result.xy = integral.yw - integral.xz;
-
   integral = IPVec4FastGaussianIntegral(
       float(sample_position_x) + vec4(-rrect_distance[2], rrect_distance[2],
                                       -rrect_distance[3], rrect_distance[3]),
       float(frag_info.blur_sigma));
-  result.wz = integral.yw - integral.xz;
+  result.zw = integral.yw - integral.xz;
 
   return result;
 }
