@@ -487,7 +487,7 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
 }
 
 // Returns the keyboard pressed state.
-FlMethodResponse* get_keyboard_state(FlKeyboardHandler* self) {
+static FlMethodResponse* get_keyboard_state(FlKeyboardHandler* self) {
   g_autoptr(FlValue) result = fl_value_new_map();
 
   GHashTable* pressing_records =
