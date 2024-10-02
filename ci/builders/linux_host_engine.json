@@ -210,8 +210,6 @@
             ]
         },
         {
-            "archives": [
-            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -239,8 +237,6 @@
                     "default",
                 ]
             },
-            "tests": [
-            ]
         }
     ],
     "generators": {
