@@ -63,7 +63,7 @@ vec4 RRectBlurX(float sample_position_x,
   // Now we integrate the Gaussian over the range of the relative positions
   // of the left and right sides of the rrect relative to the sampling
   // X coordinate.
-  vec4 integral = IPVec2FastGaussianIntegral(
+  vec4 integral = IPVec4FastGaussianIntegral(
       float(sample_position_x) + vec4(-rrect_distance[0], rrect_distance[0],
                                       -rrect_distance[1], rrect_distance[1]),
       float(frag_info.blur_sigma));
@@ -73,7 +73,7 @@ vec4 RRectBlurX(float sample_position_x,
   // integral result over the range from one to the other.
   result.xy = integral.yw - integral.xz;
 
-  integral = IPVec2FastGaussianIntegral(
+  integral = IPVec4FastGaussianIntegral(
       float(sample_position_x) + vec4(-rrect_distance[2], rrect_distance[2],
                                       -rrect_distance[3], rrect_distance[3]),
       float(frag_info.blur_sigma));
