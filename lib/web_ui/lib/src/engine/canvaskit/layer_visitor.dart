@@ -219,8 +219,7 @@ class MeasureVisitor extends LayerVisitor {
   MeasureVisitor(
     BitmapSize size,
     this.viewEmbedder,
-  ) {
-    measuringRecorder = CkPictureRecorder();
+  ) : measuringRecorder = CkPictureRecorder() {
     measuringCanvas =
         measuringRecorder.beginRecording(ui.Offset.zero & size.toSize());
   }
@@ -229,7 +228,7 @@ class MeasureVisitor extends LayerVisitor {
   List<CkManagedSkImageFilterConvertible> imageFilterStack =
       <CkManagedSkImageFilterConvertible>[];
 
-  late CkPictureRecorder measuringRecorder;
+  CkPictureRecorder measuringRecorder;
 
   /// A Canvas which records the scene operations. Used to measure pictures
   /// in the scene.
@@ -238,8 +237,10 @@ class MeasureVisitor extends LayerVisitor {
   /// A compositor for embedded HTML views.
   final HtmlViewEmbedder viewEmbedder;
 
+  /// Clean up the measuring picture recorder and the picture it recorded.
   void dispose() {
-    measuringRecorder.endRecording();
+    final CkPicture picture = measuringRecorder.endRecording();
+    picture.dispose();
   }
 
   /// Measures all child layers that need painting.
