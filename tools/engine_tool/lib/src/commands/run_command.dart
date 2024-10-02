@@ -174,7 +174,7 @@ See `flutter run --help` for a listing
 
     final dashJ = argResults![concurrencyFlag] as String;
     final concurrency = int.tryParse(dashJ);
-    if (concurrency == null || concurrency <= 0) {
+    if (concurrency == null || concurrency < 0) {
       throw FatalError(
         '--$concurrencyFlag (-j) must specify a positive integer.',
       );
@@ -189,7 +189,7 @@ See `flutter run --help` for a listing
       enableRbe: useRbe,
     );
     if (r != 0) {
-      return r;
+      throw FatalError('Failed to build host (${hostBuild.name})');
     }
 
     // Now build the target if it isn't the same.
@@ -203,7 +203,7 @@ See `flutter run --help` for a listing
         targets: buildTargetsForShell,
       );
       if (r != 0) {
-        return r;
+        throw FatalError('Failed to build target (${targetBuild.name})');
       }
     }
 
