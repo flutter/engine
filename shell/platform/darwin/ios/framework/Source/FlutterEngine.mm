@@ -42,6 +42,8 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+FLUTTER_ASSERT_ARC
+
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
@@ -88,7 +90,7 @@ NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
-@property(nonatomic, assign) FlutterEngine* flutterEngine;
+@property(nonatomic, weak) FlutterEngine* flutterEngine;
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;
 @end
 
@@ -104,7 +106,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
-@property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+@property(nonatomic, strong) id<NSObject> flutterViewControllerWillDeallocObserver;
 
 #pragma mark - Embedder API properties
 
@@ -118,7 +120,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
-  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
@@ -191,12 +192,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
-  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(self);
-
   if (project == nil) {
     _dartProject.reset([[FlutterDartProject alloc] init]);
   } else {
-    _dartProject.reset([project retain]);
+    _dartProject.reset(project);
   }
 
   _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
@@ -212,7 +211,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         @"Xcode.\n\nTo launch in debug mode in iOS 14+, run flutter run from Flutter tools, run "
         @"from an IDE with a Flutter IDE plugin or run the iOS project from Xcode.\nAlternatively "
         @"profile and release mode apps can be launched from the home screen.");
-    [self release];
     return nil;
   }
 
@@ -292,44 +290,25 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                       object:self
                                                     userInfo:nil];
 
-  // It will be destroyed and invalidate its weak pointers
-  // before any other members are destroyed.
-  _weakFactory.reset();
-
   /// nil out weak references.
   [_registrars
       enumerateKeysAndObjectsUsingBlock:^(id key, FlutterEngineRegistrar* registrar, BOOL* stop) {
         registrar.flutterEngine = nil;
       }];
 
-  [_labelPrefix release];
-  [_initialRoute release];
-  [_pluginPublications release];
-  [_registrars release];
   _binaryMessenger.parent = nil;
   _textureRegistry.parent = nil;
-  [_binaryMessenger release];
-  [_textureRegistry release];
-  _textureRegistry = nil;
-  [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   if (_flutterViewControllerWillDeallocObserver) {
     [center removeObserver:_flutterViewControllerWillDeallocObserver];
-    [_flutterViewControllerWillDeallocObserver release];
   }
   [center removeObserver:self];
-
-  [super dealloc];
 }
 
 - (flutter::Shell&)shell {
   FML_DCHECK(_shell);
   return *_shell;
-}
-
-- (fml::WeakNSObject<FlutterEngine>)getWeakNSObject {
-  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
@@ -432,7 +411,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _textInputPlugin.get().viewController = viewController;
 
   if (viewController) {
-    __block FlutterEngine* blockSelf = self;
+    __weak __block FlutterEngine* blockSelf = self;
     self.flutterViewControllerWillDeallocObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
                                                           object:viewController
@@ -455,9 +434,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     if (_flutterViewControllerWillDeallocObserver) {
       [[NSNotificationCenter defaultCenter]
           removeObserver:_flutterViewControllerWillDeallocObserver];
-      [_flutterViewControllerWillDeallocObserver release];
     }
-    _flutterViewControllerWillDeallocObserver = [observer retain];
+    _flutterViewControllerWillDeallocObserver = observer;
   }
 }
 
@@ -571,9 +549,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)startProfiler {
   FML_DCHECK(!_threadHost->name_prefix.empty());
   _profiler_metrics = std::make_shared<flutter::ProfilerMetricsIOS>();
+  __weak FlutterEngine* weakSelf = self;
   _profiler = std::make_shared<flutter::SamplingProfiler>(
       _threadHost->name_prefix.c_str(), _threadHost->profiler_thread->GetTaskRunner(),
-      [self]() { return self->_profiler_metrics->GenerateSample(); }, kNumProfilerSamplesPerSec);
+      [weakSelf]() {
+        FlutterEngine* strongSelf = weakSelf;
+        return strongSelf ? strongSelf->_profiler_metrics->GenerateSample()
+                          : flutter::ProfileSample{};
+      },
+      kNumProfilerSamplesPerSec);
   _profiler->Start();
 }
 
@@ -583,11 +567,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)setUpChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
-  fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
+  __weak FlutterEngine* weakSelf = self;
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             if (weakSelf) {
-                              weakSelf.get().isolateId =
+                              weakSelf.isolateId =
                                   [[FlutterStringCodec sharedInstance] decode:message];
                             }
                           }];
@@ -605,7 +589,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if ([_initialRoute length] > 0) {
     // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
     [_navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
-    [_initialRoute release];
     _initialRoute = nil;
   }
 
@@ -673,7 +656,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   _undoManagerPlugin.reset(undoManagerPlugin);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakNSObject]]);
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:self]);
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
@@ -687,15 +670,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   [_screenshotChannel.get()
       setMethodCallHandler:^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
-        if (!(weakSelf.get() && weakSelf.get()->_shell && weakSelf.get()->_shell->IsSetup())) {
+        FlutterEngine* strongSelf = weakSelf;
+        if (!(strongSelf && strongSelf->_shell && strongSelf->_shell->IsSetup())) {
           return result([FlutterError
               errorWithCode:@"invalid_state"
                     message:@"Requesting screenshot while engine is not running."
                     details:nil]);
         }
         flutter::Rasterizer::Screenshot screenshot =
-            [weakSelf.get() screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData
-                          base64Encode:NO];
+            [weakSelf screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData base64Encode:NO];
         if (!screenshot.data) {
           return result([FlutterError errorWithCode:@"failure"
                                             message:@"Unable to get screenshot."
@@ -718,11 +701,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [platformPlugin handleMethodCall:call result:result];
     }];
 
-    fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
+    __weak FlutterEngine* weakSelf = self;
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
-            weakSelf.get().platformViewsController->OnMethodCall(call, result);
+            weakSelf.platformViewsController->OnMethodCall(call, result);
           }
         }];
 
@@ -862,16 +845,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   _threadHost = std::make_shared<flutter::ThreadHost>();
   *_threadHost = MakeThreadHost(threadLabel, settings);
 
-  // Lambda captures by pointers to ObjC objects are fine here because the
-  // create call is synchronous.
+  __weak FlutterEngine* weakSelf = self;
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
-      [self](flutter::Shell& shell) {
-        [self recreatePlatformViewController];
-        self->_platformViewsController->SetTaskRunner(
+      [weakSelf](flutter::Shell& shell) {
+        FlutterEngine* strongSelf = weakSelf;
+        [strongSelf recreatePlatformViewController];
+        strongSelf->_platformViewsController->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners(),
-            shell.GetConcurrentWorkerTaskRunner(), shell.GetIsGpuDisabledSyncSwitch());
+            shell, strongSelf->_renderingApi, strongSelf->_platformViewsController,
+            shell.GetTaskRunners(), shell.GetConcurrentWorkerTaskRunner(),
+            shell.GetIsGpuDisabledSyncSwitch());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -1244,8 +1228,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // Discard the previous messenger and keep the new one.
   if (binaryMessenger != _binaryMessenger) {
     _binaryMessenger.parent = nil;
-    [_binaryMessenger release];
-    _binaryMessenger = [binaryMessenger retain];
+    _binaryMessenger = binaryMessenger;
   }
 }
 
@@ -1350,7 +1333,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   FlutterEngineRegistrar* result = [[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey
                                                                     flutterEngine:self];
   self.registrars[pluginKey] = result;
-  return [result autorelease];
+  return result;
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -1406,10 +1389,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
   // Get and pass the user's preferred locale list to dart:ui.
-  NSMutableArray<NSString*>* localeData = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray<NSString*>* localeData = [[NSMutableArray alloc] init];
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
   for (NSString* localeID in preferredLocales) {
-    NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+    NSLocale* locale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
     NSString* languageCode = [locale objectForKey:NSLocaleLanguageCode];
     NSString* countryCode = [locale objectForKey:NSLocaleCountryCode];
     NSString* scriptCode = [locale objectForKey:NSLocaleScriptCode];
@@ -1489,7 +1472,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler_metrics = _profiler_metrics;
   result->_isGpuDisabled = _isGpuDisabled;
   [result setUpShell:std::move(shell) withVMServicePublication:NO];
-  return [result autorelease];
+  return result;
 }
 
 - (const flutter::ThreadHost&)threadHost {
@@ -1516,11 +1499,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   _pluginKey = [pluginKey copy];
   _flutterEngine = flutterEngine;
   return self;
-}
-
-- (void)dealloc {
-  [_pluginKey release];
-  [super dealloc];
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
