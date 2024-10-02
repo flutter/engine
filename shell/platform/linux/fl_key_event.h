@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_
 
+#include <stdint.h>
+
 #include <gdk/gdk.h>
 
 /**
@@ -46,6 +48,17 @@ typedef struct _FlKeyEvent {
  * Returns: a new #FlKeyEvent. Must be freed with #fl_key_event_dispose.
  */
 FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* event);
+
+/**
+ * fl_key_event_hash:
+ * @event: an #FlKeyEvent.
+ *
+ * Calculates a unique ID for a given FlKeyEvent object to use for
+ * identification of responses from the framework.
+ *
+ * Returns: a hash code.
+ */
+uint64_t fl_key_event_hash(FlKeyEvent* event);
 
 /**
  * fl_key_event_dispose:

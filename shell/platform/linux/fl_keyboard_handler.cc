@@ -163,20 +163,6 @@ static void fl_keyboard_pending_event_class_init(
 
 static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
-// Calculates a unique ID for a given FlKeyEvent object to use for
-// identification of responses from the framework.
-static uint64_t fl_keyboard_handler_get_event_hash(FlKeyEvent* event) {
-  // Combine the event timestamp, the type of event, and the hardware keycode
-  // (scan code) of the event to come up with a unique id for this event that
-  // can be derived solely from the event data itself, so that we can identify
-  // whether or not we have seen this event already.
-  guint64 type =
-      static_cast<uint64_t>(event->is_press ? GDK_KEY_PRESS : GDK_KEY_RELEASE);
-  guint64 keycode = static_cast<uint64_t>(event->keycode);
-  return (event->time & 0xffffffff) | ((type & 0xffff) << 32) |
-         ((keycode & 0xffff) << 48);
-}
-
 // Create a new FlKeyboardPendingEvent by providing the target event,
 // the sequence ID, and the number of responders that will reply.
 //
@@ -192,7 +178,7 @@ static FlKeyboardPendingEvent* fl_keyboard_pending_event_new(
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
-  self->hash = fl_keyboard_handler_get_event_hash(self->event.get());
+  self->hash = fl_key_event_hash(self->event.get());
   return self;
 }
 
@@ -639,7 +625,7 @@ gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
 
   guarantee_layout(self, event);
 
-  uint64_t incoming_hash = fl_keyboard_handler_get_event_hash(event);
+  uint64_t incoming_hash = fl_key_event_hash(event);
   if (fl_keyboard_handler_remove_redispatched(self, incoming_hash)) {
     return FALSE;
   }
