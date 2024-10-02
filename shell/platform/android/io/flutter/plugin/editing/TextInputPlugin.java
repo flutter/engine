@@ -346,7 +346,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
     }
 
-    EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    }
     // TODO(justinmc): Scribe stylus gestures should be supported here via
     // outAttrs.setSupportedHandwritingGestures and
     // outAttrs.setSupportedHandwritingGesturePreviews.
