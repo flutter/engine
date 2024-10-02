@@ -59,24 +59,27 @@ vec4 RRectBlurX(float sample_position_x,
   vec4 rrect_distance =
       half_size.x - frag_info.corner_radii.x * (1.0 - unit_space_x);
 
+  vec4 result;
   // Now we integrate the Gaussian over the range of the relative positions
   // of the left and right sides of the rrect relative to the sampling
   // X coordinate.
-  vec4 integral_01 = IPVec2FastGaussianIntegral(
+  vec4 integral = IPVec2FastGaussianIntegral(
       float(sample_position_x) + vec4(-rrect_distance[0], rrect_distance[0],
                                       -rrect_distance[1], rrect_distance[1]),
       float(frag_info.blur_sigma));
-  vec4 integral_23 = IPVec2FastGaussianIntegral(
-      float(sample_position_x) + vec4(-rrect_distance[2], rrect_distance[2],
-                                      -rrect_distance[3], rrect_distance[3]),
-      float(frag_info.blur_sigma));
-
   // integral.y contains the evaluation of the indefinite gaussian integral
   // function at (X + rrect_distance) and integral.x contains the evaluation
   // of it at (X - rrect_distance). Subtracting the two produces the
   // integral result over the range from one to the other.
-  return vec4(integral_01.y, integral_01.w, integral_23.y, integral_23.w) -
-         vec4(integral_01.x, integral_01.z, integral_23.x, integral_23.z);
+  result.xy = integral.yw - integral.xz;
+
+  integral = IPVec2FastGaussianIntegral(
+      float(sample_position_x) + vec4(-rrect_distance[2], rrect_distance[2],
+                                      -rrect_distance[3], rrect_distance[3]),
+      float(frag_info.blur_sigma));
+  result.wz = integral.yw - integral.xz;
+
+  return result;
 }
 
 float RRectBlur(vec2 sample_position, vec2 half_size) {
