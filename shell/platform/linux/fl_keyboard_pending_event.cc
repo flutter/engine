@@ -50,7 +50,7 @@ static void fl_keyboard_pending_event_class_init(
 
 static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
-// Create a new FlKeyboardPendingEvent by providing the target event,
+// Creates a new FlKeyboardPendingEvent by providing the target event,
 // the sequence ID, and the number of responders that will reply.
 FlKeyboardPendingEvent* fl_keyboard_pending_event_new(FlKeyEvent* event,
                                                       uint64_t sequence_id,
