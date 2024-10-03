@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_TOOLKIT_INTEROP_PARAGRAPH_BUILDER_H_
 
 #include <memory>
-#include <string>
 
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
 #include "impeller/toolkit/interop/impeller.h"
@@ -35,7 +34,7 @@ class ParagraphBuilder final
 
   void PopStyle();
 
-  void AddText(std::u16string string);
+  void AddText(const uint8_t* data, size_t byte_length);
 
   ScopedObject<Paragraph> Build(Scalar width) const;
 

@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include "flutter/fml/mapping.h"
-#include "flutter/fml/string_conversion.h"
 #include "impeller/base/validation.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/toolkit/interop/color_filter.h"
@@ -967,9 +966,7 @@ void ImpellerParagraphBuilderAddText(ImpellerParagraphBuilder paragraph_builder,
   if (length == 0) {
     return;
   }
-  GetPeer(paragraph_builder)
-      ->AddText(fml::Utf8ToUtf16(
-          std::string_view{reinterpret_cast<const char*>(data), length}));
+  GetPeer(paragraph_builder)->AddText(data, length);
 }
 
 IMPELLER_EXTERN_C ImpellerParagraph ImpellerParagraphBuilderBuildParagraphNew(

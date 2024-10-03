@@ -39,8 +39,8 @@ void ParagraphBuilder::PopStyle() {
   builder_->Pop();
 }
 
-void ParagraphBuilder::AddText(std::u16string string) {
-  builder_->AddText(std::move(string));
+void ParagraphBuilder::AddText(const uint8_t* data, size_t byte_length) {
+  builder_->AddText(data, byte_length);
 }
 
 ScopedObject<Paragraph> ParagraphBuilder::Build(Scalar width) const {
