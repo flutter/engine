@@ -172,8 +172,7 @@ See `flutter run --help` for a listing
     final target = await _runTarget;
     final buildTargetsForShell = target?.buildTargetsForShell ?? [];
 
-    final dashJ = argResults![concurrencyFlag] as String;
-    final concurrency = int.tryParse(dashJ);
+    final concurrency = int.tryParse(argResults![concurrencyFlag] as String);
     if (concurrency == null || concurrency < 0) {
       throw FatalError(
         '--$concurrencyFlag (-j) must specify a positive integer.',
