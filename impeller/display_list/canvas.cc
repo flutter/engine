@@ -1130,8 +1130,8 @@ void Canvas::SaveLayer(const Paint& paint,
   // maximum texture size. Perform a clamp here, which may cause rendering
   // artifacts.
   subpass_size = subpass_size.Min(renderer_.GetContext()
-                                      ->GetResourceAllocator()
-                                      ->GetMaxTextureSizeSupported());
+                                      ->GetCapabilities()
+                                      ->GetMaximumRenderPassAttachmentSize());
 
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
