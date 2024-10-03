@@ -152,6 +152,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
 
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/155943
+  // Migrate to @property(nonatomic, weak).
   fml::WeakNSObject<FlutterViewController> _viewController;
 
   std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
