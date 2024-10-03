@@ -124,6 +124,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* platformChannel;
 @property(nonatomic, strong) FlutterMethodChannel* platformViewsChannel;
 @property(nonatomic, strong) FlutterMethodChannel* textInputChannel;
+@property(nonatomic, strong) FlutterMethodChannel* undoManagerChannel;
 
 #pragma mark - Embedder API properties
 
@@ -145,7 +146,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)undoManagerChannel {
-  return _undoManagerChannel.get();
-}
 - (FlutterMethodChannel*)scribbleChannel {
   return _scribbleChannel.get();
 }
@@ -509,7 +506,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.platformChannel = nil;
   self.platformViewsChannel = nil;
   self.textInputChannel = nil;
-  _undoManagerChannel.reset();
+  self.undoManagerChannel = nil;
   _scribbleChannel.reset();
   _lifecycleChannel.reset();
   _systemChannel.reset();
@@ -584,10 +581,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  _undoManagerChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/undomanager"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+  self.undoManagerChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/undomanager"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterJSONMethodCodec sharedInstance]];
 
   _scribbleChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/scribble"
@@ -683,10 +680,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     }];
 
     FlutterUndoManagerPlugin* undoManagerPlugin = self.undoManagerPlugin;
-    [_undoManagerChannel.get()
-        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          [undoManagerPlugin handleMethodCall:call result:result];
-        }];
+    [self.undoManagerChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [undoManagerPlugin handleMethodCall:call result:result];
+    }];
 
     FlutterSpellCheckPlugin* spellCheckPlugin = self.spellCheckPlugin;
     [_spellCheckChannel.get()
@@ -1156,7 +1152,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
-  [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
+  [self.undoManagerChannel invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
 }
 
 - (UIView<UITextInput>*)activeTextInputView {
