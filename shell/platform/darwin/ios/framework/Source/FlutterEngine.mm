@@ -682,6 +682,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
+    // TODO(cbracken): Use weakSelf for these.
     FlutterPlatformPlugin* platformPlugin = self.platformPlugin;
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [platformPlugin handleMethodCall:call result:result];
