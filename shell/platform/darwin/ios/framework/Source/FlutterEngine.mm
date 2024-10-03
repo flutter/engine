@@ -114,6 +114,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 #pragma mark - Channel properties
 
 @property(nonatomic, strong) FlutterPlatformPlugin* platformPlugin;
+@property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
 
 #pragma mark - Embedder API properties
 
@@ -135,7 +136,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
   fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
   fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
@@ -407,7 +407,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
-  _textInputPlugin.get().viewController = viewController;
+  self.textInputPlugin.viewController = viewController;
 
   if (viewController) {
     __weak __block FlutterEngine* blockSelf = self;
@@ -440,7 +440,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
-  _textInputPlugin.get().viewController = nil;
+  self.textInputPlugin.viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else if (_shell) {
@@ -449,7 +449,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       platform_view->SetOwnerViewController({});
     }
   }
-  [_textInputPlugin.get() resetViewResponder];
+  [self.textInputPlugin resetViewResponder];
   _viewController.reset();
 }
 
@@ -471,9 +471,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
-}
-- (FlutterTextInputPlugin*)textInputPlugin {
-  return _textInputPlugin.get();
 }
 - (FlutterUndoManagerPlugin*)undoManagerPlugin {
   return _undoManagerPlugin.get();
@@ -643,10 +640,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
-  _textInputPlugin.reset(textInputPlugin);
-  textInputPlugin.indirectScribbleDelegate = self;
-  [textInputPlugin setUpIndirectScribbleInteraction:self.viewController];
+  self.textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
+  self.textInputPlugin.indirectScribbleDelegate = self;
+  [self.textInputPlugin setUpIndirectScribbleInteraction:self.viewController];
 
   FlutterUndoManagerPlugin* undoManagerPlugin =
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
@@ -705,7 +701,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           }
         }];
 
-    FlutterTextInputPlugin* textInputPlugin = _textInputPlugin.get();
+    FlutterTextInputPlugin* textInputPlugin = self.textInputPlugin;
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [textInputPlugin handleMethodCall:call result:result];
     }];
