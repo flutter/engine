@@ -121,6 +121,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* localizationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* navigationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* restorationChannel;
+@property(nonatomic, strong) FlutterMethodChannel* platformChannel;
 
 #pragma mark - Embedder API properties
 
@@ -142,7 +143,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)platformChannel {
-  return _platformChannel.get();
-}
 - (FlutterMethodChannel*)textInputChannel {
   return _textInputChannel.get();
 }
@@ -512,7 +509,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.localizationChannel = nil;
   self.navigationChannel = nil;
   self.restorationChannel = nil;
-  _platformChannel.reset();
+  self.platformChannel = nil;
   _platformViewsChannel.reset();
   _textInputChannel.reset();
   _undoManagerChannel.reset();
@@ -575,10 +572,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterStandardMethodCodec sharedInstance]];
 
-  _platformChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/platform"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+  self.platformChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/platform"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterJSONMethodCodec sharedInstance]];
 
   _platformViewsChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform_views"
@@ -632,9 +629,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.undoManagerPlugin = [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
-  self.restorationPlugin =
-      [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
-                                     restorationEnabled:_restorationEnabled];
+  self.restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
+                                                          restorationEnabled:_restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
   _screenshotChannel.reset([[FlutterMethodChannel alloc]
@@ -672,7 +668,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (_shell && self.shell.IsSetup()) {
     // TODO(cbracken): Use weakSelf for these.
     FlutterPlatformPlugin* platformPlugin = self.platformPlugin;
-    [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [self.platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [platformPlugin handleMethodCall:call result:result];
     }];
 
@@ -1051,8 +1047,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     willDismissEditMenuWithTextInputClient:(int)client {
-  [_platformChannel.get() invokeMethod:@"ContextMenu.onDismissSystemContextMenu"
-                             arguments:@[ @(client) ]];
+  [self.platformChannel invokeMethod:@"ContextMenu.onDismissSystemContextMenu"
+                           arguments:@[ @(client) ]];
 }
 
 #pragma mark - FlutterViewEngineDelegate
