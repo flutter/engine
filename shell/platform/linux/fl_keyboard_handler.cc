@@ -609,8 +609,7 @@ FlKeyboardHandler* fl_keyboard_handler_new(
           },
           self)));
   g_ptr_array_add(self->responder_list,
-                  FL_KEY_RESPONDER(fl_key_channel_responder_new(
-                      fl_keyboard_view_delegate_get_messenger(view_delegate))));
+                  FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger)));
 
   fl_keyboard_view_delegate_subscribe_to_layout_change(
       self->view_delegate, [self]() { self->derived_layout->clear(); });

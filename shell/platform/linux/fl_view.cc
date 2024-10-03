@@ -351,11 +351,6 @@ static void fl_view_keyboard_delegate_iface_init(
                                                  event);
   };
 
-  iface->get_messenger = [](FlKeyboardViewDelegate* view_delegate) {
-    FlView* self = FL_VIEW(view_delegate);
-    return fl_engine_get_binary_messenger(self->engine);
-  };
-
   iface->redispatch_event = [](FlKeyboardViewDelegate* view_delegate,
                                std::unique_ptr<FlKeyEvent> in_event) {
     FlKeyEvent* event = in_event.release();

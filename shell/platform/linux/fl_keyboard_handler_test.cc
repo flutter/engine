@@ -368,13 +368,6 @@ static gboolean fl_mock_view_keyboard_text_filter_key_press(
   return priv->text_filter_result;
 }
 
-static FlBinaryMessenger* fl_mock_view_keyboard_get_messenger(
-    FlKeyboardViewDelegate* view_delegate) {
-  FlMockViewDelegatePrivate* priv =
-      FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(view_delegate);
-  return FL_BINARY_MESSENGER(priv->messenger);
-}
-
 static void fl_mock_view_keyboard_redispatch_event(
     FlKeyboardViewDelegate* view_delegate,
     std::unique_ptr<FlKeyEvent> event) {
@@ -417,7 +410,6 @@ static void fl_mock_view_keyboard_delegate_iface_init(
     FlKeyboardViewDelegateInterface* iface) {
   iface->send_key_event = fl_mock_view_keyboard_send_key_event;
   iface->text_filter_key_press = fl_mock_view_keyboard_text_filter_key_press;
-  iface->get_messenger = fl_mock_view_keyboard_get_messenger;
   iface->redispatch_event = fl_mock_view_keyboard_redispatch_event;
   iface->subscribe_to_layout_change =
       fl_mock_view_keyboard_subscribe_to_layout_change;
