@@ -22,6 +22,12 @@ FLUTTER_ASSERT_ARC
 
 @implementation IOSSurfaceNoopTest
 - (void)testCreateSurface {
+#ifdef NDEBUG
+  NSLog(@"============================= NDEBUG is defined");
+#else
+  NSLog(@"============================= NDEBUG is NOT defined");
+#endif
+
   flutter::IOSSurfaceNoop noop(nullptr);
 
   XCTAssertTrue(noop.IsValid());
