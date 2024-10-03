@@ -122,6 +122,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* navigationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* restorationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* platformChannel;
+@property(nonatomic, strong) FlutterMethodChannel* platformViewsChannel;
 
 #pragma mark - Embedder API properties
 
@@ -143,7 +144,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
@@ -510,7 +510,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.navigationChannel = nil;
   self.restorationChannel = nil;
   self.platformChannel = nil;
-  _platformViewsChannel.reset();
+  self.platformViewsChannel = nil;
   _textInputChannel.reset();
   _undoManagerChannel.reset();
   _scribbleChannel.reset();
@@ -577,10 +577,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  _platformViewsChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/platform_views"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
+  self.platformViewsChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/platform_views"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterStandardMethodCodec sharedInstance]];
 
   _textInputChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/textinput"
@@ -673,7 +673,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     }];
 
     __weak FlutterEngine* weakSelf = self;
-    [_platformViewsChannel.get()
+    [self.platformViewsChannel
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
             weakSelf.platformViewsController->OnMethodCall(call, result);
@@ -1152,7 +1152,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       return;
     }
 
-    [_platformViewsChannel.get() invokeMethod:@"viewFocused" arguments:@(platform_view_id)];
+    [self.platformViewsChannel invokeMethod:@"viewFocused" arguments:@(platform_view_id)];
   });
 }
 
