@@ -110,6 +110,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, strong) id<NSObject> flutterViewControllerWillDeallocObserver;
+@property(nonatomic, strong) FlutterDartVMServicePublisher* publisher;
 
 #pragma mark - Channel properties
 
@@ -145,7 +146,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::unique_ptr<flutter::Shell> _shell;
 
   fml::WeakNSObject<FlutterViewController> _viewController;
-  fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
@@ -472,11 +472,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (NSURL*)observatoryUrl {
-  return [_publisher.get() url];
+  return [self.publisher url];
 }
 
 - (NSURL*)vmServiceUrl {
-  return [_publisher.get() url];
+  return [self.publisher url];
 }
 
 - (void)resetChannels {
@@ -691,8 +691,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self setUpChannels];
   [self onLocaleUpdated:nil];
   [self updateDisplays];
-  _publisher.reset([[FlutterDartVMServicePublisher alloc]
-      initWithEnableVMServicePublication:doesVMServicePublication]);
+  self.publisher = [[FlutterDartVMServicePublisher alloc]
+      initWithEnableVMServicePublication:doesVMServicePublication];
   [self maybeSetupPlatformViewChannels];
   _shell->SetGpuAvailability(_isGpuDisabled ? flutter::GpuAvailability::kUnavailable
                                             : flutter::GpuAvailability::kAvailable);
