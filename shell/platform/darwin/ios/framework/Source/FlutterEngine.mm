@@ -129,6 +129,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* spellCheckChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* systemChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* settingsChannel;
 
 #pragma mark - Embedder API properties
 
@@ -150,7 +151,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterBasicMessageChannel*)settingsChannel {
-  return _settingsChannel.get();
-}
 - (FlutterBasicMessageChannel*)keyEventChannel {
   return _keyEventChannel.get();
 }
@@ -498,7 +495,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.scribbleChannel = nil;
   self.lifecycleChannel = nil;
   self.systemChannel = nil;
-  _settingsChannel.reset();
+  self.settingsChannel = nil;
   _keyEventChannel.reset();
   self.spellCheckChannel = nil;
 }
@@ -594,10 +591,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                        binaryMessenger:self.binaryMessenger
                                                  codec:[FlutterJSONMessageCodec sharedInstance]];
 
-  _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/settings"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMessageCodec sharedInstance]]);
+  self.settingsChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/settings"
+                                       binaryMessenger:self.binaryMessenger
+                                                 codec:[FlutterJSONMessageCodec sharedInstance]];
 
   _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/keyevent"
