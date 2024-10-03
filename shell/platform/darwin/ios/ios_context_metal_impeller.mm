@@ -6,7 +6,7 @@
 
 #include "flutter/impeller/entity/mtl/entity_shaders.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 FLUTTER_ASSERT_ARC

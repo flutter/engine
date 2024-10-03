@@ -7,7 +7,7 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 #include "gtest/gtest.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/entity/mtl/entity_shaders.h"
 #include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"

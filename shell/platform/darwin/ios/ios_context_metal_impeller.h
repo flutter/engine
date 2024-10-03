@@ -9,7 +9,7 @@
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 
 namespace impeller {
 

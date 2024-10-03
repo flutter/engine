@@ -15,7 +15,7 @@
 #include "flutter/fml/synchronization/sync_switch.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace impeller {
