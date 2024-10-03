@@ -67,7 +67,7 @@ struct Paint {
   };
 
   Color color = Color::Black();
-  const flutter::DlColorSource* color_source;
+  const flutter::DlColorSource* color_source = nullptr;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
