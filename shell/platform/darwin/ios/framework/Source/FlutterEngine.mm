@@ -99,6 +99,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                              FlutterTextInputDelegate,
                              FlutterBinaryMessenger,
                              FlutterTextureRegistry>
+@property(nonatomic, readonly) FlutterDartProject* dartProject;
+
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -116,7 +118,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @end
 
 @implementation FlutterEngine {
-  fml::scoped_nsobject<FlutterDartProject> _dartProject;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
@@ -192,20 +193,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
-  if (project == nil) {
-    _dartProject.reset([[FlutterDartProject alloc] init]);
-  } else {
-    _dartProject.reset(project);
-  }
+  _dartProject = project ?: [[FlutterDartProject alloc] init];
 
-  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  _enableEmbedderAPI = _dartProject.settings.enable_embedder_api;
   if (_enableEmbedderAPI) {
     NSLog(@"============== iOS: enable_embedder_api is on ==============");
     _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
     FlutterEngineGetProcAddresses(&_embedderAPI);
   }
 
-  if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
+  if (!EnableTracingIfNecessary(_dartProject.settings)) {
     NSLog(
         @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
         @"Xcode.\n\nTo launch in debug mode in iOS 14+, run flutter run from Flutter tools, run "
@@ -737,9 +734,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           libraryURI:(NSString*)libraryOrNil
       entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
   // Launch the Dart application with the inferred run configuration.
-  self.shell.RunEngine([_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                                            libraryOrNil:libraryOrNil
-                                                          entrypointArgs:entrypointArgs]);
+  self.shell.RunEngine([self.dartProject runConfigurationForEntrypoint:entrypoint
+                                                          libraryOrNil:libraryOrNil
+                                                        entrypointArgs:entrypointArgs]);
 }
 
 - (void)setUpShell:(std::unique_ptr<flutter::Shell>)shell
@@ -828,7 +825,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   self.initialRoute = initialRoute;
 
-  auto settings = [_dartProject.get() settings];
+  auto settings = [self.dartProject settings];
   if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
@@ -837,7 +834,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
 
-  auto platformData = [_dartProject.get() defaultPlatformData];
+  auto platformData = [self.dartProject defaultPlatformData];
 
   SetEntryPoint(&settings, entrypoint, libraryURI);
 
@@ -1430,12 +1427,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                        entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
-                                                      project:_dartProject.get()
+                                                      project:self.dartProject
                                        allowHeadlessExecution:_allowHeadlessExecution];
   flutter::RunConfiguration configuration =
-      [_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                           libraryOrNil:libraryURI
-                                         entrypointArgs:entrypointArgs];
+      [self.dartProject runConfigurationForEntrypoint:entrypoint
+                                         libraryOrNil:libraryURI
+                                       entrypointArgs:entrypointArgs];
 
   fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
@@ -1480,7 +1477,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (FlutterDartProject*)project {
-  return _dartProject.get();
+  return self.dartProject;
 }
 
 - (BOOL)isUsingImpeller {
