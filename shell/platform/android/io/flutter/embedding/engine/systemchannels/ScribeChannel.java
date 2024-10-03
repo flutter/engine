@@ -36,20 +36,10 @@ public class ScribeChannel {
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "Scribe.isStylusHandwritingAvailable":
-              try {
-                final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
-                result.success(isAvailable);
-              } catch (IllegalStateException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
+              isStylusHandwritingAvailable(call, result);
               break;
             case "Scribe.startStylusHandwriting":
-              try {
-                scribeMethodHandler.startStylusHandwriting();
-                result.success(null);
-              } catch (IllegalStateException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
+              startStylusHandwriting(call, result);
               break;
             default:
               result.notImplemented();
@@ -57,6 +47,24 @@ public class ScribeChannel {
           }
         }
       };
+
+  private void isStylusHandwritingAvailable(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    try {
+      final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
+      result.success(isAvailable);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
+
+  private void startStylusHandwriting(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    try {
+      scribeMethodHandler.startStylusHandwriting();
+      result.success(null);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
 
   public ScribeChannel(@NonNull DartExecutor dartExecutor) {
     channel = new MethodChannel(dartExecutor, "flutter/scribe", StandardMethodCodec.INSTANCE);
