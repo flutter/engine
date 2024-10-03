@@ -115,6 +115,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @property(nonatomic, strong) FlutterPlatformPlugin* platformPlugin;
 @property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
+@property(nonatomic, strong) FlutterUndoManagerPlugin* undoManagerPlugin;
 
 #pragma mark - Embedder API properties
 
@@ -136,7 +137,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
   fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterUndoManagerPlugin*)undoManagerPlugin {
-  return _undoManagerPlugin.get();
-}
 - (FlutterRestorationPlugin*)restorationPlugin {
   return _restorationPlugin.get();
 }
@@ -644,10 +641,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.textInputPlugin.indirectScribbleDelegate = self;
   [self.textInputPlugin setUpIndirectScribbleInteraction:self.viewController];
 
-  FlutterUndoManagerPlugin* undoManagerPlugin =
-      [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
-  _undoManagerPlugin.reset(undoManagerPlugin);
-
+  self.undoManagerPlugin = [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
@@ -706,7 +700,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [textInputPlugin handleMethodCall:call result:result];
     }];
 
-    FlutterUndoManagerPlugin* undoManagerPlugin = _undoManagerPlugin.get();
+    FlutterUndoManagerPlugin* undoManagerPlugin = self.undoManagerPlugin;
     [_undoManagerChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           [undoManagerPlugin handleMethodCall:call result:result];
