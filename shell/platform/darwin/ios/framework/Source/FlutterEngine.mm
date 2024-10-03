@@ -125,6 +125,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* platformViewsChannel;
 @property(nonatomic, strong) FlutterMethodChannel* textInputChannel;
 @property(nonatomic, strong) FlutterMethodChannel* undoManagerChannel;
+@property(nonatomic, strong) FlutterMethodChannel* scribbleChannel;
 
 #pragma mark - Embedder API properties
 
@@ -146,7 +147,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)scribbleChannel {
-  return _scribbleChannel.get();
-}
 - (FlutterMethodChannel*)spellCheckChannel {
   return _spellCheckChannel.get();
 }
@@ -507,7 +504,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.platformViewsChannel = nil;
   self.textInputChannel = nil;
   self.undoManagerChannel = nil;
-  _scribbleChannel.reset();
+  self.scribbleChannel = nil;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
@@ -586,10 +583,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  _scribbleChannel.reset([[FlutterMethodChannel alloc]
+  self.scribbleChannel = [[FlutterMethodChannel alloc]
          initWithName:@"flutter/scribble"
       binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+                codec:[FlutterJSONMethodCodec sharedInstance]];
 
   _spellCheckChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/spellcheck"
