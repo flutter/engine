@@ -198,34 +198,34 @@ typedef enum ImpellerColorSpace {
 } ImpellerColorSpace;
 
 typedef enum ImpellerFontWeight {
-  ImpellerFontWeight100,  // Thin
-  ImpellerFontWeight200,  // Extra-Light
-  ImpellerFontWeight300,  // Light
-  ImpellerFontWeight400,  // Normal/Regular
-  ImpellerFontWeight500,  // Medium
-  ImpellerFontWeight600,  // Semi-bold
-  ImpellerFontWeight700,  // Bold
-  ImpellerFontWeight800,  // Extra-Bold
-  ImpellerFontWeight900,  // Black
+  kImpellerFontWeight100,  // Thin
+  kImpellerFontWeight200,  // Extra-Light
+  kImpellerFontWeight300,  // Light
+  kImpellerFontWeight400,  // Normal/Regular
+  kImpellerFontWeight500,  // Medium
+  kImpellerFontWeight600,  // Semi-bold
+  kImpellerFontWeight700,  // Bold
+  kImpellerFontWeight800,  // Extra-Bold
+  kImpellerFontWeight900,  // Black
 } ImpellerFontWeight;
 
 typedef enum ImpellerFontStyle {
-  ImpellerFontStyleNormal,
-  ImpellerFontStyleItalic,
+  kImpellerFontStyleNormal,
+  kImpellerFontStyleItalic,
 } ImpellerFontStyle;
 
 typedef enum ImpellerTextAlignment {
-  ImpellerTextAlignmentLeft,
-  ImpellerTextAlignmentRight,
-  ImpellerTextAlignmentCenter,
-  ImpellerTextAlignmentJustify,
-  ImpellerTextAlignmentStart,
-  ImpellerTextAlignmentEnd,
+  kImpellerTextAlignmentLeft,
+  kImpellerTextAlignmentRight,
+  kImpellerTextAlignmentCenter,
+  kImpellerTextAlignmentJustify,
+  kImpellerTextAlignmentStart,
+  kImpellerTextAlignmentEnd,
 } ImpellerTextAlignment;
 
 typedef enum ImpellerTextDirection {
-  ImpellerTextDirectionRTL,
-  ImpellerTextDirectionLTR,
+  kImpellerTextDirectionRTL,
+  kImpellerTextDirectionLTR,
 } ImpellerTextDirection;
 
 //------------------------------------------------------------------------------

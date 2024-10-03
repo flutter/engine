@@ -423,23 +423,23 @@ constexpr flutter::DlColor ToDisplayListType(ImpellerColor color) {
 
 constexpr txt::FontWeight ToTxtType(ImpellerFontWeight weight) {
   switch (weight) {
-    case ImpellerFontWeight100:
+    case kImpellerFontWeight100:
       return txt::FontWeight::w100;
-    case ImpellerFontWeight200:
+    case kImpellerFontWeight200:
       return txt::FontWeight::w200;
-    case ImpellerFontWeight300:
+    case kImpellerFontWeight300:
       return txt::FontWeight::w300;
-    case ImpellerFontWeight400:
+    case kImpellerFontWeight400:
       return txt::FontWeight::w400;
-    case ImpellerFontWeight500:
+    case kImpellerFontWeight500:
       return txt::FontWeight::w500;
-    case ImpellerFontWeight600:
+    case kImpellerFontWeight600:
       return txt::FontWeight::w600;
-    case ImpellerFontWeight700:
+    case kImpellerFontWeight700:
       return txt::FontWeight::w700;
-    case ImpellerFontWeight800:
+    case kImpellerFontWeight800:
       return txt::FontWeight::w800;
-    case ImpellerFontWeight900:
+    case kImpellerFontWeight900:
       return txt::FontWeight::w900;
   }
   return txt::FontWeight::w400;
@@ -447,9 +447,9 @@ constexpr txt::FontWeight ToTxtType(ImpellerFontWeight weight) {
 
 constexpr txt::FontStyle ToTxtType(ImpellerFontStyle style) {
   switch (style) {
-    case ImpellerFontStyleNormal:
+    case kImpellerFontStyleNormal:
       return txt::FontStyle::normal;
-    case ImpellerFontStyleItalic:
+    case kImpellerFontStyleItalic:
       return txt::FontStyle::italic;
   }
   return txt::FontStyle::normal;
@@ -457,17 +457,17 @@ constexpr txt::FontStyle ToTxtType(ImpellerFontStyle style) {
 
 constexpr txt::TextAlign ToTxtType(ImpellerTextAlignment align) {
   switch (align) {
-    case ImpellerTextAlignmentLeft:
+    case kImpellerTextAlignmentLeft:
       return txt::TextAlign::left;
-    case ImpellerTextAlignmentRight:
+    case kImpellerTextAlignmentRight:
       return txt::TextAlign::right;
-    case ImpellerTextAlignmentCenter:
+    case kImpellerTextAlignmentCenter:
       return txt::TextAlign::center;
-    case ImpellerTextAlignmentJustify:
+    case kImpellerTextAlignmentJustify:
       return txt::TextAlign::justify;
-    case ImpellerTextAlignmentStart:
+    case kImpellerTextAlignmentStart:
       return txt::TextAlign::start;
-    case ImpellerTextAlignmentEnd:
+    case kImpellerTextAlignmentEnd:
       return txt::TextAlign::end;
   }
   return txt::TextAlign::left;
@@ -475,9 +475,9 @@ constexpr txt::TextAlign ToTxtType(ImpellerTextAlignment align) {
 
 constexpr txt::TextDirection ToTxtType(ImpellerTextDirection direction) {
   switch (direction) {
-    case ImpellerTextDirectionRTL:
+    case kImpellerTextDirectionRTL:
       return txt::TextDirection::rtl;
-    case ImpellerTextDirectionLTR:
+    case kImpellerTextDirectionLTR:
       return txt::TextDirection::ltr;
   }
   return txt::TextDirection::ltr;
