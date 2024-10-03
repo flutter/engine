@@ -117,6 +117,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, strong) FlutterUndoManagerPlugin* undoManagerPlugin;
 @property(nonatomic, strong) FlutterSpellCheckPlugin* spellCheckPlugin;
+@property(nonatomic, strong) FlutterRestorationPlugin* restorationPlugin;
 
 #pragma mark - Embedder API properties
 
@@ -138,7 +139,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterRestorationPlugin*)restorationPlugin {
-  return _restorationPlugin.get();
-}
 - (FlutterMethodChannel*)localizationChannel {
   return _localizationChannel.get();
 }
@@ -644,9 +641,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.undoManagerPlugin = [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
-  _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
-         initWithChannel:_restorationChannel.get()
-      restorationEnabled:_restorationEnabled]);
+  self.restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:_restorationChannel.get()
+                                     restorationEnabled:_restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
   _screenshotChannel.reset([[FlutterMethodChannel alloc]
