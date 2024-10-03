@@ -118,6 +118,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterUndoManagerPlugin* undoManagerPlugin;
 @property(nonatomic, strong) FlutterSpellCheckPlugin* spellCheckPlugin;
 @property(nonatomic, strong) FlutterRestorationPlugin* restorationPlugin;
+@property(nonatomic, strong) FlutterMethodChannel* localizationChannel;
 
 #pragma mark - Embedder API properties
 
@@ -139,7 +140,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)localizationChannel {
-  return _localizationChannel.get();
-}
 - (FlutterMethodChannel*)navigationChannel {
   return _navigationChannel.get();
 }
@@ -518,7 +515,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)resetChannels {
-  _localizationChannel.reset();
+  self.localizationChannel = nil;
   _navigationChannel.reset();
   _restorationChannel.reset();
   _platformChannel.reset();
@@ -563,10 +560,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                             }
                           }];
 
-  _localizationChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/localization"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+  self.localizationChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/localization"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterJSONMethodCodec sharedInstance]];
 
   _navigationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/navigation"
