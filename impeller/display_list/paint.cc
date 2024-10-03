@@ -325,7 +325,8 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
-  if (color_source->type() == flutter::DlColorSourceType::kImage) {
+  if (color_source &&
+      color_source->type() == flutter::DlColorSourceType::kImage) {
     return input;
   }
 
