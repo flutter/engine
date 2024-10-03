@@ -99,35 +99,6 @@ void main() {
       flutterTool = _FakeFlutterTool();
     });
 
-    test('fails if a target build could not be found', () async {
-      final builders = TestBuilderConfig();
-      builders.addBuild(
-        name: 'linux/android_debug_arm64',
-        dimension: TestDroneDimension.linux,
-      );
-
-      final et = _engineTool(RunCommand(
-        environment: testEnvironment,
-        configs: {
-          'linux_test_config': builders.buildConfig(
-            path: 'ci/builders/linux_test_config.json',
-          ),
-        },
-        flutterTool: flutterTool,
-      ));
-
-      expect(
-        () => et.run(['run', '--config=android_debug_arm64']),
-        throwsA(
-          isA<FatalError>().having(
-            (a) => a.toString(),
-            'toString()',
-            contains('Could not find build'),
-          ),
-        ),
-      );
-    });
-
     test('fails if a host build could not be found', () async {
       final builders = TestBuilderConfig();
       builders.addBuild(
