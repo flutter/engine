@@ -64,7 +64,8 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
   if (needs_color_filter &&
-      paint.color_source->type() != flutter::DlColorSourceType::kImage) {
+      (!paint.color_source ||
+       paint.color_source->type() != flutter::DlColorSourceType::kImage)) {
     std::shared_ptr<ColorFilter> color_filter = paint.GetColorFilter();
     contents_copy = color_filter->WrapWithGPUColorFilter(
         FilterInput::Make(std::move(contents_copy)),
@@ -448,8 +449,9 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Size corner_radii,
                                      const Paint& paint) {
-  if (paint.color_source->type() != flutter::DlColorSourceType::kColor ||
-      paint.style != Paint::Style::kFill) {
+  if (paint.color_source &&
+      (paint.color_source->type() != flutter::DlColorSourceType::kColor ||
+       paint.style != Paint::Style::kFill)) {
     return false;
   }
 
@@ -811,7 +813,8 @@ static bool UseColorSourceContents(
     return false;
   }
   if (vertices->HasTextureCoordinates() &&
-      (paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
+      (!paint.color_source ||
+       paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -823,7 +826,8 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   // Override the blend mode with kDestination in order to match the behavior
   // of Skia's SK_LEGACY_IGNORE_DRAW_VERTICES_BLEND_WITH_NO_SHADER flag, which
   // is enabled when the Flutter engine builds Skia.
-  if (paint.color_source->type() == flutter::DlColorSourceType::kColor) {
+  if (!paint.color_source ||
+      paint.color_source->type() == flutter::DlColorSourceType::kColor) {
     blend_mode = BlendMode::kDestination;
   }
 
@@ -851,7 +855,8 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there is a texture, use this directly. Otherwise render the color
   // source to a texture.
-  if (paint.color_source->type() == flutter::DlColorSourceType::kImage) {
+  if (paint.color_source &&
+      paint.color_source->type() == flutter::DlColorSourceType::kImage) {
     const flutter::DlImageColorSource* image_color_source =
         paint.color_source->asImage();
     FML_DCHECK(image_color_source &&
