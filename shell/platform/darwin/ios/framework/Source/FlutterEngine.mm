@@ -100,6 +100,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                              FlutterBinaryMessenger,
                              FlutterTextureRegistry>
 @property(nonatomic, readonly) FlutterDartProject* dartProject;
+@property(nonatomic, readonly, copy) NSString* labelPrefix;
 
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
@@ -120,7 +121,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @implementation FlutterEngine {
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
-  NSString* _labelPrefix;
 
   fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
@@ -191,8 +191,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _restorationEnabled = restorationEnabled;
   _allowHeadlessExecution = allowHeadlessExecution;
-  _labelPrefix = [labelPrefix copy];
-
+  _labelPrefix = labelPrefix;
   _dartProject = project ?: [[FlutterDartProject alloc] init];
 
   _enableEmbedderAPI = _dartProject.settings.enable_embedder_api;
@@ -838,7 +837,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   SetEntryPoint(&settings, entrypoint, libraryURI);
 
-  NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
+  NSString* threadLabel = [FlutterEngine generateThreadLabel:self.labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();
   *_threadHost = MakeThreadHost(threadLabel, settings);
 
@@ -1426,7 +1425,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                          initialRoute:(/*nullable*/ NSString*)initialRoute
                        entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
-  FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
+  FlutterEngine* result = [[FlutterEngine alloc] initWithName:self.labelPrefix
                                                       project:self.dartProject
                                        allowHeadlessExecution:_allowHeadlessExecution];
   flutter::RunConfiguration configuration =
