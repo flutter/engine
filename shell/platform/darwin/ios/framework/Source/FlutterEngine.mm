@@ -120,6 +120,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterRestorationPlugin* restorationPlugin;
 @property(nonatomic, strong) FlutterMethodChannel* localizationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* navigationChannel;
+@property(nonatomic, strong) FlutterMethodChannel* restorationChannel;
 
 #pragma mark - Embedder API properties
 
@@ -141,7 +142,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)restorationChannel {
-  return _restorationChannel.get();
-}
 - (FlutterMethodChannel*)platformChannel {
   return _platformChannel.get();
 }
@@ -514,7 +511,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)resetChannels {
   self.localizationChannel = nil;
   self.navigationChannel = nil;
-  _restorationChannel.reset();
+  self.restorationChannel = nil;
   _platformChannel.reset();
   _platformViewsChannel.reset();
   _textInputChannel.reset();
@@ -573,10 +570,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _initialRoute = nil;
   }
 
-  _restorationChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/restoration"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
+  self.restorationChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/restoration"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterStandardMethodCodec sharedInstance]];
 
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
@@ -636,7 +633,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
   self.restorationPlugin =
-      [[FlutterRestorationPlugin alloc] initWithChannel:_restorationChannel.get()
+      [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
                                      restorationEnabled:_restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
