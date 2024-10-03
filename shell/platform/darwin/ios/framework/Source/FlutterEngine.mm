@@ -99,8 +99,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                              FlutterTextInputDelegate,
                              FlutterBinaryMessenger,
                              FlutterTextureRegistry>
+
+#pragma mark - Properties
+
 @property(nonatomic, readonly) FlutterDartProject* dartProject;
 @property(nonatomic, readonly, copy) NSString* labelPrefix;
+@property(nonatomic, readonly, assign) BOOL allowHeadlessExecution;
+@property(nonatomic, readonly, assign) BOOL restorationEnabled;
 
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
@@ -111,6 +116,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, strong) id<NSObject> flutterViewControllerWillDeallocObserver;
 @property(nonatomic, strong) FlutterDartVMServicePublisher* publisher;
+@property(nonatomic, assign) int64_t nextTextureId;
 
 #pragma mark - Channel properties
 
@@ -139,6 +145,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, assign) BOOL enableEmbedderAPI;
 // Function pointers for interacting with the embedder.h API.
 @property(nonatomic) FlutterEngineProcTable& embedderAPI;
+
 @end
 
 @implementation FlutterEngine {
@@ -152,10 +159,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
-  int64_t _nextTextureId;
-
-  BOOL _allowHeadlessExecution;
-  BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
   FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
@@ -439,7 +442,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)notifyViewControllerDeallocated {
   [self.lifecycleChannel sendMessage:@"AppLifecycleState.detached"];
   self.textInputPlugin.viewController = nil;
-  if (!_allowHeadlessExecution) {
+  if (!self.allowHeadlessExecution) {
     [self destroyContext];
   } else if (_shell) {
     flutter::PlatformViewIOS* platform_view = [self iosPlatformView];
@@ -604,7 +607,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
   self.restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
-                                                          restorationEnabled:_restorationEnabled];
+                                                          restorationEnabled:self.restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
   self.screenshotChannel =
@@ -1242,7 +1245,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - FlutterTextureRegistry
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
-  int64_t textureId = _nextTextureId++;
+  int64_t textureId = self.nextTextureId++;
   self.iosPlatformView->RegisterExternalTexture(textureId, texture);
   return textureId;
 }
@@ -1373,7 +1376,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:self.labelPrefix
                                                       project:self.dartProject
-                                       allowHeadlessExecution:_allowHeadlessExecution];
+                                       allowHeadlessExecution:self.allowHeadlessExecution];
   flutter::RunConfiguration configuration =
       [self.dartProject runConfigurationForEntrypoint:entrypoint
                                          libraryOrNil:libraryURI
