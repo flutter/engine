@@ -130,6 +130,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* systemChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* settingsChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* keyEventChannel;
 
 #pragma mark - Embedder API properties
 
@@ -151,7 +152,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
   int64_t _nextTextureId;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterBasicMessageChannel*)keyEventChannel {
-  return _keyEventChannel.get();
-}
 
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
@@ -496,7 +493,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.lifecycleChannel = nil;
   self.systemChannel = nil;
   self.settingsChannel = nil;
-  _keyEventChannel.reset();
+  self.keyEventChannel = nil;
   self.spellCheckChannel = nil;
 }
 
@@ -596,10 +593,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                        binaryMessenger:self.binaryMessenger
                                                  codec:[FlutterJSONMessageCodec sharedInstance]];
 
-  _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/keyevent"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMessageCodec sharedInstance]]);
+  self.keyEventChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/keyevent"
+                                       binaryMessenger:self.binaryMessenger
+                                                 codec:[FlutterJSONMessageCodec sharedInstance]];
 
   self.textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
   self.textInputPlugin.indirectScribbleDelegate = self;
