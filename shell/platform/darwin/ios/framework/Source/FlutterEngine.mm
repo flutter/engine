@@ -119,6 +119,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterSpellCheckPlugin* spellCheckPlugin;
 @property(nonatomic, strong) FlutterRestorationPlugin* restorationPlugin;
 @property(nonatomic, strong) FlutterMethodChannel* localizationChannel;
+@property(nonatomic, strong) FlutterMethodChannel* navigationChannel;
 
 #pragma mark - Embedder API properties
 
@@ -140,7 +141,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)navigationChannel {
-  return _navigationChannel.get();
-}
 - (FlutterMethodChannel*)restorationChannel {
   return _restorationChannel.get();
 }
@@ -516,7 +513,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)resetChannels {
   self.localizationChannel = nil;
-  _navigationChannel.reset();
+  self.navigationChannel = nil;
   _restorationChannel.reset();
   _platformChannel.reset();
   _platformViewsChannel.reset();
@@ -565,14 +562,14 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  _navigationChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/navigation"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+  self.navigationChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/navigation"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterJSONMethodCodec sharedInstance]];
 
   if ([_initialRoute length] > 0) {
     // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
-    [_navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
+    [self.navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
     _initialRoute = nil;
   }
 
