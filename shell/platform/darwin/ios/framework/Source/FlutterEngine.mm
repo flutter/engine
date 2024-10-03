@@ -123,6 +123,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* restorationChannel;
 @property(nonatomic, strong) FlutterMethodChannel* platformChannel;
 @property(nonatomic, strong) FlutterMethodChannel* platformViewsChannel;
+@property(nonatomic, strong) FlutterMethodChannel* textInputChannel;
 
 #pragma mark - Embedder API properties
 
@@ -144,7 +145,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterMethodChannel*)textInputChannel {
-  return _textInputChannel.get();
-}
 - (FlutterMethodChannel*)undoManagerChannel {
   return _undoManagerChannel.get();
 }
@@ -511,7 +508,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.restorationChannel = nil;
   self.platformChannel = nil;
   self.platformViewsChannel = nil;
-  _textInputChannel.reset();
+  self.textInputChannel = nil;
   _undoManagerChannel.reset();
   _scribbleChannel.reset();
   _lifecycleChannel.reset();
@@ -582,10 +579,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterStandardMethodCodec sharedInstance]];
 
-  _textInputChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/textinput"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
+  self.textInputChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/textinput"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterJSONMethodCodec sharedInstance]];
 
   _undoManagerChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/undomanager"
@@ -681,7 +678,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         }];
 
     FlutterTextInputPlugin* textInputPlugin = self.textInputPlugin;
-    [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [self.textInputChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [textInputPlugin handleMethodCall:call result:result];
     }];
 
@@ -951,23 +948,23 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingState"
-                              arguments:@[ @(client), state ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.updateEditingState"
+                            arguments:@[ @(client), state ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state
                      withTag:(NSString*)tag {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithTag"
-                              arguments:@[ @(client), @{tag : state} ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.updateEditingStateWithTag"
+                            arguments:@[ @(client), @{tag : state} ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
          updateEditingClient:(int)client
                    withDelta:(NSDictionary*)delta {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithDeltas"
-                              arguments:@[ @(client), delta ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.updateEditingStateWithDeltas"
+                            arguments:@[ @(client), delta ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -986,8 +983,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       stateString = @"FloatingCursorDragState.end";
       break;
   }
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateFloatingCursor"
-                              arguments:@[ @(client), stateString, position ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.updateFloatingCursor"
+                            arguments:@[ @(client), stateString, position ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -1033,16 +1030,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       actionString = @"TextInputAction.newline";
       break;
   }
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.performAction"
-                              arguments:@[ @(client), actionString ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.performAction"
+                            arguments:@[ @(client), actionString ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     showAutocorrectionPromptRectForStart:(NSUInteger)start
                                      end:(NSUInteger)end
                               withClient:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showAutocorrectionPromptRect"
-                              arguments:@[ @(client), @(start), @(end) ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.showAutocorrectionPromptRect"
+                            arguments:@[ @(client), @(start), @(end) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -1057,7 +1054,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
 }
 
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
@@ -1067,7 +1064,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get()
+  [self.textInputChannel
       invokeMethod:@"TextInputClient.focusElement"
          arguments:@[ elementIdentifier, @(referencePoint.x), @(referencePoint.y) ]
             result:callback];
@@ -1079,7 +1076,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get()
+  [self.textInputChannel
       invokeMethod:@"TextInputClient.requestElementsInRect"
          arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
             result:callback];
@@ -1089,15 +1086,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionBegan" arguments:nil];
+  [self.textInputChannel invokeMethod:@"TextInputClient.scribbleInteractionBegan" arguments:nil];
 }
 
 - (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView {
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished"
-                              arguments:nil];
+  [self.textInputChannel invokeMethod:@"TextInputClient.scribbleInteractionFinished" arguments:nil];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -1106,8 +1102,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.insertTextPlaceholder"
-                              arguments:@[ @(client), @(size.width), @(size.height) ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.insertTextPlaceholder"
+                            arguments:@[ @(client), @(size.width), @(size.height) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -1115,8 +1111,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
   // the framework has finished transitioning to the Scribble channel.
   // https://github.com/flutter/flutter/pull/115296
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
-                              arguments:@[ @(client) ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.removeTextPlaceholder"
+                            arguments:@[ @(client) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
@@ -1124,8 +1120,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // When flutter text input view resign first responder, send a message to
   // framework to ensure the focus state is correct. This is useful when close
   // keyboard from platform side.
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.onConnectionClosed"
-                              arguments:@[ @(client) ]];
+  [self.textInputChannel invokeMethod:@"TextInputClient.onConnectionClosed"
+                            arguments:@[ @(client) ]];
 
   // Platform view's first responder detection logic:
   //
