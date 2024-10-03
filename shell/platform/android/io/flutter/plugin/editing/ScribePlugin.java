@@ -26,6 +26,8 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
   private final InputMethodManager mImm;
   @NonNull private final View mView;
 
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   public ScribePlugin(
       @NonNull View view, @NonNull InputMethodManager imm, @NonNull ScribeChannel scribeChannel) {
     view.setAutoHandwritingEnabled(false);

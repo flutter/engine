@@ -280,6 +280,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
 
   // TODO(justinmc): Scribe stylus gestures should be supported here.
   // https://github.com/flutter/flutter/issues/156018
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   @Override
   public void performHandwritingGesture(
       HandwritingGesture gesture, Executor executor, IntConsumer consumer) {
