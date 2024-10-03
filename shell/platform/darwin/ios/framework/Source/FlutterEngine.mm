@@ -128,6 +128,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* scribbleChannel;
 @property(nonatomic, strong) FlutterMethodChannel* spellCheckChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* systemChannel;
 
 #pragma mark - Embedder API properties
 
@@ -149,7 +150,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterBasicMessageChannel*)systemChannel {
-  return _systemChannel.get();
-}
 - (FlutterBasicMessageChannel*)settingsChannel {
   return _settingsChannel.get();
 }
@@ -500,7 +497,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.undoManagerChannel = nil;
   self.scribbleChannel = nil;
   self.lifecycleChannel = nil;
-  _systemChannel.reset();
+  self.systemChannel = nil;
   _settingsChannel.reset();
   _keyEventChannel.reset();
   self.spellCheckChannel = nil;
@@ -592,10 +589,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                        binaryMessenger:self.binaryMessenger
                                                  codec:[FlutterStringCodec sharedInstance]];
 
-  _systemChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/system"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterJSONMessageCodec sharedInstance]]);
+  self.systemChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/system"
+                                       binaryMessenger:self.binaryMessenger
+                                                 codec:[FlutterJSONMessageCodec sharedInstance]];
 
   _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/settings"
@@ -926,7 +923,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (_shell) {
     _shell->NotifyLowMemoryWarning();
   }
-  [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
+  [self.systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 #pragma mark - Text input delegate
