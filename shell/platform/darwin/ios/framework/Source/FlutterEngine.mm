@@ -127,6 +127,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterMethodChannel* undoManagerChannel;
 @property(nonatomic, strong) FlutterMethodChannel* scribbleChannel;
 @property(nonatomic, strong) FlutterMethodChannel* spellCheckChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
 
 #pragma mark - Embedder API properties
 
@@ -148,7 +149,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
@@ -439,7 +439,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)notifyViewControllerDeallocated {
-  [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
+  [self.lifecycleChannel sendMessage:@"AppLifecycleState.detached"];
   self.textInputPlugin.viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
@@ -472,9 +472,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
-- (FlutterBasicMessageChannel*)lifecycleChannel {
-  return _lifecycleChannel.get();
-}
 - (FlutterBasicMessageChannel*)systemChannel {
   return _systemChannel.get();
 }
@@ -502,7 +499,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.textInputChannel = nil;
   self.undoManagerChannel = nil;
   self.scribbleChannel = nil;
-  _lifecycleChannel.reset();
+  self.lifecycleChannel = nil;
   _systemChannel.reset();
   _settingsChannel.reset();
   _keyEventChannel.reset();
@@ -585,15 +582,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                  binaryMessenger:self.binaryMessenger
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  self.spellCheckChannel = [[FlutterMethodChannel alloc]
-         initWithName:@"flutter/spellcheck"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]];
+  self.spellCheckChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/spellcheck"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterStandardMethodCodec sharedInstance]];
 
-  _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/lifecycle"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStringCodec sharedInstance]]);
+  self.lifecycleChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:@"flutter/lifecycle"
+                                       binaryMessenger:self.binaryMessenger
+                                                 codec:[FlutterStringCodec sharedInstance]];
 
   _systemChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/system"
@@ -680,8 +677,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
     FlutterSpellCheckPlugin* spellCheckPlugin = self.spellCheckPlugin;
     [self.spellCheckChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          [spellCheckPlugin handleMethodCall:call result:result];
-        }];
+      [spellCheckPlugin handleMethodCall:call result:result];
+    }];
   }
 }
 
