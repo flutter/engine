@@ -124,9 +124,7 @@ struct _FlKeyboardPendingEvent {
   GObject parent_instance;
 
   // The target event.
-  //
-  // This is freed by #FlKeyboardPendingEvent if not null.
-  std::unique_ptr<FlKeyEvent> event;
+  FlKeyEvent* event;
 
   // Self-incrementing ID attached to an event sent to the framework.
   //
@@ -145,14 +143,10 @@ struct _FlKeyboardPendingEvent {
 G_DEFINE_TYPE(FlKeyboardPendingEvent, fl_keyboard_pending_event, G_TYPE_OBJECT)
 
 static void fl_keyboard_pending_event_dispose(GObject* object) {
-  // Redundant, but added so that we don't get a warning about unused function
-  // for FL_IS_KEYBOARD_PENDING_EVENT.
-  g_return_if_fail(FL_IS_KEYBOARD_PENDING_EVENT(object));
-
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(object);
-  if (self->event != nullptr) {
-    fl_key_event_dispose(self->event.release());
-  }
+
+  g_clear_object(&self->event);
+
   G_OBJECT_CLASS(fl_keyboard_pending_event_parent_class)->dispose(object);
 }
 
@@ -168,17 +162,18 @@ static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 //
 // This will acquire the ownership of the event.
 static FlKeyboardPendingEvent* fl_keyboard_pending_event_new(
-    std::unique_ptr<FlKeyEvent> event,
+    FlKeyEvent* event,
     uint64_t sequence_id,
     size_t to_reply) {
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(
       g_object_new(fl_keyboard_pending_event_get_type(), nullptr));
+  (void)FL_IS_KEYBOARD_PENDING_EVENT(self);
 
-  self->event = std::move(event);
+  self->event = FL_KEY_EVENT(g_object_ref(event));
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
-  self->hash = fl_key_event_hash(self->event.get());
+  self->hash = fl_key_event_hash(self->event);
   return self;
 }
 
@@ -374,11 +369,11 @@ static void responder_handle_event_callback(bool handled,
     g_return_if_fail(removed == pending);
     bool should_redispatch = !pending->any_handled &&
                              !fl_keyboard_view_delegate_text_filter_key_press(
-                                 self->view_delegate, pending->event.get());
+                                 self->view_delegate, pending->event);
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
-      fl_keyboard_view_delegate_redispatch_event(self->view_delegate,
-                                                 std::move(pending->event));
+      fl_keyboard_view_delegate_redispatch_event(
+          self->view_delegate, FL_KEY_EVENT(g_steal_pointer(&pending->event)));
     } else {
       g_object_unref(pending);
     }
@@ -631,8 +626,7 @@ gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
   }
 
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
-      std::unique_ptr<FlKeyEvent>(event), ++self->last_sequence_id,
-      self->responder_list->len);
+      event, ++self->last_sequence_id, self->responder_list->len);
 
   g_ptr_array_add(self->pending_responds, pending);
   FlKeyboardHandlerUserData* user_data =
