@@ -116,6 +116,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterPlatformPlugin* platformPlugin;
 @property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, strong) FlutterUndoManagerPlugin* undoManagerPlugin;
+@property(nonatomic, strong) FlutterSpellCheckPlugin* spellCheckPlugin;
 
 #pragma mark - Embedder API properties
 
@@ -137,7 +138,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
@@ -647,7 +647,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
       restorationEnabled:_restorationEnabled]);
-  _spellCheckPlugin.reset([[FlutterSpellCheckPlugin alloc] init]);
+  self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
   _screenshotChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/screenshot"
@@ -707,7 +707,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           [undoManagerPlugin handleMethodCall:call result:result];
         }];
 
-    FlutterSpellCheckPlugin* spellCheckPlugin = _spellCheckPlugin.get();
+    FlutterSpellCheckPlugin* spellCheckPlugin = self.spellCheckPlugin;
     [_spellCheckChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           [spellCheckPlugin handleMethodCall:call result:result];
