@@ -74,7 +74,7 @@ static void SetupFragInfo(
     Point center,
     Point rSize,
     Scalar radius) {
-  auto sigma = std::max(blurSigma * kSqrt2, 1e-6f);
+  auto sigma = std::max(blurSigma * kSqrt2, 1.f);
 
   frag_info.center = rSize * 0.5f;
   frag_info.minEdge = std::min(rSize.x, rSize.y);
