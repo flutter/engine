@@ -46,8 +46,6 @@ float powerDistance(vec2 p) {
 }
 
 void main() {
-  frag_color = frag_info.color;
-
   vec2 adjusted = abs(v_position - frag_info.center) - frag_info.adjust;
 
   float dPos = powerDistance(max(adjusted, 0.0));
@@ -57,5 +55,5 @@ void main() {
       frag_info.scale * (computeErf7(frag_info.sInv * (frag_info.minEdge + d)) -
                          computeErf7(frag_info.sInv * d));
 
-  frag_color *= z;
+  frag_color = frag_info.color * float16_t(z);
 }
