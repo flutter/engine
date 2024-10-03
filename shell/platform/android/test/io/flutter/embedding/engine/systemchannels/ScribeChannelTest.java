@@ -15,6 +15,7 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.StandardMethodCodec;
 import java.nio.ByteBuffer;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -29,14 +30,17 @@ public class ScribeChannelTest {
         (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
+  ScribeChannel.ScribeMethodHandler mockHandler;
+  BinaryMessenger.BinaryMessageHandler binaryMessageHandler;
+
   @SuppressWarnings("deprecation")
   // setMessageHandler is deprecated.
-  @Test
-  public void respondsToStartStylusHandwriting() {
+  @Before
+  public void setUp() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
         ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
     DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
-    ScribeChannel.ScribeMethodHandler mockHandler = mock(ScribeChannel.ScribeMethodHandler.class);
+    mockHandler = mock(ScribeChannel.ScribeMethodHandler.class);
     ScribeChannel scribeChannel = new ScribeChannel(mockBinaryMessenger);
 
     scribeChannel.setScribeMethodHandler(mockHandler);
@@ -44,33 +48,20 @@ public class ScribeChannelTest {
     verify(mockBinaryMessenger, times(1))
         .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
 
-    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
-        binaryMessageHandlerCaptor.getValue();
+    binaryMessageHandler = binaryMessageHandlerCaptor.getValue();
+  }
 
-    sendToBinaryMessageHandler(binaryMessageHandler, "Scribe.startStylusHandwriting");
+  @Test
+  public void respondsToStartStylusHandwriting() {
+    sendToBinaryMessageHandler(binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
 
     verify(mockHandler).startStylusHandwriting();
   }
 
-  @SuppressWarnings("deprecation")
-  // setMessageHandler is deprecated.
   @Test
   public void respondsToIsStylusHandwritingAvailable() {
-    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
-        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
-    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
-    ScribeChannel.ScribeMethodHandler mockHandler = mock(ScribeChannel.ScribeMethodHandler.class);
-    ScribeChannel scribeChannel = new ScribeChannel(mockBinaryMessenger);
-
-    scribeChannel.setScribeMethodHandler(mockHandler);
-
-    verify(mockBinaryMessenger, times(1))
-        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
-
-    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
-        binaryMessageHandlerCaptor.getValue();
-
-    sendToBinaryMessageHandler(binaryMessageHandler, "Scribe.isStylusHandwritingAvailable");
+    sendToBinaryMessageHandler(
+        binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
 
     verify(mockHandler).isStylusHandwritingAvailable();
   }

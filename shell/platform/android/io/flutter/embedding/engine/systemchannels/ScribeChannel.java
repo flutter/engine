@@ -4,8 +4,13 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
+import static io.flutter.Build.API_LEVELS;
+
+import android.annotation.TargetApi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
@@ -18,6 +23,13 @@ import io.flutter.plugin.common.StandardMethodCodec;
  */
 public class ScribeChannel {
   private static final String TAG = "ScribeChannel";
+
+  @VisibleForTesting
+  public static final String METHOD_IS_STYLUS_HANDWRITING_AVAILABLE =
+      "Scribe.isStylusHandwritingAvailable";
+
+  @VisibleForTesting
+  public static final String METHOD_START_STYLUS_HANDWRITING = "Scribe.startStylusHandwriting";
 
   public final MethodChannel channel;
   private ScribeMethodHandler scribeMethodHandler;
@@ -48,7 +60,8 @@ public class ScribeChannel {
         }
       };
 
-  private void isStylusHandwritingAvailable(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+  private void isStylusHandwritingAvailable(
+      @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
     try {
       final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
       result.success(isAvailable);
@@ -57,7 +70,8 @@ public class ScribeChannel {
     }
   }
 
-  private void startStylusHandwriting(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+  private void startStylusHandwriting(
+      @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
     try {
       scribeMethodHandler.startStylusHandwriting();
       result.success(null);
@@ -84,12 +98,16 @@ public class ScribeChannel {
      * Responds to the {@code result} with success and a boolean indicating whether or not stylus
      * hadnwriting is available.
      */
+    @TargetApi(API_LEVELS.API_34)
+    @RequiresApi(API_LEVELS.API_34)
     boolean isStylusHandwritingAvailable();
 
     /**
      * Requests to start Scribe stylus handwriting, which will respond to the {@code result} with
      * either success if handwriting input has started or error otherwise.
      */
+    @TargetApi(API_LEVELS.API_33)
+    @RequiresApi(API_LEVELS.API_33)
     void startStylusHandwriting();
   }
 

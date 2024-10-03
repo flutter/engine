@@ -26,7 +26,6 @@ import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
-import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
@@ -42,8 +41,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.function.IntConsumer;
 
 public class InputConnectionAdaptor extends BaseInputConnection
     implements ListenableEditingState.EditingStateWatcher {
@@ -278,15 +275,9 @@ public class InputConnectionAdaptor extends BaseInputConnection
     return result;
   }
 
-  // TODO(justinmc): Scribe stylus gestures should be supported here.
+  // TODO(justinmc): Scribe stylus gestures should be supported here via
+  // performHandwritingGesture.
   // https://github.com/flutter/flutter/issues/156018
-  @TargetApi(API_LEVELS.API_34)
-  @RequiresApi(API_LEVELS.API_34)
-  @Override
-  public void performHandwritingGesture(
-      HandwritingGesture gesture, Executor executor, IntConsumer consumer) {
-    executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
-  }
 
   // Sanitizes the index to ensure the index is within the range of the
   // contents of editable.

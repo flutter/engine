@@ -17,6 +17,7 @@ import android.view.inputmethod.InputMethodManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.systemchannels.ScribeChannel;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
@@ -25,31 +26,32 @@ import org.robolectric.annotation.Config;
 public class ScribePluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 
-  @Config(sdk = API_LEVELS.API_34)
+  ScribePlugin scribePlugin;
+  InputMethodManager mockImm;
+  View testView;
+
+  @Before
+  public void setUp() {
+    ScribeChannel mockScribeChannel = mock(ScribeChannel.class);
+    testView = new View(ctx);
+    mockImm = mock(InputMethodManager.class);
+    when(mockImm.isStylusHandwritingAvailable()).thenReturn(true);
+    scribePlugin = new ScribePlugin(testView, mockImm, mockScribeChannel);
+  }
+
+  @Config(minSdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void scribePluginIsStylusHandwritingAvailable() {
-    ScribeChannel mockScribeChannel = mock(ScribeChannel.class);
-    View testView = new View(ctx);
-    InputMethodManager mockImm = mock(InputMethodManager.class);
-    when(mockImm.isStylusHandwritingAvailable()).thenReturn(true);
-    ScribePlugin scribePlugin = new ScribePlugin(testView, mockImm, mockScribeChannel);
-
     assertEquals(scribePlugin.isStylusHandwritingAvailable(), true);
 
     verify(mockImm).isStylusHandwritingAvailable();
   }
 
-  @Config(sdk = API_LEVELS.API_34)
+  @Config(minSdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void scribePluginStartStylusHandwriting() {
-    ScribeChannel mockScribeChannel = mock(ScribeChannel.class);
-    View testView = new View(ctx);
-    InputMethodManager mockImm = mock(InputMethodManager.class);
-    when(mockImm.isStylusHandwritingAvailable()).thenReturn(true);
-    ScribePlugin scribePlugin = new ScribePlugin(testView, mockImm, mockScribeChannel);
-
     scribePlugin.startStylusHandwriting();
 
     verify(mockImm).startStylusHandwriting(testView);

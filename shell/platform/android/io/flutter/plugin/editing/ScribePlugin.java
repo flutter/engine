@@ -23,7 +23,7 @@ import io.flutter.embedding.engine.systemchannels.ScribeChannel;
 public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
 
   private final ScribeChannel mScribeChannel;
-  private final InputMethodManager mImm;
+  private final InputMethodManager mInputMethodManager;
   @NonNull private final View mView;
 
   @TargetApi(API_LEVELS.API_34)
@@ -33,7 +33,7 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
     view.setAutoHandwritingEnabled(false);
 
     mView = view;
-    mImm = imm;
+    mInputMethodManager = imm;
     mScribeChannel = scribeChannel;
 
     mScribeChannel.setScribeMethodHandler(this);
@@ -58,7 +58,7 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
   @RequiresApi(API_LEVELS.API_34)
   @Override
   public boolean isStylusHandwritingAvailable() {
-    return mImm.isStylusHandwritingAvailable();
+    return mInputMethodManager.isStylusHandwritingAvailable();
   }
 
   /**
@@ -71,6 +71,6 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
   @RequiresApi(API_LEVELS.API_33)
   @Override
   public void startStylusHandwriting() {
-    mImm.startStylusHandwriting(mView);
+    mInputMethodManager.startStylusHandwriting(mView);
   }
 }

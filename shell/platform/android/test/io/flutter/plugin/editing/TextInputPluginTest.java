@@ -1393,7 +1393,7 @@ public class TextInputPluginTest {
             | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
   }
 
-  @Config(sdk = API_LEVELS.API_34)
+  @Config(minSdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void inputConnection_setsStylusHandwritingAvailable() {
