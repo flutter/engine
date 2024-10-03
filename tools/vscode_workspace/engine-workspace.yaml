@@ -133,6 +133,11 @@ settings:
       gtest:
         prependTestRunningArgs:
           - --enable_playground
+      env:
+        MTL_DEBUG_LAYER: "1"
+        MTL_DEBUG_LAYER_ERROR_MODE: assert
+        MTL_DEBUG_LAYER_WARNING_MODE: nslog
+        MTL_SHADER_VALIDATION: "1"
     - name: display_list_unittests_arm64
       pattern: ../out/host_debug_unopt_arm64/display_list_unittests
       runTask:
@@ -193,6 +198,12 @@ tasks:
       group:
         kind: build
     - <<: *et-task
+      label: host_debug_unopt_arm64
+      args:
+        - build
+        - -c
+        - host_debug_unopt_arm64
+    - <<: *et-task
       label: display_list_unittests_arm64
       args:
         - build
@@ -217,6 +228,17 @@ tasks:
         - build
         - -c
         - ios_debug_unopt
+    - <<: *et-task
+      label: android_debug_unopt_arm64
+      args:
+        - build
+        - -c
+        - host_debug_unopt_arm64
+        - "&&"
+        - *et-cmd
+        - build
+        - -c
+        - android_debug_unopt_arm64
 extensions:
   recommendations:
     # C++ TestMate

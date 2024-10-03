@@ -4,8 +4,8 @@
 
 #include "impeller/toolkit/interop/surface.h"
 
-#include "impeller/aiks/aiks_context.h"
 #include "impeller/base/validation.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
 #include "impeller/toolkit/interop/formats.h"
@@ -61,21 +61,9 @@ bool Surface::DrawDisplayList(const DisplayList& dl) const {
   const auto cull_rect = IRect::MakeSize(surface_->GetSize());
   auto skia_cull_rect =
       SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
-  impeller::TextFrameDispatcher collector(content_context, impeller::Matrix{});
-  display_list->Dispatch(collector, skia_cull_rect);
 
-  impeller::ExperimentalDlDispatcher impeller_dispatcher(
-      content_context,                           //
-      render_target,                             //
-      display_list->root_has_backdrop_filter(),  //
-      display_list->max_root_blend_mode(),       //
-      cull_rect                                  //
-  );
-  display_list->Dispatch(impeller_dispatcher, skia_cull_rect);
-  impeller_dispatcher.FinishRecording();
-  content_context.GetLazyGlyphAtlas()->ResetTextFrames();
-  content_context.GetTransientsBuffer().Reset();
-  return true;
+  return RenderToOnscreen(content_context, render_target, display_list,
+                          skia_cull_rect, /*reset_host_buffer=*/true);
 }
 
 }  // namespace impeller::interop

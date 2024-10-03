@@ -18,7 +18,7 @@
 #include "flutter/display_list/effects/dl_mask_filter.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_playground.h"
@@ -1478,21 +1478,6 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-template <typename Contents>
-static std::optional<Rect> GetCoverageOfFirstEntity(const Picture& picture) {
-  std::optional<Rect> coverage;
-  picture.pass->IterateAllEntities([&coverage](Entity& entity) {
-    if (std::static_pointer_cast<Contents>(entity.GetContents())) {
-      auto contents = std::static_pointer_cast<Contents>(entity.GetContents());
-      Entity entity;
-      coverage = contents->GetCoverage(entity);
-      return false;
-    }
-    return true;
-  });
-  return coverage;
 }
 
 TEST_P(DisplayListTest, DrawPaintIgnoresMaskFilter) {

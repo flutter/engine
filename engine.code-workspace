@@ -145,6 +145,12 @@
           "prependTestRunningArgs": [
             "--enable_playground"
           ]
+        },
+        "env": {
+          "MTL_DEBUG_LAYER": "1",
+          "MTL_DEBUG_LAYER_ERROR_MODE": "assert",
+          "MTL_DEBUG_LAYER_WARNING_MODE": "nslog",
+          "MTL_SHADER_VALIDATION": "1"
         }
       },
       {
@@ -251,6 +257,32 @@
         "group": {
           "kind": "build"
         },
+        "label": "host_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
+        },
         "label": "display_list_unittests_arm64",
         "args": [
           "build",
@@ -284,6 +316,68 @@
           "-c",
           "host_debug_unopt_arm64",
           "//flutter/impeller/golden_tests:impeller_golden_tests"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
+        },
+        "label": "ios_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64",
+          "&&",
+          "./flutter/bin/et",
+          "build",
+          "-c",
+          "ios_debug_unopt"
+        ]
+      },
+      {
+        "type": "shell",
+        "command": "./flutter/bin/et",
+        "options": {
+          "cwd": "${workspaceFolder}/.."
+        },
+        "problemMatcher": [
+          "$gcc"
+        ],
+        "presentation": {
+          "echo": true,
+          "reveal": "silent",
+          "focus": false,
+          "panel": "shared",
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
+        },
+        "label": "android_debug_unopt_arm64",
+        "args": [
+          "build",
+          "-c",
+          "host_debug_unopt_arm64",
+          "&&",
+          "./flutter/bin/et",
+          "build",
+          "-c",
+          "android_debug_unopt_arm64"
         ]
       }
     ]
