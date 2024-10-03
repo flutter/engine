@@ -27,6 +27,11 @@ FLUTTER_ASSERT_ARC
 #else
   NSLog(@"============================= NDEBUG is NOT defined");
 #endif
+#ifdef DEBUG
+  NSLog(@"============================= DEBUG is defined");
+#else
+  NSLog(@"============================= DEBUG is NOT defined");
+#endif
 
   flutter::IOSSurfaceNoop noop(nullptr);
 
