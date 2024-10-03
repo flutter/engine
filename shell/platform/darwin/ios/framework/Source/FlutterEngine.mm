@@ -608,8 +608,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.undoManagerPlugin = [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
-  self.restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
-                                                          restorationEnabled:self.restorationEnabled];
+  self.restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:self.restorationChannel
+                                     restorationEnabled:self.restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
   self.screenshotChannel =
