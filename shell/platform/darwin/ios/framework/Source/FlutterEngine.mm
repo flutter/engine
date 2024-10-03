@@ -131,6 +131,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, strong) FlutterBasicMessageChannel* systemChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* settingsChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* keyEventChannel;
+@property(nonatomic, strong) FlutterMethodChannel* screenshotChannel;
 
 #pragma mark - Embedder API properties
 
@@ -150,9 +151,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::IOSRenderingAPI _renderingApi;
   std::shared_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
-
-  // Channels
-  fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
   int64_t _nextTextureId;
 
@@ -609,12 +607,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                           restorationEnabled:_restorationEnabled];
   self.spellCheckPlugin = [[FlutterSpellCheckPlugin alloc] init];
 
-  _screenshotChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/screenshot"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
+  self.screenshotChannel =
+      [[FlutterMethodChannel alloc] initWithName:@"flutter/screenshot"
+                                 binaryMessenger:self.binaryMessenger
+                                           codec:[FlutterStandardMethodCodec sharedInstance]];
 
-  [_screenshotChannel.get()
+  [self.screenshotChannel
       setMethodCallHandler:^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
         FlutterEngine* strongSelf = weakSelf;
         if (!(strongSelf && strongSelf->_shell && strongSelf->_shell->IsSetup())) {
