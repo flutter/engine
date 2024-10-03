@@ -40,7 +40,6 @@ group("impeller") {
 
   if (impeller_supports_rendering) {
     public_deps += [
-      "aiks",
       "display_list",
       "entity",
       "renderer",
@@ -65,11 +64,12 @@ impeller_component("impeller_unittests") {
     "runtime_stage:runtime_stage_unittests",
     "shader_archive:shader_archive_unittests",
     "tessellator:tessellator_unittests",
+    "toolkit/interop:interop_unittests",
   ]
 
   if (impeller_supports_rendering) {
     deps += [
-      "aiks:aiks_unittests",
+      "display_list:aiks_unittests",
       "display_list:display_list_unittests",
       "entity:entity_unittests",
       "fixtures",
