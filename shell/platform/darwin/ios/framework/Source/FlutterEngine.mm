@@ -111,6 +111,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, strong) id<NSObject> flutterViewControllerWillDeallocObserver;
 
+#pragma mark - Channel properties
+
+@property(nonatomic, strong) FlutterPlatformPlugin* platformPlugin;
+
 #pragma mark - Embedder API properties
 
 @property(nonatomic, assign) BOOL enableEmbedderAPI;
@@ -131,7 +135,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
   fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
   fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
@@ -466,9 +469,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _viewController.get();
 }
 
-- (FlutterPlatformPlugin*)platformPlugin {
-  return _platformPlugin.get();
-}
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
@@ -652,7 +652,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   _undoManagerPlugin.reset(undoManagerPlugin);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:self]);
+  self.platformPlugin = [[FlutterPlatformPlugin alloc] initWithEngine:self];
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
@@ -692,7 +692,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
-    FlutterPlatformPlugin* platformPlugin = _platformPlugin.get();
+    FlutterPlatformPlugin* platformPlugin = self.platformPlugin;
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [platformPlugin handleMethodCall:call result:result];
     }];
