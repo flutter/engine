@@ -10,6 +10,12 @@ namespace impeller::android {
 
 fml::UniqueFD CreatePreviousReleaseFence(const SurfaceControl& control,
                                          ASurfaceTransactionStats* stats) {
+  if (stats == nullptr) {
+    // For some reason we got a null surface transaction stats. Treat this
+    // as a completed buffer, as passing a null stats to the function
+    // below will crash.
+    return {};
+  }
   const auto fd =
       GetProcTable().ASurfaceTransactionStats_getPreviousReleaseFenceFd(
           stats, control.GetHandle());
