@@ -116,25 +116,41 @@ void main() {
       callback(canvas);
       return recorder.endRecording();
     }
-    final SceneBuilder sceneBuilder = SceneBuilder();
+
+    const double rectSize = 10;
+    const int count = 50;
+    const double imgSize = rectSize * count;
 
     final Picture blueGreenGridPicture = makePicture((Canvas canvas) {
       const Color white = Color(0xFFFFFFFF);
+      const Color purple = Color(0xFFFF00FF);
       const Color blue = Color(0xFF0000FF);
       const Color green = Color(0xFF00FF00);
+      const Color yellow = Color(0xFFFFFF00);
+      const Color red = Color(0xFFFF0000);
       canvas.drawColor(white, BlendMode.src);
-      for (int i = 0; i < 100; i++) {
-        canvas.drawRect(Rect.fromLTWH(i * 5, 0, 1, 1000),
-                        Paint()..color = (i & 1) == 0 ? green : blue);
-        canvas.drawRect(Rect.fromLTWH(0, i * 5, 1000, 1),
-                        Paint()..color = (i & 1) == 0 ? blue : green);
+      for (int i = 0; i < count; i++) {
+        for (int j = 0; j < count; j++) {
+          final bool rectOdd = (i + j) & 1 == 0;
+          final Color fg = (i < count / 2)
+            ? ((j < count / 2) ? green : blue)
+            : ((j < count / 2) ? yellow : red);
+          canvas.drawRect(Rect.fromLTWH(i * rectSize, j * rectSize, rectSize, rectSize),
+                          Paint()..color = rectOdd ? fg : white);
+        }
       }
+      canvas.drawRect(const Rect.fromLTWH(0, 0, imgSize, 1), Paint()..color = purple);
+      canvas.drawRect(const Rect.fromLTWH(0, 0, 1, imgSize), Paint()..color = purple);
+      canvas.drawRect(const Rect.fromLTWH(0, imgSize - 1, imgSize, 1), Paint()..color = purple);
+      canvas.drawRect(const Rect.fromLTWH(imgSize - 1, 0, 1, imgSize), Paint()..color = purple);
     });
+
+    final SceneBuilder sceneBuilder = SceneBuilder();
     sceneBuilder.addPicture(Offset.zero, blueGreenGridPicture);
-    sceneBuilder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10, sigmaY: 10, tileMode: tileMode));
+    sceneBuilder.pushBackdropFilter(ImageFilter.blur(sigmaX: 20, sigmaY: 20, tileMode: tileMode));
 
     final Scene scene = sceneBuilder.build();
-    final Image image = scene.toImageSync(501, 501);
+    final Image image = scene.toImageSync(imgSize.round(), imgSize.round());
 
     scene.dispose();
     blueGreenGridPicture.dispose();
