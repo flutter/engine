@@ -78,6 +78,7 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
+@property(nonatomic, strong) NSMutableSet<NSNumber*>* ongoingTouches;
 /**
  * Whether we should ignore viewport metrics updates during rotation transition.
  */
@@ -133,7 +134,6 @@ typedef struct MouseState {
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
   flutter::ViewportMetrics _viewportMetrics;
-  fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
   // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
@@ -181,7 +181,7 @@ typedef struct MouseState {
                                                       opaque:self.isViewOpaque
                                              enableWideGamut:engine.project.isWideGamutEnabled];
     _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
-    _ongoingTouches.reset([[NSMutableSet alloc] init]);
+    _ongoingTouches = [[NSMutableSet alloc] init];
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -259,7 +259,7 @@ typedef struct MouseState {
                                            enableWideGamut:project.isWideGamutEnabled];
   [self.engine createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
-  _ongoingTouches.reset([[NSMutableSet alloc] init]);
+  _ongoingTouches = [[NSMutableSet alloc] init];
   [self loadDefaultSplashScreenView];
   [self performCommonViewControllerInitialization];
 }
@@ -921,12 +921,12 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)flushOngoingTouches {
-  if (self.engine && _ongoingTouches.get().count > 0) {
-    auto packet = std::make_unique<flutter::PointerDataPacket>(_ongoingTouches.get().count);
+  if (self.engine && self.ongoingTouches.count > 0) {
+    auto packet = std::make_unique<flutter::PointerDataPacket>(self.ongoingTouches.count);
     size_t pointer_index = 0;
     // If the view controller is going away, we want to flush cancel all the ongoing
     // touches to the framework so nothing gets orphaned.
-    for (NSNumber* device in _ongoingTouches.get()) {
+    for (NSNumber* device in self.ongoingTouches) {
       // Create fake PointerData to balance out each previously started one for the framework.
       flutter::PointerData pointer_data = [self generatePointerDataForFake];
 
@@ -946,7 +946,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
       packet->SetPointerData(pointer_index++, pointer_data);
     }
 
-    [_ongoingTouches removeAllObjects];
+    [self.ongoingTouches removeAllObjects];
     [self.engine dispatchPointerDataPacket:std::move(packet)];
   }
 }
@@ -1196,11 +1196,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // if the view controller goes away.
     switch (pointer_data.change) {
       case flutter::PointerData::Change::kDown:
-        [_ongoingTouches addObject:deviceKey];
+        [self.ongoingTouches addObject:deviceKey];
         break;
       case flutter::PointerData::Change::kCancel:
       case flutter::PointerData::Change::kUp:
-        [_ongoingTouches removeObject:deviceKey];
+        [self.ongoingTouches removeObject:deviceKey];
         break;
       case flutter::PointerData::Change::kHover:
       case flutter::PointerData::Change::kMove:
