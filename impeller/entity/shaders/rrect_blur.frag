@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// The math for this shader was based on the work done in Raph Levien's blog
+// post "Blurred rounded rectangles":
+// https://web.archive.org/web/20231103044404/https://raphlinus.github.io/graphics/2020/04/21/blurred-rounded-rects.html
+
 precision highp float;
 
 #include <impeller/gaussian.glsl>
