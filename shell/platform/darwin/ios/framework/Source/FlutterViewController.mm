@@ -2159,7 +2159,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)onUserSettingsChanged:(NSNotification*)notification {
   [self.engine.settingsChannel sendMessage:@{
     @"textScaleFactor" : @(self.textScaleFactor),
-    @"alwaysUse24HourFormat" : @([FlutterHourFormat isAlwaysUse24HourFormat]),
+    @"alwaysUse24HourFormat" : @(FlutterHourFormat.isAlwaysUse24HourFormat),
     @"platformBrightness" : self.brightnessMode,
     @"platformContrast" : self.contrastMode,
     @"nativeSpellCheckServiceDefined" : @true,
