@@ -13,7 +13,6 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/thread_host.h"
 #import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
@@ -245,22 +244,20 @@ typedef struct MouseState {
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
-  auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
-                initWithName:@"io.flutter"
-                     project:project
-      allowHeadlessExecution:self.engineAllowHeadlessExecution
-          restorationEnabled:self.restorationIdentifier != nil]};
-
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:project
+                                       allowHeadlessExecution:self.engineAllowHeadlessExecution
+                                           restorationEnabled:self.restorationIdentifier != nil];
   if (!engine) {
     return;
   }
 
   _viewOpaque = YES;
   _engine = engine;
-  _flutterView = [[FlutterView alloc] initWithDelegate:self.engine
-                                                opaque:self.isViewOpaque
+  _flutterView = [[FlutterView alloc] initWithDelegate:_engine
+                                                opaque:_viewOpaque
                                        enableWideGamut:project.isWideGamutEnabled];
-  [self.engine createShell:nil libraryURI:nil initialRoute:initialRoute];
+  [_engine createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches = [[NSMutableSet alloc] init];
   [self loadDefaultSplashScreenView];
