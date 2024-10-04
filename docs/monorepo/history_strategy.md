@@ -40,7 +40,7 @@ The output is stored in `.git/filter-repo`.
 
 ## Step 2: Prune the History
 
-The following table is pulled from git-filter-repo's analsis.  The `Packed Size` due to cross referencing.
+The following table is pulled from git-filter-repo's analsis.  The `Packed Size` due to cross referencing. In general; we looked at large files that are not referenced any more and folders older than 2016.
 
 | Packed Size | Deleted Date | Path                                    | Notes                        |
 |-------------|:-------------|:----------------------------------------|:-----------------------------|
@@ -99,17 +99,7 @@ The following table is pulled from git-filter-repo's analsis.  The `Packed Size`
 | 91730       | 2015-08-21   | .pxd                                    |                              |
 | 84850       | 2016-08-09   | third_party/yasm                        |                              |
 
-We might be able to get 7 more MB from:
-
-| Packed Size | Deleted Date | Path                                    | Notes                        |
-|-------------|:-------------|:----------------------------------------|:-----------------------------|
-| 2596188 | 2016-01-28 | base ||
-| 1984371 | 2018-05-10 | sky/engine ||
-| 1533736 | 2015-07-16 | sdk ||
-| 1146140 | 2015-08-28 | gpu ||
-| 959799 | 2015-08-28 | gpu/command_buffer ||
-
-The following command will remove files and foldes from the checkout history. Since this is a destructive edit, the SHA1 git hashes will be changed in the process. At the end, the `.git` history will be 107 MB of packfiles.
+The following command will remove files and foldes from the checkout history. Since this is a destructive edit, the SHA1 git hashes will be changed in the process. At the end, the `.git` history will be 74 MB of object files.
 
 ```shell
 # Lets do some heavy filtering;
@@ -143,10 +133,22 @@ git filter-repo  --force --invert-paths \
 --path 'mojo/public/third_party' \
 --path 'tests/data' \
 --path 'tests/fast' \
+--path 'tests/framework' \
 --path 'travis' \
 --path 'mojo' \
 --path 'sky/sdk' \
+--path 'sky/engine' \
+--path 'sky/engine' \
+--path 'sky/tools/webkitpy' \
+--path 'sky/shell' \
 --path 'sky/packages/sky' \
+--path 'sky/tests' \
+--path 'sky/unit' \
+--path 'sky/services' \
+--path 'sky/compositor' \
+--path 'sky/build' \
+--path 'sky/specs' \
+--path 'skysprites' \
 --path 'examples/demo_launcher' \
 --path 'examples/game' \
 --path 'third_party/qcms' \
@@ -170,8 +172,45 @@ git filter-repo  --force --invert-paths \
 --path 'third_party/okhttp' \
 --path 'third_party/libxml' \
 --path 'third_party/ots' \
+--path 'third_party/libXNVCtrl' \
 --path 'lib/web_ui/test/golden_files' \
---path 'flutter'
+--path 'apk' \
+--path 'flutter' \
+--path 'base' \
+--path 'sdk' \
+--path 'gpu' \
+--path 'engine' \
+--path 'tools/webkitpy' \
+--path 'tools/valgrind' \
+--path 'tools/clang' \
+--path 'tools/android' \
+--path 'build/linux' \
+--path 'build/win' \
+--path 'build/mac' \
+--path 'ui' \
+--path 'examples/stocks' \
+--path 'examples/stocks2' \
+--path 'examples/stocks-fn' \
+--path 'examples/data' \
+--path 'examples/fitness' \
+--path 'examples/city-list' \
+--path 'examples/widgets' \
+--path 'examples/raw' \
+--path 'examples/color' \
+--path 'examples/flights' \
+--path 'examples/rendering' \
+--path 'examples/fn' \
+--path 'specs' \
+--path 'url' \
+--path 'services' \
+--path 'framework' \
+--path 'crypto' \
+--path 'skia/ext' \
+--path 'e2etests' \
+--path 'tests/resources' \
+--path 'viewer' \
+--path 'lib/stub_ui' \
+--path 'content_handler'
 
 # Garbage collect!
 git reflog expire --expire=now --all && git gc --prune=now --aggressive
