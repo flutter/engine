@@ -2,6 +2,7 @@ package io.flutter.plugin.editing;
 
 import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -1425,6 +1426,40 @@ public class TextInputPluginTest {
         textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), editorInfo);
 
     assertTrue(EditorInfoCompat.isStylusHandwritingEnabled(editorInfo));
+  }
+
+  @Config(sdk = API_LEVELS.API_32)
+  @TargetApi(API_LEVELS.API_32)
+  @Test
+  public void inputConnection_doesNotcallSetsStylusHandwritingAvailableWhenAPILevelUnsupported() {
+    View testView = new View(ctx);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    ScribeChannel scribeChannel = new ScribeChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(
+            testView, textInputChannel, scribeChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.MULTILINE, false, false),
+            null,
+            null,
+            null,
+            null,
+            null));
+
+    EditorInfo editorInfo = new EditorInfo();
+    InputConnection connection =
+        textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), editorInfo);
+
+    assertFalse(EditorInfoCompat.isStylusHandwritingEnabled(editorInfo));
   }
 
   // -------- Start: Autofill Tests -------
