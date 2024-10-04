@@ -58,8 +58,11 @@ void DlSkCanvasAdapter::SaveLayer(const SkRect* bounds,
   sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
   SkOptionalPaint sk_paint(paint);
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
-  delegate_->saveLayer(
-      SkCanvas::SaveLayerRec{bounds, sk_paint(), sk_backdrop.get(), 0});
+  const SkTileMode tile_mode = backdrop && backdrop->asBlur()
+                                   ? ToSk(backdrop->asBlur()->tile_mode())
+                                   : SkTileMode::kClamp;
+  delegate_->saveLayer(SkCanvas::SaveLayerRec{
+      bounds, sk_paint(), sk_backdrop.get(), tile_mode, nullptr, 0});
 }
 
 void DlSkCanvasAdapter::Restore() {
