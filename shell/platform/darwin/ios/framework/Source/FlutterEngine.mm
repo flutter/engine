@@ -292,7 +292,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                       object:self
                                                     userInfo:nil];
 
-  /// nil out weak references.
+  // nil out weak references.
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/156222
+  // Ensure that FlutterEngineRegistrar is using weak pointers, then eliminate this code.
   [_registrars
       enumerateKeysAndObjectsUsingBlock:^(id key, FlutterEngineRegistrar* registrar, BOOL* stop) {
         registrar.flutterEngine = nil;
@@ -413,13 +415,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.textInputPlugin.viewController = viewController;
 
   if (viewController) {
-    __weak __block FlutterEngine* blockSelf = self;
+    __weak __block FlutterEngine* weakSelf = self;
     self.flutterViewControllerWillDeallocObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
                                                           object:viewController
                                                            queue:[NSOperationQueue mainQueue]
                                                       usingBlock:^(NSNotification* note) {
-                                                        [blockSelf notifyViewControllerDeallocated];
+                                                        [weakSelf notifyViewControllerDeallocated];
                                                       }];
   } else {
     self.flutterViewControllerWillDeallocObserver = nil;
@@ -477,11 +479,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (NSURL*)observatoryUrl {
-  return [self.publisher url];
+  return self.publisher.url;
 }
 
 - (NSURL*)vmServiceUrl {
-  return [self.publisher url];
+  return self.publisher.url;
 }
 
 - (void)resetChannels {
@@ -628,7 +630,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                     details:nil]);
         }
         flutter::Rasterizer::Screenshot screenshot =
-            [weakSelf screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData base64Encode:NO];
+            [strongSelf screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData base64Encode:NO];
         if (!screenshot.data) {
           return result([FlutterError errorWithCode:@"failure"
                                             message:@"Unable to get screenshot."
@@ -794,6 +796,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [weakSelf](flutter::Shell& shell) {
         FlutterEngine* strongSelf = weakSelf;
+        if (!strongSelf) {
+          return std::unique_ptr<flutter::PlatformViewIOS>();
+        }
         [strongSelf recreatePlatformViewController];
         strongSelf->_platformViewsController->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
