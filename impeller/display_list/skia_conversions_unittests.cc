@@ -90,7 +90,7 @@ TEST(SkiaConversionTest, ToSamplerDescriptor) {
   EXPECT_EQ(skia_conversions::ToSamplerDescriptor(
                 flutter::DlImageSampling::kMipmapLinear)
                 .mip_filter,
-            impeller::MipFilter::kNearest);
+            impeller::MipFilter::kLinear);
 }
 
 TEST(SkiaConversionsTest, SkPointToPoint) {
