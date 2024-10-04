@@ -134,13 +134,12 @@ sealed class BuildTarget {
       if (actionTypes != null && actionTypes.contains('dart_test')) {
         final String executable;
         final outputs = json.stringListOrNull('outputs');
-        if (outputs != null && outputs.isNotEmpty) {
-          // Remove the leading // from the path.
-          executable = outputs.first.substring(2);
-        } else {
+        if (outputs == null || outputs.isEmpty) {
           throw StateError('Expected at least one output for $label');
         }
-        print(executable);
+
+        // Remove the leading // from the path.
+        executable = outputs.first.substring(2);
         return ExecutableBuildTarget(
           label: Label.parseGn(label),
           testOnly: testOnly,
@@ -148,7 +147,10 @@ sealed class BuildTarget {
         );
       }
     }
-    return ActionBuildTarget(label: Label.parseGn(label), testOnly: testOnly);
+    return ActionBuildTarget(
+      label: Label.parseGn(label),
+      testOnly: testOnly,
+    );
   }
 
   /// Returns a build target from JSON originating from `gn desc --format=json`.
