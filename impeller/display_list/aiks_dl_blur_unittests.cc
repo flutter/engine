@@ -34,36 +34,30 @@ namespace testing {
 
 using namespace flutter;
 
+// The shapes of these ovals should appear equal. They are demonstrating the
+// difference between the fast pass and not.
 TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurTinySigma) {
-  auto callback = [&]() -> sk_sp<DisplayList> {
-    if (AiksTest::ImGuiBegin("Controls", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      ImGui::End();
-    }
-    DisplayListBuilder builder;
-    builder.Scale(GetContentScale().x, GetContentScale().y);
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
 
-    std::vector<float> sigmas = {0.0, 0.01, 1.0};
-    std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
-                                   DlColor::kRed()};
-    for (uint32_t i = 0; i < sigmas.size(); ++i) {
-      DlPaint paint;
-      paint.setColor(colors[i]);
-      paint.setMaskFilter(
-          DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
+  std::vector<float> sigmas = {0.0, 0.01, 1.0};
+  std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
+                                 DlColor::kRed()};
+  for (uint32_t i = 0; i < sigmas.size(); ++i) {
+    DlPaint paint;
+    paint.setColor(colors[i]);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
 
-      builder.Save();
-      builder.Translate(100 + (i * 100), 100);
-      SkRRect rrect =
-          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 60.0f, 160.0f), 50, 100);
-      builder.DrawRRect(rrect, paint);
-      builder.Restore();
-    }
+    builder.Save();
+    builder.Translate(100 + (i * 100), 100);
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 60.0f, 160.0f), 50, 100);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+  }
 
-    return builder.Build();
-  };
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, CanRenderMaskBlurHugeSigma) {
