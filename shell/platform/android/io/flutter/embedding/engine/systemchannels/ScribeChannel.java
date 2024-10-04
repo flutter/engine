@@ -47,10 +47,10 @@ public class ScribeChannel {
           Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
-            case "Scribe.isStylusHandwritingAvailable":
+            case METHOD_IS_STYLUS_HANDWRITING_AVAILABLE:
               isStylusHandwritingAvailable(call, result);
               break;
-            case "Scribe.startStylusHandwriting":
+            case METHOD_START_STYLUS_HANDWRITING:
               startStylusHandwriting(call, result);
               break;
             default:

@@ -37,8 +37,6 @@ public class ScribeChannelTest {
   ScribeChannel.ScribeMethodHandler mockHandler;
   BinaryMessenger.BinaryMessageHandler binaryMessageHandler;
 
-  @SuppressWarnings("deprecation")
-  // setMessageHandler is deprecated.
   @Before
   public void setUp() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -49,7 +47,7 @@ public class ScribeChannelTest {
 
     scribeChannel.setScribeMethodHandler(mockHandler);
 
-    verify(mockBinaryMessenger, times(1))
+    verify((BinaryMessenger) mockBinaryMessenger, times(1))
         .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
 
     binaryMessageHandler = binaryMessageHandlerCaptor.getValue();
@@ -68,6 +66,7 @@ public class ScribeChannelTest {
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void respondsToIsStylusHandwritingAvailable() {
+
     sendToBinaryMessageHandler(
         binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
 
