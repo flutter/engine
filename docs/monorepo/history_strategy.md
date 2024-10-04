@@ -1,6 +1,12 @@
-# La Grande Fusion with History
+# Monorepo History Pruning
 
-**Goal**: retain valuable history in a way that is consumable in the final merge layout.
+These are the steps we will/did follow to prune excessive history from the [flutter/engine](https://github.com/flutter/engine) repository when we merged with [flutter/flutter](https://github.com/flutter/flutter). The idea was to retain as much useful history as possible without blowing up the footprint of the framework's `.git` folder. The history that should get merged should be as relative and useful to currently engine development.
+
+The engine `.git` folder is ~780MB of history.
+
+* Binary files were checked in that are not used anymore.
+* Third party librariers were checked in and removed nearly a decade ago.
+* Examples were created and later moved elsewhere.
 
 ## Step 1: Fresh Clone + Safety
 
@@ -33,8 +39,6 @@ git filter-repo --analyze --force
 The output is stored in `.git/filter-repo`.
 
 ## Step 2: Prune the History
-
-The engine `.git` folder is ~780MB of history. Binary files were checked in that are not used anymore. Third party librariers were checked in and removed nearly a decade ago. Examples were created and later moved elsewhere.  The history that should get merged should be as engine specific as possible.
 
 The following table is pulled from git-filter-repo's analsis.  The `Packed Size` due to cross referencing.
 
