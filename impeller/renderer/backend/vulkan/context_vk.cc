@@ -428,7 +428,7 @@ void ContextVK::Setup(Settings settings) {
   /// Fetch the queues.
   ///
   QueuesVK queues;
-  if (settings.embedder_data.has_value()) {
+  if (!settings.embedder_data.has_value()) {
     queues = QueuesVK::FromQueueIndices(device_holder->device.get(),  //
                                         graphics_queue.value(),       //
                                         compute_queue.value(),        //
