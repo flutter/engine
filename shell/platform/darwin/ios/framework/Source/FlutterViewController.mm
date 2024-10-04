@@ -2092,8 +2092,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (!self.engine) {
     return;
   }
-  // XXX: Explicit type here.
-  auto platformView = self.engine.platformView;
+  fml::WeakPtr<flutter::PlatformView> platformView = self.engine.platformView;
   int32_t flags = self.accessibilityFlags;
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
