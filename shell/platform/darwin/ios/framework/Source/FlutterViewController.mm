@@ -69,6 +69,9 @@ typedef struct MouseState {
 @property(nonatomic, strong) FlutterView* flutterView;
 @property(nonatomic, strong) void (^flutterViewRenderedCallback)(void);
 
+@property(nonatomic, assign) UIInterfaceOrientationMask orientationPreferences;
+@property(nonatomic, assign) UIStatusBarStyle statusBarStyle;
+
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -127,8 +130,6 @@ typedef struct MouseState {
   // Eliminate once we can use weak pointers in platform_view_ios.h.
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
-  UIInterfaceOrientationMask _orientationPreferences;
-  UIStatusBarStyle _statusBarStyle;
   flutter::ViewportMetrics _viewportMetrics;
   BOOL _initialized;
   BOOL _viewOpaque;
@@ -1974,7 +1975,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   for (UIScene* windowScene in windowScenes) {
     FML_DCHECK([windowScene isKindOfClass:[UIWindowScene class]]);
     UIWindowSceneGeometryPreferencesIOS* preference = [[UIWindowSceneGeometryPreferencesIOS alloc]
-        initWithInterfaceOrientations:_orientationPreferences];
+        initWithInterfaceOrientations:self.orientationPreferences];
     [(UIWindowScene*)windowScene
         requestGeometryUpdateWithPreferences:preference
                                 errorHandler:^(NSError* error) {
@@ -1986,8 +1987,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
-  if (new_preferences != _orientationPreferences) {
-    _orientationPreferences = new_preferences;
+  if (new_preferences != self.orientationPreferences) {
+    self.orientationPreferences = new_preferences;
 
     if (@available(iOS 16.0, *)) {
       NSSet<UIScene*>* scenes =
@@ -2022,22 +2023,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
 #endif
       }
-      if (!(_orientationPreferences & currentInterfaceOrientation)) {
+      if (!(self.orientationPreferences & currentInterfaceOrientation)) {
         [UIViewController attemptRotationToDeviceOrientation];
         // Force orientation switch if the current orientation is not allowed
-        if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+        if (self.orientationPreferences & UIInterfaceOrientationMaskPortrait) {
           // This is no official API but more like a workaround / hack (using
           // key-value coding on a read-only property). This might break in
           // the future, but currently it´s the only way to force an orientation change
           [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait)
                                       forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
+        } else if (self.orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
           [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)
                                       forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
+        } else if (self.orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
           [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft)
                                       forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
+        } else if (self.orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
           [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight)
                                       forKey:@"orientation"];
         }
@@ -2070,7 +2071,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (NSUInteger)supportedInterfaceOrientations {
-  return _orientationPreferences;
+  return self.orientationPreferences;
 }
 
 #pragma mark - Accessibility
@@ -2258,7 +2259,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Status bar style
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-  return _statusBarStyle;
+  return self.statusBarStyle;
 }
 
 - (void)onPreferredStatusBarStyleUpdated:(NSNotification*)notification {
@@ -2271,9 +2272,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       return;
     }
 
-    NSInteger style = update.integerValue;
-    if (style != _statusBarStyle) {
-      _statusBarStyle = static_cast<UIStatusBarStyle>(style);
+    UIStatusBarStyle style = static_cast<UIStatusBarStyle>(update.integerValue);
+    if (style != self.statusBarStyle) {
+      self.statusBarStyle = style;
       [weakSelf setNeedsStatusBarAppearanceUpdate];
     }
   });
