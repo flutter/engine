@@ -27,7 +27,7 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
 
   @NonNull private final ScribeChannel mScribeChannel;
   @NonNull private final InputMethodManager mInputMethodManager;
-  @NonNull private final View mView;
+  @NonNull public View mView;
 
   public ScribePlugin(
       @NonNull View view, @NonNull InputMethodManager imm, @NonNull ScribeChannel scribeChannel) {
