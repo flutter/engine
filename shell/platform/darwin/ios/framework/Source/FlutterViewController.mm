@@ -102,6 +102,17 @@ typedef struct MouseState {
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
 
+/// Timestamp after which a scroll inertia cancel event should be inferred.
+@property(nonatomic, assign) NSTimeInterval scrollInertiaEventStartline;
+
+/// When an iOS app is running in emulation on an Apple Silicon Mac, trackpad input goes through
+/// a translation layer, and events are not received with precise deltas. Due to this, we can't
+/// rely on checking for a stationary trackpad event. Fortunately, AppKit will send an event of
+/// type UIEventTypeScroll following a scroll when inertia should stop. This field is needed to
+/// estimate if such an event represents the natural end of scrolling inertia or a user-initiated
+/// cancellation.
+@property(nonatomic, assign) NSTimeInterval scrollInertiaEventAppKitDeadline;
+
 /// VSyncClient for touch events delivery frame rate correction.
 ///
 /// On promotion devices(eg: iPhone13 Pro), the delivery frame rate of touch events is 60HZ
@@ -143,15 +154,6 @@ typedef struct MouseState {
 
   flutter::ViewportMetrics _viewportMetrics;
   MouseState _mouseState;
-  // Timestamp after which a scroll inertia cancel event should be inferred.
-  NSTimeInterval _scrollInertiaEventStartline;
-  // When an iOS app is running in emulation on an Apple Silicon Mac, trackpad input goes through
-  // a translation layer, and events are not received with precise deltas. Due to this, we can't
-  // rely on checking for a stationary trackpad event. Fortunately, AppKit will send an event of
-  // type UIEventTypeScroll following a scroll when inertia should stop. This field is needed to
-  // estimate if such an event represents the natural end of scrolling inertia or a user-initiated
-  // cancellation.
-  NSTimeInterval _scrollInertiaEventAppKitDeadline;
 }
 
 @synthesize viewOpaque = _viewOpaque;
@@ -2422,13 +2424,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
     pointer_data.view_id = self.viewIdentifier;
 
-    if (event.timestamp < _scrollInertiaEventAppKitDeadline) {
+    if (event.timestamp < self.scrollInertiaEventAppKitDeadline) {
       // Only send the event if it occured before the expected natural end of gesture momentum.
       // If received after the deadline, it's not likely the event is from a user-initiated cancel.
       auto packet = std::make_unique<flutter::PointerDataPacket>(1);
       packet->SetPointerData(/*i=*/0, pointer_data);
       [self.engine dispatchPointerDataPacket:std::move(packet)];
-      _scrollInertiaEventAppKitDeadline = 0;
+      self.scrollInertiaEventAppKitDeadline = 0;
     }
   }
   // This method is also called for UITouches, should return YES to process all touches.
@@ -2470,7 +2472,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     isRunningOnMac = [NSProcessInfo processInfo].iOSAppOnMac;
   }
   if (!isRunningOnMac && CGPointEqualToPoint(oldLocation, _mouseState.location) &&
-      time > _scrollInertiaEventStartline) {
+      time > self.scrollInertiaEventStartline) {
     // iPadOS reports trackpad movements events with high (sub-pixel) precision. When an event
     // is received with the same position as the previous one, it can only be from a finger
     // making or breaking contact with the trackpad surface.
@@ -2483,7 +2485,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     inertia_cancel.view_id = self.viewIdentifier;
     packet->SetPointerData(/*i=*/1, inertia_cancel);
     [self.engine dispatchPointerDataPacket:std::move(packet)];
-    _scrollInertiaEventStartline = DBL_MAX;
+    self.scrollInertiaEventStartline = DBL_MAX;
   } else {
     auto packet = std::make_unique<flutter::PointerDataPacket>(1);
     packet->SetPointerData(/*i=*/0, pointer_data);
@@ -2543,7 +2545,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
     case UIGestureRecognizerStateEnded:
     case UIGestureRecognizerStateCancelled:
-      _scrollInertiaEventStartline =
+      self.scrollInertiaEventStartline =
           [[NSProcessInfo processInfo] systemUptime] +
           0.1;  // Time to lift fingers off trackpad (experimentally determined)
       // When running an iOS app on an Apple Silicon Mac, AppKit will send an event
@@ -2554,7 +2556,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       // The following (curve-fitted) calculation provides a cutoff point after which any
       // UIEventTypeScroll event will likely be from the system instead of the user.
       // See https://github.com/flutter/engine/pull/34929.
-      _scrollInertiaEventAppKitDeadline =
+      self.scrollInertiaEventAppKitDeadline =
           [[NSProcessInfo processInfo] systemUptime] +
           (0.1821 * log(fmax([recognizer velocityInView:self.view].x,
                              [recognizer velocityInView:self.view].y))) -
