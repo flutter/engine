@@ -67,6 +67,7 @@ typedef struct MouseState {
 // We keep a separate reference to this and create it ahead of time because we want to be able to
 // set up a shell along with its platform view before the view has to appear.
 @property(nonatomic, strong) FlutterView* flutterView;
+@property(nonatomic, strong) void (^flutterViewRenderedCallback)(void);
 
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
@@ -126,7 +127,6 @@ typedef struct MouseState {
   // Eliminate once we can use weak pointers in platform_view_ios.h.
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
-  fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   flutter::ViewportMetrics _viewportMetrics;
@@ -587,9 +587,9 @@ static void SendFakeTouchEvent(UIScreen* screen,
 
 - (void)callViewRenderedCallback {
   self.displayingFlutterUI = YES;
-  if (_flutterViewRenderedCallback != nil) {
-    _flutterViewRenderedCallback.get()();
-    _flutterViewRenderedCallback.reset();
+  if (self.flutterViewRenderedCallback) {
+    self.flutterViewRenderedCallback();
+    self.flutterViewRenderedCallback = nil;
   }
 }
 
@@ -723,7 +723,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback.reset(callback, fml::scoped_policy::OwnershipPolicy::kRetain);
+  _flutterViewRenderedCallback = callback;
 }
 
 #pragma mark - Surface creation and teardown updates
