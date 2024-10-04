@@ -109,7 +109,7 @@ void main() {
     redClippedPicture.dispose();
   });
 
-  Image BackdropBlurWithTileMode(TileMode tileMode) {
+  Image backdropBlurWithTileMode(TileMode tileMode) {
     Picture makePicture(CanvasCallback callback) {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
@@ -119,14 +119,14 @@ void main() {
     final SceneBuilder sceneBuilder = SceneBuilder();
 
     final Picture blueGreenGridPicture = makePicture((Canvas canvas) {
-      const Color white = const Color(0xFFFFFFFF);
-      const Color blue = const Color(0xFF0000FF);
-      const Color green = const Color(0xFF00FF00);
+      const Color white = Color(0xFFFFFFFF);
+      const Color blue = Color(0xFF0000FF);
+      const Color green = Color(0xFF00FF00);
       canvas.drawColor(white, BlendMode.src);
       for (int i = 0; i < 100; i++) {
-        canvas.drawRect(Rect.fromLTRB(i * 5, 0, i * 5, 1000),
+        canvas.drawRect(Rect.fromLTWH(i * 5, 0, 1, 1000),
                         Paint()..color = (i & 1) == 0 ? green : blue);
-        canvas.drawRect(Rect.fromLTRB(0, i * 5, 1000, i * 5),
+        canvas.drawRect(Rect.fromLTWH(0, i * 5, 1000, 1),
                         Paint()..color = (i & 1) == 0 ? blue : green);
       }
     });
@@ -143,7 +143,7 @@ void main() {
   }
 
   test('BackdropFilter with Blur honors TileMode.decal', () async {
-    Image image = BackdropBlurWithTileMode(TileMode.decal);
+    final Image image = backdropBlurWithTileMode(TileMode.decal);
 
     final ImageComparer comparer = await ImageComparer.create();
     await comparer.addGoldenImage(image, 'dart_ui_backdrop_filter_blur_decal_tile_mode.png');
@@ -152,7 +152,7 @@ void main() {
   });
 
   test('BackdropFilter with Blur honors TileMode.clamp', () async {
-    Image image = BackdropBlurWithTileMode(TileMode.clamp);
+    final Image image = backdropBlurWithTileMode(TileMode.clamp);
 
     final ImageComparer comparer = await ImageComparer.create();
     await comparer.addGoldenImage(image, 'dart_ui_backdrop_filter_blur_clamp_tile_mode.png');
@@ -161,7 +161,7 @@ void main() {
   });
 
   test('BackdropFilter with Blur honors TileMode.mirror', () async {
-    Image image = BackdropBlurWithTileMode(TileMode.mirror);
+    final Image image = backdropBlurWithTileMode(TileMode.mirror);
 
     final ImageComparer comparer = await ImageComparer.create();
     await comparer.addGoldenImage(image, 'dart_ui_backdrop_filter_blur_mirror_tile_mode.png');
@@ -170,7 +170,7 @@ void main() {
   });
 
   test('BackdropFilter with Blur honors TileMode.repeated', () async {
-    Image image = BackdropBlurWithTileMode(TileMode.repeated);
+    final Image image = backdropBlurWithTileMode(TileMode.repeated);
 
     final ImageComparer comparer = await ImageComparer.create();
     await comparer.addGoldenImage(image, 'dart_ui_backdrop_filter_blur_repeated_tile_mode.png');
