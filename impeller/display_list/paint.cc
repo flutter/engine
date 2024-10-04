@@ -188,13 +188,13 @@ std::shared_ptr<ColorSourceContents> Paint::CreateContents() const {
         TiledTextureContents::ColorFilterProc filter_proc =
             [color_filter = color_filter,
              invert_colors = invert_colors](const FilterInput::Ref& input) {
-              if (invert_colors && invert_colors) {
-                std::shared_ptr<FilterContents> filter_contents =
-                    WrapWithInvertColors(
-                        input, ColorFilterContents::AbsorbOpacity::kNo);
-                auto invert_output = FilterInput::Make(filter_contents);
-                return WrapWithGPUColorFilter(
-                    color_filter, invert_output,
+              if (invert_colors && color_filter) {
+                std::shared_ptr<FilterContents> color_filter_output =
+                    WrapWithGPUColorFilter(
+                        color_filter, input,
+                        ColorFilterContents::AbsorbOpacity::kNo);
+                return WrapWithInvertColors(
+                    FilterInput::Make(color_filter_output),
                     ColorFilterContents::AbsorbOpacity::kNo);
               }
               if (color_filter) {
@@ -388,16 +388,15 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   std::shared_ptr<Contents> color_contents = color_source_contents;
 
   /// 4. Apply the user set color filter on the GPU, if applicable.
-  if (invert_colors) {
-    color_contents =
-        WrapWithInvertColors(FilterInput::Make(color_contents),
-                             ColorFilterContents::AbsorbOpacity::kYes);
-  }
-
   if (color_filter) {
     color_contents =
         WrapWithGPUColorFilter(color_filter, FilterInput::Make(color_contents),
                                ColorFilterContents::AbsorbOpacity::kYes);
+  }
+  if (invert_colors) {
+    color_contents =
+        WrapWithInvertColors(FilterInput::Make(color_contents),
+                             ColorFilterContents::AbsorbOpacity::kYes);
   }
 
   /// 5. Composite the color source with the blurred mask.

@@ -58,11 +58,11 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   bool needs_color_filter = paint.color_filter || paint.invert_colors;
   if (needs_color_filter &&
       contents->ApplyColorFilter([&](Color color) -> Color {
-        if (paint.invert_colors) {
-          color = color.ApplyColorMatrix(kColorInversion);
-        }
         if (paint.color_filter) {
           color = GetCPUColorFilterProc(paint.color_filter)(color);
+        }
+        if (paint.invert_colors) {
+          color = color.ApplyColorMatrix(kColorInversion);
         }
         return color;
       })) {
@@ -88,16 +88,15 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   if (needs_color_filter &&
       (!paint.color_source ||
        paint.color_source->type() != flutter::DlColorSourceType::kImage)) {
-    if (paint.invert_colors) {
-      contents_copy =
-          WrapWithInvertColors(FilterInput::Make(contents_copy),
-                               ColorFilterContents::AbsorbOpacity::kYes);
-    }
-
     if (paint.color_filter) {
       contents_copy = WrapWithGPUColorFilter(
           paint.color_filter, FilterInput::Make(std::move(contents_copy)),
           ColorFilterContents::AbsorbOpacity::kYes);
+    }
+    if (paint.invert_colors) {
+      contents_copy =
+          WrapWithInvertColors(FilterInput::Make(contents_copy),
+                               ColorFilterContents::AbsorbOpacity::kYes);
     }
   }
 
