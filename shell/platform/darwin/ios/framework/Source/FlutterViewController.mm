@@ -831,8 +831,8 @@ static void SendFakeTouchEvent(UIScreen* screen,
     if (_viewportMetrics.physical_width) {
       [self surfaceUpdated:YES];
     }
-    [[self.engine lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-    [[self.engine restorationPlugin] markRestorationComplete];
+    [self.engine.lifecycleChannel sendMessage:@"AppLifecycleState.inactive"];
+    [self.engine.restorationPlugin markRestorationComplete];
   }
 
   [super viewWillAppear:animated];
