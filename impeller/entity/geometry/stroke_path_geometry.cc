@@ -574,21 +574,14 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
                           .transform = entity.GetShaderTransform(pass),
                           .mode = GeometryResult::Mode::kPreventOverdraw};
   }
-  // For hairline strokes that must be tessellated, switch to the cheaper
-  // cap and joins since they will be barely noticable at pixel scale.
-  Join join = stroke_join_;
-  Cap cap = stroke_cap_;
-  if (is_hairline) {
-    join = Join::kBevel;
-    cap = Cap::kButt;
-  }
 
   PositionWriter position_writer;
   auto polyline =
       renderer.GetTessellator()->CreateTempPolyline(path_, max_basis);
   CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
                             miter_limit_ * stroke_width_ * 0.5f,
-                            GetJoinProc(join), GetCapProc(cap), max_basis);
+                            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
+                            max_basis);
 
   BufferView buffer_view = host_buffer.Emplace(
       position_writer.GetData().data(),

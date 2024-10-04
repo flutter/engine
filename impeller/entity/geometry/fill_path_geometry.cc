@@ -37,7 +37,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   }
 
   VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-      path_, host_buffer, entity.GetTransform().GetMaxBasisLengthXY());
+      path_, host_buffer, entity.GetTransform().GetMaxBasisLength());
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
