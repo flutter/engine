@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.systemchannels;
 import static io.flutter.Build.API_LEVELS;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -57,8 +58,11 @@ public class ScribeChannelTest {
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void respondsToStartStylusHandwriting() {
-    sendToBinaryMessageHandler(binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(
+            binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
 
+    verify(mockReply).reply(any(ByteBuffer.class));
     verify(mockHandler).startStylusHandwriting();
   }
 
@@ -66,28 +70,35 @@ public class ScribeChannelTest {
   @TargetApi(API_LEVELS.API_34)
   @Test
   public void respondsToIsStylusHandwritingAvailable() {
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(
+            binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
 
-    sendToBinaryMessageHandler(
-        binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
-
+    verify(mockReply).reply(any(ByteBuffer.class));
     verify(mockHandler).isStylusHandwritingAvailable();
   }
 
-  /*
   @Config(sdk = API_LEVELS.API_32)
   @TargetApi(API_LEVELS.API_32)
   @Test
-  public void respondsToIsStylusHandwritingAvailableWhenAPILevelUnsupported() {
-    BinaryMessenger.BinaryReply mockReply = sendToBinaryMessageHandler(
-        binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
+  public void respondsToStartStylusHandwritingWhenAPILevelUnsupported() {
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(
+            binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
 
-    // TODO(justinmc): reply thing is binary, which is hard to read. Could you
-    // use BasicMessageChannel or something instead? Or, follow Reid's latest
-    // comment and come back to this.
-    //verify(mockReply).reply(null);
-    verify(mockReply).reply("error");
-
-    verify(mockHandler).isStylusHandwritingAvailable();
+    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockHandler, never()).startStylusHandwriting();
   }
-  */
+
+  @Config(sdk = API_LEVELS.API_33)
+  @TargetApi(API_LEVELS.API_33)
+  @Test
+  public void respondsToIsStylusHandwritingAvailableWhenAPILevelUnsupported() {
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(
+            binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
+
+    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockHandler, never()).isStylusHandwritingAvailable();
+  }
 }

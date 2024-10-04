@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.systemchannels;
 import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -62,6 +63,11 @@ public class ScribeChannel {
 
   private void isStylusHandwritingAvailable(
       @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_34) {
+      result.error("error", "Requires API level 34 or higher.", null);
+      return;
+    }
+
     try {
       final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
       result.success(isAvailable);
@@ -72,6 +78,11 @@ public class ScribeChannel {
 
   private void startStylusHandwriting(
       @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_33) {
+      result.error("error", "Requires API level 33 or higher.", null);
+      return;
+    }
+
     try {
       scribeMethodHandler.startStylusHandwriting();
       result.success(null);
