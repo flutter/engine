@@ -7,6 +7,7 @@ package io.flutter.plugin.editing;
 import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
+import android.os.Build;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
@@ -19,18 +20,20 @@ import io.flutter.embedding.engine.systemchannels.ScribeChannel;
  *
  * <p>The plugin handles requests for scribe sent by the {@link
  * io.flutter.embedding.engine.systemchannels.ScribeChannel}.
+ *
+ * <p>On API versions below 33, the plugin does nothing.
  */
 public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
 
-  private final ScribeChannel mScribeChannel;
-  private final InputMethodManager mInputMethodManager;
+  @NonNull private final ScribeChannel mScribeChannel;
+  @NonNull private final InputMethodManager mInputMethodManager;
   @NonNull private final View mView;
 
-  @TargetApi(API_LEVELS.API_34)
-  @RequiresApi(API_LEVELS.API_34)
   public ScribePlugin(
       @NonNull View view, @NonNull InputMethodManager imm, @NonNull ScribeChannel scribeChannel) {
-    view.setAutoHandwritingEnabled(false);
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
+      view.setAutoHandwritingEnabled(false);
+    }
 
     mView = view;
     mInputMethodManager = imm;
