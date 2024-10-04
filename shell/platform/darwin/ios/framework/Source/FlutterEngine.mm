@@ -197,7 +197,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _restorationEnabled = restorationEnabled;
   _allowHeadlessExecution = allowHeadlessExecution;
-  _labelPrefix = labelPrefix;
+  _labelPrefix = [labelPrefix copy];
   _dartProject = project ?: [[FlutterDartProject alloc] init];
 
   _enableEmbedderAPI = _dartProject.settings.enable_embedder_api;
