@@ -646,13 +646,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
-    // TODO(cbracken): Use weakSelf for these.
-    FlutterPlatformPlugin* platformPlugin = self.platformPlugin;
+    __weak FlutterEngine* weakSelf = self;
+
     [self.platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [platformPlugin handleMethodCall:call result:result];
+      [weakSelf.platformPlugin handleMethodCall:call result:result];
     }];
 
-    __weak FlutterEngine* weakSelf = self;
     [self.platformViewsChannel
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
@@ -660,19 +659,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           }
         }];
 
-    FlutterTextInputPlugin* textInputPlugin = self.textInputPlugin;
     [self.textInputChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [textInputPlugin handleMethodCall:call result:result];
+      [weakSelf.textInputPlugin handleMethodCall:call result:result];
     }];
 
-    FlutterUndoManagerPlugin* undoManagerPlugin = self.undoManagerPlugin;
     [self.undoManagerChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [undoManagerPlugin handleMethodCall:call result:result];
+      [weakSelf.undoManagerPlugin handleMethodCall:call result:result];
     }];
 
-    FlutterSpellCheckPlugin* spellCheckPlugin = self.spellCheckPlugin;
     [self.spellCheckChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [spellCheckPlugin handleMethodCall:call result:result];
+      [weakSelf.spellCheckPlugin handleMethodCall:call result:result];
     }];
   }
 }
