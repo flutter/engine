@@ -244,6 +244,7 @@ void ContextVK::Setup(Settings settings) {
     device_holder->instance = std::move(instance.value);
   } else {
     device_holder->instance.reset(settings.embedder_data->instance);
+    device_holder->owned = false;
   }
   dispatcher.init(device_holder->instance.get());
 

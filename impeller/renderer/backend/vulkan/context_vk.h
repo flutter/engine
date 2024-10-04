@@ -199,9 +199,17 @@ class ContextVK final : public Context,
       return physical_device;
     }
 
+    ~DeviceHolderImpl() {
+      if (!owned) {
+        instance.release();
+        device.release();
+      }
+    }
+
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;
     vk::UniqueDevice device;
+    bool owned = true;
   };
 
   std::shared_ptr<DeviceHolderImpl> device_holder_;
