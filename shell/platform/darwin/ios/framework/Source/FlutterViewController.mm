@@ -84,6 +84,8 @@ typedef struct MouseState {
 // UIScrollView with height zero and a content offset so we can get those events. See also:
 // https://github.com/flutter/flutter/issues/35050
 @property(nonatomic, strong) UIScrollView* scrollView;
+@property(nonatomic, strong) UIView* keyboardAnimationView;
+
 /**
  * Whether we should ignore viewport metrics updates during rotation transition.
  */
@@ -139,7 +141,6 @@ typedef struct MouseState {
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
   flutter::ViewportMetrics _viewportMetrics;
-  fml::scoped_nsobject<UIView> _keyboardAnimationView;
   fml::scoped_nsobject<SpringAnimation> _keyboardSpringAnimation;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
@@ -648,10 +649,6 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // TODO(dkwingsmt): Fill the view ID property with the correct value once the
   // iOS shell supports multiple views.
   return flutter::kFlutterImplicitViewId;
-}
-
-- (UIView*)keyboardAnimationView {
-  return _keyboardAnimationView.get();
 }
 
 - (SpringAnimation*)keyboardSpringAnimation {
@@ -1685,8 +1682,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // initialize the keyboardAnimationView to get animation interpolation during animation.
   if (!self.keyboardAnimationView) {
     UIView* keyboardAnimationView = [[UIView alloc] init];
-    [keyboardAnimationView setHidden:YES];
-    _keyboardAnimationView.reset(keyboardAnimationView);
+    keyboardAnimationView.hidden = YES;
+    self.keyboardAnimationView = keyboardAnimationView;
   }
 
   if (!self.keyboardAnimationView.superview) {
@@ -1758,11 +1755,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         }
 
         // Set end value.
-        [strongSelf keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+        strongSelf.keyboardAnimationView.frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
 
         // Setup keyboard animation interpolation.
         CAAnimation* keyboardAnimation =
-            [[strongSelf keyboardAnimationView].layer animationForKey:@"position"];
+            [strongSelf.keyboardAnimationView.layer animationForKey:@"position"];
         [strongSelf setUpKeyboardSpringAnimationIfNeeded:keyboardAnimation];
       }
       completion:^(BOOL finished) {
