@@ -1894,11 +1894,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    __weak FlutterViewController* weakSelf = self;
+    // Define a local function to call super, avoiding capture of self inside the block.
+    void (^superPressesBegan)(UIPress*) = ^(UIPress* press) {
+      [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+    };
+
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                    superPressesBegan(press);
                   }];
     }
   } else {
@@ -1909,11 +1913,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesChanged:(NSSet<UIPress*>*)presses
              withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    __weak FlutterViewController* weakSelf = self;
+    // Define a local function to call super, avoiding capture of self inside the block.
+    void (^superPressesChanged)(UIPress*) = ^(UIPress* press) {
+      [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+    };
+
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+                    superPressesChanged(press);
                   }];
     }
   } else {
@@ -1924,11 +1932,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesEnded:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    __weak FlutterViewController* weakSelf = self;
+    // Define a local function to call super, avoiding capture of self inside the block.
+    void (^superPressesEnded)(UIPress*) = ^(UIPress* press) {
+      [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+    };
+
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                    superPressesEnded(press);
                   }];
     }
   } else {
@@ -1939,11 +1951,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    __weak FlutterViewController* weakSelf = self;
+    // Define a local function to call super, avoiding capture of self inside the block.
+    void (^superPressesCancelled)(UIPress*) = ^(UIPress* press) {
+      [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+    };
+
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+                    superPressesCancelled(press);
                   }];
     }
   } else {
