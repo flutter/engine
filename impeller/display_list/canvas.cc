@@ -35,18 +35,6 @@ namespace impeller {
 
 namespace {
 
-/// A color matrix which inverts colors.
-// clang-format off
-constexpr ColorMatrix kColorInversion = {
-  .array = {
-    -1.0,    0,    0, 1.0, 0, //
-       0, -1.0,    0, 1.0, 0, //
-       0,    0, -1.0, 1.0, 0, //
-     1.0,  1.0,  1.0, 1.0, 0  //
-  }
-};
-// clang-format on
-
 static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
     const Paint& paint,
     std::shared_ptr<Geometry> geometry) {

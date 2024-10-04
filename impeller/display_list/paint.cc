@@ -309,18 +309,33 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     return input;
   }
 
-  if (!color_filter) {
+  if (!color_filter && !invert_colors) {
     return input;
   }
 
   // Attempt to apply the color filter on the CPU first.
   // Note: This is not just an optimization; some color sources rely on
   //       CPU-applied color filters to behave properly.
-  if (input->ApplyColorFilter(GetCPUColorFilterProc(color_filter))) {
+  if (input->ApplyColorFilter([&](Color color) -> Color {
+        if (color_filter) {
+          color = GetCPUColorFilterProc(color_filter)(color);
+        }
+        if (invert_colors) {
+          color = color.ApplyColorMatrix(kColorInversion);
+        }
+        return color;
+      })) {
     return input;
   }
-  return WrapWithGPUColorFilter(color_filter, FilterInput::Make(input),
-                                absorb_opacity);
+  if (color_filter) {
+    input = WrapWithGPUColorFilter(color_filter, FilterInput::Make(input),
+                                   absorb_opacity);
+  }
+  if (invert_colors) {
+    input = WrapWithInvertColors(FilterInput::Make(input), absorb_opacity);
+  }
+
+  return input;
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(

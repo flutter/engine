@@ -16,18 +16,6 @@ namespace impeller {
 std::shared_ptr<ColorFilterContents> WrapWithInvertColors(
     const std::shared_ptr<FilterInput>& input,
     ColorFilterContents::AbsorbOpacity absorb_opacity) {
-  /// A color matrix which inverts colors.
-  // clang-format off
-constexpr ColorMatrix kColorInversion = {
-  .array = {
-    -1.0,    0,    0, 1.0, 0, //
-       0, -1.0,    0, 1.0, 0, //
-       0,    0, -1.0, 1.0, 0, //
-     1.0,  1.0,  1.0, 1.0, 0  //
-  }
-};
-  // clang-format on
-
   auto filter = ColorFilterContents::MakeColorMatrix({input}, kColorInversion);
   filter->SetAbsorbOpacity(absorb_opacity);
   return filter;

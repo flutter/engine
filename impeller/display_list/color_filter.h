@@ -11,6 +11,17 @@
 
 namespace impeller {
 
+/// A color matrix which inverts colors.
+// clang-format off
+static const constexpr ColorMatrix kColorInversion = {
+  .array = {
+    -1.0,    0,    0, 1.0, 0, //
+       0, -1.0,    0, 1.0, 0, //
+       0,    0, -1.0, 1.0, 0, //
+     1.0,  1.0,  1.0, 1.0, 0  //
+  }
+};
+
 std::shared_ptr<ColorFilterContents> WrapWithInvertColors(
     const std::shared_ptr<FilterInput>& input,
     ColorFilterContents::AbsorbOpacity absorb_opacity);
