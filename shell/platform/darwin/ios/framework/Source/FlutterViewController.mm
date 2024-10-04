@@ -1804,13 +1804,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            @"_keyboardAnimationVSyncClient must be nil when setting up.");
 
   // Make sure the new viewport metrics get sent after the begin frame event has processed.
-  fml::scoped_nsprotocol<FlutterKeyboardAnimationCallback> animationCallback(
-      [keyboardAnimationCallback copy]);
+  FlutterKeyboardAnimationCallback animationCallback = [keyboardAnimationCallback copy];
   auto uiCallback = [animationCallback](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
     fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
     dispatch_async(dispatch_get_main_queue(), ^(void) {
-      animationCallback.get()(keyboardAnimationTargetTime);
+      animationCallback(keyboardAnimationTargetTime);
     });
   };
 
@@ -1895,10 +1894,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
+    __weak FlutterViewController* weakSelf = self;
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf->super pressesBegan:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1909,10 +1909,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesChanged:(NSSet<UIPress*>*)presses
              withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
+    __weak FlutterViewController* weakSelf = self;
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf->super pressesChanged:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1923,10 +1924,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesEnded:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
+    __weak FlutterViewController* weakSelf = self;
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf->super pressesEnded:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1937,10 +1939,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
+    __weak FlutterViewController* weakSelf = self;
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf->super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -2266,8 +2269,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     UIStatusBarStyle style = static_cast<UIStatusBarStyle>(update.integerValue);
-    if (style != self.statusBarStyle) {
-      self.statusBarStyle = style;
+    if (style != weakSelf.statusBarStyle) {
+      weakSelf.statusBarStyle = style;
       [weakSelf setNeedsStatusBarAppearanceUpdate];
     }
   });
