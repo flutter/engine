@@ -85,6 +85,7 @@ typedef struct MouseState {
 // https://github.com/flutter/flutter/issues/35050
 @property(nonatomic, strong) UIScrollView* scrollView;
 @property(nonatomic, strong) UIView* keyboardAnimationView;
+@property(nonatomic, strong) SpringAnimation* keyboardSpringAnimation;
 
 /**
  * Whether we should ignore viewport metrics updates during rotation transition.
@@ -141,7 +142,6 @@ typedef struct MouseState {
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
   flutter::ViewportMetrics _viewportMetrics;
-  fml::scoped_nsobject<SpringAnimation> _keyboardSpringAnimation;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -179,8 +179,8 @@ typedef struct MouseState {
     _engine = engine;
     _engineNeedsLaunch = NO;
     _flutterView = [[FlutterView alloc] initWithDelegate:_engine
-                                                      opaque:self.isViewOpaque
-                                             enableWideGamut:engine.project.isWideGamutEnabled];
+                                                  opaque:self.isViewOpaque
+                                         enableWideGamut:engine.project.isWideGamutEnabled];
     _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches = [[NSMutableSet alloc] init];
 
@@ -256,8 +256,8 @@ typedef struct MouseState {
   _viewOpaque = YES;
   _engine = engine;
   _flutterView = [[FlutterView alloc] initWithDelegate:self.engine
-                                                    opaque:self.isViewOpaque
-                                           enableWideGamut:project.isWideGamutEnabled];
+                                                opaque:self.isViewOpaque
+                                       enableWideGamut:project.isWideGamutEnabled];
   [self.engine createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches = [[NSMutableSet alloc] init];
@@ -649,10 +649,6 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // TODO(dkwingsmt): Fill the view ID property with the correct value once the
   // iOS shell supports multiple views.
   return flutter::kFlutterImplicitViewId;
-}
-
-- (SpringAnimation*)keyboardSpringAnimation {
-  return _keyboardSpringAnimation.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1782,19 +1778,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)setUpKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation {
   // If keyboard animation is null or not a spring animation, fallback to DisplayLink tracking.
   if (keyboardAnimation == nil || ![keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
-    _keyboardSpringAnimation.reset();
+    _keyboardSpringAnimation = nil;
     return;
   }
 
   // Setup keyboard spring animation details for spring curve animation calculation.
   CASpringAnimation* keyboardCASpringAnimation = (CASpringAnimation*)keyboardAnimation;
-  _keyboardSpringAnimation.reset([[SpringAnimation alloc]
-      initWithStiffness:keyboardCASpringAnimation.stiffness
-                damping:keyboardCASpringAnimation.damping
-                   mass:keyboardCASpringAnimation.mass
-        initialVelocity:keyboardCASpringAnimation.initialVelocity
-              fromValue:self.originalViewInsetBottom
-                toValue:self.targetViewInsetBottom]);
+  _keyboardSpringAnimation =
+      [[SpringAnimation alloc] initWithStiffness:keyboardCASpringAnimation.stiffness
+                                         damping:keyboardCASpringAnimation.damping
+                                            mass:keyboardCASpringAnimation.mass
+                                 initialVelocity:keyboardCASpringAnimation.initialVelocity
+                                       fromValue:self.originalViewInsetBottom
+                                         toValue:self.targetViewInsetBottom];
 }
 
 - (void)setUpKeyboardAnimationVsyncClient:
@@ -2325,8 +2321,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                      taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSAssert(channel, @"The channel must not be null");
   return [self.engine.binaryMessenger setMessageHandlerOnChannel:channel
-                                              binaryMessageHandler:handler
-                                                         taskQueue:taskQueue];
+                                            binaryMessageHandler:handler
+                                                       taskQueue:taskQueue];
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
