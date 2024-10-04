@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reservedj；えr
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -1885,11 +1885,30 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 // the wild, however, so I suspect that the API is built for a tvOS remote or
 // something, and perhaps only one ever appears in the set on iOS from a
 // keyboard.
+//
+// We define separate superPresses* overrides to avoid implicitly capturing self in the blocks
+// passed to the presses* methods below.
+
+- (void)superPressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIPressesEvent*)event {
+  [super pressesBegan:presses withEvent:event];
+}
+
+- (void)superPressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIPressesEvent*)event {
+  [super pressesChanged:presses withEvent:event];
+}
+
+- (void)superPressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIPressesEvent*)event {
+  [super pressesEnded:presses withEvent:event];
+}
+
+- (void)superPressesCancelled:(NSSet<UIPress*>*)presses withEvent:(UIPressesEvent*)event {
+  [super pressesCancelled:presses withEvent:event];
+}
 
 // If you substantially change these presses overrides, consider also changing
 // the similar ones in FlutterTextInputPlugin. They need to be overridden in
 // both places to capture keys both inside and outside of a text field, but have
-// slightly different implmentations.
+// slightly different implementations.
 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
@@ -1898,7 +1917,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf superPressesBegan:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1913,7 +1932,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf superPressesChanged:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1928,7 +1947,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf superPressesEnded:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
@@ -1943,7 +1962,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     for (UIPress* press in presses) {
       [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
                   nextAction:^() {
-                    [weakSelf->super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+                    [weakSelf superPressesCancelled:[NSSet setWithObject:press] withEvent:event];
                   }];
     }
   } else {
