@@ -696,13 +696,13 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)setSplashScreenView:(UIView*)view {
-  if (view == self.splashScreenView) {
+  if (view == _splashScreenView) {
     return;
   }
 
   // Special case: user wants to remove the splash screen view.
   if (!view) {
-    if (self.splashScreenView) {
+    if (_splashScreenView) {
       [self removeSplashScreenView:nil];
     }
     return;
