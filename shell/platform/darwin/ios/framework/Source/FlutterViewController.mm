@@ -79,6 +79,11 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
 @property(nonatomic, strong) NSMutableSet<NSNumber*>* ongoingTouches;
+// This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
+// touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
+// UIScrollView with height zero and a content offset so we can get those events. See also:
+// https://github.com/flutter/flutter/issues/35050
+@property(nonatomic, strong) UIScrollView* scrollView;
 /**
  * Whether we should ignore viewport metrics updates during rotation transition.
  */
@@ -134,11 +139,6 @@ typedef struct MouseState {
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
   flutter::ViewportMetrics _viewportMetrics;
-  // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
-  // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
-  // UIScrollView with height zero and a content offset so we can get those events. See also:
-  // https://github.com/flutter/flutter/issues/35050
-  fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   fml::scoped_nsobject<SpringAnimation> _keyboardSpringAnimation;
   MouseState _mouseState;
@@ -497,17 +497,16 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self installSplashScreenViewIfNecessary];
-  UIScrollView* scrollView = [[UIScrollView alloc] init];
-  scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+  self.scrollView = [[UIScrollView alloc] init];
+  self.scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
   // The color shouldn't matter since it is offscreen.
-  scrollView.backgroundColor = UIColor.whiteColor;
-  scrollView.delegate = self;
+  self.scrollView.backgroundColor = UIColor.whiteColor;
+  self.scrollView.delegate = self;
   // This is an arbitrary small size.
-  scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
+  self.scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
   // This is an arbitrary offset that is not CGPointZero.
-  scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
-  [self.view addSubview:scrollView];
-  _scrollView.reset(scrollView);
+  self.scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+  [self.view addSubview:self.scrollView];
 }
 
 - (flutter::PointerData)generatePointerDataForFake {
@@ -971,7 +970,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 
   // TODO(cbracken): https://github.com/flutter/flutter/issues/156222
   // Ensure all delegates are weak and remove this.
-  _scrollView.get().delegate = nil;
+  _scrollView.delegate = nil;
   _hoverGestureRecognizer.delegate = nil;
   _discreteScrollingPanGestureRecognizer.delegate = nil;
   _continuousScrollingPanGestureRecognizer.delegate = nil;
@@ -1376,8 +1375,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = self.flutterScreenIfViewLoaded.scale;
 
   // Purposefully place this not visible.
-  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
-  _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+  self.scrollView.frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
+  self.scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
