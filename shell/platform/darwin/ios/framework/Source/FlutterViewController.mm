@@ -2162,7 +2162,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"alwaysUse24HourFormat" : @(FlutterHourFormat.isAlwaysUse24HourFormat),
     @"platformBrightness" : self.brightnessMode,
     @"platformContrast" : self.contrastMode,
-    @"nativeSpellCheckServiceDefined" : @true,
+    @"nativeSpellCheckServiceDefined" : @YES,
     @"supportsShowingSystemContextMenu" : @(self.supportsShowingSystemContextMenu)
   }];
 }
@@ -2583,7 +2583,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
     default:
       // continuousScrollEvent: should only ever be triggered with the above phases
-      NSAssert(false, @"Trackpad pan event occured with unexpected phase 0x%lx",
+      NSAssert(NO, @"Trackpad pan event occured with unexpected phase 0x%lx",
                (long)recognizer.state);
       break;
   }
@@ -2613,7 +2613,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
     default:
       // pinchEvent: should only ever be triggered with the above phases
-      NSAssert(false, @"Trackpad pinch event occured with unexpected phase 0x%lx",
+      NSAssert(NO, @"Trackpad pinch event occured with unexpected phase 0x%lx",
                (long)recognizer.state);
       break;
   }
