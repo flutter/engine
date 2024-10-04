@@ -147,7 +147,7 @@ typedef struct MouseState {
 @end
 
 @implementation FlutterViewController {
-  // TODO(cbracken): https://github.com/flutter/flutter/issues/155943
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/137801
   // Eliminate once we can use weak pointers in platform_view_ios.h.
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
