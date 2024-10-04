@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_AIKS_PAINT_H_
-#define FLUTTER_IMPELLER_AIKS_PAINT_H_
+#ifndef FLUTTER_IMPELLER_DISPLAY_LIST_PAINT_H_
+#define FLUTTER_IMPELLER_DISPLAY_LIST_PAINT_H_
 
 #include <memory>
 
-#include "impeller/aiks/color_filter.h"
-#include "impeller/aiks/color_source.h"
-#include "impeller/aiks/image_filter.h"
+#include "display_list/effects/dl_color_source.h"
+#include "impeller/display_list/color_filter.h"
+#include "impeller/display_list/image_filter.h"
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -66,7 +67,7 @@ struct Paint {
   };
 
   Color color = Color::Black();
-  ColorSource color_source;
+  const flutter::DlColorSource* color_source = nullptr;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
@@ -107,6 +108,8 @@ struct Paint {
   /// @brief   Whether this paint has a color filter that can apply opacity
   bool HasColorFilter() const;
 
+  std::shared_ptr<ColorSourceContents> CreateContents() const;
+
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
                                          bool is_solid_color,
                                          const Matrix& ctm) const;
@@ -125,4 +128,4 @@ struct Paint {
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_AIKS_PAINT_H_
+#endif  // FLUTTER_IMPELLER_DISPLAY_LIST_PAINT_H_
