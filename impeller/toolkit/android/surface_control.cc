@@ -5,6 +5,7 @@
 #include "impeller/toolkit/android/surface_control.h"
 
 #include "impeller/base/validation.h"
+#include "impeller/toolkit/android/proc_table.h"
 #include "impeller/toolkit/android/surface_transaction.h"
 
 namespace impeller::android {
@@ -48,8 +49,21 @@ bool SurfaceControl::RemoveFromParent() const {
 }
 
 bool SurfaceControl::IsAvailableOnPlatform() {
-  return GetProcTable().IsValid() &&
-         GetProcTable().ASurfaceControl_createFromWindow.IsAvailable();
+  // We must check all procs used by the AHB swapchain as some Android 29
+  // devices do not correctly expose all required APIs. See:
+  // https://github.com/flutter/flutter/issues/155877
+  const ProcTable& proc_table = GetProcTable();
+  return proc_table.IsValid() &&
+         proc_table.ASurfaceControl_createFromWindow.IsAvailable() &&
+         proc_table.ASurfaceControl_release.IsAvailable() &&
+         proc_table.ASurfaceTransaction_apply.IsAvailable() &&
+         proc_table.ASurfaceTransaction_create.IsAvailable() &&
+         proc_table.ASurfaceTransaction_delete.IsAvailable() &&
+         proc_table.ASurfaceTransaction_reparent.IsAvailable() &&
+         proc_table.ASurfaceTransaction_setBuffer.IsAvailable() &&
+         proc_table.ASurfaceTransaction_setOnComplete.IsAvailable() &&
+         proc_table.ASurfaceTransactionStats_getPreviousReleaseFenceFd
+             .IsAvailable();
 }
 
 }  // namespace impeller::android
