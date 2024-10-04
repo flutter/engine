@@ -71,6 +71,8 @@ typedef struct MouseState {
 
 @property(nonatomic, assign) UIInterfaceOrientationMask orientationPreferences;
 @property(nonatomic, assign) UIStatusBarStyle statusBarStyle;
+@property(nonatomic, assign) BOOL initialized;
+@property(nonatomic, assign) BOOL engineNeedsLaunch;
 
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
@@ -131,9 +133,6 @@ typedef struct MouseState {
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
   flutter::ViewportMetrics _viewportMetrics;
-  BOOL _initialized;
-  BOOL _viewOpaque;
-  BOOL _engineNeedsLaunch;
   fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
   // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
@@ -154,6 +153,7 @@ typedef struct MouseState {
   NSTimeInterval _scrollInertiaEventAppKitDeadline;
 }
 
+@synthesize viewOpaque = _viewOpaque;
 @synthesize displayingFlutterUI = _displayingFlutterUI;
 @synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
 @dynamic viewIdentifier;
@@ -284,7 +284,6 @@ typedef struct MouseState {
   }
 
   _initialized = YES;
-
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
 
@@ -754,10 +753,10 @@ static void SendFakeTouchEvent(UIScreen* screen,
 - (void)viewDidLoad {
   TRACE_EVENT0("flutter", "viewDidLoad");
 
-  if (self.engine && _engineNeedsLaunch) {
+  if (self.engine && self.engineNeedsLaunch) {
     [self.engine launchEngine:nil libraryURI:nil entrypointArgs:nil];
     [self.engine setViewController:self];
-    _engineNeedsLaunch = NO;
+    self.engineNeedsLaunch = NO;
   } else if (self.engine.viewController == self) {
     [self.engine attachView];
   }
