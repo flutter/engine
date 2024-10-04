@@ -64,6 +64,10 @@ typedef struct MouseState {
 // https://github.com/flutter/flutter/issues/138168
 @property(nonatomic, readonly) int64_t viewIdentifier;
 
+// We keep a separate reference to this and create it ahead of time because we want to be able to
+// set up a shell along with its platform view before the view has to appear.
+@property(nonatomic, strong) FlutterView* flutterView;
+
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -122,9 +126,6 @@ typedef struct MouseState {
   // Eliminate once we can use weak pointers in platform_view_ios.h.
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
 
-  // We keep a separate reference to this and create it ahead of time because we want to be able to
-  // set up a shell along with its platform view before the view has to appear.
-  fml::scoped_nsobject<FlutterView> _flutterView;
   fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
@@ -175,9 +176,9 @@ typedef struct MouseState {
     }
     _engine = engine;
     _engineNeedsLaunch = NO;
-    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
+    _flutterView = [[FlutterView alloc] initWithDelegate:_engine
                                                       opaque:self.isViewOpaque
-                                             enableWideGamut:engine.project.isWideGamutEnabled]);
+                                             enableWideGamut:engine.project.isWideGamutEnabled];
     _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
@@ -252,9 +253,9 @@ typedef struct MouseState {
 
   _viewOpaque = YES;
   _engine = engine;
-  _flutterView.reset([[FlutterView alloc] initWithDelegate:self.engine
+  _flutterView = [[FlutterView alloc] initWithDelegate:self.engine
                                                     opaque:self.isViewOpaque
-                                           enableWideGamut:project.isWideGamutEnabled]);
+                                           enableWideGamut:project.isWideGamutEnabled];
   [self.engine createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches.reset([[NSMutableSet alloc] init]);
@@ -268,9 +269,9 @@ typedef struct MouseState {
 
 - (void)setViewOpaque:(BOOL)value {
   _viewOpaque = value;
-  if (_flutterView.get().layer.opaque != value) {
-    _flutterView.get().layer.opaque = value;
-    [_flutterView.get().layer setNeedsLayout];
+  if (self.flutterView.layer.opaque != value) {
+    self.flutterView.layer.opaque = value;
+    [self.flutterView.layer setNeedsLayout];
   }
 }
 
@@ -491,7 +492,7 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
 }
 
 - (void)loadView {
-  self.view = GetViewOrPlaceholder(_flutterView.get());
+  self.view = GetViewOrPlaceholder(self.flutterView);
   self.view.multipleTouchEnabled = YES;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -736,7 +737,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // thread.
   if (appeared) {
     [self installFirstFrameCallback];
-    [self.engine platformViewsController]->SetFlutterView(_flutterView.get());
+    [self.engine platformViewsController]->SetFlutterView(self.flutterView);
     [self.engine platformViewsController]->SetFlutterViewController(self);
     [self.engine iosPlatformView]->NotifyCreated();
   } else {
@@ -770,7 +771,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
     _hoverGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer];
+    [self.flutterView addGestureRecognizer:_hoverGestureRecognizer];
 
     _discreteScrollingPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(discreteScrollEvent:)];
@@ -781,23 +782,23 @@ static void SendFakeTouchEvent(UIScreen* screen,
     // than touch events, so they will still be received.
     _discreteScrollingPanGestureRecognizer.allowedTouchTypes = @[];
     _discreteScrollingPanGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
+    [self.flutterView addGestureRecognizer:_discreteScrollingPanGestureRecognizer];
     _continuousScrollingPanGestureRecognizer =
         [[UIPanGestureRecognizer alloc] initWithTarget:self
                                                 action:@selector(continuousScrollEvent:)];
     _continuousScrollingPanGestureRecognizer.allowedScrollTypesMask = UIScrollTypeMaskContinuous;
     _continuousScrollingPanGestureRecognizer.allowedTouchTypes = @[];
     _continuousScrollingPanGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_continuousScrollingPanGestureRecognizer];
+    [self.flutterView addGestureRecognizer:_continuousScrollingPanGestureRecognizer];
     _pinchGestureRecognizer =
         [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchEvent:)];
     _pinchGestureRecognizer.allowedTouchTypes = @[];
     _pinchGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_pinchGestureRecognizer];
+    [self.flutterView addGestureRecognizer:_pinchGestureRecognizer];
     _rotationGestureRecognizer = [[UIRotationGestureRecognizer alloc] init];
     _rotationGestureRecognizer.allowedTouchTypes = @[];
     _rotationGestureRecognizer.delegate = self;
-    [_flutterView.get() addGestureRecognizer:_rotationGestureRecognizer];
+    [self.flutterView addGestureRecognizer:_rotationGestureRecognizer];
   }
 
   [super viewDidLoad];
