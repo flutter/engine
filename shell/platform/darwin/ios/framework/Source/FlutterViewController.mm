@@ -908,7 +908,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
                  dispatch_get_main_queue(), ^{
                    // `viewWillTransitionToSize` is only called after the previous rotation is
                    // complete. So there won't be race condition for this flag.
-                   _shouldIgnoreViewportMetricsUpdatesDuringRotation = NO;
+                   weakSelf.shouldIgnoreViewportMetricsUpdatesDuringRotation = NO;
                    [weakSelf updateViewportMetricsIfNeeded];
                  });
 }
