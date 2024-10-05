@@ -2250,22 +2250,19 @@ TEST_P(EntityTest, ContentContextOptionsHasReasonableHashFunctions) {
 
 #ifdef FML_OS_LINUX
 TEST_P(EntityTest, FramebufferFetchVulkanBindingOffsetIsTheSame) {
-  // Using framebuffer fetch on Vulkan requires that we maintain a subpass
-  input
-      // binding that we don't have a good route for configuring with the
-      // current metadata approach. This test verifies that the binding value
-      // doesn't
-      change
-          // from the expected constant.
-          // See also:
-          //   * impeller/renderer/backend/vulkan/binding_helpers_vk.cc
-          //   * impeller/entity/shaders/blending/framebuffer_blend.frag
-          // This test only works on Linux because macOS hosts incorrectly
-          // populate
-          the
-      // Vulkan descriptor sets based on the MSL compiler settings.
+  // Using framebuffer fetch on Vulkan requires that we maintain a subpass input
+  // binding that we don't have a good route for configuring with the
+  // current metadata approach. This test verifies that the binding value
+  // doesn't change
+  // from the expected constant.
+  // See also:
+  //   * impeller/renderer/backend/vulkan/binding_helpers_vk.cc
+  //   * impeller/entity/shaders/blending/framebuffer_blend.frag
+  // This test only works on Linux because macOS hosts incorrectly
+  // populate  the
+  // Vulkan descriptor sets based on the MSL compiler settings.
 
-      bool expected_layout = false;
+  bool expected_layout = false;
   for (const DescriptorSetLayout& layout : FramebufferBlendColorBurnPipeline::
            FragmentShader::kDescriptorSetLayouts) {
     if (layout.binding == 64 &&
