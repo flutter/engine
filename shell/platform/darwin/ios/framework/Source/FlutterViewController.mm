@@ -1317,7 +1317,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  NSAssert(self.engine, @"engine must not be nil");
   flutter::Shell& shell = self.engine.shell;
   auto callback = [](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     // Do nothing in this block. Just trigger system to callback touch events with correct rate.
@@ -1402,7 +1401,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (firstViewBoundsUpdate && applicationOrSceneIsActive && self.engine) {
     [self surfaceUpdated:YES];
 
-    NSAssert(self.engine, @"engine must not be nil");
     flutter::Shell& shell = self.engine.shell;
     fml::TimeDelta waitTime =
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
