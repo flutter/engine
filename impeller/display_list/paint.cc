@@ -327,6 +327,7 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
       })) {
     return input;
   }
+
   if (color_filter) {
     input = WrapWithGPUColorFilter(color_filter, FilterInput::Make(input),
                                    absorb_opacity);

@@ -63,9 +63,13 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
     case flutter::DlImageFilterType::kLocalMatrix: {
       auto matrix_filter = filter->asLocalMatrix();
       FML_DCHECK(matrix_filter);
+      FML_DCHECK(matrix_filter->image_filter());
 
       auto matrix = skia_conversions::ToMatrix(matrix_filter->matrix());
-      return FilterContents::MakeLocalMatrixFilter(input, matrix);
+      return FilterContents::MakeLocalMatrixFilter(
+          FilterInput::Make(
+              WrapInput(matrix_filter->image_filter().get(), input)),
+          matrix);
     }
     case flutter::DlImageFilterType::kColorFilter: {
       auto image_color_filter = filter->asColorFilter();
