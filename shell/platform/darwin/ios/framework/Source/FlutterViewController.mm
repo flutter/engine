@@ -499,16 +499,20 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self installSplashScreenViewIfNecessary];
-  self.scrollView = [[UIScrollView alloc] init];
-  self.scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+
+  // Create and set up the scroll view.
+  UIScrollView* scrollView = [[UIScrollView alloc] init];
+  scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
   // The color shouldn't matter since it is offscreen.
-  self.scrollView.backgroundColor = UIColor.whiteColor;
-  self.scrollView.delegate = self;
+  scrollView.backgroundColor = UIColor.whiteColor;
+  scrollView.delegate = self;
   // This is an arbitrary small size.
-  self.scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
+  scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
   // This is an arbitrary offset that is not CGPointZero.
-  self.scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+  scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+
   [self.view addSubview:self.scrollView];
+  self.scrollView = scrollView;
 }
 
 - (flutter::PointerData)generatePointerDataForFake {
