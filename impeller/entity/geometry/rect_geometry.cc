@@ -8,6 +8,8 @@ namespace impeller {
 
 RectGeometry::RectGeometry(Rect rect) : rect_(rect) {}
 
+RectGeometry::~RectGeometry() {}
+
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) const {
