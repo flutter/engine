@@ -13,6 +13,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.text.DynamicLayout;
 import android.text.Editable;
 import android.text.InputType;
@@ -26,20 +27,27 @@ import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
+import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.PreviewableHandwritingGesture;
+import android.view.inputmethod.SelectGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.systemchannels.ScribeChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.common.MethodChannel;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.IntConsumer;
 
 public class InputConnectionAdaptor extends BaseInputConnection
     implements ListenableEditingState.EditingStateWatcher {
@@ -51,6 +59,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
 
   private final View mFlutterView;
   private final int mClient;
+  private final ScribeChannel scribeChannel;
   private final TextInputChannel textInputChannel;
   private final ListenableEditingState mEditable;
   private final EditorInfo mEditorInfo;
@@ -69,6 +78,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
       View view,
       int client,
       TextInputChannel textInputChannel,
+      ScribeChannel scribeChannel,
       KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
       EditorInfo editorInfo,
@@ -77,6 +87,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
     mFlutterView = view;
     mClient = client;
     this.textInputChannel = textInputChannel;
+    this.scribeChannel = scribeChannel;
     mEditable = editable;
     mEditable.addEditingStateListener(this);
     mEditorInfo = editorInfo;
@@ -100,10 +111,19 @@ public class InputConnectionAdaptor extends BaseInputConnection
       View view,
       int client,
       TextInputChannel textInputChannel,
+      ScribeChannel scribeChannel,
       KeyboardDelegate keyboardDelegate,
       ListenableEditingState editable,
       EditorInfo editorInfo) {
-    this(view, client, textInputChannel, keyboardDelegate, editable, editorInfo, new FlutterJNI());
+    this(
+        view,
+        client,
+        textInputChannel,
+        scribeChannel,
+        keyboardDelegate,
+        editable,
+        editorInfo,
+        new FlutterJNI());
   }
 
   private ExtractedText getExtractedText(ExtractedTextRequest request) {
@@ -260,6 +280,52 @@ public class InputConnectionAdaptor extends BaseInputConnection
     boolean result = super.setSelection(start, end);
     endBatchEdit();
     return result;
+  }
+
+  @Override
+  public boolean previewHandwritingGesture(
+      PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
+    System.out.println("justin previewHandwritingGesture gesture: " + gesture);
+    return true;
+  }
+
+  @Override
+  public void performHandwritingGesture(
+      HandwritingGesture gesture, Executor executor, IntConsumer consumer) {
+    System.out.println("justin performHandwritingGesture gesture: " + gesture);
+
+    if (gesture instanceof SelectGesture) {
+      final MethodChannel.Result result =
+          new MethodChannel.Result() {
+            @Override
+            public void success(Object result) {
+              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_SUCCESS));
+            }
+
+            @Override
+            public void error(String errorCode, String errorMessage, Object errorDetails) {
+              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_FAILED));
+            }
+
+            @Override
+            public void notImplemented() {
+              executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
+            }
+          };
+      scribeChannel.performHandwritingSelectGesture((SelectGesture) gesture, result);
+      return;
+    }
+
+    executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
+    /*
+    InputConnection#HANDWRITING_GESTURE_RESULT_SUCCESS
+    InputConnection#HANDWRITING_GESTURE_RESULT_FAILED
+    InputConnection#HANDWRITING_GESTURE_RESULT_FALLBACK
+    The gesture is performed and fallback text is inserted.
+    InputConnection#HANDWRITING_GESTURE_RESULT_UNSUPPORTED
+    The gesture is not supported by the editor
+    InputConnection#HANDWRITING_GESTURE_RESULT_CANCELLED
+        */
   }
 
   // Sanitizes the index to ensure the index is within the range of the
