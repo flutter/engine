@@ -81,21 +81,17 @@ class CommandBufferVK final
   // Visible for testing.
   bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
 
-  void Reset();
-
  private:
   friend class ContextVK;
   friend class CommandQueueVK;
 
   std::weak_ptr<const DeviceHolderVK> device_holder_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
-  std::shared_ptr<QueueVK> queue_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
 
   CommandBufferVK(std::weak_ptr<const Context> context,
                   std::weak_ptr<const DeviceHolderVK> device_holder,
                   std::shared_ptr<TrackedObjectsVK> tracked_objects,
-                  std::shared_ptr<QueueVK> queue,
                   std::shared_ptr<FenceWaiterVK> fence_waiter);
 
   // |CommandBuffer|

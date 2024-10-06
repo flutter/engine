@@ -23,12 +23,10 @@ CommandBufferVK::CommandBufferVK(
     std::weak_ptr<const Context> context,
     std::weak_ptr<const DeviceHolderVK> device_holder,
     std::shared_ptr<TrackedObjectsVK> tracked_objects,
-    std::shared_ptr<QueueVK> queue,
     std::shared_ptr<FenceWaiterVK> fence_waiter)
     : CommandBuffer(std::move(context)),
       device_holder_(std::move(device_holder)),
       tracked_objects_(std::move(tracked_objects)),
-      queue_(std::move(queue)),
       fence_waiter_(std::move(fence_waiter)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
@@ -116,10 +114,6 @@ vk::CommandBuffer CommandBufferVK::GetCommandBuffer() const {
     return tracked_objects_->GetCommandBuffer();
   }
   return {};
-}
-
-void CommandBufferVK::Reset() {
-  queue_ = nullptr;
 }
 
 bool CommandBufferVK::Track(std::shared_ptr<SharedObjectVK> object) {
@@ -213,9 +207,6 @@ void CommandBufferVK::InsertDebugMarker(std::string_view label) const {
   label_info.pLabelName = label.data();
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.insertDebugUtilsLabelEXT(label_info);
-  }
-  if (queue_) {
-    queue_->InsertDebugMarker(label);
   }
 }
 

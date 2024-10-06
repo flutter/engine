@@ -46,7 +46,6 @@ fml::Status CommandQueueVK::Submit(
     }
     vk_buffers.push_back(command_buffer.GetCommandBuffer());
     tracked_objects.push_back(std::move(command_buffer.tracked_objects_));
-    command_buffer.Reset();
   }
 
   auto context = context_.lock();

@@ -519,7 +519,6 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
       shared_from_this(),          //
       GetDeviceHolder(),           //
       std::move(tracked_objects),  //
-      GetGraphicsQueue(),          //
       GetFenceWaiter()             //
       ));
 }
