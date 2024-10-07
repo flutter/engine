@@ -395,6 +395,42 @@ Future<void> toByteDataRetries() async {
 }
 
 @pragma('vm:entry-point')
+Future<void> toByteDataRetryOverflows() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  List<Image> images = [];
+  for (int i = 0; i < 100; ++i) {
+    images.add(await picture.toImage(100, 100));
+  }
+  List<Future<ByteData?>> dataFutures = [];
+  _turnOffGPU(true);
+  for (Image image in images) {
+    dataFutures.add(image.toByteData());
+  }
+  Future<void>.delayed(Duration(milliseconds: 100), () {
+    _turnOffGPU(false);
+  });
+  try {
+    List<ByteData?> data = await Future.wait(dataFutures);
+    for (ByteData? item in data) {
+      if (item != null) {
+        _validateNotNull(item);
+        return;
+      }
+    }
+    _validateNotNull(null);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
+
+@pragma('vm:entry-point')
 Future<void> toImageRetries() async {
   final PictureRecorder pictureRecorder = PictureRecorder();
   final Canvas canvas = Canvas(pictureRecorder);
