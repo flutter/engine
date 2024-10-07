@@ -50,6 +50,7 @@ template("skwasm_variant") {
       "-sEXPORTED_FUNCTIONS=[stackAlloc]",
       "-sEXPORTED_RUNTIME_METHODS=[addFunction,wasmExports,wasmMemory,stackAlloc]",
       "-sSHARED_MEMORY=1",
+      "-sINCOMING_MODULE_JS_API=[instantiateWasm]",
       "--js-library",
       rebase_path("library_skwasm_support.js"),
     ]

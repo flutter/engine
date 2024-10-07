@@ -507,8 +507,8 @@ class BrowserPlatform extends PlatformPlugin {
         fileInDirectory.readAsBytesSync(),
         headers: <String, Object>{
           HttpHeaders.contentTypeHeader: contentType,
-          if (isScript && needsCrossOriginIsolated)
-            ...coopCoepHeaders,
+          // if (isScript && needsCrossOriginIsolated)
+          //   ...coopCoepHeaders,
         },
       );
     };
@@ -591,8 +591,8 @@ class BrowserPlatform extends PlatformPlugin {
         </html>
       ''', headers: <String, String>{
         'Content-Type': 'text/html',
-        if (needsCrossOriginIsolated)
-          ...coopCoepHeaders
+        // if (needsCrossOriginIsolated)
+        //   ...coopCoepHeaders
       });
     }
 
