@@ -6,6 +6,7 @@ package io.flutter.embedding.engine.systemchannels;
 
 import static io.flutter.Build.API_LEVELS;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -15,6 +16,7 @@ import android.annotation.TargetApi;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.FlutterException;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import java.nio.ByteBuffer;
@@ -62,7 +64,18 @@ public class ScribeChannelTest {
         sendToBinaryMessageHandler(
             binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
 
-    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    return decodedReply == null;
+                  } catch (FlutterException e) {
+                    return false;
+                  }
+                }));
     verify(mockHandler).startStylusHandwriting();
   }
 
@@ -74,7 +87,20 @@ public class ScribeChannelTest {
         sendToBinaryMessageHandler(
             binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
 
-    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    // Should succeed and should tell whether or not Scribe is available by
+                    // using a boolean.
+                    return decodedReply.getClass() == java.lang.Boolean.class;
+                  } catch (FlutterException e) {
+                    return false;
+                  }
+                }));
     verify(mockHandler).isStylusHandwritingAvailable();
   }
 
@@ -86,7 +112,19 @@ public class ScribeChannelTest {
         sendToBinaryMessageHandler(
             binaryMessageHandler, ScribeChannel.METHOD_START_STYLUS_HANDWRITING);
 
-    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    return false;
+                  } catch (FlutterException e) {
+                    // Should fail because the API version is too low.
+                    return true;
+                  }
+                }));
     verify(mockHandler, never()).startStylusHandwriting();
   }
 
@@ -98,7 +136,19 @@ public class ScribeChannelTest {
         sendToBinaryMessageHandler(
             binaryMessageHandler, ScribeChannel.METHOD_IS_STYLUS_HANDWRITING_AVAILABLE);
 
-    verify(mockReply).reply(any(ByteBuffer.class));
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    return false;
+                  } catch (FlutterException e) {
+                    // Should fail because the API version is too low.
+                    return true;
+                  }
+                }));
     verify(mockHandler, never()).isStylusHandwritingAvailable();
   }
 }
