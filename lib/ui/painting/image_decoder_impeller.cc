@@ -423,10 +423,8 @@ void ImageDecoderImpeller::UploadTextureToPrivate(
                 [result_ptr, context, buffer, image_info, resize_info]() {
                   sk_sp<DlImage> image;
                   std::string decode_error;
-                  std::tie(image, decode_error) =
-                      std::tie(image, decode_error) =
-                          UnsafeUploadTextureToPrivate(context, buffer,
-                                                       image_info, resize_info);
+                  std::tie(image, decode_error) = UnsafeUploadTextureToPrivate(
+                      context, buffer, image_info, resize_info);
                   (*result_ptr)(image, decode_error);
                 },
                 [result_ptr]() {
