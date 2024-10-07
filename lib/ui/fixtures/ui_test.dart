@@ -456,6 +456,40 @@ Future<void> toImageRetries() async {
 }
 
 @pragma('vm:entry-point')
+Future<void> toImageRetryOverflows() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  _turnOffGPU(true);
+  List<Future<Image>> imageFutures = [];
+  // This number must be bigger than impeller::Context::kMaxTasksAwaitingGPU.
+  int numJobs = 100;
+  for (int i = 0; i < numJobs; i++) {
+    imageFutures.add(picture.toImage(100, 100));
+  }
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  late Image result;
+  bool didSeeImage = false;
+  for (Future<Image> future in imageFutures) {
+    try {
+      Image image = await future;
+      result = image;
+      didSeeImage = true;
+    } catch (_) {
+      // Ignore gpu not available errors.
+    }
+  }
+  _validateNotNull(didSeeImage ? result : null);
+}
+
+@pragma('vm:entry-point')
 Future<void> pumpImage() async {
   const int width = 60;
   const int height = 60;
