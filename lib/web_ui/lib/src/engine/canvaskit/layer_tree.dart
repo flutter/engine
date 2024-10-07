@@ -4,7 +4,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../../engine.dart' show BitmapSize, kProfileApplyFrame, kProfilePrerollFrame;
 import '../profiler.dart';
 import 'canvas.dart';
 import 'embedded_views.dart';
@@ -38,18 +38,15 @@ class LayerTree {
   /// Performs a paint pass with a recording canvas for each picture in the
   /// tree. This paint pass is just used to measure the bounds for each picture
   /// so we can optimize the total number of canvases required.
-  void measure(Frame frame, {bool ignoreRasterCache = false}) {
-    final CkNWayCanvas nWayCanvas = CkNWayCanvas();
-    final Iterable<CkCanvas> recordingCanvases =
-        frame.viewEmbedder!.getPictureCanvases();
-    recordingCanvases.forEach(nWayCanvas.addCanvas);
+  void measure(Frame frame, BitmapSize size, {bool ignoreRasterCache = false}) {
     final MeasureVisitor measureVisitor = MeasureVisitor(
-      nWayCanvas,
+      size,
       frame.viewEmbedder!,
     );
     if (rootLayer.needsPainting) {
       rootLayer.accept(measureVisitor);
     }
+    measureVisitor.dispose();
   }
 
   /// Paints the layer tree into the given [frame].
@@ -101,10 +98,11 @@ class Frame {
   final HtmlViewEmbedder? viewEmbedder;
 
   /// Rasterize the given layer tree into this frame.
-  bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {
+  bool raster(LayerTree layerTree, BitmapSize size,
+      {bool ignoreRasterCache = false}) {
     timeAction<void>(kProfilePrerollFrame, () {
       layerTree.preroll(this, ignoreRasterCache: ignoreRasterCache);
-      layerTree.measure(this, ignoreRasterCache: ignoreRasterCache);
+      layerTree.measure(this, size, ignoreRasterCache: ignoreRasterCache);
       viewEmbedder?.optimizeRendering();
     });
     timeAction<void>(kProfileApplyFrame, () {

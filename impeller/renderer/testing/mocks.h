@@ -16,6 +16,10 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
 
+#define FLT_FORWARD(mock, real, method) \
+  EXPECT_CALL(*mock, method())          \
+      .WillRepeatedly(::testing::Return(real->method()));
+
 namespace impeller {
 namespace testing {
 
@@ -213,6 +217,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultGlyphAtlasFormat, (), (const, override));
+  MOCK_METHOD(ISize, GetMaximumRenderPassAttachmentSize, (), (const override));
 };
 
 class MockCommandQueue : public CommandQueue {

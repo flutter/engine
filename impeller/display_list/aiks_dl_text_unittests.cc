@@ -7,7 +7,7 @@
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
@@ -449,6 +449,30 @@ TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "Hello world",
                                      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithPerspectiveTransformInSublist) {
+  DisplayListBuilder text_builder;
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), text_builder, "Hello world",
+                                     "Roboto-Regular.ttf"));
+  auto text_display_list = text_builder.Build();
+
+  DisplayListBuilder builder;
+
+  Matrix matrix = Matrix::MakeRow(2.0, 0.0, 0.0, 0.0,  //
+                                  0.0, 2.0, 0.0, 0.0,  //
+                                  0.0, 0.0, 1.0, 0.0,  //
+                                  0.0, 0.002, 0.0, 1.0);
+
+  DlPaint save_paint;
+  SkRect window_bounds =
+      SkRect::MakeXYWH(0, 0, GetWindowSize().width, GetWindowSize().height);
+  builder.SaveLayer(&window_bounds, &save_paint);
+  builder.Transform(SkM44::ColMajor(matrix.m));
+  builder.DrawDisplayList(text_display_list, 1.0f);
+  builder.Restore();
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

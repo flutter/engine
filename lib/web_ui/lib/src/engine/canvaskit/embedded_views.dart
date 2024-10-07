@@ -79,15 +79,6 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  /// Returns a list of recording canvases which the pictures in the upcoming
-  /// paint step will be drawn into. These recording canvases are combined into
-  /// an N-way canvas for the rasterizer to record clip and transform operations
-  /// during the measure step.
-  Iterable<CkCanvas> getPictureCanvases() {
-    return _context.measuringPictureRecorders.values
-        .map((CkPictureRecorder r) => r.recordingCanvas!);
-  }
-
   /// Returns a list of canvases for the optimized rendering. These are used in
   /// the paint step.
   Iterable<CkCanvas> getOptimizedCanvases() {
@@ -109,24 +100,10 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.add(viewId);
   }
 
-  /// Record that a picture recorder is needed for [picture] to be measured.
-  void prerollPicture(PictureLayer picture) {
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
-    _context.measuringPictureRecorders[picture] = pictureRecorder;
-  }
-
-  /// Returns the canvas that was created to measure [picture].
-  CkCanvas getMeasuringCanvasFor(PictureLayer picture) {
-    return _context.measuringPictureRecorders[picture]!.recordingCanvas!;
-  }
-
   /// Adds the picture recorder associated with [picture] to the unoptimized
   /// scene.
   void addPictureToUnoptimizedScene(PictureLayer picture) {
-    final CkPictureRecorder recorder =
-        _context.measuringPictureRecorders[picture]!;
-    _context.sceneElements.add(PictureSceneElement(picture, recorder));
+    _context.sceneElements.add(PictureSceneElement(picture));
   }
 
   /// Prepares to composite [viewId].
@@ -366,24 +343,8 @@ class HtmlViewEmbedder {
   /// Optimizes the scene to use the fewest possible canvases. This sets up
   /// the final paint pass to paint the pictures into the optimized canvases.
   void optimizeRendering() {
-    final Map<CkPicture, PictureLayer> scenePictureToRawPicture =
-        <CkPicture, PictureLayer>{};
-    final Iterable<SceneElement> unoptimizedRendering =
-        _context.sceneElements.map<SceneElement>((SceneElement element) {
-      if (element is PictureSceneElement) {
-        final CkPicture scenePicture = element.pictureRecorder.endRecording();
-        if (scenePicture.cullRect.isEmpty) {
-          element.picture.isCulled = true;
-        }
-        element.scenePicture = scenePicture;
-        scenePictureToRawPicture[scenePicture] = element.picture;
-        return element;
-      } else {
-        return element;
-      }
-    });
     Rendering rendering = createOptimizedRendering(
-        unoptimizedRendering, _currentCompositionParams);
+        _context.sceneElements, _currentCompositionParams);
     rendering = _modifyRenderingForMaxCanvases(rendering);
     _context.optimizedRendering = rendering;
     // Create new picture recorders for the optimized render canvases and record
@@ -396,8 +357,8 @@ class HtmlViewEmbedder {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
       optimizedCanvasRecorders.add(pictureRecorder);
-      for (final CkPicture picture in renderCanvas.pictures) {
-        pictureToOptimizedCanvasMap[scenePictureToRawPicture[picture]!] =
+      for (final PictureLayer picture in renderCanvas.pictures) {
+        pictureToOptimizedCanvasMap[picture] =
             pictureRecorder;
       }
     }
@@ -466,8 +427,8 @@ class HtmlViewEmbedder {
                 entity.debugComputedBounds!, platformViewBoundsPaint);
           }
         } else if (entity is RenderingRenderCanvas) {
-          for (final CkPicture picture in entity.pictures) {
-            boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
+          for (final PictureLayer picture in entity.pictures) {
+            boundsCanvas.drawRect(picture.sceneBounds!, pictureBoundsPaint);
           }
         }
       }
@@ -538,7 +499,7 @@ class HtmlViewEmbedder {
       return rendering;
     }
     int numCanvasesToDelete = numCanvases - maximumCanvases;
-    final List<CkPicture> picturesForLastCanvas = <CkPicture>[];
+    final List<PictureLayer> picturesForLastCanvas = <PictureLayer>[];
     final List<RenderingEntity> modifiedEntities =
         List<RenderingEntity>.from(rendering.entities);
     bool sawLastCanvas = false;
@@ -961,14 +922,9 @@ class MutatorsStack extends Iterable<Mutator> {
 sealed class SceneElement {}
 
 class PictureSceneElement extends SceneElement {
-  PictureSceneElement(this.picture, this.pictureRecorder);
+  PictureSceneElement(this.picture);
 
   final PictureLayer picture;
-  final CkPictureRecorder pictureRecorder;
-
-  /// The picture as it would be painted in the final scene, with clips and
-  /// transforms applied. This is set by [optimizeRendering].
-  CkPicture? scenePicture;
 }
 
 class PlatformViewSceneElement extends SceneElement {
