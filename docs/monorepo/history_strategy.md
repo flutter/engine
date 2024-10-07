@@ -228,7 +228,7 @@ git filter-repo --path-rename engine/src/flutter/DEPS:DEPS
 
 ## Step 4 - Rewrite the PR links
 
-The PR link in the first line of the comment message will be wrong; `flutter/flutter` doesn't have the same history. To make history a little bit better. We only want to edit the first line. This must be done before we merge with the `flutter/flutter` repo so as not to step on their commit lines.
+The PR link in the first line of the comment message will be wrong; `flutter/flutter` doesn't have the same history. To make history a little bit better, we only want to edit the first line. This must be done before we merge with the `flutter/flutter` repo so as not to step on their commit lines.
 
 ```shell
 git filter-repo --force --message-callback '
