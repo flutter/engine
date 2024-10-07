@@ -27,7 +27,7 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
 
   @NonNull private final ScribeChannel mScribeChannel;
   @NonNull private final InputMethodManager mInputMethodManager;
-  @NonNull public View mView;
+  @NonNull private View mView;
 
   public ScribePlugin(
       @NonNull View view, @NonNull InputMethodManager imm, @NonNull ScribeChannel scribeChannel) {
@@ -40,6 +40,18 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
     mScribeChannel = scribeChannel;
 
     mScribeChannel.setScribeMethodHandler(this);
+  }
+
+  /**
+   * Sets the View in which Scribe input is handled.
+   *
+   * <p>Only one View can be set at any given time.
+   */
+  public void setView(@NonNull View view) {
+    if (view == mView) {
+      return;
+    }
+    mView = view;
   }
 
   /**
