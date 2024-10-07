@@ -138,7 +138,6 @@ git filter-repo  --force --invert-paths \
 --path 'mojo' \
 --path 'sky/sdk' \
 --path 'sky/engine' \
---path 'sky/engine' \
 --path 'sky/tools/webkitpy' \
 --path 'sky/shell' \
 --path 'sky/packages/sky' \
