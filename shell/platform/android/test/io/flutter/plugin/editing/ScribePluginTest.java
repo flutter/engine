@@ -62,8 +62,8 @@ public class ScribePluginTest {
     verify(mockImm).startStylusHandwriting(testView);
   }
 
-  @Config(sdk = API_LEVELS.API_33)
-  @TargetApi(API_LEVELS.API_33)
+  @Config(sdk = API_LEVELS.API_32)
+  @TargetApi(API_LEVELS.API_32)
   @Test
   public void scribePluginStartStylusHandwritingWhenAPILevelUnsupported() {
     assertNotNull(scribePlugin);
@@ -75,8 +75,8 @@ public class ScribePluginTest {
         });
   }
 
-  @Config(sdk = API_LEVELS.API_32)
-  @TargetApi(API_LEVELS.API_32)
+  @Config(sdk = API_LEVELS.API_33)
+  @TargetApi(API_LEVELS.API_33)
   @Test
   public void scribePluginIsStylusHandwritingAvailableWhenAPILevelUnsupported() {
     assertNotNull(scribePlugin);
