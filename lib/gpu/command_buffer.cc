@@ -34,11 +34,7 @@ void CommandBuffer::AddRenderPass(
 }
 
 bool CommandBuffer::Submit() {
-  for (auto& encodable : encodables_) {
-    encodable->EncodeCommands();
-  }
-
-  return context_->GetCommandQueue()->Submit({command_buffer_}).ok();
+  return CommandBuffer::Submit({});
 }
 
 bool CommandBuffer::Submit(
@@ -46,6 +42,24 @@ bool CommandBuffer::Submit(
   for (auto& encodable : encodables_) {
     encodable->EncodeCommands();
   }
+
+  if (context_->GetBackendType() == impeller::Context::BackendType::kOpenGLES) {
+    auto dart_state = flutter::UIDartState::Current();
+    auto& task_runners = dart_state->GetTaskRunners();
+
+    std::promise<bool> result_promise;
+    auto result_future = result_promise.get_future();
+    task_runners.GetRasterTaskRunner()->PostTask(
+        fml::MakeCopyable([context = context_, command_buffer = command_buffer_,
+                           completion_callback = completion_callback,
+                           promise = std::move(result_promise)]() mutable {
+          promise.set_value(context->GetCommandQueue()
+                                ->Submit({command_buffer}, completion_callback)
+                                .ok());
+        }));
+    return result_future.get();
+  }
+
   return context_->GetCommandQueue()
       ->Submit({command_buffer_}, completion_callback)
       .ok();
@@ -91,7 +105,7 @@ Dart_Handle InternalFlutterGpu_CommandBuffer_Submit(
       std::make_unique<tonic::DartPersistentValue>(dart_state,
                                                    completion_callback);
 
-  bool success = wrapper->Submit(fml::MakeCopyable(
+  auto ui_task_completion_callback = fml::MakeCopyable(
       [callback = std::move(persistent_completion_callback),
        task_runners](impeller::CommandBuffer::Status status) mutable {
         bool success = status != impeller::CommandBuffer::Status::kError;
@@ -112,7 +126,8 @@ Dart_Handle InternalFlutterGpu_CommandBuffer_Submit(
               callback.reset();
             });
         task_runners.GetUITaskRunner()->PostTask(ui_completion_task);
-      }));
+      });
+  bool success = wrapper->Submit(ui_task_completion_callback);
   if (!success) {
     return tonic::ToDart("Failed to submit CommandBuffer");
   }
