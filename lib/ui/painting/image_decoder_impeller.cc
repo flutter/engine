@@ -418,21 +418,22 @@ void ImageDecoderImpeller::UploadTextureToPrivate(
             result(image, decode_error);
           })
           .SetIfTrue([&result, context, buffer, image_info, resize_info] {
-            auto result_ptr = std::make_shared<ImageResult>(std::move(result));
+            // The `result` function must be copied in the capture list for each
+            // closure or the stack allocated callback will be cleared by the
+            // time to closure is executed later.
             context->StoreTaskForGPU(
-                [result_ptr, context, buffer, image_info, resize_info]() {
+                [result, context, buffer, image_info, resize_info]() {
                   sk_sp<DlImage> image;
                   std::string decode_error;
                   std::tie(image, decode_error) =
                       std::tie(image, decode_error) =
                           UnsafeUploadTextureToPrivate(context, buffer,
                                                        image_info, resize_info);
-                  (*result_ptr)(image, decode_error);
+                  result(image, decode_error);
                 },
-                [result_ptr]() {
-                  (*result_ptr)(
-                      nullptr,
-                      "Image upload failed due to loss of GPU access.");
+                [result]() {
+                  result(nullptr,
+                         "Image upload failed due to loss of GPU access.");
                 });
           }));
 }
