@@ -328,7 +328,6 @@ TEST_F(ShellTest, EncodeImageRetryOverflows) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-
 TEST_F(ShellTest, ToImageRetries) {
 #ifndef FML_OS_MACOSX
   GTEST_SKIP() << "Only works on macos currently.";
