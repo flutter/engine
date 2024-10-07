@@ -15,8 +15,8 @@ import android.annotation.TargetApi;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.StandardMethodCodec;
 import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +29,7 @@ public class ScribeChannelTest {
   private static BinaryMessenger.BinaryReply sendToBinaryMessageHandler(
       BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method) {
     MethodCall methodCall = new MethodCall(method, null);
-    ByteBuffer encodedMethodCall = StandardMethodCodec.INSTANCE.encodeMethodCall(methodCall);
+    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
     BinaryMessenger.BinaryReply mockReply = mock(BinaryMessenger.BinaryReply.class);
     binaryMessageHandler.onMessage((ByteBuffer) encodedMethodCall.flip(), mockReply);
     return mockReply;

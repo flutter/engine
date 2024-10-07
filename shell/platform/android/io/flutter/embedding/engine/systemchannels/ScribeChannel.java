@@ -14,9 +14,9 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StandardMethodCodec;
 
 /**
  * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate the
@@ -45,7 +45,6 @@ public class ScribeChannel {
             return;
           }
           String method = call.method;
-          Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case METHOD_IS_STYLUS_HANDWRITING_AVAILABLE:
@@ -92,7 +91,7 @@ public class ScribeChannel {
   }
 
   public ScribeChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, "flutter/scribe", StandardMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/scribe", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
