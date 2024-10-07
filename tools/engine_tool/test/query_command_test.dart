@@ -2,75 +2,103 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' as convert;
+import 'dart:convert';
+import 'dart:ffi' show Abi;
 
-import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:logging/logging.dart' as log;
-import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
-import 'fixtures.dart' as fixtures;
+import 'src/test_build_configs.dart';
 import 'utils.dart';
 
 void main() {
-  final linuxTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/linux_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Linux', Platform.linux))
-        as Map<String, Object?>,
-  );
-
-  final linuxTestConfig2 = BuilderConfig.fromJson(
-    path: 'ci/builders/linux_test_config2.json',
-    map: convert.jsonDecode(
-            fixtures.testConfig('Linux', Platform.linux, suffix: '2'))
-        as Map<String, Object?>,
-  );
-
-  final macTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/mac_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Mac-12', Platform.macOS))
-        as Map<String, Object?>,
-  );
-
-  final winTestConfig = BuilderConfig.fromJson(
-    path: 'ci/builders/win_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Windows-11', Platform.windows))
-        as Map<String, Object?>,
-  );
-
-  final configs = <String, BuilderConfig>{
-    'linux_test_config': linuxTestConfig,
-    'linux_test_config2': linuxTestConfig2,
-    'mac_test_config': macTestConfig,
-    'win_test_config': winTestConfig,
-  };
-
   List<String> stringsFromLogs(List<log.LogRecord> logs) {
     return logs.map((log.LogRecord r) => r.message).toList();
   }
 
-  final cannedProcesses = <CannedProcess>[
-    CannedProcess(
-      (command) => command.contains('desc'),
-      stdout: fixtures.gnDescOutput(),
-    ),
-  ];
-
   test('query command returns builds for the host platform.', () async {
     final testEnvironment = TestEnvironment.withTestEngine(
-      cannedProcesses: cannedProcesses,
+      // Intentionally use the default parameter to make it explicit.
+      // ignore: avoid_redundant_argument_values
+      abi: Abi.linuxX64,
     );
     addTearDown(testEnvironment.cleanup);
 
+    final linuxBuilders1 = TestBuilderConfig();
+    linuxBuilders1.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/android_debug_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final linuxBuilders2 = TestBuilderConfig();
+    linuxBuilders2.addBuild(
+      name: 'ci/build_name2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/host_debug2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/android_debug2_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'ci/android_debug2_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final macOSBuilders = TestBuilderConfig();
+    macOSBuilders.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'mac/host_debug',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'mac/android_debug_arm64',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.mac,
+    );
+
     final runner = ToolCommandRunner(
       environment: testEnvironment.environment,
-      configs: configs,
+      configs: {
+        'linux_test_config': linuxBuilders1.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+        'linux_test_config2': linuxBuilders2.buildConfig(
+          path: 'ci/builders/linux_test_config2.json',
+        ),
+        'mac_test_config': macOSBuilders.buildConfig(
+          path: 'ci/builders/mac_test_config.json',
+        ),
+      },
     );
     final result = await runner.run(<String>[
       'query',
       'builders',
     ]);
+
+    printOnFailure(testEnvironment.testLogs.map((r) => r.message).join('\n'));
     expect(result, equals(0));
     expect(
       stringsFromLogs(testEnvironment.testLogs),
@@ -91,16 +119,60 @@ void main() {
     );
   });
 
-  test('query command with --builder returns only from the named builder.',
-      () async {
+  test('query command returns only from the named builder.', () async {
     final testEnvironment = TestEnvironment.withTestEngine(
-      cannedProcesses: cannedProcesses,
+      // Intentionally use the default parameter to make it explicit.
+      // ignore: avoid_redundant_argument_values
+      abi: Abi.linuxX64,
     );
     addTearDown(testEnvironment.cleanup);
 
+    final linuxBuilders1 = TestBuilderConfig();
+    linuxBuilders1.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/android_debug_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final linuxBuilders2 = TestBuilderConfig();
+    linuxBuilders2.addBuild(
+      name: 'ci/build_name2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/host_debug2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/android_debug2_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'ci/android_debug2_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
     final runner = ToolCommandRunner(
       environment: testEnvironment.environment,
-      configs: configs,
+      configs: {
+        'linux_test_config': linuxBuilders1.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+        'linux_test_config2': linuxBuilders2.buildConfig(
+          path: 'ci/builders/linux_test_config2.json',
+        ),
+      },
     );
     final result = await runner.run(<String>[
       'query',
@@ -108,6 +180,8 @@ void main() {
       '--builder',
       'linux_test_config',
     ]);
+
+    printOnFailure(testEnvironment.testLogs.map((r) => r.message).join('\n'));
     expect(result, equals(0));
     expect(
         stringsFromLogs(testEnvironment.testLogs),
@@ -123,41 +197,178 @@ void main() {
   });
 
   test('query command with --all returns all builds.', () async {
-    final testEnvironment = TestEnvironment.withTestEngine(
-      cannedProcesses: cannedProcesses,
-    );
+    final testEnvironment = TestEnvironment.withTestEngine();
     addTearDown(testEnvironment.cleanup);
+
+    final linuxBuilders1 = TestBuilderConfig();
+    linuxBuilders1.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/android_debug_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders1.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final linuxBuilders2 = TestBuilderConfig();
+    linuxBuilders2.addBuild(
+      name: 'ci/build_name2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/host_debug2',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'linux/android_debug2_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+    linuxBuilders2.addBuild(
+      name: 'ci/android_debug2_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final macOSBuilders = TestBuilderConfig();
+    macOSBuilders.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'mac/host_debug',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'mac/android_debug_arm64',
+      dimension: TestDroneDimension.mac,
+    );
+    macOSBuilders.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.mac,
+    );
 
     final runner = ToolCommandRunner(
       environment: testEnvironment.environment,
-      configs: configs,
+      configs: {
+        'linux_test_config': linuxBuilders1.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+        'linux_test_config2': linuxBuilders2.buildConfig(
+          path: 'ci/builders/linux_test_config2.json',
+        ),
+        'mac_test_config': macOSBuilders.buildConfig(
+          path: 'ci/builders/mac_test_config.json',
+        ),
+      },
     );
     final result = await runner.run(<String>[
       'query',
       'builders',
       '--all',
     ]);
+
+    printOnFailure(testEnvironment.testLogs.map((r) => r.message).join('\n'));
     expect(result, equals(0));
     expect(
-      testEnvironment.testLogs.length,
-      equals(30),
+      stringsFromLogs(testEnvironment.testLogs),
+      equals(<String>[
+        'Add --verbose to see detailed information about each builder\n',
+        '\n',
+        '"linux_test_config" builder:\n',
+        '   "ci/build_name" config\n',
+        '   "linux/host_debug" config\n',
+        '   "linux/android_debug_arm64" config\n',
+        '   "ci/android_debug_rbe_arm64" config\n',
+        '"linux_test_config2" builder:\n',
+        '   "ci/build_name2" config\n',
+        '   "linux/host_debug2" config\n',
+        '   "linux/android_debug2_arm64" config\n',
+        '   "ci/android_debug2_rbe_arm64" config\n',
+        '"mac_test_config" builder:\n',
+        '   "ci/build_name" config\n',
+        '   "mac/host_debug" config\n',
+        '   "mac/android_debug_arm64" config\n',
+        '   "ci/android_debug_rbe_arm64" config\n',
+      ]),
     );
   });
 
   test('query targets', () async {
     final testEnvironment = TestEnvironment.withTestEngine(
-      cannedProcesses: cannedProcesses,
+      cannedProcesses: [
+        CannedProcess(
+          (command) => command.contains('desc'),
+          stdout: jsonEncode({
+            '//flutter/display_list:display_list_unittests': {
+              'outputs': [
+                '//out/host_debug/display_list_unittests',
+              ],
+              'testonly': true,
+              'type': 'executable',
+            },
+            '//flutter/flow:flow_unittests': {
+              'outputs': [
+                '//out/host_debug/flow_unittests',
+              ],
+              'testonly': true,
+              'type': 'executable',
+            },
+            '//flutter/fml:fml_arc_unittests': {
+              'outputs': [
+                '//out/host_debug/fml_arc_unittests',
+              ],
+              'testonly': true,
+              'type': 'executable',
+            },
+          }),
+        ),
+      ],
     );
     addTearDown(testEnvironment.cleanup);
 
+    final linuxBuilders1 = TestBuilderConfig();
+    linuxBuilders1.addBuild(
+      name: 'ci/build_name',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'host_debug',
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'host_debug',
+    );
+    linuxBuilders1.addBuild(
+      name: 'linux/android_debug_arm64',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'android_debug_arm64',
+    );
+    linuxBuilders1.addBuild(
+      name: 'ci/android_debug_rbe_arm64',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'android_debug_arm64',
+    );
+
     final runner = ToolCommandRunner(
       environment: testEnvironment.environment,
-      configs: configs,
+      configs: {
+        'linux_test_config': linuxBuilders1.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+      },
     );
     final result = await runner.run(<String>[
       'query',
       'targets',
     ]);
+
+    printOnFailure(testEnvironment.testLogs.map((r) => r.message).join('\n'));
     expect(result, equals(0));
 
     final expected = <String>[

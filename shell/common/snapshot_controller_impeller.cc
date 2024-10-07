@@ -13,7 +13,7 @@
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/size.h"
 #include "flutter/shell/common/snapshot_controller.h"
-#include "impeller/renderer/render_target.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 
 namespace flutter {
 
@@ -48,7 +48,8 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
 
   return impeller::DlImageImpeller::Make(
       impeller::DisplayListToTexture(display_list, render_target_size, *context,
-                                     /*reset_host_buffer=*/false),
+                                     /*reset_host_buffer=*/false,
+                                     /*generate_mips=*/true),
       DlImage::OwningContext::kRaster);
 }
 
