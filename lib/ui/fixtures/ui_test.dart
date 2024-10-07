@@ -405,7 +405,9 @@ Future<void> toByteDataRetryOverflows() async {
   canvas.drawCircle(c, 25.0, paint);
   final Picture picture = pictureRecorder.endRecording();
   List<Image> images = [];
-  for (int i = 0; i < 100; ++i) {
+  // This number must be bigger than impeller::Context::kMaxTasksAwaitingGPU.
+  int numJobs = 100;
+  for (int i = 0; i < numJobs; ++i) {
     images.add(await picture.toImage(100, 100));
   }
   List<Future<ByteData?>> dataFutures = [];
@@ -413,21 +415,22 @@ Future<void> toByteDataRetryOverflows() async {
   for (Image image in images) {
     dataFutures.add(image.toByteData());
   }
-  Future<void>.delayed(Duration(milliseconds: 100), () {
+  Future<void>.delayed(Duration(milliseconds: 10), () {
     _turnOffGPU(false);
   });
-  try {
-    List<ByteData?> data = await Future.wait(dataFutures);
-    for (ByteData? item in data) {
-      if (item != null) {
-        _validateNotNull(item);
-        return;
+
+  ByteData? result;
+  for (Future<ByteData?> future in dataFutures) {
+    try {
+      ByteData? byteData = await future;
+      if (byteData != null) {
+        result = byteData;
       }
+    } catch (_) {
+      // Ignore errors from unavailable gpu.
     }
-    _validateNotNull(null);
-  } catch (error) {
-    _validateNotNull(null);
   }
+  _validateNotNull(result);
 }
 
 @pragma('vm:entry-point')
