@@ -12,6 +12,7 @@
 #include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
@@ -32,15 +33,6 @@ SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
   sampler_desc.width_address_mode = address_mode;
   sampler_desc.height_address_mode = address_mode;
   return sampler_desc;
-}
-
-template <typename T>
-void BindVertices(RenderPass& pass,
-                  HostBuffer& host_buffer,
-                  std::initializer_list<typename T::PerVertexData>&& vertices) {
-  VertexBufferBuilder<typename T::PerVertexData> vtx_builder;
-  vtx_builder.AddVertices(vertices);
-  pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 }
 
 void SetTileMode(SamplerDescriptor* descriptor,
@@ -325,10 +317,12 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
 fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const ContentContext& renderer,
     const std::shared_ptr<CommandBuffer>& command_buffer,
-    std::shared_ptr<Texture> input_texture,
+    const std::shared_ptr<Texture>& input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
+  using VS = TextureFillVertexShader;
+
   // If the texture already had mip levels generated, then we can use the
   // original downsample shader.
   if (pass_args.effective_scalar.x >= 0.5f ||
@@ -345,19 +339,20 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-          frame_info.texture_sampler_y_coord_scale = 1.0;
+          frame_info.texture_sampler_y_coord_scale =
+              input_texture->GetYCoordScale();
 
           TextureFillFragmentShader::FragInfo frag_info;
           frag_info.alpha = 1.0;
 
           const Quad& uvs = pass_args.uvs;
-          BindVertices<TextureFillVertexShader>(pass, host_buffer,
-                                                {
-                                                    {Point(0, 0), uvs[0]},
-                                                    {Point(1, 0), uvs[1]},
-                                                    {Point(0, 1), uvs[2]},
-                                                    {Point(1, 1), uvs[3]},
-                                                });
+          std::array<VS::PerVertexData, 4> vertices = {
+              VS::PerVertexData{Point(0, 0), uvs[0]},
+              VS::PerVertexData{Point(1, 0), uvs[1]},
+              VS::PerVertexData{Point(0, 1), uvs[2]},
+              VS::PerVertexData{Point(1, 1), uvs[3]},
+          };
+          pass.SetVertexBuffer(CreateVertexBuffer(vertices, host_buffer));
 
           SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
           SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
@@ -398,7 +393,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-          frame_info.texture_sampler_y_coord_scale = 1.0;
+          frame_info.texture_sampler_y_coord_scale =
+              input_texture->GetYCoordScale();
 
           TextureDownsampleFragmentShader::FragInfo frag_info;
           frag_info.edge = edge;
@@ -406,13 +402,13 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
           frag_info.pixel_size = Vector2(1.0f / Size(input_texture->GetSize()));
 
           const Quad& uvs = pass_args.uvs;
-          BindVertices<TextureFillVertexShader>(pass, host_buffer,
-                                                {
-                                                    {Point(0, 0), uvs[0]},
-                                                    {Point(1, 0), uvs[1]},
-                                                    {Point(0, 1), uvs[2]},
-                                                    {Point(1, 1), uvs[3]},
-                                                });
+          std::array<VS::PerVertexData, 4> vertices = {
+              VS::PerVertexData{Point(0, 0), uvs[0]},
+              VS::PerVertexData{Point(1, 0), uvs[1]},
+              VS::PerVertexData{Point(0, 1), uvs[2]},
+              VS::PerVertexData{Point(1, 1), uvs[3]},
+          };
+          pass.SetVertexBuffer(CreateVertexBuffer(vertices, host_buffer));
 
           SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
           SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
@@ -443,20 +439,24 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
     const BlurParameters& blur_info,
     std::optional<RenderTarget> destination_target,
     const Quad& blur_uvs) {
+  using VS = GaussianBlurVertexShader;
+
   if (blur_info.blur_sigma < kEhCloseEnough) {
     return input_pass;
   }
 
-  std::shared_ptr<Texture> input_texture = input_pass.GetRenderTargetTexture();
+  const std::shared_ptr<Texture>& input_texture =
+      input_pass.GetRenderTargetTexture();
 
   // TODO(gaaclarke): This blurs the whole image, but because we know the clip
   //                  region we could focus on just blurring that.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
-        GaussianBlurVertexShader::FrameInfo frame_info{
-            .mvp = Matrix::MakeOrthographic(ISize(1, 1)),
-            .texture_sampler_y_coord_scale = 1.0};
+        GaussianBlurVertexShader::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1)),
+        frame_info.texture_sampler_y_coord_scale =
+            input_texture->GetYCoordScale();
 
         HostBuffer& host_buffer = renderer.GetTransientsBuffer();
 
@@ -464,13 +464,13 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         options.primitive_type = PrimitiveType::kTriangleStrip;
         pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
 
-        BindVertices<GaussianBlurVertexShader>(pass, host_buffer,
-                                               {
-                                                   {blur_uvs[0], blur_uvs[0]},
-                                                   {blur_uvs[1], blur_uvs[1]},
-                                                   {blur_uvs[2], blur_uvs[2]},
-                                                   {blur_uvs[3], blur_uvs[3]},
-                                               });
+        std::array<VS::PerVertexData, 4> vertices = {
+            VS::PerVertexData{blur_uvs[0], blur_uvs[0]},
+            VS::PerVertexData{blur_uvs[1], blur_uvs[1]},
+            VS::PerVertexData{blur_uvs[2], blur_uvs[2]},
+            VS::PerVertexData{blur_uvs[3], blur_uvs[3]},
+        };
+        pass.SetVertexBuffer(CreateVertexBuffer(vertices, host_buffer));
 
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
@@ -481,11 +481,9 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
                 linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
-            LerpHackKernelSamples(GenerateBlurInfo(blur_info));
-        FML_CHECK(kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
         GaussianBlurFragmentShader::BindKernelSamples(
-            pass, host_buffer.EmplaceUniform(kernel_samples));
+            pass, host_buffer.EmplaceUniform(
+                      LerpHackKernelSamples(GenerateBlurInfo(blur_info))));
         return pass.Draw().ok();
       };
   if (destination_target.has_value()) {
@@ -565,28 +563,26 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
           Entity::FromSnapshot(input_snapshot, entity.GetBlendMode());
       Entity result;
       Matrix blurred_transform = blur_entity.GetTransform();
-      Matrix snapshot_transform =
-          entity.GetTransform() * snapshot_entity.GetTransform();
+      Matrix snapshot_transform = entity.GetTransform() *  //
+                                  Matrix::MakeScale(1.f / source_space_scalar) *
+                                  input_snapshot.transform;
       result.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable(
-              [blur_entity = blur_entity.Clone(), blurred_transform,
-               source_space_scalar, snapshot_transform,
-               snapshot_entity = std::move(snapshot_entity)](
-                  const ContentContext& renderer, const Entity& entity,
-                  RenderPass& pass) mutable {
-                bool result = true;
-                snapshot_entity.SetTransform(
-                    entity.GetTransform() *
-                    Matrix::MakeScale(1.f / source_space_scalar) *
-                    snapshot_transform);
-                snapshot_entity.SetClipDepth(entity.GetClipDepth());
-                result = result && snapshot_entity.Render(renderer, pass);
-                blur_entity.SetClipDepth(entity.GetClipDepth());
-                blur_entity.SetTransform(entity.GetTransform() *
-                                         blurred_transform);
-                result = result && blur_entity.Render(renderer, pass);
-                return result;
-              }),
+          fml::MakeCopyable([blur_entity = blur_entity.Clone(),
+                             blurred_transform, snapshot_transform,
+                             snapshot_entity = std::move(snapshot_entity)](
+                                const ContentContext& renderer,
+                                const Entity& entity,
+                                RenderPass& pass) mutable {
+            bool result = true;
+            snapshot_entity.SetTransform(entity.GetTransform() *
+                                         snapshot_transform);
+            snapshot_entity.SetClipDepth(entity.GetClipDepth());
+            result = result && snapshot_entity.Render(renderer, pass);
+            blur_entity.SetClipDepth(entity.GetClipDepth());
+            blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
+            result = result && blur_entity.Render(renderer, pass);
+            return result;
+          }),
           fml::MakeCopyable([blur_entity = blur_entity.Clone(),
                              blurred_transform](const Entity& entity) mutable {
             blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
@@ -900,7 +896,7 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters) {
   Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; ++i) {
     int x = x_offset + (i * parameters.step_size) - parameters.blur_radius;
-    result.samples[i] = GaussianBlurPipeline::FragmentShader::KernelSample{
+    result.samples[i] = KernelSample{
         .uv_offset = parameters.blur_uv_offset * x,
         .coefficient = expf(-0.5f * (x * x) /
                             (parameters.blur_sigma * parameters.blur_sigma)) /
@@ -921,25 +917,31 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters) {
 // between the samples.
 GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelSamples parameters) {
-  GaussianBlurPipeline::FragmentShader::KernelSamples result;
+  GaussianBlurPipeline::FragmentShader::KernelSamples result = {};
   result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
   int32_t middle = result.sample_count / 2;
   int32_t j = 0;
   FML_DCHECK(result.sample_count <= kGaussianBlurMaxKernelSize);
+  static_assert(sizeof(result.sample_data) ==
+                sizeof(std::array<Vector4, kGaussianBlurMaxKernelSize>));
+
   for (int i = 0; i < result.sample_count; i++) {
     if (i == middle) {
-      result.samples[i] = parameters.samples[j++];
+      result.sample_data[i].x = parameters.samples[j].uv_offset.x;
+      result.sample_data[i].y = parameters.samples[j].uv_offset.y;
+      result.sample_data[i].z = parameters.samples[j].coefficient;
+      j++;
     } else {
-      GaussianBlurPipeline::FragmentShader::KernelSample left =
-          parameters.samples[j];
-      GaussianBlurPipeline::FragmentShader::KernelSample right =
-          parameters.samples[j + 1];
-      result.samples[i] = GaussianBlurPipeline::FragmentShader::KernelSample{
-          .uv_offset = (left.uv_offset * left.coefficient +
-                        right.uv_offset * right.coefficient) /
-                       (left.coefficient + right.coefficient),
-          .coefficient = left.coefficient + right.coefficient,
-      };
+      KernelSample left = parameters.samples[j];
+      KernelSample right = parameters.samples[j + 1];
+
+      result.sample_data[i].z = left.coefficient + right.coefficient;
+
+      Point uv = (left.uv_offset * left.coefficient +
+                  right.uv_offset * right.coefficient) /
+                 (left.coefficient + right.coefficient);
+      result.sample_data[i].x = uv.x;
+      result.sample_data[i].y = uv.y;
       j += 2;
     }
   }
