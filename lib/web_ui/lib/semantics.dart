@@ -100,35 +100,37 @@ class SemanticsFlag {
 
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
-  static const int _kIsSelectedIndex = 1 << 2;
-  static const int _kIsButtonIndex = 1 << 3;
-  static const int _kIsTextFieldIndex = 1 << 4;
-  static const int _kIsFocusedIndex = 1 << 5;
-  static const int _kHasEnabledStateIndex = 1 << 6;
-  static const int _kIsEnabledIndex = 1 << 7;
-  static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
-  static const int _kIsHeaderIndex = 1 << 9;
-  static const int _kIsObscuredIndex = 1 << 10;
-  static const int _kScopesRouteIndex = 1 << 11;
-  static const int _kNamesRouteIndex = 1 << 12;
-  static const int _kIsHiddenIndex = 1 << 13;
-  static const int _kIsImageIndex = 1 << 14;
-  static const int _kIsLiveRegionIndex = 1 << 15;
-  static const int _kHasToggledStateIndex = 1 << 16;
-  static const int _kIsToggledIndex = 1 << 17;
-  static const int _kHasImplicitScrollingIndex = 1 << 18;
-  static const int _kIsMultilineIndex = 1 << 19;
-  static const int _kIsReadOnlyIndex = 1 << 20;
-  static const int _kIsFocusableIndex = 1 << 21;
-  static const int _kIsLinkIndex = 1 << 22;
-  static const int _kIsSliderIndex = 1 << 23;
-  static const int _kIsKeyboardKeyIndex = 1 << 24;
-  static const int _kIsCheckStateMixedIndex = 1 << 25;
-  static const int _kHasExpandedStateIndex = 1 << 26;
-  static const int _kIsExpandedIndex = 1 << 27;
+  static const int _kHasSelectedStateIndex = 1 << 2;
+  static const int _kIsSelectedIndex = 1 << 3;
+  static const int _kIsButtonIndex = 1 << 4;
+  static const int _kIsTextFieldIndex = 1 << 5;
+  static const int _kIsFocusedIndex = 1 << 6;
+  static const int _kHasEnabledStateIndex = 1 << 7;
+  static const int _kIsEnabledIndex = 1 << 8;
+  static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 9;
+  static const int _kIsHeaderIndex = 1 << 10;
+  static const int _kIsObscuredIndex = 1 << 11;
+  static const int _kScopesRouteIndex = 1 << 12;
+  static const int _kNamesRouteIndex = 1 << 13;
+  static const int _kIsHiddenIndex = 1 << 14;
+  static const int _kIsImageIndex = 1 << 15;
+  static const int _kIsLiveRegionIndex = 1 << 16;
+  static const int _kHasToggledStateIndex = 1 << 17;
+  static const int _kIsToggledIndex = 1 << 18;
+  static const int _kHasImplicitScrollingIndex = 1 << 19;
+  static const int _kIsMultilineIndex = 1 << 20;
+  static const int _kIsReadOnlyIndex = 1 << 21;
+  static const int _kIsFocusableIndex = 1 << 22;
+  static const int _kIsLinkIndex = 1 << 23;
+  static const int _kIsSliderIndex = 1 << 24;
+  static const int _kIsKeyboardKeyIndex = 1 << 25;
+  static const int _kIsCheckStateMixedIndex = 1 << 26;
+  static const int _kHasExpandedStateIndex = 1 << 27;
+  static const int _kIsExpandedIndex = 1 << 28;
 
   static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex, 'hasCheckedState');
   static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex, 'isChecked');
+  static const SemanticsFlag hasSelectedState = SemanticsFlag._(_kHasSelectedStateIndex, 'hasSelectedState');
   static const SemanticsFlag isSelected = SemanticsFlag._(_kIsSelectedIndex, 'isSelected');
   static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex, 'isButton');
   static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex, 'isTextField');
@@ -159,6 +161,7 @@ class SemanticsFlag {
   static const Map<int, SemanticsFlag> _kFlagById = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
+    _kHasSelectedStateIndex: hasSelectedState,
     _kIsSelectedIndex: isSelected,
     _kIsButtonIndex: isButton,
     _kIsTextFieldIndex: isTextField,
