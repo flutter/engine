@@ -175,7 +175,8 @@ class MockCanvas final : public DlCanvas {
   void Save() override;
   void SaveLayer(const SkRect* bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr) override;
+                 const DlImageFilter* backdrop = nullptr,
+                 int64_t backdrop_id = -1) override;
   void Restore() override;
   int GetSaveCount() const { return current_layer_; }
   void RestoreToCount(int restore_count) {

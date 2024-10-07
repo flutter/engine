@@ -15,6 +15,7 @@
 #include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/aiks_context.h"
+#include "impeller/display_list/canvas.h"
 #include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/dl_atlas_geometry.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
@@ -301,7 +302,8 @@ void DlDispatcherBase::saveLayer(const DlRect& bounds,
                                  const flutter::SaveLayerOptions& options,
                                  uint32_t total_content_depth,
                                  flutter::DlBlendMode max_content_mode,
-                                 const flutter::DlImageFilter* backdrop) {
+                                 const flutter::DlImageFilter* backdrop,
+                                 int64_t backdrop_id) {
   AUTO_DEPTH_WATCHER(1u);
 
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
@@ -319,7 +321,9 @@ void DlDispatcherBase::saveLayer(const DlRect& bounds,
       paint, impeller_bounds, backdrop, promise, total_content_depth,
       // Unbounded content can still have user specified bounds that require a
       // saveLayer to be created to perform the clip.
-      options.can_distribute_opacity() && !options.content_is_unbounded());
+      options.can_distribute_opacity() && !options.content_is_unbounded(),
+      backdrop_id  //
+  );
 }
 
 // |flutter::DlOpReceiver|
@@ -985,8 +989,25 @@ void TextFrameDispatcher::save() {
 
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
-                                    const flutter::DlImageFilter* backdrop) {
+                                    const flutter::DlImageFilter* backdrop,
+                                    int64_t backdrop_id) {
   save();
+
+  if (backdrop != nullptr && backdrop_id != -1) {
+    const auto& existing = backdrop_keys_.find(backdrop_id);
+    if (existing == backdrop_keys_.end()) {
+      backdrop_keys_[backdrop_id] =
+          BackdropData{.global_rects = {bounds.TransformBounds(matrix_)},
+                       .last_backdrop = backdrop};
+    } else {
+      BackdropData& data = backdrop_keys_[backdrop_id];
+      if (data.all_filters_equal) {
+        data.all_filters_equal = true;  // data.last_backdrop == backdrop;
+        data.last_backdrop = backdrop;
+      }
+      data.global_rects.push_back(bounds.TransformBounds(matrix_));
+    }
+  }
 
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
@@ -1230,6 +1251,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
       display_list->max_root_blend_mode(),       //
       impeller::IRect::MakeSize(size)            //
   );
+  impeller_dispatcher.SetBackdropKeys(collector.TakeBackdropData());
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   impeller_dispatcher.FinishRecording();
 
@@ -1258,6 +1280,7 @@ bool RenderToOnscreen(ContentContext& context,
       display_list->max_root_blend_mode(),       //
       IRect::RoundOut(ip_cull_rect)              //
   );
+  impeller_dispatcher.SetBackdropKeys(collector.TakeBackdropData());
   display_list->Dispatch(impeller_dispatcher, cull_rect);
   impeller_dispatcher.FinishRecording();
   if (reset_host_buffer) {

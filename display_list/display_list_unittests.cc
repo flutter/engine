@@ -1476,7 +1476,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 int64_t backdrop_id) override {
     FML_UNREACHABLE();
   }
 
@@ -1484,7 +1485,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
                          const SaveLayerOptions& options,
                          uint32_t total_content_depth,
                          DlBlendMode max_content_blend_mode,
-                         const DlImageFilter* backdrop = nullptr) {
+                         const DlImageFilter* backdrop = nullptr,
+                         int64_t backdrop_id = -1) {
     ASSERT_LT(save_layer_count_, expected_.size()) << label();
     auto expect = expected_[save_layer_count_];
     if (expect.options.has_value()) {
@@ -3657,7 +3659,8 @@ class SaveLayerBoundsExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 int64_t backdrop_id) override {
     ASSERT_LT(save_layer_count_, expected_.size());
     auto expected = expected_[save_layer_count_];
     EXPECT_EQ(options.bounds_from_caller(),
@@ -4122,7 +4125,8 @@ class DepthExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 int64_t backdrop_id) override {
     // This method should not be called since we override the variant with
     // the total_content_depth parameter.
     FAIL() << "saveLayer(no depth parameter) method should not be called";
@@ -4132,7 +4136,8 @@ class DepthExpector : public virtual DlOpReceiver,
                  const SaveLayerOptions& options,
                  uint32_t total_content_depth,
                  DlBlendMode max_content_mode,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 int64_t backdrop_id) override {
     ASSERT_LT(index_, depth_expectations_.size());
     EXPECT_EQ(depth_expectations_[index_], total_content_depth)
         << "at index " << index_;
