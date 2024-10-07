@@ -107,11 +107,11 @@ const std::unordered_map<std::string_view, MaliGPU> kMaliVersions = {
 
 AdrenoGPU GetAdrenoVersion(std::string_view version) {
   /// The format that Adreno names follow is "Adreno (TM) VERSION".
-  auto paren_pos = version.find(")");
+  auto paren_pos = version.find("Adreno (TM) ");
   if (paren_pos == std::string::npos) {
     return AdrenoGPU::kUnknown;
   }
-  auto version_string = version.substr(paren_pos + 2);
+  auto version_string = version.substr(paren_pos + 12);
   const auto& result = kAdrenoVersions.find(version_string);
   if (result == kAdrenoVersions.end()) {
     return AdrenoGPU::kUnknown;
@@ -121,11 +121,11 @@ AdrenoGPU GetAdrenoVersion(std::string_view version) {
 
 MaliGPU GetMaliVersion(std::string_view version) {
   // These names are usually Mali-VERSION or Mali-Version-EXTRA_CRAP.
-  auto dash_pos = version.find("-");
+  auto dash_pos = version.find("Mali-");
   if (dash_pos == std::string::npos) {
     return MaliGPU::kUnknown;
   }
-  auto version_string_with_trailing = version.substr(dash_pos + 1);
+  auto version_string_with_trailing = version.substr(dash_pos + 5);
   // Remove any trailing crap if present.
   auto more_dash_pos = version_string_with_trailing.find("-");
   if (more_dash_pos != std::string::npos) {
