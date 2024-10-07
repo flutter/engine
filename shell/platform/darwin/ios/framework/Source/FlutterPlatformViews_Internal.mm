@@ -736,10 +736,8 @@ static BOOL _preparedOnce = NO;
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
-  // not necessarially mean the touch sequence has ended. We Only set the state to
-  // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
+  // not necessarially mean the touch sequence has ended.
   if (_currentTouchPointersCount == 0) {
-    self.state = UIGestureRecognizerStateFailed;
     _flutterViewController.reset(nil);
   }
 }
@@ -753,7 +751,6 @@ static BOOL _preparedOnce = NO;
   [_flutterViewController.get() forceTouchesCancelled:touches];
   _currentTouchPointersCount -= touches.count;
   if (_currentTouchPointersCount == 0) {
-    self.state = UIGestureRecognizerStateFailed;
     _flutterViewController.reset(nil);
   }
 }
