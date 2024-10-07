@@ -30,7 +30,7 @@ void testMain() {
 
     expect(chosenRenderer, isA<HtmlRenderer>());
     expect(warnings, contains(
-      contains('See: https://docs.flutter.dev/go/web-html-renderer-deprecation')
+      contains('See: https://docs.flutter.dev/to/web-html-renderer-deprecation')
     ));
   });
 }

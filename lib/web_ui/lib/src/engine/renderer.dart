@@ -47,7 +47,7 @@ abstract class Renderer {
             (FlutterConfiguration.flutterWebAutoDetect ? 'auto' : 'html');
           printWarning(
             'The HTML Renderer is being deprecated. Stop using the "$requested" renderer mode.'
-            '\nSee: https://docs.flutter.dev/go/web-html-renderer-deprecation');
+            '\nSee: https://docs.flutter.dev/to/web-html-renderer-deprecation');
         }
         return true;
       }());
