@@ -381,6 +381,7 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
 
 void ContextMTL::StoreTaskForGPU(const fml::closure& task,
                                  const fml::closure& failure) {
+  std::scoped_lock lock(tasks_awaiting_gpu_mutex_);
   tasks_awaiting_gpu_.push_back(PendingTasks{task, failure});
   while (tasks_awaiting_gpu_.size() > kMaxTasksAwaitingGPU) {
     const PendingTasks& front = tasks_awaiting_gpu_.front();
@@ -392,6 +393,7 @@ void ContextMTL::StoreTaskForGPU(const fml::closure& task,
 }
 
 void ContextMTL::FlushTasksAwaitingGPU() {
+  std::scoped_lock lock(tasks_awaiting_gpu_mutex_);
   for (const auto& task : tasks_awaiting_gpu_) {
     task.task();
   }
