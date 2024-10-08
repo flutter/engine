@@ -82,6 +82,11 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
     }
   }
 
+  Future<Uint8ClampedList> toUint8ClampedList(
+      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) async {
+    return (renderer as SkwasmRenderer).surface.rasterizeImageJS(this, format);
+  }
+
   @override
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
