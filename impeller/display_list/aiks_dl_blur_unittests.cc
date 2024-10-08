@@ -61,7 +61,8 @@ TEST_P(AiksTest, SolidColorOvalsMaskBlurTinySigma) {
 }
 
 sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
-                                                         Scalar sigma) {
+                                                         Scalar sigma,
+                                                         DlBlurStyle style) {
   DisplayListBuilder builder;
   builder.Scale(content_Scale.x, content_Scale.y);
 
@@ -73,7 +74,7 @@ sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
   std::vector<Scalar> stops = {0.0, 1.0};
 
   DlPaint paint;
-  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(style, sigma));
   auto gradient = DlColorSource::MakeLinear(
       {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
   paint.setColorSource(gradient);
@@ -99,14 +100,30 @@ sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
   return builder.Build();
 }
 
-TEST_P(AiksTest, GradientOvalStrokeMaskBlurSigmaZero) {
-  ASSERT_TRUE(OpenPlaygroundHere(
-      DoGradientOvalStrokeMaskBlur(GetContentScale(), /*sigma=*/0)));
+// https://github.com/flutter/flutter/issues/155930
+TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kNormal)));
 }
 
-TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
-  ASSERT_TRUE(OpenPlaygroundHere(
-      DoGradientOvalStrokeMaskBlur(GetContentScale(), /*sigma=*/10)));
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSigmaZero) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/0, DlBlurStyle::kNormal)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurOuter) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kOuter)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurInner) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kInner)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSolid) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kSolid)));
 }
 
 TEST_P(AiksTest, SolidColorCircleMaskBlurTinySigma) {
