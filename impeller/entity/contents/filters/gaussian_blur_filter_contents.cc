@@ -700,7 +700,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Entity snapshot_entity = entity.Clone();
   Scalar foox = entity.GetTransform().m[12];
-  Scalar fooy = entity.GetTransform().m[13q];
+  Scalar fooy = entity.GetTransform().m[13];
 
   snapshot_entity.SetTransform(
       Matrix::MakeTranslation({foox, fooy, 0}) *
