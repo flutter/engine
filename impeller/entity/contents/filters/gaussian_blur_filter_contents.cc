@@ -89,7 +89,6 @@ struct BlurInfo {
 BlurInfo CalculateBlurInfo(const Entity& entity,
                            const Matrix& effect_transform,
                            Vector2 sigma) {
-  FML_LOG(ERROR) << entity.GetTransform();
   // Source space here is scaled by the entity's transform. This is a
   // requirement for text to be rendered correctly. You can think of this as
   // "scaled source space" or "un-rotated local space". The entity's rotation is
@@ -667,8 +666,6 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
       Point(blur_info.local_padding.x, blur_info.local_padding.y));
 }
 
-static bool foo = true;
-
 // A brief overview how this works:
 // 1) Snapshot the filter input.
 // 2) Perform downsample pass. This also inserts the gutter around the input
@@ -719,8 +716,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (foo || (blur_info.scaled_sigma.x < kEhCloseEnough &&
-              blur_info.scaled_sigma.y < kEhCloseEnough)) {
+  if (blur_info.scaled_sigma.x < kEhCloseEnough &&
+      blur_info.scaled_sigma.y < kEhCloseEnough) {
     Entity result =
         Entity::FromSnapshot(input_snapshot.value(),
                              entity.GetBlendMode());  // No blur to render.
@@ -835,6 +832,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .transform =
                    entity.GetTransform() *                                   //
                    Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
+                   Matrix::MakeTranslation({-foox, -fooy, 0}) *
                    downsample_pass_args.transform *                          //
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,

@@ -60,9 +60,10 @@ TEST_P(AiksTest, SolidColorOvalsMaskBlurTinySigma) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
+                                                         Scalar sigma) {
   DisplayListBuilder builder;
-  builder.Scale(GetContentScale().x, GetContentScale().y);
+  builder.Scale(content_Scale.x, content_Scale.y);
 
   DlPaint background_paint;
   background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
@@ -71,7 +72,6 @@ TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
   std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  Scalar sigma = 5;
   DlPaint paint;
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
   auto gradient = DlColorSource::MakeLinear(
@@ -96,7 +96,17 @@ TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
   builder.DrawRRect(rrect, paint);
   builder.Restore();
 
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+  return builder.Build();
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSigmaZero) {
+  ASSERT_TRUE(OpenPlaygroundHere(
+      DoGradientOvalStrokeMaskBlur(GetContentScale(), /*sigma=*/0)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+  ASSERT_TRUE(OpenPlaygroundHere(
+      DoGradientOvalStrokeMaskBlur(GetContentScale(), /*sigma=*/10)));
 }
 
 TEST_P(AiksTest, SolidColorCircleMaskBlurTinySigma) {
