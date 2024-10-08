@@ -22,30 +22,35 @@ base class ColorAttachment {
   Texture texture;
   Texture? resolveTexture;
 
-  void _assertValid() {
+  void _validate() {
     if (resolveTexture != null) {
-      assert(resolveTexture!.format == texture.format,
-          "ColorAttachment MSAA resolve texture must have the same format as the texture");
-      assert(
-          resolveTexture!.width == texture.width &&
-              resolveTexture!.height == texture.height,
-          "ColorAttachment MSAA resolve texture must have the same dimensions as the texture");
-      assert(resolveTexture!.sampleCount == 1,
-          "ColorAttachment MSAA resolve texture must have a sample count of 1");
-      assert(texture.sampleCount > 1,
-          "ColorAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
-      assert(
-          storeAction == StoreAction.multisampleResolve ||
-              storeAction == StoreAction.storeAndMultisampleResolve,
-          "ColorAttachment StoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
-      assert(resolveTexture!.storageMode != StorageMode.deviceTransient,
-          "ColorAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+      if (resolveTexture!.format != texture.format) {
+        throw Exception(
+            "ColorAttachment MSAA resolve texture must have the same format as the texture");
+      }
+      if (resolveTexture!.width != texture.width ||
+          resolveTexture!.height != texture.height) {
+        throw Exception(
+            "ColorAttachment MSAA resolve texture must have the same dimensions as the texture");
+      }
+      if (resolveTexture!.sampleCount != 1) {
+        throw Exception(
+            "ColorAttachment MSAA resolve texture must have a sample count of 1");
+      }
+      if (texture.sampleCount <= 1) {
+        throw Exception(
+            "ColorAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
+      }
+      if (storeAction != StoreAction.multisampleResolve &&
+          storeAction != StoreAction.storeAndMultisampleResolve) {
+        throw Exception(
+            "ColorAttachment StoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      }
+      if (resolveTexture!.storageMode == StorageMode.deviceTransient) {
+        throw Exception(
+            "ColorAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+      }
     }
-
-    assert(
-        texture.storageMode != StorageMode.deviceTransient ||
-            loadAction != LoadAction.load,
-        "ColorAttachment loadAction must not be load when the texture has a storage mode of deviceTransient");
   }
 }
 
@@ -71,39 +76,50 @@ base class DepthStencilAttachment {
   Texture texture;
   Texture? resolveTexture;
 
-  void _assertValid() {
+  void _validate() {
     if (resolveTexture != null) {
-      assert(resolveTexture!.format == texture.format,
-          "DepthStencilAttachment MSAA resolve texture must have the same format as the texture");
-      assert(
-          resolveTexture!.width == texture.width &&
-              resolveTexture!.height == texture.height,
-          "DepthStencilAttachment MSAA resolve texture must have the same dimensions as the texture");
-      assert(resolveTexture!.sampleCount == 1,
-          "DepthStencilAttachment MSAA resolve texture must have a sample count of 1");
-      assert(texture.sampleCount > 1,
-          "DepthStencilAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
-      assert(
-          depthStoreAction == StoreAction.multisampleResolve ||
-              depthStoreAction == StoreAction.storeAndMultisampleResolve,
-          "DepthStencilAttachment depthStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
-      assert(
-          stencilStoreAction == StoreAction.multisampleResolve ||
-              stencilStoreAction == StoreAction.storeAndMultisampleResolve,
-          "DepthStencilAttachment stencilStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
-      assert(resolveTexture!.storageMode != StorageMode.deviceTransient,
-          "DepthStencilAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+      if (resolveTexture!.format != texture.format) {
+        throw Exception(
+            "DepthStencilAttachment MSAA resolve texture must have the same format as the texture");
+      }
+      if (resolveTexture!.width != texture.width ||
+          resolveTexture!.height != texture.height) {
+        throw Exception(
+            "DepthStencilAttachment MSAA resolve texture must have the same dimensions as the texture");
+      }
+      if (resolveTexture!.sampleCount != 1) {
+        throw Exception(
+            "DepthStencilAttachment MSAA resolve texture must have a sample count of 1");
+      }
+      if (texture.sampleCount <= 1) {
+        throw Exception(
+            "DepthStencilAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
+      }
+      if (depthStoreAction != StoreAction.multisampleResolve &&
+          depthStoreAction != StoreAction.storeAndMultisampleResolve) {
+        throw Exception(
+            "DepthStencilAttachment depthStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      }
+      if (stencilStoreAction != StoreAction.multisampleResolve &&
+          stencilStoreAction != StoreAction.storeAndMultisampleResolve) {
+        throw Exception(
+            "DepthStencilAttachment stencilStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
+      }
+      if (resolveTexture!.storageMode == StorageMode.deviceTransient) {
+        throw Exception(
+            "DepthStencilAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
+      }
     }
 
     if (texture.storageMode == StorageMode.deviceTransient) {
-      assert(
-          texture.storageMode != StorageMode.deviceTransient ||
-              depthLoadAction != LoadAction.load,
-          "DepthStencilAttachment depthLoadAction must not be load when the texture has a storage mode of deviceTransient");
-      assert(
-          texture.storageMode != StorageMode.deviceTransient ||
-              stencilLoadAction != LoadAction.load,
-          "DepthStencilAttachment stencilLoadAction must not be load when the texture has a storage mode of deviceTransient");
+      if (depthLoadAction == LoadAction.load) {
+        throw Exception(
+            "DepthStencilAttachment depthLoadAction must not be load when the texture has a storage mode of deviceTransient");
+      }
+      if (stencilLoadAction == LoadAction.load) {
+        throw Exception(
+            "DepthStencilAttachment stencilLoadAction must not be load when the texture has a storage mode of deviceTransient");
+      }
     }
   }
 }
@@ -180,12 +196,12 @@ base class RenderTarget {
             colorAttachments: [colorAttachment],
             depthStencilAttachment: depthStencilAttachment);
 
-  _assertValid() {
+  _validate() {
     for (final color in colorAttachments) {
-      color._assertValid();
+      color._validate();
     }
     if (depthStencilAttachment != null) {
-      depthStencilAttachment!._assertValid();
+      depthStencilAttachment!._validate();
     }
   }
 
@@ -197,7 +213,10 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   /// Creates a new RenderPass.
   RenderPass._(GpuContext gpuContext, CommandBuffer commandBuffer,
       RenderTarget renderTarget) {
-    renderTarget._assertValid();
+    assert(() {
+      renderTarget._validate();
+      return true;
+    }());
 
     _initialize();
     String? error;
