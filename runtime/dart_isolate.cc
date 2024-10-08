@@ -100,7 +100,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration,
     const UIDartState::Context& context,
-    const DartIsolate* spawning_isolate) {
+    const DartIsolate* spawning_isolate,
+    std::shared_ptr<NativeAssetsManager> native_assets_manager) {
   if (!isolate_snapshot) {
     FML_LOG(ERROR) << "Invalid isolate snapshot.";
     return {};
@@ -122,7 +123,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
                                    isolate_create_callback,            //
                                    isolate_shutdown_callback,          //
                                    context,                            //
-                                   spawning_isolate                    //
+                                   spawning_isolate,                   //
+                                   std::move(native_assets_manager)    //
                                    )
                      .lock();
 
@@ -196,7 +198,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback,
     const UIDartState::Context& context,
-    const DartIsolate* spawning_isolate) {
+    const DartIsolate* spawning_isolate,
+    std::shared_ptr<NativeAssetsManager> native_assets_manager) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateRootIsolate");
 
   // Only needed if this is the main isolate for the group.
@@ -247,7 +250,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
                 context.advisory_script_entrypoint,  // advisory entrypoint
                 nullptr,                             // child isolate preparer
                 isolate_create_callback,             // isolate create callback
-                isolate_shutdown_callback  // isolate shutdown callback
+                isolate_shutdown_callback,        // isolate shutdown callback
+                std::move(native_assets_manager)  //
                 )));
     isolate_maker = [](std::shared_ptr<DartIsolateGroupData>*
                            isolate_group_data,
@@ -1181,15 +1185,70 @@ static void* NativeAssetsDlopenRelative(const char* path, char** error) {
                                                  error);
 }
 
+static void* NativeAssetsDlopen(const char* asset_id, char** error) {
+  auto* isolate_group_data =
+      static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+          Dart_CurrentIsolateGroupData());
+  auto native_assets_manager = (*isolate_group_data)->GetNativeAssetsManager();
+  if (native_assets_manager == nullptr) {
+    return nullptr;
+  }
+
+  auto asset_path = native_assets_manager->LookupNativeAsset(asset_id);
+  if (asset_path.size() == 0) {
+    // The asset id was not in the mapping.
+    return nullptr;
+  }
+
+  auto& path_type = asset_path[0];
+  std::string path;
+  if (strcmp(path_type.c_str(), "absolute") == 0 ||
+      strcmp(path_type.c_str(), "relative") == 0 ||
+      strcmp(path_type.c_str(), "system") == 0) {
+    path = asset_path[1];
+  }
+
+  if (strcmp(path_type.c_str(), "absolute") == 0) {
+    return dart::bin::NativeAssets::DlopenAbsolute(path.c_str(), error);
+  } else if (strcmp(path_type.c_str(), "relative") == 0) {
+    return NativeAssetsDlopenRelative(path.c_str(), error);
+  } else if (strcmp(path_type.c_str(), "system") == 0) {
+    return dart::bin::NativeAssets::DlopenSystem(path.c_str(), error);
+  } else if (strcmp(path_type.c_str(), "process") == 0) {
+    return dart::bin::NativeAssets::DlopenProcess(error);
+  } else if (strcmp(path_type.c_str(), "executable") == 0) {
+    return dart::bin::NativeAssets::DlopenExecutable(error);
+  }
+
+  return nullptr;
+}
+
+static char* NativeAssetsAvailableAssets() {
+  auto* isolate_group_data =
+      static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+          Dart_CurrentIsolateGroupData());
+  auto native_assets_manager = (*isolate_group_data)->GetNativeAssetsManager();
+  FML_DCHECK(native_assets_manager != nullptr);
+  auto available_assets = native_assets_manager->AvailableNativeAssets();
+  auto* result = (char*)malloc(std::strlen(available_assets.c_str()) + 1);
+  std::strcpy(result, available_assets.c_str());
+  return result;
+}
+
 static void InitDartFFIForIsolateGroup() {
   NativeAssetsApi native_assets;
   memset(&native_assets, 0, sizeof(native_assets));
-  native_assets.dlopen_absolute = &dart::bin::NativeAssets::DlopenAbsolute;
-  native_assets.dlopen_relative = &NativeAssetsDlopenRelative;
-  native_assets.dlopen_system = &dart::bin::NativeAssets::DlopenSystem;
-  native_assets.dlopen_executable = &dart::bin::NativeAssets::DlopenExecutable;
-  native_assets.dlopen_process = &dart::bin::NativeAssets::DlopenProcess;
+  // TODO(dacoharkes): Remove after flutter_tools stops kernel embedding.
+  // native_assets.dlopen_absolute = &dart::bin::NativeAssets::DlopenAbsolute;
+  // native_assets.dlopen_relative = &NativeAssetsDlopenRelative;
+  // native_assets.dlopen_system = &dart::bin::NativeAssets::DlopenSystem;
+  // native_assets.dlopen_executable =
+  // &dart::bin::NativeAssets::DlopenExecutable; native_assets.dlopen_process =
+  // &dart::bin::NativeAssets::DlopenProcess;
+  // TODO(dacoharkes): End todo.
   native_assets.dlsym = &dart::bin::NativeAssets::Dlsym;
+  native_assets.dlopen = &NativeAssetsDlopen;
+  native_assets.available_assets = &NativeAssetsAvailableAssets;
   Dart_InitializeNativeAssetsResolver(&native_assets);
 };
 

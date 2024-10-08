@@ -1055,6 +1055,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string initial_route_;
   std::shared_ptr<AssetManager> asset_manager_;
   std::shared_ptr<FontCollection> font_collection_;
+  std::shared_ptr<NativeAssetsManager> native_assets_manager_;
   const std::unique_ptr<ImageDecoder> image_decoder_;
   ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;

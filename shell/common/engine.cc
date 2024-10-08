@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/assets/native_assets.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
@@ -195,6 +196,11 @@ bool Engine::UpdateAssetManager(
     font_collection_->RegisterTestFonts();
   }
 
+  if (native_assets_manager_ == nullptr) {
+    native_assets_manager_.reset(new NativeAssetsManager());
+  }
+  native_assets_manager_->RegisterNativeAssets(asset_manager_);
+
   return true;
 }
 
@@ -244,7 +250,8 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
           configuration.GetEntrypoint(),             //
           configuration.GetEntrypointLibrary(),      //
           configuration.GetEntrypointArgs(),         //
-          configuration.TakeIsolateConfiguration())  //
+          configuration.TakeIsolateConfiguration(),  //
+          native_assets_manager_)                    //
   ) {
     return RunStatus::Failure;
   }

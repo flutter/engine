@@ -9,11 +9,14 @@ source_set("assets") {
     "asset_resolver.h",
     "directory_asset_bundle.cc",
     "directory_asset_bundle.h",
+    "native_assets.cc",
+    "native_assets.h",
   ]
 
   deps = [
     "//flutter/common",
     "//flutter/fml",
+    "//flutter/third_party/rapidjson",
   ]
 
   public_configs = [ "//flutter:config" ]

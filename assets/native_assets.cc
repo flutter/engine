@@ -1,0 +1,127 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "assets/native_assets.h"
+
+#include "flutter/fml/build_config.h"
+#include "rapidjson/document.h"
+
+namespace flutter {
+
+#if defined(FML_ARCH_CPU_ARMEL)
+#define kTargetArchitectureName "arm"
+#elif defined(FML_ARCH_CPU_ARM64)
+#define kTargetArchitectureName "arm64"
+#elif defined(FML_ARCH_CPU_X86)
+#define kTargetArchitectureName "ia32"
+#elif defined(FML_ARCH_CPU_X86_64)
+#define kTargetArchitectureName "x64"
+#else
+#error Target architecture detection failed.
+#endif
+
+#if defined(FML_OS_ANDROID)
+#define kTargetOperatingSystemName "android"
+#elif defined(FML_OS_LINUX)
+#define kTargetOperatingSystemName "linux"
+#elif defined(FML_OS_IOS) || defined(FML_OS_IOS_SIMULATOR)
+#define kTargetOperatingSystemName "ios"
+#elif defined(FML_OS_MACOSX)
+#define kTargetOperatingSystemName "macos"
+#elif defined(FML_OS_WIN)
+#define kTargetOperatingSystemName "windows"
+#else
+#error Target operating system detection failed.
+#endif
+
+void NativeAssetsManager::RegisterNativeAssets(
+    const std::shared_ptr<AssetManager>& asset_manager) {
+  std::unique_ptr<fml::Mapping> manifest_mapping =
+      asset_manager->GetAsMapping("NativeAssetsManifest.json");
+  if (manifest_mapping == nullptr) {
+    FML_DLOG(WARNING)
+        << "Could not find NativeAssetsManifest.json in the asset store.";
+    return;
+  }
+
+  parsed_mapping_.clear();
+
+  rapidjson::Document document;
+  static_assert(sizeof(decltype(document)::Ch) == sizeof(uint8_t), "");
+  document.Parse(reinterpret_cast<const decltype(document)::Ch*>(
+                     manifest_mapping->GetMapping()),
+                 manifest_mapping->GetSize());
+  if (document.HasParseError()) {
+    FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+    return;
+  }
+  if (!document.IsObject()) {
+    FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+    return;
+  }
+  auto native_assets = document.FindMember("native-assets");
+  if (native_assets == document.MemberEnd() ||
+      !native_assets->value.IsObject()) {
+    FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+    return;
+  }
+  char target[100];
+  snprintf(target, sizeof(target), "%s_%s", kTargetOperatingSystemName,
+           kTargetArchitectureName);
+  auto mapping = native_assets->value.FindMember(target);
+  if (mapping == native_assets->value.MemberEnd() ||
+      !mapping->value.IsObject()) {
+    FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+    return;
+  }
+  for (auto entry = mapping->value.MemberBegin();
+       entry != mapping->value.MemberEnd(); entry++) {
+    std::vector<std::string> parsed_path;
+    entry->name.GetString();
+    auto& value = entry->value;
+    if (!value.IsArray()) {
+      FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+      continue;
+    }
+    for (const auto& element : value.GetArray()) {
+      if (!element.IsString()) {
+        FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
+        continue;
+      }
+      parsed_path.push_back(element.GetString());
+    }
+    parsed_mapping_[entry->name.GetString()] = std::move(parsed_path);
+  }
+}
+
+std::vector<std::string> NativeAssetsManager::LookupNativeAsset(
+    const std::string& asset_id) {
+  if (parsed_mapping_.find(asset_id) == parsed_mapping_.end()) {
+    return std::vector<std::string>();
+  }
+  return parsed_mapping_[asset_id];
+}
+
+std::string NativeAssetsManager::AvailableNativeAssets() {
+  if (parsed_mapping_.empty()) {
+    return std::string("No available native assets.");
+  }
+
+  std::string result;
+  result.append("Available native assets: ");
+  bool first = true;
+  for (const auto& n : parsed_mapping_) {
+    if (first) {
+      first = false;
+    } else {
+      result.append(", ");
+    }
+    result.append(n.first);
+  }
+
+  result.append(".");
+  return result;
+}
+
+}  // namespace flutter

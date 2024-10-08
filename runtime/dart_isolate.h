@@ -11,6 +11,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "assets/native_assets.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
@@ -221,7 +222,8 @@ class DartIsolate : public UIDartState {
       const std::vector<std::string>& dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configuration,
       const UIDartState::Context& context,
-      const DartIsolate* spawning_isolate = nullptr);
+      const DartIsolate* spawning_isolate = nullptr,
+      std::shared_ptr<NativeAssetsManager> native_assets_manager = nullptr);
 
   // |UIDartState|
   ~DartIsolate() override;
@@ -447,7 +449,8 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       const UIDartState::Context& context,
-      const DartIsolate* spawning_isolate = nullptr);
+      const DartIsolate* spawning_isolate = nullptr,
+      std::shared_ptr<NativeAssetsManager> native_assets_manager = nullptr);
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
