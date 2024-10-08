@@ -393,11 +393,14 @@ void ContextMTL::StoreTaskForGPU(const fml::closure& task,
 }
 
 void ContextMTL::FlushTasksAwaitingGPU() {
-  Lock lock(tasks_awaiting_gpu_mutex_);
-  for (const auto& task : tasks_awaiting_gpu_) {
+  std::deque<PendingTasks> tasks_awaiting_gpu;
+  {
+    Lock lock(tasks_awaiting_gpu_mutex_);
+    std::swap(tasks_awaiting_gpu, tasks_awaiting_gpu_);
+  }
+  for (const auto& task : tasks_awaiting_gpu) {
     task.task();
   }
-  tasks_awaiting_gpu_.clear();
 }
 
 ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
