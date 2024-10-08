@@ -164,7 +164,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
-  std::mutex tasks_awaiting_gpu_mutex_;
+  Mutex tasks_awaiting_gpu_mutex_;
   std::deque<PendingTasks> tasks_awaiting_gpu_ IPLR_GUARDED_BY(
       tasks_awaiting_gpu_mutex_);
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
