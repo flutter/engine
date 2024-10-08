@@ -64,27 +64,6 @@ When developing a pull request (PR), your branch might contain multiple commits.
 git ls-tree -R $(git merge-base HEAD master) engine DEPS | git hash-object --stdin
 ```
 
-## Considerations and Future Refinements
-
-Currently, `git ls-tree` incorporates file names and permissions into the hash calculation. Consequently, renaming or changing permissions of a file will necessitate rebuilding the engine. While acceptable initially, this behavior might require adjustments in the future.
-
-If we want to focus solely on file content and size, we could use `git ls-tree -r --object-only engine DEPS | sort | git hash-object --stdin`. However, this relies on consistent sorting across operating systems, which might introduce complexities.
-
-```shell
-#
-# Not using --object-only for demonstration. We would use --blob-only to get just the hash
-#
-$ git ls-tree -r HEAD README.md
-100644 blob 38daa079e3693e4940f0e9bc0201b7f5fda627e2	README.md
-
-$ git mv README.md DONTREADME.md
-$ git commit -a -m "test"
-$ git ls-tree -r HEAD README.md
-#nothing to see here, its not in the tree
-$ git ls-tree -r HEAD DONTREADME.md
-100644 blob 38daa079e3693e4940f0e9bc0201b7f5fda627e2	DONTREADME.md
-```
-
 ## Recommended Formula and Implementation
 
 For now, the recommended formula for calculating the engine hash is:
@@ -94,3 +73,27 @@ git ls-tree -R $(git merge-base HEAD master) engine DEPS | git hash-object --std
 ```
 
 To ensure backwards compatibility and allow for future updates, this formula should be implemented in both `.sh` and `.bat` scripts checked into the repository. This approach enables controlled updates to the hash calculation logic without disrupting existing workflows.
+
+## Considerations and Future Refinements
+
+Using the recomended formula incorporates the blob hash, permissions, and paths into the hash calculation. Consequently, moving, renaming, or changing permissions of a file will change the hash output and trigger rebuilding the engine. While acceptable initially, this behavior could be fine tuned in the future.
+
+If we want to focus solely on file contents, we could use `git ls-tree -r --object-only engine DEPS | sort | git hash-object --stdin`. The output of `ls-tree` will only contain the githash of the blobs; sorting that output should make it resiliant to renames. However, this relies on consistent sorting across operating systems, which might introduce complexities.
+
+An example showing renaming doesn't affect `ls-tree` blob hash:
+```shell
+#
+# Not using --object-only for demonstration. We would use --blob-only to get just the hash
+#
+$ git ls-tree -r HEAD README.md
+100644 blob 38daa079e3693e4940f0e9bc0201b7f5fda627e2	README.md
+
+$ git mv README.md DONTREADME.md
+$ git commit -a -m "test"
+
+$ git ls-tree -r HEAD README.md
+#nothing to see here, its not in the tree
+
+$ git ls-tree -r HEAD DONTREADME.md
+100644 blob 38daa079e3693e4940f0e9bc0201b7f5fda627e2	DONTREADME.md
+```
