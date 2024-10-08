@@ -223,7 +223,8 @@ bool TextContents::Render(const ContentContext& renderer,
                 continue;
               }
               Point subpixel = TextFrame::ComputeSubpixelPosition(
-                  glyph_position, font.GetAxisAlignment(), offset_, rounded_scale);
+                  glyph_position, font.GetAxisAlignment(), offset_,
+                  rounded_scale);
 
               std::optional<FrameBounds> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
