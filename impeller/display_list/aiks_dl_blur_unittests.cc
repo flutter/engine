@@ -60,6 +60,45 @@ TEST_P(AiksTest, SolidColorOvalsMaskBlurTinySigma) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  DlPaint background_paint;
+  background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
+  builder.DrawPaint(background_paint);
+
+  std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  Scalar sigma = 5;
+  DlPaint paint;
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma));
+  auto gradient = DlColorSource::MakeLinear(
+      {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
+  paint.setColorSource(gradient);
+  paint.setColor(DlColor::kWhite());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(20);
+
+  builder.Save();
+  builder.Translate(100, 100);
+
+  {
+    DlPaint line_paint;
+    line_paint.setColor(DlColor::kWhite());
+    builder.DrawLine({100, 0}, {100, 60}, line_paint);
+    builder.DrawLine({0, 30}, {200, 30}, line_paint);
+  }
+
+  SkRRect rrect =
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200.0f, 60.0f), 50, 100);
+  builder.DrawRRect(rrect, paint);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, SolidColorCircleMaskBlurTinySigma) {
   DisplayListBuilder builder;
   builder.Scale(GetContentScale().x, GetContentScale().y);
