@@ -736,7 +736,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders a header with an aria-label', () {
+  test('renders a header with a label and uses a sized span for label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -752,13 +752,13 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<header aria-label="Header of the page"></header>
+<header><span>Header of the page</span></header>
 ''');
 
     semantics().semanticsEnabled = false;
   });
 
-  test('header with children', () {
+  test('renders a header with children and uses aria-label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;

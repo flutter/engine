@@ -20,7 +20,7 @@ class SemanticHeader extends SemanticRole {
   SemanticHeader(SemanticsObject semanticsObject) : super.withBasics(
     SemanticRoleKind.header,
     semanticsObject,
-    preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+    preferredLabelRepresentation: LabelRepresentation.sizedSpan,
   );
 
   @override
