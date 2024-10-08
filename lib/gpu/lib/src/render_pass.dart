@@ -74,43 +74,8 @@ base class DepthStencilAttachment {
   int stencilClearValue;
 
   Texture texture;
-  Texture? resolveTexture;
 
   void _validate() {
-    if (resolveTexture != null) {
-      if (resolveTexture!.format != texture.format) {
-        throw Exception(
-            "DepthStencilAttachment MSAA resolve texture must have the same format as the texture");
-      }
-      if (resolveTexture!.width != texture.width ||
-          resolveTexture!.height != texture.height) {
-        throw Exception(
-            "DepthStencilAttachment MSAA resolve texture must have the same dimensions as the texture");
-      }
-      if (resolveTexture!.sampleCount != 1) {
-        throw Exception(
-            "DepthStencilAttachment MSAA resolve texture must have a sample count of 1");
-      }
-      if (texture.sampleCount <= 1) {
-        throw Exception(
-            "DepthStencilAttachment must have a sample count greater than 1 when a MSAA resolve texture is set");
-      }
-      if (depthStoreAction != StoreAction.multisampleResolve &&
-          depthStoreAction != StoreAction.storeAndMultisampleResolve) {
-        throw Exception(
-            "DepthStencilAttachment depthStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
-      }
-      if (stencilStoreAction != StoreAction.multisampleResolve &&
-          stencilStoreAction != StoreAction.storeAndMultisampleResolve) {
-        throw Exception(
-            "DepthStencilAttachment stencilStoreAction must be multisampleResolve or storeAndMultisampleResolve when a resolve texture is set");
-      }
-      if (resolveTexture!.storageMode == StorageMode.deviceTransient) {
-        throw Exception(
-            "DepthStencilAttachment MSAA resolve texture must not have a storage mode of deviceTransient");
-      }
-    }
-
     if (texture.storageMode == StorageMode.deviceTransient) {
       if (depthLoadAction == LoadAction.load) {
         throw Exception(
@@ -244,8 +209,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
           ds.stencilLoadAction.index,
           ds.stencilStoreAction.index,
           ds.stencilClearValue,
-          ds.texture,
-          ds.resolveTexture);
+          ds.texture);
       if (error != null) {
         throw Exception(error);
       }
@@ -404,8 +368,8 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       Texture? resolveTexture);
 
   @Native<
-          Handle Function(Pointer<Void>, Int, Int, Float, Int, Int, Int,
-              Pointer<Void>, Handle)>(
+          Handle Function(
+              Pointer<Void>, Int, Int, Float, Int, Int, Int, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetDepthStencilAttachment')
   external String? _setDepthStencilAttachment(
       int depthLoadAction,
@@ -414,8 +378,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int stencilLoadAction,
       int stencilStoreAction,
       int stencilClearValue,
-      Texture texture,
-      Texture? resolveTexture);
+      Texture texture);
 
   @Native<Handle Function(Pointer<Void>, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Begin')
