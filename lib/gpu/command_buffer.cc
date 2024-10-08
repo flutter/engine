@@ -43,21 +43,20 @@ bool CommandBuffer::Submit(
     encodable->EncodeCommands();
   }
 
+  // For the GLES backend, command queue submission just flushes the reactor,
+  // which needs to happen on the raster thread.
   if (context_->GetBackendType() == impeller::Context::BackendType::kOpenGLES) {
     auto dart_state = flutter::UIDartState::Current();
     auto& task_runners = dart_state->GetTaskRunners();
 
-    std::promise<bool> result_promise;
-    auto result_future = result_promise.get_future();
-    task_runners.GetRasterTaskRunner()->PostTask(
-        fml::MakeCopyable([context = context_, command_buffer = command_buffer_,
-                           completion_callback = completion_callback,
-                           promise = std::move(result_promise)]() mutable {
-          promise.set_value(context->GetCommandQueue()
-                                ->Submit({command_buffer}, completion_callback)
-                                .ok());
+    task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
+        [context = context_, command_buffer = command_buffer_,
+         completion_callback = completion_callback]() mutable {
+          context->GetCommandQueue()
+              ->Submit({command_buffer}, completion_callback)
+              .ok();
         }));
-    return result_future.get();
+    return true;
   }
 
   return context_->GetCommandQueue()

@@ -142,8 +142,15 @@ RenderPass::GetOrCreatePipeline() {
 
   std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
 
-  if (context.GetBackendType() == impeller::Context::BackendType::kOpenGLES) {
-    // Get the pipeline on the raster thread.
+  if (context.GetBackendType() == impeller::Context::BackendType::kOpenGLES &&
+      !context.GetPipelineLibrary()->HasPipeline(pipeline_desc)) {
+    // For GLES, new pipeline creation must be done on the reactor (raster)
+    // thread. We're about the draw, so we need to synchronize with a raster
+    // task in order to get the new pipeline. Depending on how busy the raster
+    // thread is, this could hang the UI thread long enough to miss a frame.
+
+    // Note that this branch is only called if a new pipeline actually needs to
+    // be built.
     auto dart_state = flutter::UIDartState::Current();
     std::promise<
         std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>>
