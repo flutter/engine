@@ -1402,7 +1402,7 @@ void Canvas::AddRenderEntityWithFiltersToCurrentPass(Entity& entity,
     }
     if (paint.invert_colors) {
       contents_copy =
-          WrapWithInvertColors(FilterInput::Make(contents_copy),
+          WrapWithInvertColors(FilterInput::Make(std::move(contents_copy)),
                                ColorFilterContents::AbsorbOpacity::kYes);
     }
   }
@@ -1418,7 +1418,6 @@ void Canvas::AddRenderEntityWithFiltersToCurrentPass(Entity& entity,
 
   entity.SetContents(std::move(contents_copy));
   AddRenderEntityToCurrentPass(entity, reuse_depth);
-  return;
 }
 
 void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {

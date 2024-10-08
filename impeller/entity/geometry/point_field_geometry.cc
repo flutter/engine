@@ -15,7 +15,7 @@ PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
                                        bool round)
     : points_(std::move(points)), radius_(radius), round_(round) {}
 
-PointFieldGeometry::~PointFieldGeometry() {}
+PointFieldGeometry::~PointFieldGeometry() = default;
 
 GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
