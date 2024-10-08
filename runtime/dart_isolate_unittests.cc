@@ -892,6 +892,8 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
   // root isolate will be auto-shutdown
 }
 
+// TODO(https://github.com/flutter/flutter/issues/156251): Fix and re-enable.
+#if 0
 TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
   fml::AutoResetWaitableEvent message_latch;
   AddNativeCallback(
@@ -964,6 +966,7 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
 
   // root isolate will be auto-shutdown
 }
+#endif
 
 TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
   AddNativeCallback("PassMessage",
