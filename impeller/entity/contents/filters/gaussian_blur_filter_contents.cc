@@ -703,9 +703,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Scalar fooy = entity.GetTransform().m[13q];
 
   snapshot_entity.SetTransform(
-        Matrix::MakeTranslation({foox, fooy, 0}) *
-      Matrix::MakeScale(
-        blur_info.source_space_scalar));
+      Matrix::MakeTranslation({foox, fooy, 0}) *
+      Matrix::MakeScale(blur_info.source_space_scalar));
 
   std::optional<Rect> source_expanded_coverage_hint;
   if (expanded_coverage_hint.has_value()) {
@@ -721,7 +720,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   if (foo || (blur_info.scaled_sigma.x < kEhCloseEnough &&
-      blur_info.scaled_sigma.y < kEhCloseEnough)) {
+              blur_info.scaled_sigma.y < kEhCloseEnough)) {
     Entity result =
         Entity::FromSnapshot(input_snapshot.value(),
                              entity.GetBlendMode());  // No blur to render.
