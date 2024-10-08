@@ -381,14 +381,27 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
 
 void ContextMTL::StoreTaskForGPU(const fml::closure& task,
                                  const fml::closure& failure) {
-  Lock lock(tasks_awaiting_gpu_mutex_);
-  tasks_awaiting_gpu_.push_back(PendingTasks{task, failure});
-  while (tasks_awaiting_gpu_.size() > kMaxTasksAwaitingGPU) {
-    const PendingTasks& front = tasks_awaiting_gpu_.front();
-    if (front.failure) {
-      front.failure();
+  std::vector<PendingTasks> failed_tasks;
+  {
+    Lock lock(tasks_awaiting_gpu_mutex_);
+    tasks_awaiting_gpu_.push_back(PendingTasks{task, failure});
+    int32_t failed_task_count =
+        tasks_awaiting_gpu_.size() - kMaxTasksAwaitingGPU;
+    if (failed_task_count > 0) {
+      failed_tasks.reserve(failed_task_count);
+      failed_tasks.insert(failed_tasks.end(),
+                          std::make_move_iterator(tasks_awaiting_gpu_.begin()),
+                          std::make_move_iterator(tasks_awaiting_gpu_.begin() +
+                                                  failed_task_count));
+      tasks_awaiting_gpu_.erase(
+          tasks_awaiting_gpu_.begin(),
+          tasks_awaiting_gpu_.begin() + failed_task_count);
     }
-    tasks_awaiting_gpu_.pop_front();
+  }
+  for (const PendingTasks& task : failed_tasks) {
+    if (task.failure) {
+      task.failure();
+    }
   }
 }
 
