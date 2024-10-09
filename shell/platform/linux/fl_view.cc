@@ -31,8 +31,16 @@
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
+#include "flutter/shell/platform/linux/sequential_id_generator.h"
 
 static constexpr int kMicrosecondsPerMillisecond = 1000;
+
+static const int kMinTouchDeviceId = 0;
+static const int kMaxTouchDeviceId = 128;
+
+// Generates touch point IDs for touch events.
+flutter::SequentialIdGenerator touch_id_generator_{kMinTouchDeviceId,
+                                                   kMaxTouchDeviceId};
 
 struct _FlView {
   GtkBox parent_instance;
@@ -459,12 +467,67 @@ static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
   return TRUE;
 }
 
+static gboolean touch_event_cb(FlView* self, GdkEventTouch* event) {
+  if (self->engine == nullptr) {
+    return FALSE;
+  }
+  // get sequence id from GdkEvent
+  GdkEventSequence* seq =
+      gdk_event_get_event_sequence(reinterpret_cast<GdkEvent*>(event));
+  // cast pointer to int to get unique id
+  uint32_t id = reinterpret_cast<long>(seq);
+  // generate touch id from unique id
+  auto touch_id = touch_id_generator_.GetGeneratedId(id);
+
+  gdouble event_x = 0.0, event_y = 0.0;
+  gdk_event_get_coords(reinterpret_cast<GdkEvent*>(event), &event_x, &event_y);
+  check_pointer_inside(self, reinterpret_cast<GdkEvent*>(event));
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+
+  double x = event_x * scale_factor;
+  double y = event_y * scale_factor;
+
+  GdkEventType touch_event_type =
+      gdk_event_get_event_type(reinterpret_cast<GdkEvent*>(event));
+  switch (touch_event_type) {
+    case GDK_TOUCH_BEGIN:
+      OnPointerDown(
+          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
+          touch_id,
+          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+      break;
+    case GDK_TOUCH_UPDATE:
+      OnPointerMove(self->engine, self->view_id, x, y,
+                    kFlutterPointerDeviceKindTouch, touch_id, 0);
+      break;
+    case GDK_TOUCH_END:
+      OnPointerUp(
+          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
+          touch_id,
+          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+      OnPointerLeave(self->engine, self->view_id, x, y,
+                     kFlutterPointerDeviceKindTouch, touch_id);
+      touch_id_generator_.ReleaseNumber(id);
+      break;
+    default:
+      return FALSE;
+  }
+  return TRUE;
+}
+
 // Signal handler for GtkWidget::motion-notify-event
 static gboolean motion_notify_event_cb(FlView* self,
                                        GdkEventMotion* motion_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(motion_event);
 
   if (self->engine == nullptr) {
+    return FALSE;
+  }
+
+  // return if touch event
+  auto event_type = gdk_event_get_event_type(event);
+  if (event_type == GDK_TOUCH_BEGIN || event_type == GDK_TOUCH_UPDATE ||
+      event_type == GDK_TOUCH_END || event_type == GDK_TOUCH_CANCEL) {
     return FALSE;
   }
 
@@ -787,7 +850,7 @@ static void fl_view_init(FlView* self) {
   gtk_widget_add_events(self->event_box,
                         GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
                             GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
-                            GDK_SMOOTH_SCROLL_MASK);
+                            GDK_SMOOTH_SCROLL_MASK | GDK_TOUCH_MASK);
 
   g_signal_connect_swapped(self->event_box, "button-press-event",
                            G_CALLBACK(button_press_event_cb), self);
@@ -814,6 +877,9 @@ static void fl_view_init(FlView* self) {
                            G_CALLBACK(gesture_rotation_update_cb), self);
   g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
                            self);
+
+  g_signal_connect_swapped(self->event_box, "touch-event",
+                           G_CALLBACK(touch_event_cb), self);
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
