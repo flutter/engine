@@ -481,7 +481,7 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
 
   GWeakRef* ref = static_cast<GWeakRef*>(
       g_hash_table_lookup(priv->views, GINT_TO_POINTER(view_id)));
-  FlRenderable* renderable =
+  g_autoptr(FlRenderable) renderable =
       ref != nullptr ? FL_RENDERABLE(g_weak_ref_get(ref)) : nullptr;
   if (renderable != nullptr) {
     fl_renderable_redraw(renderable);
