@@ -44,23 +44,21 @@ void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
 ClipCoverage ClipContents::GetClipCoverage(
     const std::optional<Rect>& current_clip_coverage) const {
   if (!current_clip_coverage.has_value()) {
-    return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
+    return {.coverage = std::nullopt};
   }
   switch (clip_op_) {
     case Entity::ClipOperation::kDifference:
       // This can be optimized further by considering cases when the bounds of
       // the current stencil will shrink.
       return {
-          .type = ClipCoverage::Type::kAppend,  //
           .is_difference_or_non_square = true,  //
           .coverage = current_clip_coverage     //
       };
     case Entity::ClipOperation::kIntersect:
       if (coverage_rect_.IsEmpty() || !current_clip_coverage.has_value()) {
-        return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
+        return {.coverage = std::nullopt};
       }
       return {
-          .type = ClipCoverage::Type::kAppend,                              //
           .is_difference_or_non_square = !is_axis_aligned_rect_,            //
           .coverage = current_clip_coverage->Intersection(coverage_rect_),  //
       };

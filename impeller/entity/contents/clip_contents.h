@@ -12,9 +12,6 @@
 namespace impeller {
 
 struct ClipCoverage {
-  enum class Type { kNoChange, kAppend, kRestore };
-
-  Type type = Type::kNoChange;
   // TODO(jonahwilliams): this should probably use the Entity::ClipOperation
   // enum, but that has transitive import errors.
   bool is_difference_or_non_square = false;
