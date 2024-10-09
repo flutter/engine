@@ -1267,7 +1267,7 @@ class SemanticsObject {
   /// Not to be confused with [isHeader].
   bool get isHeading => headingLevel != 0;
 
-  /// Whether this object represents an editable text field.
+  /// Whether this object represents an interactive link.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
 
   /// Whether this object represents a header.
