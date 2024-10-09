@@ -15,7 +15,6 @@
 #include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/aiks_context.h"
-#include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/dl_atlas_geometry.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
@@ -25,7 +24,11 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/ellipse_geometry.h"
+#include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
+#include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -431,7 +434,8 @@ void DlDispatcherBase::clipRect(const DlRect& rect,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeRect(rect), ToClipOperation(clip_op));
+  RectGeometry geom(rect);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
@@ -440,8 +444,8 @@ void DlDispatcherBase::clipOval(const DlRect& bounds,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeOval(bounds),
-                           ToClipOperation(clip_op));
+  EllipseGeometry geom(bounds);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
@@ -452,20 +456,18 @@ void DlDispatcherBase::clipRRect(const SkRRect& rrect,
 
   auto clip_op = ToClipOperation(sk_op);
   if (rrect.isRect()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeRect(skia_conversions::ToRect(rrect.rect())), clip_op);
+    RectGeometry geom(skia_conversions::ToRect(rrect.rect()));
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else if (rrect.isOval()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeOval(skia_conversions::ToRect(rrect.rect())), clip_op);
+    EllipseGeometry geom(skia_conversions::ToRect(rrect.rect()));
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else if (rrect.isSimple()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeRoundRect(
-            skia_conversions::ToRect(rrect.rect()),
-            skia_conversions::ToSize(rrect.getSimpleRadii())),
-        clip_op);
+    RoundRectGeometry geom(skia_conversions::ToRect(rrect.rect()),
+                           skia_conversions::ToSize(rrect.getSimpleRadii()));
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeFillPath(skia_conversions::ToPath(rrect)), clip_op);
+    FillPathGeometry geom(skia_conversions::ToPath(rrect));
+    GetCanvas().ClipGeometry(geom, clip_op);
   }
 }
 
@@ -477,19 +479,20 @@ void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
 
   DlRect rect;
   if (path.IsRect(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeRect(rect), clip_op);
+    RectGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else if (path.IsOval(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeOval(rect), clip_op);
+    EllipseGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
     SkRRect rrect;
     if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
-      GetCanvas().ClipGeometry(
-          Geometry::MakeRoundRect(
-              skia_conversions::ToRect(rrect.rect()),
-              skia_conversions::ToSize(rrect.getSimpleRadii())),
-          clip_op);
+      RoundRectGeometry geom(skia_conversions::ToRect(rrect.rect()),
+                             skia_conversions::ToSize(rrect.getSimpleRadii()));
+      GetCanvas().ClipGeometry(geom, clip_op);
     } else {
-      GetCanvas().ClipGeometry(Geometry::MakeFillPath(path.GetPath()), clip_op);
+      FillPathGeometry geom(skia_conversions::ToPath(rrect));
+      GetCanvas().ClipGeometry(geom, clip_op);
     }
   }
 }

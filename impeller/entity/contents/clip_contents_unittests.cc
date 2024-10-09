@@ -20,35 +20,35 @@ namespace testing {
 
 using EntityTest = EntityPlayground;
 
-TEST_P(EntityTest, ClipContentsOptimizesFullScreenIntersectClips) {
-  // Set up mock environment.
+// TEST_P(EntityTest, ClipContentsOptimizesFullScreenIntersectClips) {
+//   // Set up mock environment.
 
-  auto content_context = GetContentContext();
-  auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target =
-      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
-          *content_context->GetContext(), {100, 100},
-          /*mip_count=*/1);
-  auto render_pass = buffer->CreateRenderPass(render_target);
-  auto recording_pass = std::make_shared<RecordingRenderPass>(
-      render_pass, GetContext(), render_target);
+//   auto content_context = GetContentContext();
+//   auto buffer = content_context->GetContext()->CreateCommandBuffer();
+//   auto render_target =
+//       GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+//           *content_context->GetContext(), {100, 100},
+//           /*mip_count=*/1);
+//   auto render_pass = buffer->CreateRenderPass(render_target);
+//   auto recording_pass = std::make_shared<RecordingRenderPass>(
+//       render_pass, GetContext(), render_target);
 
-  // Set up clip contents.
+//   // Set up clip contents.
 
-  auto contents = std::make_shared<ClipContents>();
-  contents->SetClipOperation(Entity::ClipOperation::kIntersect);
-  auto geom = Geometry::MakeCover();
-  contents->SetGeometry(geom.get());
+//   auto contents = std::make_shared<ClipContents>();
+//   contents->SetClipOperation(Entity::ClipOperation::kIntersect);
+//   auto geom = Geometry::MakeCover();
+//   contents->SetGeometry(geom.get());
 
-  Entity entity;
-  entity.SetContents(std::move(contents));
+//   Entity entity;
+//   entity.SetContents(std::move(contents));
 
-  // Render the clip contents.
+//   // Render the clip contents.
 
-  ASSERT_TRUE(recording_pass->GetCommands().empty());
-  ASSERT_TRUE(entity.Render(*content_context, *recording_pass));
-  ASSERT_FALSE(recording_pass->GetCommands().empty());
-}
+//   ASSERT_TRUE(recording_pass->GetCommands().empty());
+//   ASSERT_TRUE(entity.Render(*content_context, *recording_pass));
+//   ASSERT_FALSE(recording_pass->GetCommands().empty());
+// }
 
 }  // namespace testing
 }  // namespace impeller

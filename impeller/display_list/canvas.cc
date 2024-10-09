@@ -177,9 +177,10 @@ static std::shared_ptr<Texture> FlipBackdrop(
         replay.clip_coverage,
         *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
         global_pass_position);
-    if (!replay.entity.Render(
+    if (!replay.clip_contents.Render(
             renderer,
-            *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+            *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
+            replay.clip_depth)) {
       VALIDATION_LOG << "Failed to render entity for clip restore.";
     }
   }
@@ -525,14 +526,14 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       break;
     }
     case FilterContents::BlurStyle::kOuter: {
-      ClipGeometry(Geometry::MakeRoundRect(rect, corner_radii),
-                   Entity::ClipOperation::kDifference);
+      RoundRectGeometry geom(rect, corner_radii);
+      ClipGeometry(geom, Entity::ClipOperation::kDifference);
       draw_blurred_rrect();
       break;
     }
     case FilterContents::BlurStyle::kInner: {
-      ClipGeometry(Geometry::MakeRoundRect(rect, corner_radii),
-                   Entity::ClipOperation::kIntersect);
+      RoundRectGeometry geom(rect, corner_radii);
+      ClipGeometry(geom, Entity::ClipOperation::kIntersect);
       draw_blurred_rrect();
       break;
     }
@@ -648,34 +649,35 @@ void Canvas::DrawCircle(const Point& center,
   }
 }
 
-void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
+void Canvas::ClipGeometry(const Geometry& geometry,
                           Entity::ClipOperation clip_op) {
-  clip_geometry_.push_back(std::move(geometry));
+  if (IsSkipping()) {
+    return;
+  }
+  auto clip_transform = GetCurrentTransform();
+  auto clip_coverage = geometry.GetCoverage(clip_transform);
 
-  auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(clip_geometry_.back().get());
-  contents->SetClipOperation(clip_op);
+  if (!clip_coverage.has_value()) {
+    return;
+  }
 
   Entity entity;
-  entity.SetTransform(GetCurrentTransform());
-  entity.SetContents(std::move(contents));
+  entity.SetTransform(clip_transform);
+  auto geometry_result = geometry.GetPositionBuffer(
+      renderer_,                                                         //
+      entity,                                                            //
+      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass  //
+  );
 
-  AddClipEntityToCurrentPass(entity);
+  ClipContents contents;
+  contents.SetClipOperation(clip_op);
+  contents.SetGeometry(geometry_result, clip_coverage.value(),
+                       geometry.IsAxisAlignedRect());
+
+  AddClipEntityToCurrentPass(contents, clip_transform);
 
   ++transform_stack_.back().clip_height;
   ++transform_stack_.back().num_clips;
-}
-
-void Canvas::RestoreClip() {
-  Entity entity;
-  entity.SetTransform(GetCurrentTransform());
-  // This path is empty because ClipRestoreContents just generates a quad that
-  // takes up the full render target.
-  auto clip_restore = std::make_shared<ClipRestoreContents>();
-  clip_restore->SetRestoreHeight(GetClipHeight());
-  entity.SetContents(std::move(clip_restore));
-
-  AddRenderEntityToCurrentPass(entity);
 }
 
 void Canvas::DrawPoints(std::vector<Point> points,
@@ -1256,35 +1258,12 @@ bool Canvas::Restore() {
   transform_stack_.pop_back();
 
   if (num_clips > 0) {
-    Entity entity;
-    entity.SetTransform(
-        Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-        GetCurrentTransform());
-    // This path is empty because ClipRestoreContents just generates a quad that
-    // takes up the full render target.
-    auto clip_restore = std::make_shared<ClipRestoreContents>();
-    clip_restore->SetRestoreHeight(GetClipHeight());
-    entity.SetContents(std::move(clip_restore));
-
-    auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-    if (current_clip_coverage.has_value()) {
-      // Entity transforms are relative to the current pass position, so we need
-      // to check clip coverage in the same space.
-      current_clip_coverage =
-          current_clip_coverage->Shift(-GetGlobalPassPosition());
-    }
-
-    auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
-    if (clip_coverage.coverage.has_value()) {
-      clip_coverage.coverage =
-          clip_coverage.coverage->Shift(GetGlobalPassPosition());
-    }
-
     EntityPassClipStack::ClipStateResult clip_state_result =
-        clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
-                                            GetClipHeightFloor(),
-                                            GetGlobalPassPosition());
+        clip_coverage_stack_.RecordRestore(GetGlobalPassPosition(),
+                                           GetClipHeight());
 
+    // STC does not require executing restore programs.
+    FML_DCHECK(!!clip_state_result.should_render);
     if (clip_state_result.clip_did_change) {
       // We only need to update the pass scissor if the clip state has changed.
       SetClipScissor(
@@ -1293,14 +1272,6 @@ bool Canvas::Restore() {
           GetGlobalPassPosition()                                             //
       );
     }
-
-    if (!clip_state_result.should_render) {
-      return true;
-    }
-
-    entity.Render(
-        renderer_,
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
   }
 
   return true;
@@ -1519,15 +1490,8 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
   entity.Render(renderer_, *result.pass);
 }
 
-void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
-  if (IsSkipping()) {
-    return;
-  }
-
-  auto transform = entity.GetTransform();
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
-
+void Canvas::AddClipEntityToCurrentPass(const ClipContents& clip_contents,
+                                        const Matrix& transform) {
   // Ideally the clip depth would be greater than the current rendering
   // depth because any rendering calls that follow this clip operation will
   // pre-increment the depth and then be rendering above our clip depth,
@@ -1540,25 +1504,15 @@ void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
   // See https://github.com/flutter/flutter/issues/147021
   FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
-  entity.SetClipDepth(transform_stack_.back().clip_depth);
 
-  auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-  if (current_clip_coverage.has_value()) {
-    // Entity transforms are relative to the current pass position, so we need
-    // to check clip coverage in the same space.
-    current_clip_coverage =
-        current_clip_coverage->Shift(-GetGlobalPassPosition());
-  }
-
-  auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
-  if (clip_coverage.coverage.has_value()) {
-    clip_coverage.coverage =
-        clip_coverage.coverage->Shift(GetGlobalPassPosition());
-  }
+  auto clip_depth = transform_stack_.back().clip_depth;
+  auto clip_transform =
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform;
 
   EntityPassClipStack::ClipStateResult clip_state_result =
-      clip_coverage_stack_.ApplyClipState(
-          clip_coverage, entity, GetClipHeightFloor(), GetGlobalPassPosition());
+      clip_coverage_stack_.RecordClip(clip_contents, clip_transform,
+                                      GetGlobalPassPosition(), clip_depth,
+                                      GetClipHeightFloor());
 
   if (clip_state_result.clip_did_change) {
     // We only need to update the pass scissor if the clip state has changed.
@@ -1572,9 +1526,10 @@ void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
     return;
   }
 
-  entity.Render(
+  clip_contents.Render(
       renderer_,
-      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
+      clip_depth);
 }
 
 bool Canvas::BlitToOnscreen() {
