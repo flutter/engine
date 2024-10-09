@@ -1312,7 +1312,7 @@ bool Canvas::Restore() {
                                            GetClipHeight());
 
     // STC does not require executing restore programs.
-    FML_DCHECK(!!clip_state_result.should_render);
+    FML_DCHECK(!clip_state_result.should_render);
     if (clip_state_result.clip_did_change) {
       // We only need to update the pass scissor if the clip state has changed.
       SetClipScissor(
