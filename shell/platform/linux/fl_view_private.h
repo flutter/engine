@@ -8,22 +8,6 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 /**
- * fl_view_redraw:
- * @view: an #FlView.
- *
- * Indicate the view needs to redraw.
- */
-void fl_view_redraw(FlView* view);
-
-/**
- * fl_view_make_current:
- * @view: an #FlView.
- *
- * Makes this view the current OpenGL context.
- */
-void fl_view_make_current(FlView* view);
-
-/**
  * fl_view_get_keyboard_state:
  * @view: an #FlView.
  *

@@ -7,7 +7,6 @@
 #include "flutter/common/constants.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/linux/fl_framebuffer.h"
-#include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 #include "flutter/shell/platform/linux/testing/mock_epoxy.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
@@ -23,13 +22,11 @@ TEST(FlRendererTest, BackgroundColor) {
           ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
   EXPECT_CALL(epoxy, glClearColor(0.2, 0.3, 0.4, 0.5));
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -56,15 +53,13 @@ TEST(FlRendererTest, RestoresGLState) {
   constexpr int kWidth = 100;
   constexpr int kHeight = 100;
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   g_autoptr(FlFramebuffer) framebuffer =
       fl_framebuffer_new(GL_RGB, kWidth, kHeight);
 
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
@@ -102,8 +97,6 @@ static gdouble renderer_get_refresh_rate(FlRenderer* renderer) {
 }
 
 TEST(FlRendererTest, RefreshRate) {
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlMockRenderer) renderer =
       fl_mock_renderer_new(&renderer_get_refresh_rate);
 
@@ -124,13 +117,11 @@ TEST(FlRendererTest, BlitFramebuffer) {
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -168,13 +159,11 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -205,13 +194,11 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -243,13 +230,11 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = FL_VIEW(g_object_ref_sink(fl_view_new(project)));
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
   fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       view);
+                       FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
