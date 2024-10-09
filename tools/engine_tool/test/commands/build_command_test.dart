@@ -12,9 +12,9 @@ import 'package:engine_tool/src/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
-import 'fixtures.dart' as fixtures;
-import 'src/test_build_configs.dart';
-import 'utils.dart';
+import '../fixtures.dart' as fixtures;
+import '../src/test_build_configs.dart';
+import '../src/utils.dart';
 
 void main() {
   test('can find host runnable build', () async {
