@@ -31,14 +31,12 @@ struct ClipCoverage {
 
 class ClipContents {
  public:
-  ClipContents();
+  ClipContents(Rect coverage_rect, bool is_axis_aligned_rect);
 
   ~ClipContents();
 
   /// @brief Set the pre-tessellated clip geometry.
-  void SetGeometry(GeometryResult geometry,
-                   Rect coverage_rect,
-                   bool is_axis_aligned_rect);
+  void SetGeometry(GeometryResult geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 

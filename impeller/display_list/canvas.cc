@@ -654,30 +654,79 @@ void Canvas::ClipGeometry(const Geometry& geometry,
   if (IsSkipping()) {
     return;
   }
-  auto clip_transform = GetCurrentTransform();
-  auto clip_coverage = geometry.GetCoverage(clip_transform);
 
+  // Ideally the clip depth would be greater than the current rendering
+  // depth because any rendering calls that follow this clip operation will
+  // pre-increment the depth and then be rendering above our clip depth,
+  // but that case will be caught by the CHECK in AddRenderEntity above.
+  // In practice we sometimes have a clip set with no rendering after it
+  // and in such cases the current depth will equal the clip depth.
+  // Eventually the DisplayList should optimize these out, but it is hard
+  // to know if a clip will actually be used in advance of storing it in
+  // the DisplayList buffer.
+  // See https://github.com/flutter/flutter/issues/147021
+  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
+
+  uint32_t clip_depth = transform_stack_.back().clip_depth;
+
+  ++transform_stack_.back().clip_height;
+  ++transform_stack_.back().num_clips;
+
+  const Matrix clip_transform =
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+      GetCurrentTransform();
+
+  auto clip_coverage = geometry.GetCoverage(clip_transform);
   if (!clip_coverage.has_value()) {
     return;
   }
 
+  ClipContents clip_contents(clip_coverage.value(),
+                             geometry.IsAxisAlignedRect());
+  clip_contents.SetClipOperation(clip_op);
+
+  EntityPassClipStack::ClipStateResult clip_state_result =
+      clip_coverage_stack_.RecordClip(clip_contents,            //
+                                      clip_transform,           //
+                                      GetGlobalPassPosition(),  //
+                                      clip_depth,               //
+                                      GetClipHeightFloor()      //
+      );
+
+  if (clip_state_result.clip_did_change) {
+    // We only need to update the pass scissor if the clip state has changed.
+    SetClipScissor(
+        clip_coverage_stack_.CurrentClipCoverage(),
+        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
+        GetGlobalPassPosition());
+  }
+
+  if (!clip_state_result.should_render) {
+    return;
+  }
+
+  // Note: this is a bit of a hack. Its not possible to construct a geometry
+  // result without begninning the render pass. We should refactor the geometry
+  // objects so that they only need a reference to the render pass size and/or
+  // orthographic transform.
   Entity entity;
   entity.SetTransform(clip_transform);
-  auto geometry_result = geometry.GetPositionBuffer(
+  entity.SetClipDepth(clip_depth);
+
+  GeometryResult geometry_result = geometry.GetPositionBuffer(
       renderer_,                                                         //
       entity,                                                            //
       *render_passes_.back().inline_pass_context->GetRenderPass(0).pass  //
   );
+  clip_contents.SetGeometry(geometry_result);
+  clip_coverage_stack_.GetLastReplayResult().clip_contents.SetGeometry(
+      geometry_result);
 
-  ClipContents contents;
-  contents.SetClipOperation(clip_op);
-  contents.SetGeometry(geometry_result, clip_coverage.value(),
-                       geometry.IsAxisAlignedRect());
-
-  AddClipEntityToCurrentPass(contents, clip_transform);
-
-  ++transform_stack_.back().clip_height;
-  ++transform_stack_.back().num_clips;
+  clip_contents.Render(
+      renderer_,
+      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
+      clip_depth);
 }
 
 void Canvas::DrawPoints(std::vector<Point> points,
@@ -1488,48 +1537,6 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
   }
 
   entity.Render(renderer_, *result.pass);
-}
-
-void Canvas::AddClipEntityToCurrentPass(const ClipContents& clip_contents,
-                                        const Matrix& transform) {
-  // Ideally the clip depth would be greater than the current rendering
-  // depth because any rendering calls that follow this clip operation will
-  // pre-increment the depth and then be rendering above our clip depth,
-  // but that case will be caught by the CHECK in AddRenderEntity above.
-  // In practice we sometimes have a clip set with no rendering after it
-  // and in such cases the current depth will equal the clip depth.
-  // Eventually the DisplayList should optimize these out, but it is hard
-  // to know if a clip will actually be used in advance of storing it in
-  // the DisplayList buffer.
-  // See https://github.com/flutter/flutter/issues/147021
-  FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
-      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
-
-  auto clip_depth = transform_stack_.back().clip_depth;
-  auto clip_transform =
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform;
-
-  EntityPassClipStack::ClipStateResult clip_state_result =
-      clip_coverage_stack_.RecordClip(clip_contents, clip_transform,
-                                      GetGlobalPassPosition(), clip_depth,
-                                      GetClipHeightFloor());
-
-  if (clip_state_result.clip_did_change) {
-    // We only need to update the pass scissor if the clip state has changed.
-    SetClipScissor(
-        clip_coverage_stack_.CurrentClipCoverage(),
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
-        GetGlobalPassPosition());
-  }
-
-  if (!clip_state_result.should_render) {
-    return;
-  }
-
-  clip_contents.Render(
-      renderer_,
-      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
-      clip_depth);
 }
 
 bool Canvas::BlitToOnscreen() {

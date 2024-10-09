@@ -57,6 +57,10 @@ class EntityPassClipStack {
                              uint32_t clip_depth,
                              size_t clip_height_floor);
 
+  ReplayResult& GetLastReplayResult() {
+    return GetCurrentSubpassState().rendered_clip_entities.back();
+  }
+
   ClipStateResult RecordRestore(Point global_pass_position,
                                 size_t restore_height);
 

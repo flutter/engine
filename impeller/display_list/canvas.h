@@ -269,9 +269,6 @@ class Canvas {
 
   void AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth = false);
 
-  void AddClipEntityToCurrentPass(const ClipContents& clip_contents,
-                                  const Matrix& transform);
-
   bool AttemptDrawBlurredRRect(const Rect& rect,
                                Size corner_radii,
                                const Paint& paint);

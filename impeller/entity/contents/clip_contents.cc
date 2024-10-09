@@ -27,16 +27,14 @@ static Scalar GetShaderClipDepth(uint32_t clip_depth) {
  ******* ClipContents
  ******************************************************************************/
 
-ClipContents::ClipContents() = default;
+ClipContents::ClipContents(Rect coverage_rect, bool is_axis_aligned_rect)
+    : coverage_rect_(coverage_rect),
+      is_axis_aligned_rect_(is_axis_aligned_rect) {}
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(GeometryResult clip_geometry,
-                               Rect coverage_rect,
-                               bool is_axis_aligned_rect) {
+void ClipContents::SetGeometry(GeometryResult clip_geometry) {
   clip_geometry_ = std::move(clip_geometry);
-  coverage_rect_ = coverage_rect;
-  is_axis_aligned_rect_ = is_axis_aligned_rect;
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -58,10 +56,7 @@ ClipCoverage ClipContents::GetClipCoverage(
           .coverage = current_clip_coverage     //
       };
     case Entity::ClipOperation::kIntersect:
-      if (!clip_geometry_.vertex_buffer) {
-        return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
-      }
-      if (!coverage_rect_.IsEmpty() || !current_clip_coverage.has_value()) {
+      if (coverage_rect_.IsEmpty() || !current_clip_coverage.has_value()) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
       return {

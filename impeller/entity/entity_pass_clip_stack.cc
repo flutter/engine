@@ -102,16 +102,16 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
     size_t clip_height_floor) {
   ClipStateResult result = {.should_render = false, .clip_did_change = false};
 
-  std::optional<Rect> current_clip_coverage = CurrentClipCoverage();
-  if (current_clip_coverage.has_value()) {
-    // Entity transforms are relative to the current pass position, so we need
-    // to check clip coverage in the same space.
-    current_clip_coverage = current_clip_coverage->Shift(-global_pass_position);
-  } else {
-    // Running this append op won't impact the clip buffer because the
-    // whole screen is already being clipped, so skip it.
+  std::optional<Rect> maybe_clip_coverage = CurrentClipCoverage();
+  // Running this append op won't impact the clip buffer because the
+  // whole screen is already being clipped, so skip it.
+  if (!maybe_clip_coverage.has_value()) {
     return result;
   }
+  auto current_clip_coverage = maybe_clip_coverage.value();
+  // Entity transforms are relative to the current pass position, so we need
+  // to check clip coverage in the same space.
+  current_clip_coverage = current_clip_coverage.Shift(-global_pass_position);
 
   ClipCoverage clip_coverage =
       clip_contents.GetClipCoverage(current_clip_coverage);
@@ -136,10 +136,10 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
   // intersect clips, we do not need to change the clip region.
   if (!clip_coverage.is_difference_or_non_square &&
       clip_coverage.coverage.has_value() &&
-      clip_coverage.coverage.value().Contains(current_clip_coverage.value())) {
+      clip_coverage.coverage.value().Contains(current_clip_coverage)) {
     subpass_state.clip_coverage.push_back(ClipCoverageLayer{
-        .coverage = current_clip_coverage.value(),  //
-        .clip_height = previous_clip_height + 1     //
+        .coverage = current_clip_coverage,       //
+        .clip_height = previous_clip_height + 1  //
     });
 
     return result;
@@ -151,6 +151,7 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
 
   });
   result.clip_did_change = true;
+  result.should_render = true;
 
   FML_DCHECK(subpass_state.clip_coverage.back().clip_height ==
              subpass_state.clip_coverage.front().clip_height +
@@ -160,10 +161,10 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
       << "Not all clips have been replayed before appending new clip.";
 
   subpass_state.rendered_clip_entities.push_back(ReplayResult{
-      .clip_contents = clip_contents,                   //
-      .transform = transform,                           //
+      .clip_contents = clip_contents,           //
+      .transform = transform,                   //
       .clip_coverage = clip_coverage.coverage,  //
-      .clip_depth = clip_depth                          //
+      .clip_depth = clip_depth                  //
   });
   next_replay_index_++;
 
