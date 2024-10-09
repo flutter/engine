@@ -776,7 +776,6 @@ public class FlutterRendererTest {
     verify(callback).onSurfaceDestroyed();
   }
 
-
   @Test
   public void ImageReaderSurfaceProducerUnsubscribesWhenReleased() {
     // Regression test for https://github.com/flutter/flutter/issues/156434.
@@ -785,7 +784,7 @@ public class FlutterRendererTest {
 
     // Create and set a mock callback.
     TextureRegistry.SurfaceProducer.Callback callback =
-            mock(TextureRegistry.SurfaceProducer.Callback.class);
+        mock(TextureRegistry.SurfaceProducer.Callback.class);
     producer.setCallback(callback);
 
     // Release the surface.
