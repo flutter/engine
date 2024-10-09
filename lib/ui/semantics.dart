@@ -342,6 +342,7 @@ class SemanticsFlag {
   static const int _kIsCheckStateMixedIndex = 1 << 25;
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
+  static const int _kHasSelectedStateIndex = 1 << 28;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart and
   // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests will
@@ -386,8 +387,19 @@ class SemanticsFlag {
   /// Must be false when the checkbox is either checked or unchecked.
   static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex, 'isCheckStateMixed');
 
+  /// The semantics node has the quality of either being "selected" or "unselected".
+  ///
+  /// Whether the widget corresponding to this node is currently selected or not
+  /// is determined by the [isSelected] flag.
+  ///
+  /// When this flag is not set, the corresponding widget cannot be selected by
+  /// the user, and the presence or the lack of [isSelected] does not carry any
+  /// meaning.
+  static const SemanticsFlag hasSelectedState = SemanticsFlag._(_kHasSelectedStateIndex, 'hasSelectedState');
 
   /// Whether a semantics node is selected.
+  ///
+  /// This flag only has meaning in nodes that have [hasSelectedState] flag set.
   ///
   /// If true, the semantics node is "selected". If false, the semantics node is
   /// "unselected".

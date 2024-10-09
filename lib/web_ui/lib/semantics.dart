@@ -126,9 +126,11 @@ class SemanticsFlag {
   static const int _kIsCheckStateMixedIndex = 1 << 25;
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
+  static const int _kHasSelectedStateIndex = 1 << 28;
 
   static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex, 'hasCheckedState');
   static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex, 'isChecked');
+  static const SemanticsFlag hasSelectedState = SemanticsFlag._(_kHasSelectedStateIndex, 'hasSelectedState');
   static const SemanticsFlag isSelected = SemanticsFlag._(_kIsSelectedIndex, 'isSelected');
   static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex, 'isButton');
   static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex, 'isTextField');
