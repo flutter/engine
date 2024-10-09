@@ -254,3 +254,48 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
   fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
                      1024, 1024, &background_color);
 }
+
+TEST(FlRendererTest, MultiView) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 3.0
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
+
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
+  g_autoptr(FlMockRenderable) secondary_renderable = fl_mock_renderable_new();
+
+  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                       FL_RENDERABLE(renderable));
+  fl_renderer_add_view(FL_RENDERER(renderer), 1,
+                       FL_RENDERABLE(secondary_renderable));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(renderable),
+            static_cast<size_t>(0));
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(secondary_renderable),
+            static_cast<size_t>(0));
+
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 1, layers, 1);
+
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(renderable),
+            static_cast<size_t>(0));
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(secondary_renderable),
+            static_cast<size_t>(1));
+}
