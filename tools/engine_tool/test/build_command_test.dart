@@ -13,6 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 import 'fixtures.dart' as fixtures;
+import 'src/matchers.dart';
 import 'src/test_build_configs.dart';
 import 'utils.dart';
 
@@ -643,6 +644,74 @@ The input testing/scenario_app:sceario_app matches no targets, configs or files.
     expect(
       testEnv.testLogs.map((LogRecord r) => r.message).join(),
       contains('No targets matched the pattern `testing/scenario_app'),
+    );
+  });
+
+  test('build command warns on an unrecognized action', () async {
+    final testEnv = TestEnvironment.withTestEngine(
+      abi: Abi.macosArm64,
+      cannedProcesses: [
+        CannedProcess(
+          (command) => command.contains('desc'),
+          stdout: convert.jsonEncode({
+            '//flutter/tools/unrecognized:action': {
+              'outputs': [
+                '//out/host_debug/unrecognized_action',
+              ],
+              'testonly': true,
+              'type': 'unrecognized',
+            },
+          }),
+        ),
+      ],
+    );
+    addTearDown(testEnv.cleanup);
+
+    final builder = TestBuilderConfig();
+    builder.addBuild(
+      name: 'ci/host_debug',
+      targetDir: 'host_debug',
+      dimension: TestDroneDimension.mac,
+    );
+    final runner = ToolCommandRunner(
+      environment: testEnv.environment,
+      configs: {
+        'mac_test_config': builder.buildConfig(
+          path: 'ci/builders/mac_test_config.json',
+        ),
+      },
+    );
+
+    final result = await runner.run([
+      'build',
+      '--config',
+      'ci/host_debug',
+      '//flutter/tools/unrecognized:action',
+    ]);
+
+    printOnFailure(testEnv.testLogs.map((r) => r.message).join('\n'));
+    expect(result, equals(0));
+
+    expect(
+      testEnv.testLogs,
+      contains(
+        logRecord(
+          stringContainsInOrder([
+            'Unknown target type',
+            '//flutter/tools/unrecognized:action',
+            'type=unrecognized',
+          ]),
+          level: Logger.warningLevel,
+        ),
+      ),
+    );
+
+    expect(
+      testEnv.testLogs,
+      contains(logRecord(
+        contains('One or more targets specified did not match'),
+        level: Logger.warningLevel,
+      )),
     );
   });
 
