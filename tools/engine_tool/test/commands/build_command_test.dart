@@ -5,7 +5,6 @@
 import 'dart:convert' as convert;
 import 'dart:ffi';
 
-import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_tool/src/build_utils.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/logger.dart';
