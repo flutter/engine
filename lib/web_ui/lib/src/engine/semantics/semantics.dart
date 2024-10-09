@@ -681,7 +681,7 @@ final class GenericRole extends SemanticRole {
       return;
     }
 
-    // Assign one of three roles to the element: group or text.
+    // Assign one of two roles to the element: group or text.
     //
     // - "group" is used when the node has children, irrespective of whether the
     //   node is marked as a header or not. This is because marking a group
