@@ -440,7 +440,6 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       symbol: 'InternalFlutterGpu_RenderPass_SetPolygonMode')
   external void _setPolygonMode(int polygonMode);
 
-
   @Native<Bool Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Draw')
   external bool _draw();

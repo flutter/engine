@@ -57,7 +57,7 @@ IMPELLER_EXTERN_C_BEGIN
 
 #define IMPELLER_VERSION_VARIANT 1
 #define IMPELLER_VERSION_MAJOR 1
-#define IMPELLER_VERSION_MINOR 1
+#define IMPELLER_VERSION_MINOR 2
 #define IMPELLER_VERSION_PATCH 0
 
 #define IMPELLER_VERSION                                                  \
@@ -480,11 +480,22 @@ ImpellerTextureCreateWithContentsNew(
     const ImpellerMapping* IMPELLER_NONNULL contents,
     void* IMPELLER_NULLABLE contents_on_release_user_data);
 
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerTexture IMPELLER_NULLABLE
+ImpellerTextureCreateWithOpenGLTextureHandleNew(
+    ImpellerContext IMPELLER_NONNULL context,
+    const ImpellerTextureDescriptor* IMPELLER_NONNULL descriptor,
+    uint64_t handle  // transfer-in ownership
+);
+
 IMPELLER_EXPORT
 void ImpellerTextureRetain(ImpellerTexture IMPELLER_NULLABLE texture);
 
 IMPELLER_EXPORT
 void ImpellerTextureRelease(ImpellerTexture IMPELLER_NULLABLE texture);
+
+IMPELLER_EXPORT
+uint64_t ImpellerTextureGetOpenGLHandle(
+    ImpellerTexture IMPELLER_NONNULL texture);
 
 //------------------------------------------------------------------------------
 // Color Sources
@@ -539,6 +550,14 @@ ImpellerColorSourceCreateSweepGradientNew(
     const ImpellerColor* IMPELLER_NONNULL colors,
     const float* IMPELLER_NONNULL stops,
     ImpellerTileMode tile_mode,
+    const ImpellerMatrix* IMPELLER_NULLABLE transformation);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerColorSource IMPELLER_NULLABLE
+ImpellerColorSourceCreateImageNew(
+    ImpellerTexture IMPELLER_NONNULL image,
+    ImpellerTileMode horizontal_tile_mode,
+    ImpellerTileMode vertical_tile_mode,
+    ImpellerTextureSampling sampling,
     const ImpellerMatrix* IMPELLER_NULLABLE transformation);
 
 //------------------------------------------------------------------------------
@@ -959,11 +978,11 @@ float ImpellerParagraphGetLongestLineWidth(
     ImpellerParagraph IMPELLER_NONNULL paragraph);
 
 IMPELLER_EXPORT
-float ImpellerParagraphGetMinInstrinsicWidth(
+float ImpellerParagraphGetMinIntrinsicWidth(
     ImpellerParagraph IMPELLER_NONNULL paragraph);
 
 IMPELLER_EXPORT
-float ImpellerParagraphGetMaxInstrinsicWidth(
+float ImpellerParagraphGetMaxIntrinsicWidth(
     ImpellerParagraph IMPELLER_NONNULL paragraph);
 
 IMPELLER_EXPORT
