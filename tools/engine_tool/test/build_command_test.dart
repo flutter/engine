@@ -709,7 +709,10 @@ The input testing/scenario_app:sceario_app matches no targets, configs or files.
     expect(
       testEnv.testLogs,
       contains(logRecord(
-        contains('One or more targets specified did not match'),
+        stringContainsInOrder([
+          'One or more targets specified did not match',
+          '//flutter/tools/unrecognized:action',
+        ]),
         level: Logger.warningLevel,
       )),
     );
