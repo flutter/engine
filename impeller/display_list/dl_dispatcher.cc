@@ -8,7 +8,6 @@
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 #include "display_list/effects/dl_color_source.h"
@@ -16,7 +15,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/canvas.h"
-#include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/dl_atlas_geometry.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
@@ -1009,11 +1007,12 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
           BackdropData{.backdrop_count = 1, .last_backdrop = backdrop};
     } else {
       BackdropData& data = backdrop_keys_[backdrop_id];
+
+      data.backdrop_count++;
       if (data.all_filters_equal) {
         data.all_filters_equal = (*data.last_backdrop == *backdrop);
         data.last_backdrop = backdrop;
       }
-      data.backdrop_count++;
     }
   }
 
