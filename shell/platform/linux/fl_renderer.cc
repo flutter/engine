@@ -316,9 +316,9 @@ void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
   g_weak_ref_init(&priv->engine, engine);
 }
 
-void fl_renderer_add_view(FlRenderer* self,
-                          FlutterViewId view_id,
-                          FlRenderable* renderable) {
+void fl_renderer_add_renderable(FlRenderer* self,
+                                FlutterViewId view_id,
+                                FlRenderable* renderable) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 

@@ -52,7 +52,7 @@ TEST(FlRendererTest, RestoresGLState) {
   g_autoptr(FlFramebuffer) framebuffer =
       fl_framebuffer_new(GL_RGB, kWidth, kHeight);
 
-  fl_renderer_add_view(FL_RENDERER(renderer), 0, renderable);
+  fl_renderer_add_renderable(FL_RENDERER(renderer), 0, renderable);
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
