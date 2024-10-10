@@ -1182,7 +1182,7 @@ void Canvas::SaveLayer(const Paint& paint,
     // If there is a cached input snapshot, render the subregion of the backdrop
     // filter.
     if (data.filtered_input_slot.has_value()) {
-      Snapshot snapshot = backdrop_data->second.filtered_input_slot.value();
+      Snapshot snapshot = data.filtered_input_slot.value();
       auto contents = TextureContents::MakeRect(subpass_coverage);
       auto scaled =
           subpass_coverage.TransformBounds(snapshot.transform.Invert());
