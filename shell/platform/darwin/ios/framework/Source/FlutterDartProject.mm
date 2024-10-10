@@ -178,10 +178,19 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 #endif
 
 #if FML_OS_IOS_SIMULATOR
-  // Fallback to Skia which itself falls back to software rendering on simulators that cannot
-  // support accelerated rendering.
-  settings.enable_impeller = ::MTLCreateSystemDefaultDevice() != nil;
-#endif  // TARGET_OS_SIMULATOR
+  if (!command_line.HasOption("enable-impeller")) {
+    // Next, look in the app bundle.
+    NSNumber* enableImpeller = [bundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+    if (enableImpeller == nil) {
+      // If it isn't in the app bundle, look in the main bundle.
+      enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
+    }
+    // Change the default only if the option is present.
+    if (enableImpeller != nil) {
+      settings.enable_impeller = enableImpeller.boolValue;
+    }
+  }
+#endif  // FML_OS_IOS_SIMULATOR
 
   settings.warn_on_impeller_opt_out = true;
 
