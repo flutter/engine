@@ -47,10 +47,6 @@ test-sets:
     directory: fallbacks
 
 test-bundles:
-  - name: dart2js-html-engine
-    test-set: engine
-    compile-configs: dart2js-html
-
   - name: dart2js-html-html
     test-set: html
     compile-configs: dart2js-html
@@ -58,6 +54,10 @@ test-bundles:
   - name: dart2js-html-ui
     test-set: ui
     compile-configs: dart2js-html
+
+  - name: dart2js-canvaskit-engine
+    test-set: engine
+    compile-configs: dart2js-canvaskit
 
   - name: dart2js-canvaskit-canvaskit
     test-set: canvaskit
@@ -67,10 +67,6 @@ test-bundles:
     test-set: ui
     compile-configs: dart2js-canvaskit
 
-  - name: dart2wasm-html-engine
-    test-set: engine
-    compile-configs: dart2wasm-html
-
   - name: dart2wasm-html-html
     test-set: html
     compile-configs: dart2wasm-html
@@ -78,6 +74,10 @@ test-bundles:
   - name: dart2wasm-html-ui
     test-set: ui
     compile-configs: dart2wasm-html
+
+  - name: dart2wasm-canvaskit-engine
+    test-set: engine
+    compile-configs: dart2wasm-canvaskit
 
   - name: dart2wasm-canvaskit-canvaskit
     test-set: canvaskit
@@ -123,10 +123,6 @@ run-configs:
     canvaskit-variant: full
 
 test-suites:
-  - name: chrome-dart2js-html-engine
-    test-bundle: dart2js-html-engine
-    run-config: chrome
-
   - name: chrome-dart2js-html-html
     test-bundle: dart2js-html-html
     run-config: chrome
@@ -134,6 +130,11 @@ test-suites:
   - name: chrome-dart2js-html-ui
     test-bundle: dart2js-html-ui
     run-config: chrome
+
+  - name: chrome-dart2js-canvaskit-engine
+    test-bundle: dart2js-canvaskit-engine
+    run-config: chrome
+    artifact-deps: [ canvaskit_chromium ]
 
   - name: chrome-dart2js-canvaskit-canvaskit
     test-bundle: dart2js-canvaskit-canvaskit
@@ -155,10 +156,6 @@ test-suites:
     run-config: chrome-full
     artifact-deps: [ canvaskit ]
 
-  - name: edge-dart2js-html-engine
-    test-bundle: dart2js-html-engine
-    run-config: edge
-
   - name: edge-dart2js-html-html
     test-bundle: dart2js-html-html
     run-config: edge
@@ -166,6 +163,11 @@ test-suites:
   - name: edge-dart2js-html-ui
     test-bundle: dart2js-html-ui
     run-config: edge
+
+  - name: edge-dart2js-canvaskit-engine
+    test-bundle: dart2js-canvaskit-engine
+    run-config: edge
+    artifact-deps: [ canvaskit_chromium ]
 
   - name: edge-dart2js-canvaskit-canvaskit
     test-bundle: dart2js-canvaskit-canvaskit
@@ -187,10 +189,6 @@ test-suites:
     run-config: edge-full
     artifact-deps: [ canvaskit ]
 
-  - name: firefox-dart2js-html-engine
-    test-bundle: dart2js-html-engine
-    run-config: firefox
-
   - name: firefox-dart2js-html-html
     test-bundle: dart2js-html-html
     run-config: firefox
@@ -198,6 +196,11 @@ test-suites:
   - name: firefox-dart2js-html-ui
     test-bundle: dart2js-html-ui
     run-config: firefox
+
+  - name: firefox-dart2js-canvaskit-engine
+    test-bundle: dart2js-canvaskit-engine
+    run-config: firefox
+    artifact-deps: [ canvaskit ]
 
   - name: firefox-dart2js-canvaskit-canvaskit
     test-bundle: dart2js-canvaskit-canvaskit
@@ -209,10 +212,6 @@ test-suites:
     run-config: firefox
     artifact-deps: [ canvaskit ]
 
-  - name: safari-dart2js-html-engine
-    test-bundle: dart2js-html-engine
-    run-config: safari
-
   - name: safari-dart2js-html-html
     test-bundle: dart2js-html-html
     run-config: safari
@@ -220,6 +219,11 @@ test-suites:
   - name: safari-dart2js-html-ui
     test-bundle: dart2js-html-ui
     run-config: safari
+
+  - name: safari-dart2js-canvaskit-engine
+    test-bundle: dart2js-canvaskit-engine
+    run-config: safari
+    artifact-deps: [ canvaskit ]
 
   - name: safari-dart2js-canvaskit-canvaskit
     test-bundle: dart2js-canvaskit-canvaskit
@@ -231,10 +235,6 @@ test-suites:
     run-config: safari
     artifact-deps: [ canvaskit ]
 
-  - name: chrome-dart2wasm-html-engine
-    test-bundle: dart2wasm-html-engine
-    run-config: chrome
-
   - name: chrome-dart2wasm-html-html
     test-bundle: dart2wasm-html-html
     run-config: chrome
@@ -242,6 +242,11 @@ test-suites:
   - name: chrome-dart2wasm-html-ui
     test-bundle: dart2wasm-html-ui
     run-config: chrome
+
+  - name: chrome-dart2wasm-canvaskit-engine
+    test-bundle: dart2wasm-canvaskit-engine
+    run-config: chrome
+    artifact-deps: [ canvaskit_chromium ]
 
   - name: chrome-dart2wasm-canvaskit-canvaskit
     test-bundle: dart2wasm-canvaskit-canvaskit
