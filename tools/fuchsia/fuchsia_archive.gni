@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/build_id_dir.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/cmc.gni")
@@ -91,12 +92,17 @@ template("fuchsia_archive") {
     deps = [ ":$_component_target" ]
   }
 
-  _build_dir_target = target_name + "__build_id"
-  build_id_dir(_build_dir_target) {
-    forward_variables_from(invoker, [ "testonly" ])
-    output_path = "$target_gen_dir/$_package_name/.build_id"
-    deps = [ ":$_package_target" ]
+  _build_id_target = target_name + "__build_id"
+  fuchsia_debug_symbols(_build_id_target) {
+    forward_variables_from(invoker, [ "deps", "testonly", ])
+    binary = _binary
   }
+
+  #build_id_dir(_build_id_target) {
+  #  forward_variables_from(invoker, [ "testonly" ])
+  #  output_path = "$target_gen_dir/$_package_name/.build-id"
+  #  deps = [ ":$_package_target" ]
+  #}
 
   # TODO(zijiehe): http://crbug.com/368608542, copying the far files is not very
   # necessary, try to remove the -0.far copy.
@@ -105,8 +111,10 @@ template("fuchsia_archive") {
     package_output_dir = get_label_info(":$_package_target", "target_gen_dir")
     sources = [ "$package_output_dir/$_package_name/${_package_name}.far" ]
     outputs = [ "$root_out_dir/${_package_name}-0.far" ]
-    deps = [ ":$_package_target",
-    ":$_build_dir_target", ]
+    deps = [
+      ":$_build_id_target",
+      ":$_package_target",
+    ]
   }
 }
 
