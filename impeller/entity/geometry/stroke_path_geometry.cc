@@ -552,12 +552,12 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   if (stroke_width_ < 0.0) {
     return {};
   }
-  Scalar max_basis = entity.GetTransform().GetMaxBasisLengthXY();
-  if (max_basis == 0) {
+  auto scale = entity.GetTransform().GetMaxBasisLengthXY();
+  if (scale == 0) {
     return {};
   }
 
-  Scalar min_size = kMinStrokeSize / max_basis;
+  Scalar min_size = kMinStrokeSize / scale;
   Scalar stroke_width = std::max(stroke_width_, min_size);
   bool is_hairline = stroke_width_ <= min_size;
   auto& host_buffer = renderer.GetTransientsBuffer();
@@ -570,7 +570,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
     // TODO(jonahwilliams): this could apply to multi contour paths if we add
     // support for primitive restart.
     auto vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-        path_, host_buffer, max_basis, /*line_strip=*/true);
+        path_, host_buffer, scale, /*line_strip=*/true);
     return GeometryResult{
         .type = PrimitiveType::kLineStrip,              //
         .vertex_buffer = vertex_buffer,                 //
@@ -578,6 +578,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
         .mode = GeometryResult::Mode::kPreventOverdraw  //
     };
   }
+
 
   PositionWriter position_writer;
   auto polyline =

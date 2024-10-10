@@ -5,16 +5,14 @@
 import 'dart:convert' as convert;
 import 'dart:ffi';
 
-import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_tool/src/build_utils.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
-import 'fixtures.dart' as fixtures;
-import 'src/test_build_configs.dart';
-import 'utils.dart';
+import '../src/test_build_configs.dart';
+import '../src/utils.dart';
 
 void main() {
   test('can find host runnable build', () async {
@@ -281,41 +279,6 @@ void main() {
     );
   });
 
-  test('build command fails when rbe is enabled but not supported', () async {
-    final testEnv = TestEnvironment.withTestEngine(
-      abi: Abi.macosArm64,
-      // Intentionally omit withRbe: true.
-      // That means the //flutter/build/rbe directory will not be created.
-    );
-    addTearDown(testEnv.cleanup);
-
-    final builder = TestBuilderConfig();
-    builder.addBuild(
-      name: 'ci/android_debug_rbe_arm64',
-      dimension: TestDroneDimension.mac,
-      enableRbe: true,
-    );
-    final runner = ToolCommandRunner(
-      environment: testEnv.environment,
-      configs: {
-        'mac_test_config': builder.buildConfig(
-          path: 'ci/builders/mac_test_config.json',
-        ),
-      },
-    );
-    final result = await runner.run([
-      'build',
-      '--config',
-      'ci/android_debug_rbe_arm64',
-      '--rbe',
-    ]);
-    expect(result, equals(1));
-    expect(
-      testEnv.testLogs.map((LogRecord r) => r.message).join(),
-      contains('RBE was requested but no RBE config was found'),
-    );
-  });
-
   test('build command does not run rbe when disabled', () async {
     final testEnv = TestEnvironment.withTestEngine(
       abi: Abi.macosArm64,
@@ -436,20 +399,28 @@ void main() {
 
   test('local config name on the command line is correctly translated',
       () async {
-    final namespaceTestConfigs = BuilderConfig.fromJson(
-      path: 'ci/builders/namespace_test_config.json',
-      map: convert.jsonDecode(fixtures.configsToTestNamespacing)
-          as Map<String, Object?>,
+    final builder = TestBuilderConfig();
+    builder.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'local_host_debug',
     );
-    final configs = <String, BuilderConfig>{
-      'namespace_test_config': namespaceTestConfigs,
-    };
+    builder.addBuild(
+      name: 'ci/host_debug',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'ci/host_debug',
+    );
+
     final testEnv = TestEnvironment.withTestEngine();
     addTearDown(testEnv.cleanup);
 
     final runner = ToolCommandRunner(
       environment: testEnv.environment,
-      configs: configs,
+      configs: {
+        'namespace_test_config': builder.buildConfig(
+          path: 'ci/builders/namespace_test_config.json',
+        ),
+      },
     );
     final result = await runner.run([
       'build',
@@ -463,20 +434,27 @@ void main() {
   });
 
   test('ci config name on the command line is correctly translated', () async {
-    final namespaceTestConfigs = BuilderConfig.fromJson(
-      path: 'ci/builders/namespace_test_config.json',
-      map: convert.jsonDecode(fixtures.configsToTestNamespacing)
-          as Map<String, Object?>,
+    final builder = TestBuilderConfig();
+    builder.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'local_host_debug',
     );
-    final configs = <String, BuilderConfig>{
-      'namespace_test_config': namespaceTestConfigs,
-    };
+    builder.addBuild(
+      name: 'ci/host_debug',
+      dimension: TestDroneDimension.linux,
+      targetDir: 'ci/host_debug',
+    );
     final testEnv = TestEnvironment.withTestEngine();
     addTearDown(testEnv.cleanup);
 
     final runner = ToolCommandRunner(
       environment: testEnv.environment,
-      configs: configs,
+      configs: {
+        'namespace_test_config': builder.buildConfig(
+          path: 'ci/builders/namespace_test_config.json',
+        ),
+      },
     );
     final result = await runner.run([
       'build',

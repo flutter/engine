@@ -9,8 +9,10 @@
 #include <utility>
 
 #include "display_list/effects/dl_color_source.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/image_filter.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -23,7 +25,16 @@
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
+#include "impeller/entity/geometry/circle_geometry.h"
+#include "impeller/entity/geometry/cover_geometry.h"
+#include "impeller/entity/geometry/ellipse_geometry.h"
+#include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/line_geometry.h"
+#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
+#include "impeller/entity/geometry/round_rect_geometry.h"
+#include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
@@ -33,76 +44,20 @@ namespace impeller {
 
 namespace {
 
-static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
-    const Paint& paint,
-    std::shared_ptr<Geometry> geometry) {
-  std::shared_ptr<ColorSourceContents> contents = paint.CreateContents();
-
-  // Attempt to apply the color filter on the CPU first.
-  // Note: This is not just an optimization; some color sources rely on
-  //       CPU-applied color filters to behave properly.
-  bool needs_color_filter = paint.HasColorFilter();
-  if (needs_color_filter) {
-    auto color_filter = paint.GetColorFilter();
-    if (contents->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
-      needs_color_filter = false;
-    }
-  }
-
-  bool can_apply_mask_filter = geometry->CanApplyMaskFilter();
-  contents->SetGeometry(std::move(geometry));
-
-  if (can_apply_mask_filter && paint.mask_blur_descriptor.has_value()) {
-    // If there's a mask blur and we need to apply the color filter on the GPU,
-    // we need to be careful to only apply the color filter to the source
-    // colors. CreateMaskBlur is able to handle this case.
-    return paint.mask_blur_descriptor->CreateMaskBlur(
-        contents, needs_color_filter ? paint.GetColorFilter() : nullptr);
-  }
-
-  std::shared_ptr<Contents> contents_copy = std::move(contents);
-  // Image input types will directly set their color filter,
-  // if any. See `TiledTextureContents.SetColorFilter`.
-  if (needs_color_filter &&
-      (!paint.color_source ||
-       paint.color_source->type() != flutter::DlColorSourceType::kImage)) {
-    std::shared_ptr<ColorFilter> color_filter = paint.GetColorFilter();
-    contents_copy = color_filter->WrapWithGPUColorFilter(
-        FilterInput::Make(std::move(contents_copy)),
-        ColorFilterContents::AbsorbOpacity::kYes);
-  }
-
-  if (paint.image_filter) {
-    std::shared_ptr<FilterContents> filter = paint.image_filter->WrapInput(
-        FilterInput::Make(std::move(contents_copy)));
-    filter->SetRenderingMode(Entity::RenderingMode::kDirect);
-    return filter;
-  }
-
-  return contents_copy;
-}
-
-static std::shared_ptr<Contents> CreatePathContentsWithFilters(
-    const Paint& paint,
-    const Path& path) {
-  std::shared_ptr<Geometry> geometry;
-  switch (paint.style) {
-    case Paint::Style::kFill:
-      geometry = Geometry::MakeFillPath(path);
-      break;
-    case Paint::Style::kStroke:
-      geometry =
-          Geometry::MakeStrokePath(path, paint.stroke_width, paint.stroke_miter,
-                                   paint.stroke_cap, paint.stroke_join);
-      break;
-  }
-
-  return CreateContentsForGeometryWithFilters(paint, std::move(geometry));
-}
-
-static std::shared_ptr<Contents> CreateCoverContentsWithFilters(
+static bool UseColorSourceContents(
+    const std::shared_ptr<VerticesGeometry>& vertices,
     const Paint& paint) {
-  return CreateContentsForGeometryWithFilters(paint, Geometry::MakeCover());
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates but its just a color.
+  if (vertices->HasVertexColors()) {
+    return false;
+  }
+  if (vertices->HasTextureCoordinates() &&
+      (!paint.color_source ||
+       paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
+    return true;
+  }
+  return !vertices->HasTextureCoordinates();
 }
 
 static void SetClipScissor(std::optional<Rect> clip_coverage,
@@ -432,18 +387,24 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreatePathContentsWithFilters(paint, path));
 
-  AddRenderEntityToCurrentPass(entity);
+  if (paint.style == Paint::Style::kFill) {
+    FillPathGeometry geom(path);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  } else {
+    StrokePathGeometry geom(path, paint.stroke_width, paint.stroke_miter,
+                            paint.stroke_cap, paint.stroke_join);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  }
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateCoverContentsWithFilters(paint));
 
-  AddRenderEntityToCurrentPass(entity);
+  CoverGeometry geom;
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
@@ -464,14 +425,20 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
     return false;
   }
 
+  // The current rrect blur math doesn't work on ovals.
+  if (fabsf(corner_radii.width - corner_radii.height) > kEhCloseEnough) {
+    return false;
+  }
+
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
-
-  Color rrect_color =
-      paint.HasColorFilter()
-          // Absorb the color filter, if any.
-          ? paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color)
-          : paint.color;
+  Color rrect_color = paint.color;
+  if (paint.invert_colors) {
+    rrect_color = rrect_color.ApplyColorMatrix(kColorInversion);
+  }
+  if (paint.color_filter) {
+    rrect_color = GetCPUColorFilterProc(paint.color_filter)(rrect_color);
+  }
 
   Paint rrect_paint = {.mask_blur_descriptor = paint.mask_blur_descriptor};
 
@@ -507,11 +474,13 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
           render_bounds.Expand(paint.mask_blur_descriptor->sigma.sigma * 4.0);
     }
     // Defer the alpha, blend mode, and image filter to a separate layer.
-    SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
-               .blend_mode = paint.blend_mode,
-               .image_filter = paint.image_filter},
-              render_bounds, nullptr, ContentBoundsPromise::kContainsContents,
-              1u);
+    SaveLayer(
+        Paint{
+            .color = Color::White().WithAlpha(rrect_color.alpha),
+            .image_filter = paint.image_filter,
+            .blend_mode = paint.blend_mode,
+        },
+        render_bounds, nullptr, ContentBoundsPromise::kContainsContents, 1u);
     rrect_paint.color = rrect_color.WithAlpha(1);
   } else {
     rrect_paint.color = rrect_color;
@@ -549,18 +518,21 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       Entity entity;
       entity.SetTransform(GetCurrentTransform());
       entity.SetBlendMode(rrect_paint.blend_mode);
-      entity.SetContents(CreateContentsForGeometryWithFilters(
-          rrect_paint, Geometry::MakeRoundRect(rect, corner_radii)));
-      AddRenderEntityToCurrentPass(entity, true);
+
+      RoundRectGeometry geom(rect, corner_radii);
+      AddRenderEntityWithFiltersToCurrentPass(entity, &geom, rrect_paint,
+                                              /*reuse_depth=*/true);
       break;
     }
     case FilterContents::BlurStyle::kOuter: {
-      ClipRRect(rect, corner_radii, Entity::ClipOperation::kDifference);
+      ClipGeometry(Geometry::MakeRoundRect(rect, corner_radii),
+                   Entity::ClipOperation::kDifference);
       draw_blurred_rrect();
       break;
     }
     case FilterContents::BlurStyle::kInner: {
-      ClipRRect(rect, corner_radii, Entity::ClipOperation::kIntersect);
+      ClipGeometry(Geometry::MakeRoundRect(rect, corner_radii),
+                   Entity::ClipOperation::kIntersect);
       draw_blurred_rrect();
       break;
     }
@@ -575,10 +547,9 @@ void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateContentsForGeometryWithFilters(
-      paint, Geometry::MakeLine(p0, p1, paint.stroke_width, paint.stroke_cap)));
 
-  AddRenderEntityToCurrentPass(entity);
+  LineGeometry geom(p0, p1, paint.stroke_width, paint.stroke_cap);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
 void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
@@ -594,10 +565,9 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(
-      CreateContentsForGeometryWithFilters(paint, Geometry::MakeRect(rect)));
 
-  AddRenderEntityToCurrentPass(entity);
+  RectGeometry geom(rect);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
@@ -625,10 +595,9 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(
-      CreateContentsForGeometryWithFilters(paint, Geometry::MakeOval(rect)));
 
-  AddRenderEntityToCurrentPass(entity);
+  EllipseGeometry geom(rect);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
 void Canvas::DrawRRect(const Rect& rect,
@@ -642,10 +611,9 @@ void Canvas::DrawRRect(const Rect& rect,
     Entity entity;
     entity.SetTransform(GetCurrentTransform());
     entity.SetBlendMode(paint.blend_mode);
-    entity.SetContents(CreateContentsForGeometryWithFilters(
-        paint, Geometry::MakeRoundRect(rect, corner_radii)));
 
-    AddRenderEntityToCurrentPass(entity);
+    RoundRectGeometry geom(rect, corner_radii);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
     return;
   }
 
@@ -670,41 +638,22 @@ void Canvas::DrawCircle(const Point& center,
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  auto geometry =
-      paint.style == Paint::Style::kStroke
-          ? Geometry::MakeStrokedCircle(center, radius, paint.stroke_width)
-          : Geometry::MakeCircle(center, radius);
-  entity.SetContents(
-      CreateContentsForGeometryWithFilters(paint, std::move(geometry)));
 
-  AddRenderEntityToCurrentPass(entity);
+  if (paint.style == Paint::Style::kStroke) {
+    CircleGeometry geom(center, radius, paint.stroke_width);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  } else {
+    CircleGeometry geom(center, radius);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  }
 }
 
-void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
-  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
-}
-
-void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
-  auto geometry = Geometry::MakeRect(rect);
-  ClipGeometry(geometry, clip_op);
-}
-
-void Canvas::ClipOval(const Rect& bounds, Entity::ClipOperation clip_op) {
-  auto geometry = Geometry::MakeOval(bounds);
-  ClipGeometry(geometry, clip_op);
-}
-
-void Canvas::ClipRRect(const Rect& rect,
-                       const Size& corner_radii,
-                       Entity::ClipOperation clip_op) {
-  auto geometry = Geometry::MakeRoundRect(rect, corner_radii);
-  ClipGeometry(geometry, clip_op);
-}
-
-void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
+void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
                           Entity::ClipOperation clip_op) {
+  clip_geometry_.push_back(std::move(geometry));
+
   auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(geometry);
+  contents->SetGeometry(clip_geometry_.back().get());
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -740,12 +689,10 @@ void Canvas::DrawPoints(std::vector<Point> points,
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateContentsForGeometryWithFilters(
-      paint,
-      Geometry::MakePointField(std::move(points), radius,
-                               /*round=*/point_style == PointStyle::kRound)));
 
-  AddRenderEntityToCurrentPass(entity);
+  PointFieldGeometry geom(std::move(points), radius,
+                          /*round=*/point_style == PointStyle::kRound);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Texture>& image,
@@ -787,37 +734,25 @@ void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
   texture_contents->SetOpacity(paint.color.alpha);
   texture_contents->SetDeferApplyingOpacity(paint.HasColorFilter());
 
-  std::shared_ptr<Contents> contents = texture_contents;
-  if (paint.mask_blur_descriptor.has_value()) {
-    contents = paint.mask_blur_descriptor->CreateMaskBlur(texture_contents);
-  }
-
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(contents));
   entity.SetTransform(GetCurrentTransform());
 
+  if (!paint.mask_blur_descriptor.has_value()) {
+    entity.SetContents(paint.WithFilters(std::move(texture_contents)));
+    AddRenderEntityToCurrentPass(entity);
+    return;
+  }
+
+  RectGeometry out_rect(Rect{});
+
+  entity.SetContents(paint.WithFilters(
+      paint.mask_blur_descriptor->CreateMaskBlur(texture_contents, &out_rect)));
   AddRenderEntityToCurrentPass(entity);
 }
 
 size_t Canvas::GetClipHeight() const {
   return transform_stack_.back().clip_height;
-}
-
-static bool UseColorSourceContents(
-    const std::shared_ptr<VerticesGeometry>& vertices,
-    const Paint& paint) {
-  // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates but its just a color.
-  if (vertices->HasVertexColors()) {
-    return false;
-  }
-  if (vertices->HasTextureCoordinates() &&
-      (!paint.color_source ||
-       paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
-    return true;
-  }
-  return !vertices->HasTextureCoordinates();
 }
 
 void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
@@ -837,8 +772,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there are no vertex colors.
   if (UseColorSourceContents(vertices, paint)) {
-    entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
-    AddRenderEntityToCurrentPass(entity);
+    AddRenderEntityWithFiltersToCurrentPass(entity, vertices.get(), paint);
     return;
   }
 
@@ -887,8 +821,9 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   auto src_paint = paint;
   src_paint.color = paint.color.WithAlpha(1.0);
 
-  std::shared_ptr<Contents> src_contents =
-      src_paint.CreateContentsForGeometry(vertices);
+  std::shared_ptr<ColorSourceContents> src_contents =
+      src_paint.CreateContents();
+  src_contents->SetGeometry(vertices.get());
 
   // If the color source has an intrinsic size, then we use that to
   // create the src contents as a simplification. Otherwise we use
@@ -907,8 +842,10 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
-  src_contents = src_paint.CreateContentsForGeometry(
-      Geometry::MakeRect(Rect::Round(src_coverage)));
+  src_contents = src_paint.CreateContents();
+
+  clip_geometry_.push_back(Geometry::MakeRect(Rect::Round(src_coverage)));
+  src_contents->SetGeometry(clip_geometry_.back().get());
 
   auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
@@ -1044,7 +981,7 @@ std::optional<Rect> Canvas::GetLocalCoverageLimit() const {
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
-                       const std::shared_ptr<ImageFilter>& backdrop_filter,
+                       const flutter::DlImageFilter* backdrop_filter,
                        ContentBoundsPromise bounds_promise,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity) {
@@ -1107,16 +1044,23 @@ void Canvas::SaveLayer(const Paint& paint,
     return SkipUntilMatchingRestore(total_content_depth);
   }
 
+  // When there are scaling filters present, these contents may exceed the
+  // maximum texture size. Perform a clamp here, which may cause rendering
+  // artifacts.
+  subpass_size = subpass_size.Min(renderer_.GetContext()
+                                      ->GetCapabilities()
+                                      ->GetMaximumRenderPassAttachmentSize());
+
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
     local_position = subpass_coverage.GetOrigin() - GetGlobalPassPosition();
     Canvas::BackdropFilterProc backdrop_filter_proc =
-        [backdrop_filter = backdrop_filter->Clone()](
+        [backdrop_filter = backdrop_filter](
             const FilterInput::Ref& input, const Matrix& effect_transform,
             Entity::RenderingMode rendering_mode) {
-          auto filter = backdrop_filter->WrapInput(input);
+          auto filter = WrapInput(backdrop_filter, input);
           filter->SetEffectTransform(effect_transform);
           filter->SetRenderingMode(rendering_mode);
           return filter;
@@ -1398,6 +1342,84 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   AddRenderEntityToCurrentPass(entity, false);
 }
 
+void Canvas::AddRenderEntityWithFiltersToCurrentPass(Entity& entity,
+                                                     const Geometry* geometry,
+                                                     const Paint& paint,
+                                                     bool reuse_depth) {
+  std::shared_ptr<ColorSourceContents> contents = paint.CreateContents();
+  if (!paint.color_filter && !paint.invert_colors && !paint.image_filter &&
+      !paint.mask_blur_descriptor.has_value()) {
+    contents->SetGeometry(geometry);
+    entity.SetContents(std::move(contents));
+    AddRenderEntityToCurrentPass(entity, reuse_depth);
+    return;
+  }
+
+  // Attempt to apply the color filter on the CPU first.
+  // Note: This is not just an optimization; some color sources rely on
+  //       CPU-applied color filters to behave properly.
+  bool needs_color_filter = paint.color_filter || paint.invert_colors;
+  if (needs_color_filter &&
+      contents->ApplyColorFilter([&](Color color) -> Color {
+        if (paint.color_filter) {
+          color = GetCPUColorFilterProc(paint.color_filter)(color);
+        }
+        if (paint.invert_colors) {
+          color = color.ApplyColorMatrix(kColorInversion);
+        }
+        return color;
+      })) {
+    needs_color_filter = false;
+  }
+
+  bool can_apply_mask_filter = geometry->CanApplyMaskFilter();
+  contents->SetGeometry(geometry);
+
+  if (can_apply_mask_filter && paint.mask_blur_descriptor.has_value()) {
+    // If there's a mask blur and we need to apply the color filter on the GPU,
+    // we need to be careful to only apply the color filter to the source
+    // colors. CreateMaskBlur is able to handle this case.
+    RectGeometry out_rect(Rect{});
+    auto filter_contents = paint.mask_blur_descriptor->CreateMaskBlur(
+        contents, needs_color_filter ? paint.color_filter : nullptr,
+        needs_color_filter ? paint.invert_colors : false, &out_rect);
+    entity.SetContents(std::move(filter_contents));
+    AddRenderEntityToCurrentPass(entity, reuse_depth);
+    return;
+  }
+
+  std::shared_ptr<Contents> contents_copy = std::move(contents);
+
+  // Image input types will directly set their color filter,
+  // if any. See `TiledTextureContents.SetColorFilter`.
+  if (needs_color_filter &&
+      (!paint.color_source ||
+       paint.color_source->type() != flutter::DlColorSourceType::kImage)) {
+    if (paint.color_filter) {
+      contents_copy = WrapWithGPUColorFilter(
+          paint.color_filter, FilterInput::Make(std::move(contents_copy)),
+          ColorFilterContents::AbsorbOpacity::kYes);
+    }
+    if (paint.invert_colors) {
+      contents_copy =
+          WrapWithInvertColors(FilterInput::Make(std::move(contents_copy)),
+                               ColorFilterContents::AbsorbOpacity::kYes);
+    }
+  }
+
+  if (paint.image_filter) {
+    std::shared_ptr<FilterContents> filter = WrapInput(
+        paint.image_filter, FilterInput::Make(std::move(contents_copy)));
+    filter->SetRenderingMode(Entity::RenderingMode::kDirect);
+    entity.SetContents(filter);
+    AddRenderEntityToCurrentPass(entity, reuse_depth);
+    return;
+  }
+
+  entity.SetContents(std::move(contents_copy));
+  AddRenderEntityToCurrentPass(entity, reuse_depth);
+}
+
 void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
   if (IsSkipping()) {
     return;
@@ -1628,6 +1650,7 @@ void Canvas::EndReplay() {
 
   render_passes_.clear();
   renderer_.GetRenderTargetCache()->End();
+  clip_geometry_.clear();
 
   Reset();
   Initialize(initial_cull_rect_);

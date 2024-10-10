@@ -3316,7 +3316,6 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
-../../../fuchsia/sdk/linux/fidl/fuchsia.component.config/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
@@ -3563,6 +3562,7 @@
 ../../../fuchsia/sdk/linux/pkg/driver_metadata_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_node_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_outgoing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_platform_device_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_power_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_runtime/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_runtime_cpp/meta.json

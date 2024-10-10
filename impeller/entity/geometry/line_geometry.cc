@@ -13,7 +13,9 @@ LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
     : p0_(p0), p1_(p1), width_(width), cap_(cap) {
   FML_DCHECK(width >= 0);
 }
-
+    
+LineGeometry::~LineGeometry() = default;
+  
 std::pair<Scalar, bool> LineGeometry::ComputePixelHalfWidth(Scalar max_basis,
                                                             Scalar width) {
   Scalar min_size = kMinStrokeSize / max_basis;

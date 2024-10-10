@@ -6,9 +6,11 @@
 
 #include <memory>
 
+#include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/geometry/dl_path.h"
 #include "fml/logging.h"
+#include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
@@ -22,6 +24,7 @@
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 
 namespace impeller {
 
@@ -30,18 +33,6 @@ using DlPoint = flutter::DlPoint;
 using DlRect = flutter::DlRect;
 using DlIRect = flutter::DlIRect;
 using DlPath = flutter::DlPath;
-
-/// A color matrix which inverts colors.
-// clang-format off
-constexpr ColorMatrix kColorInversion = {
-  .array = {
-    -1.0,    0,    0, 1.0, 0, //
-       0, -1.0,    0, 1.0, 0, //
-       0,    0, -1.0, 1.0, 0, //
-     1.0,  1.0,  1.0, 1.0, 0  //
-  }
-};
-// clang-format on
 
 std::shared_ptr<ColorSourceContents> Paint::CreateContents() const {
   if (color_source == nullptr) {
@@ -194,11 +185,26 @@ std::shared_ptr<ColorSourceContents> Paint::CreateContents() const {
       contents->SetTileModes(x_tile_mode, y_tile_mode);
       contents->SetSamplerDescriptor(sampler_descriptor);
       contents->SetEffectTransform(effect_transform);
-      if (color_filter) {
+      if (color_filter || invert_colors) {
         TiledTextureContents::ColorFilterProc filter_proc =
-            [color_filter = color_filter](FilterInput::Ref input) {
-              return color_filter->WrapWithGPUColorFilter(
-                  std::move(input), ColorFilterContents::AbsorbOpacity::kNo);
+            [color_filter = color_filter,
+             invert_colors = invert_colors](const FilterInput::Ref& input) {
+              if (invert_colors && color_filter) {
+                std::shared_ptr<FilterContents> color_filter_output =
+                    WrapWithGPUColorFilter(
+                        color_filter, input,
+                        ColorFilterContents::AbsorbOpacity::kNo);
+                return WrapWithInvertColors(
+                    FilterInput::Make(color_filter_output),
+                    ColorFilterContents::AbsorbOpacity::kNo);
+              }
+              if (color_filter) {
+                return WrapWithGPUColorFilter(
+                    color_filter, input,
+                    ColorFilterContents::AbsorbOpacity::kNo);
+              }
+              return WrapWithInvertColors(
+                  input, ColorFilterContents::AbsorbOpacity::kNo);
             };
         contents->SetColorFilter(filter_proc);
       }
@@ -247,32 +253,6 @@ std::shared_ptr<ColorSourceContents> Paint::CreateContents() const {
   FML_UNREACHABLE();
 }
 
-std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    const std::shared_ptr<Geometry>& geometry) const {
-  auto contents = CreateContents();
-
-  // Attempt to apply the color filter on the CPU first.
-  // Note: This is not just an optimization; some color sources rely on
-  //       CPU-applied color filters to behave properly.
-  auto color_filter = GetColorFilter();
-  bool needs_color_filter = !!color_filter;
-  if (color_filter &&
-      contents->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
-    needs_color_filter = false;
-  }
-
-  contents->SetGeometry(geometry);
-  if (mask_blur_descriptor.has_value()) {
-    // If there's a mask blur and we need to apply the color filter on the GPU,
-    // we need to be careful to only apply the color filter to the source
-    // colors. CreateMaskBlur is able to handle this case.
-    return mask_blur_descriptor->CreateMaskBlur(
-        contents, needs_color_filter ? color_filter : nullptr);
-  }
-
-  return contents;
-}
-
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input) const {
   input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
@@ -314,7 +294,7 @@ std::shared_ptr<FilterContents> Paint::WithImageFilter(
   if (!image_filter) {
     return nullptr;
   }
-  auto filter = image_filter->WrapInput(FilterInput::Make(input));
+  auto filter = WrapInput(image_filter, FilterInput::Make(input));
   filter->SetRenderingMode(rendering_mode);
   filter->SetEffectTransform(effect_transform);
   return filter;
@@ -330,23 +310,39 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     return input;
   }
 
-  auto color_filter = GetColorFilter();
-  if (!color_filter) {
+  if (!color_filter && !invert_colors) {
     return input;
   }
 
   // Attempt to apply the color filter on the CPU first.
   // Note: This is not just an optimization; some color sources rely on
   //       CPU-applied color filters to behave properly.
-  if (input->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
+  if (input->ApplyColorFilter([&](Color color) -> Color {
+        if (color_filter) {
+          color = GetCPUColorFilterProc(color_filter)(color);
+        }
+        if (invert_colors) {
+          color = color.ApplyColorMatrix(kColorInversion);
+        }
+        return color;
+      })) {
     return input;
   }
-  return color_filter->WrapWithGPUColorFilter(FilterInput::Make(input),
-                                              absorb_opacity);
+
+  if (color_filter) {
+    input = WrapWithGPUColorFilter(color_filter, FilterInput::Make(input),
+                                   absorb_opacity);
+  }
+  if (invert_colors) {
+    input = WrapWithInvertColors(FilterInput::Make(input), absorb_opacity);
+  }
+
+  return input;
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
-    std::shared_ptr<TextureContents> texture_contents) const {
+    std::shared_ptr<TextureContents> texture_contents,
+    RectGeometry* rect_geom) const {
   Scalar expand_amount = GaussianBlurFilterContents::CalculateBlurRadius(
       GaussianBlurFilterContents::ScaleSigma(sigma.sigma));
   texture_contents->SetSourceRect(
@@ -354,11 +350,12 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   auto mask = std::make_shared<SolidColorContents>();
   mask->SetColor(Color::White());
   std::optional<Rect> coverage = texture_contents->GetCoverage({});
-  std::shared_ptr<Geometry> geometry;
+  Geometry* geometry = nullptr;
   if (coverage) {
     texture_contents->SetDestinationRect(
         coverage.value().Expand(expand_amount, expand_amount));
-    geometry = Geometry::MakeRect(coverage.value());
+    *rect_geom = RectGeometry(coverage.value());
+    geometry = rect_geom;
   }
   mask->SetGeometry(geometry);
   auto descriptor = texture_contents->GetSamplerDescriptor();
@@ -375,10 +372,12 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     std::shared_ptr<ColorSourceContents> color_source_contents,
-    const std::shared_ptr<ColorFilter>& color_filter) const {
-  // If it's a solid color and there is no color filter, then we can just get
-  // away with doing one Gaussian blur.
-  if (color_source_contents->IsSolidColor() && !color_filter) {
+    const flutter::DlColorFilter* color_filter,
+    bool invert_colors,
+    RectGeometry* rect_geom) const {
+  // If it's a solid color then we can just get  away with doing one Gaussian
+  // blur. The color filter will always be applied on the CPU.
+  if (color_source_contents->IsSolidColor()) {
     return FilterContents::MakeGaussianBlur(
         FilterInput::Make(color_source_contents), sigma, sigma,
         Entity::TileMode::kDecal, style, color_source_contents->GetGeometry());
@@ -404,16 +403,20 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   if (!expanded_local_bounds.has_value()) {
     expanded_local_bounds = Rect();
   }
-  color_source_contents->SetGeometry(
-      Geometry::MakeRect(*expanded_local_bounds));
+  *rect_geom = RectGeometry(expanded_local_bounds.value());
+  color_source_contents->SetGeometry(rect_geom);
   std::shared_ptr<Contents> color_contents = color_source_contents;
 
   /// 4. Apply the user set color filter on the GPU, if applicable.
-
   if (color_filter) {
-    color_contents = color_filter->WrapWithGPUColorFilter(
-        FilterInput::Make(color_source_contents),
-        ColorFilterContents::AbsorbOpacity::kYes);
+    color_contents =
+        WrapWithGPUColorFilter(color_filter, FilterInput::Make(color_contents),
+                               ColorFilterContents::AbsorbOpacity::kYes);
+  }
+  if (invert_colors) {
+    color_contents =
+        WrapWithInvertColors(FilterInput::Make(color_contents),
+                             ColorFilterContents::AbsorbOpacity::kYes);
   }
 
   /// 5. Composite the color source with the blurred mask.
@@ -441,22 +444,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
                                             Sigma(blur_sigma.y), style);
 }
 
-std::shared_ptr<ColorFilter> Paint::GetColorFilter() const {
-  if (invert_colors && color_filter) {
-    auto filter = ColorFilter::MakeMatrix(kColorInversion);
-    return ColorFilter::MakeComposed(filter, color_filter);
-  }
-  if (invert_colors) {
-    return ColorFilter::MakeMatrix(kColorInversion);
-  }
-  if (color_filter) {
-    return color_filter;
-  }
-  return nullptr;
-}
-
 bool Paint::HasColorFilter() const {
-  return !!color_filter || invert_colors;
+  return color_filter || invert_colors;
 }
 
 }  // namespace impeller
