@@ -5,6 +5,7 @@
 #include "impeller/entity/geometry/line_geometry.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/path.h"
 
 namespace impeller {
 
@@ -81,7 +82,9 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
 
   // This is a harline stroke and can be drawn directly with line primitives,
   // which avoids extra tessellation work, cap/joins, and overdraw prevention.
-  if (is_harline) {
+  // TODO(jonahwilliams): round and square caps would require us to extend the
+  // primitive by a half pixel in each direction.
+  if (is_harline && cap_ == Cap::kButt) {
     Point points[2] = {p0_, p1_};
     return GeometryResult{
         .type = PrimitiveType::kLineStrip,

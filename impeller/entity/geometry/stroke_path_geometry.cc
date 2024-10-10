@@ -564,15 +564,19 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
 
   // This is a harline stroke and can be drawn directly with line primitives,
   // which avoids extra tessellation work and cap/joins.
-  if (is_hairline && path_.IsSingleContour()) {
+  // TODO(jonahwilliams): round and square caps would require us to extend the
+  // primitive by a half pixel in each direction.
+  if (is_hairline && path_.IsSingleContour() && stroke_cap_ == Cap::kButt) {
     // TODO(jonahwilliams): this could apply to multi contour paths if we add
     // support for primitive restart.
     auto vertex_buffer = renderer.GetTessellator()->TessellateConvex(
         path_, host_buffer, max_basis, /*line_strip=*/true);
-    return GeometryResult{.type = PrimitiveType::kLineStrip,
-                          .vertex_buffer = vertex_buffer,
-                          .transform = entity.GetShaderTransform(pass),
-                          .mode = GeometryResult::Mode::kPreventOverdraw};
+    return GeometryResult{
+        .type = PrimitiveType::kLineStrip,              //
+        .vertex_buffer = vertex_buffer,                 //
+        .transform = entity.GetShaderTransform(pass),   //
+        .mode = GeometryResult::Mode::kPreventOverdraw  //
+    };
   }
 
   PositionWriter position_writer;
