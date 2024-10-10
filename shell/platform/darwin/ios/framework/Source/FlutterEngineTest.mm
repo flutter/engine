@@ -472,7 +472,6 @@ FLUTTER_ASSERT_ARC
 
 - (void)testCanMergePlatformAndUIThread {
   auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
@@ -483,7 +482,6 @@ FLUTTER_ASSERT_ARC
 
 - (void)testCanNotUnMergePlatformAndUIThread {
   auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
