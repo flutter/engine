@@ -153,6 +153,8 @@ class Path {
 
   bool IsEmpty() const;
 
+  bool IsSingleContour() const;
+
   bool GetLinearComponentAtIndex(size_t index,
                                  LinearPathComponent& linear) const;
 
@@ -216,6 +218,7 @@ class Path {
 
     FillType fill = FillType::kNonZero;
     Convexity convexity = Convexity::kUnknown;
+    bool single_countour = true;
     std::optional<Rect> bounds;
     std::vector<Point> points;
     std::vector<ComponentType> components;

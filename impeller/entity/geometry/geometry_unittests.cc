@@ -53,13 +53,13 @@ namespace impeller {
 
 class ImpellerEntityUnitTestAccessor {
  public:
-  static std::vector<SolidFillVertexShader::PerVertexData>
-  GenerateSolidStrokeVertices(const Path::Polyline& polyline,
-                              Scalar stroke_width,
-                              Scalar miter_limit,
-                              Join stroke_join,
-                              Cap stroke_cap,
-                              Scalar scale) {
+  static std::vector<Point> GenerateSolidStrokeVertices(
+      const Path::Polyline& polyline,
+      Scalar stroke_width,
+      Scalar miter_limit,
+      Join stroke_join,
+      Cap stroke_cap,
+      Scalar scale) {
     return StrokePathGeometry::GenerateSolidStrokeVertices(
         polyline, stroke_width, miter_limit, stroke_join, stroke_cap, scale);
   }
@@ -140,14 +140,14 @@ TEST(EntityGeometryTest, AlphaCoverageStrokePaths) {
   auto matrix = Matrix::MakeScale(Vector2{3.0, 3.0});
   EXPECT_EQ(Geometry::MakeStrokePath({}, 0.5)->ComputeAlphaCoverage(matrix), 1);
   EXPECT_NEAR(Geometry::MakeStrokePath({}, 0.1)->ComputeAlphaCoverage(matrix),
-              0.6, 0.05);
-  EXPECT_NEAR(Geometry::MakeStrokePath({}, 0.05)->ComputeAlphaCoverage(matrix),
               0.3, 0.05);
+  EXPECT_NEAR(Geometry::MakeStrokePath({}, 0.05)->ComputeAlphaCoverage(matrix),
+              0.15, 0.05);
   EXPECT_NEAR(Geometry::MakeStrokePath({}, 0.01)->ComputeAlphaCoverage(matrix),
               0.1, 0.1);
   EXPECT_NEAR(
       Geometry::MakeStrokePath({}, 0.0000005)->ComputeAlphaCoverage(matrix),
-      1e-05, 0.001);
+      0.10, 0.001);
   EXPECT_EQ(Geometry::MakeStrokePath({}, 0)->ComputeAlphaCoverage(matrix), 1);
   EXPECT_EQ(Geometry::MakeStrokePath({}, 40)->ComputeAlphaCoverage(matrix), 1);
 }

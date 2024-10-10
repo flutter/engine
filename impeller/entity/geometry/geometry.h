@@ -10,16 +10,10 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
 class Tessellator;
-
-/// @brief The minimum stroke size can be less than one physical pixel because
-///        of MSAA, but no less that half a physical pixel otherwise we might
-///        not hit one of the sample positions.
-static constexpr Scalar kMinStrokeSizeMSAA = 0.5f;
 
 static constexpr Scalar kMinStrokeSize = 1.0f;
 

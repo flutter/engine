@@ -11,11 +11,13 @@
 namespace impeller {
 
 VertexWriter::VertexWriter(std::vector<Point>& points,
-                           std::vector<uint16_t>& indices)
-    : points_(points), indices_(indices) {}
+                           std::vector<uint16_t>& indices,
+                           bool line_strip)
+    : points_(points), indices_(indices), line_strip_(line_strip) {}
 
 void VertexWriter::EndContour() {
-  if (points_.size() == 0u || contour_start_ == points_.size() - 1) {
+  if (points_.size() == 0u || contour_start_ == points_.size() - 1 ||
+      line_strip_) {
     // Empty or first contour.
     return;
   }
