@@ -136,7 +136,7 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
-  ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  ui_runner = platform_runner;
   io_runner = thread_host_->io_thread->GetTaskRunner();
 
   flutter::TaskRunners task_runners(thread_label,     // label
