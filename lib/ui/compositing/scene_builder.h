@@ -80,6 +80,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   void pushBackdropFilter(Dart_Handle layer_handle,
                           ImageFilter* filter,
                           int blendMode,
+                          int backdropId,
                           const fml::RefPtr<EngineLayer>& oldLayer);
   void pushShaderMask(Dart_Handle layer_handle,
                       Shader* shader,

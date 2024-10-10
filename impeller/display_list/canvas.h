@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "display_list/effects/dl_image_filter.h"
@@ -24,9 +25,18 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
+
+struct BackdropData {
+  size_t backdrop_count = 0;
+  bool all_filters_equal = true;
+  std::shared_ptr<Texture> texture_slot;
+  std::optional<Snapshot> filtered_input_slot;
+  const flutter::DlImageFilter* last_backdrop = nullptr;
+};
 
 struct CanvasStackEntry {
   Matrix transform;
@@ -123,6 +133,11 @@ class Canvas {
 
   ~Canvas() = default;
 
+  void SetBackdropKeys(
+      std::unordered_map<int64_t, BackdropData> backdrop_keys) {
+    backdrop_keys_ = std::move(backdrop_keys);
+  }
+
   /// @brief Return the culling bounds of the current render target, or nullopt
   ///        if there is no coverage.
   std::optional<Rect> GetLocalCoverageLimit() const;
@@ -135,7 +150,8 @@ class Canvas {
       const flutter::DlImageFilter* backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
-      bool can_distribute_opacity = false);
+      bool can_distribute_opacity = false,
+      int64_t backdrop_id = -1);
 
   bool Restore();
 
@@ -232,6 +248,7 @@ class Canvas {
   std::optional<Rect> initial_cull_rect_;
   std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
+  std::unordered_map<int64_t, BackdropData> backdrop_keys_;
 
   // All geometry objects created for regular draws can be stack allocated,
   // but clip geometries must be cached for record/replay for backdrop filters

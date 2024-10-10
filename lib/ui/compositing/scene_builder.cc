@@ -168,9 +168,10 @@ void SceneBuilder::pushBackdropFilter(
     Dart_Handle layer_handle,
     ImageFilter* filter,
     int blendMode,
+    int backdropId,
     const fml::RefPtr<EngineLayer>& oldLayer) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(
-      filter->filter(), static_cast<DlBlendMode>(blendMode));
+      filter->filter(), static_cast<DlBlendMode>(blendMode), backdropId);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
