@@ -460,6 +460,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testCanMergePlatformAndUIThread {
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
   settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
@@ -468,9 +469,11 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
                  engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+#endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 
 - (void)testCanNotUnMergePlatformAndUIThread {
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
   settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
@@ -479,6 +482,7 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
                  engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+#endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 
 @end
