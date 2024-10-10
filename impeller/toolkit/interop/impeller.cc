@@ -8,7 +8,11 @@
 
 #include "flutter/fml/mapping.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/context.h"
 #include "impeller/toolkit/interop/color_filter.h"
 #include "impeller/toolkit/interop/color_source.h"
 #include "impeller/toolkit/interop/context.h"
@@ -502,6 +506,50 @@ ImpellerTexture ImpellerTextureCreateWithContentsNew(
 }
 
 IMPELLER_EXTERN_C
+ImpellerTexture ImpellerTextureCreateWithOpenGLTextureHandleNew(
+    ImpellerContext context,
+    const ImpellerTextureDescriptor* descriptor,
+    uint64_t external_gl_handle) {
+  auto impeller_context = GetPeer(context)->GetContext();
+  if (impeller_context->GetBackendType() !=
+      impeller::Context::BackendType::kOpenGLES) {
+    VALIDATION_LOG << "Context is not OpenGL.";
+    return nullptr;
+  }
+
+  const auto& impeller_context_gl = ContextGLES::Cast(*impeller_context);
+  const auto& reactor = impeller_context_gl.GetReactor();
+
+  auto wrapped_external_gl_handle =
+      reactor->CreateHandle(HandleType::kTexture, external_gl_handle);
+  if (wrapped_external_gl_handle.IsDead()) {
+    VALIDATION_LOG << "Could not wrap external handle.";
+    return nullptr;
+  }
+
+  TextureDescriptor desc;
+  desc.storage_mode = StorageMode::kDevicePrivate;
+  desc.type = TextureType::kTexture2D;
+  desc.format = ToImpellerType(descriptor->pixel_format);
+  desc.size = ToImpellerType(descriptor->size);
+  desc.mip_count = std::min(descriptor->mip_count, 1u);
+  desc.usage = TextureUsage::kShaderRead;
+  desc.compression_type = CompressionType::kLossless;
+  auto texture = std::make_shared<TextureGLES>(reactor,                    //
+                                               desc,                       //
+                                               wrapped_external_gl_handle  //
+  );
+  if (!texture || !texture->IsValid()) {
+    VALIDATION_LOG << "Could not wrap external texture.";
+    return nullptr;
+  }
+  texture->SetCoordinateSystem(TextureCoordinateSystem::kUploadFromHost);
+  return Create<Texture>(impeller::Context::BackendType::kOpenGLES,
+                         std::move(texture))
+      .Leak();
+}
+
+IMPELLER_EXTERN_C
 void ImpellerTextureRetain(ImpellerTexture texture) {
   ObjectBase::SafeRetain(texture);
 }
@@ -509,6 +557,19 @@ void ImpellerTextureRetain(ImpellerTexture texture) {
 IMPELLER_EXTERN_C
 void ImpellerTextureRelease(ImpellerTexture texture) {
   ObjectBase::SafeRelease(texture);
+}
+
+IMPELLER_EXTERN_C
+uint64_t ImpellerTextureGetOpenGLHandle(ImpellerTexture texture) {
+  auto interop_texture = GetPeer(texture);
+  if (interop_texture->GetBackendType() !=
+      impeller::Context::BackendType::kOpenGLES) {
+    VALIDATION_LOG << "Can only fetch the texture handle of an OpenGL texture.";
+    return 0u;
+  }
+  return TextureGLES::Cast(*interop_texture->GetTexture())
+      .GetGLHandle()
+      .value_or(0u);
 }
 
 IMPELLER_EXTERN_C
@@ -711,6 +772,24 @@ ImpellerColorSource ImpellerColorSourceCreateSweepGradientNew(
              colors_and_stops.first,        //
              colors_and_stops.second,       //
              ToDisplayListType(tile_mode),  //
+             transformation == nullptr ? Matrix{}
+                                       : ToImpellerType(*transformation)  //
+             )
+      .Leak();
+}
+
+IMPELLER_EXTERN_C
+ImpellerColorSource ImpellerColorSourceCreateImageNew(
+    ImpellerTexture image,
+    ImpellerTileMode horizontal_tile_mode,
+    ImpellerTileMode vertical_tile_mode,
+    ImpellerTextureSampling sampling,
+    const ImpellerMatrix* transformation) {
+  return ColorSource::MakeImage(
+             *GetPeer(image),                          //
+             ToDisplayListType(horizontal_tile_mode),  //
+             ToDisplayListType(vertical_tile_mode),    //
+             ToDisplayListType(sampling),              //
              transformation == nullptr ? Matrix{}
                                        : ToImpellerType(*transformation)  //
              )
@@ -1001,13 +1080,13 @@ float ImpellerParagraphGetLongestLineWidth(ImpellerParagraph paragraph) {
 }
 
 IMPELLER_EXTERN_C
-float ImpellerParagraphGetMinInstrinsicWidth(ImpellerParagraph paragraph) {
+float ImpellerParagraphGetMinIntrinsicWidth(ImpellerParagraph paragraph) {
   return GetPeer(paragraph)->GetMinIntrinsicWidth();
 }
 
 IMPELLER_EXTERN_C
-float ImpellerParagraphGetMaxInstrinsicWidth(ImpellerParagraph paragraph) {
-  return GetPeer(paragraph)->GetMaxInstrinsicWidth();
+float ImpellerParagraphGetMaxIntrinsicWidth(ImpellerParagraph paragraph) {
+  return GetPeer(paragraph)->GetMaxIntrinsicWidth();
 }
 
 IMPELLER_EXTERN_C
