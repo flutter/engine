@@ -579,14 +579,16 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
     };
   }
 
-
   PositionWriter position_writer;
-  auto polyline =
-      renderer.GetTessellator()->CreateTempPolyline(path_, max_basis);
-  CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
-                            miter_limit_ * stroke_width_ * 0.5f,
-                            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
-                            max_basis);
+  auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
+  CreateSolidStrokeVertices(position_writer,                      //
+                            polyline,                             //
+                            stroke_width,                         //
+                            miter_limit_ * stroke_width_ * 0.5f,  //
+                            GetJoinProc(stroke_join_),            //
+                            GetCapProc(stroke_cap_),              //
+                            scale                                 //
+  );
 
   BufferView buffer_view = host_buffer.Emplace(
       position_writer.GetData().data(),
