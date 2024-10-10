@@ -1061,7 +1061,7 @@ void Canvas::SaveLayer(const Paint& paint,
 
   // Backdrop filter state, ignored if there is no BDF.
   std::shared_ptr<FilterContents> backdrop_filter_contents;
-  Point local_position = {0, 0};
+  Point local_position = Point(0, 0);
   if (backdrop_filter) {
     local_position = subpass_coverage.GetOrigin() - GetGlobalPassPosition();
     Canvas::BackdropFilterProc backdrop_filter_proc =
@@ -1079,10 +1079,11 @@ void Canvas::SaveLayer(const Paint& paint,
     // If the backdrop ID is not the no-op id, and there is more than one usage
     // of it in the current scene, cache the backdrop texture and remove it from
     // the current entity pass flip.
-    bool will_cache_texture =
-        backdrop_id != -1 && backdrop_data->second.backdrop_count > 1;
-    if (backdrop_data == backdrop_keys_.end() ||
-        !backdrop_data->second.texture_slot) {
+    bool will_cache_texture = backdrop_id != -1 &&
+                              backdrop_data != backdrop_keys_.end() &&
+                              backdrop_data->second.backdrop_count > 1;
+    if (!will_cache_texture ||
+        (will_cache_texture && !backdrop_data->second.texture_slot)) {
       input_texture = FlipBackdrop(render_passes_,           //
                                    GetGlobalPassPosition(),  //
                                    clip_coverage_stack_,     //
@@ -1121,7 +1122,7 @@ void Canvas::SaveLayer(const Paint& paint,
       }
 
       if (data.filtered_input_slot.has_value()) {
-        auto snapshot = data.filtered_input_slot.value();
+        Snapshot snapshot = data.filtered_input_slot.value();
         auto contents = TextureContents::MakeRect(subpass_coverage);
         auto scaled =
             subpass_coverage.TransformBounds(snapshot.transform.Invert());
@@ -1175,9 +1176,9 @@ void Canvas::SaveLayer(const Paint& paint,
 
   if (backdrop_filter_contents) {
     const auto& backdrop_data = backdrop_keys_.find(backdrop_id);
-    if (backdrop_id != -1 &&
+    if (backdrop_id != -1 && backdrop_data != backdrop_keys_.end() &&
         backdrop_data->second.filtered_input_slot.has_value()) {
-      auto snapshot = backdrop_data->second.filtered_input_slot.value();
+      Snapshot snapshot = backdrop_data->second.filtered_input_slot.value();
       auto contents = TextureContents::MakeRect(subpass_coverage);
       auto scaled =
           subpass_coverage.TransformBounds(snapshot.transform.Invert());
