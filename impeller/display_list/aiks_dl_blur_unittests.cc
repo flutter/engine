@@ -277,8 +277,8 @@ TEST_P(AiksTest, CanRenderBackdropBlurWithSingleBackdropId) {
   builder.DrawImage(image, SkPoint::Make(50.0, 50.0),
                     DlImageSampling::kNearestNeighbor, &paint);
 
-  SkRRect rrect = SkRRect::MakeRectXY(
-      SkRect::MakeXYWH(50 + (i * 100), 250, 100, 100), 20, 20);
+  SkRRect rrect =
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(50, 250, 100, 100), 20, 20);
   builder.Save();
   builder.ClipRRect(rrect);
 
