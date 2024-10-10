@@ -31,7 +31,7 @@
 namespace impeller {
 
 struct BackdropData {
-  std::vector<Rect> global_rects;
+  size_t backdrop_count = 0;
   bool all_filters_equal = true;
   std::shared_ptr<Texture> texture_slot;
   std::optional<Snapshot> filtered_input_slot;

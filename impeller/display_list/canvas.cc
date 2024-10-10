@@ -993,7 +993,7 @@ void Canvas::SaveLayer(const Paint& paint,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity,
                        int64_t backdrop_id) {
-  // TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   if (IsSkipping()) {
     return SkipUntilMatchingRestore(total_content_depth);
   }
@@ -1080,7 +1080,7 @@ void Canvas::SaveLayer(const Paint& paint,
     // of it in the current scene, cache the backdrop texture and remove it from
     // the current entity pass flip.
     bool will_cache_texture =
-        backdrop_id != -1 && backdrop_data->second.global_rects.size() > 1;
+        backdrop_id != -1 && backdrop_data->second.backdrop_count > 1;
     if (backdrop_data == backdrop_keys_.end() ||
         !backdrop_data->second.texture_slot) {
       input_texture = FlipBackdrop(render_passes_,           //
@@ -1110,34 +1110,35 @@ void Canvas::SaveLayer(const Paint& paint,
             ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
             : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
 
-    // If all filters are equal, process the filter input once.
-    if (will_cache_texture && backdrop_data->second.all_filters_equal &&
-        !backdrop_data->second.filtered_input_slot.has_value()) {
-      backdrop_data->second.filtered_input_slot =
-          backdrop_filter_contents->RenderToSnapshot(renderer_, {});
-    }
+    if (will_cache_texture) {
+      auto& data = backdrop_data->second;
+      // If all filters on the shared backdrop layer are equal, process the
+      // layer once.
+      if (data.all_filters_equal && !data.filtered_input_slot.has_value()) {
+        // TODO(jonahwilliams): compute minimum input hint.
+        data.filtered_input_slot =
+            backdrop_filter_contents->RenderToSnapshot(renderer_, {});
+      }
 
-    if (will_cache_texture &&
-        backdrop_data->second.filtered_input_slot.has_value()) {
-      auto snapshot = backdrop_data->second.filtered_input_slot.value();
-      auto contents = TextureContents::MakeRect(subpass_coverage);
-      auto scaled =
-          subpass_coverage.TransformBounds(snapshot.transform.Invert());
-      contents->SetTexture(snapshot.texture);
-      contents->SetSourceRect(scaled);
+      if (data.filtered_input_slot.has_value()) {
+        auto snapshot = data.filtered_input_slot.value();
+        auto contents = TextureContents::MakeRect(subpass_coverage);
+        auto scaled =
+            subpass_coverage.TransformBounds(snapshot.transform.Invert());
+        contents->SetTexture(snapshot.texture);
+        contents->SetSourceRect(scaled);
 
-      Entity backdrop_entity;
-      backdrop_entity.SetContents(std::move(contents));
-      // backdrop_entity.SetTransform(
-      //     Matrix::MakeTranslation(Vector3(-local_position)));
-      backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
-      backdrop_entity.SetBlendMode(paint.blend_mode);
+        Entity backdrop_entity;
+        backdrop_entity.SetContents(std::move(contents));
+        backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
+        backdrop_entity.SetBlendMode(paint.blend_mode);
 
-      backdrop_entity.Render(
-          renderer_,
-          *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
-      Save(0);
-      return;
+        backdrop_entity.Render(
+            renderer_,
+            *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+        Save(0);
+        return;
+      }
     }
   }
 

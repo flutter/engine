@@ -1006,15 +1006,14 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
     const auto& existing = backdrop_keys_.find(backdrop_id);
     if (existing == backdrop_keys_.end()) {
       backdrop_keys_[backdrop_id] =
-          BackdropData{.global_rects = {bounds.TransformBounds(matrix_)},
-                       .last_backdrop = backdrop};
+          BackdropData{.backdrop_count = 1, .last_backdrop = backdrop};
     } else {
       BackdropData& data = backdrop_keys_[backdrop_id];
       if (data.all_filters_equal) {
-        data.all_filters_equal = true;  // data.last_backdrop == backdrop;
+        data.all_filters_equal = (*data.last_backdrop == *backdrop);
         data.last_backdrop = backdrop;
       }
-      data.global_rects.push_back(bounds.TransformBounds(matrix_));
+      data.backdrop_count++;
     }
   }
 
