@@ -88,8 +88,8 @@ sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
   {
     DlPaint line_paint;
     line_paint.setColor(DlColor::kWhite());
-    builder.DrawLine({100, 0}, {100, 60}, line_paint);
-    builder.DrawLine({0, 30}, {200, 30}, line_paint);
+    builder.DrawLine(SkPoint{100, 0}, SkPoint{100, 60}, line_paint);
+    builder.DrawLine(SkPoint{0, 30}, SkPoint{200, 30}, line_paint);
   }
 
   SkRRect rrect =
