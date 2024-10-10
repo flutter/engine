@@ -670,20 +670,19 @@ void Canvas::ClipGeometry(const Geometry& geometry,
 
   uint32_t clip_depth = transform_stack_.back().clip_depth;
 
-  ++transform_stack_.back().clip_height;
-  ++transform_stack_.back().num_clips;
-
   const Matrix clip_transform =
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
       GetCurrentTransform();
 
-  auto clip_coverage = geometry.GetCoverage(clip_transform);
+  std::optional<Rect> clip_coverage = geometry.GetCoverage(clip_transform);
   if (!clip_coverage.has_value()) {
     return;
   }
 
-  ClipContents clip_contents(clip_coverage.value(),
-                             geometry.IsAxisAlignedRect());
+  ClipContents clip_contents(
+      clip_coverage.value(),
+      geometry.IsAxisAlignedRect() &&
+          GetCurrentTransform().IsTranslationScaleOnly());
   clip_contents.SetClipOperation(clip_op);
 
   EntityPassClipStack::ClipStateResult clip_state_result =
@@ -701,6 +700,9 @@ void Canvas::ClipGeometry(const Geometry& geometry,
         *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
         GetGlobalPassPosition());
   }
+
+  ++transform_stack_.back().clip_height;
+  ++transform_stack_.back().num_clips;
 
   if (!clip_state_result.should_render) {
     return;

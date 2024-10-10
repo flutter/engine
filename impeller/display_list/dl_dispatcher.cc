@@ -491,7 +491,7 @@ void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
                              skia_conversions::ToSize(rrect.getSimpleRadii()));
       GetCanvas().ClipGeometry(geom, clip_op);
     } else {
-      FillPathGeometry geom(skia_conversions::ToPath(rrect));
+      FillPathGeometry geom(path.GetPath());
       GetCanvas().ClipGeometry(geom, clip_op);
     }
   }

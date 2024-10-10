@@ -130,11 +130,7 @@ bool ClipContents::Render(const ContentContext& renderer,
     case Entity::ClipOperation::kDifference:
       pass.SetCommandLabel("Difference Clip");
       options.stencil_mode = ContentContextOptions::StencilMode::kCoverCompare;
-      std::optional<Rect> maybe_cover_area = coverage_rect_;
-      if (!maybe_cover_area.has_value()) {
-        return true;
-      }
-      cover_area = maybe_cover_area.value();
+      cover_area = coverage_rect_;
       break;
   }
   auto points = cover_area.GetPoints();
