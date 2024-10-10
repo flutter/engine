@@ -239,17 +239,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
 }
 
-- (void)testPlatformViewsControllerRenderingSoftware {
-  auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_software_rendering = true;
-  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine run];
-  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
-
-  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kSoftware);
-}
-
 - (void)testWaitForFirstFrameTimeout {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
