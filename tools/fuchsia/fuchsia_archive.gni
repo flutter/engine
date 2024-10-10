@@ -4,7 +4,6 @@
 
 import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
-import("//flutter/tools/fuchsia/gn-sdk/src/build_id_dir.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/cmc.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/component.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
@@ -92,17 +91,17 @@ template("fuchsia_archive") {
     deps = [ ":$_component_target" ]
   }
 
+  # TODO(zijiehe): http://crbug.com/368608542, prefer using
+  # gn-sdk/build_id_dir.gni
   _build_id_target = target_name + "__build_id"
   fuchsia_debug_symbols(_build_id_target) {
-    forward_variables_from(invoker, [ "deps", "testonly", ])
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "testonly",
+                           ])
     binary = _binary
   }
-
-  #build_id_dir(_build_id_target) {
-  #  forward_variables_from(invoker, [ "testonly" ])
-  #  output_path = "$target_gen_dir/$_package_name/.build-id"
-  #  deps = [ ":$_package_target" ]
-  #}
 
   # TODO(zijiehe): http://crbug.com/368608542, copying the far files is not very
   # necessary, try to remove the -0.far copy.
