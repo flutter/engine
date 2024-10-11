@@ -410,7 +410,7 @@ void DisplayListBuilder::Save() {
 void DisplayListBuilder::saveLayer(const DlRect& bounds,
                                    const SaveLayerOptions in_options,
                                    const DlImageFilter* backdrop,
-                                   int64_t backdrop_id) {
+                                   std::optional<int64_t> backdrop_id) {
   SaveLayerOptions options = in_options.without_optimizations();
   DisplayListAttributeFlags flags = options.renders_with_attributes()
                                         ? kSaveLayerWithPaintFlags
@@ -545,7 +545,7 @@ void DisplayListBuilder::saveLayer(const DlRect& bounds,
 void DisplayListBuilder::SaveLayer(const SkRect* bounds,
                                    const DlPaint* paint,
                                    const DlImageFilter* backdrop,
-                                   int64_t backdrop_id) {
+                                   std::optional<int64_t> backdrop_id) {
   SaveLayerOptions options;
   DlRect temp_bounds;
   if (bounds) {

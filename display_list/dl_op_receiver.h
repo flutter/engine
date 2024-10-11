@@ -142,7 +142,7 @@ class DlOpReceiver {
   virtual void saveLayer(const DlRect& bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr,
-                         int64_t backdrop_id = -1) = 0;
+                         std::optional<int64_t> backdrop_id = std::nullopt) = 0;
   // Optional variant of saveLayer() that passes the total depth count of
   // all rendering operations that occur until the next restore() call.
   virtual void saveLayer(const DlRect& bounds,
@@ -150,7 +150,7 @@ class DlOpReceiver {
                          uint32_t total_content_depth,
                          DlBlendMode max_content_blend_mode,
                          const DlImageFilter* backdrop = nullptr,
-                         int64_t backdrop_id = -1) {
+                         std::optional<int64_t> backdrop_id = std::nullopt) {
     saveLayer(bounds, options, backdrop, backdrop_id);
   }
   virtual void restore() = 0;
@@ -170,10 +170,11 @@ class DlOpReceiver {
   // public DisplayListBuilder/DlCanvas public interfaces where possible,
   // as tracked in:
   // https://github.com/flutter/flutter/issues/144070
-  virtual void saveLayer(const DlRect* bounds,
-                         const SaveLayerOptions options,
-                         const DlImageFilter* backdrop = nullptr,
-                         int64_t backdrop_id = -1) final {
+  virtual void saveLayer(
+      const DlRect* bounds,
+      const SaveLayerOptions options,
+      const DlImageFilter* backdrop = nullptr,
+      std::optional<int64_t> backdrop_id = std::nullopt) final {
     if (bounds) {
       saveLayer(*bounds, options.with_bounds_from_caller(), backdrop,
                 backdrop_id);

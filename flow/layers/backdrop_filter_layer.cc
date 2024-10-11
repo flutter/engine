@@ -9,7 +9,7 @@ namespace flutter {
 BackdropFilterLayer::BackdropFilterLayer(
     std::shared_ptr<const DlImageFilter> filter,
     DlBlendMode blend_mode,
-    int64_t backdrop_id)
+    std::optional<int64_t> backdrop_id)
     : filter_(std::move(filter)),
       blend_mode_(blend_mode),
       backdrop_id_(backdrop_id) {}

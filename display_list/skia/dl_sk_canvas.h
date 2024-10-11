@@ -33,7 +33,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void SaveLayer(const SkRect* bounds,
                  const DlPaint* paint = nullptr,
                  const DlImageFilter* backdrop = nullptr,
-                 int64_t backdrop_id = -1) override;
+                 std::optional<int64_t> backdrop_id = std::nullopt) override;
   void Restore() override;
   int GetSaveCount() const override;
   void RestoreToCount(int restore_count) override;

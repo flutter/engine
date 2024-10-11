@@ -992,7 +992,7 @@ void Canvas::SaveLayer(const Paint& paint,
                        ContentBoundsPromise bounds_promise,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity,
-                       int64_t backdrop_id) {
+                       std::optional<int64_t> backdrop_id) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   if (IsSkipping()) {
     return SkipUntilMatchingRestore(total_content_depth);
@@ -1075,14 +1075,21 @@ void Canvas::SaveLayer(const Paint& paint,
         };
 
     std::shared_ptr<Texture> input_texture;
-    const auto& backdrop_data = backdrop_keys_.find(backdrop_id);
+
     // If the backdrop ID is not the no-op id, and there is more than one usage
     // of it in the current scene, cache the backdrop texture and remove it from
     // the current entity pass flip.
-    bool will_cache_texture = backdrop_data != backdrop_keys_.end() &&
-                              backdrop_data->second.backdrop_count > 1;
-    if (!will_cache_texture ||
-        (will_cache_texture && !backdrop_data->second.texture_slot)) {
+    bool will_cache_texture = false;
+    BackdropData* data = nullptr;
+    if (backdrop_id.has_value()) {
+      const auto& backdrop_data = backdrop_keys_.find(backdrop_id.value());
+      if (backdrop_data != backdrop_keys_.end()) {
+        data = &backdrop_data->second;
+        will_cache_texture = backdrop_data->second.backdrop_count > 1;
+      }
+    }
+
+    if (!will_cache_texture || (will_cache_texture && !data->texture_slot)) {
       input_texture = FlipBackdrop(render_passes_,           //
                                    GetGlobalPassPosition(),  //
                                    clip_coverage_stack_,     //
@@ -1095,10 +1102,10 @@ void Canvas::SaveLayer(const Paint& paint,
       }
 
       if (will_cache_texture) {
-        backdrop_data->second.texture_slot = input_texture;
+        data->texture_slot = input_texture;
       }
     } else {
-      input_texture = backdrop_data->second.texture_slot;
+      input_texture = data->texture_slot;
     }
 
     backdrop_filter_contents = backdrop_filter_proc(
@@ -1111,18 +1118,19 @@ void Canvas::SaveLayer(const Paint& paint,
             : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
 
     if (will_cache_texture) {
-      auto& data = backdrop_data->second;
+      FML_DCHECK(data);
       // If all filters on the shared backdrop layer are equal, process the
       // layer once.
-      if (data.all_filters_equal && !data.filtered_input_slot.has_value()) {
+      if (data->all_filters_equal && !data->filtered_input_slot.has_value()) {
         // TODO(jonahwilliams): compute minimum input hint.
-        data.filtered_input_slot =
+        data->filtered_input_slot =
             backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
 
-      if (data.filtered_input_slot.has_value()) {
-        Snapshot snapshot = data.filtered_input_slot.value();
-        auto contents = TextureContents::MakeRect(subpass_coverage);
+      if (data->filtered_input_slot.has_value()) {
+        Snapshot snapshot = data->filtered_input_slot.value();
+        std::shared_ptr<TextureContents> contents = TextureContents::MakeRect(
+            subpass_coverage.Shift(-GetGlobalPassPosition()));
         auto scaled =
             subpass_coverage.TransformBounds(snapshot.transform.Invert());
         contents->SetTexture(snapshot.texture);

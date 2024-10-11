@@ -703,12 +703,16 @@ void DisplayListStreamDispatcher::save() {
 void DisplayListStreamDispatcher::saveLayer(const DlRect& bounds,
                                             const SaveLayerOptions options,
                                             const DlImageFilter* backdrop,
-                                            int64_t backdrop_id) {
+                                            std::optional<int64_t> backdrop_id) {
   startl() << "saveLayer(" << bounds << ", " << options;
   if (backdrop) {
     os_ << "," << std::endl;
     indent(10);
-    startl() << "backdrop: " << backdrop_id;
+    if (backdrop_id.has_value()) {
+      startl() << "backdrop: " << backdrop_id.value();
+    } else {
+      startl() << "backdrop: (no id)";
+    }
     out(backdrop);
     outdent(10);
   } else {

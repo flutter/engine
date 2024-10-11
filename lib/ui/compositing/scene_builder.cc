@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
+#include <cstdint>
 
+#include "dart_api.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
@@ -168,10 +170,17 @@ void SceneBuilder::pushBackdropFilter(
     Dart_Handle layer_handle,
     ImageFilter* filter,
     int blendMode,
-    int backdropId,
+    Dart_Handle backdropId,
     const fml::RefPtr<EngineLayer>& oldLayer) {
+  std::optional<int64_t> backdrop_id;
+  if (Dart_IsInteger(backdropId)) {
+    int64_t out;
+    Dart_IntegerToInt64(backdropId, &out);
+    backdrop_id = out;
+  }
+
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(
-      filter->filter(), static_cast<DlBlendMode>(blendMode), backdropId);
+      filter->filter(), static_cast<DlBlendMode>(blendMode), backdrop_id);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

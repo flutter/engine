@@ -401,7 +401,7 @@ abstract class SceneBuilder {
   /// the most recent save layer and rendered back to the scene using the indicated
   /// [blendMode] prior to rasterizing the child layers.
   ///
-  /// if [backdropId] is provided and not equal to -1, then this value is treated
+  /// if [backdropId] is provided and not null, then this value is treated
   /// as a unique identifier for the backdrop. When the first backdrop filter with
   /// a given id is processed during rasterization, the state of the backdrop is
   /// recorded and cached. All subsequent backdrop filters with the same identifier
@@ -419,7 +419,7 @@ abstract class SceneBuilder {
   BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter filter, {
     BlendMode blendMode = BlendMode.srcOver,
-    int backdropId = -1,
+    int? backdropId,
     BackdropFilterEngineLayer? oldLayer,
   });
 
@@ -783,7 +783,7 @@ base class _NativeSceneBuilder extends NativeFieldWrapperClass1 implements Scene
   BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter filter, {
     BlendMode blendMode = BlendMode.srcOver,
-    int backdropId = -1,
+    int? backdropId,
     BackdropFilterEngineLayer? oldLayer,
   }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
@@ -794,8 +794,8 @@ base class _NativeSceneBuilder extends NativeFieldWrapperClass1 implements Scene
     return layer;
   }
 
-  @Native<Void Function(Pointer<Void>, Handle, Pointer<Void>, Int32, Int32, Handle)>(symbol: 'SceneBuilder::pushBackdropFilter')
-  external void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter, int blendMode, int backdropId, EngineLayer? oldLayer);
+  @Native<Void Function(Pointer<Void>, Handle, Pointer<Void>, Int32, Handle, Handle)>(symbol: 'SceneBuilder::pushBackdropFilter')
+  external void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter, int blendMode, int? backdropId, EngineLayer? oldLayer);
 
   @override
   ShaderMaskEngineLayer pushShaderMask(

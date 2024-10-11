@@ -46,7 +46,7 @@ void MockCanvas::Save() {
 void MockCanvas::SaveLayer(const SkRect* bounds,
                            const DlPaint* paint,
                            const DlImageFilter* backdrop,
-                           int64_t backdrop_id) {
+                           std::optional<int64_t> backdrop_id) {
   // saveLayer calls this prior to running, so we use it to track saveLayer
   // calls
   draw_calls_.emplace_back(DrawCall{

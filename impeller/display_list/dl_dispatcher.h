@@ -76,7 +76,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                  uint32_t total_content_depth,
                  flutter::DlBlendMode max_content_mode,
                  const flutter::DlImageFilter* backdrop,
-                 int64_t backdrop_id) override;
+                 std::optional<int64_t> backdrop_id) override;
 
   // |flutter::DlOpReceiver|
   void restore() override;
@@ -272,7 +272,7 @@ class CanvasDlDispatcher : public DlDispatcherBase {
   void saveLayer(const DlRect& bounds,
                  const flutter::SaveLayerOptions options,
                  const flutter::DlImageFilter* backdrop,
-                 int64_t backdrop_id) override {
+                 std::optional<int64_t> backdrop_id) override {
     // This dispatcher should never be used with the saveLayer() variant
     // that does not include the content_depth parameter.
     FML_UNREACHABLE();
@@ -308,7 +308,7 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void saveLayer(const DlRect& bounds,
                  const flutter::SaveLayerOptions options,
                  const flutter::DlImageFilter* backdrop,
-                 int64_t backdrop_id) override;
+                 std::optional<int64_t> backdrop_id) override;
 
   void restore() override;
 

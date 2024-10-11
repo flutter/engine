@@ -311,13 +311,13 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
   SaveLayerBackdropOp(const SaveLayerOptions& options,
                       const DlRect& rect,
                       const DlImageFilter* backdrop,
-                      int64_t backdrop_id = -1)
+                      std::optional<int64_t> backdrop_id)
       : SaveLayerOpBase(options, rect),
         backdrop(backdrop->shared()),
         backdrop_id_(backdrop_id) {}
 
   const std::shared_ptr<DlImageFilter> backdrop;
-  int64_t backdrop_id_;
+  std::optional<int64_t> backdrop_id_;
 
   void dispatch(DlOpReceiver& receiver) const {
     receiver.saveLayer(rect, options, total_content_depth, max_blend_mode,

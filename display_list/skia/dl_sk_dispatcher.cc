@@ -48,7 +48,7 @@ void DlSkCanvasDispatcher::restore() {
 void DlSkCanvasDispatcher::saveLayer(const DlRect& bounds,
                                      const SaveLayerOptions options,
                                      const DlImageFilter* backdrop,
-                                     int64_t backdrop_id) {
+                                     std::optional<int64_t> backdrop_id) {
   if (!options.content_is_clipped() && options.can_distribute_opacity() &&
       backdrop == nullptr) {
     // We know that:

@@ -32,7 +32,7 @@ void DlOpSpy::save() {}
 void DlOpSpy::saveLayer(const DlRect& bounds,
                         const SaveLayerOptions options,
                         const DlImageFilter* backdrop,
-                        int64_t backdrop_id) {}
+                        std::optional<int64_t> backdrop_id) {}
 void DlOpSpy::restore() {}
 void DlOpSpy::drawColor(DlColor color, DlBlendMode mode) {
   did_draw_ |= !color.isTransparent();

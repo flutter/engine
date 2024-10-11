@@ -151,7 +151,7 @@ class Canvas {
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
       bool can_distribute_opacity = false,
-      int64_t backdrop_id = -1);
+      std::optional<int64_t> backdrop_id = std::nullopt);
 
   bool Restore();
 

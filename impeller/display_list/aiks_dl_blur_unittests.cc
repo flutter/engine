@@ -1364,7 +1364,7 @@ TEST_P(AiksTest,
     save_paint.setBlendMode(DlBlendMode::kSrc);
     auto backdrop_filter = DlBlurImageFilter::Make(30, 30, DlTileMode::kClamp);
     builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get(),
-                      /*backdrop_id=*/-1);
+                      /*backdrop_id=*/1);
     builder.Restore();
     builder.Restore();
     if (i != 0) {

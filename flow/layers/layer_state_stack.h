@@ -198,7 +198,7 @@ class LayerStateStack {
     void applyBackdropFilter(const SkRect& bounds,
                              const std::shared_ptr<const DlImageFilter>& filter,
                              DlBlendMode blend_mode,
-                             int64_t backdrop_id);
+                             std::optional<int64_t> backdrop_id);
 
     void translate(SkScalar tx, SkScalar ty);
     void translate(SkPoint tp) { translate(tp.fX, tp.fY); }
@@ -336,7 +336,7 @@ class LayerStateStack {
   void push_backdrop(const SkRect& bounds,
                      const std::shared_ptr<const DlImageFilter>& filter,
                      DlBlendMode blend_mode,
-                     int64_t push_backdrop);
+                     std::optional<int64_t> backdrop_id);
 
   void push_translate(SkScalar tx, SkScalar ty);
   void push_transform(const SkM44& matrix);
@@ -446,11 +446,12 @@ class LayerStateStack {
     virtual bool content_culled(const SkRect& content_bounds) const = 0;
 
     virtual void save() = 0;
-    virtual void saveLayer(const SkRect& bounds,
-                           RenderingAttributes& attributes,
-                           DlBlendMode blend,
-                           const DlImageFilter* backdrop,
-                           int backdrop_id = -1) = 0;
+    virtual void saveLayer(
+        const SkRect& bounds,
+        RenderingAttributes& attributes,
+        DlBlendMode blend,
+        const DlImageFilter* backdrop,
+        std::optional<int64_t> backdrop_id = std::nullopt) = 0;
     virtual void restore() = 0;
 
     virtual void translate(SkScalar tx, SkScalar ty) = 0;

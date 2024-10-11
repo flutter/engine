@@ -52,7 +52,7 @@ void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
     const DlRect& bounds,
     const SaveLayerOptions options,
     const DlImageFilter* backdrop,
-    int64_t backdrop_id) {
+    std::optional<int64_t> backdrop_id) {
   if (IsComplex()) {
     return;
   }

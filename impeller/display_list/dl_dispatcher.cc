@@ -302,7 +302,7 @@ void DlDispatcherBase::saveLayer(const DlRect& bounds,
                                  uint32_t total_content_depth,
                                  flutter::DlBlendMode max_content_mode,
                                  const flutter::DlImageFilter* backdrop,
-                                 int64_t backdrop_id) {
+                                 std::optional<int64_t> backdrop_id) {
   AUTO_DEPTH_WATCHER(1u);
 
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
@@ -997,16 +997,16 @@ void TextFrameDispatcher::save() {
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop,
-                                    int64_t backdrop_id) {
+                                    std::optional<int64_t> backdrop_id) {
   save();
 
-  if (backdrop != nullptr && backdrop_id != -1) {
-    const auto& existing = backdrop_keys_.find(backdrop_id);
+  if (backdrop != nullptr && backdrop_id.has_value()) {
+    const auto& existing = backdrop_keys_.find(backdrop_id.value());
     if (existing == backdrop_keys_.end()) {
-      backdrop_keys_[backdrop_id] =
+      backdrop_keys_[backdrop_id.value()] =
           BackdropData{.backdrop_count = 1, .last_backdrop = backdrop};
     } else {
-      BackdropData& data = backdrop_keys_[backdrop_id];
+      BackdropData& data = backdrop_keys_[backdrop_id.value()];
 
       data.backdrop_count++;
       if (data.all_filters_equal) {

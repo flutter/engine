@@ -53,7 +53,7 @@ class DummyDelegate : public LayerStateStack::Delegate {
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend,
                  const DlImageFilter* backdrop,
-                 int backdrop_id) override {}
+                 std::optional<int64_t> backdrop_id) override {}
   void restore() override {}
 
   void translate(SkScalar tx, SkScalar ty) override {}
@@ -101,7 +101,7 @@ class DlCanvasDelegate : public LayerStateStack::Delegate {
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend_mode,
                  const DlImageFilter* backdrop,
-                 int backdrop_id) override {
+                 std::optional<int64_t> backdrop_id) override {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
     DlPaint paint;
     canvas_->SaveLayer(&bounds, attributes.fill(paint, blend_mode), backdrop,
@@ -161,7 +161,7 @@ class PrerollDelegate : public LayerStateStack::Delegate {
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend,
                  const DlImageFilter* backdrop,
-                 int backdrop_id) override {
+                 std::optional<int64_t> backdrop_id) override {
     save_stack_.emplace_back(state());
   }
   void restore() override { save_stack_.pop_back(); }
@@ -347,7 +347,7 @@ class BackdropFilterEntry : public SaveLayerEntry {
   BackdropFilterEntry(const SkRect& bounds,
                       const std::shared_ptr<const DlImageFilter>& filter,
                       DlBlendMode blend_mode,
-                      int64_t backdrop_id,
+                      std::optional<int64_t> backdrop_id,
                       const LayerStateStack::RenderingAttributes& prev)
       : SaveLayerEntry(bounds, blend_mode, prev),
         filter_(filter),
@@ -373,7 +373,7 @@ class BackdropFilterEntry : public SaveLayerEntry {
 
  private:
   const std::shared_ptr<const DlImageFilter> filter_;
-  int64_t backdrop_id_ = -1;
+  std::optional<int64_t> backdrop_id_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(BackdropFilterEntry);
 };
@@ -567,7 +567,7 @@ void MutatorContext::applyBackdropFilter(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode,
-    int64_t backdrop_id) {
+    std::optional<int64_t> backdrop_id) {
   layer_state_stack_->push_backdrop(bounds, filter, blend_mode, backdrop_id);
 }
 
@@ -716,7 +716,7 @@ void LayerStateStack::push_backdrop(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter>& filter,
     DlBlendMode blend_mode,
-    int64_t backdrop_id) {
+    std::optional<int64_t> backdrop_id) {
   state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
       bounds, filter, blend_mode, backdrop_id, outstanding_));
   apply_last_entry();

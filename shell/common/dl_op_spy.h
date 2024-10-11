@@ -42,7 +42,7 @@ class DlOpSpy final : public virtual DlOpReceiver,
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop,
-                 int64_t backdrop_id) override;
+                 std::optional<int64_t> backdrop_id) override;
   void restore() override;
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawPaint() override;
