@@ -1116,10 +1116,8 @@ void Canvas::SaveLayer(const Paint& paint,
       // layer once.
       if (data.all_filters_equal && !data.filtered_input_slot.has_value()) {
         // TODO(jonahwilliams): compute minimum input hint.
-        Entity snapshot_entity;
-        snapshot_entity.SetTransform(GetCurrentTransform());
-        data.filtered_input_slot = backdrop_filter_contents->RenderToSnapshot(
-            renderer_, snapshot_entity);
+        data.filtered_input_slot =
+            backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
 
       if (data.filtered_input_slot.has_value()) {
@@ -1129,6 +1127,7 @@ void Canvas::SaveLayer(const Paint& paint,
             subpass_coverage.TransformBounds(snapshot.transform.Invert());
         contents->SetTexture(snapshot.texture);
         contents->SetSourceRect(scaled);
+        contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
 
         // This backdrop entity sets a depth value as it is written to the newly
         // flipped backdrop and not into a new saveLayer.
