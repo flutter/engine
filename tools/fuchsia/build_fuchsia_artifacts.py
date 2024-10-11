@@ -161,10 +161,8 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type, api_lev
   source_root = os.path.join(_out_dir, source)
   destination = os.path.join(_bucket_directory, destination, mode)
 
-  CopyPath(
-      '%s/%s_%s_runner-0.far' % (source_root, runner_type, mode),
-      '%s/%s_%s%s_runner.far' % (destination, runner_type, mode, '_product' if product else '')
-  )
+  far_file = '%s_%s%s_runner' % (runner_type, mode, '_product' if product else '')
+  CopyPath('%s/%s-0.far' % (source_root, far_file), '%s/%s.far' % (destination, far_file))
 
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
