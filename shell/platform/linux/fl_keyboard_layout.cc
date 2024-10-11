@@ -13,6 +13,7 @@ constexpr size_t kLayoutSize = 128;
 struct _FlKeyboardLayout {
   GObject parent_instance;
 
+  // Each keycode->logical key mapping per group.
   GHashTable* groups;
 };
 

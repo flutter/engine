@@ -18,7 +18,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardLayout,
 
 /**
  * FlKeyboardLayout:
- * FIXME
+ * Tracks keycode to to logical key mappings for #FlKeyboardHandler
  */
 
 /**
