@@ -321,7 +321,7 @@
             "name": "ci/ios_debug_sim_extension_safe_nocopy",
             "description": "Produces extension safe debug mode artifacts to target the x64 iOS simulator, no gen_snapshots copying.",
             "ninja": {
-                "config": "ci/ios_debug_sim_extension_safe",
+                "config": "ci/ios_debug_sim_extension_safe_nocopy",
                 "targets": [
                     "flutter:unittests",
                     "flutter/shell/platform/embedder:flutter_engine",
