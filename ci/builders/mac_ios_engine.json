@@ -307,7 +307,7 @@
             },
             "gn": [
                 "--target-dir",
-                "ci/ios_debug_sim_extension_safe",
+                "ci/ios_debug_sim_extension_safe_nocopy",
                 "--ios",
                 "--runtime-mode",
                 "debug",
@@ -332,7 +332,7 @@
             "postsubmit_overrides": {
                 "gn": [
                     "--target-dir",
-                    "ci/ios_debug_sim_extension_safe",
+                    "ci/ios_debug_sim_extension_safe_nocopy",
                     "--ios",
                     "--runtime-mode",
                     "debug",
