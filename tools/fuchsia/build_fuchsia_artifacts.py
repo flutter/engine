@@ -17,13 +17,27 @@ import subprocess
 import sys
 import tempfile
 
-from gather_flutter_runner_artifacts import CreateMetaPackage, CopyPath
-from gen_package import CreateFarPackage
-
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out', 'ci')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
+
+
+def EnsureParentExists(path):
+  dir_name, _ = os.path.split(path)
+  if not os.path.exists(dir_name):
+    os.makedirs(dir_name)
+
+
+def CopyPath(src, dst):
+  try:
+    EnsureParentExists(dst)
+    shutil.copytree(src, dst)
+  except OSError as exc:
+    if exc.errno == errno.ENOTDIR:
+      shutil.copy(src, dst)
+    else:
+      raise
 
 
 def IsLinux():
@@ -56,10 +70,6 @@ def GetHostArchFromPlatform():
   elif host_arch == 'aarch64':
     return 'arm64'
   raise Exception('Unsupported host architecture: %s' % host_arch)
-
-
-def GetPMBinPath():
-  return os.path.join(GetFuchsiaSDKPath(), 'tools', GetHostArchFromPlatform(), 'pm')
 
 
 def RunExecutable(command):
@@ -146,26 +156,20 @@ def CopyZirconFFILibIfExists(source, destination):
   FindFileAndCopyTo('libzircon_ffi.so', source_root, destination_base)
 
 
-# TODO(zijiehe): http://crbug.com/368608542, avoid using pm or building far
-# packages here, packages should be built by ninja.
 def CopyToBucketWithMode(source, destination, aot, product, runner_type, api_level):
   mode = 'aot' if aot else 'jit'
-  product_suff = '_product' if product else ''
-  runner_name = '%s_%s%s_runner' % (runner_type, mode, product_suff)
-  far_dir_name = '%s_far' % runner_name
   source_root = os.path.join(_out_dir, source)
-  far_base = os.path.join(source_root, far_dir_name)
-  CreateMetaPackage(far_base, runner_name)
-  pm_bin = GetPMBinPath()
-  key_path = os.path.join(_script_dir, 'development.key')
-
   destination = os.path.join(_bucket_directory, destination, mode)
-  CreateFarPackage(pm_bin, far_base, key_path, destination, api_level)
+
+  CopyPath('%s/%s_%s_runner-0.far' % (source_root, runner_type, mode),
+           '%s/%s_%s%s_runner.far' % (destination, runner_type, mode, '_product' if product else ''))
+
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
   dest_sdk_path = os.path.join(destination, patched_sdk_dirname)
   if not os.path.exists(dest_sdk_path):
     CopyPath(patched_sdk_dir, dest_sdk_path)
+
   CopyGenSnapshotIfExists(source_root, destination)
   CopyFlutterTesterBinIfExists(source_root, destination)
   CopyZirconFFILibIfExists(source_root, destination)
