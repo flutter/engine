@@ -15,11 +15,11 @@ import shutil
 import sys
 
 
-def Main(src, dst):
+def main(src, dst):
   # Use copy instead of copyfile to ensure the executable bit is copied.
   shutil.copy(src, os.path.normpath(dst))
   return 0
 
 
 if __name__ == '__main__':
-  sys.exit(Main(sys.argv[1], sys.argv[2]))
+  sys.exit(main(sys.argv[1], sys.argv[2]))
