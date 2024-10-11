@@ -62,36 +62,6 @@ def GetFuchsiaSDKPath():
   return os.path.join(_src_root_dir, 'fuchsia', 'sdk', host_os)
 
 
-def GetHostArchFromPlatform():
-  host_arch = platform.machine()
-  # platform.machine() returns AMD64 on 64-bit Windows.
-  if host_arch in ['x86_64', 'AMD64']:
-    return 'x64'
-  elif host_arch == 'aarch64':
-    return 'arm64'
-  raise Exception('Unsupported host architecture: %s' % host_arch)
-
-
-def RunExecutable(command):
-  subprocess.check_call(command, cwd=_src_root_dir)
-
-
-def RunGN(variant_dir, flags):
-  print('Running gn for variant "%s" with flags: %s' % (variant_dir, ','.join(flags)))
-  RunExecutable([
-      os.path.join('flutter', 'tools', 'gn'),
-  ] + flags)
-
-  assert os.path.exists(os.path.join(_out_dir, variant_dir))
-
-
-def BuildNinjaTargets(variant_dir, targets):
-  assert os.path.exists(os.path.join(_out_dir, variant_dir))
-
-  print('Running autoninja for targets: %s' % targets)
-  RunExecutable(['autoninja', '-C', os.path.join(_out_dir, variant_dir)] + targets)
-
-
 def RemoveDirectoryIfExists(path):
   if not os.path.exists(path):
     return
@@ -304,39 +274,6 @@ def ProcessCIPDPackage(upload, engine_version):
   ])
 
 
-def BuildTarget(
-    runtime_mode, arch, optimized, enable_lto, enable_legacy, asan, dart_version_git_info,
-    prebuilt_dart_sdk, build_targets
-):
-  unopt = "_unopt" if not optimized else ""
-  out_dir = 'fuchsia_%s%s_%s' % (runtime_mode, unopt, arch)
-  flags = [
-      '--fuchsia',
-      '--fuchsia-cpu',
-      arch,
-      '--runtime-mode',
-      runtime_mode,
-  ]
-
-  if not optimized:
-    flags.append('--unoptimized')
-  if not enable_lto:
-    flags.append('--no-lto')
-  if not enable_legacy:
-    flags.append('--no-fuchsia-legacy')
-  if asan:
-    flags.append('--asan')
-  if not dart_version_git_info:
-    flags.append('--no-dart-version-git-info')
-  if not prebuilt_dart_sdk:
-    flags.append('--no-prebuilt-dart-sdk')
-
-  RunGN(out_dir, flags)
-  BuildNinjaTargets(out_dir, build_targets)
-
-  return
-
-
 def main():
   parser = argparse.ArgumentParser()
 
@@ -385,13 +322,6 @@ def main():
       action='store_true',
       default=False,
       help='If set, disables legacy code for the build.'
-  )
-
-  parser.add_argument(
-      '--skip-build',
-      action='store_true',
-      default=False,
-      help='If set, skips building and just creates packages.'
   )
 
   parser.add_argument(
@@ -453,12 +383,6 @@ def main():
       runtime_mode = runtime_modes[i]
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
-        if not args.skip_build:
-          BuildTarget(
-              runtime_mode, arch, optimized, enable_lto, enable_legacy, args.asan,
-              not args.no_dart_version_git_info, not args.no_prebuilt_dart_sdk,
-              args.targets.split(",") if args.targets else ['flutter']
-          )
         CopyBuildToBucket(runtime_mode, arch, optimized, product)
 
         # This is a hack. The recipe for building and uploading Fuchsia to CIPD
