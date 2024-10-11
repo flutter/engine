@@ -55,6 +55,7 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
           environment,
           plan.build,
           enableRbe: plan.useRbe,
+          extraGnArgs: plan.toGnArgs(),
         )) {
       return 1;
     }

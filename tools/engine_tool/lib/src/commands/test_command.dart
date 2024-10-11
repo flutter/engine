@@ -55,6 +55,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       environment,
       plan.build,
       enableRbe: plan.useRbe,
+      extraGnArgs: plan.toGnArgs(),
     )) {
       return 1;
     }
@@ -96,6 +97,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       targets: testTargets.map((target) => target.label).toList(),
       enableRbe: plan.useRbe,
       rbeConfig: plan.toRbeConfig(),
+      extraGnArgs: plan.toGnArgs(),
     );
     if (buildExitCode != 0) {
       return buildExitCode;

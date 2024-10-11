@@ -546,6 +546,129 @@ void main() {
     );
   });
 
+  test('dart build defaults to prebuilt', () {
+    final testEnv = TestEnvironment.withTestEngine(
+      withRbe: true,
+    );
+    addTearDown(testEnv.cleanup);
+
+    final testConfig = TestBuilderConfig();
+    testConfig.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final parser = ArgParser();
+    final builds = BuildPlan.configureArgParser(
+      parser,
+      testEnv.environment,
+      configs: {
+        'linux_test_config': testConfig.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+      },
+      help: false,
+    );
+
+    final plan = BuildPlan.fromArgResults(
+      parser.parse([]),
+      testEnv.environment,
+      builds: builds,
+    );
+
+    expect(plan.buildDart, BuildDart.prebuilt);
+    expect(
+      plan.toGnArgs(),
+      isNot(contains('--no-prebuilt-dart-sdk')),
+    );
+    expect(
+      plan.toGnArgs(),
+      isNot(contains('--full-dart-sdk')),
+    );
+  });
+
+  test('dart build can be set to from source', () {
+    final testEnv = TestEnvironment.withTestEngine(
+      withRbe: true,
+    );
+    addTearDown(testEnv.cleanup);
+
+    final testConfig = TestBuilderConfig();
+    testConfig.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final parser = ArgParser();
+    final builds = BuildPlan.configureArgParser(
+      parser,
+      testEnv.environment,
+      configs: {
+        'linux_test_config': testConfig.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+      },
+      help: false,
+    );
+
+    final plan = BuildPlan.fromArgResults(
+      parser.parse(['--build-dart']),
+      testEnv.environment,
+      builds: builds,
+    );
+
+    expect(plan.buildDart, BuildDart.build);
+    expect(
+      plan.toGnArgs(),
+      contains('--no-prebuilt-dart-sdk'),
+    );
+    expect(
+      plan.toGnArgs(),
+      isNot(contains('--full-dart-sdk')),
+    );
+  });
+
+  test('dart build can be set to full', () {
+    final testEnv = TestEnvironment.withTestEngine(
+      withRbe: true,
+    );
+    addTearDown(testEnv.cleanup);
+
+    final testConfig = TestBuilderConfig();
+    testConfig.addBuild(
+      name: 'linux/host_debug',
+      dimension: TestDroneDimension.linux,
+    );
+
+    final parser = ArgParser();
+    final builds = BuildPlan.configureArgParser(
+      parser,
+      testEnv.environment,
+      configs: {
+        'linux_test_config': testConfig.buildConfig(
+          path: 'ci/builders/linux_test_config.json',
+        ),
+      },
+      help: false,
+    );
+
+    final plan = BuildPlan.fromArgResults(
+      parser.parse(['--build-dart-full']),
+      testEnv.environment,
+      builds: builds,
+    );
+
+    expect(plan.buildDart, BuildDart.buildFull);
+    expect(
+      plan.toGnArgs(),
+      contains('--no-prebuilt-dart-sdk'),
+    );
+    expect(
+      plan.toGnArgs(),
+      contains('--full-dart-sdk'),
+    );
+  });
+
   test('build defaults to host_debug', () {
     final testEnv = TestEnvironment.withTestEngine(
       withRbe: true,
