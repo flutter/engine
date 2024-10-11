@@ -1116,8 +1116,10 @@ void Canvas::SaveLayer(const Paint& paint,
       // layer once.
       if (data.all_filters_equal && !data.filtered_input_slot.has_value()) {
         // TODO(jonahwilliams): compute minimum input hint.
-        data.filtered_input_slot =
-            backdrop_filter_contents->RenderToSnapshot(renderer_, {});
+        Entity snapshot_entity;
+        snapshot_entity.SetTransform(GetCurrentTransform());
+        data.filtered_input_slot = backdrop_filter_contents->RenderToSnapshot(
+            renderer_, snapshot_entity);
       }
 
       if (data.filtered_input_slot.has_value()) {
@@ -1128,9 +1130,11 @@ void Canvas::SaveLayer(const Paint& paint,
         contents->SetTexture(snapshot.texture);
         contents->SetSourceRect(scaled);
 
+        // This backdrop entity sets a depth value as it is written to the newly
+        // flipped backdrop and not into a new saveLayer.
         Entity backdrop_entity;
         backdrop_entity.SetContents(std::move(contents));
-        backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
+        backdrop_entity.SetClipDepth(++current_depth_);
         backdrop_entity.SetBlendMode(paint.blend_mode);
 
         backdrop_entity.Render(
@@ -1175,31 +1179,6 @@ void Canvas::SaveLayer(const Paint& paint,
 
   if (!backdrop_filter_contents) {
     return;
-  }
-  const auto& backdrop_data = backdrop_keys_.find(backdrop_id);
-  if (backdrop_data != backdrop_keys_.end()) {
-    auto& data = backdrop_data->second;
-    // If there is a cached input snapshot, render the subregion of the backdrop
-    // filter.
-    if (data.filtered_input_slot.has_value()) {
-      Snapshot snapshot = data.filtered_input_slot.value();
-      auto contents = TextureContents::MakeRect(subpass_coverage);
-      auto scaled =
-          subpass_coverage.TransformBounds(snapshot.transform.Invert());
-      contents->SetTexture(snapshot.texture);
-      contents->SetSourceRect(scaled);
-
-      Entity backdrop_entity;
-      backdrop_entity.SetContents(std::move(contents));
-      backdrop_entity.SetTransform(
-          Matrix::MakeTranslation(Vector3(-local_position)));
-      backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
-
-      backdrop_entity.Render(
-          renderer_,
-          *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
-      return;
-    }
   }
 
   // Render the backdrop entity.
