@@ -324,7 +324,7 @@
                 "config": "ci/ios_debug_sim_extension_safe",
                 "targets": [
                     "flutter:unittests",
-                    "flutter/lib/shell/platform/embedder:flutter_engine",
+                    "flutter/shell/platform/embedder:flutter_engine",
                     "flutter/sky:sky",
                     "flutter/testing/scenario_app:scenario_app"
                 ]
