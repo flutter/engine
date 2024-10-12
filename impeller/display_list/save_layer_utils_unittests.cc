@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/dl_sampling_options.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/testing/testing.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/save_layer_utils.h"
+#include "impeller/display_list/save_layer_utils.h"
+#include "include/core/SkMatrix.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
@@ -43,14 +45,16 @@ TEST(SaveLayerUtilsTest, BackdropFiterComputedCoverage) {
 
 TEST(SaveLayerUtilsTest, ImageFiterComputedCoverage) {
   // Image Filter, computed coverage
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({2, 2, 1}), {});
+  SkMatrix matrix;
+  matrix.setScale(2, 2);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),    //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/image_filter                         //
+      /*image_filter=*/image_filter.get()                   //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -60,31 +64,35 @@ TEST(SaveLayerUtilsTest, ImageFiterComputedCoverage) {
 TEST(SaveLayerUtilsTest,
      ImageFiterSmallScaleComputedCoverageLargerThanBoundsLimit) {
   // Image Filter scaling large, computed coverage is larger than bounds limit.
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({2, 2, 1}), {});
+  SkMatrix matrix;
+  matrix.setScale(2, 2);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),  //
       /*effect_transform=*/{},                            //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 5, 5),      //
-      /*image_filter=*/image_filter                       //
+      /*image_filter=*/image_filter.get()                 //
   );
 
   ASSERT_TRUE(coverage.has_value());
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 2.5, 2.5));
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 3, 3));
 }
 
 TEST(SaveLayerUtilsTest,
      ImageFiterLargeScaleComputedCoverageLargerThanBoundsLimit) {
   // Image Filter scaling small, computed coverage is larger than bounds limit.
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({0.5, 0.5, 1}), {});
+  SkMatrix matrix;
+  matrix.setScale(0.5, 0.5);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 10, 10),  //
       /*effect_transform=*/{},                            //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 5, 5),      //
-      /*image_filter=*/image_filter                       //
+      /*image_filter=*/image_filter.get()                 //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -106,14 +114,15 @@ TEST(SaveLayerUtilsTest, DisjointCoverage) {
 TEST(SaveLayerUtilsTest, DisjointCoverageTransformedByImageFilter) {
   // Coverage disjoint from parent coverage but transformed into parent space
   // with image filter.
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeTranslation({-200, -200, 0}), {});
+  SkMatrix matrix = SkMatrix::Translate(-200, -200);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(200, 200, 210, 210),  //
       /*effect_transform=*/{},                                  //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
-      /*image_filter=*/image_filter                             //
+      /*image_filter=*/image_filter.get()                       //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -147,14 +156,15 @@ TEST(SaveLayerUtilsTest, BasicEmptyCoverage) {
 
 TEST(SaveLayerUtilsTest, ImageFilterEmptyCoverage) {
   // Empty coverage with Image Filter
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeTranslation({-200, -200, 0}), {});
+  SkMatrix matrix = SkMatrix::Translate(-200, -200);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/image_filter                         //
+      /*image_filter=*/image_filter.get()                   //
   );
 
   ASSERT_FALSE(coverage.has_value());
@@ -189,14 +199,15 @@ TEST(SaveLayerUtilsTest, FloodInputCoverage) {
 }
 
 TEST(SaveLayerUtilsTest, FloodInputCoverageWithImageFilter) {
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({0.5, 0.5, 1}), {});
+  SkMatrix matrix = SkMatrix::Scale(0.5, 0.5);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/image_filter,                        //
+      /*image_filter=*/image_filter.get(),                  //
       /*flood_output_coverage=*/false,                      //
       /*flood_input_coverage=*/true                         //
   );
@@ -209,14 +220,15 @@ TEST(SaveLayerUtilsTest,
      FloodInputCoverageWithImageFilterWithNoCoverageProducesNoCoverage) {
   // Even if we flood the input coverage due to a bdf, we can still cull out the
   // layer if the image filter results in no coverage.
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({1, 1, 0}), {});
+  SkMatrix matrix = SkMatrix::Scale(1, 0);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 0, 0),      //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 2400, 1800),  //
-      /*image_filter=*/image_filter,                        //
+      /*image_filter=*/image_filter.get(),                  //
       /*flood_output_coverage=*/false,                      //
       /*flood_input_coverage=*/true                         //
   );
@@ -228,14 +240,15 @@ TEST(
     SaveLayerUtilsTest,
     CoverageLimitIgnoredIfIntersectedValueIsCloseToActualCoverageSmallerWithImageFilter) {
   // Create an image filter that slightly shrinks the coverage limit
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({1.1, 1.1, 1}), {});
+  SkMatrix matrix = SkMatrix::Scale(1.1, 1.1);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 100, 100),  //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),    //
-      /*image_filter=*/image_filter                         //
+      /*image_filter=*/image_filter.get()                   //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -249,14 +262,15 @@ TEST(
   // Create an image filter that slightly stretches the coverage limit. Even
   // without the special logic for using the original content coverage, we
   // verify that we don't introduce any artifacts from the intersection.
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({0.9, 0.9, 1}), {});
+  SkMatrix matrix = SkMatrix::Scale(0.9, 0.9);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 100, 100),  //
       /*effect_transform=*/{},                              //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),    //
-      /*image_filter=*/image_filter                         //
+      /*image_filter=*/image_filter.get()                   //
   );
 
   ASSERT_TRUE(coverage.has_value());
@@ -266,14 +280,15 @@ TEST(
 
 TEST(SaveLayerUtilsTest,
      CoverageLimitRespectedIfSubstantiallyDifferentFromContentCoverge) {
-  auto image_filter = FilterContents::MakeMatrixFilter(
-      FilterInput::Make(Rect()), Matrix::MakeScale({2, 2, 1}), {});
+  SkMatrix matrix = SkMatrix::Scale(2, 2);
+  auto image_filter =
+      flutter::DlMatrixImageFilter::Make(matrix, flutter::DlImageSampling{});
 
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(0, 0, 1000, 1000),  //
       /*effect_transform=*/{},                                //
       /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),      //
-      /*image_filter=*/image_filter                           //
+      /*image_filter=*/image_filter.get()                     //
   );
 
   ASSERT_TRUE(coverage.has_value());

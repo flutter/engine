@@ -14,6 +14,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/image_filter.h"
+#include "impeller/display_list/save_layer_utils.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
@@ -35,7 +36,6 @@
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
-#include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
@@ -1004,15 +1004,11 @@ void Canvas::SaveLayer(const Paint& paint,
     return;
   }
 
-  std::shared_ptr<FilterContents> filter_contents = paint.WithImageFilter(
-      Rect(), transform_stack_.back().transform,
-      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
-
   std::optional<Rect> maybe_subpass_coverage = ComputeSaveLayerCoverage(
       bounds.value_or(Rect::MakeMaximum()),
       transform_stack_.back().transform,  //
       coverage_limit,                     //
-      filter_contents,                    //
+      paint.image_filter,                 //
       /*flood_output_coverage=*/
       Entity::IsBlendModeDestructive(paint.blend_mode),  //
       /*flood_input_coverage=*/!!backdrop_filter         //

@@ -42,6 +42,8 @@ impeller_component("display_list") {
     "nine_patch_converter.h",
     "paint.cc",
     "paint.h",
+    "save_layer_utils.cc",
+    "save_layer_utils.h",
   ]
 
   public_deps = [
@@ -78,6 +80,7 @@ template("display_list_unittests_component") {
     "dl_playground.cc",
     "dl_playground.h",
     "dl_unittests.cc",
+    "save_layer_utils_unittests.cc",
   ]
   additional_sources = []
   if (defined(invoker.sources)) {

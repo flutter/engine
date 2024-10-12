@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/entity/save_layer_utils.h"
+#include "impeller/display_list/save_layer_utils.h"
+
+#include "impeller/geometry/matrix_decomposition.h"
+#include "include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace impeller {
 
@@ -11,13 +15,19 @@ bool SizeDifferenceUnderThreshold(Size a, Size b, Scalar threshold) {
   return (std::abs(a.width - b.width) / b.width) < threshold &&
          (std::abs(a.height - b.height) / b.height) < threshold;
 }
+
+SkMatrix ToMatrix(const Matrix& m) {
+  return SkMatrix::MakeAll(m.m[0], m.m[4], m.m[12], m.m[2], m.m[5], m.m[13],
+                           m.m[3], m.m[7], m.m[15]);
+}
+
 }  // namespace
 
 std::optional<Rect> ComputeSaveLayerCoverage(
     const Rect& content_coverage,
     const Matrix& effect_transform,
     const Rect& coverage_limit,
-    const std::shared_ptr<FilterContents>& image_filter,
+    const flutter::DlImageFilter* image_filter,
     bool flood_output_coverage,
     bool flood_input_coverage) {
   Rect coverage = content_coverage;
@@ -56,12 +66,28 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     // Transform the input coverage into the global coordinate space before
     // computing the bounds limit intersection. This is the "worst case"
     // coverage value before we intersect with the content coverage below.
-    std::optional<Rect> source_coverage_limit =
-        image_filter->GetSourceCoverage(effect_transform, coverage_limit);
-    if (!source_coverage_limit.has_value()) {
+
+    SkIRect sk_coverage_limit = SkIRect::MakeLTRB(
+        coverage_limit.GetX(), coverage_limit.GetY(), coverage_limit.GetWidth(),
+        coverage_limit.GetHeight());
+    std::optional<MatrixDecomposition> maybe_decomp =
+        effect_transform.Decompose();
+
+    // If the CTM is degenerate then no coverage.
+    if (!maybe_decomp.has_value()) {
+      return std::nullopt;
+    }
+
+    SkIRect output;
+    SkIRect* result = image_filter->get_input_device_bounds(
+        sk_coverage_limit, ToMatrix(effect_transform), output);
+
+    if (!result) {
       // No intersection with parent coverage limit.
       return std::nullopt;
     }
+    auto source_coverage_limit = Rect::MakeLTRB(
+        result->fLeft, result->fTop, result->fRight, result->fBottom);
     // The image filter may change the coverage limit required to flood
     // the parent layer. Returning the source coverage limit so that we
     // can guarantee the render target is larger enough.
@@ -83,7 +109,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     // cases, use the intersection.
     auto transformed_coverage = coverage.TransformBounds(effect_transform);
     auto intersected_coverage =
-        transformed_coverage.Intersection(source_coverage_limit.value());
+        transformed_coverage.Intersection(source_coverage_limit);
     if (intersected_coverage.has_value() &&
         SizeDifferenceUnderThreshold(transformed_coverage.GetSize(),
                                      intersected_coverage->GetSize(), 0.2)) {

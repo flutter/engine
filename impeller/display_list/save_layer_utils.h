@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_ENTITY_SAVE_LAYER_UTILS_H_
-#define FLUTTER_IMPELLER_ENTITY_SAVE_LAYER_UTILS_H_
+#ifndef FLUTTER_IMPELLER_DISPLAY_LIST_SAVE_LAYER_UTILS_H_
+#define FLUTTER_IMPELLER_DISPLAY_LIST_SAVE_LAYER_UTILS_H_
 
 #include <memory>
 #include <optional>
 
-#include "impeller/entity/contents/filters/filter_contents.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
@@ -40,10 +40,10 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     const Rect& content_coverage,
     const Matrix& effect_transform,
     const Rect& coverage_limit,
-    const std::shared_ptr<FilterContents>& image_filter,
+    const flutter::DlImageFilter* image_filter,
     bool flood_output_coverage = false,
     bool flood_input_coverage = false);
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_ENTITY_SAVE_LAYER_UTILS_H_
+#endif  // FLUTTER_IMPELLER_DISPLAY_LIST_SAVE_LAYER_UTILS_H_
