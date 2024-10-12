@@ -215,6 +215,8 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   // Historically SK_ColorGRAY (== 0xFF888888) was used here
   DlPaint text_paint(DlColor(0xFF888888));
   DlPoint text_position = DlPoint(16.0f, 22.0f);
+  ImageSizeTextBlobInspector inspector;
+  display_list()->Dispatch(inspector);
 
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
@@ -222,8 +224,6 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
 #endif  // OS_FUCHSIA
-  ImageSizeTextBlobInspector inspector;
-  display_list()->Dispatch(inspector);
   ASSERT_EQ(inspector.sizes().size(), 0u);
   ASSERT_EQ(inspector.text_blobs().size(), 1u);
   ASSERT_EQ(inspector.text_positions().size(), 1u);
