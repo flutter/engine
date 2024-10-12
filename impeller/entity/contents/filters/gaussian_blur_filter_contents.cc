@@ -12,6 +12,7 @@
 #include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
@@ -73,6 +74,9 @@ Vector2 ExtractScale(const Matrix& matrix) {
 struct BlurInfo {
   /// The scalar that is used to get from source space to unrotated local space.
   Vector2 source_space_scalar;
+  /// The translation that is used to get from  source space to unrotated local
+  /// space.
+  Vector2 source_space_offset;
   /// Sigma when considering an entity's scale and the effect transform.
   Vector2 scaled_sigma;
   /// Blur radius in source pixels based on scaled_sigma.
@@ -94,6 +98,8 @@ BlurInfo CalculateBlurInfo(const Entity& entity,
   // applied to the result of the blur as part of the result's transform.
   const Vector2 source_space_scalar =
       ExtractScale(entity.GetTransform().Basis());
+  const Vector2 source_space_offset =
+      Vector2(entity.GetTransform().m[12], entity.GetTransform().m[13]);
 
   Vector2 scaled_sigma =
       (effect_transform.Basis() * Matrix::MakeScale(source_space_scalar) *  //
@@ -109,6 +115,7 @@ BlurInfo CalculateBlurInfo(const Entity& entity,
       (Matrix::MakeScale(source_space_scalar) * padding).Abs();
   return {
       .source_space_scalar = source_space_scalar,
+      .source_space_offset = source_space_offset,
       .scaled_sigma = scaled_sigma,
       .blur_radius = blur_radius,
       .padding = padding,
@@ -316,7 +323,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
 fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const ContentContext& renderer,
     const std::shared_ptr<CommandBuffer>& command_buffer,
-    std::shared_ptr<Texture> input_texture,
+    const std::shared_ptr<Texture>& input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
@@ -338,7 +345,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-          frame_info.texture_sampler_y_coord_scale = 1.0;
+          frame_info.texture_sampler_y_coord_scale =
+              input_texture->GetYCoordScale();
 
           TextureFillFragmentShader::FragInfo frag_info;
           frag_info.alpha = 1.0;
@@ -391,7 +399,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-          frame_info.texture_sampler_y_coord_scale = 1.0;
+          frame_info.texture_sampler_y_coord_scale =
+              input_texture->GetYCoordScale();
 
           TextureDownsampleFragmentShader::FragInfo frag_info;
           frag_info.edge = edge;
@@ -442,16 +451,18 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
     return input_pass;
   }
 
-  std::shared_ptr<Texture> input_texture = input_pass.GetRenderTargetTexture();
+  const std::shared_ptr<Texture>& input_texture =
+      input_pass.GetRenderTargetTexture();
 
   // TODO(gaaclarke): This blurs the whole image, but because we know the clip
   //                  region we could focus on just blurring that.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
-        GaussianBlurVertexShader::FrameInfo frame_info{
-            .mvp = Matrix::MakeOrthographic(ISize(1, 1)),
-            .texture_sampler_y_coord_scale = 1.0};
+        GaussianBlurVertexShader::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1)),
+        frame_info.texture_sampler_y_coord_scale =
+            input_texture->GetYCoordScale();
 
         HostBuffer& host_buffer = renderer.GetTransientsBuffer();
 
@@ -476,11 +487,9 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
                 linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
-            LerpHackKernelSamples(GenerateBlurInfo(blur_info));
-        FML_CHECK(kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
         GaussianBlurFragmentShader::BindKernelSamples(
-            pass, host_buffer.EmplaceUniform(kernel_samples));
+            pass, host_buffer.EmplaceUniform(
+                      LerpHackKernelSamples(GenerateBlurInfo(blur_info))));
         return pass.Draw().ok();
       };
   if (destination_target.has_value()) {
@@ -502,7 +511,7 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                              const std::shared_ptr<FilterInput>& input,
                              const Snapshot& input_snapshot,
                              Entity blur_entity,
-                             const std::shared_ptr<Geometry>& geometry) {
+                             const Geometry* geometry) {
   auto clip_contents = std::make_shared<ClipContents>();
   clip_contents->SetClipOperation(clip_operation);
   clip_contents->SetGeometry(geometry);
@@ -541,8 +550,9 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                       const std::shared_ptr<FilterInput>& input,
                       const Snapshot& input_snapshot,
                       Entity blur_entity,
-                      const std::shared_ptr<Geometry>& geometry,
-                      Vector2 source_space_scalar) {
+                      const Geometry* geometry,
+                      Vector2 source_space_scalar,
+                      Vector2 source_space_offset) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
       return blur_entity;
@@ -560,9 +570,11 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
           Entity::FromSnapshot(input_snapshot, entity.GetBlendMode());
       Entity result;
       Matrix blurred_transform = blur_entity.GetTransform();
-      Matrix snapshot_transform = entity.GetTransform() *  //
-                                  Matrix::MakeScale(1.f / source_space_scalar) *
-                                  input_snapshot.transform;
+      Matrix snapshot_transform =
+          entity.GetTransform() *  //
+          Matrix::MakeScale(1.f / source_space_scalar) *
+          Matrix::MakeTranslation(-1 * source_space_offset) *
+          input_snapshot.transform;
       result.SetContents(Contents::MakeAnonymous(
           fml::MakeCopyable([blur_entity = blur_entity.Clone(),
                              blurred_transform, snapshot_transform,
@@ -596,7 +608,7 @@ GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_y,
     Entity::TileMode tile_mode,
     BlurStyle mask_blur_style,
-    const std::shared_ptr<Geometry>& mask_geometry)
+    const Geometry* mask_geometry)
     : sigma_(sigma_x, sigma_y),
       tile_mode_(tile_mode),
       mask_blur_style_(mask_blur_style),
@@ -694,11 +706,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Entity snapshot_entity = entity.Clone();
   snapshot_entity.SetTransform(
+      Matrix::MakeTranslation(blur_info.source_space_offset) *
       Matrix::MakeScale(blur_info.source_space_scalar));
 
   std::optional<Rect> source_expanded_coverage_hint;
   if (expanded_coverage_hint.has_value()) {
     source_expanded_coverage_hint = expanded_coverage_hint->TransformBounds(
+        Matrix::MakeTranslation(blur_info.source_space_offset) *
         Matrix::MakeScale(blur_info.source_space_scalar) *
         entity.GetTransform().Invert());
   }
@@ -714,9 +728,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     Entity result =
         Entity::FromSnapshot(input_snapshot.value(),
                              entity.GetBlendMode());  // No blur to render.
-    result.SetTransform(entity.GetTransform() *
-                        Matrix::MakeScale(1.f / blur_info.source_space_scalar) *
-                        input_snapshot->transform);
+    result.SetTransform(
+        entity.GetTransform() *
+        Matrix::MakeScale(1.f / blur_info.source_space_scalar) *
+        Matrix::MakeTranslation(-1 * blur_info.source_space_offset) *
+        input_snapshot->transform);
     return result;
   }
 
@@ -824,7 +840,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .transform =
                    entity.GetTransform() *                                   //
                    Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
-                   downsample_pass_args.transform *                          //
+                   Matrix::MakeTranslation(-1 * blur_info.source_space_offset) *
+                   downsample_pass_args.transform *  //
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
@@ -832,7 +849,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
                         input_snapshot.value(), std::move(blur_output_entity),
-                        mask_geometry_, blur_info.source_space_scalar);
+                        mask_geometry_, blur_info.source_space_scalar,
+                        blur_info.source_space_offset);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
@@ -893,7 +911,7 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters) {
   Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; ++i) {
     int x = x_offset + (i * parameters.step_size) - parameters.blur_radius;
-    result.samples[i] = GaussianBlurPipeline::FragmentShader::KernelSample{
+    result.samples[i] = KernelSample{
         .uv_offset = parameters.blur_uv_offset * x,
         .coefficient = expf(-0.5f * (x * x) /
                             (parameters.blur_sigma * parameters.blur_sigma)) /
@@ -914,25 +932,31 @@ KernelSamples GenerateBlurInfo(BlurParameters parameters) {
 // between the samples.
 GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelSamples parameters) {
-  GaussianBlurPipeline::FragmentShader::KernelSamples result;
+  GaussianBlurPipeline::FragmentShader::KernelSamples result = {};
   result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
   int32_t middle = result.sample_count / 2;
   int32_t j = 0;
   FML_DCHECK(result.sample_count <= kGaussianBlurMaxKernelSize);
+  static_assert(sizeof(result.sample_data) ==
+                sizeof(std::array<Vector4, kGaussianBlurMaxKernelSize>));
+
   for (int i = 0; i < result.sample_count; i++) {
     if (i == middle) {
-      result.samples[i] = parameters.samples[j++];
+      result.sample_data[i].x = parameters.samples[j].uv_offset.x;
+      result.sample_data[i].y = parameters.samples[j].uv_offset.y;
+      result.sample_data[i].z = parameters.samples[j].coefficient;
+      j++;
     } else {
-      GaussianBlurPipeline::FragmentShader::KernelSample left =
-          parameters.samples[j];
-      GaussianBlurPipeline::FragmentShader::KernelSample right =
-          parameters.samples[j + 1];
-      result.samples[i] = GaussianBlurPipeline::FragmentShader::KernelSample{
-          .uv_offset = (left.uv_offset * left.coefficient +
-                        right.uv_offset * right.coefficient) /
-                       (left.coefficient + right.coefficient),
-          .coefficient = left.coefficient + right.coefficient,
-      };
+      KernelSample left = parameters.samples[j];
+      KernelSample right = parameters.samples[j + 1];
+
+      result.sample_data[i].z = left.coefficient + right.coefficient;
+
+      Point uv = (left.uv_offset * left.coefficient +
+                  right.uv_offset * right.coefficient) /
+                 (left.coefficient + right.coefficient);
+      result.sample_data[i].x = uv.x;
+      result.sample_data[i].y = uv.y;
       j += 2;
     }
   }

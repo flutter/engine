@@ -8,12 +8,12 @@
 #include "display_list/dl_color.h"
 #include "display_list/effects/dl_color_source.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -48,13 +48,20 @@ Size ToSize(const SkPoint& point);
 
 Color ToColor(const flutter::DlColor& color);
 
-std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
+Matrix ToRSXForm(const SkRSXform& form);
 
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 
 Path ToPath(const SkRRect& rrect);
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);
+
+impeller::SamplerDescriptor ToSamplerDescriptor(
+    const flutter::DlImageSampling options);
+
+Matrix ToMatrix(const SkMatrix& m);
+
+BlendMode ToBlendMode(flutter::DlBlendMode mode);
 
 /// @brief Convert display list colors + stops into impeller colors and stops,
 /// taking care to ensure that the stops monotonically increase from 0.0 to 1.0.

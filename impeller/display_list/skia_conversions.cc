@@ -114,21 +114,15 @@ Color ToColor(const flutter::DlColor& color) {
   };
 }
 
-std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
-  auto result = std::vector<Matrix>();
-  for (int i = 0; i < count; i++) {
-    auto form = xform[i];
-    // clang-format off
-    auto matrix = Matrix{
+Matrix ToRSXForm(const SkRSXform& form) {
+  // clang-format off
+    return Matrix{
       form.fSCos, form.fSSin, 0, 0,
      -form.fSSin, form.fSCos, 0, 0,
       0,          0,          1, 0,
       form.fTx,   form.fTy,   0, 1
     };
-    // clang-format on
-    result.push_back(matrix);
-  }
-  return result;
+  // clang-format on
 }
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
@@ -170,6 +164,105 @@ void ConvertStops(const flutter::DlGradientColorSourceBase* gradient,
   for (auto i = 1; i < gradient->stop_count(); i++) {
     stops[i] = std::clamp(stops[i], stops[i - 1], stops[i]);
   }
+}
+
+impeller::SamplerDescriptor ToSamplerDescriptor(
+    const flutter::DlImageSampling options) {
+  impeller::SamplerDescriptor desc;
+  switch (options) {
+    case flutter::DlImageSampling::kNearestNeighbor:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.mip_filter = impeller::MipFilter::kBase;
+      desc.label = "Nearest Sampler";
+      break;
+    case flutter::DlImageSampling::kLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.mip_filter = impeller::MipFilter::kBase;
+      desc.label = "Linear Sampler";
+      break;
+    case flutter::DlImageSampling::kCubic:
+    case flutter::DlImageSampling::kMipmapLinear:
+      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.mip_filter = impeller::MipFilter::kLinear;
+      desc.label = "Mipmap Linear Sampler";
+      break;
+  }
+  return desc;
+}
+
+Matrix ToMatrix(const SkMatrix& m) {
+  return Matrix{
+      // clang-format off
+      m[0], m[3], 0, m[6],
+      m[1], m[4], 0, m[7],
+      0,    0,    1, 0,
+      m[2], m[5], 0, m[8],
+      // clang-format on
+  };
+}
+
+BlendMode ToBlendMode(flutter::DlBlendMode mode) {
+  switch (mode) {
+    case flutter::DlBlendMode::kClear:
+      return BlendMode::kClear;
+    case flutter::DlBlendMode::kSrc:
+      return BlendMode::kSource;
+    case flutter::DlBlendMode::kDst:
+      return BlendMode::kDestination;
+    case flutter::DlBlendMode::kSrcOver:
+      return BlendMode::kSourceOver;
+    case flutter::DlBlendMode::kDstOver:
+      return BlendMode::kDestinationOver;
+    case flutter::DlBlendMode::kSrcIn:
+      return BlendMode::kSourceIn;
+    case flutter::DlBlendMode::kDstIn:
+      return BlendMode::kDestinationIn;
+    case flutter::DlBlendMode::kSrcOut:
+      return BlendMode::kSourceOut;
+    case flutter::DlBlendMode::kDstOut:
+      return BlendMode::kDestinationOut;
+    case flutter::DlBlendMode::kSrcATop:
+      return BlendMode::kSourceATop;
+    case flutter::DlBlendMode::kDstATop:
+      return BlendMode::kDestinationATop;
+    case flutter::DlBlendMode::kXor:
+      return BlendMode::kXor;
+    case flutter::DlBlendMode::kPlus:
+      return BlendMode::kPlus;
+    case flutter::DlBlendMode::kModulate:
+      return BlendMode::kModulate;
+    case flutter::DlBlendMode::kScreen:
+      return BlendMode::kScreen;
+    case flutter::DlBlendMode::kOverlay:
+      return BlendMode::kOverlay;
+    case flutter::DlBlendMode::kDarken:
+      return BlendMode::kDarken;
+    case flutter::DlBlendMode::kLighten:
+      return BlendMode::kLighten;
+    case flutter::DlBlendMode::kColorDodge:
+      return BlendMode::kColorDodge;
+    case flutter::DlBlendMode::kColorBurn:
+      return BlendMode::kColorBurn;
+    case flutter::DlBlendMode::kHardLight:
+      return BlendMode::kHardLight;
+    case flutter::DlBlendMode::kSoftLight:
+      return BlendMode::kSoftLight;
+    case flutter::DlBlendMode::kDifference:
+      return BlendMode::kDifference;
+    case flutter::DlBlendMode::kExclusion:
+      return BlendMode::kExclusion;
+    case flutter::DlBlendMode::kMultiply:
+      return BlendMode::kMultiply;
+    case flutter::DlBlendMode::kHue:
+      return BlendMode::kHue;
+    case flutter::DlBlendMode::kSaturation:
+      return BlendMode::kSaturation;
+    case flutter::DlBlendMode::kColor:
+      return BlendMode::kColor;
+    case flutter::DlBlendMode::kLuminosity:
+      return BlendMode::kLuminosity;
+  }
+  FML_UNREACHABLE();
 }
 
 }  // namespace skia_conversions

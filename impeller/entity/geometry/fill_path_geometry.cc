@@ -16,6 +16,8 @@ FillPathGeometry::FillPathGeometry(const Path& path,
                                    std::optional<Rect> inner_rect)
     : path_(path), inner_rect_(inner_rect) {}
 
+FillPathGeometry::~FillPathGeometry() {}
+
 GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
@@ -37,7 +39,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   }
 
   VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-      path_, host_buffer, entity.GetTransform().GetMaxBasisLength());
+      path_, host_buffer, entity.GetTransform().GetMaxBasisLengthXY());
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

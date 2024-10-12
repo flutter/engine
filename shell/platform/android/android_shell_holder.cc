@@ -89,17 +89,14 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  auto mask =
-      ThreadHost::Type::kUi | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  auto mask = ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
-  if (!settings.merged_platform_ui_thread) {
-    host_config.ui_config = fml::Thread::ThreadConfig(
-        flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-            flutter::ThreadHost::Type::kUi, thread_label),
-        fml::Thread::ThreadPriority::kDisplay);
-  }
+  host_config.ui_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::kUi, thread_label),
+      fml::Thread::ThreadPriority::kDisplay);
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
           flutter::ThreadHost::Type::kRaster, thread_label),
@@ -139,11 +136,7 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
-  if (settings.merged_platform_ui_thread) {
-    ui_runner = platform_runner;
-  } else {
-    ui_runner = thread_host_->ui_thread->GetTaskRunner();
-  }
+  ui_runner = platform_runner;
   io_runner = thread_host_->io_thread->GetTaskRunner();
 
   flutter::TaskRunners task_runners(thread_label,     // label

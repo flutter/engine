@@ -17,10 +17,6 @@ ContentsFilterInput::ContentsFilterInput(std::shared_ptr<Contents> contents,
 
 ContentsFilterInput::~ContentsFilterInput() = default;
 
-FilterInput::Variant ContentsFilterInput::GetInput() const {
-  return contents_;
-}
-
 std::optional<Snapshot> ContentsFilterInput::GetSnapshot(
     const std::string& label,
     const ContentContext& renderer,
@@ -46,12 +42,6 @@ std::optional<Snapshot> ContentsFilterInput::GetSnapshot(
 std::optional<Rect> ContentsFilterInput::GetCoverage(
     const Entity& entity) const {
   return contents_->GetCoverage(entity);
-}
-
-void ContentsFilterInput::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) {
-  contents_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
 }
 
 }  // namespace impeller
