@@ -33,8 +33,7 @@ class FilterInput {
   using Vector = std::vector<FilterInput::Ref>;
   using Variant = std::variant<std::shared_ptr<FilterContents>,
                                std::shared_ptr<Contents>,
-                               std::shared_ptr<Texture>,
-                               Rect>;
+                               std::shared_ptr<Texture>>;
 
   virtual ~FilterInput();
 
@@ -52,12 +51,7 @@ class FilterInput {
       std::optional<Rect> coverage_limit = std::nullopt,
       int32_t mip_count = 1) const = 0;
 
-  std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
-
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
-
-  virtual std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
-                                                const Rect& output_limit) const;
 
   /// @brief  Get the local transform of this filter input. This transform is
   ///         relative to the `Entity` transform space.

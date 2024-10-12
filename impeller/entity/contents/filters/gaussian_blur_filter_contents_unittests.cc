@@ -7,8 +7,10 @@
 #include "gmock/gmock.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_playground.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/renderer/testing/mocks.h"
@@ -130,11 +132,15 @@ TEST(GaussianBlurFilterContentsTest, CoverageEmpty) {
 }
 
 TEST(GaussianBlurFilterContentsTest, CoverageSimple) {
+  RectGeometry geom(Rect::MakeLTRB(10, 10, 110, 110));
+  auto leaf_contents = std::make_shared<SolidColorContents>();
+  leaf_contents->SetColor(Color::Red());
+  leaf_contents->SetGeometry(&geom);
+
   GaussianBlurFilterContents contents(
       /*sigma_x=*/0.0, /*sigma_y=*/0.0, Entity::TileMode::kDecal,
       FilterContents::BlurStyle::kNormal, /*mask_geometry=*/nullptr);
-  FilterInput::Vector inputs = {
-      FilterInput::Make(Rect::MakeLTRB(10, 10, 110, 110))};
+  FilterInput::Vector inputs = {FilterInput::Make(leaf_contents)};
   Entity entity;
   std::optional<Rect> coverage =
       contents.GetFilterCoverage(inputs, entity, /*effect_transform=*/Matrix());
@@ -143,6 +149,11 @@ TEST(GaussianBlurFilterContentsTest, CoverageSimple) {
 }
 
 TEST(GaussianBlurFilterContentsTest, CoverageWithSigma) {
+  RectGeometry geom(Rect::MakeLTRB(100, 100, 200, 200));
+  auto leaf_contents = std::make_shared<SolidColorContents>();
+  leaf_contents->SetColor(Color::Red());
+  leaf_contents->SetGeometry(&geom);
+
   fml::StatusOr<Scalar> sigma_radius_1 =
       CalculateSigmaForBlurRadius(1.0, Matrix());
   ASSERT_TRUE(sigma_radius_1.ok());
@@ -150,8 +161,7 @@ TEST(GaussianBlurFilterContentsTest, CoverageWithSigma) {
       /*sigma_x=*/sigma_radius_1.value(),
       /*sigma_y=*/sigma_radius_1.value(), Entity::TileMode::kDecal,
       FilterContents::BlurStyle::kNormal, /*mask_geometry=*/nullptr);
-  FilterInput::Vector inputs = {
-      FilterInput::Make(Rect::MakeLTRB(100, 100, 200, 200))};
+  FilterInput::Vector inputs = {FilterInput::Make(leaf_contents)};
   Entity entity;
   std::optional<Rect> coverage =
       contents.GetFilterCoverage(inputs, entity, /*effect_transform=*/Matrix());

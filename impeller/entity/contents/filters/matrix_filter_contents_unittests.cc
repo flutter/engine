@@ -5,7 +5,9 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
+#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity_playground.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/geometry_asserts.h"
 
 namespace impeller {
@@ -52,9 +54,13 @@ TEST(MatrixFilterContentsTest, CoverageEmpty) {
 }
 
 TEST(MatrixFilterContentsTest, CoverageSimple) {
+  RectGeometry geom(Rect::MakeLTRB(10, 10, 110, 110));
+  auto leaf_contents = std::make_shared<SolidColorContents>();
+  leaf_contents->SetColor(Color::Red());
+  leaf_contents->SetGeometry(&geom);
+
   MatrixFilterContents contents;
-  FilterInput::Vector inputs = {
-      FilterInput::Make(Rect::MakeLTRB(10, 10, 110, 110))};
+  FilterInput::Vector inputs = {FilterInput::Make(leaf_contents)};
   Entity entity;
   std::optional<Rect> coverage =
       contents.GetFilterCoverage(inputs, entity, /*effect_transform=*/Matrix());
@@ -63,10 +69,14 @@ TEST(MatrixFilterContentsTest, CoverageSimple) {
 }
 
 TEST(MatrixFilterContentsTest, Coverage2x) {
+  RectGeometry geom(Rect::MakeXYWH(10, 10, 100, 100));
+  auto leaf_contents = std::make_shared<SolidColorContents>();
+  leaf_contents->SetColor(Color::Red());
+  leaf_contents->SetGeometry(&geom);
+
   MatrixFilterContents contents;
   contents.SetMatrix(Matrix::MakeScale({2.0, 2.0, 1.0}));
-  FilterInput::Vector inputs = {
-      FilterInput::Make(Rect::MakeXYWH(10, 10, 100, 100))};
+  FilterInput::Vector inputs = {FilterInput::Make(leaf_contents)};
   Entity entity;
   std::optional<Rect> coverage =
       contents.GetFilterCoverage(inputs, entity, /*effect_transform=*/Matrix());
@@ -75,9 +85,13 @@ TEST(MatrixFilterContentsTest, Coverage2x) {
 }
 
 TEST(MatrixFilterContentsTest, Coverage2xEffect) {
+  RectGeometry geom(Rect::MakeXYWH(10, 10, 100, 100));
+  auto leaf_contents = std::make_shared<SolidColorContents>();
+  leaf_contents->SetColor(Color::Red());
+  leaf_contents->SetGeometry(&geom);
+
   MatrixFilterContents contents;
-  FilterInput::Vector inputs = {
-      FilterInput::Make(Rect::MakeXYWH(10, 10, 100, 100))};
+  FilterInput::Vector inputs = {FilterInput::Make(leaf_contents)};
   Entity entity;
   std::optional<Rect> coverage = contents.GetFilterCoverage(
       inputs, entity, /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}));

@@ -120,39 +120,6 @@ class FilterContents : public Contents {
       int32_t mip_count = 1,
       const std::string& label = "Filter Snapshot") const override;
 
-  /// @brief  Determines the coverage of source pixels that will be needed
-  ///         to produce results for the specified |output_limit| under the
-  ///         specified |effect_transform|. This is essentially a reverse of
-  ///         the |GetCoverage| method computing a source coverage from
-  ///         an intended |output_limit| coverage.
-  ///
-  ///         Both the |output_limit| and the return value are in the
-  ///         transformed coordinate space, and so do not need to be
-  ///         transformed or inverse transformed by the |effect_transform|
-  ///         but individual parameters on the filter might be in the
-  ///         untransformed space and should be transformed by the
-  ///         |effect_transform| before applying them to the coverages.
-  ///
-  ///         The method computes a result such that if the filter is applied
-  ///         to a set of pixels filling the computed source coverage, it
-  ///         should produce an output that covers the entire specified
-  ///         |output_limit|.
-  ///
-  ///         This is useful for subpass rendering scenarios where a filter
-  ///         will be applied to the output of the subpass and we need to
-  ///         determine how large of a render target to allocate in order
-  ///         to collect all pixels that might affect the supplied output
-  ///         coverage limit. While we might end up clipping the rendering
-  ///         of the subpass to its destination, we want to avoid clipping
-  ///         out any pixels that contribute to the output limit via the
-  ///         filtering operation.
-  ///
-  /// @return The coverage bounds in the transformed space of any source pixel
-  ///         that may be needed to produce output for the indicated filter
-  ///         that covers the indicated |output_limit|.
-  std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
-                                        const Rect& output_limit) const;
-
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
