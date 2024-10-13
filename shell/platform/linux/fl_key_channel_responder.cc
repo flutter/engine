@@ -58,6 +58,8 @@ static void fl_key_channel_user_data_dispose(GObject* object) {
   FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
 
   g_weak_ref_clear(&self->responder);
+
+  G_OBJECT_CLASS(fl_key_channel_user_data_parent_class)->dispose(object);
 }
 
 // Class initialization method for FlKeyChannelUserData private class.

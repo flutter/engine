@@ -129,6 +129,8 @@ static void fl_keyboard_handler_user_data_dispose(GObject* object) {
   FlKeyboardHandlerUserData* self = FL_KEYBOARD_HANDLER_USER_DATA(object);
 
   g_weak_ref_clear(&self->handler);
+
+  G_OBJECT_CLASS(fl_keyboard_handler_user_data_parent_class)->dispose(object);
 }
 
 static void fl_keyboard_handler_user_data_class_init(
