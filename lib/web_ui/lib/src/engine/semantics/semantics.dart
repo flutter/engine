@@ -1966,7 +1966,13 @@ class SemanticsObject {
   void dispose() {
     assert(!_isDisposed);
     _isDisposed = true;
-    element.remove();
+
+    EnginePlatformDispatcher.instance.viewManager.safelyBlurElement(
+      element,
+      delayed: false,
+      removeElement: true,
+    );
+
     _parent = null;
     semanticRole?.dispose();
     semanticRole = null;
