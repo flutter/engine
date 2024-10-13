@@ -18,7 +18,8 @@ G_DECLARE_INTERFACE(FlRenderable, fl_renderable, FL, RENDERABLE, GObject);
  *
  * An interface for a class that can render views from #FlRenderer.
  *
- * This interface is typically implemented by #FlView.
+ * This interface is typically implemented by #FlView and is provided to make
+ * #FlRenderer easier to test.
  */
 
 struct _FlRenderableInterface {
@@ -32,7 +33,8 @@ struct _FlRenderableInterface {
  * fl_renderable_redraw:
  * @renderable: an #FlRenderable
  *
- * Indicate the renderable needs to redraw.
+ * Indicate the renderable needs to redraw. When ready, the renderable should
+ * call fl_renderer_draw().
  */
 void fl_renderable_redraw(FlRenderable* renderable);
 

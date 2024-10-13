@@ -331,9 +331,9 @@ void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
   g_weak_ref_init(&priv->engine, engine);
 }
 
-void fl_renderer_add_view(FlRenderer* self,
-                          FlutterViewId view_id,
-                          FlRenderable* renderable) {
+void fl_renderer_add_renderable(FlRenderer* self,
+                                FlutterViewId view_id,
+                                FlRenderable* renderable) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 
@@ -490,7 +490,7 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
 
   GWeakRef* ref = static_cast<GWeakRef*>(
       g_hash_table_lookup(priv->views, GINT_TO_POINTER(view_id)));
-  FlRenderable* renderable =
+  g_autoptr(FlRenderable) renderable =
       ref != nullptr ? FL_RENDERABLE(g_weak_ref_get(ref)) : nullptr;
   if (renderable == nullptr) {
     return TRUE;

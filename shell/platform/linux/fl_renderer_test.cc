@@ -25,8 +25,9 @@ TEST(FlRendererTest, BackgroundColor) {
   g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -58,8 +59,9 @@ TEST(FlRendererTest, RestoresGLState) {
   g_autoptr(FlFramebuffer) framebuffer =
       fl_framebuffer_new(GL_RGB, kWidth, kHeight);
 
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
@@ -120,8 +122,9 @@ TEST(FlRendererTest, BlitFramebuffer) {
   g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -162,8 +165,9 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
   g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -197,8 +201,9 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
   g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -233,8 +238,9 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
   g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -270,10 +276,11 @@ TEST(FlRendererTest, MultiView) {
 
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
-  fl_renderer_add_view(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
-                       FL_RENDERABLE(renderable));
-  fl_renderer_add_view(FL_RENDERER(renderer), 1,
-                       FL_RENDERABLE(secondary_renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer), 1,
+                             FL_RENDERABLE(secondary_renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
 
   EXPECT_EQ(fl_mock_renderable_get_redraw_count(renderable),

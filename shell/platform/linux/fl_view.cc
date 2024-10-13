@@ -650,8 +650,8 @@ static void realize_cb(FlView* self) {
 
   init_keyboard(self);
 
-  fl_renderer_add_view(FL_RENDERER(self->renderer), self->view_id,
-                       FL_RENDERABLE(self));
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   if (!fl_engine_start(self->engine, &error)) {
     g_warning("Failed to start Flutter engine: %s", error->message);
@@ -896,8 +896,8 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
 
   self->view_id = fl_engine_add_view(self->engine, 1, 1, 1.0, self->cancellable,
                                      view_added_cb, self);
-  fl_renderer_add_view(FL_RENDERER(self->renderer), self->view_id,
-                       FL_RENDERABLE(self));
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   return self;
 }

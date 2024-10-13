@@ -79,16 +79,16 @@ struct _FlRendererClass {
 void fl_renderer_set_engine(FlRenderer* renderer, FlEngine* engine);
 
 /**
- * fl_renderer_add_view:
+ * fl_renderer_add_renderable:
  * @renderer: an #FlRenderer.
  * @view_id: the ID of the view.
  * @renderable: object that is to be rendered on.
  *
  * Add a view to render on.
  */
-void fl_renderer_add_view(FlRenderer* renderer,
-                          FlutterViewId view_id,
-                          FlRenderable* renderable);
+void fl_renderer_add_renderable(FlRenderer* renderer,
+                                FlutterViewId view_id,
+                                FlRenderable* renderable);
 
 /**
  * fl_renderer_remove_view:
