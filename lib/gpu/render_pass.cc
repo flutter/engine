@@ -315,7 +315,7 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
                              int length_in_bytes,
                              int vertex_count) {
   auto& vertex_buffer = wrapper->GetVertexBuffer();
-  vertex_buffer.vertex_buffer = impeller::BufferView{
+  vertex_buffer.vertex_buffers = impeller::BufferView{
       .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };

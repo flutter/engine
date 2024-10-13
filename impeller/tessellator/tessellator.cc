@@ -36,7 +36,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
 
   if (point_buffer_->empty()) {
     return VertexBuffer{
-        .vertex_buffer = {},
+        .vertex_buffers = {},
         .index_buffer = {},
         .vertex_count = 0u,
         .index_type = IndexType::k16bit,
@@ -52,7 +52,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
       alignof(uint16_t));
 
   return VertexBuffer{
-      .vertex_buffer = std::move(vertex_buffer),
+      .vertex_buffers = std::move(vertex_buffer),
       .index_buffer = std::move(index_buffer),
       .vertex_count = index_buffer_->size(),
       .index_type = IndexType::k16bit,

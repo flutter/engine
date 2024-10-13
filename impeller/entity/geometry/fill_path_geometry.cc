@@ -30,7 +30,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
         .type = PrimitiveType::kTriangle,
         .vertex_buffer =
             VertexBuffer{
-                .vertex_buffer = {},
+                .vertex_buffers = {},
                 .vertex_count = 0,
                 .index_type = IndexType::k16bit,
             },

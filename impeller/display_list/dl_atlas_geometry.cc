@@ -97,7 +97,7 @@ VertexBuffer DlAtlasGeometry::CreateSimpleVertexBuffer(
       });
 
   return VertexBuffer{
-      .vertex_buffer = buffer_view,
+      .vertex_buffers = buffer_view,
       .index_buffer = {},
       .vertex_count = count_ * 6,
       .index_type = IndexType::kNone,
@@ -134,7 +134,7 @@ VertexBuffer DlAtlasGeometry::CreateBlendVertexBuffer(
       });
 
   return VertexBuffer{
-      .vertex_buffer = buffer_view,
+      .vertex_buffers = buffer_view,
       .index_buffer = {},
       .vertex_count = count_ * 6,
       .index_type = IndexType::kNone,

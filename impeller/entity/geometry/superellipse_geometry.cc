@@ -82,7 +82,7 @@ GeometryResult SuperellipseGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer =
           {
-              .vertex_buffer = host_buffer.Emplace(
+              .vertex_buffers = host_buffer.Emplace(
                   geometry.data(), geometry.size() * sizeof(Point),
                   alignof(Point)),
               .index_buffer = host_buffer.Emplace(

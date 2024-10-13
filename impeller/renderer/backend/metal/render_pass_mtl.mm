@@ -294,10 +294,21 @@ bool RenderPassMTL::SetVertexBuffer(VertexBuffer buffer) {
     return false;
   }
 
-  if (!Bind(pass_bindings_, ShaderStage::kVertex,
-            VertexDescriptor::kReservedVertexBufferIndex,
-            buffer.vertex_buffer)) {
-    return false;
+  auto vertex_buffers = buffer.vertex_buffers;
+  if (auto* view = std::get_if<BufferView>(&vertex_buffers)) {
+    if (!Bind(pass_bindings_, ShaderStage::kVertex,
+              VertexDescriptor::kReservedVertexBufferIndex, *view)) {
+      return false;
+    }
+  } else if (auto* views =
+                 std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
+    for (size_t i = 0; i < views->size(); i++) {
+      if (!Bind(pass_bindings_, ShaderStage::kVertex,
+                VertexDescriptor::kReservedVertexBufferIndex - i,
+                (*views)[i])) {
+        return false;
+      }
+    }
   }
 
   vertex_count_ = buffer.vertex_count;
