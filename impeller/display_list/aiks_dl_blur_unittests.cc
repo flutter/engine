@@ -88,8 +88,8 @@ sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
   {
     DlPaint line_paint;
     line_paint.setColor(DlColor::kWhite());
-    builder.DrawLine({100, 0}, {100, 60}, line_paint);
-    builder.DrawLine({0, 30}, {200, 30}, line_paint);
+    builder.DrawLine(SkPoint{100, 0}, SkPoint{100, 60}, line_paint);
+    builder.DrawLine(SkPoint{0, 30}, SkPoint{200, 30}, line_paint);
   }
 
   SkRRect rrect =
@@ -156,7 +156,7 @@ TEST_P(AiksTest, CanRenderMaskBlurHugeSigma) {
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 99999));
-  builder.DrawCircle({400, 400}, 300, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 300, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -176,7 +176,7 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
       DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -196,7 +196,7 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
       DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -211,16 +211,16 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     DisplayListBuilder builder;
     DlPaint paint;
     paint.setColor(DlColor::kCornflowerBlue());
-    builder.DrawCircle({100, 100}, 50, paint);
+    builder.DrawCircle(SkPoint{100, 100}, 50, paint);
 
     paint.setColor(DlColor::kGreenYellow());
-    builder.DrawCircle({300, 200}, 100, paint);
+    builder.DrawCircle(SkPoint{300, 200}, 100, paint);
 
     paint.setColor(DlColor::kDarkMagenta());
-    builder.DrawCircle({140, 170}, 75, paint);
+    builder.DrawCircle(SkPoint{140, 170}, 75, paint);
 
     paint.setColor(DlColor::kOrangeRed());
-    builder.DrawCircle({180, 120}, 100, paint);
+    builder.DrawCircle(SkPoint{180, 120}, 100, paint);
 
     SkRRect rrect =
         SkRRect::MakeRectXY(SkRect::MakeLTRB(a.x, a.y, b.x, b.y), 20, 20);
@@ -244,16 +244,16 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
 
   DlPaint paint;
   paint.setColor(DlColor::kCornflowerBlue());
-  builder.DrawCircle({100, 100}, 50, paint);
+  builder.DrawCircle(SkPoint{100, 100}, 50, paint);
 
   paint.setColor(DlColor::kGreenYellow());
-  builder.DrawCircle({300, 200}, 100, paint);
+  builder.DrawCircle(SkPoint{300, 200}, 100, paint);
 
   paint.setColor(DlColor::kDarkMagenta());
-  builder.DrawCircle({140, 170}, 75, paint);
+  builder.DrawCircle(SkPoint{140, 170}, 75, paint);
 
   paint.setColor(DlColor::kOrangeRed());
-  builder.DrawCircle({180, 120}, 100, paint);
+  builder.DrawCircle(SkPoint{180, 120}, 100, paint);
 
   SkRRect rrect =
       SkRRect::MakeRectXY(SkRect::MakeLTRB(75, 50, 375, 275), 20, 20);
@@ -354,7 +354,7 @@ TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
 
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({400, 400}, 300, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 300, paint);
 
   DlPaint save_paint;
   save_paint.setBlendMode(DlBlendMode::kSrc);
@@ -374,7 +374,7 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
   paint.setImageFilter(DlBlurImageFilter::Make(20, 20, DlTileMode::kDecal));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -431,7 +431,7 @@ TEST_P(AiksTest, ClearBlendWithBlur) {
   clear.setBlendMode(DlBlendMode::kClear);
   clear.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
 
-  builder.DrawCircle({300.0, 300.0}, 200.0, clear);
+  builder.DrawCircle(SkPoint{300.0, 300.0}, 200.0, clear);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -466,7 +466,7 @@ TEST_P(AiksTest, MaskBlurWithZeroSigmaIsSkipped) {
   paint.setColor(DlColor::kBlue());
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 0));
 
-  builder.DrawCircle({300, 300}, 200, paint);
+  builder.DrawCircle(SkPoint{300, 300}, 200, paint);
   builder.DrawRect(SkRect::MakeLTRB(100, 300, 500, 600), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -515,7 +515,7 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
 
   y += y_spacing;
   paint.setColor(DlColor::kBlue().withAlpha(alpha));
-  builder.DrawCircle({x + 25, y + 25}, radius, paint);
+  builder.DrawCircle(SkPoint{x + 25, y + 25}, radius, paint);
 
   y += y_spacing;
   paint.setColor(DlColor::kGreen().withAlpha(alpha));
@@ -724,7 +724,7 @@ TEST_P(AiksTest, MaskBlurTexture) {
 
     builder.DrawImage(
         DlImageImpeller::Make(CreateTextureForFixture("boston.jpg")),
-        {200, 200}, DlImageSampling::kNearestNeighbor, &paint);
+        SkPoint{200, 200}, DlImageSampling::kNearestNeighbor, &paint);
 
     DlPaint red;
     red.setColor(DlColor::kRed());
@@ -1081,7 +1081,7 @@ TEST_P(AiksTest, GaussianBlurOneDimension) {
   builder.Scale(0.5, 0.5);
 
   std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
-  builder.DrawImage(DlImageImpeller::Make(boston), {100, 100}, {});
+  builder.DrawImage(DlImageImpeller::Make(boston), SkPoint{100, 100}, {});
 
   DlPaint paint;
   paint.setBlendMode(DlBlendMode::kSrc);
@@ -1331,7 +1331,7 @@ TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
     auto blur_filter = DlBlurImageFilter::Make(0.1, 0.1, DlTileMode::kDecal);
     paint.setImageFilter(blur_filter);
 
-    builder.DrawCircle({400, 400}, 200, paint);
+    builder.DrawCircle(SkPoint{400, 400}, 200, paint);
     builder.Restore();
 
     auto image = DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
