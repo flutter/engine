@@ -14,8 +14,7 @@ namespace impeller {
 constexpr size_t kMaxVertexBuffers = 16;
 
 struct VertexBuffer {
-  std::array<BufferView, kMaxVertexBuffers> vertex_buffers;
-  size_t vertex_buffer_count = 0u;
+  BufferView vertex_buffer;
 
   //----------------------------------------------------------------------------
   /// The index buffer binding used by the vertex shader stage.
@@ -33,10 +32,8 @@ struct VertexBuffer {
   IndexType index_type = IndexType::kUnknown;
 
   constexpr explicit operator bool() const {
-    if (vertex_buffer_count == 0) {
-      return false;
-    }
-    return index_type == IndexType::kNone || static_cast<bool>(index_buffer);
+    return static_cast<bool>(vertex_buffer) &&
+           (index_type == IndexType::kNone || static_cast<bool>(index_buffer));
   }
 };
 

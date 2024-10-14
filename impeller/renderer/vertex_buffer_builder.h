@@ -24,11 +24,10 @@ template <class VertexType, size_t size>
 VertexBuffer CreateVertexBuffer(std::array<VertexType, size> input,
                                 HostBuffer& host_buffer) {
   return VertexBuffer{
-      .vertex_buffers = {host_buffer.Emplace(
-          input.data(), sizeof(VertexType) * size, alignof(VertexType))},  //
-      .vertex_buffer_count = 1,                                            //
-      .vertex_count = size,                                                //
-      .index_type = IndexType::kNone,                                      //
+      .vertex_buffer = host_buffer.Emplace(
+          input.data(), sizeof(VertexType) * size, alignof(VertexType)),  //
+      .vertex_count = size,                                               //
+      .index_type = IndexType::kNone,                                     //
   };
 }
 
@@ -95,8 +94,7 @@ class VertexBufferBuilder {
 
   VertexBuffer CreateVertexBuffer(HostBuffer& host_buffer) const {
     VertexBuffer buffer;
-    buffer.vertex_buffers = {CreateVertexBufferView(host_buffer)};
-    buffer.vertex_buffer_count = 1;
+    buffer.vertex_buffer = CreateVertexBufferView(host_buffer);
     buffer.index_buffer = CreateIndexBufferView(host_buffer);
     buffer.vertex_count = GetIndexCount();
     buffer.index_type = GetIndexType();
@@ -106,8 +104,7 @@ class VertexBufferBuilder {
   VertexBuffer CreateVertexBuffer(Allocator& device_allocator) const {
     VertexBuffer buffer;
     // This can be merged into a single allocation.
-    buffer.vertex_buffers = {CreateVertexBufferView(device_allocator)};
-    buffer.vertex_buffer_count = 1;
+    buffer.vertex_buffer = CreateVertexBufferView(device_allocator);
     buffer.index_buffer = CreateIndexBufferView(device_allocator);
     buffer.vertex_count = GetIndexCount();
     buffer.index_type = GetIndexType();

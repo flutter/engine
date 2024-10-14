@@ -122,8 +122,7 @@ void RenderPass::SetInstanceCount(size_t count) {
 }
 
 bool RenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  if (!SetVertexBuffer(buffer.vertex_buffers.data(), buffer.vertex_buffer_count,
-                       buffer.vertex_count)) {
+  if (!SetVertexBuffer(&buffer.vertex_buffer, 1u, buffer.vertex_count)) {
     return false;
   }
   if (!SetIndexBuffer(buffer.index_buffer, buffer.index_type)) {

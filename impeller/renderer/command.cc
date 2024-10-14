@@ -18,8 +18,8 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
     return false;
   }
 
-  vertex_buffers = buffer.vertex_buffers;
-  vertex_buffer_count = buffer.vertex_buffer_count;
+  vertex_buffers = {buffer.vertex_buffer};
+  vertex_buffer_count = 1u;
   vertex_count = buffer.vertex_count;
   index_buffer = buffer.index_buffer;
   index_type = buffer.index_type;

@@ -20,11 +20,10 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = {host_buffer.Emplace(
+              .vertex_buffer = host_buffer.Emplace(
                   rect.GetTransformedPoints(entity.GetTransform().Invert())
                       .data(),
-                  8 * sizeof(float), alignof(float))},
-              .vertex_buffer_count = 1,
+                  8 * sizeof(float), alignof(float)),
               .index_buffer = host_buffer.Emplace(
                   kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
               .vertex_count = 4,
