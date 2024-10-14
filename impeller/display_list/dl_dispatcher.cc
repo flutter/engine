@@ -1006,7 +1006,7 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   save();
 
   if (backdrop != nullptr && backdrop_id.has_value()) {
-    const std::unordered_map<int64_t, BackdropData>::iterator& existing =
+    std::unordered_map<int64_t, BackdropData>::iterator existing =
         backdrop_data_.find(backdrop_id.value());
     if (existing == backdrop_data_.end()) {
       backdrop_data_[backdrop_id.value()] =
@@ -1015,8 +1015,7 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
       BackdropData& data = existing->second;
       data.backdrop_count++;
       if (data.all_filters_equal) {
-        data.all_filters_equal =
-            data.last_backdrop && (*data.last_backdrop == *backdrop);
+        data.all_filters_equal = (*data.last_backdrop == *backdrop);
         data.last_backdrop = backdrop;
       }
     }
@@ -1215,6 +1214,13 @@ void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   } else {
     has_image_filter_ = true;
   }
+}
+
+std::unordered_map<int64_t, BackdropData>
+TextFrameDispatcher::TakeBackdropData() {
+  std::unordered_map<int64_t, BackdropData> temp;
+  std::swap(temp, backdrop_data_);
+  return temp;
 }
 
 std::shared_ptr<Texture> DisplayListToTexture(

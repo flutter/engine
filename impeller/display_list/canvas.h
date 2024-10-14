@@ -34,7 +34,9 @@ struct BackdropData {
   size_t backdrop_count = 0;
   bool all_filters_equal = true;
   std::shared_ptr<Texture> texture_slot;
-  std::optional<Snapshot> filtered_input_slot;
+  // A single snapshot of the backdrop filter that is used when there are
+  // multiple backdrops that share an identical filter.
+  std::optional<Snapshot> shared_filter_snapshot;
   const flutter::DlImageFilter* last_backdrop = nullptr;
 };
 

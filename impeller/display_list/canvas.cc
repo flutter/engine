@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_map>
 #include <utility>
 
 #include "display_list/effects/dl_color_source.h"
@@ -1083,7 +1084,8 @@ void Canvas::SaveLayer(const Paint& paint,
     bool will_cache_backdrop_texture = false;
     BackdropData* backdrop_data = nullptr;
     if (backdrop_id.has_value()) {
-      const auto& backdrop_data_it = backdrop_data_.find(backdrop_id.value());
+      std::unordered_map<int64_t, BackdropData>::iterator backdrop_data_it =
+          backdrop_data_.find(backdrop_id.value());
       if (backdrop_data_it != backdrop_data_.end()) {
         backdrop_data = &backdrop_data_it->second;
         will_cache_backdrop_texture =
@@ -1125,14 +1127,14 @@ void Canvas::SaveLayer(const Paint& paint,
       // If all filters on the shared backdrop layer are equal, process the
       // layer once.
       if (backdrop_data->all_filters_equal &&
-          !backdrop_data->filtered_input_slot.has_value()) {
+          !backdrop_data->shared_filter_snapshot.has_value()) {
         // TODO(jonahwilliams): compute minimum input hint.
-        backdrop_data->filtered_input_slot =
+        backdrop_data->shared_filter_snapshot =
             backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
 
       std::optional<Snapshot> maybe_snapshot =
-          backdrop_data->filtered_input_slot;
+          backdrop_data->shared_filter_snapshot;
       if (maybe_snapshot.has_value()) {
         Snapshot snapshot = maybe_snapshot.value();
         std::shared_ptr<TextureContents> contents = TextureContents::MakeRect(

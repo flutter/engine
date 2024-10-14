@@ -360,9 +360,7 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   // |flutter::DlOpReceiver|
   void setImageFilter(const flutter::DlImageFilter* filter) override;
 
-  std::unordered_map<int64_t, BackdropData> TakeBackdropData() {
-    return std::move(backdrop_data_);
-  }
+  std::unordered_map<int64_t, BackdropData> TakeBackdropData();
 
  private:
   const Rect GetCurrentLocalCullingBounds() const;
