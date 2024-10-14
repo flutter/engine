@@ -401,26 +401,23 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
         break;
     }
 
+    auto vertex_desc_gles = pipeline.GetBufferBindings();
+
     if (command.vertex_buffer.index_type == IndexType::kUnknown) {
       return false;
     }
 
-    auto vertex_desc_gles = pipeline.GetBufferBindings();
-
     //--------------------------------------------------------------------------
     /// Bind vertex buffers.
     ///
-    auto vertex_buffers = command.vertex_buffer.vertex_buffers;
-    if (auto* view = std::get_if<BufferView>(&vertex_buffers)) {
-      if (!BindVertexBuffer(gl, vertex_desc_gles, *view, 0)) {
+    /// Note: There is no need to run `RenderPass::ValidateVertexBuffers` or
+    ///       `RenderPass::ValidateIndexBuffer` here, as validation already runs
+    ///       when the vertex/index buffers are set on the command.
+    ///
+    for (size_t i = 0; i < command.vertex_buffer.vertex_buffer_count; i++) {
+      if (!BindVertexBuffer(gl, vertex_desc_gles,
+                            command.vertex_buffer.vertex_buffers[i], i)) {
         return false;
-      }
-    } else if (auto* views =
-                   std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
-      for (size_t i = 0; i < views->size(); i++) {
-        if (!BindVertexBuffer(gl, vertex_desc_gles, (*views)[i], i)) {
-          return false;
-        }
       }
     }
 

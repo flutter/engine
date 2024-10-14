@@ -14,6 +14,7 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -24,6 +25,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -368,70 +370,41 @@ void RenderPassVK::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
-static bool AppendVertexBuffer(
-    CommandBufferVK& command_buffer,
-    std::vector<vk::Buffer>& vertex_buffers,
-    std::vector<vk::DeviceSize>& vertex_buffer_offsets,
-    const BufferView& vertex_buffer_view) {
-  if (!vertex_buffer_view) {
-    return false;
-  }
-  auto vertex_buffer = vertex_buffer_view.buffer;
-
-  if (!vertex_buffer) {
-    VALIDATION_LOG << "Failed to acquire device buffer"
-                   << " for vertex buffer view";
+// |RenderPass|
+bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
+                                   size_t vertex_buffer_count,
+                                   size_t vertex_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
 
-  if (!command_buffer.Track(vertex_buffer)) {
-    return false;
+  vk::Buffer buffers[kMaxVertexBuffers];
+  vk::DeviceSize vertex_buffer_offsets[kMaxVertexBuffers];
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
+    vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
   }
 
-  auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
-  vertex_buffers.push_back(vertex_buffer_handle);
-  vertex_buffer_offsets.push_back(vertex_buffer_view.range.offset);
+  // Bind the vertex buffers.
+  command_buffer_vk_.bindVertexBuffers(0u, vertex_buffer_count, buffers,
+                                       vertex_buffer_offsets);
+
+  vertex_count_ = vertex_count;
 
   return true;
 }
 
 // |RenderPass|
-bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
-  std::vector<vk::Buffer> vertex_buffers;
-  std::vector<vk::DeviceSize> vertex_buffer_offsets;
-
-  if (auto* view = std::get_if<BufferView>(&buffer.vertex_buffers)) {
-    if (!AppendVertexBuffer(*command_buffer_, vertex_buffers,
-                            vertex_buffer_offsets, *view)) {
-      return false;
-    }
-  } else if (auto* views =
-                 std::get_if<std::vector<BufferView>>(&buffer.vertex_buffers)) {
-    const size_t binding_count = views->size();
-    vertex_buffers.reserve(binding_count);
-    vertex_buffer_offsets.reserve(binding_count);
-    for (size_t i = 0; i < views->size(); i++) {
-      if (!AppendVertexBuffer(*command_buffer_, vertex_buffers,
-                              vertex_buffer_offsets, (*views)[i])) {
-        return false;
-      }
-    }
-  }
-
-  // Bind the vertex buffers.
-  command_buffer_vk_.bindVertexBuffers(0u, vertex_buffers.size(),
-                                       vertex_buffers.data(),
-                                       vertex_buffer_offsets.data());
-
-  vertex_count_ = buffer.vertex_count;
-  if (buffer.index_type == IndexType::kUnknown) {
+bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
+                                  IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
     return false;
   }
 
-  // Bind the index buffer.
-  if (buffer.index_type != IndexType::kNone) {
+  if (index_type != IndexType::kNone) {
     has_index_buffer_ = true;
-    const BufferView& index_buffer_view = buffer.index_buffer;
+
+    const BufferView& index_buffer_view = index_buffer;
     if (!index_buffer_view) {
       return false;
     }
@@ -452,10 +425,11 @@ bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
         DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
                                        index_buffer_view.range.offset,
-                                       ToVKIndexType(buffer.index_type));
+                                       ToVKIndexType(index_type));
   } else {
     has_index_buffer_ = false;
   }
+
   return true;
 }
 
