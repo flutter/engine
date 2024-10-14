@@ -104,7 +104,8 @@ class DlCanvasDelegate : public LayerStateStack::Delegate {
                  std::optional<int64_t> backdrop_id) override {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
     DlPaint paint;
-    canvas_->SaveLayer(&bounds, attributes.fill(paint, blend_mode), backdrop,
+    std::optional<const DlRect> rect = ToDlRect(bounds);
+    canvas_->SaveLayer(rect, attributes.fill(paint, blend_mode), backdrop,
                        backdrop_id);
   }
   void restore() override { canvas_->Restore(); }
