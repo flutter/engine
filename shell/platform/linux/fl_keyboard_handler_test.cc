@@ -191,14 +191,16 @@ static void fl_mock_key_binary_messenger_init(FlMockKeyBinaryMessenger* self) {
   new (priv) FlMockKeyBinaryMessengerPrivate();
 }
 
-static void fl_mock_key_binary_messenger_finalize(GObject* object) {
+static void fl_mock_key_binary_messenger_dispose(GObject* object) {
   FL_MOCK_KEY_BINARY_MESSENGER_GET_PRIVATE(object)
       ->~FlMockKeyBinaryMessengerPrivate();
+
+  G_OBJECT_CLASS(fl_mock_key_binary_messenger_parent_class)->dispose(object);
 }
 
 static void fl_mock_key_binary_messenger_class_init(
     FlMockKeyBinaryMessengerClass* klass) {
-  G_OBJECT_CLASS(klass)->finalize = fl_mock_key_binary_messenger_finalize;
+  G_OBJECT_CLASS(klass)->dispose = fl_mock_key_binary_messenger_dispose;
 }
 
 static void fl_mock_key_binary_messenger_send_on_channel(
@@ -305,7 +307,6 @@ struct FlMockViewDelegatePrivate {
   EmbedderCallHandler embedder_handler;
   bool text_filter_result;
   RedispatchHandler redispatch_handler;
-  KeyboardLayoutNotifier layout_notifier;
   const MockLayoutData* layout_data;
 };
 
@@ -329,13 +330,10 @@ static void fl_mock_view_delegate_init(FlMockViewDelegate* self) {
   new (priv) FlMockViewDelegatePrivate();
 }
 
-static void fl_mock_view_delegate_finalize(GObject* object) {
-  FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(object)->~FlMockViewDelegatePrivate();
-}
-
 static void fl_mock_view_delegate_dispose(GObject* object) {
   FlMockViewDelegatePrivate* priv = FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(object);
 
+  FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(object)->~FlMockViewDelegatePrivate();
   g_clear_object(&priv->messenger);
 
   G_OBJECT_CLASS(fl_mock_view_delegate_parent_class)->dispose(object);
@@ -343,7 +341,6 @@ static void fl_mock_view_delegate_dispose(GObject* object) {
 
 static void fl_mock_view_delegate_class_init(FlMockViewDelegateClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_mock_view_delegate_dispose;
-  G_OBJECT_CLASS(klass)->finalize = fl_mock_view_delegate_finalize;
 }
 
 static void fl_mock_view_keyboard_send_key_event(
@@ -385,13 +382,6 @@ static void fl_mock_view_keyboard_redispatch_event(
   }
 }
 
-static void fl_mock_view_keyboard_subscribe_to_layout_change(
-    FlKeyboardViewDelegate* delegate,
-    KeyboardLayoutNotifier notifier) {
-  FlMockViewDelegatePrivate* priv = FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(delegate);
-  priv->layout_notifier = std::move(notifier);
-}
-
 static guint fl_mock_view_keyboard_lookup_key(FlKeyboardViewDelegate* delegate,
                                               const GdkKeymapKey* key) {
   FlMockViewDelegatePrivate* priv = FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(delegate);
@@ -419,8 +409,6 @@ static void fl_mock_view_keyboard_delegate_iface_init(
   iface->text_filter_key_press = fl_mock_view_keyboard_text_filter_key_press;
   iface->get_messenger = fl_mock_view_keyboard_get_messenger;
   iface->redispatch_event = fl_mock_view_keyboard_redispatch_event;
-  iface->subscribe_to_layout_change =
-      fl_mock_view_keyboard_subscribe_to_layout_change;
   iface->lookup_key = fl_mock_view_keyboard_lookup_key;
   iface->get_keyboard_state = fl_mock_view_keyboard_get_keyboard_state;
 }
@@ -460,9 +448,6 @@ static void fl_mock_view_set_layout(FlMockViewDelegate* self,
                                     const MockLayoutData* layout) {
   FlMockViewDelegatePrivate* priv = FL_MOCK_VIEW_DELEGATE_GET_PRIVATE(self);
   priv->layout_data = layout;
-  if (priv->layout_notifier != nullptr) {
-    priv->layout_notifier();
-  }
 }
 
 /***** End FlMockViewDelegate *****/
@@ -602,11 +587,14 @@ class KeyboardTester {
 
   void setLayout(const MockLayoutData& layout) {
     fl_mock_view_set_layout(view_, &layout);
+    if (handler_ != nullptr) {
+      fl_keyboard_handler_notify_layout_changed(handler_);
+    }
   }
 
  private:
   FlMockViewDelegate* view_;
-  FlKeyboardHandler* handler_;
+  FlKeyboardHandler* handler_ = nullptr;
   GPtrArray* redispatched_events_ = nullptr;
   bool during_redispatch_ = false;
 

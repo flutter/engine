@@ -76,7 +76,6 @@ struct _FlView {
   gboolean pointer_inside;
 
   /* FlKeyboardViewDelegate related properties */
-  KeyboardLayoutNotifier keyboard_layout_notifier;
   GdkKeymap* keymap;
   gulong keymap_keys_changed_cb_id;  // Signal connection ID for
                                      // keymap-keys-changed
@@ -90,6 +89,8 @@ struct _FlView {
 enum { kSignalFirstFrame, kSignalLastSignal };
 
 static guint fl_view_signals[kSignalLastSignal];
+
+static void fl_renderable_iface_init(FlRenderableInterface* iface);
 
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
@@ -107,14 +108,16 @@ G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
     GTK_TYPE_BOX,
-    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
-                          fl_view_plugin_registry_iface_init)
-        G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
-                              fl_view_keyboard_delegate_iface_init)
-            G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
-                                  fl_view_scrolling_delegate_iface_init)
-                G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init))
+    G_IMPLEMENT_INTERFACE(fl_renderable_get_type(), fl_renderable_iface_init)
+        G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                              fl_view_plugin_registry_iface_init)
+            G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
+                                  fl_view_keyboard_delegate_iface_init)
+                G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
+                                      fl_view_scrolling_delegate_iface_init)
+                    G_IMPLEMENT_INTERFACE(
+                        fl_text_input_view_delegate_get_type(),
+                        fl_view_text_input_delegate_iface_init))
 
 // Emit the first frame signal in the main thread.
 static gboolean first_frame_idle_cb(gpointer user_data) {
@@ -317,6 +320,26 @@ static void on_pre_engine_restart_cb(FlView* self) {
   init_scrolling(self);
 }
 
+// Implements FlRenderable::redraw
+static void fl_view_redraw(FlRenderable* renderable) {
+  FlView* self = FL_VIEW(renderable);
+
+  gtk_widget_queue_draw(GTK_WIDGET(self->gl_area));
+
+  if (!self->have_first_frame) {
+    self->have_first_frame = TRUE;
+    // This is not the main thread, so the signal needs to be done via an idle
+    // callback.
+    g_idle_add(first_frame_idle_cb, self);
+  }
+}
+
+// Implements FlRenderable::make_current
+static void fl_view_make_current(FlRenderable* renderable) {
+  FlView* self = FL_VIEW(renderable);
+  gtk_gl_area_make_current(self->gl_area);
+}
+
 // Implements FlPluginRegistry::get_registrar_for_plugin.
 static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
     FlPluginRegistry* registry,
@@ -326,6 +349,11 @@ static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
   return fl_plugin_registrar_new(self,
                                  fl_engine_get_binary_messenger(self->engine),
                                  fl_engine_get_texture_registrar(self->engine));
+}
+
+static void fl_renderable_iface_init(FlRenderableInterface* iface) {
+  iface->redraw = fl_view_redraw;
+  iface->make_current = fl_view_make_current;
 }
 
 static void fl_view_plugin_registry_iface_init(
@@ -363,12 +391,6 @@ static void fl_view_keyboard_delegate_iface_init(
     g_return_if_fail(event_type == GDK_KEY_PRESS ||
                      event_type == GDK_KEY_RELEASE);
     gdk_event_put(fl_key_event_get_origin(event));
-  };
-
-  iface->subscribe_to_layout_change = [](FlKeyboardViewDelegate* view_delegate,
-                                         KeyboardLayoutNotifier notifier) {
-    FlView* self = FL_VIEW(view_delegate);
-    self->keyboard_layout_notifier = std::move(notifier);
   };
 
   iface->lookup_key = [](FlKeyboardViewDelegate* view_delegate,
@@ -537,11 +559,7 @@ static gboolean leave_notify_event_cb(FlView* self,
 }
 
 static void keymap_keys_changed_cb(FlView* self) {
-  if (self->keyboard_layout_notifier == nullptr) {
-    return;
-  }
-
-  self->keyboard_layout_notifier();
+  fl_keyboard_handler_notify_layout_changed(self->keyboard_handler);
 }
 
 static void gesture_rotation_begin_cb(FlView* self) {
@@ -621,7 +639,8 @@ static void realize_cb(FlView* self) {
 
   init_keyboard(self);
 
-  fl_renderer_add_view(FL_RENDERER(self->renderer), self->view_id, self);
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   if (!fl_engine_start(self->engine, &error)) {
     g_warning("Failed to start Flutter engine: %s", error->message);
@@ -866,7 +885,8 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
 
   self->view_id = fl_engine_add_view(self->engine, 1, 1, 1.0, self->cancellable,
                                      view_added_cb, self);
-  fl_renderer_add_view(FL_RENDERER(self->renderer), self->view_id, self);
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   return self;
 }
@@ -887,19 +907,6 @@ G_MODULE_EXPORT void fl_view_set_background_color(FlView* self,
   g_return_if_fail(FL_IS_VIEW(self));
   gdk_rgba_free(self->background_color);
   self->background_color = gdk_rgba_copy(color);
-}
-
-void fl_view_redraw(FlView* self) {
-  g_return_if_fail(FL_IS_VIEW(self));
-
-  gtk_widget_queue_draw(GTK_WIDGET(self->gl_area));
-
-  if (!self->have_first_frame) {
-    self->have_first_frame = TRUE;
-    // This is not the main thread, so the signal needs to be done via an idle
-    // callback.
-    g_idle_add(first_frame_idle_cb, self);
-  }
 }
 
 GHashTable* fl_view_get_keyboard_state(FlView* self) {
