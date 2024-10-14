@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'd2833b68c8c7bd2ffd607bd6425b860377e66490',
+  'skia_revision': 'd6d3c4f624a3a920b6c932f42fb77c6e9f839d73',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -226,7 +226,6 @@ vars = {
   "upstream_sqlite": "https://github.com/sqlite/sqlite.git",
   "upstream_sse": "https://github.com/dart-lang/sse.git",
   "upstream_stack_trace": "https://github.com/dart-lang/stack_trace.git",
-  "upstream_stb": "https://github.com/nothings/stb.git",
   "upstream_stream_channel": "https://github.com/dart-lang/stream_channel.git",
   "upstream_string_scanner": "https://github.com/dart-lang/string_scanner.git",
   "upstream_SwiftShader": "https://swiftshader.googlesource.com/SwiftShader.git",
@@ -277,7 +276,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4006f2730e566c2a4c2bbbbba406f888c401e094',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'c8f93f25a19cefaaeb64d4323e2fc8c9ccd20479',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -717,9 +716,6 @@ deps = {
   'src/flutter/third_party/json':
   Var('flutter_git') + '/third_party/json.git' + '@' + '17d9eacd248f58b73f4d1be518ef649fe2295642',
 
-  'src/flutter/third_party/stb':
-  Var('flutter_git') + '/third_party/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
-
   'src/flutter/third_party/gradle': {
     'packages': [
       {
@@ -960,7 +956,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'tNuwSyjjbdU9HjOwQ8qrTDX-NBqFa8qHfkm5_mp0R_oC'
+        'version': 'T2Cq00sVabK2fCW9rsjkaWqRxX6RLvKGTNya2LeZ2MAC'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
