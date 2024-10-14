@@ -401,7 +401,7 @@ abstract class SceneBuilder {
   /// the most recent save layer and rendered back to the scene using the indicated
   /// [blendMode] prior to rasterizing the child layers.
   ///
-  /// if [backdropId] is provided and not null, then this value is treated
+  /// If [backdropId] is provided and not null, then this value is treated
   /// as a unique identifier for the backdrop. When the first backdrop filter with
   /// a given id is processed during rasterization, the state of the backdrop is
   /// recorded and cached. All subsequent backdrop filters with the same identifier
@@ -410,6 +410,10 @@ abstract class SceneBuilder {
   /// applications with multiple backdrop filters. For example, an application
   /// that uses a backdrop blur filter for each item in a list view should set
   /// all filters to have the same backdrop id.
+  ///
+  /// If overlapping backdrop filters use the same backdropId, then each filter
+  /// will apply to the backdrop before the overlapping filter components were
+  /// rendered.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///

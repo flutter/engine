@@ -133,10 +133,9 @@ class Canvas {
 
   ~Canvas() = default;
 
-  void SetBackdropKeys(
-      std::unordered_map<int64_t, BackdropData> backdrop_keys) {
-    backdrop_keys_ = std::move(backdrop_keys);
-  }
+  /// @brief Update the backdrop data used to group together backdrop filters
+  ///        within the same layer.
+  void SetBackdropData(std::unordered_map<int64_t, BackdropData> backdrop_data);
 
   /// @brief Return the culling bounds of the current render target, or nullopt
   ///        if there is no coverage.
@@ -248,7 +247,7 @@ class Canvas {
   std::optional<Rect> initial_cull_rect_;
   std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
-  std::unordered_map<int64_t, BackdropData> backdrop_keys_;
+  std::unordered_map<int64_t, BackdropData> backdrop_data_;
 
   // All geometry objects created for regular draws can be stack allocated,
   // but clip geometries must be cached for record/replay for backdrop filters
@@ -293,6 +292,8 @@ class Canvas {
   bool AttemptDrawBlurredRRect(const Rect& rect,
                                Size corner_radii,
                                const Paint& paint);
+
+  RenderPass& GetCurrentRenderPass() const;
 
   Canvas(const Canvas&) = delete;
 

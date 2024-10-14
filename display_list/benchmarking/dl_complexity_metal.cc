@@ -572,7 +572,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
   MetalHelper helper(Ceiling() - CurrentComplexityScore());
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
     auto bounds = display_list->GetBounds();
-    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr, -1);
+    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr,
+                     /*backdrop_id=*/-1);
   }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());

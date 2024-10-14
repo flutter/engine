@@ -51,7 +51,7 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
             callback(),                   //
             SkIRect::MakeWH(render_target.GetRenderTargetSize().width,
                             render_target.GetRenderTargetSize().height),  //
-            true                                                          //
+            /*reset_host_buffer=*/true                                    //
         );
       });
 }

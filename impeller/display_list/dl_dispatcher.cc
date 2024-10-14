@@ -976,6 +976,11 @@ void CanvasDlDispatcher::drawVertices(
       skia_conversions::ToBlendMode(dl_mode), paint_);
 }
 
+void CanvasDlDispatcher::SetBackdropData(
+    std::unordered_map<int64_t, BackdropData> backdrop) {
+  GetCanvas().SetBackdropData(std::move(backdrop));
+}
+
 //// Text Frame Dispatcher
 
 TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
@@ -1001,16 +1006,17 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   save();
 
   if (backdrop != nullptr && backdrop_id.has_value()) {
-    const auto& existing = backdrop_keys_.find(backdrop_id.value());
-    if (existing == backdrop_keys_.end()) {
-      backdrop_keys_[backdrop_id.value()] =
+    const std::unordered_map<int64_t, BackdropData>::iterator& existing =
+        backdrop_data_.find(backdrop_id.value());
+    if (existing == backdrop_data_.end()) {
+      backdrop_data_[backdrop_id.value()] =
           BackdropData{.backdrop_count = 1, .last_backdrop = backdrop};
     } else {
-      BackdropData& data = backdrop_keys_[backdrop_id.value()];
-
+      BackdropData& data = existing->second;
       data.backdrop_count++;
       if (data.all_filters_equal) {
-        data.all_filters_equal = (*data.last_backdrop == *backdrop);
+        data.all_filters_equal =
+            data.last_backdrop && (*data.last_backdrop == *backdrop);
         data.last_backdrop = backdrop;
       }
     }
@@ -1258,7 +1264,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
       display_list->max_root_blend_mode(),       //
       impeller::IRect::MakeSize(size)            //
   );
-  impeller_dispatcher.SetBackdropKeys(collector.TakeBackdropData());
+  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   impeller_dispatcher.FinishRecording();
 
@@ -1287,7 +1293,7 @@ bool RenderToOnscreen(ContentContext& context,
       display_list->max_root_blend_mode(),       //
       IRect::RoundOut(ip_cull_rect)              //
   );
-  impeller_dispatcher.SetBackdropKeys(collector.TakeBackdropData());
+  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
   display_list->Dispatch(impeller_dispatcher, cull_rect);
   impeller_dispatcher.FinishRecording();
   if (reset_host_buffer) {

@@ -93,6 +93,11 @@ static void ApplyFramebufferBlend(Entity& entity) {
 ///
 /// Returns the previous render pass stored as a texture, or nullptr if there
 /// was a validation failure.
+///
+/// [should_remove_texture] defaults to false. If true, the render target
+/// texture is removed from the entity pass target. This allows the texture to
+/// be cached by the canvas dispatcher for usage in the backdrop filter reuse
+/// mechanism.
 static std::shared_ptr<Texture> FlipBackdrop(
     std::vector<LazyRenderingConfig>& render_passes,
     Point global_pass_position,
@@ -145,11 +150,13 @@ static std::shared_ptr<Texture> FlipBackdrop(
   render_passes.push_back(LazyRenderingConfig(
       renderer, std::move(rendering_config.entity_pass_target),
       std::move(rendering_config.inline_pass_context)));
-  // If the current texture is being cachced for a BDF we need to ensure we
-  // don't recycle it during recording. remove it from the entity pass target.
+  // If the current texture is being cached for a BDF we need to ensure we
+  // don't recycle it during recording; remove it from the entity pass target.
   if (should_remove_texture) {
     render_passes.back().entity_pass_target->RemoveSecondary();
   }
+  RenderPass& current_render_pass =
+      *render_passes.back().inline_pass_context->GetRenderPass(0).pass;
 
   // Eagerly restore the BDF contents.
 
@@ -169,9 +176,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
   msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
   msaa_backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
-  if (!msaa_backdrop_entity.Render(
-          renderer,
-          *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+  if (!msaa_backdrop_entity.Render(renderer, current_render_pass)) {
     VALIDATION_LOG << "Failed to render MSAA backdrop entity.";
     return nullptr;
   }
@@ -180,13 +185,9 @@ static std::shared_ptr<Texture> FlipBackdrop(
   // applied.
   auto& replay_entities = clip_coverage_stack.GetReplayEntities();
   for (const auto& replay : replay_entities) {
-    SetClipScissor(
-        replay.clip_coverage,
-        *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
-        global_pass_position);
-    if (!replay.entity.Render(
-            renderer,
-            *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+    SetClipScissor(replay.clip_coverage, current_render_pass,
+                   global_pass_position);
+    if (!replay.entity.Render(renderer, current_render_pass)) {
       VALIDATION_LOG << "Failed to render entity for clip restore.";
     }
   }
@@ -1079,33 +1080,35 @@ void Canvas::SaveLayer(const Paint& paint,
     // If the backdrop ID is not the no-op id, and there is more than one usage
     // of it in the current scene, cache the backdrop texture and remove it from
     // the current entity pass flip.
-    bool will_cache_texture = false;
-    BackdropData* data = nullptr;
+    bool will_cache_backdrop_texture = false;
+    BackdropData* backdrop_data = nullptr;
     if (backdrop_id.has_value()) {
-      const auto& backdrop_data = backdrop_keys_.find(backdrop_id.value());
-      if (backdrop_data != backdrop_keys_.end()) {
-        data = &backdrop_data->second;
-        will_cache_texture = backdrop_data->second.backdrop_count > 1;
+      const auto& backdrop_data_it = backdrop_data_.find(backdrop_id.value());
+      if (backdrop_data_it != backdrop_data_.end()) {
+        backdrop_data = &backdrop_data_it->second;
+        will_cache_backdrop_texture =
+            backdrop_data_it->second.backdrop_count > 1;
       }
     }
 
-    if (!will_cache_texture || (will_cache_texture && !data->texture_slot)) {
-      input_texture = FlipBackdrop(render_passes_,           //
-                                   GetGlobalPassPosition(),  //
-                                   clip_coverage_stack_,     //
-                                   renderer_,                //
-                                   will_cache_texture        //
+    if (!will_cache_backdrop_texture ||
+        (will_cache_backdrop_texture && !backdrop_data->texture_slot)) {
+      input_texture = FlipBackdrop(render_passes_,              //
+                                   GetGlobalPassPosition(),     //
+                                   clip_coverage_stack_,        //
+                                   renderer_,                   //
+                                   will_cache_backdrop_texture  //
       );
       if (!input_texture) {
         // Validation failures are logged in FlipBackdrop.
         return;
       }
 
-      if (will_cache_texture) {
-        data->texture_slot = input_texture;
+      if (will_cache_backdrop_texture) {
+        backdrop_data->texture_slot = input_texture;
       }
     } else {
-      input_texture = data->texture_slot;
+      input_texture = backdrop_data->texture_slot;
     }
 
     backdrop_filter_contents = backdrop_filter_proc(
@@ -1117,17 +1120,19 @@ void Canvas::SaveLayer(const Paint& paint,
             ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
             : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
 
-    if (will_cache_texture) {
-      FML_DCHECK(data);
+    if (will_cache_backdrop_texture) {
+      FML_DCHECK(backdrop_data);
       // If all filters on the shared backdrop layer are equal, process the
       // layer once.
-      if (data->all_filters_equal && !data->filtered_input_slot.has_value()) {
+      if (backdrop_data->all_filters_equal &&
+          !backdrop_data->filtered_input_slot.has_value()) {
         // TODO(jonahwilliams): compute minimum input hint.
-        data->filtered_input_slot =
+        backdrop_data->filtered_input_slot =
             backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
 
-      auto maybe_snapshot = data->filtered_input_slot;
+      std::optional<Snapshot> maybe_snapshot =
+          backdrop_data->filtered_input_slot;
       if (maybe_snapshot.has_value()) {
         Snapshot snapshot = maybe_snapshot.value();
         std::shared_ptr<TextureContents> contents = TextureContents::MakeRect(
@@ -1145,9 +1150,7 @@ void Canvas::SaveLayer(const Paint& paint,
         backdrop_entity.SetClipDepth(++current_depth_);
         backdrop_entity.SetBlendMode(paint.blend_mode);
 
-        backdrop_entity.Render(
-            renderer_,
-            *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+        backdrop_entity.Render(renderer_, GetCurrentRenderPass());
         Save(0);
         return;
       }
@@ -1196,9 +1199,7 @@ void Canvas::SaveLayer(const Paint& paint,
       Matrix::MakeTranslation(Vector3(-local_position)));
   backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
 
-  backdrop_entity.Render(
-      renderer_,
-      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+  backdrop_entity.Render(renderer_, GetCurrentRenderPass());
 }
 
 bool Canvas::Restore() {
@@ -1368,9 +1369,7 @@ bool Canvas::Restore() {
       return true;
     }
 
-    entity.Render(
-        renderer_,
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+    entity.Render(renderer_, GetCurrentRenderPass());
   }
 
   return true;
@@ -1632,19 +1631,24 @@ void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
 
   if (clip_state_result.clip_did_change) {
     // We only need to update the pass scissor if the clip state has changed.
-    SetClipScissor(
-        clip_coverage_stack_.CurrentClipCoverage(),
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
-        GetGlobalPassPosition());
+    SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
+                   GetCurrentRenderPass(), GetGlobalPassPosition());
   }
 
   if (!clip_state_result.should_render) {
     return;
   }
 
-  entity.Render(
-      renderer_,
-      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+  entity.Render(renderer_, GetCurrentRenderPass());
+}
+
+RenderPass& Canvas::GetCurrentRenderPass() const {
+  return *render_passes_.back().inline_pass_context->GetRenderPass(0).pass;
+}
+
+void Canvas::SetBackdropData(
+    std::unordered_map<int64_t, BackdropData> backdrop_data) {
+  backdrop_data_ = std::move(backdrop_data);
 }
 
 bool Canvas::BlitToOnscreen() {
@@ -1710,7 +1714,7 @@ void Canvas::EndReplay() {
   FML_DCHECK(render_passes_.size() == 1u);
   render_passes_.back().inline_pass_context->GetRenderPass(0);
   render_passes_.back().inline_pass_context->EndPass();
-  backdrop_keys_.clear();
+  backdrop_data_.clear();
 
   // If requires_readback_ was true, then we rendered to an offscreen texture
   // instead of to the onscreen provided in the render target. Now we need to

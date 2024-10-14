@@ -256,9 +256,7 @@ class CanvasDlDispatcher : public DlDispatcherBase {
 
   ~CanvasDlDispatcher() = default;
 
-  void SetBackdropKeys(std::unordered_map<int64_t, BackdropData> backdrop) {
-    GetCanvas().SetBackdropKeys(std::move(backdrop));
-  }
+  void SetBackdropData(std::unordered_map<int64_t, BackdropData> backdrop);
 
   // |flutter::DlOpReceiver|
   void save() override {
@@ -363,7 +361,7 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void setImageFilter(const flutter::DlImageFilter* filter) override;
 
   std::unordered_map<int64_t, BackdropData> TakeBackdropData() {
-    return std::move(backdrop_keys_);
+    return std::move(backdrop_data_);
   }
 
  private:
@@ -372,7 +370,7 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
-  std::unordered_map<int64_t, BackdropData> backdrop_keys_;
+  std::unordered_map<int64_t, BackdropData> backdrop_data_;
   // note: cull rects are always in the global coordinate space.
   std::vector<Rect> cull_rect_state_;
   bool has_image_filter_ = false;

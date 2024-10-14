@@ -29,7 +29,7 @@ class EntityPassTarget {
   RenderTarget& GetRenderTarget();
 
   /// @brief Remove the cached secondary color texture.
-  void RemoveSecondary() { secondary_color_texture_ = nullptr; }
+  void RemoveSecondary();
 
   bool IsValid() const;
 
