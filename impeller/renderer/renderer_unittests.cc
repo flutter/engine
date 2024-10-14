@@ -198,6 +198,8 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   const std::vector<ShaderStageBufferLayout> layouts = {
       ShaderStageBufferLayout{.stride = 12u, .binding = 0},
       ShaderStageBufferLayout{.stride = 16u, .binding = 1}};
+  vertex_desc->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+  vertex_desc->RegisterDescriptorSetLayouts(FS::kDescriptorSetLayouts);
   vertex_desc->SetStageInputs(io_slots, layouts);
   desc->SetVertexDescriptor(std::move(vertex_desc));
   auto pipeline =
