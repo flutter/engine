@@ -418,7 +418,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     } else if (auto* views =
                    std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
       for (size_t i = 0; i < views->size(); i++) {
-        if (!BindVertexBuffer(gl, vertex_desc_gles, (*views)[i], 0)) {
+        if (!BindVertexBuffer(gl, vertex_desc_gles, (*views)[i], i)) {
           return false;
         }
       }
