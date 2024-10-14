@@ -72,8 +72,7 @@ bool RenderPass::AddCommand(Command&& command) {
     }
   }
 
-  if (command.vertex_buffer.vertex_count == 0u ||
-      command.instance_count == 0u) {
+  if (command.vertex_count == 0u || command.instance_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
     return true;
@@ -152,10 +151,10 @@ bool RenderPass::SetVertexBuffer(BufferView vertex_buffers[],
     return false;
   }
 
-  pending_.vertex_buffer.vertex_count = vertex_count;
-  pending_.vertex_buffer.vertex_buffer_count = vertex_buffer_count;
+  pending_.vertex_count = vertex_count;
+  pending_.vertex_buffer_count = vertex_buffer_count;
   for (size_t i = 0; i < vertex_buffer_count; i++) {
-    pending_.vertex_buffer.vertex_buffers[i] = std::move(vertex_buffers[i]);
+    pending_.vertex_buffers[i] = std::move(vertex_buffers[i]);
   }
   return true;
 }
@@ -165,8 +164,8 @@ bool RenderPass::SetIndexBuffer(BufferView index_buffer, IndexType index_type) {
     return false;
   }
 
-  pending_.vertex_buffer.index_buffer = std::move(index_buffer);
-  pending_.vertex_buffer.index_type = index_type;
+  pending_.index_buffer = std::move(index_buffer);
+  pending_.index_type = index_type;
   return true;
 }
 

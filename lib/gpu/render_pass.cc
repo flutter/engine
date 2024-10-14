@@ -176,7 +176,6 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
   impeller::Command result = command_;
 
   result.pipeline = GetOrCreatePipeline();
-  result.BindVertices(vertex_buffer_);
 
   return result;
 }
@@ -195,7 +194,7 @@ bool RenderPass::Draw() {
   if (result.scissor.has_value()) {
     render_pass_->SetScissor(result.scissor.value());
   }
-  render_pass_->SetVertexBuffer(result.vertex_buffer);
+  render_pass_->SetVertexBuffer(GetVertexBuffer());
   for (const auto& buffer : result.vertex_bindings.buffers) {
     render_pass_->BindResource(impeller::ShaderStage::kVertex,
                                impeller::DescriptorType::kUniformBuffer,
@@ -504,7 +503,6 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
 void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
-  command.vertex_buffer = {};
   command.vertex_bindings = {};
   command.fragment_bindings = {};
 }
