@@ -11,6 +11,7 @@
 
 #include "flutter/shell/platform/linux/fl_key_channel_responder.h"
 #include "flutter/shell/platform/linux/fl_key_embedder_responder.h"
+#include "flutter/shell/platform/linux/fl_keyboard_layout.h"
 #include "flutter/shell/platform/linux/fl_keyboard_pending_event.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
@@ -25,8 +26,6 @@ static constexpr char kGetKeyboardStateMethod[] = "getKeyboardState";
 
 /* Declarations of private classes */
 
-#define FL_TYPE_KEYBOARD_HANDLER_USER_DATA \
-  fl_keyboard_handler_user_data_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardHandlerUserData,
                      fl_keyboard_handler_user_data,
                      FL,
@@ -37,20 +36,6 @@ G_DECLARE_FINAL_TYPE(FlKeyboardHandlerUserData,
 
 namespace {
 
-// The maxiumum keycode in a derived layout.
-//
-// Although X supports higher keycodes, Flutter only cares about standard keys,
-// which are below this.
-constexpr size_t kLayoutSize = 128;
-// Describes the derived layout of a keyboard group.
-//
-// Maps from keycode to logical key. Value being 0 stands for empty.
-typedef std::array<uint64_t, kLayoutSize> DerivedGroupLayout;
-// Describes the derived layout of the entire keyboard.
-//
-// Maps from group ID to group layout.
-typedef std::map<guint8, DerivedGroupLayout> DerivedLayout;
-
 // Context variables for the foreach call used to dispatch events to responders.
 typedef struct {
   FlKeyEvent* event;
@@ -58,7 +43,7 @@ typedef struct {
   FlKeyboardHandlerUserData* user_data;
 } DispatchToResponderLoopContext;
 
-bool is_eascii(uint16_t character) {
+static bool is_eascii(uint16_t character) {
   return character < 256;
 }
 
@@ -89,21 +74,6 @@ void debug_format_layout_data(std::string& debug_layout_data,
 
 }  // namespace
 
-static uint64_t get_logical_key_from_layout(FlKeyEvent* event,
-                                            const DerivedLayout& layout) {
-  guint8 group = fl_key_event_get_group(event);
-  guint16 keycode = fl_key_event_get_keycode(event);
-  if (keycode >= kLayoutSize) {
-    return 0;
-  }
-
-  auto found_group_layout = layout.find(group);
-  if (found_group_layout != layout.end()) {
-    return found_group_layout->second[keycode];
-  }
-  return 0;
-}
-
 /* Define FlKeyboardHandlerUserData */
 
 /**
@@ -115,8 +85,8 @@ static uint64_t get_logical_key_from_layout(FlKeyEvent* event,
 struct _FlKeyboardHandlerUserData {
   GObject parent_instance;
 
-  // A weak reference to the owner handler.
-  FlKeyboardHandler* handler;
+  // The owner handler.
+  GWeakRef handler;
   uint64_t sequence_id;
 };
 
@@ -127,11 +97,10 @@ G_DEFINE_TYPE(FlKeyboardHandlerUserData,
 static void fl_keyboard_handler_user_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEYBOARD_HANDLER_USER_DATA(object));
   FlKeyboardHandlerUserData* self = FL_KEYBOARD_HANDLER_USER_DATA(object);
-  if (self->handler != nullptr) {
-    g_object_remove_weak_pointer(G_OBJECT(self->handler),
-                                 reinterpret_cast<gpointer*>(&(self->handler)));
-    self->handler = nullptr;
-  }
+
+  g_weak_ref_clear(&self->handler);
+
+  G_OBJECT_CLASS(fl_keyboard_handler_user_data_parent_class)->dispose(object);
 }
 
 static void fl_keyboard_handler_user_data_class_init(
@@ -149,11 +118,7 @@ static FlKeyboardHandlerUserData* fl_keyboard_handler_user_data_new(
   FlKeyboardHandlerUserData* self = FL_KEYBOARD_HANDLER_USER_DATA(
       g_object_new(fl_keyboard_handler_user_data_get_type(), nullptr));
 
-  self->handler = handler;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(handler),
-                            reinterpret_cast<gpointer*>(&(self->handler)));
+  g_weak_ref_init(&self->handler, handler);
   self->sequence_id = sequence_id;
   return self;
 }
@@ -163,7 +128,7 @@ static FlKeyboardHandlerUserData* fl_keyboard_handler_user_data_new(
 struct _FlKeyboardHandler {
   GObject parent_instance;
 
-  FlKeyboardViewDelegate* view_delegate;
+  GWeakRef view_delegate;
 
   // An array of #FlKeyResponder. Elements are added with
   // #fl_keyboard_handler_add_responder immediately after initialization and are
@@ -190,11 +155,13 @@ struct _FlKeyboardHandler {
   // It is cleared when the platform reports a layout switch. Each entry,
   // which corresponds to a group, is only initialized on the arrival of the
   // first event for that group that has a goal keycode.
-  std::unique_ptr<DerivedLayout> derived_layout;
+  FlKeyboardLayout* derived_layout;
+
   // A static map from keycodes to all layout goals.
   //
   // It is set up when the handler is initialized and is not changed ever after.
   std::unique_ptr<std::map<uint16_t, const LayoutGoal*>> keycode_to_goals;
+
   // A static map from logical keys to all mandatory layout goals.
   //
   // It is set up when the handler is initialized and is not changed ever after.
@@ -273,8 +240,18 @@ static void responder_handle_event_callback(bool handled,
   g_return_if_fail(FL_IS_KEYBOARD_HANDLER_USER_DATA(user_data_ptr));
   FlKeyboardHandlerUserData* user_data =
       FL_KEYBOARD_HANDLER_USER_DATA(user_data_ptr);
-  FlKeyboardHandler* self = user_data->handler;
-  g_return_if_fail(self->view_delegate != nullptr);
+
+  g_autoptr(FlKeyboardHandler) self =
+      FL_KEYBOARD_HANDLER(g_weak_ref_get(&user_data->handler));
+  if (self == nullptr) {
+    return;
+  }
+
+  g_autoptr(FlKeyboardViewDelegate) view_delegate =
+      FL_KEYBOARD_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
+  if (view_delegate == nullptr) {
+    return;
+  }
 
   guint result_index = -1;
   gboolean found = g_ptr_array_find_with_equal_func1(
@@ -294,11 +271,11 @@ static void responder_handle_event_callback(bool handled,
     bool should_redispatch =
         !fl_keyboard_pending_event_get_any_handled(pending) &&
         !fl_keyboard_view_delegate_text_filter_key_press(
-            self->view_delegate, fl_keyboard_pending_event_get_event(pending));
+            view_delegate, fl_keyboard_pending_event_get_event(pending));
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
       fl_keyboard_view_delegate_redispatch_event(
-          self->view_delegate,
+          view_delegate,
           FL_KEY_EVENT(fl_keyboard_pending_event_get_event(pending)));
     } else {
       g_object_unref(pending);
@@ -319,16 +296,20 @@ static uint16_t convert_key_to_char(FlKeyboardViewDelegate* view_delegate,
 // Make sure that Flutter has derived the layout for the group of the event,
 // if the event contains a goal keycode.
 static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
+  g_autoptr(FlKeyboardViewDelegate) view_delegate =
+      FL_KEYBOARD_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
+  if (view_delegate == nullptr) {
+    return;
+  }
+
   guint8 group = fl_key_event_get_group(event);
-  if (self->derived_layout->find(group) != self->derived_layout->end()) {
+  if (fl_keyboard_layout_has_group(self->derived_layout, group)) {
     return;
   }
   if (self->keycode_to_goals->find(fl_key_event_get_keycode(event)) ==
       self->keycode_to_goals->end()) {
     return;
   }
-
-  DerivedGroupLayout& layout = (*self->derived_layout)[group];
 
   // Clone all mandatory goals. Each goal is removed from this cloned map when
   // fulfilled, and the remaining ones will be assigned to a default position.
@@ -339,8 +320,8 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
   std::string debug_layout_data;
   for (uint16_t keycode = 0; keycode < 128; keycode += 1) {
     std::vector<uint16_t> this_key_clues = {
-        convert_key_to_char(self->view_delegate, keycode, group, 0),
-        convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
+        convert_key_to_char(view_delegate, keycode, group, 0),
+        convert_key_to_char(view_delegate, keycode, group, 1),  // Shift
     };
     debug_format_layout_data(debug_layout_data, keycode, this_key_clues[0],
                              this_key_clues[1]);
@@ -354,8 +335,8 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
   for (const LayoutGoal& keycode_goal : layout_goals) {
     uint16_t keycode = keycode_goal.keycode;
     std::vector<uint16_t> this_key_clues = {
-        convert_key_to_char(self->view_delegate, keycode, group, 0),
-        convert_key_to_char(self->view_delegate, keycode, group, 1),  // Shift
+        convert_key_to_char(view_delegate, keycode, group, 0),
+        convert_key_to_char(view_delegate, keycode, group, 1),  // Shift
     };
 
     // The logical key should be the first available clue from below:
@@ -369,8 +350,10 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
       auto matching_goal = remaining_mandatory_goals.find(clue);
       if (matching_goal != remaining_mandatory_goals.end()) {
         // Found a key that produces a mandatory char. Use it.
-        g_return_if_fail(layout[keycode] == 0);
-        layout[keycode] = clue;
+        g_return_if_fail(fl_keyboard_layout_get_logical_key(
+                             self->derived_layout, group, keycode) == 0);
+        fl_keyboard_layout_set_logical_key(self->derived_layout, group, keycode,
+                                           clue);
         remaining_mandatory_goals.erase(matching_goal);
         break;
       }
@@ -378,10 +361,14 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
     bool has_any_eascii =
         is_eascii(this_key_clues[0]) || is_eascii(this_key_clues[1]);
     // See if any produced char meets the requirement as a logical key.
-    if (layout[keycode] == 0 && !has_any_eascii) {
+    if (fl_keyboard_layout_get_logical_key(self->derived_layout, group,
+                                           keycode) == 0 &&
+        !has_any_eascii) {
       auto found_us_layout = self->keycode_to_goals->find(keycode);
       if (found_us_layout != self->keycode_to_goals->end()) {
-        layout[keycode] = found_us_layout->second->logical_key;
+        fl_keyboard_layout_set_logical_key(
+            self->derived_layout, group, keycode,
+            found_us_layout->second->logical_key);
       }
     }
   }
@@ -389,7 +376,8 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
   // Ensure all mandatory goals are assigned.
   for (const auto mandatory_goal_iter : remaining_mandatory_goals) {
     const LayoutGoal* goal = mandatory_goal_iter.second;
-    layout[goal->keycode] = goal->logical_key;
+    fl_keyboard_layout_set_logical_key(self->derived_layout, group,
+                                       goal->keycode, goal->logical_key);
   }
 }
 
@@ -397,8 +385,11 @@ static void guarantee_layout(FlKeyboardHandler* self, FlKeyEvent* event) {
 static FlMethodResponse* get_keyboard_state(FlKeyboardHandler* self) {
   g_autoptr(FlValue) result = fl_value_new_map();
 
+  g_autoptr(FlKeyboardViewDelegate) view_delegate =
+      FL_KEYBOARD_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
+
   GHashTable* pressing_records =
-      fl_keyboard_view_delegate_get_keyboard_state(self->view_delegate);
+      fl_keyboard_view_delegate_get_keyboard_state(view_delegate);
 
   g_hash_table_foreach(
       pressing_records,
@@ -449,16 +440,8 @@ static void dispatch_to_responder(gpointer responder_data,
 static void fl_keyboard_handler_dispose(GObject* object) {
   FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(object);
 
-  if (self->view_delegate != nullptr) {
-    fl_keyboard_view_delegate_subscribe_to_layout_change(self->view_delegate,
-                                                         nullptr);
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->view_delegate),
-        reinterpret_cast<gpointer*>(&(self->view_delegate)));
-    self->view_delegate = nullptr;
-  }
+  g_weak_ref_clear(&self->view_delegate);
 
-  self->derived_layout.reset();
   self->keycode_to_goals.reset();
   self->logical_to_mandatory_goals.reset();
 
@@ -466,6 +449,7 @@ static void fl_keyboard_handler_dispose(GObject* object) {
   g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
   g_ptr_array_free(self->pending_responds, TRUE);
   g_ptr_array_free(self->pending_redispatches, TRUE);
+  g_clear_object(&self->derived_layout);
 
   G_OBJECT_CLASS(fl_keyboard_handler_parent_class)->dispose(object);
 }
@@ -475,7 +459,7 @@ static void fl_keyboard_handler_class_init(FlKeyboardHandlerClass* klass) {
 }
 
 static void fl_keyboard_handler_init(FlKeyboardHandler* self) {
-  self->derived_layout = std::make_unique<DerivedLayout>();
+  self->derived_layout = fl_keyboard_layout_new();
 
   self->keycode_to_goals =
       std::make_unique<std::map<uint16_t, const LayoutGoal*>>();
@@ -504,10 +488,7 @@ FlKeyboardHandler* fl_keyboard_handler_new(
   FlKeyboardHandler* self = FL_KEYBOARD_HANDLER(
       g_object_new(fl_keyboard_handler_get_type(), nullptr));
 
-  self->view_delegate = view_delegate;
-  g_object_add_weak_pointer(
-      G_OBJECT(view_delegate),
-      reinterpret_cast<gpointer*>(&(self->view_delegate)));
+  g_weak_ref_init(&self->view_delegate, view_delegate);
 
   // The embedder responder must be added before the channel responder.
   g_ptr_array_add(
@@ -517,17 +498,18 @@ FlKeyboardHandler* fl_keyboard_handler_new(
              void* callback_user_data, void* send_key_event_user_data) {
             FlKeyboardHandler* self =
                 FL_KEYBOARD_HANDLER(send_key_event_user_data);
-            g_return_if_fail(self->view_delegate != nullptr);
+            g_autoptr(FlKeyboardViewDelegate) view_delegate =
+                FL_KEYBOARD_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
+            if (view_delegate == nullptr) {
+              return;
+            }
             fl_keyboard_view_delegate_send_key_event(
-                self->view_delegate, event, callback, callback_user_data);
+                view_delegate, event, callback, callback_user_data);
           },
           self)));
   g_ptr_array_add(self->responder_list,
                   FL_KEY_RESPONDER(fl_key_channel_responder_new(
                       fl_keyboard_view_delegate_get_messenger(view_delegate))));
-
-  fl_keyboard_view_delegate_subscribe_to_layout_change(
-      self->view_delegate, [self]() { self->derived_layout->clear(); });
 
   // Setup the flutter/keyboard channel.
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
@@ -542,7 +524,6 @@ gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
                                           FlKeyEvent* event) {
   g_return_val_if_fail(FL_IS_KEYBOARD_HANDLER(self), FALSE);
   g_return_val_if_fail(event != nullptr, FALSE);
-  g_return_val_if_fail(self->view_delegate != nullptr, FALSE);
 
   guarantee_layout(self, event);
 
@@ -559,8 +540,9 @@ gboolean fl_keyboard_handler_handle_event(FlKeyboardHandler* self,
       self, fl_keyboard_pending_event_get_sequence_id(pending));
   DispatchToResponderLoopContext data{
       .event = event,
-      .specified_logical_key =
-          get_logical_key_from_layout(event, *self->derived_layout),
+      .specified_logical_key = fl_keyboard_layout_get_logical_key(
+          self->derived_layout, fl_key_event_get_group(event),
+          fl_key_event_get_keycode(event)),
       .user_data = user_data,
   };
   g_ptr_array_foreach(self->responder_list, dispatch_to_responder, &data);
@@ -595,4 +577,10 @@ GHashTable* fl_keyboard_handler_get_pressed_state(FlKeyboardHandler* self) {
   FlKeyEmbedderResponder* responder =
       FL_KEY_EMBEDDER_RESPONDER(g_ptr_array_index(self->responder_list, 0));
   return fl_key_embedder_responder_get_pressed_state(responder);
+}
+
+void fl_keyboard_handler_notify_layout_changed(FlKeyboardHandler* self) {
+  g_return_if_fail(FL_IS_KEYBOARD_HANDLER(self));
+  g_clear_object(&self->derived_layout);
+  self->derived_layout = fl_keyboard_layout_new();
 }
