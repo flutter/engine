@@ -1127,8 +1127,9 @@ void Canvas::SaveLayer(const Paint& paint,
             backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
 
-      if (data->filtered_input_slot.has_value()) {
-        Snapshot snapshot = data->filtered_input_slot.value();
+      auto maybe_snapshot = data->filtered_input_slot;
+      if (maybe_snapshot.has_value()) {
+        Snapshot snapshot = maybe_snapshot.value();
         std::shared_ptr<TextureContents> contents = TextureContents::MakeRect(
             subpass_coverage.Shift(-GetGlobalPassPosition()));
         auto scaled =
