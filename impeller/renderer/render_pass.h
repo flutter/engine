@@ -125,6 +125,7 @@ class RenderPass : public ResourceBinder {
   /// @brief      Specify a set of vertex buffers to use for this command.
   ///
   /// @param[in]  vertex_buffers  The array of vertex buffer views to use.
+  ///                             The maximum number of vertex buffers is 16.
   ///
   /// @param[in]  vertex_count    The number of vertices to draw.
   ///
@@ -137,7 +138,8 @@ class RenderPass : public ResourceBinder {
   /// @brief      Specify a set of vertex buffers to use for this command.
   ///
   /// @param[in]  vertex_buffers      Pointer to an array of vertex buffers to
-  ///                                 be copied.
+  ///                                 be copied. The maximum number of vertex
+  ///                                 buffers is 16.
   ///
   /// @param[in]  vertex_buffer_count The number of vertex buffers to copy from
   ///                                 the array (max 16).

@@ -383,6 +383,7 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
   for (size_t i = 0; i < vertex_buffer_count; i++) {
     buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
     vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
+    command_buffer_->Track(vertex_buffers[i].buffer);
   }
 
   // Bind the vertex buffers.

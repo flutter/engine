@@ -30,7 +30,7 @@ struct VertexBuffer {
   /// The type of indices in the index buffer. The indices must be tightly
   /// packed in the index buffer.
   ///
-  IndexType index_type = IndexType::kNone;
+  IndexType index_type = IndexType::kUnknown;
 
   constexpr explicit operator bool() const {
     if (vertex_buffer_count == 0) {
