@@ -237,12 +237,15 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   {
     auto device_buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
         reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
-    vertex_buffer.vertex_buffers = std::vector<BufferView>{
-        {.buffer = device_buffer,
-         .range = Range(offsetof(Cube, positions), sizeof(Cube::positions))},
-        {.buffer = device_buffer,
-         .range = Range(offsetof(Cube, colors), sizeof(Cube::colors))},
+    vertex_buffer.vertex_buffers = {
+        BufferView{
+            .buffer = device_buffer,
+            .range = Range(offsetof(Cube, positions), sizeof(Cube::positions))},
+        BufferView{
+            .buffer = device_buffer,
+            .range = Range(offsetof(Cube, colors), sizeof(Cube::colors))},
     };
+    vertex_buffer.vertex_buffer_count = 2;
     vertex_buffer.index_buffer = {
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};

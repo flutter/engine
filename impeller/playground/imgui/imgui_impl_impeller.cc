@@ -252,9 +252,11 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             vertex_buffer_offset + pcmd->VtxOffset * sizeof(ImDrawVert);
 
         impeller::VertexBuffer vertex_buffer;
-        vertex_buffer.vertex_buffers = impeller::BufferView{
+        vertex_buffer.vertex_buffers = {impeller::BufferView{
             .buffer = buffer,
-            .range = impeller::Range(vb_start, draw_list_vtx_bytes - vb_start)};
+            .range =
+                impeller::Range(vb_start, draw_list_vtx_bytes - vb_start)}};
+        vertex_buffer.vertex_buffer_count = 1;
         vertex_buffer.index_buffer = {
             .buffer = buffer,
             .range = impeller::Range(

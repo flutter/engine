@@ -150,6 +150,16 @@ struct Command : public ResourceBinder {
   /// The bound per-vertex data and optional index buffer.
   VertexBuffer vertex_buffer;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Specify the vertex and index buffer to use for this command.
+  ///
+  /// @param[in]  buffer  The vertex and index buffer definition. If possible,
+  ///             this value should be moved and not copied.
+  ///
+  /// @return     returns if the binding was updated.
+  ///
+  bool BindVertices(VertexBuffer buffer);
+
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,

@@ -12,6 +12,16 @@
 
 namespace impeller {
 
+bool Command::BindVertices(VertexBuffer buffer) {
+  if (buffer.index_type == IndexType::kUnknown) {
+    VALIDATION_LOG << "Cannot bind vertex buffer with an unknown index type.";
+    return false;
+  }
+
+  vertex_buffer = std::move(buffer);
+  return true;
+}
+
 bool Command::BindResource(ShaderStage stage,
                            DescriptorType type,
                            const ShaderUniformSlot& slot,

@@ -34,7 +34,7 @@ GeometryResult Geometry::ComputePositionGeometry(
       .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
-              .vertex_buffers = renderer.GetTransientsBuffer().Emplace(
+              .vertex_buffers = {renderer.GetTransientsBuffer().Emplace(
                   count * sizeof(VT), alignof(VT),
                   [&generator](uint8_t* buffer) {
                     auto vertices = reinterpret_cast<VT*>(buffer);
@@ -45,7 +45,8 @@ GeometryResult Geometry::ComputePositionGeometry(
                     });
                     FML_DCHECK(vertices == reinterpret_cast<VT*>(buffer) +
                                                generator.GetVertexCount());
-                  }),
+                  })},
+              .vertex_buffer_count = 1,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },

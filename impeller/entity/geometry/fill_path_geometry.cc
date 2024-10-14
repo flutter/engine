@@ -31,6 +31,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
         .vertex_buffer =
             VertexBuffer{
                 .vertex_buffers = {},
+                .vertex_buffer_count = 0,
                 .vertex_count = 0,
                 .index_type = IndexType::k16bit,
             },

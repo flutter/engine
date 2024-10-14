@@ -99,14 +99,16 @@ class RenderPass : public ResourceBinder {
   virtual void SetInstanceCount(size_t count);
 
   //----------------------------------------------------------------------------
-  /// @brief      Specify the vertex and index buffer to use for this command.
+  /// @deprecated Use SetVertexBuffer(BufferView[], size_t, size_t) instead.
   ///
+  /// @brief      Specify the vertex and index buffer to use for this command.
   ///
   /// @param[in]  buffer  The vertex and index buffer definition. If possible,
   ///             this value should be moved and not copied.
   ///
   /// @return     returns if the binding was updated.
-  bool SetVertexBuffer(VertexBuffer buffer);
+  ///
+  virtual bool SetVertexBuffer(VertexBuffer buffer);
 
   //----------------------------------------------------------------------------
   /// @brief      Specify a vertex buffer to use for this command.

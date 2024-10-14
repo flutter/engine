@@ -600,7 +600,8 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = buffer_view,
+              .vertex_buffers = {buffer_view},
+              .vertex_buffer_count = 1,
               .vertex_count = position_writer.GetData().size(),
               .index_type = IndexType::kNone,
           },

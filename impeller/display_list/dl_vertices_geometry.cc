@@ -134,7 +134,8 @@ GeometryResult DlVerticesGeometry::GetPositionBuffer(
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffers = vertex_buffer,
+              .vertex_buffers = {vertex_buffer},
+              .vertex_buffer_count = 1,
               .index_buffer = index_buffer,
               .vertex_count = index_count > 0 ? index_count : vertex_count,
               .index_type =
@@ -195,7 +196,8 @@ GeometryResult DlVerticesGeometry::GetPositionUVColorBuffer(
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffers = vertex_buffer,
+              .vertex_buffers = {vertex_buffer},
+              .vertex_buffer_count = 1,
               .index_buffer = index_buffer,
               .vertex_count = index_count > 0 ? index_count : vertex_count,
               .index_type =

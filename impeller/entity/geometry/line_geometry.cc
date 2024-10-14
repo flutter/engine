@@ -112,7 +112,8 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = vertex_buffer,
+              .vertex_buffers = {vertex_buffer},
+              .vertex_buffer_count = 1,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
