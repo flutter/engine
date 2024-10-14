@@ -10,12 +10,11 @@ import 'dart:js_interop_unsafe';
 
 /// This is the same as package:js_interop's FutureToPromise (.toJS), but with
 /// a more descriptive error message.
-///
-/// TODO(srujzs/dit): Move to js_interop's .toJS.
 extension CustomFutureOfJSAnyToJSPromise<T extends JSAny?> on Future<T> {
   /// A [JSPromise] that either resolves with the result of the completed
   /// [Future] or rejects with an object that contains its error.
   JSPromise<T> get toPromise {
+    // TODO(ditman): Move to js_interop's .toJS, https://github.com/dart-lang/sdk/issues/56898
     return JSPromise<T>((JSFunction resolve, JSFunction reject) {
       then((JSAny? value) {
         resolve.callAsFunction(resolve, value);
