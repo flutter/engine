@@ -37,7 +37,7 @@ struct BackdropData {
   // A single snapshot of the backdrop filter that is used when there are
   // multiple backdrops that share an identical filter.
   std::optional<Snapshot> shared_filter_snapshot;
-  const flutter::DlImageFilter* last_backdrop = nullptr;
+  std::shared_ptr<flutter::DlImageFilter> last_backdrop;
 };
 
 struct CanvasStackEntry {

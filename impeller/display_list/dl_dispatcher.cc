@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "display_list/effects/dl_color_source.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/aiks_context.h"
@@ -1006,17 +1007,19 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   save();
 
   if (backdrop != nullptr && backdrop_id.has_value()) {
+    std::shared_ptr<flutter::DlImageFilter> shared_backdrop =
+        backdrop->shared();
     std::unordered_map<int64_t, BackdropData>::iterator existing =
         backdrop_data_.find(backdrop_id.value());
     if (existing == backdrop_data_.end()) {
       backdrop_data_[backdrop_id.value()] =
-          BackdropData{.backdrop_count = 1, .last_backdrop = backdrop};
+          BackdropData{.backdrop_count = 1, .last_backdrop = shared_backdrop};
     } else {
       BackdropData& data = existing->second;
       data.backdrop_count++;
       if (data.all_filters_equal) {
-        data.all_filters_equal = (*data.last_backdrop == *backdrop);
-        data.last_backdrop = backdrop;
+        data.all_filters_equal = (*data.last_backdrop == *shared_backdrop);
+        data.last_backdrop = shared_backdrop;
       }
     }
   }
