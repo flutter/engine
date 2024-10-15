@@ -423,8 +423,8 @@ abstract class SceneBuilder {
   BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter filter, {
     BlendMode blendMode = BlendMode.srcOver,
-    int? backdropId,
     BackdropFilterEngineLayer? oldLayer,
+    int? backdropId,
   });
 
   /// Pushes a shader mask operation onto the operation stack.
