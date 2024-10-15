@@ -235,17 +235,6 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
 
   auto device_buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
       reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
-  std::array<BufferView, 2> vertex_buffers = {
-      BufferView{
-          .buffer = device_buffer,
-          .range = Range(offsetof(Cube, positions), sizeof(Cube::positions))},
-      BufferView{.buffer = device_buffer,
-                 .range = Range(offsetof(Cube, colors), sizeof(Cube::colors))},
-  };
-
-  BufferView index_buffer = {
-      .buffer = device_buffer,
-      .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
 
   const std::unique_ptr<const Sampler>& sampler =
       context->GetSamplerLibrary()->GetSampler({});
@@ -264,6 +253,19 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
 
     pass.SetCommandLabel("Perspective Cube");
     pass.SetPipeline(pipeline);
+
+    std::array<BufferView, 2> vertex_buffers = {
+        BufferView{
+            .buffer = device_buffer,
+            .range = Range(offsetof(Cube, positions), sizeof(Cube::positions))},
+        BufferView{
+            .buffer = device_buffer,
+            .range = Range(offsetof(Cube, colors), sizeof(Cube::colors))},
+    };
+
+    BufferView index_buffer = {
+        .buffer = device_buffer,
+        .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
     pass.SetVertexBuffer(vertex_buffers.data(), vertex_buffers.size(), 36);
     pass.SetIndexBuffer(index_buffer, IndexType::k16bit);
 

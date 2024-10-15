@@ -124,6 +124,10 @@ class RenderPass : public ResourceBinder {
   //----------------------------------------------------------------------------
   /// @brief      Specify a set of vertex buffers to use for this command.
   ///
+  /// @warning    This method takes ownership of each buffer view in the vector.
+  ///             Attempting to use the given buffer views after this call is
+  ///             invalid.
+  ///
   /// @param[in]  vertex_buffers  The array of vertex buffer views to use.
   ///                             The maximum number of vertex buffers is 16.
   ///
@@ -136,6 +140,10 @@ class RenderPass : public ResourceBinder {
 
   //----------------------------------------------------------------------------
   /// @brief      Specify a set of vertex buffers to use for this command.
+  ///
+  /// @warning    This method takes ownership of each buffer view in the vector.
+  ///             Attempting to use the given buffer views after this call is
+  ///             invalid.
   ///
   /// @param[in]  vertex_buffers      Pointer to an array of vertex buffers to
   ///                                 be copied. The maximum number of vertex
