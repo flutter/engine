@@ -43,6 +43,7 @@
                     "name": "Host Tests for host_debug",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/host_debug_tests",
                         "--type",
@@ -92,6 +93,7 @@
                     "name": "Host Tests for host_profile",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/host_profile_tests",
                         "--type",
@@ -142,6 +144,7 @@
                     "name": "Dart and engine tests for host_release",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/host_release_tests",
                         "--type",
@@ -199,6 +202,7 @@
                     "name": "Impeller-golden for host_release",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/mac_release_arm64_tests",
                         "--type",
@@ -248,6 +252,7 @@
                     "name": "Host Tests for host_debug_unopt",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/host_debug_unopt",
                         "--type",
@@ -308,6 +313,7 @@
                     "name": "Tests for ios_debug_unopt_sim",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/ios_debug_unopt_sim",
                         "--type",
@@ -371,6 +377,7 @@
                     "name": "Host Tests for host_debug_unopt_arm64",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/host_debug_unopt_arm64",
                         "--type",
@@ -429,6 +436,7 @@
                     "name": "Tests for ios_debug_unopt_sim_arm64",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/ios_debug_unopt_sim_arm64",
                         "--type",
@@ -497,6 +505,7 @@
                     "name": "Tests for ios_debug_unopt_sim_arm64_extension_safe",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
                         "--variant",
                         "ci/ios_debug_unopt_sim_arm64_extension_safe",
                         "--type",
