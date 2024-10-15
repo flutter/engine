@@ -153,6 +153,11 @@ group("flutter") {
     ]
   }
 
+  # Build the standalone Impeller library.
+  if (is_mac || is_linux || is_win || is_android) {
+    public_deps += [ "//flutter/impeller/toolkit/interop:sdk" ]
+  }
+
   if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
       (is_ios || is_android)) {
     public_deps += [ "//flutter/testing/scenario_app" ]
@@ -191,7 +196,6 @@ group("unittests") {
       "//flutter/shell/platform/embedder:embedder_a11y_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
-      "//flutter/testing:testing_unittests",
       "//flutter/testing/dart",
       "//flutter/testing/smoke_test_failure",
       "//flutter/third_party/tonic/tests:tonic_unittests",
@@ -213,7 +217,6 @@ group("unittests") {
         "//flutter/impeller:impeller_dart_unittests",
         "//flutter/impeller:impeller_unittests",
         "//flutter/impeller/toolkit/interop:example",
-        "//flutter/impeller/toolkit/interop:library",
       ]
     }
 

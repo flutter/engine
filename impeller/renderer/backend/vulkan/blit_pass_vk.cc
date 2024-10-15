@@ -6,7 +6,6 @@
 
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_enums.hpp"
@@ -75,13 +74,12 @@ bool BlitPassVK::OnCopyTextureToTextureCommand(
     IRect source_region,
     IPoint destination_origin,
     std::string label) {
-  auto& encoder = *command_buffer_->GetEncoder();
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   const auto& src = TextureVK::Cast(*source);
   const auto& dst = TextureVK::Cast(*destination);
 
-  if (!encoder.Track(source) || !encoder.Track(destination)) {
+  if (!command_buffer_->Track(source) || !command_buffer_->Track(destination)) {
     return false;
   }
 
@@ -159,13 +157,12 @@ bool BlitPassVK::OnCopyTextureToBufferCommand(
     IRect source_region,
     size_t destination_offset,
     std::string label) {
-  auto& encoder = *command_buffer_->GetEncoder();
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   // cast source and destination to TextureVK
   const auto& src = TextureVK::Cast(*source);
 
-  if (!encoder.Track(source) || !encoder.Track(destination)) {
+  if (!command_buffer_->Track(source) || !command_buffer_->Track(destination)) {
     return false;
   }
 
@@ -223,8 +220,7 @@ bool BlitPassVK::OnCopyTextureToBufferCommand(
 
 bool BlitPassVK::ConvertTextureToShaderRead(
     const std::shared_ptr<Texture>& texture) {
-  auto& encoder = *command_buffer_->GetEncoder();
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   BarrierVK barrier;
   barrier.cmd_buffer = cmd_buffer;
@@ -237,7 +233,7 @@ bool BlitPassVK::ConvertTextureToShaderRead(
 
   const auto& texture_vk = TextureVK::Cast(*texture);
 
-  if (!encoder.Track(texture)) {
+  if (!command_buffer_->Track(texture)) {
     return false;
   }
 
@@ -250,16 +246,17 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
     std::shared_ptr<Texture> destination,
     IRect destination_region,
     std::string label,
+    uint32_t mip_level,
     uint32_t slice,
     bool convert_to_read) {
-  auto& encoder = *command_buffer_->GetEncoder();
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   // cast destination to TextureVK
   const auto& dst = TextureVK::Cast(*destination);
   const auto& src = DeviceBufferVK::Cast(*source.buffer);
 
-  if (!encoder.Track(source.buffer) || !encoder.Track(destination)) {
+  if (!command_buffer_->Track(source.buffer) ||
+      !command_buffer_->Track(destination)) {
     return false;
   }
 
@@ -277,8 +274,8 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
   image_copy.setBufferOffset(source.range.offset);
   image_copy.setBufferRowLength(0);
   image_copy.setBufferImageHeight(0);
-  image_copy.setImageSubresource(
-      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setImageSubresource(vk::ImageSubresourceLayers(
+      vk::ImageAspectFlagBits::eColor, mip_level, slice, 1));
   image_copy.imageOffset.x = destination_region.GetX();
   image_copy.imageOffset.y = destination_region.GetY();
   image_copy.imageOffset.z = 0u;
@@ -322,13 +319,12 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
 // |BlitPass|
 bool BlitPassVK::ResizeTexture(const std::shared_ptr<Texture>& source,
                                const std::shared_ptr<Texture>& destination) {
-  auto& encoder = *command_buffer_->GetEncoder();
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   const auto& src = TextureVK::Cast(*source);
   const auto& dst = TextureVK::Cast(*destination);
 
-  if (!encoder.Track(source) || !encoder.Track(destination)) {
+  if (!command_buffer_->Track(source) || !command_buffer_->Track(destination)) {
     return false;
   }
 
@@ -406,7 +402,6 @@ bool BlitPassVK::ResizeTexture(const std::shared_ptr<Texture>& source,
 // |BlitPass|
 bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                          std::string label) {
-  auto& encoder = *command_buffer_->GetEncoder();
   auto& src = TextureVK::Cast(*texture);
 
   const auto size = src.GetTextureDescriptor().size;
@@ -417,9 +412,9 @@ bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
   }
 
   const auto& image = src.GetImage();
-  const auto& cmd = encoder.GetCommandBuffer();
+  const auto& cmd = command_buffer_->GetCommandBuffer();
 
-  if (!encoder.Track(texture)) {
+  if (!command_buffer_->Track(texture)) {
     return false;
   }
 

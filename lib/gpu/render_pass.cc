@@ -3,10 +3,13 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/gpu/render_pass.h"
+#include <future>
+#include <memory>
 
 #include "flutter/lib/gpu/formats.h"
 #include "flutter/lib/gpu/render_pipeline.h"
 #include "flutter/lib/gpu/shader.h"
+#include "fml/make_copyable.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -14,7 +17,10 @@
 #include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
+#include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "lib/ui/ui_dart_state.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -134,8 +140,34 @@ RenderPass::GetOrCreatePipeline() {
   render_pipeline_->BindToPipelineDescriptor(*context.GetShaderLibrary(),
                                              pipeline_desc);
 
-  auto pipeline =
-      context.GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
+
+  if (context.GetBackendType() == impeller::Context::BackendType::kOpenGLES &&
+      !context.GetPipelineLibrary()->HasPipeline(pipeline_desc)) {
+    // For GLES, new pipeline creation must be done on the reactor (raster)
+    // thread. We're about the draw, so we need to synchronize with a raster
+    // task in order to get the new pipeline. Depending on how busy the raster
+    // thread is, this could hang the UI thread long enough to miss a frame.
+
+    // Note that this branch is only called if a new pipeline actually needs to
+    // be built.
+    auto dart_state = flutter::UIDartState::Current();
+    std::promise<
+        std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>>
+        pipeline_promise;
+    auto pipeline_future = pipeline_promise.get_future();
+    fml::TaskRunner::RunNowOrPostTask(
+        dart_state->GetTaskRunners().GetRasterTaskRunner(),
+        fml::MakeCopyable([promise = std::move(pipeline_promise),
+                           context = GetContext(), pipeline_desc]() mutable {
+          promise.set_value(
+              context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get());
+        }));
+    pipeline = pipeline_future.get();
+  } else {
+    pipeline = context.GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  }
+
   FML_DCHECK(pipeline) << "Couldn't resolve render pipeline";
   return pipeline;
 }
@@ -144,7 +176,6 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
   impeller::Command result = command_;
 
   result.pipeline = GetOrCreatePipeline();
-  result.BindVertices(vertex_buffer_);
 
   return result;
 }
@@ -163,7 +194,7 @@ bool RenderPass::Draw() {
   if (result.scissor.has_value()) {
     render_pass_->SetScissor(result.scissor.value());
   }
-  render_pass_->SetVertexBuffer(result.vertex_buffer);
+  render_pass_->SetVertexBuffer(GetVertexBuffer());
   for (const auto& buffer : result.vertex_bindings.buffers) {
     render_pass_->BindResource(impeller::ShaderStage::kVertex,
                                impeller::DescriptorType::kUniformBuffer,
@@ -287,6 +318,7 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
       .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
+
   // If the index type is set, then the `vertex_count` becomes the index
   // count... So don't overwrite the count if it's already been set when binding
   // the index buffer.
@@ -443,11 +475,11 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
   auto& command = wrapper->GetCommand();
 
   auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
-  const impeller::SampledImageSlot* image_slot =
+  const flutter::gpu::Shader::TextureBinding* texture_binding =
       shader->GetUniformTexture(uniform_name);
   // TODO(bdero): Return an error string stating that no uniform texture with
   //              this name exists and throw an exception.
-  if (!image_slot) {
+  if (!texture_binding) {
     return false;
   }
 
@@ -461,16 +493,15 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
   const std::unique_ptr<const impeller::Sampler>& sampler =
       wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
-
-  return command.BindResource(
-      shader->GetShaderStage(), impeller::DescriptorType::kSampledImage,
-      *image_slot, impeller::ShaderMetadata{}, texture->GetTexture(), sampler);
+  return command.BindResource(shader->GetShaderStage(),
+                              impeller::DescriptorType::kSampledImage,
+                              texture_binding->slot, texture_binding->metadata,
+                              texture->GetTexture(), sampler);
 }
 
 void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
-  command.vertex_buffer = {};
   command.vertex_bindings = {};
   command.fragment_bindings = {};
 }
@@ -565,6 +596,33 @@ void InternalFlutterGpu_RenderPass_SetCullMode(
   impeller::PipelineDescriptor& pipeline_descriptor =
       wrapper->GetPipelineDescriptor();
   pipeline_descriptor.SetCullMode(flutter::gpu::ToImpellerCullMode(cull_mode));
+}
+
+void InternalFlutterGpu_RenderPass_SetPrimitiveType(
+    flutter::gpu::RenderPass* wrapper,
+    int primitive_type) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetPrimitiveType(
+      flutter::gpu::ToImpellerPrimitiveType(primitive_type));
+}
+
+void InternalFlutterGpu_RenderPass_SetWindingOrder(
+    flutter::gpu::RenderPass* wrapper,
+    int winding_order) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetWindingOrder(
+      flutter::gpu::ToImpellerWindingOrder(winding_order));
+}
+
+void InternalFlutterGpu_RenderPass_SetPolygonMode(
+    flutter::gpu::RenderPass* wrapper,
+    int polygon_mode) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetPolygonMode(
+      flutter::gpu::ToImpellerPolygonMode(polygon_mode));
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

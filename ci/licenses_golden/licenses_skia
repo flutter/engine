@@ -1,4 +1,4 @@
-Signature: f48f5a9a2a1ca8fc3f09e7387adda99d
+Signature: bebcb653e2a01aef3585b1a5650d03d7
 
 ====================================================================================================
 LIBRARY: etc1
@@ -399,7 +399,6 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
-FILE: ../../../flutter/third_party/skia/relnotes/mipmap-sharpening.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9425,6 +9424,8 @@ ORIGIN: ../../../flutter/third_party/skia/modules/svg/include/SkSVGFeMerge.h + .
 ORIGIN: ../../../flutter/third_party/skia/modules/svg/src/SkSVGFeComponentTransfer.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/svg/src/SkSVGFeMerge.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/svg/src/SkSVGRectPriv.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/codec/SkCrabbyAvifCodec.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/codec/SkCrabbyAvifCodec.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkJpegMetadataDecoderImpl.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkJpegMetadataDecoderImpl.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkFontScanner.h + ../../../flutter/third_party/skia/LICENSE
@@ -9442,6 +9443,8 @@ FILE: ../../../flutter/third_party/skia/modules/svg/include/SkSVGFeMerge.h
 FILE: ../../../flutter/third_party/skia/modules/svg/src/SkSVGFeComponentTransfer.cpp
 FILE: ../../../flutter/third_party/skia/modules/svg/src/SkSVGFeMerge.cpp
 FILE: ../../../flutter/third_party/skia/modules/svg/src/SkSVGRectPriv.h
+FILE: ../../../flutter/third_party/skia/src/codec/SkCrabbyAvifCodec.cpp
+FILE: ../../../flutter/third_party/skia/src/codec/SkCrabbyAvifCodec.h
 FILE: ../../../flutter/third_party/skia/src/codec/SkJpegMetadataDecoderImpl.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkJpegMetadataDecoderImpl.h
 FILE: ../../../flutter/third_party/skia/src/core/SkFontScanner.h

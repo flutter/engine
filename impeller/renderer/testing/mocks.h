@@ -94,6 +94,7 @@ class MockBlitPass : public BlitPass {
                std::shared_ptr<Texture> destination,
                IRect destination_rect,
                std::string label,
+               uint32_t mip_level,
                uint32_t slice,
                bool convert_to_read),
               (override));
@@ -217,6 +218,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultGlyphAtlasFormat, (), (const, override));
+  MOCK_METHOD(ISize, GetMaximumRenderPassAttachmentSize, (), (const override));
 };
 
 class MockCommandQueue : public CommandQueue {

@@ -141,6 +141,16 @@ enum CullMode {
   backFace,
 }
 
+enum WindingOrder {
+  clockwise,
+  counterClockwise,
+}
+
+enum PolygonMode {
+  fill,
+  line
+}
+
 enum CompareFunction {
   /// Comparison test never passes.
   never,
