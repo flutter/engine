@@ -20,7 +20,7 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
 
   vertex_buffers = {buffer.vertex_buffer};
   vertex_buffer_count = 1u;
-  vertex_count = buffer.vertex_count;
+  element_count = buffer.vertex_count;
   index_buffer = buffer.index_buffer;
   index_type = buffer.index_type;
   return true;

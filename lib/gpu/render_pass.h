@@ -7,11 +7,14 @@
 
 #include <map>
 #include <memory>
+#include <optional>
+#include <unordered_set>
 #include "flutter/lib/gpu/command_buffer.h"
 #include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
@@ -35,8 +38,7 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   const std::shared_ptr<const impeller::Context>& GetContext() const;
 
-  impeller::Command& GetCommand();
-  const impeller::Command& GetCommand() const;
+  impeller::RenderPass& GetRenderPass();
 
   impeller::RenderTarget& GetRenderTarget();
   const impeller::RenderTarget& GetRenderTarget() const;
@@ -50,41 +52,44 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   impeller::StencilAttachmentDescriptor& GetStencilBackAttachmentDescriptor();
 
-  impeller::VertexBuffer& GetVertexBuffer();
-
   impeller::PipelineDescriptor& GetPipelineDescriptor();
 
   bool Begin(flutter::gpu::CommandBuffer& command_buffer);
 
   void SetPipeline(fml::RefPtr<RenderPipeline> pipeline);
 
+  void SetHasIndexBuffer(bool value);
+
+  bool HasIndexBuffer() const;
+
+  bool Draw();
+
+ private:
   /// Lookup an Impeller pipeline by building a descriptor based on the current
   /// command state.
   std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
   GetOrCreatePipeline();
 
-  impeller::Command ProvisionRasterCommand();
+  /// Set up the default render pass draw state in-between draws.
+  void SetDefaultDrawState();
 
-  bool Draw();
-
- private:
   impeller::RenderTarget render_target_;
   std::shared_ptr<impeller::RenderPass> render_pass_;
 
   // Command encoding state.
-  impeller::Command command_;
   fml::RefPtr<RenderPipeline> render_pipeline_;
   impeller::PipelineDescriptor pipeline_descriptor_;
 
-  // Pipeline descriptor layout state. We always keep track of this state, but
-  // we'll only apply it as necessary to match the RenderTarget.
+  // Helper flag to determine whether the vertex_count should override the
+  // element count. The index count takes precedent.
+  bool has_index_buffer_ = false;
+
+  // Pipeline descriptor layout state. We always keep track of this state,
+  // but we'll only apply it as necessary to match the RenderTarget.
   std::map<size_t, impeller::ColorAttachmentDescriptor> color_descriptors_;
   impeller::StencilAttachmentDescriptor stencil_front_desc_;
   impeller::StencilAttachmentDescriptor stencil_back_desc_;
   impeller::DepthAttachmentDescriptor depth_desc_;
-
-  // Command state.
-  impeller::VertexBuffer vertex_buffer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPass);
 };
