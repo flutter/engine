@@ -626,6 +626,7 @@ class SemanticsFlag {
   static const Map<int, SemanticsFlag> _kFlagById = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
+    _kHasSelectedStateIndex: hasSelectedState,
     _kIsSelectedIndex: isSelected,
     _kIsButtonIndex: isButton,
     _kIsTextFieldIndex: isTextField,
