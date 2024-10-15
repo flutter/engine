@@ -5,8 +5,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13|Mac-14",
-                "cpu=x86",
-                "mac_model=Macmini8,1"
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -28,7 +27,7 @@
 
             ],
             "name": "ci/host_debug_tests",
-            "description": "Produces debug mode x64 macOS host-side tooling and builds host-side unit tests for x64 macOS.",
+            "description": "Produces debug mode arm64 macOS host-side tooling and builds host-side unit tests for arm64 macOS.",
             "ninja": {
                 "config": "ci/host_debug_tests",
                 "targets": []
@@ -58,8 +57,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13|Mac-14",
-                "cpu=x86",
-                "mac_model=Macmini8,1"
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -78,7 +76,7 @@
                 "--xcode-symlinks"
             ],
             "name": "ci/host_profile_tests",
-            "description": "Produces profile mode x64 macOS host-side tooling and builds host-side unit tests for x64 macOS.",
+            "description": "Produces profile mode arm64 macOS host-side tooling and builds host-side unit tests for arm64 macOS.",
             "ninja": {
                 "config": "ci/host_profile_tests",
                 "targets": []
@@ -108,14 +106,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13|Mac-14",
-                "cpu=x86",
-                "mac_model=Macmini8,1"
-            ],
-            "dependencies": [
-                {
-                    "dependency": "goldctl",
-                    "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
-                }
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -135,7 +126,7 @@
                 "--xcode-symlinks"
             ],
             "name": "ci/host_release_tests",
-            "description": "Produces release mode x64 macOS host-side tooling and builds host-side unit tests for x64 macOS.",
+            "description": "Produces release mode arm64 macOS host-side tooling and builds host-side unit tests for arm64 macOS.",
             "ninja": {
                 "config": "ci/host_release_tests",
                 "targets": []
@@ -148,7 +139,7 @@
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Impeller-golden, dart and engine tests for host_release",
+                    "name": "Dart and engine tests for host_release",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
@@ -221,8 +212,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13|Mac-14",
-                "cpu=x86",
-                "mac_model=Macmini8,1"
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -242,7 +232,7 @@
                 "--xcode-symlinks"
             ],
             "name": "ci/host_debug_unopt",
-            "description": "Builds a debug mode unopt x64 macOS engine and runs host-side tests.",
+            "description": "Builds a debug mode unopt arm64 macOS engine and runs host-side tests.",
             "ninja": {
                 "config": "ci/host_debug_unopt",
                 "targets": []
