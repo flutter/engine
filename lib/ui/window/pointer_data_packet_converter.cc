@@ -87,7 +87,12 @@ void PointerDataPacketConverter::ConvertPointerData(
           synthesized_data.scale = state.scale;
           synthesized_data.rotation = state.rotation;
           synthesized_data.buttons = state.buttons;
+          synthesized_data.synthesized = 1;
 
+          // The framework expects an add event to always follow a remove event,
+          // and remove events with invalid views are ignored.
+          // To meet the framework's expectations, the view ID of the add event
+          // is used for the remove event if the old view has been destroyed.
           if (delegate_.ViewExists(state.view_id)) {
             synthesized_data.view_id = state.view_id;
 
@@ -95,7 +100,6 @@ void PointerDataPacketConverter::ConvertPointerData(
               // Synthesizes cancel event if the pointer is down.
               PointerData synthesized_cancel_event = synthesized_data;
               synthesized_cancel_event.change = PointerData::Change::kCancel;
-              synthesized_cancel_event.synthesized = 1;
               UpdatePointerIdentifier(synthesized_cancel_event, state, false);
 
               state.is_down = false;
@@ -105,7 +109,6 @@ void PointerDataPacketConverter::ConvertPointerData(
 
           PointerData synthesized_remove_event = synthesized_data;
           synthesized_remove_event.change = PointerData::Change::kRemove;
-          synthesized_remove_event.synthesized = 1;
 
           converted_pointers.push_back(synthesized_remove_event);
         }
