@@ -71,6 +71,10 @@ class Surface extends DisplayCanvas {
   bool _contextLost = false;
   bool get debugContextLost => _contextLost;
 
+  /// Forces AssertionError when attempting to create a CPU-based surface.
+  /// Only for tests.
+  bool debugThrowOnSoftwareSurfaceCreation = false;
+
   /// A cached copy of the most recently created `webglcontextlost` listener.
   ///
   /// We must cache this function because each time we access the tear-off it
@@ -499,6 +503,8 @@ class Surface extends DisplayCanvas {
     }
 
     try {
+      assert(!debugThrowOnSoftwareSurfaceCreation);
+
       SkSurface surface;
       if (useOffscreenCanvas) {
         surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
