@@ -140,7 +140,7 @@ class FontFallbackManager {
   void registerFallbackFont(String family) {
     // Insert emoji font before all other fallback fonts so we use the emoji
     // whenever it's available.
-    if (family == 'Noto Color Emoji' || family == 'Noto Emoji') {
+    if (family.startsWith('Noto Color Emoji') || family == 'Noto Emoji') {
       if (globalFontFallbacks.first == 'Roboto') {
         globalFontFallbacks.insert(1, family);
       } else {
