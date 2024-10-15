@@ -311,11 +311,10 @@ void testMain() {
       expect(surface.debugForceNewContext, isFalse);
 
       surface.debugThrowOnSoftwareSurfaceCreation = false;
-      surface.createOrUpdateSurface(const BitmapSize(12, 34));
+      final ckSurface = surface.createOrUpdateSurface(const BitmapSize(12, 34));
 
-      final DomOffscreenCanvas canvas = surface.debugOffscreenCanvas!;
-      expect(canvas.width, 12);
-      expect(canvas.height, 34);
+      expect(ckSurface.surface.width(), 12);
+      expect(ckSurface.surface.height(), 34);
     });
   });
 }
