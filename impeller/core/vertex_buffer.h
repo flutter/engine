@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_VERTEX_BUFFER_H_
 #define FLUTTER_IMPELLER_CORE_VERTEX_BUFFER_H_
 
-#include <array>
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 
