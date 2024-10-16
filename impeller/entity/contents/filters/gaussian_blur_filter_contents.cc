@@ -239,7 +239,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //     .Contains(coverage_hint.value()))
 
   std::optional<Rect> snapshot_coverage = input_snapshot.GetCoverage();
-  if (input_snapshot.transform == snapshot_entity.GetTransform() &&
+  if (input_snapshot.transform.Equals(snapshot_entity.GetTransform()) &&
       source_expanded_coverage_hint.has_value() &&
       snapshot_coverage.has_value() &&
       snapshot_coverage->Contains(source_expanded_coverage_hint.value())) {
