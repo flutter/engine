@@ -13,6 +13,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
@@ -20,6 +21,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/color.h"
@@ -152,14 +154,18 @@ static std::optional<Entity> AdvancedBlend(
     auto& host_buffer = renderer.GetTransientsBuffer();
 
     auto size = pass.GetRenderTargetSize();
-    VertexBufferBuilder<typename VS::PerVertexData> vtx_builder;
-    vtx_builder.AddVertices({
-        {Point(0, 0), dst_uvs[0], src_uvs[0]},
-        {Point(size.width, 0), dst_uvs[1], src_uvs[1]},
-        {Point(0, size.height), dst_uvs[2], src_uvs[2]},
-        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
-    });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+
+    std::array<typename VS::PerVertexData, 4> vertices = {
+        typename VS::PerVertexData{Point(0, 0), dst_uvs[0], src_uvs[0]},
+        typename VS::PerVertexData{Point(size.width, 0), dst_uvs[1],
+                                   src_uvs[1]},
+        typename VS::PerVertexData{Point(0, size.height), dst_uvs[2],
+                                   src_uvs[2]},
+        typename VS::PerVertexData{Point(size.width, size.height), dst_uvs[3],
+                                   src_uvs[3]},
+    };
+    auto vtx_buffer =
+        CreateVertexBuffer(vertices, renderer.GetTransientsBuffer());
 
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -282,23 +288,23 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     using FS = BlendScreenPipeline::FragmentShader;
 
     auto& host_buffer = renderer.GetTransientsBuffer();
-
     auto size = dst_snapshot->texture->GetSize();
-    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-    vtx_builder.AddVertices({
-        {{0, 0}, {0, 0}, {0, 0}},
-        {Point(size.width, 0), {1, 0}, {1, 0}},
-        {Point(0, size.height), {0, 1}, {0, 1}},
-        {Point(size.width, size.height), {1, 1}, {1, 1}},
-    });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+
+    std::array<VS::PerVertexData, 4> vertices = {
+        VS::PerVertexData{{0, 0}, {0, 0}, {0, 0}},
+        VS::PerVertexData{Point(size.width, 0), {1, 0}, {1, 0}},
+        VS::PerVertexData{Point(0, size.height), {0, 1}, {0, 1}},
+        VS::PerVertexData{Point(size.width, size.height), {1, 1}, {1, 1}},
+    };
+    auto vtx_buffer =
+        CreateVertexBuffer(vertices, renderer.GetTransientsBuffer());
 
 #ifdef IMPELLER_DEBUG
     pass.SetCommandLabel(SPrintF("Foreground Advanced Blend Filter (%s)",
                                  BlendModeToString(blend_mode)));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
-    auto options = OptionsFromPass(pass);
+    auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
 
     switch (blend_mode) {
@@ -365,8 +371,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
 
-    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
-                                                pass, dst_snapshot->transform);
+    frame_info.mvp = Entity::GetShaderTransform(
+        entity.GetShaderClipDepth(), pass,
+        entity.GetTransform() * dst_snapshot->transform);
 
     blend_info.dst_input_alpha =
         absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
@@ -397,6 +404,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
+  sub_entity.SetBlendMode(entity.GetBlendMode());
 
   return sub_entity;
 }
@@ -434,29 +442,31 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     auto& host_buffer = renderer.GetTransientsBuffer();
     auto size = dst_snapshot->texture->GetSize();
     auto color = foreground_color.Premultiply();
-    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-    vtx_builder.AddVertices({
-        {{0, 0}, {0, 0}, color},
-        {Point(size.width, 0), {1, 0}, color},
-        {Point(0, size.height), {0, 1}, color},
-        {Point(size.width, size.height), {1, 1}, color},
-    });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+
+    std::array<VS::PerVertexData, 4> vertices = {
+        VS::PerVertexData{{0, 0}, {0, 0}, color},
+        VS::PerVertexData{Point(size.width, 0), {1, 0}, color},
+        VS::PerVertexData{Point(0, size.height), {0, 1}, color},
+        VS::PerVertexData{Point(size.width, size.height), {1, 1}, color},
+    };
+    auto vtx_buffer =
+        CreateVertexBuffer(vertices, renderer.GetTransientsBuffer());
 
 #ifdef IMPELLER_DEBUG
     pass.SetCommandLabel(SPrintF("Foreground PorterDuff Blend Filter (%s)",
                                  BlendModeToString(blend_mode)));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
-    auto options = OptionsFromPass(pass);
+    auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
     pass.SetPipeline(renderer.GetPorterDuffBlendPipeline(options));
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
 
-    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
-                                                pass, dst_snapshot->transform);
+    frame_info.mvp = Entity::GetShaderTransform(
+        entity.GetShaderClipDepth(), pass,
+        entity.GetTransform() * dst_snapshot->transform);
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -499,6 +509,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
+  sub_entity.SetBlendMode(entity.GetBlendMode());
 
   return sub_entity;
 }
@@ -562,14 +573,14 @@ static std::optional<Entity> PipelineBlend(
       FS::BindTextureSampler(pass, input->texture, sampler);
 
       auto size = input->texture->GetSize();
-      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-      vtx_builder.AddVertices({
-          {Point(0, 0), Point(0, 0)},
-          {Point(size.width, 0), Point(1, 0)},
-          {Point(0, size.height), Point(0, 1)},
-          {Point(size.width, size.height), Point(1, 1)},
-      });
-      pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+      std::array<VS::PerVertexData, 4> vertices = {
+          VS::PerVertexData{Point(0, 0), Point(0, 0)},
+          VS::PerVertexData{Point(size.width, 0), Point(1, 0)},
+          VS::PerVertexData{Point(0, size.height), Point(0, 1)},
+          VS::PerVertexData{Point(size.width, size.height), Point(1, 1)},
+      };
+      pass.SetVertexBuffer(
+          CreateVertexBuffer(vertices, renderer.GetTransientsBuffer()));
 
       VS::FrameInfo frame_info;
       frame_info.mvp = pass.GetOrthographicTransform() *
@@ -616,8 +627,8 @@ static std::optional<Entity> PipelineBlend(
 
     if (foreground_color.has_value()) {
       auto contents = std::make_shared<SolidColorContents>();
-      contents->SetGeometry(
-          Geometry::MakeRect(Rect::MakeSize(pass.GetRenderTargetSize())));
+      RectGeometry geom(Rect::MakeSize(pass.GetRenderTargetSize()));
+      contents->SetGeometry(&geom);
       contents->SetColor(foreground_color.value());
 
       Entity foreground_entity;
@@ -711,15 +722,14 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
       FS::FragInfo frag_info;
       frag_info.alpha = 1.0;
 
-      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-      vtx_builder.AddVertices({
-          {{0, 0}, {0, 0}},
-          {Point(1, 0), {1, 0}},
-          {Point(0, 1), {0, 1}},
-          {Point(1, 1), {1, 1}},
-      });
-      auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-      pass.SetVertexBuffer(std::move(vtx_buffer));
+      std::array<VS::PerVertexData, 4> vertices = {
+          VS::PerVertexData{{0, 0}, {0, 0}},
+          VS::PerVertexData{Point(1, 0), {1, 0}},
+          VS::PerVertexData{Point(0, 1), {0, 1}},
+          VS::PerVertexData{Point(1, 1), {1, 1}},
+      };
+      pass.SetVertexBuffer(
+          CreateVertexBuffer(vertices, renderer.GetTransientsBuffer()));
 
       VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
       FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
@@ -753,20 +763,20 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
         src_texture = src_snapshot->texture;
       }
 
-      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-      vtx_builder.AddVertices({
-          {Point(0, 0), Point(0, 0)},
-          {Point(1, 0), Point(1, 0)},
-          {Point(0, 1), Point(0, 1)},
-          {Point(1, 1), Point(1, 1)},
-      });
+      std::array<VS::PerVertexData, 4> vertices = {
+          VS::PerVertexData{Point(0, 0), Point(0, 0)},
+          VS::PerVertexData{Point(1, 0), Point(1, 0)},
+          VS::PerVertexData{Point(0, 1), Point(0, 1)},
+          VS::PerVertexData{Point(1, 1), Point(1, 1)},
+      };
 
       auto options = OptionsFromPass(pass);
       options.blend_mode = BlendMode::kSource;
       options.primitive_type = PrimitiveType::kTriangleStrip;
 
       pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
-      pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+      pass.SetVertexBuffer(
+          CreateVertexBuffer(vertices, renderer.GetTransientsBuffer()));
 
       switch (blend_mode) {
         case BlendMode::kScreen:

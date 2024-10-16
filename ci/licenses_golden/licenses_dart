@@ -1,4 +1,4 @@
-Signature: 2b488f1b7fc93b69b4f89d69211da628
+Signature: 125335ea80d045b9f6f1a902f51abbc7
 
 ====================================================================================================
 LIBRARY: dart
@@ -3695,14 +3695,13 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.cc + ../../..
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_http/http_testing.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/load_library_priority.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/record_patch.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/boxed_bool.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart + ../../../flutter/third_party/dart/LICENSE
@@ -3767,14 +3766,13 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_x64.h
 FILE: ../../../flutter/third_party/dart/sdk/lib/_http/http_testing.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_names.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/load_library_priority.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/js_util_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/embedded_names.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/ffi_native_finalizer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/finalizer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/hash_factories.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/record_patch.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/boxed_bool.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
@@ -4065,6 +4063,7 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/bin/icu.h + ../../../flutter/t
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/native_assets_api_impl.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/bin/thread.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/uri.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/uri.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h + ../../../flutter/third_party/dart/LICENSE
@@ -4100,6 +4099,7 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_t
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/js_helper_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/js_helper_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/concurrent/concurrent.dart + ../../../flutter/third_party/dart/LICENSE
@@ -4109,6 +4109,7 @@ FILE: ../../../flutter/third_party/dart/runtime/bin/icu.h
 FILE: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h
 FILE: ../../../flutter/third_party/dart/runtime/bin/native_assets_api_impl.cc
+FILE: ../../../flutter/third_party/dart/runtime/bin/thread.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/uri.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/uri.h
 FILE: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h
@@ -4144,6 +4145,7 @@ FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_tim
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/js_helper_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/js_helper_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/concurrent/concurrent.dart
@@ -4785,7 +4787,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/1a6246225b75aae44a5cba2b98ee6d55ecfc89b6
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/115a3c609bf22d78d532ea9a9ecbcfb11ca9764f
 /third_party/fallback_root_certificates/
 
 ====================================================================================================

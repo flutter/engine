@@ -7,6 +7,7 @@
 
 #include "fml/logging.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -31,7 +32,7 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+void ClipContents::SetGeometry(const Geometry* geometry) {
   geometry_ = geometry;
 }
 
@@ -73,15 +74,6 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
       };
   }
   FML_UNREACHABLE();
-}
-
-bool ClipContents::ShouldRender(const Entity& entity,
-                                const std::optional<Rect> clip_coverage) const {
-  return true;
-}
-
-bool ClipContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
 }
 
 void ClipContents::SetInheritedOpacity(Scalar opacity) {}
@@ -160,11 +152,8 @@ bool ClipContents::Render(const ContentContext& renderer,
       break;
   }
   auto points = cover_area.GetPoints();
-  auto vertices =
-      VertexBufferBuilder<VS::PerVertexData>{}
-          .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
-          .CreateVertexBuffer(renderer.GetTransientsBuffer());
-  pass.SetVertexBuffer(std::move(vertices));
+  pass.SetVertexBuffer(
+      CreateVertexBuffer(points, renderer.GetTransientsBuffer()));
 
   pass.SetPipeline(renderer.GetClipPipeline(options));
 
@@ -206,16 +195,6 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
   return {.type = ClipCoverage::Type::kRestore, .coverage = std::nullopt};
 }
 
-bool ClipRestoreContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect> clip_coverage) const {
-  return true;
-}
-
-bool ClipRestoreContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
-
 void ClipRestoreContents::SetInheritedOpacity(Scalar opacity) {}
 
 bool ClipRestoreContents::Render(const ContentContext& renderer,
@@ -237,15 +216,15 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   auto ltrb =
       restore_coverage_.value_or(Rect::MakeSize(pass.GetRenderTargetSize()))
           .GetLTRB();
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  vtx_builder.AddVertices({
-      {Point(ltrb[0], ltrb[1])},
-      {Point(ltrb[2], ltrb[1])},
-      {Point(ltrb[0], ltrb[3])},
-      {Point(ltrb[2], ltrb[3])},
-  });
+
+  std::array<VS::PerVertexData, 4> vertices = {
+      VS::PerVertexData{Point(ltrb[0], ltrb[1])},
+      VS::PerVertexData{Point(ltrb[2], ltrb[1])},
+      VS::PerVertexData{Point(ltrb[0], ltrb[3])},
+      VS::PerVertexData{Point(ltrb[2], ltrb[3])},
+  };
   pass.SetVertexBuffer(
-      vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
+      CreateVertexBuffer(vertices, renderer.GetTransientsBuffer()));
 
   VS::FrameInfo info;
   info.depth = GetShaderClipDepth(entity);

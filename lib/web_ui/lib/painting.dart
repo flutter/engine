@@ -17,18 +17,14 @@ void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   }
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha(engine.clampInt((a.alpha * factor).round(), 0, 255));
+Color _scaleAlpha(Color x, double factor) {
+  return x.withValues(alpha: (x.a * factor).clamp(0, 1));
 }
 
 class Color {
   const Color(int value)
-      : _value = value & 0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromARGBC(
+            value >> 24, value >> 16, value >> 8, value, ColorSpace.sRGB);
 
   const Color.from(
       {required double alpha,
@@ -36,77 +32,49 @@ class Color {
       required double green,
       required double blue,
       this.colorSpace = ColorSpace.sRGB})
-      : _value = 0,
-        _a = alpha,
-        _r = red,
-        _g = green,
-        _b = blue;
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
 
   const Color.fromARGB(int a, int r, int g, int b)
-      : _value = (((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromARGBC(a, r, g, b, ColorSpace.sRGB);
 
   const Color._fromARGBC(
-      int alpha, int red, int green, int blue, this.colorSpace)
-      : _value = (((alpha & 0xff) << 24) |
-                ((red & 0xff) << 16) |
-                ((green & 0xff) << 8) |
-                ((blue & 0xff) << 0)) &
-            0xFFFFFFFF,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      int alpha, int red, int green, int blue, ColorSpace colorSpace)
+      : this._fromRGBOC(
+            red, green, blue, (alpha & 0xff) / 255, colorSpace);
 
   const Color.fromRGBO(int r, int g, int b, double opacity)
-      : _value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
 
-  double get a => _a ?? (alpha / 255);
-  final double? _a;
+  const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
 
-  double get r => _r ?? (red / 255);
-  final double? _r;
+  final double a;
 
-  double get g => _g ?? (green / 255);
-  final double? _g;
+  final double r;
 
-  double get b => _b ?? (blue / 255);
-  final double? _b;
+  final double g;
+
+  final double b;
 
   final ColorSpace colorSpace;
 
   static int _floatToInt8(double x) {
-    return ((x * 255.0).round()) & 0xff;
+    return (x * 255.0).round() & 0xff;
   }
 
   int get value {
-    if (_a != null && _r != null && _g != null && _b != null) {
-      return _floatToInt8(_a) << 24 |
-          _floatToInt8(_r) << 16 |
-          _floatToInt8(_g) << 8 |
-          _floatToInt8(_b) << 0;
-    } else {
-      return _value;
-    }
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
   }
-  final int _value;
+
 
   int get alpha => (0xff000000 & value) >> 24;
 
@@ -173,32 +141,32 @@ class Color {
 
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
-  static Color? lerp(Color? a, Color? b, double t) {
-    assert(a?.colorSpace != ColorSpace.extendedSRGB);
-    assert(b?.colorSpace != ColorSpace.extendedSRGB);
-    if (b == null) {
-      if (a == null) {
+  static Color? lerp(Color? x, Color? y, double t) {
+    assert(x?.colorSpace != ColorSpace.extendedSRGB);
+    assert(y?.colorSpace != ColorSpace.extendedSRGB);
+    if (y == null) {
+      if (x == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleAlpha(x, 1.0 - t);
       }
     } else {
-      if (a == null) {
-        return _scaleAlpha(b, t);
+      if (x == null) {
+        return _scaleAlpha(y, t);
       } else {
-        assert(a.colorSpace == b.colorSpace);
-        return Color._fromARGBC(
-          engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
-          a.colorSpace,
+        assert(x.colorSpace == y.colorSpace);
+        return Color.from(
+          alpha: _lerpDouble(x.a, y.a, t).clamp(0, 1),
+          red: _lerpDouble(x.r, y.r, t).clamp(0, 1),
+          green: _lerpDouble(x.g, y.g, t).clamp(0, 1),
+          blue: _lerpDouble(x.b, y.b, t).clamp(0, 1),
+          colorSpace: x.colorSpace,
         );
       }
     }
@@ -207,30 +175,30 @@ class Color {
   static Color alphaBlend(Color foreground, Color background) {
     assert(foreground.colorSpace == background.colorSpace);
     assert(foreground.colorSpace != ColorSpace.extendedSRGB);
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) {
+    final double alpha = foreground.a;
+    if (alpha == 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
-    if (backAlpha == 0xff) {
-      return Color._fromARGBC(
-        0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
-        foreground.colorSpace,
+    final double invAlpha = 1 - alpha;
+    double backAlpha = background.a;
+    if (backAlpha == 1) { // Opaque background case
+      return Color.from(
+        alpha: 1,
+        red: alpha * foreground.r + invAlpha * background.r,
+        green: alpha * foreground.g + invAlpha * background.g,
+        blue: alpha * foreground.b + invAlpha * background.b,
+        colorSpace: foreground.colorSpace,
       );
-    } else {
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color._fromARGBC(
-        outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
-        foreground.colorSpace,
+    } else { // General case
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0);
+      return Color.from(
+        alpha: outAlpha,
+        red: (foreground.r * alpha + background.r * backAlpha) / outAlpha,
+        green: (foreground.g * alpha + background.g * backAlpha) / outAlpha,
+        blue: (foreground.b * alpha + background.b * backAlpha) / outAlpha,
+        colorSpace: foreground.colorSpace,
       );
     }
   }
@@ -248,15 +216,19 @@ class Color {
       return false;
     }
     return other is Color &&
-        other.value == value &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
         other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => Object.hash(value, colorSpace);
+  int get hashCode => Object.hash(a, r, g, b, colorSpace);
 
   @override
-  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
+  String toString() =>
+      'Color(alpha: ${a.toStringAsFixed(4)}, red: ${r.toStringAsFixed(4)}, green: ${g.toStringAsFixed(4)}, blue: ${b.toStringAsFixed(4)}, colorSpace: $colorSpace)';
 }
 
 enum StrokeCap {

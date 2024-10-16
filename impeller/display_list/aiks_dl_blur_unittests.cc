@@ -13,7 +13,7 @@
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "gmock/gmock.h"
 #include "impeller/display_list/dl_dispatcher.h"
@@ -33,6 +33,122 @@ namespace impeller {
 namespace testing {
 
 using namespace flutter;
+
+// The shapes of these ovals should appear equal. They are demonstrating the
+// difference between the fast pass and not.
+TEST_P(AiksTest, SolidColorOvalsMaskBlurTinySigma) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  std::vector<float> sigmas = {0.0, 0.01, 1.0};
+  std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
+                                 DlColor::kRed()};
+  for (uint32_t i = 0; i < sigmas.size(); ++i) {
+    DlPaint paint;
+    paint.setColor(colors[i]);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
+
+    builder.Save();
+    builder.Translate(100 + (i * 100), 100);
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 60.0f, 160.0f), 50, 100);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
+                                                         Scalar sigma,
+                                                         DlBlurStyle style) {
+  DisplayListBuilder builder;
+  builder.Scale(content_Scale.x, content_Scale.y);
+
+  DlPaint background_paint;
+  background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
+  builder.DrawPaint(background_paint);
+
+  std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  DlPaint paint;
+  paint.setMaskFilter(DlBlurMaskFilter::Make(style, sigma));
+  auto gradient = DlColorSource::MakeLinear(
+      {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
+  paint.setColorSource(gradient);
+  paint.setColor(DlColor::kWhite());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(20);
+
+  builder.Save();
+  builder.Translate(100, 100);
+
+  {
+    DlPaint line_paint;
+    line_paint.setColor(DlColor::kWhite());
+    builder.DrawLine({100, 0}, {100, 60}, line_paint);
+    builder.DrawLine({0, 30}, {200, 30}, line_paint);
+  }
+
+  SkRRect rrect =
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200.0f, 60.0f), 50, 100);
+  builder.DrawRRect(rrect, paint);
+  builder.Restore();
+
+  return builder.Build();
+}
+
+// https://github.com/flutter/flutter/issues/155930
+TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kNormal)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSigmaZero) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/0, DlBlurStyle::kNormal)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurOuter) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kOuter)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurInner) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kInner)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSolid) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kSolid)));
+}
+
+TEST_P(AiksTest, SolidColorCircleMaskBlurTinySigma) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  std::vector<float> sigmas = {0.0, 0.01, 1.0};
+  std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
+                                 DlColor::kRed()};
+  for (uint32_t i = 0; i < sigmas.size(); ++i) {
+    DlPaint paint;
+    paint.setColor(colors[i]);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
+
+    builder.Save();
+    builder.Translate(100 + (i * 100), 100);
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 100.0f, 100.0f), 100, 100);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
 
 TEST_P(AiksTest, CanRenderMaskBlurHugeSigma) {
   DisplayListBuilder builder;
@@ -291,6 +407,7 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
   builder.Scale(test_context.GetContentScale().x,
                 test_context.GetContentScale().y);
   builder.Scale(0.8f, 0.8f);
+  builder.Translate(50.f, 50.f);
 
   DlPaint draw_paint;
   draw_paint.setColor(
@@ -1040,10 +1157,6 @@ TEST_P(AiksTest, BlurredRectangleWithShader) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-#define FLT_FORWARD(mock, real, method) \
-  EXPECT_CALL(*mock, method())          \
-      .WillRepeatedly(::testing::Return(real->method()));
-
 TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP()
@@ -1076,6 +1189,7 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsTextureToTextureBlits);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultGlyphAtlasFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
   auto texture = DlImageImpeller::Make(CreateTextureForFixture("boston.jpg"));

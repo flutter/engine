@@ -263,7 +263,7 @@ bool Playground::OpenPlaygroundHere(
     ImGui_ImplGlfw_NewFrame();
 
     auto surface = impl_->AcquireSurfaceFrame(context_);
-    RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = surface->GetRenderTarget();
 
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
@@ -511,6 +511,11 @@ fml::Status Playground::SetCapabilities(
 
 bool Playground::WillRenderSomething() const {
   return switches_.enable_playground;
+}
+
+Playground::GLProcAddressResolver Playground::CreateGLProcAddressResolver()
+    const {
+  return impl_->CreateGLProcAddressResolver();
 }
 
 }  // namespace impeller

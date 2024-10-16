@@ -44,7 +44,7 @@ class FilterContents : public Contents {
       Sigma sigma_y,
       Entity::TileMode tile_mode = Entity::TileMode::kDecal,
       BlurStyle mask_blur_style = BlurStyle::kNormal,
-      const std::shared_ptr<Geometry>& mask_geometry = nullptr);
+      const Geometry* mask_geometry = nullptr);
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
       FilterInput::Ref input,
@@ -109,11 +109,6 @@ class FilterContents : public Contents {
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) override;
 
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(

@@ -108,6 +108,9 @@ class CapabilitiesGLES final
   bool SupportsDeviceTransientTextures() const override;
 
   // |Capabilities|
+  bool SupportsTriangleFan() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
@@ -118,6 +121,8 @@ class CapabilitiesGLES final
 
   // |Capabilities|
   PixelFormat GetDefaultGlyphAtlasFormat() const override;
+
+  ISize GetMaximumRenderPassAttachmentSize() const override;
 
  private:
   bool supports_framebuffer_fetch_ = false;

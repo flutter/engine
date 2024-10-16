@@ -135,6 +135,17 @@ enum PrimitiveType {
   point,
 }
 
+enum CullMode {
+  none,
+  frontFace,
+  backFace,
+}
+
+enum WindingOrder {
+  clockwise,
+  counterClockwise,
+}
+
 enum CompareFunction {
   /// Comparison test never passes.
   never,

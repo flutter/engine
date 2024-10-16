@@ -3,10 +3,13 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/gpu/render_pass.h"
+#include <future>
+#include <memory>
 
 #include "flutter/lib/gpu/formats.h"
 #include "flutter/lib/gpu/render_pipeline.h"
 #include "flutter/lib/gpu/shader.h"
+#include "fml/make_copyable.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -14,7 +17,10 @@
 #include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
+#include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "lib/ui/ui_dart_state.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -62,8 +68,22 @@ RenderPass::GetDepthAttachmentDescriptor() {
   return depth_desc_;
 }
 
+impeller::StencilAttachmentDescriptor&
+RenderPass::GetStencilFrontAttachmentDescriptor() {
+  return stencil_front_desc_;
+}
+
+impeller::StencilAttachmentDescriptor&
+RenderPass::GetStencilBackAttachmentDescriptor() {
+  return stencil_back_desc_;
+}
+
 impeller::VertexBuffer& RenderPass::GetVertexBuffer() {
   return vertex_buffer_;
+}
+
+impeller::PipelineDescriptor& RenderPass::GetPipelineDescriptor() {
+  return pipeline_descriptor_;
 }
 
 bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
@@ -120,8 +140,34 @@ RenderPass::GetOrCreatePipeline() {
   render_pipeline_->BindToPipelineDescriptor(*context.GetShaderLibrary(),
                                              pipeline_desc);
 
-  auto pipeline =
-      context.GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
+
+  if (context.GetBackendType() == impeller::Context::BackendType::kOpenGLES &&
+      !context.GetPipelineLibrary()->HasPipeline(pipeline_desc)) {
+    // For GLES, new pipeline creation must be done on the reactor (raster)
+    // thread. We're about the draw, so we need to synchronize with a raster
+    // task in order to get the new pipeline. Depending on how busy the raster
+    // thread is, this could hang the UI thread long enough to miss a frame.
+
+    // Note that this branch is only called if a new pipeline actually needs to
+    // be built.
+    auto dart_state = flutter::UIDartState::Current();
+    std::promise<
+        std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>>
+        pipeline_promise;
+    auto pipeline_future = pipeline_promise.get_future();
+    fml::TaskRunner::RunNowOrPostTask(
+        dart_state->GetTaskRunners().GetRasterTaskRunner(),
+        fml::MakeCopyable([promise = std::move(pipeline_promise),
+                           context = GetContext(), pipeline_desc]() mutable {
+          promise.set_value(
+              context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get());
+        }));
+    pipeline = pipeline_future.get();
+  } else {
+    pipeline = context.GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  }
+
   FML_DCHECK(pipeline) << "Couldn't resolve render pipeline";
   return pipeline;
 }
@@ -180,13 +226,6 @@ bool RenderPass::Draw() {
 }  // namespace gpu
 }  // namespace flutter
 
-static impeller::Color ToImpellerColor(uint32_t argb) {
-  return impeller::Color::MakeRGBA8((argb >> 16) & 0xFF,  // R
-                                    (argb >> 8) & 0xFF,   // G
-                                    argb & 0xFF,          // B
-                                    argb >> 24);          // A
-}
-
 //----------------------------------------------------------------------------
 /// Exports
 ///
@@ -201,13 +240,17 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     int color_attachment_index,
     int load_action,
     int store_action,
-    int clear_color,
+    float clear_color_r,
+    float clear_color_g,
+    float clear_color_b,
+    float clear_color_a,
     flutter::gpu::Texture* texture,
     Dart_Handle resolve_texture_wrapper) {
   impeller::ColorAttachment desc;
   desc.load_action = flutter::gpu::ToImpellerLoadAction(load_action);
   desc.store_action = flutter::gpu::ToImpellerStoreAction(store_action);
-  desc.clear_color = ToImpellerColor(static_cast<uint32_t>(clear_color));
+  desc.clear_color = impeller::Color(clear_color_r, clear_color_g,
+                                     clear_color_b, clear_color_a);
   desc.texture = texture->GetTexture();
   if (!Dart_IsNull(resolve_texture_wrapper)) {
     flutter::gpu::Texture* resolve_texture =
@@ -432,11 +475,11 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
   auto& command = wrapper->GetCommand();
 
   auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
-  const impeller::SampledImageSlot* image_slot =
+  const flutter::gpu::Shader::TextureBinding* texture_binding =
       shader->GetUniformTexture(uniform_name);
   // TODO(bdero): Return an error string stating that no uniform texture with
   //              this name exists and throw an exception.
-  if (!image_slot) {
+  if (!texture_binding) {
     return false;
   }
 
@@ -450,10 +493,10 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
   const std::unique_ptr<const impeller::Sampler>& sampler =
       wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
-
-  return command.BindResource(
-      shader->GetShaderStage(), impeller::DescriptorType::kSampledImage,
-      *image_slot, impeller::ShaderMetadata{}, texture->GetTexture(), sampler);
+  return command.BindResource(shader->GetShaderStage(),
+                              impeller::DescriptorType::kSampledImage,
+                              texture_binding->slot, texture_binding->metadata,
+                              texture->GetTexture(), sampler);
 }
 
 void InternalFlutterGpu_RenderPass_ClearBindings(
@@ -509,6 +552,69 @@ void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
   auto& depth = wrapper->GetDepthAttachmentDescriptor();
   depth.depth_compare =
       flutter::gpu::ToImpellerCompareFunction(compare_operation);
+}
+
+void InternalFlutterGpu_RenderPass_SetStencilReference(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_reference) {
+  auto& command = wrapper->GetCommand();
+  command.stencil_reference = static_cast<uint32_t>(stencil_reference);
+}
+
+void InternalFlutterGpu_RenderPass_SetStencilConfig(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_compare_operation,
+    int stencil_fail_operation,
+    int depth_fail_operation,
+    int depth_stencil_pass_operation,
+    int read_mask,
+    int write_mask,
+    int target_face) {
+  impeller::StencilAttachmentDescriptor desc;
+  desc.stencil_compare =
+      flutter::gpu::ToImpellerCompareFunction(stencil_compare_operation);
+  desc.stencil_failure =
+      flutter::gpu::ToImpellerStencilOperation(stencil_fail_operation);
+  desc.depth_failure =
+      flutter::gpu::ToImpellerStencilOperation(depth_fail_operation);
+  desc.depth_stencil_pass =
+      flutter::gpu::ToImpellerStencilOperation(depth_stencil_pass_operation);
+  desc.read_mask = static_cast<uint32_t>(read_mask);
+  desc.write_mask = static_cast<uint32_t>(write_mask);
+
+  // Corresponds to the `StencilFace` enum in `gpu/lib/src/render_pass.dart`.
+  if (target_face != 2 /* both or front */) {
+    wrapper->GetStencilFrontAttachmentDescriptor() = desc;
+  }
+  if (target_face != 1 /* both or back */) {
+    wrapper->GetStencilBackAttachmentDescriptor() = desc;
+  }
+}
+
+void InternalFlutterGpu_RenderPass_SetCullMode(
+    flutter::gpu::RenderPass* wrapper,
+    int cull_mode) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetCullMode(flutter::gpu::ToImpellerCullMode(cull_mode));
+}
+
+void InternalFlutterGpu_RenderPass_SetPrimitiveType(
+    flutter::gpu::RenderPass* wrapper,
+    int primitive_type) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetPrimitiveType(
+      flutter::gpu::ToImpellerPrimitiveType(primitive_type));
+}
+
+void InternalFlutterGpu_RenderPass_SetWindingOrder(
+    flutter::gpu::RenderPass* wrapper,
+    int winding_order) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetWindingOrder(
+      flutter::gpu::ToImpellerWindingOrder(winding_order));
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

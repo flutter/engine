@@ -10,14 +10,14 @@ base class ColorAttachment {
   ColorAttachment({
     this.loadAction = LoadAction.clear,
     this.storeAction = StoreAction.store,
-    this.clearValue = const ui.Color(0x00000000),
+    vm.Vector4? clearValue = null,
     required this.texture,
     this.resolveTexture = null,
-  });
+  }) : clearValue = clearValue ?? vm.Vector4.zero();
 
   LoadAction loadAction;
   StoreAction storeAction;
-  ui.Color clearValue;
+  vm.Vector4 clearValue;
 
   Texture texture;
   Texture? resolveTexture;
@@ -43,6 +43,32 @@ base class DepthStencilAttachment {
   int stencilClearValue;
 
   Texture texture;
+}
+
+base class StencilConfig {
+  StencilConfig({
+    this.compareFunction = CompareFunction.always,
+    this.stencilFailureOperation = StencilOperation.keep,
+    this.depthFailureOperation = StencilOperation.keep,
+    this.depthStencilPassOperation = StencilOperation.keep,
+    this.readMask = 0xFFFFFFFF,
+    this.writeMask = 0xFFFFFFFF,
+  });
+
+  CompareFunction compareFunction;
+  StencilOperation stencilFailureOperation;
+  StencilOperation depthFailureOperation;
+  StencilOperation depthStencilPassOperation;
+  int readMask;
+  int writeMask;
+}
+
+// Note: When modifying this enum, also update
+//       `InternalFlutterGpu_RenderPass_SetStencilConfig` in `gpu/render_pass.cc`.
+enum StencilFace {
+  both,
+  front,
+  back,
 }
 
 base class ColorBlendEquation {
@@ -95,15 +121,6 @@ base class RenderTarget {
   final DepthStencilAttachment? depthStencilAttachment;
 }
 
-// TODO(gaaclarke): Refactor this to support wide gamut colors.
-int _colorToInt(ui.Color color) {
-  assert(color.colorSpace == ui.ColorSpace.sRGB);
-  return ((color.a * 255.0).round() << 24) |
-      ((color.r * 255.0).round() << 16) |
-      ((color.g * 255.0).round() << 8) |
-      ((color.b * 255.0).round() << 0);
-}
-
 base class RenderPass extends NativeFieldWrapperClass1 {
   /// Creates a new RenderPass.
   RenderPass._(CommandBuffer commandBuffer, RenderTarget renderTarget) {
@@ -114,7 +131,10 @@ base class RenderPass extends NativeFieldWrapperClass1 {
           index,
           color.loadAction.index,
           color.storeAction.index,
-          _colorToInt(color.clearValue),
+          color.clearValue.r,
+          color.clearValue.g,
+          color.clearValue.b,
+          color.clearValue.a,
           color.texture,
           color.resolveTexture);
       if (error != null) {
@@ -212,6 +232,45 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     _setDepthCompareOperation(compareFunction.index);
   }
 
+  void setStencilReference(int referenceValue) {
+    if (referenceValue < 0 || referenceValue > 0xFFFFFFFF) {
+      throw Exception(
+          "The stencil reference value must be in the range [0, 2^32 - 1]");
+    }
+    _setStencilReference(referenceValue);
+  }
+
+  void setStencilConfig(StencilConfig configuration,
+      {StencilFace targetFace = StencilFace.both}) {
+    if (configuration.readMask < 0 || configuration.readMask > 0xFFFFFFFF) {
+      throw Exception("The stencil read mask must be in the range [0, 255]");
+    }
+    if (configuration.writeMask < 0 || configuration.writeMask > 0xFFFFFFFF) {
+      throw Exception("The stencil write mask must be in the range [0, 255]");
+    }
+    _setStencilConfig(
+        configuration.compareFunction.index,
+        configuration.stencilFailureOperation.index,
+        configuration.depthFailureOperation.index,
+        configuration.depthStencilPassOperation.index,
+        configuration.readMask,
+        configuration.writeMask,
+        targetFace.index);
+  }
+
+  void setCullMode(CullMode cullMode) {
+    _setCullMode(cullMode.index);
+  }
+
+
+  void setPrimitiveType(PrimitiveType primitiveType) {
+    _setPrimitiveType(primitiveType.index);
+}
+
+  void setWindingOrder(WindingOrder windingOrder) {
+    _setWindingOrder(windingOrder.index);
+  }
+
   void draw() {
     if (!_draw()) {
       throw Exception("Failed to append draw");
@@ -224,13 +283,25 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   external void _initialize();
 
   @Native<
-      Handle Function(Pointer<Void>, Int, Int, Int, Int, Pointer<Void>,
+      Handle Function(
+          Pointer<Void>,
+          Int,
+          Int,
+          Int,
+          Float,
+          Float,
+          Float,
+          Float,
+          Pointer<Void>,
           Handle)>(symbol: 'InternalFlutterGpu_RenderPass_SetColorAttachment')
   external String? _setColorAttachment(
       int colorAttachmentIndex,
       int loadAction,
       int storeAction,
-      int clearColor,
+      double clearColorR,
+      double clearColorG,
+      double clearColorB,
+      double clearColorA,
       Texture texture,
       Texture? resolveTexture);
 
@@ -334,6 +405,34 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   @Native<Void Function(Pointer<Void>, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetDepthCompareOperation')
   external void _setDepthCompareOperation(int compareOperation);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetStencilReference')
+  external void _setStencilReference(int referenceValue);
+
+  @Native<Void Function(Pointer<Void>, Int, Int, Int, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetStencilConfig')
+  external void _setStencilConfig(
+      int compareFunction,
+      int stencilFailureOperation,
+      int depthFailureOperation,
+      int depthStencilPassOperation,
+      int readMask,
+      int writeMask,
+      int target_face);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetCullMode')
+  external void _setCullMode(int cullMode);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetPrimitiveType')
+  external void _setPrimitiveType(int primitiveType);
+
+    @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetWindingOrder')
+  external void _setWindingOrder(int windingOrder);
+
 
   @Native<Bool Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Draw')
