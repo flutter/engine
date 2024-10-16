@@ -418,7 +418,7 @@ struct Matrix {
              fabsf(a[10] - b[10]) > epsilon || fabsf(a[11] - b[11]) > epsilon ||
              fabsf(a[12] - b[12]) > epsilon || fabsf(a[13] - b[13]) > epsilon ||
              fabsf(a[14] - b[14]) > epsilon || fabsf(a[15] - b[15]) > epsilon);
-}
+  }
 
   constexpr bool operator==(const Matrix& m) const {
     // clang-format off
