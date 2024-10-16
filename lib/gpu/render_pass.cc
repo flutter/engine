@@ -442,6 +442,12 @@ static bool BindUniform(
     case impeller::ShaderStage::kCompute:
       return false;
   }
+
+  if (!buffer || static_cast<size_t>(offset_in_bytes + length_in_bytes) <
+                     buffer->GetDeviceBufferDescriptor().size) {
+    return false;
+  }
+
   uniform_map->emplace(
       uniform_struct,
       impeller::BufferAndUniformSlot{
