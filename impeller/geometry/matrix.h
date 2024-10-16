@@ -407,7 +407,7 @@ struct Matrix {
 
   std::optional<MatrixDecomposition> Decompose() const;
 
-  bool Equals(const Matrix& matrix, Scalar epsilon = 1e-5) const {
+  bool Equals(const Matrix& matrix, Scalar epsilon = 1e-5f) const {
     const Scalar* a = m;
     const Scalar* b = matrix.m;
     return !(fabsf(a[0] - b[0]) > epsilon || fabsf(a[1] - b[1]) > epsilon ||
