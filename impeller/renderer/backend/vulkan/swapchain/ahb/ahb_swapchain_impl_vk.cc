@@ -25,7 +25,8 @@ namespace impeller {
 /// compositor and one for the raster thread, Because the semaphore is acquired
 /// when the CPU begins working on the texture
 ///
-static constexpr const size_t kMaxPendingPresents = 3u;
+// TODO: why did I need to change this?
+static constexpr const size_t kMaxPendingPresents = 6u;
 
 static TextureDescriptor ToSwapchainTextureDescriptor(
     const android::HardwareBufferDescriptor& ahb_desc) {

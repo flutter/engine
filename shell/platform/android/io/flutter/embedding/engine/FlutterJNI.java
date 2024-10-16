@@ -1226,34 +1226,27 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
-  SurfaceControl.Transaction onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
-    ensureRunningOnMainThread();
+  SurfaceControl.Transaction createTransaction() {
     if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position an overlay surface");
+      throw new RuntimeException("");
     }
-    return platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+    return platformViewsController.createTransaction();
   }
 
   @SuppressWarnings("unused")
-  boolean hasCurrentSyncGroup() {
+  void swapTransactions() {
     if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position an overlay surface");
+      throw new RuntimeException("");
     }
-    return platformViewsController.hasCurrentSyncGroup();
+    platformViewsController.swapTransactions();
   }
 
   @SuppressWarnings("unused")
-  @UiThread
-  public void onBeginFrame() {
-    ensureRunningOnMainThread();
+  void applyTransactions() {
     if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to begin the frame");
+      throw new RuntimeException("");
     }
-    platformViewsController.onBeginFrame();
+    platformViewsController.applyTransactions();
   }
 
   @SuppressWarnings("unused")
@@ -1270,7 +1263,6 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
-    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");

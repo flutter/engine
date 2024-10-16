@@ -95,11 +95,7 @@ bool AndroidSurfaceVKImpeller::SetNativeWindow(
   }
 
   impeller::CreateTransactionCB cb = [jni_facade]() {
-    if (!jni_facade->FlutterViewHasCurrentSyncGroup()) {
-      return impeller::android::SurfaceTransaction();
-    }
-    ASurfaceTransaction* tx =
-        jni_facade->FlutterViewDisplayOverlaySurface(0, 0, 0, 0, 0);
+    ASurfaceTransaction* tx = jni_facade->createTransaction();
     return impeller::android::SurfaceTransaction(tx);
   };
 

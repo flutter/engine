@@ -49,6 +49,8 @@ class SurfacePool {
 
   ~SurfacePool();
 
+  bool HasLayer() const { return layers_.size() >= 1; }
+
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments
   // `available_layer_index_`.

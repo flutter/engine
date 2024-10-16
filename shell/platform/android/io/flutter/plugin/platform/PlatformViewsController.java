@@ -48,7 +48,6 @@ import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -228,11 +227,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private int nextOverlayLayerId = 0;
   private FlutterRenderer flutterRenderer;
 
-  // Overlay layer IDs that were displayed since the start of the current frame.
-  private final HashSet<Integer> currentFrameUsedOverlayLayerIds;
-
   // Platform view IDs that were displayed since the start of the current frame.
-  private final HashSet<Integer> currentFrameUsedPlatformViewIds;
+  private final ArrayList<PlatformViewData> currentFrameUsedPlatformViews;
 
   // Used to acquire the original motion events using the motionEventIds.
   private final MotionEventTracker motionEventTracker;
@@ -857,8 +853,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     accessibilityEventsDelegate = new AccessibilityEventsDelegate();
     contextToEmbeddedView = new HashMap<>();
     overlayLayerViews = new SparseArray<>();
-    currentFrameUsedOverlayLayerIds = new HashSet<>();
-    currentFrameUsedPlatformViewIds = new HashSet<>();
+    currentFrameUsedPlatformViews = new ArrayList<>();
+    pendingTransactions = new ArrayList<>();
+    activeTransactions = new ArrayList<>();
     viewWrappers = new SparseArray<>();
     platformViews = new SparseArray<>();
     platformViewParent = new SparseArray<>();
@@ -1297,6 +1294,25 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         new AndroidTouchProcessor(flutterRenderer, /* trackMotionEvents= */ true);
   }
 
+  class PlatformViewData {
+    int viewId;
+    int x;
+    int y;
+    int width;
+    int height;
+    FlutterMutatorsStack mutatorsStack;
+
+    PlatformViewData(
+        int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
+      this.viewId = viewId;
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.mutatorsStack = mutatorsStack;
+    }
+  }
+
   /**
    * Called when a platform view id displayed in the current frame.
    *
@@ -1323,50 +1339,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return;
     }
 
-    final FlutterMutatorView parentView = platformViewParent.get(viewId);
-    parentView.readyToDisplay(mutatorsStack, x, y, width, height);
-    parentView.setVisibility(View.VISIBLE);
-    parentView.bringToFront();
-    parentView.invalidate();
-
-    // currentSyncGroup.add(
-    //     surfacePackage,
-    //     new Runnable() {
-    //       @Override
-    //       public void run() {
-
-    //       }
-    //     });
-
-    currentFrameUsedPlatformViewIds.add(viewId);
-  }
-
-  /**
-   * Called when an overlay surface is displayed in the current frame.
-   *
-   * @param id The ID of the surface.
-   * @param x The left position relative to {@code FlutterView}.
-   * @param y The top position relative to {@code FlutterView}.
-   * @param width The width of the surface.
-   * @param height The height of the surface. This member is not intended for public use, and is
-   *     only visible for testing.
-   */
-  public SurfaceControl.Transaction onDisplayOverlaySurface(
-      int id, int x, int y, int width, int height) {
-    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
-    transactions.add(tx);
-    currentFrameUsedOverlayLayerIds.add(id);
-    return tx;
-  }
-
-  public boolean hasCurrentSyncGroup() {
-    return currentSyncGroup != null;
-  }
-
-  public void onBeginFrame() {
-    currentFrameUsedOverlayLayerIds.clear();
-    currentFrameUsedPlatformViewIds.clear();
-    currentSyncGroup = new SurfaceSyncGroup("Flutter Sync Group");
+    currentFrameUsedPlatformViews.add(
+        new PlatformViewData(viewId, x, y, width, height, mutatorsStack));
   }
 
   /**
@@ -1375,18 +1349,65 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   public void onEndFrame() {
-    finishFrame();
+    ArrayList<SurfaceControl.Transaction> txs = new ArrayList<>(activeTransactions);
+    finishFrame(txs);
   }
 
-  private void finishFrame() {
+  private void finishFrame(ArrayList<SurfaceControl.Transaction> transactions) {
+    SurfaceSyncGroup currentSyncGroup = new SurfaceSyncGroup("Flutter Sync Group");
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     for (int i = 0; i < transactions.size(); i++) {
       tx = tx.merge(transactions.get(i));
     }
+    currentSyncGroup.add(
+        surfacePackage,
+        new Runnable() {
+          @Override
+          public void run() {
+            for (PlatformViewData data : currentFrameUsedPlatformViews) {
+              final FlutterMutatorView parentView = platformViewParent.get(data.viewId);
+              if (parentView == null) {
+                continue;
+              }
+              parentView.readyToDisplay(
+                  data.mutatorsStack, data.x, data.y, data.width, data.height);
+              parentView.setVisibility(View.VISIBLE);
+              parentView.invalidate();
+            }
+          }
+        });
+
     currentSyncGroup.addTransaction(tx);
     currentSyncGroup.markSyncReady();
-    transactions.clear();
   }
+
+  // NOT called from UI thread.
+  public SurfaceControl.Transaction createTransaction() {
+    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
+    pendingTransactions.add(tx);
+    return tx;
+  }
+
+  // NOT called from UI thread.
+  public void applyTransactions() {
+    SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
+    for (int i = 0; i < pendingTransactions.size(); i++) {
+      tx = tx.merge(pendingTransactions.get(i));
+    }
+    tx.apply();
+    pendingTransactions.clear();
+  }
+
+  public synchronized void swapTransactions() {
+    activeTransactions.clear();
+    for (int i = 0; i < pendingTransactions.size(); i++) {
+      activeTransactions.add(pendingTransactions.get(i));
+    }
+    pendingTransactions.clear();
+  }
+
+  public ArrayList<SurfaceControl.Transaction> pendingTransactions;
+  public ArrayList<SurfaceControl.Transaction> activeTransactions;
 
   /**
    * Creates an overlay surface while the Flutter view is rendered by {@code PlatformOverlayView}.
@@ -1396,7 +1417,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   @NonNull
-  public FlutterOverlaySurface createOverlaySurface() {
+  public synchronized FlutterOverlaySurface createOverlaySurface() {
     final int id = nextOverlayLayerId++;
     return new FlutterOverlaySurface(id, flutterRenderer.getActiveSurface());
   }
@@ -1406,9 +1427,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This method is used only internally by {@code FlutterJNI}.
    */
-  public void destroyOverlaySurfaces() {}
+  public void destroyOverlaySurfaces() {
+    if (surfacePackage != null) {
+      if (scvh != null) {
+        scvh.release();
+      }
+      scvh = null;
+      platformViewHost = null;
+      surfacePackage.release();
+      surfacePackage = null;
+    }
+  }
 
-  private void removeOverlaySurfaces() {}
+  private void removeOverlaySurfaces() {
+    Log.e(TAG, "removeOverlaySurfaces");
+  }
 
   @VisibleForTesting
   public SparseArray<PlatformOverlayView> getOverlayLayerViews() {
