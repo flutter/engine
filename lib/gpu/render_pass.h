@@ -5,17 +5,14 @@
 #ifndef FLUTTER_LIB_GPU_RENDER_PASS_H_
 #define FLUTTER_LIB_GPU_RENDER_PASS_H_
 
+#include <cstdint>
 #include <map>
 #include <memory>
-#include <optional>
-#include <unordered_set>
 #include "flutter/lib/gpu/command_buffer.h"
 #include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/shader_types.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -38,8 +35,6 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   const std::shared_ptr<const impeller::Context>& GetContext() const;
 
-  impeller::RenderPass& GetRenderPass();
-
   impeller::RenderTarget& GetRenderTarget();
   const impeller::RenderTarget& GetRenderTarget() const;
 
@@ -58,10 +53,6 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   void SetPipeline(fml::RefPtr<RenderPipeline> pipeline);
 
-  void SetHasIndexBuffer(bool value);
-
-  bool HasIndexBuffer() const;
-
   void ClearBindings();
 
   bool Draw();
@@ -78,14 +69,22 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
   BufferUniformMap fragment_uniform_bindings;
   TextureUniformMap fragment_texture_bindings;
 
+  impeller::BufferView vertex_buffer;
+  impeller::BufferView index_buffer;
+  impeller::IndexType index_buffer_type = impeller::IndexType::kNone;
+  size_t element_count = 0;
+
+  uint32_t stencil_reference = 0;
+
+  // Helper flag to determine whether the vertex_count should override the
+  // element count. The index count takes precedent.
+  bool has_index_buffer = false;
+
  private:
   /// Lookup an Impeller pipeline by building a descriptor based on the current
   /// command state.
   std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
   GetOrCreatePipeline();
-
-  /// Set up the default render pass draw state in-between draws.
-  void SetDefaultDrawState();
 
   impeller::RenderTarget render_target_;
   std::shared_ptr<impeller::RenderPass> render_pass_;
@@ -93,10 +92,6 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
   // Command encoding state.
   fml::RefPtr<RenderPipeline> render_pipeline_;
   impeller::PipelineDescriptor pipeline_descriptor_;
-
-  // Helper flag to determine whether the vertex_count should override the
-  // element count. The index count takes precedent.
-  bool has_index_buffer_ = false;
 
   // Pipeline descriptor layout state. We always keep track of this state,
   // but we'll only apply it as necessary to match the RenderTarget.

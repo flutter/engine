@@ -15,7 +15,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/shader_types.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/pipeline.h"
@@ -35,10 +34,6 @@ RenderPass::~RenderPass() = default;
 
 const std::shared_ptr<const impeller::Context>& RenderPass::GetContext() const {
   return render_pass_->GetContext();
-}
-
-impeller::RenderPass& RenderPass::GetRenderPass() {
-  return *render_pass_;
 }
 
 impeller::RenderTarget& RenderPass::GetRenderTarget() {
@@ -80,7 +75,6 @@ impeller::PipelineDescriptor& RenderPass::GetPipelineDescriptor() {
 bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
   render_pass_ =
       command_buffer.GetCommandBuffer()->CreateRenderPass(render_target_);
-  SetDefaultDrawState();
   if (!render_pass_) {
     return false;
   }
@@ -92,19 +86,15 @@ void RenderPass::SetPipeline(fml::RefPtr<RenderPipeline> pipeline) {
   render_pipeline_ = std::move(pipeline);
 }
 
-void RenderPass::SetHasIndexBuffer(bool value) {
-  has_index_buffer_ = value;
-}
-
-bool RenderPass::HasIndexBuffer() const {
-  return has_index_buffer_;
-}
-
 void RenderPass::ClearBindings() {
   vertex_uniform_bindings.clear();
   vertex_texture_bindings.clear();
   fragment_uniform_bindings.clear();
   fragment_texture_bindings.clear();
+  vertex_buffer = {};
+  index_buffer = {};
+  index_buffer_type = impeller::IndexType::kNone;
+  element_count = 0;
 }
 
 std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
@@ -179,14 +169,6 @@ RenderPass::GetOrCreatePipeline() {
   return pipeline;
 }
 
-void RenderPass::SetDefaultDrawState() {
-  // All of the renderpass bindings are reset after drawing.
-  has_index_buffer_ = false;
-
-  // Explicitly turn off the index buffer by default.
-  render_pass_->SetIndexBuffer({}, impeller::IndexType::kNone);
-}
-
 bool RenderPass::Draw() {
   render_pass_->SetPipeline(GetOrCreatePipeline());
 
@@ -215,9 +197,13 @@ bool RenderPass::Draw() {
                                texture.texture.resource, texture.sampler);
   }
 
-  bool result = render_pass_->Draw().ok();
+  render_pass_->SetVertexBuffer(vertex_buffer);
+  render_pass_->SetIndexBuffer(index_buffer, index_buffer_type);
+  render_pass_->SetElementCount(element_count);
 
-  SetDefaultDrawState();
+  render_pass_->SetStencilReference(stencil_reference);
+
+  bool result = render_pass_->Draw().ok();
 
   return result;
 }
@@ -307,17 +293,16 @@ void InternalFlutterGpu_RenderPass_BindPipeline(
   wrapper->SetPipeline(std::move(ref));
 }
 
-template <typename TBuffer>
-static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
-                             TBuffer buffer,
-                             int offset_in_bytes,
-                             int length_in_bytes,
-                             int vertex_count) {
-  auto& render_pass = wrapper->GetRenderPass();
-  render_pass.SetVertexBuffer(impeller::BufferView{
+static void BindVertexBuffer(
+    flutter::gpu::RenderPass* wrapper,
+    const std::shared_ptr<const impeller::DeviceBuffer>& buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int vertex_count) {
+  wrapper->vertex_buffer = impeller::BufferView{
       .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
-  });
+  };
 
   // If the index type is set, then the `vertex_count` becomes the index
   // count... So don't overwrite the count if it's already been set when binding
@@ -327,8 +312,8 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
   //              but overall it would be a bit more explicit and we wouldn't
   //              have to document this behavior where the presence of the index
   //              buffer always takes precedent.
-  if (!wrapper->HasIndexBuffer()) {
-    render_pass.SetElementCount(vertex_count);
+  if (!wrapper->has_index_buffer) {
+    wrapper->element_count = vertex_count;
   }
 }
 
@@ -360,27 +345,25 @@ void InternalFlutterGpu_RenderPass_BindVertexBufferHost(
                    view->range.length, vertex_count);
 }
 
-template <typename TBuffer>
-static void BindIndexBuffer(flutter::gpu::RenderPass* wrapper,
-                            TBuffer buffer,
-                            int offset_in_bytes,
-                            int length_in_bytes,
-                            int index_type,
-                            int index_count) {
-  auto& render_pass = wrapper->GetRenderPass();
+static void BindIndexBuffer(
+    flutter::gpu::RenderPass* wrapper,
+    const std::shared_ptr<const impeller::DeviceBuffer>& buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int index_type,
+    int index_count) {
   impeller::IndexType type = flutter::gpu::ToImpellerIndexType(index_type);
-  render_pass.SetIndexBuffer(
-      impeller::BufferView{
-          .buffer = buffer,
-          .range = impeller::Range(offset_in_bytes, length_in_bytes),
-      },
-      type);
+  wrapper->index_buffer = impeller::BufferView{
+      .buffer = buffer,
+      .range = impeller::Range(offset_in_bytes, length_in_bytes),
+  };
+  wrapper->index_buffer_type = type;
 
   bool setting_index_buffer = type != impeller::IndexType::kNone;
   if (setting_index_buffer) {
-    render_pass.SetElementCount(index_count);
+    wrapper->element_count = index_count;
   }
-  wrapper->SetHasIndexBuffer(setting_index_buffer);
+  wrapper->has_index_buffer = setting_index_buffer;
 }
 
 void InternalFlutterGpu_RenderPass_BindIndexBufferDevice(
@@ -597,8 +580,7 @@ void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
 void InternalFlutterGpu_RenderPass_SetStencilReference(
     flutter::gpu::RenderPass* wrapper,
     int stencil_reference) {
-  auto& render_pass = wrapper->GetRenderPass();
-  render_pass.SetStencilReference(static_cast<uint32_t>(stencil_reference));
+  wrapper->stencil_reference = static_cast<uint32_t>(stencil_reference);
 }
 
 void InternalFlutterGpu_RenderPass_SetStencilConfig(
