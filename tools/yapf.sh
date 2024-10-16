@@ -39,11 +39,15 @@ YAPF_DIR="$(cd "$SRC_DIR/flutter/third_party/yapf"; pwd -P)"
 if command -v python3.10 &> /dev/null; then
   PYTHON_EXEC="python3.10"
 else
-  python_version=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-  if [[ $(echo "$python_version > 3.10" | bc) -eq 1 ]]; then
-    echo "Error: python3 version $python_version, yapf requires < 3.11" >&2
-    exit 1
-  fi
+  python3 -c "
+import sys
+version = sys.version_info
+if (version.major, version.minor) > (3, 10):
+    print(f'Error: python3 version {version.major}.{version.minor} is greater than 3.10.', file=sys.stderr)
+    sys.exit(1)
+else:
+    print(f'Using python3 version {version.major}.{version.minor}.')
+" || exit 1
   PYTHON_EXEC="python3"
 fi
 
