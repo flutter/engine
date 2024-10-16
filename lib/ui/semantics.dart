@@ -343,15 +343,26 @@ class SemanticsFlag {
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
   static const int _kHasSelectedStateIndex = 1 << 28;
-  // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
-  // value in testing/dart/semantics_test.dart and
-  // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests will
-  // fail. Also, please update the Flag enum in
-  // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
-  // and the SemanticsFlag class in lib/web_ui/lib/semantics.dart. If the new flag
-  // affects the visibility of a [SemanticsNode] to accessibility services,
-  // `flutter_test/controller.dart#SemanticsController._importantFlags`
-  // must be updated as well.
+  // READ THIS: if you add a flag here, you MUST update the following:
+  //
+  // - Add an appropriately named and documented `static const SemanticsFlag`
+  //   field to this class.
+  // - Add the new flag to `_kFlagById` in this file.
+  // - Make changes in lib/web_ui/lib/semantics.dart in the web engine that mirror
+  //   the changes in this file (i.e. `_k*Index`, `static const SemanticsFlag`,
+  //   `_kFlagById`).
+  // - Increment the `numSemanticsFlags` value in testing/dart/semantics_test.dart
+  //   and in lib/web_ui/test/engine/semantics/semantics_api_test.dart.
+  // - Add the new flag to platform-specific enums:
+  //   - The `Flag` enum in flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java.
+  //   - The `SemanticsFlags` enum in lib/ui/semantics/semantics_node.h.
+  //   - The `FlutterSemanticsFlag` enum in shell/platform/embedder/embedder.h.
+  // - If the new flag affects the visibility of a [SemanticsNode] to accessibility services,
+  //   update `flutter_test/controller.dart#SemanticsController._importantFlags`
+  //   accordingly
+  // - If the new flag affects focusability of a semantics node, also update the
+  //   value of `AccessibilityBridge.FOCUSABLE_FLAGS` in
+  //   flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java.
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
