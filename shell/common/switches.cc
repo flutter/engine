@@ -360,9 +360,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
 
-  settings.merged_platform_ui_thread = command_line.HasOption(
-      FlagForSwitch(Switch::EnableMergedPlatformUIThread));
-
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
@@ -446,6 +443,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_asset_fonts =
       !command_line.HasOption(FlagForSwitch(Switch::DisableAssetFonts));
 
+#if FML_OS_IOS && !FML_OS_IOS_SIMULATOR
+// On these configurations, the Impeller flags are completely ignored with the
+// default taking hold.
+#else   // FML_OS_IOS && !FML_OS_IOS_SIMULATOR
   {
     std::string enable_impeller_value;
     if (command_line.GetOptionValue(FlagForSwitch(Switch::EnableImpeller),
@@ -454,6 +455,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
           enable_impeller_value.empty() || "true" == enable_impeller_value;
     }
   }
+#endif  // FML_OS_IOS && !FML_OS_IOS_SIMULATOR
 
   {
     std::string impeller_backend_value;

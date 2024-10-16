@@ -430,7 +430,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
-      make_test('testing_unittests'),
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
@@ -589,8 +588,6 @@ def run_engine_benchmarks(build_dir, executable_filter):
   run_engine_executable(build_dir, 'display_list_builder_benchmarks', executable_filter, icu_flags)
 
   run_engine_executable(build_dir, 'geometry_benchmarks', executable_filter, icu_flags)
-
-  run_engine_executable(build_dir, 'canvas_benchmarks', executable_filter, icu_flags)
 
   if is_linux():
     run_engine_executable(build_dir, 'txt_benchmarks', executable_filter, icu_flags)

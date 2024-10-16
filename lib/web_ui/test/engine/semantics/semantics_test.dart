@@ -736,7 +736,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders heading role for headers', () {
+  test('renders a header with a label and uses a sized span for label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -752,19 +752,13 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="heading">Header of the page</sem>
+<header><span>Header of the page</span></header>
 ''');
 
     semantics().semanticsEnabled = false;
   });
 
-  // When a header has child elements, role="heading" prevents AT from reaching
-  // child elements. To fix that role="group" is used, even though that causes
-  // the heading to not be announced as a heading. If the app really needs the
-  // heading to be announced as a heading, the developer can restructure the UI
-  // such that the heading is not a parent node, but a side-note, e.g. preceding
-  // the child list.
-  test('uses group role for headers when children are present', () {
+  test('renders a header with children and uses aria-label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -788,7 +782,7 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="group" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
+<header aria-label="Header of the page"><sem-c><sem></sem></sem-c></header>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1294,6 +1288,67 @@ void _testContainer() {
     final DomElement child2 =
         owner().semanticsHost.querySelector('#flt-semantic-node-2')!;
     expect(child2.style.pointerEvents, 'all');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('containers can be opaque if tappable', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      actions: 0 | ui.SemanticsAction.tap.index,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'all');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('container can be opaque if it is a text field', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      flags: 0 | ui.SemanticsFlag.isTextField.index,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem>
+  <input>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'all');
 
     semantics().semanticsEnabled = false;
   });

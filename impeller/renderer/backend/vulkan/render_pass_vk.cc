@@ -10,12 +10,13 @@
 
 #include "fml/status.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -24,6 +25,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -81,7 +83,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
   BarrierVK barrier;
   barrier.new_layout = vk::ImageLayout::eGeneral;
-  barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
+  barrier.cmd_buffer = command_buffer->GetCommandBuffer();
   barrier.src_access = vk::AccessFlagBits::eShaderRead;
   barrier.src_stage = vk::PipelineStageFlagBits::eFragmentShader;
   barrier.dst_access = vk::AccessFlagBits::eColorAttachmentWrite |
@@ -148,15 +150,12 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
       render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
 
   const auto& vk_context = ContextVK::Cast(*context);
-  const std::shared_ptr<CommandEncoderVK>& encoder =
-      command_buffer_->GetEncoder();
-  command_buffer_vk_ = encoder->GetCommandBuffer();
-  render_target_.IterateAllAttachments(
-      [&encoder](const auto& attachment) -> bool {
-        encoder->Track(attachment.texture);
-        encoder->Track(attachment.resolve_texture);
-        return true;
-      });
+  command_buffer_vk_ = command_buffer_->GetCommandBuffer();
+  render_target_.IterateAllAttachments([&](const auto& attachment) -> bool {
+    command_buffer_->Track(attachment.texture);
+    command_buffer_->Track(attachment.resolve_texture);
+    return true;
+  });
 
   SharedHandleVK<vk::RenderPass> recycled_render_pass;
   SharedHandleVK<vk::Framebuffer> recycled_framebuffer;
@@ -186,7 +185,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     return;
   }
 
-  if (!encoder->Track(framebuffer) || !encoder->Track(render_pass_)) {
+  if (!command_buffer_->Track(framebuffer) ||
+      !command_buffer_->Track(render_pass_)) {
     is_valid_ = false;
     return;
   }
@@ -329,7 +329,7 @@ void RenderPassVK::SetPipeline(
 // |RenderPass|
 void RenderPassVK::SetCommandLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
-  command_buffer_->GetEncoder()->PushDebugGroup(label);
+  command_buffer_->PushDebugGroup(label);
   has_label_ = true;
 #endif  // IMPELLER_DEBUG
 }
@@ -371,29 +371,41 @@ void RenderPassVK::SetInstanceCount(size_t count) {
 }
 
 // |RenderPass|
-bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
-  vertex_count_ = buffer.vertex_count;
-  if (buffer.index_type == IndexType::kUnknown || !buffer.vertex_buffer) {
+bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
+                                   size_t vertex_buffer_count,
+                                   size_t vertex_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
 
-  if (!command_buffer_->GetEncoder()->Track(buffer.vertex_buffer.buffer)) {
-    return false;
+  vk::Buffer buffers[kMaxVertexBuffers];
+  vk::DeviceSize vertex_buffer_offsets[kMaxVertexBuffers];
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
+    vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
+    command_buffer_->Track(vertex_buffers[i].buffer);
   }
 
-  // Bind the vertex buffer.
-  vk::Buffer vertex_buffer_handle =
-      DeviceBufferVK::Cast(*buffer.vertex_buffer.buffer).GetBuffer();
-  vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
-  vk::DeviceSize vertex_buffer_offsets[] = {buffer.vertex_buffer.range.offset};
-
-  command_buffer_vk_.bindVertexBuffers(0u, 1u, vertex_buffers,
+  // Bind the vertex buffers.
+  command_buffer_vk_.bindVertexBuffers(0u, vertex_buffer_count, buffers,
                                        vertex_buffer_offsets);
 
-  // Bind the index buffer.
-  if (buffer.index_type != IndexType::kNone) {
+  vertex_count_ = vertex_count;
+
+  return true;
+}
+
+// |RenderPass|
+bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
+                                  IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
+    return false;
+  }
+
+  if (index_type != IndexType::kNone) {
     has_index_buffer_ = true;
-    const BufferView& index_buffer_view = buffer.index_buffer;
+
+    const BufferView& index_buffer_view = index_buffer;
     if (!index_buffer_view) {
       return false;
     }
@@ -406,7 +418,7 @@ bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
       return false;
     }
 
-    if (!command_buffer_->GetEncoder()->Track(index_buffer)) {
+    if (!command_buffer_->Track(index_buffer)) {
       return false;
     }
 
@@ -414,10 +426,11 @@ bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
         DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
                                        index_buffer_view.range.offset,
-                                       ToVKIndexType(buffer.index_type));
+                                       ToVKIndexType(index_type));
   } else {
     has_index_buffer_ = false;
   }
+
   return true;
 }
 
@@ -460,9 +473,8 @@ fml::Status RenderPassVK::Draw() {
   const auto& context_vk = ContextVK::Cast(*context_);
   const auto& pipeline_vk = PipelineVK::Cast(*pipeline_);
 
-  auto descriptor_result =
-      command_buffer_->GetEncoder()->AllocateDescriptorSets(
-          pipeline_vk.GetDescriptorSetLayout(), context_vk);
+  auto descriptor_result = command_buffer_->AllocateDescriptorSets(
+      pipeline_vk.GetDescriptorSetLayout(), context_vk);
   if (!descriptor_result.ok()) {
     return fml::Status(fml::StatusCode::kAborted,
                        "Could not allocate descriptor sets.");
@@ -511,7 +523,7 @@ fml::Status RenderPassVK::Draw() {
 
 #ifdef IMPELLER_DEBUG
   if (has_label_) {
-    command_buffer_->GetEncoder()->PopDebugGroup();
+    command_buffer_->PopDebugGroup();
   }
 #endif  // IMPELLER_DEBUG
   has_label_ = false;
@@ -560,7 +572,7 @@ bool RenderPassVK::BindResource(size_t binding,
     return false;
   }
 
-  if (!command_buffer_->GetEncoder()->Track(device_buffer)) {
+  if (!command_buffer_->Track(device_buffer)) {
     return false;
   }
 
@@ -597,7 +609,7 @@ bool RenderPassVK::BindResource(ShaderStage stage,
   const TextureVK& texture_vk = TextureVK::Cast(*texture);
   const SamplerVK& sampler_vk = SamplerVK::Cast(*sampler);
 
-  if (!command_buffer_->GetEncoder()->Track(texture)) {
+  if (!command_buffer_->Track(texture)) {
     return false;
   }
 
@@ -622,7 +634,7 @@ bool RenderPassVK::BindResource(ShaderStage stage,
 }
 
 bool RenderPassVK::OnEncodeCommands(const Context& context) const {
-  command_buffer_->GetEncoder()->GetCommandBuffer().endRenderPass();
+  command_buffer_->GetCommandBuffer().endRenderPass();
 
   // If this render target will be consumed by a subsequent render pass,
   // perform a layout transition to a shader read state.

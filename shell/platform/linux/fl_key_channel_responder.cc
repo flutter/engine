@@ -42,7 +42,7 @@ struct _FlKeyChannelUserData {
   GObject parent_instance;
 
   // The current responder.
-  FlKeyChannelResponder* responder;
+  GWeakRef responder;
   // The callback provided by the caller #FlKeyboardHandler.
   FlKeyResponderAsyncCallback callback;
   // The user_data provided by the caller #FlKeyboardHandler.
@@ -56,12 +56,10 @@ G_DEFINE_TYPE(FlKeyChannelUserData, fl_key_channel_user_data, G_TYPE_OBJECT)
 static void fl_key_channel_user_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_CHANNEL_USER_DATA(object));
   FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
-  if (self->responder != nullptr) {
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->responder),
-        reinterpret_cast<gpointer*>(&(self->responder)));
-    self->responder = nullptr;
-  }
+
+  g_weak_ref_clear(&self->responder);
+
+  G_OBJECT_CLASS(fl_key_channel_user_data_parent_class)->dispose(object);
 }
 
 // Class initialization method for FlKeyChannelUserData private class.
@@ -83,11 +81,7 @@ static FlKeyChannelUserData* fl_key_channel_user_data_new(
   FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(
       g_object_new(fl_key_channel_user_data_get_type(), nullptr));
 
-  self->responder = responder;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(responder),
-                            reinterpret_cast<gpointer*>(&(self->responder)));
+  g_weak_ref_init(&self->responder, responder);
   self->callback = callback;
   self->user_data = user_data;
   return self;
@@ -134,12 +128,11 @@ static void handle_response(GObject* object,
                             gpointer user_data) {
   g_autoptr(FlKeyChannelUserData) data = FL_KEY_CHANNEL_USER_DATA(user_data);
 
-  // This is true if the weak pointer has been destroyed.
-  if (data->responder == nullptr) {
+  g_autoptr(FlKeyChannelResponder) self =
+      FL_KEY_CHANNEL_RESPONDER(g_weak_ref_get(&data->responder));
+  if (self == nullptr) {
     return;
   }
-
-  FlKeyChannelResponder* self = data->responder;
 
   g_autoptr(GError) error = nullptr;
   FlBasicMessageChannel* messageChannel = FL_BASIC_MESSAGE_CHANNEL(object);
@@ -212,9 +205,11 @@ static void fl_key_channel_responder_handle_event(
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
 
-  const gchar* type = event->is_press ? kTypeValueDown : kTypeValueUp;
-  int64_t scan_code = event->keycode;
-  int64_t unicode_scarlar_values = gdk_keyval_to_unicode(event->keyval);
+  const gchar* type =
+      fl_key_event_get_is_press(event) ? kTypeValueDown : kTypeValueUp;
+  int64_t scan_code = fl_key_event_get_keycode(event);
+  int64_t unicode_scarlar_values =
+      gdk_keyval_to_unicode(fl_key_event_get_keyval(event));
 
   // For most modifier keys, GTK keeps track of the "pressed" state of the
   // modifier keys. Flutter uses this information to keep modifier keys from
@@ -239,20 +234,21 @@ static void fl_key_channel_responder_handle_event(
   // interactions (for example, if shift-lock is on, tab traversal is broken).
 
   // Remove lock states from state mask.
-  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+  guint state =
+      fl_key_event_get_state(event) & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
 
   static bool shift_lock_pressed = FALSE;
   static bool caps_lock_pressed = FALSE;
   static bool num_lock_pressed = FALSE;
-  switch (event->keyval) {
+  switch (fl_key_event_get_keyval(event)) {
     case GDK_KEY_Num_Lock:
-      num_lock_pressed = event->is_press;
+      num_lock_pressed = fl_key_event_get_is_press(event);
       break;
     case GDK_KEY_Caps_Lock:
-      caps_lock_pressed = event->is_press;
+      caps_lock_pressed = fl_key_event_get_is_press(event);
       break;
     case GDK_KEY_Shift_Lock:
-      shift_lock_pressed = event->is_press;
+      shift_lock_pressed = fl_key_event_get_is_press(event);
       break;
   }
 
@@ -269,7 +265,7 @@ static void fl_key_channel_responder_handle_event(
   fl_value_set_string_take(message, kToolkitKey,
                            fl_value_new_string(kGtkToolkit));
   fl_value_set_string_take(message, kKeyCodeKey,
-                           fl_value_new_int(event->keyval));
+                           fl_value_new_int(fl_key_event_get_keyval(event)));
   fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(state));
   if (unicode_scarlar_values != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,

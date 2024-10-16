@@ -32,7 +32,7 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+void ClipContents::SetGeometry(const Geometry* geometry) {
   geometry_ = geometry;
 }
 
@@ -74,15 +74,6 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
       };
   }
   FML_UNREACHABLE();
-}
-
-bool ClipContents::ShouldRender(const Entity& entity,
-                                const std::optional<Rect> clip_coverage) const {
-  return true;
-}
-
-bool ClipContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
 }
 
 void ClipContents::SetInheritedOpacity(Scalar opacity) {}
@@ -202,16 +193,6 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
     const Entity& entity,
     const std::optional<Rect>& current_clip_coverage) const {
   return {.type = ClipCoverage::Type::kRestore, .coverage = std::nullopt};
-}
-
-bool ClipRestoreContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect> clip_coverage) const {
-  return true;
-}
-
-bool ClipRestoreContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
 }
 
 void ClipRestoreContents::SetInheritedOpacity(Scalar opacity) {}

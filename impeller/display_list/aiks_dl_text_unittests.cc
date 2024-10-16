@@ -7,7 +7,7 @@
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
@@ -15,9 +15,6 @@
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/stb/text_frame_stb.h"
-#include "impeller/typographer/backends/stb/typeface_stb.h"
-#include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 
@@ -32,6 +29,7 @@ namespace testing {
 struct TextRenderOptions {
   bool stroke = false;
   Scalar font_size = 50;
+  Scalar stroke_width = 1;
   DlColor color = DlColor::kYellow();
   SkPoint position = SkPoint::Make(100, 200);
   std::shared_ptr<DlMaskFilter> filter;
@@ -72,43 +70,9 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   DlPaint text_paint;
   text_paint.setColor(options.color);
   text_paint.setMaskFilter(options.filter);
-  text_paint.setStrokeWidth(1);
+  text_paint.setStrokeWidth(options.stroke_width);
   text_paint.setDrawStyle(options.stroke ? DlDrawStyle::kStroke
                                          : DlDrawStyle::kFill);
-  canvas.DrawTextFrame(frame, options.position.x(), options.position.y(),
-                       text_paint);
-  return true;
-}
-
-bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
-                           DisplayListBuilder& canvas,
-                           const std::string& text,
-                           const std::string& font_fixture,
-                           const TextRenderOptions& options = {}) {
-  // Draw the baseline.
-  DlPaint paint;
-  paint.setColor(DlColor::kAqua().withAlpha(255 * 0.25));
-  canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
-                                   options.position.y(), 900, 10),
-                  paint);
-
-  // Mark the point at which the text is drawn.
-  paint.setColor(DlColor::kRed().withAlpha(255 * 0.25));
-  canvas.DrawCircle(options.position, 5.0, paint);
-
-  // Construct the text blob.
-  auto mapping = flutter::testing::OpenFixtureAsMapping(font_fixture.c_str());
-  if (!mapping) {
-    return false;
-  }
-  auto typeface_stb = std::make_shared<TypefaceSTB>(std::move(mapping));
-
-  auto frame = MakeTextFrameSTB(
-      typeface_stb, Font::Metrics{.point_size = options.font_size}, text);
-
-  DlPaint text_paint;
-  text_paint.setColor(options.color);
-
   canvas.DrawTextFrame(frame, options.position.x(), options.position.y(),
                        text_paint);
   return true;
@@ -159,6 +123,22 @@ TEST_P(AiksTest, CanRenderStrokedTextFrame) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, CanRenderTextStrokeWidth) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
+  builder.DrawPaint(paint);
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "LMNOP VWXYZ",
+                                     "Roboto-Medium.ttf",
+                                     {
+                                         .stroke = true,
+                                         .stroke_width = 4,
+                                     }));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
   DisplayListBuilder builder;
 
@@ -184,21 +164,6 @@ TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
-TEST_P(AiksTest, CanRenderTextFrameSTB) {
-  DisplayListBuilder builder;
-
-  DlPaint paint;
-  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
-  builder.DrawPaint(paint);
-
-  ASSERT_TRUE(RenderTextInCanvasSTB(
-      GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
-      "Roboto-Regular.ttf"));
-
-  SetTypographerContext(TypographerContextSTB::Make());
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -283,6 +248,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 TEST_P(AiksTest, CanRenderEmojiTextFrameWithBlur) {
   DisplayListBuilder builder;
 
+  builder.Scale(GetContentScale().x, GetContentScale().y);
   DlPaint paint;
   paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
@@ -449,6 +415,30 @@ TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "Hello world",
                                      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithPerspectiveTransformInSublist) {
+  DisplayListBuilder text_builder;
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), text_builder, "Hello world",
+                                     "Roboto-Regular.ttf"));
+  auto text_display_list = text_builder.Build();
+
+  DisplayListBuilder builder;
+
+  Matrix matrix = Matrix::MakeRow(2.0, 0.0, 0.0, 0.0,  //
+                                  0.0, 2.0, 0.0, 0.0,  //
+                                  0.0, 0.0, 1.0, 0.0,  //
+                                  0.0, 0.002, 0.0, 1.0);
+
+  DlPaint save_paint;
+  SkRect window_bounds =
+      SkRect::MakeXYWH(0, 0, GetWindowSize().width, GetWindowSize().height);
+  builder.SaveLayer(&window_bounds, &save_paint);
+  builder.Transform(SkM44::ColMajor(matrix.m));
+  builder.DrawDisplayList(text_display_list, 1.0f);
+  builder.Restore();
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

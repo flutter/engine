@@ -5,10 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
 
-#include <functional>
-#include <memory>
-#include <vector>
-
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -21,7 +17,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetGeometry(const std::shared_ptr<Geometry>& geometry);
+  void SetGeometry(const Geometry* geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -34,21 +30,15 @@ class ClipContents final : public Contents {
       const std::optional<Rect>& current_clip_coverage) const override;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect> clip_coverage) const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  std::shared_ptr<Geometry> geometry_;
+  const Geometry* geometry_ = nullptr;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
   ClipContents(const ClipContents&) = delete;
@@ -81,16 +71,9 @@ class ClipRestoreContents final : public Contents {
       const std::optional<Rect>& current_clip_coverage) const override;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect> clip_coverage) const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
