@@ -62,7 +62,21 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   bool HasIndexBuffer() const;
 
+  void ClearBindings();
+
   bool Draw();
+
+  using BufferUniformMap =
+      std::unordered_map<const flutter::gpu::Shader::UniformBinding*,
+                         impeller::BufferAndUniformSlot>;
+  using TextureUniformMap =
+      std::unordered_map<const flutter::gpu::Shader::TextureBinding*,
+                         impeller::TextureAndSampler>;
+
+  BufferUniformMap vertex_uniform_bindings;
+  TextureUniformMap vertex_texture_bindings;
+  BufferUniformMap fragment_uniform_bindings;
+  TextureUniformMap fragment_texture_bindings;
 
  private:
   /// Lookup an Impeller pipeline by building a descriptor based on the current
