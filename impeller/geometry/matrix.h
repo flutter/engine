@@ -410,14 +410,22 @@ struct Matrix {
   bool Equals(const Matrix& matrix, Scalar epsilon = 1e-5f) const {
     const Scalar* a = m;
     const Scalar* b = matrix.m;
-    return !(fabsf(a[0] - b[0]) > epsilon || fabsf(a[1] - b[1]) > epsilon ||
-             fabsf(a[2] - b[2]) > epsilon || fabsf(a[3] - b[3]) > epsilon ||
-             fabsf(a[4] - b[4]) > epsilon || fabsf(a[5] - b[5]) > epsilon ||
-             fabsf(a[6] - b[6]) > epsilon || fabsf(a[7] - b[7]) > epsilon ||
-             fabsf(a[8] - b[8]) > epsilon || fabsf(a[9] - b[9]) > epsilon ||
-             fabsf(a[10] - b[10]) > epsilon || fabsf(a[11] - b[11]) > epsilon ||
-             fabsf(a[12] - b[12]) > epsilon || fabsf(a[13] - b[13]) > epsilon ||
-             fabsf(a[14] - b[14]) > epsilon || fabsf(a[15] - b[15]) > epsilon);
+    return ScalarNearlyEqual(a[0], b[0], epsilon) &&
+           ScalarNearlyEqual(a[1], b[1], epsilon) &&
+           ScalarNearlyEqual(a[2], b[2], epsilon) &&
+           ScalarNearlyEqual(a[3], b[3], epsilon) &&
+           ScalarNearlyEqual(a[4], b[4], epsilon) &&
+           ScalarNearlyEqual(a[5], b[5], epsilon) &&
+           ScalarNearlyEqual(a[6], b[6], epsilon) &&
+           ScalarNearlyEqual(a[7], b[7], epsilon) &&
+           ScalarNearlyEqual(a[8], b[8], epsilon) &&
+           ScalarNearlyEqual(a[9], b[9], epsilon) &&
+           ScalarNearlyEqual(a[10], b[10], epsilon) &&
+           ScalarNearlyEqual(a[11], b[11], epsilon) &&
+           ScalarNearlyEqual(a[12], b[12], epsilon) &&
+           ScalarNearlyEqual(a[13], b[13], epsilon) &&
+           ScalarNearlyEqual(a[14], b[14], epsilon) &&
+           ScalarNearlyEqual(a[15], b[15], epsilon);
   }
 
   constexpr bool operator==(const Matrix& m) const {
