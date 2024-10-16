@@ -176,7 +176,6 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
   impeller::Command result = command_;
 
   result.pipeline = GetOrCreatePipeline();
-  result.BindVertices(vertex_buffer_);
 
   return result;
 }
@@ -195,7 +194,7 @@ bool RenderPass::Draw() {
   if (result.scissor.has_value()) {
     render_pass_->SetScissor(result.scissor.value());
   }
-  render_pass_->SetVertexBuffer(result.vertex_buffer);
+  render_pass_->SetVertexBuffer(GetVertexBuffer());
   for (const auto& buffer : result.vertex_bindings.buffers) {
     render_pass_->BindResource(impeller::ShaderStage::kVertex,
                                impeller::DescriptorType::kUniformBuffer,
@@ -319,6 +318,7 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
       .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
+
   // If the index type is set, then the `vertex_count` becomes the index
   // count... So don't overwrite the count if it's already been set when binding
   // the index buffer.
@@ -502,7 +502,6 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
 void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
-  command.vertex_buffer = {};
   command.vertex_bindings = {};
   command.fragment_bindings = {};
 }
@@ -615,6 +614,15 @@ void InternalFlutterGpu_RenderPass_SetWindingOrder(
       wrapper->GetPipelineDescriptor();
   pipeline_descriptor.SetWindingOrder(
       flutter::gpu::ToImpellerWindingOrder(winding_order));
+}
+
+void InternalFlutterGpu_RenderPass_SetPolygonMode(
+    flutter::gpu::RenderPass* wrapper,
+    int polygon_mode) {
+  impeller::PipelineDescriptor& pipeline_descriptor =
+      wrapper->GetPipelineDescriptor();
+  pipeline_descriptor.SetPolygonMode(
+      flutter::gpu::ToImpellerPolygonMode(polygon_mode));
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

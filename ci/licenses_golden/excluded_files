@@ -1443,6 +1443,11 @@
 ../../../flutter/third_party/dart/runtime/tools/heapsnapshot/README.md
 ../../../flutter/third_party/dart/runtime/tools/heapsnapshot/pubspec.yaml
 ../../../flutter/third_party/dart/runtime/tools/heapsnapshot/test
+../../../flutter/third_party/dart/runtime/tools/profiling/.gitignore
+../../../flutter/third_party/dart/runtime/tools/profiling/CHANGELOG.md
+../../../flutter/third_party/dart/runtime/tools/profiling/README.md
+../../../flutter/third_party/dart/runtime/tools/profiling/analysis_options.yaml
+../../../flutter/third_party/dart/runtime/tools/profiling/pubspec.yaml
 ../../../flutter/third_party/dart/runtime/tools/utils.py
 ../../../flutter/third_party/dart/runtime/tools/valgrind.py
 ../../../flutter/third_party/dart/runtime/tools/wiki/README.md
@@ -1564,7 +1569,7 @@
 ../../../flutter/third_party/dart/runtime/vm/port_test.cc
 ../../../flutter/third_party/dart/runtime/vm/profiler_test.cc
 ../../../flutter/third_party/dart/runtime/vm/protos/.gitignore
-../../../flutter/third_party/dart/runtime/vm/regexp_test.cc
+../../../flutter/third_party/dart/runtime/vm/regexp/regexp_test.cc
 ../../../flutter/third_party/dart/runtime/vm/ring_buffer_test.cc
 ../../../flutter/third_party/dart/runtime/vm/scopes_test.cc
 ../../../flutter/third_party/dart/runtime/vm/service
@@ -2945,7 +2950,6 @@
 ../../../flutter/third_party/sqlite/Makefile
 ../../../flutter/third_party/sqlite/README.md
 ../../../flutter/third_party/sqlite/VERSION
-../../../flutter/third_party/stb
 ../../../flutter/third_party/swiftshader/.clang-format
 ../../../flutter/third_party/swiftshader/.git
 ../../../flutter/third_party/swiftshader/.gitignore
@@ -3498,6 +3502,9 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-23/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-24/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-24/sysroot/dist/lib/hwasan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-24/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-NEXT/sysroot/dist/lib/ld.so.1
@@ -3513,6 +3520,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-22/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-23/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-23/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-24/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-24/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
@@ -3527,6 +3536,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-22/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-23/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-23/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-24/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-24/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-NEXT/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
@@ -3574,6 +3585,8 @@
 ../../../fuchsia/sdk/linux/pkg/driver_symbols/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/include/lib/driver/testing
 ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_testing_scoped_global_logger_cpp/include/lib/driver/testing
+../../../fuchsia/sdk/linux/pkg/driver_testing_scoped_global_logger_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json

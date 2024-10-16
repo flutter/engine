@@ -14,8 +14,6 @@
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
-typedef std::function<void()> KeyboardLayoutNotifier;
-
 G_BEGIN_DECLS
 
 G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
@@ -44,12 +42,7 @@ struct _FlKeyboardViewDelegateInterface {
   gboolean (*text_filter_key_press)(FlKeyboardViewDelegate* delegate,
                                     FlKeyEvent* event);
 
-  FlBinaryMessenger* (*get_messenger)(FlKeyboardViewDelegate* delegate);
-
   void (*redispatch_event)(FlKeyboardViewDelegate* delegate, FlKeyEvent* event);
-
-  void (*subscribe_to_layout_change)(FlKeyboardViewDelegate* delegate,
-                                     KeyboardLayoutNotifier notifier);
 
   guint (*lookup_key)(FlKeyboardViewDelegate* view_delegate,
                       const GdkKeymapKey* key);
@@ -87,17 +80,6 @@ gboolean fl_keyboard_view_delegate_text_filter_key_press(
     FlKeyEvent* event);
 
 /**
- * fl_keyboard_view_delegate_get_messenger:
- *
- * Returns a binary messenger that can be used to send messages to the
- * framework.
- *
- * The ownership of messenger is kept by the view delegate.
- */
-FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
-    FlKeyboardViewDelegate* delegate);
-
-/**
  * fl_keyboard_view_delegate_redispatch_event:
  *
  * Handles `FlKeyboardHandler`'s request to insert a GDK event to the system for
@@ -106,10 +88,6 @@ FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
 void fl_keyboard_view_delegate_redispatch_event(
     FlKeyboardViewDelegate* delegate,
     FlKeyEvent* event);
-
-void fl_keyboard_view_delegate_subscribe_to_layout_change(
-    FlKeyboardViewDelegate* delegate,
-    KeyboardLayoutNotifier notifier);
 
 guint fl_keyboard_view_delegate_lookup_key(FlKeyboardViewDelegate* delegate,
                                            const GdkKeymapKey* key);
