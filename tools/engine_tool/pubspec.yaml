@@ -15,6 +15,8 @@ resolution: workspace
 dependencies:
   args: any
   collection: any
+  convert: any
+  crypto: any
   engine_build_configs: any
   engine_repo_tools: any
   file: any

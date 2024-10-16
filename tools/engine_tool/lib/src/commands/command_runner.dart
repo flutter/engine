@@ -10,6 +10,7 @@ import 'build_command.dart';
 import 'fetch_command.dart';
 import 'flags.dart';
 import 'format_command.dart';
+import 'hash_command.dart';
 import 'lint_command.dart';
 import 'query_command.dart';
 import 'run_command.dart';
@@ -60,6 +61,10 @@ final class ToolCommandRunner extends CommandRunner<int> {
         environment: environment,
         configs: configs,
         help: help,
+        usageLineLength: _usageLineLength,
+      ),
+      HashCommand(
+        environment: environment,
         usageLineLength: _usageLineLength,
       ),
     ];

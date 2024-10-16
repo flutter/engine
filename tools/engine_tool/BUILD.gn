@@ -13,6 +13,7 @@ group("tests") {
     ":flutter_tools_test",
     ":format_command_test",
     ":gn_test",
+    ":hash_command_test",
     ":label_test",
     ":lint_command_test",
     ":logger_test",
@@ -50,6 +51,10 @@ dart_test("fetch_command_test") {
 
 dart_test("format_command_test") {
   main_dart = "test/commands/format_command_test.dart"
+}
+
+dart_test("hash_command_test") {
+  main_dart = "test/commands/hash_command_test.dart"
 }
 
 dart_test("label_test") {

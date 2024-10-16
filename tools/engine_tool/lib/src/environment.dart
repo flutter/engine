@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:ffi' as ffi show Abi;
-import 'dart:io' as io show Directory;
+import 'dart:io' as io show Directory, Stdout, stdout;
 
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as p;
@@ -26,8 +26,9 @@ final class Environment {
     required this.logger,
     required this.platform,
     required this.processRunner,
+    io.Stdout? stdout,
     this.verbose = false,
-  });
+  }) : stdout = stdout ?? io.stdout;
 
   /// Whether the tool should be considered running in "verbose" mode.
   final bool verbose;
@@ -46,6 +47,9 @@ final class Environment {
 
   /// Facility for commands to run subprocesses.
   final ProcessRunner processRunner;
+
+  /// Raw stdout for use in machine readable output.
+  final io.Stdout stdout;
 
   /// Whether it appears that the current environment supports remote builds.
   ///
