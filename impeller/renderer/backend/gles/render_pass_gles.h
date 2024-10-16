@@ -23,7 +23,7 @@ class RenderPassGLES final
   friend class CommandBufferGLES;
 
   ReactorGLES::Ref reactor_;
-  std::string label_;
+  std::string_view label_;
   bool is_valid_ = false;
 
   RenderPassGLES(std::shared_ptr<const Context> context,
@@ -34,7 +34,7 @@ class RenderPassGLES final
   bool IsValid() const override;
 
   // |RenderPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;
