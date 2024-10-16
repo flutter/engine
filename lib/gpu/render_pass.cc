@@ -419,8 +419,6 @@ static bool BindUniform(
     const std::shared_ptr<const impeller::DeviceBuffer>& buffer,
     int offset_in_bytes,
     int length_in_bytes) {
-  auto& render_pass = wrapper->GetRenderPass();
-
   auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
   const flutter::gpu::Shader::UniformBinding* uniform_struct =
       shader->GetUniformStruct(uniform_name);
@@ -502,8 +500,6 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
     int mip_filter,
     int width_address_mode,
     int height_address_mode) {
-  auto& render_pass = wrapper->GetRenderPass();
-
   auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
   const flutter::gpu::Shader::TextureBinding* texture_binding =
       shader->GetUniformTexture(uniform_name);
