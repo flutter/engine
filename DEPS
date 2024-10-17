@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'd6d3c4f624a3a920b6c932f42fb77c6e9f839d73',
+  'skia_revision': '3a081993e2a740118839621e0b0fd206e045987e',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -226,7 +226,6 @@ vars = {
   "upstream_sqlite": "https://github.com/sqlite/sqlite.git",
   "upstream_sse": "https://github.com/dart-lang/sse.git",
   "upstream_stack_trace": "https://github.com/dart-lang/stack_trace.git",
-  "upstream_stb": "https://github.com/nothings/stb.git",
   "upstream_stream_channel": "https://github.com/dart-lang/stream_channel.git",
   "upstream_string_scanner": "https://github.com/dart-lang/string_scanner.git",
   "upstream_SwiftShader": "https://swiftshader.googlesource.com/SwiftShader.git",
@@ -717,9 +716,6 @@ deps = {
   'src/flutter/third_party/json':
   Var('flutter_git') + '/third_party/json.git' + '@' + '17d9eacd248f58b73f4d1be518ef649fe2295642',
 
-  'src/flutter/third_party/stb':
-  Var('flutter_git') + '/third_party/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
-
   'src/flutter/third_party/gradle': {
     'packages': [
       {
@@ -960,7 +956,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '2cTD8TkGBMX2IssGl1MO4hHNrB1YvY50Q3D-vDSqlmkC'
+        'version': '9F_NaKPd2twhbPwP7A4a6UlWT-_f9PVyLrS8ZFo-3UkC'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
