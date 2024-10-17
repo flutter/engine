@@ -155,7 +155,8 @@ void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
                                    double dy,
                                    const fml::RefPtr<EngineLayer>& oldLayer) {
   auto layer = std::make_shared<flutter::ImageFilterLayer>(
-      image_filter->filter(), SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)));
+      image_filter->filter(DlTileMode::kDecal),
+      SkPoint::Make(SafeNarrow(dx), SafeNarrow(dy)));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
@@ -170,7 +171,7 @@ void SceneBuilder::pushBackdropFilter(
     int blendMode,
     const fml::RefPtr<EngineLayer>& oldLayer) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(
-      filter->filter(), static_cast<DlBlendMode>(blendMode));
+      filter->filter(DlTileMode::kMirror), static_cast<DlBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
