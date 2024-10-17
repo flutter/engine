@@ -4,8 +4,10 @@
 
 #include "impeller/renderer/render_target.h"
 
+#include <optional>
 #include <sstream>
 
+#include "fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
@@ -93,8 +95,8 @@ bool RenderTarget::IsValid() const {
 
 void RenderTarget::IterateAllAttachments(
     const std::function<bool(const Attachment& attachment)>& iterator) const {
-  for (const auto& color : colors_) {
-    if (!iterator(color.second)) {
+  for (const std::optional<ColorAttachment>& color : colors_) {
+    if (color.has_value() && !iterator(color.value())) {
       return;
     }
   }
@@ -113,27 +115,24 @@ void RenderTarget::IterateAllAttachments(
 }
 
 SampleCount RenderTarget::GetSampleCount() const {
-  if (auto found = colors_.find(0u); found != colors_.end()) {
-    return found->second.texture->GetTextureDescriptor().sample_count;
+  if (std::optional<ColorAttachment> found = colors_[0u]; found.has_value()) {
+    return found->texture->GetTextureDescriptor().sample_count;
   }
   return SampleCount::kCount1;
 }
 
 bool RenderTarget::HasColorAttachment(size_t index) const {
-  if (auto found = colors_.find(index); found != colors_.end()) {
-    return true;
-  }
-  return false;
+  return colors_[index].has_value();
 }
 
 std::optional<ISize> RenderTarget::GetColorAttachmentSize(size_t index) const {
-  auto found = colors_.find(index);
+  std::optional<ColorAttachment> found = colors_[index];
 
-  if (found == colors_.end()) {
+  if (!found.has_value()) {
     return std::nullopt;
   }
 
-  return found->second.texture->GetSize();
+  return found->texture->GetSize();
 }
 
 ISize RenderTarget::GetRenderTargetSize() const {
@@ -142,12 +141,11 @@ ISize RenderTarget::GetRenderTargetSize() const {
 }
 
 std::shared_ptr<Texture> RenderTarget::GetRenderTargetTexture() const {
-  auto found = colors_.find(0u);
-  if (found == colors_.end()) {
+  std::optional<ColorAttachment> found = colors_[0u];
+  if (!found.has_value()) {
     return nullptr;
   }
-  return found->second.resolve_texture ? found->second.resolve_texture
-                                       : found->second.texture;
+  return found->resolve_texture ? found->resolve_texture : found->texture;
 }
 
 PixelFormat RenderTarget::GetRenderTargetPixelFormat() const {
@@ -160,8 +158,12 @@ PixelFormat RenderTarget::GetRenderTargetPixelFormat() const {
 
 size_t RenderTarget::GetMaxColorAttacmentBindIndex() const {
   size_t max = 0;
-  for (const auto& color : colors_) {
-    max = std::max(color.first, max);
+  size_t index = 0;
+  for (const std::optional<ColorAttachment>& color : colors_) {
+    if (color.has_value()) {
+      max = std::max(index, max);
+    }
+    index++;
   }
   return max;
 }
@@ -195,8 +197,19 @@ RenderTarget& RenderTarget::SetStencilAttachment(
   return *this;
 }
 
-const std::map<size_t, ColorAttachment>& RenderTarget::GetColorAttachments()
-    const {
+ColorAttachment RenderTarget::GetColorAttachment0() const {
+  std::optional<ColorAttachment> color0 = colors_[0];
+  if (!color0.has_value()) {
+    FML_CHECK(false) << "Invalid Render target";
+    FML_UNREACHABLE();
+  } else {
+    return color0.value();
+  }
+}
+
+const std::array<std::optional<ColorAttachment>,
+                 RenderTarget::kColorAttachmentLimit>&
+RenderTarget::GetColorAttachments() const {
   return colors_;
 }
 
@@ -211,12 +224,14 @@ const std::optional<StencilAttachment>& RenderTarget::GetStencilAttachment()
 
 size_t RenderTarget::GetTotalAttachmentCount() const {
   size_t count = 0u;
-  for (const auto& [_, color] : colors_) {
-    if (color.texture) {
-      count++;
-    }
-    if (color.resolve_texture) {
-      count++;
+  for (const std::optional<ColorAttachment>& color : colors_) {
+    if (color.has_value()) {
+      if (color->texture) {
+        count++;
+      }
+      if (color->resolve_texture) {
+        count++;
+      }
     }
   }
   if (depth_.has_value()) {
@@ -231,9 +246,13 @@ size_t RenderTarget::GetTotalAttachmentCount() const {
 std::string RenderTarget::ToString() const {
   std::stringstream stream;
 
-  for (const auto& [index, color] : colors_) {
-    stream << SPrintF("Color[%zu]=(%s)", index,
-                      ColorAttachmentToString(color).c_str());
+  size_t index = 0;
+  for (const std::optional<ColorAttachment>& color : colors_) {
+    if (color.has_value()) {
+      stream << SPrintF("Color[%zu]=(%s)", index,
+                        ColorAttachmentToString(color.value()).c_str());
+    }
+    index++;
   }
   if (depth_) {
     stream << ",";
@@ -455,6 +474,19 @@ void RenderTarget::SetupDepthStencilAttachments(
       SPrintF("%s Depth+Stencil Texture", label.c_str()));
   SetDepthAttachment(std::move(depth0));
   SetStencilAttachment(std::move(stencil0));
+}
+
+RenderTargetConfig RenderTarget::ToConfig() const {
+  const std::optional<ColorAttachment>& color_attachment =
+      GetColorAttachments()[0u];
+  if (!color_attachment.has_value()) {
+    return RenderTargetConfig{};
+  }
+  return RenderTargetConfig{
+      .size = color_attachment->texture->GetSize(),
+      .mip_count = color_attachment->texture->GetMipCount(),
+      .has_msaa = color_attachment->resolve_texture != nullptr,
+      .has_depth_stencil = depth_.has_value() && stencil_.has_value()};
 }
 
 }  // namespace impeller

@@ -6,7 +6,7 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
+#include <utility>
 
 #include "fml/status.h"
 #include "impeller/base/validation.h"
@@ -25,6 +25,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/render_target.h"
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
@@ -36,6 +37,11 @@ namespace impeller {
 //
 // See: impeller/entity/shaders/blending/framebuffer_blend.frag
 static constexpr size_t kMagicSubpassInputBinding = 64u;
+
+// Two attachment textures for each supported color attachment (MSAA and
+// resolve) and then either a depth or stencil attachment.
+static constexpr size_t kVulkanAttachmentLimit =
+    RenderTarget::kColorAttachmentLimit * 2 + 1;
 
 static vk::ClearColorValue VKClearValueFromColor(Color color) {
   vk::ClearColorValue value;
@@ -52,14 +58,19 @@ static vk::ClearDepthStencilValue VKClearValueFromDepthStencil(uint32_t stencil,
   return value;
 }
 
-static std::vector<vk::ClearValue> GetVKClearValues(
-    const RenderTarget& target) {
-  std::vector<vk::ClearValue> clears;
+static std::pair<std::array<vk::ClearValue, kVulkanAttachmentLimit>, size_t>
+GetVKClearValues(const RenderTarget& target) {
+  std::array<vk::ClearValue, kVulkanAttachmentLimit> clears;
+  size_t count = 0;
 
-  for (const auto& [_, color] : target.GetColorAttachments()) {
-    clears.emplace_back(VKClearValueFromColor(color.clear_color));
-    if (color.resolve_texture) {
-      clears.emplace_back(VKClearValueFromColor(color.clear_color));
+  for (const std::optional<ColorAttachment>& color :
+       target.GetColorAttachments()) {
+    if (!color.has_value()) {
+      continue;
+    }
+    clears[count++] = VKClearValueFromColor(color->clear_color);
+    if (color->resolve_texture) {
+      clears[count++] = VKClearValueFromColor(color->clear_color);
     }
   }
 
@@ -67,14 +78,14 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   const auto& stencil = target.GetStencilAttachment();
 
   if (depth.has_value()) {
-    clears.emplace_back(VKClearValueFromDepthStencil(
-        stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
+    clears[count++] = VKClearValueFromDepthStencil(
+        stencil ? stencil->clear_stencil : 0u, depth->clear_depth);
   } else if (stencil.has_value()) {
-    clears.emplace_back(VKClearValueFromDepthStencil(
-        stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
+    clears[count++] = VKClearValueFromDepthStencil(
+        stencil->clear_stencil, depth ? depth->clear_depth : 0.0f);
   }
 
-  return clears;
+  return std::make_pair(clears, count);
 }
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
@@ -93,28 +104,36 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
 
   RenderPassBuilderVK builder;
 
-  for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    builder.SetColorAttachment(
-        bind_point,                                          //
-        color.texture->GetTextureDescriptor().format,        //
-        color.texture->GetTextureDescriptor().sample_count,  //
-        color.load_action,                                   //
-        color.store_action                                   //
-    );
-    TextureVK::Cast(*color.texture).SetLayout(barrier);
-    if (color.resolve_texture) {
-      TextureVK::Cast(*color.resolve_texture).SetLayout(barrier);
+  size_t bind_point = 0;
+  for (const std::optional<ColorAttachment>& color :
+       render_target_.GetColorAttachments()) {
+    if (color.has_value()) {
+      builder.SetColorAttachment(
+          bind_point,                                           //
+          color->texture->GetTextureDescriptor().format,        //
+          color->texture->GetTextureDescriptor().sample_count,  //
+          color->load_action,                                   //
+          color->store_action                                   //
+      );
+      TextureVK::Cast(*color->texture).SetLayout(barrier);
+      if (color->resolve_texture) {
+        TextureVK::Cast(*color->resolve_texture).SetLayout(barrier);
+      }
     }
+    bind_point++;
   }
 
-  if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
+  if (std::optional<DepthAttachment> depth =
+          render_target_.GetDepthAttachment();
+      depth.has_value()) {
     builder.SetDepthStencilAttachment(
         depth->texture->GetTextureDescriptor().format,        //
         depth->texture->GetTextureDescriptor().sample_count,  //
         depth->load_action,                                   //
         depth->store_action                                   //
     );
-  } else if (auto stencil = render_target_.GetStencilAttachment();
+  } else if (std::optional<StencilAttachment> stencil =
+                 render_target_.GetStencilAttachment();
              stencil.has_value()) {
     builder.SetStencilAttachment(
         stencil->texture->GetTextureDescriptor().format,        //
@@ -144,11 +163,15 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
                            const RenderTarget& target,
                            std::shared_ptr<CommandBufferVK> command_buffer)
     : RenderPass(context, target), command_buffer_(std::move(command_buffer)) {
-  color_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.texture;
-  resolve_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
-
+  // Setup input attachment bindings. This is only used by the 2D renderer.
+  if (const std::optional<ColorAttachment>& color0 =
+          render_target_.GetColorAttachments()[0u];
+      color0.has_value()) {
+    color_image_vk_ = color0->texture;
+    if (color0->resolve_texture) {
+      resolve_image_vk_ = color0->resolve_texture;
+    }
+  }
   const auto& vk_context = ContextVK::Cast(*context);
   command_buffer_vk_ = command_buffer_->GetCommandBuffer();
   render_target_.IterateAllAttachments([&](const auto& attachment) -> bool {
@@ -195,7 +218,7 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     TextureVK::Cast(*resolve_image_vk_).SetCachedRenderPass(render_pass_);
   }
 
-  auto clear_values = GetVKClearValues(render_target_);
+  auto [clear_values, count] = GetVKClearValues(render_target_);
 
   vk::RenderPassBeginInfo pass_info;
   pass_info.renderPass = *render_pass_;
@@ -203,7 +226,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
   pass_info.renderArea.extent.width = static_cast<uint32_t>(target_size.width);
   pass_info.renderArea.extent.height =
       static_cast<uint32_t>(target_size.height);
-  pass_info.setClearValues(clear_values);
+  pass_info.setPClearValues(clear_values.data());
+  pass_info.setClearValueCount(count);
 
   command_buffer_vk_.beginRenderPass(pass_info, vk::SubpassContents::eInline);
 
@@ -257,31 +281,37 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   fb_info.height = target_size.height;
   fb_info.layers = 1u;
 
-  std::vector<vk::ImageView> attachments;
+  size_t offset = 0;
+  std::array<vk::ImageView, kVulkanAttachmentLimit> attachments;
 
   // This bit must be consistent to ensure compatibility with the pass created
   // earlier. Follow this order: Color attachments, then depth-stencil, then
   // stencil.
-  for (const auto& [_, color] : render_target_.GetColorAttachments()) {
+  for (const std::optional<ColorAttachment>& color :
+       render_target_.GetColorAttachments()) {
+    if (!color.has_value()) {
+      continue;
+    }
     // The bind point doesn't matter here since that information is present in
     // the render pass.
-    attachments.emplace_back(
-        TextureVK::Cast(*color.texture).GetRenderTargetView());
-    if (color.resolve_texture) {
-      attachments.emplace_back(
-          TextureVK::Cast(*color.resolve_texture).GetRenderTargetView());
+    attachments[offset++] =
+        TextureVK::Cast(*color->texture).GetRenderTargetView();
+    if (color->resolve_texture) {
+      attachments[offset++] =
+          TextureVK::Cast(*color->resolve_texture).GetRenderTargetView();
     }
   }
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
-    attachments.emplace_back(
-        TextureVK::Cast(*depth->texture).GetRenderTargetView());
+    attachments[offset++] =
+        TextureVK::Cast(*depth->texture).GetRenderTargetView();
   } else if (auto stencil = render_target_.GetStencilAttachment();
              stencil.has_value()) {
-    attachments.emplace_back(
-        TextureVK::Cast(*stencil->texture).GetRenderTargetView());
+    attachments[offset++] =
+        TextureVK::Cast(*stencil->texture).GetRenderTargetView();
   }
 
-  fb_info.setAttachments(attachments);
+  fb_info.setPAttachments(attachments.data());
+  fb_info.setAttachmentCount(offset);
 
   auto [result, framebuffer] =
       context.GetDevice().createFramebufferUnique(fb_info);

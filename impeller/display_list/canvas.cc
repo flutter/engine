@@ -882,8 +882,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<AtlasContents>& atlas_contents,
 
 void Canvas::SetupRenderPass() {
   renderer_.GetRenderTargetCache()->Start();
-  auto color0 = render_target_.GetColorAttachments().find(0u)->second;
-
+  auto color0 = render_target_.GetColorAttachment0();
   auto& stencil_attachment = render_target_.GetStencilAttachment();
   auto& depth_attachment = render_target_.GetDepthAttachment();
   if (!stencil_attachment.has_value() || !depth_attachment.has_value()) {
@@ -1445,8 +1444,7 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
       RenderTarget& render_target = render_passes_.back()
                                         .inline_pass_context->GetPassTarget()
                                         .GetRenderTarget();
-      ColorAttachment attachment =
-          render_target.GetColorAttachments().find(0u)->second;
+      ColorAttachment attachment = render_target.GetColorAttachment0();
       // Attachment.clear color needs to be premultiplied at all times, but the
       // Color::Blend function requires unpremultiplied colors.
       attachment.clear_color = attachment.clear_color.Unpremultiply()
