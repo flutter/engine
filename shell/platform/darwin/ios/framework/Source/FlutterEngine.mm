@@ -1384,6 +1384,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       // owns a WeakPtrFactory whose destructor asserts that it be freed on the platform thread. To
       // avoid this, we capture strongSelf in the current block, which is executed on the platform
       // thread.
+      //
+      // strongSelf is never nil here since it's a strong reference that's verified non-nil above,
+      // but we use a conditional check to avoid and unused expression compiler warning.
       if (strongSelf) {
         callback(didTimeout);
       }
