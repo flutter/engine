@@ -1363,12 +1363,30 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)waitForFirstFrame:(NSTimeInterval)timeout
                  callback:(void (^_Nonnull)(BOOL didTimeout))callback {
   dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
+  __weak FlutterEngine* weakSelf = self;
   dispatch_async(queue, ^{
+    FlutterEngine* strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+
     fml::TimeDelta waitTime = fml::TimeDelta::FromMilliseconds(timeout * 1000);
     BOOL didTimeout =
-        self.shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded;
+        strongSelf.shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded;
     dispatch_async(dispatch_get_main_queue(), ^{
-      callback(didTimeout);
+      // Capture strongSelf to ensure that destruction does not occur on a background thread.
+      //
+      // The containing block, executed on a background thread, strongly captures self, then makes a
+      // blocking call to self.shell.WaitForFirstFrame(). If, during this time, all other instances
+      // of self are released, the containing block's reference would be the last one, resulting in
+      // `[FlutterEngine dealloc]` being called when it goes out of scope at the end of that block,
+      // on a background thread. FlutterEngine owns a reference to a PlatformViewsController, which
+      // owns a WeakPtrFactory whose destructor asserts that it be freed on the platform thread. To
+      // avoid this, we capture strongSelf in the current block, which is executed on the platform
+      // thread.
+      if (strongSelf) {
+        callback(didTimeout);
+      }
     });
   });
 }
