@@ -182,7 +182,7 @@ bool RenderPass::Draw() {
     render_pass_->BindResource(impeller::ShaderStage::kVertex,
                                impeller::DescriptorType::kSampledImage,
                                texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, texture.sampler);
+                               texture.texture.resource, *texture.sampler);
   }
   for (const auto& [_, buffer] : fragment_uniform_bindings) {
     render_pass_->BindResource(impeller::ShaderStage::kFragment,
@@ -194,7 +194,7 @@ bool RenderPass::Draw() {
     render_pass_->BindResource(impeller::ShaderStage::kFragment,
                                impeller::DescriptorType::kSampledImage,
                                texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, texture.sampler);
+                               texture.texture.resource, *texture.sampler);
   }
 
   render_pass_->SetVertexBuffer(vertex_buffer);
@@ -429,7 +429,7 @@ static bool BindUniform(
     return false;
   }
 
-  uniform_map->emplace(
+  uniform_map->insert_or_assign(
       uniform_struct,
       impeller::BufferAndUniformSlot{
           .slot = uniform_struct->slot,
@@ -515,12 +515,12 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
     case impeller::ShaderStage::kCompute:
       return false;
   }
-  uniform_map->emplace(
+  uniform_map->insert_or_assign(
       texture_binding,
       impeller::TextureAndSampler{
           .slot = texture_binding->slot,
           .texture = {&texture_binding->metadata, texture->GetTexture()},
-          .sampler = sampler,
+          .sampler = &sampler,
       });
   return true;
 }

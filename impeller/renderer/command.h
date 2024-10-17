@@ -61,7 +61,7 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 struct TextureAndSampler {
   SampledImageSlot slot;
   TextureResource texture;
-  const std::unique_ptr<const Sampler>& sampler;
+  const std::unique_ptr<const Sampler>* sampler;
 };
 
 /// @brief combines the buffer resource and its uniform slot information.

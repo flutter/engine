@@ -89,14 +89,14 @@ bool Command::BindResource(ShaderStage stage,
       vertex_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
           .texture = {&metadata, std::move(texture)},
-          .sampler = sampler,
+          .sampler = &sampler,
       });
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
           .texture = {&metadata, std::move(texture)},
-          .sampler = sampler,
+          .sampler = &sampler,
       });
       return true;
     case ShaderStage::kCompute:
