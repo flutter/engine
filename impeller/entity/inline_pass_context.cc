@@ -119,10 +119,9 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   RenderPassResult result;
   {
     // If the pass target has a resolve texture, then we're using MSAA.
-    bool is_msaa = pass_target_.GetRenderTarget()
-                       .GetColorAttachments()
-                       .find(0)
-                       ->second.resolve_texture != nullptr;
+    bool is_msaa =
+        pass_target_.GetRenderTarget().GetColorAttachment0().resolve_texture !=
+        nullptr;
     if (pass_count_ > 0 && is_msaa) {
       result.backdrop_texture =
           pass_target_.Flip(*renderer_.GetContext()->GetResourceAllocator());
@@ -134,8 +133,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
 
   // Find the color attachment a second time, since the target may have just
   // flipped.
-  auto color0 =
-      pass_target_.GetRenderTarget().GetColorAttachments().find(0)->second;
+  auto color0 = pass_target_.GetRenderTarget().GetColorAttachment0();
   bool is_msaa = color0.resolve_texture != nullptr;
 
   if (pass_count_ > 0) {

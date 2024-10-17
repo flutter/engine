@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include "fml/concurrent_message_loop.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
 #include "impeller/renderer/render_target.h"
@@ -599,15 +600,14 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
       rt_allocator.CreateOffscreenMSAA(*this, {1, 1}, 1);
 
   RenderPassBuilderVK builder;
-  for (const auto& [bind_point, color] : render_target.GetColorAttachments()) {
-    builder.SetColorAttachment(
-        bind_point,                                          //
-        color.texture->GetTextureDescriptor().format,        //
-        color.texture->GetTextureDescriptor().sample_count,  //
-        color.load_action,                                   //
-        color.store_action                                   //
-    );
-  }
+  const ColorAttachment& color0 = render_target.GetColorAttachment0();
+  builder.SetColorAttachment(
+      0,                                                    //
+      color0.texture->GetTextureDescriptor().format,        //
+      color0.texture->GetTextureDescriptor().sample_count,  //
+      color0.load_action,                                   //
+      color0.store_action                                   //
+  );
 
   if (auto depth = render_target.GetDepthAttachment(); depth.has_value()) {
     builder.SetDepthStencilAttachment(

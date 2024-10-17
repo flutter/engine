@@ -52,9 +52,7 @@ RenderTarget RenderTargetCache::CreateOffscreen(
     const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
-      auto color0 = render_target_data.render_target.GetColorAttachments()
-                        .find(0u)
-                        ->second;
+      auto color0 = render_target_data.render_target.GetColorAttachment0();
       auto depth = render_target_data.render_target.GetDepthAttachment();
       std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreen(
@@ -102,9 +100,7 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
     const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
-      auto color0 = render_target_data.render_target.GetColorAttachments()
-                        .find(0u)
-                        ->second;
+      auto color0 = render_target_data.render_target.GetColorAttachment0();
       auto depth = render_target_data.render_target.GetDepthAttachment();
       std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreenMSAA(

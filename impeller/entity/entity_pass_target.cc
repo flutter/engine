@@ -18,7 +18,7 @@ EntityPassTarget::EntityPassTarget(const RenderTarget& render_target,
       supports_implicit_msaa_(supports_implicit_msaa) {}
 
 std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
-  auto color0 = target_.GetColorAttachments().find(0)->second;
+  auto color0 = target_.GetColorAttachment0();
   if (!color0.resolve_texture) {
     VALIDATION_LOG << "EntityPassTarget Flip should never be called for a "
                       "non-MSAA target.";

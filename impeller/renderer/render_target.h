@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_
 
 #include <functional>
-#include <map>
 #include <optional>
 
 #include "flutter/fml/hash_combine.h"
@@ -51,6 +50,8 @@ class RenderTarget final {
     StoreAction store_action;
     Color clear_color;
   };
+
+  static constexpr size_t kColorAttachmentLimit = 8u;
 
   static constexpr AttachmentConfig kDefaultColorAttachmentConfig = {
       .storage_mode = StorageMode::kDevicePrivate,
@@ -109,7 +110,11 @@ class RenderTarget final {
 
   size_t GetMaxColorAttacmentBindIndex() const;
 
-  const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
+  ColorAttachment GetColorAttachment0() const;
+
+  const std::array<std::optional<ColorAttachment>,
+                   RenderTarget::kColorAttachmentLimit>&
+  GetColorAttachments() const;
 
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
 
@@ -122,17 +127,15 @@ class RenderTarget final {
 
   std::string ToString() const;
 
-  RenderTargetConfig ToConfig() const {
-    auto& color_attachment = GetColorAttachments().find(0)->second;
-    return RenderTargetConfig{
-        .size = color_attachment.texture->GetSize(),
-        .mip_count = color_attachment.texture->GetMipCount(),
-        .has_msaa = color_attachment.resolve_texture != nullptr,
-        .has_depth_stencil = depth_.has_value() && stencil_.has_value()};
-  }
+  /// @brief Construct the render target config used as a key by the render
+  ///        target cache.
+  ///
+  ///        This is not a general purpose caching mechanism and instead is
+  ///        specialized for the 2D renderer use case.
+  RenderTargetConfig ToConfig() const;
 
  private:
-  std::map<size_t, ColorAttachment> colors_;
+  std::array<std::optional<ColorAttachment>, kColorAttachmentLimit> colors_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
 };
