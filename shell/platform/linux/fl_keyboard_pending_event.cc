@@ -22,16 +22,16 @@ struct _FlKeyboardPendingEvent {
   // Unique ID to identify pending responds.
   uint64_t sequence_id;
 
-  // True if a reply received from the embedder.
+  // True if the embedder responder has replied.
   bool embedder_replied;
 
-  // True if a reply received from the channel.
+  // True if the channel responder has replied.
   bool channel_replied;
 
-  // True if handled by the embedder.
+  // True if this event was handled by the embedder responder.
   bool embedder_handled;
 
-  // True if handled by the channel.
+  // True if this event was handled by the channel responder.
   bool channel_handled;
 
   // A value calculated out of critical event information that can be used
