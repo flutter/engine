@@ -593,6 +593,12 @@ final List<RegExp> csReferencesByType = <RegExp>[
     multiLine: true,
   ),
 
+  // Brotli (MIT)
+  RegExp(
+    kIndent +
+    r'Distributed under (MIT) license\.',
+  ),
+
   RegExp(
     kIndent +
     r'This software is made available under the terms of the (ICU) License -- ICU 1\.8\.1 and later\.'
