@@ -23,7 +23,7 @@ class RenderPassGLES final
   friend class CommandBufferGLES;
 
   ReactorGLES::Ref reactor_;
-  std::string_view label_;
+  std::string label_;
   bool is_valid_ = false;
 
   RenderPassGLES(std::shared_ptr<const Context> context,
