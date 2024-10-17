@@ -1130,7 +1130,7 @@ void Canvas::SaveLayer(const Paint& paint,
       // layer once.
       if (backdrop_data->all_filters_equal &&
           !backdrop_data->shared_filter_snapshot.has_value()) {
-        // TODO(jonahwilliams): compute minimum input hint.
+        // TODO(157110): compute minimum input hint.
         backdrop_data->shared_filter_snapshot =
             backdrop_filter_contents->RenderToSnapshot(renderer_, {});
       }
