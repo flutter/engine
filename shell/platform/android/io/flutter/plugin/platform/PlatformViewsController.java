@@ -146,9 +146,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Used to acquire the original motion events using the motionEventIds.
   private final MotionEventTracker motionEventTracker;
 
-  // Whether software rendering is used.
-  private boolean usesSoftwareRendering = false;
-
   private static boolean enableImageRenderTarget = true;
 
   private static boolean enableSurfaceProducerRenderTarget = true;
@@ -222,12 +219,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     .TEXTURE_WITH_HYBRID_FALLBACK) {
               configureForHybridComposition(platformView, request);
               return PlatformViewsChannel.PlatformViewsHandler.NON_TEXTURE_FALLBACK;
-            } else if (!usesSoftwareRendering) { // Virtual Display doesn't support software mode.
+            } else {
               return configureForVirtualDisplay(platformView, request);
             }
-            // TODO(stuartmorgan): Consider throwing a specific exception here as a breaking change.
-            // For now, preserve the 3.0 behavior of falling through to Texture Layer mode even
-            // though it won't work correctly.
           }
           return configureForTextureLayerComposition(platformView, request);
         }
@@ -608,16 +602,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     final int physicalWidth = toPhysicalPixels(request.logicalWidth);
     final int physicalHeight = toPhysicalPixels(request.logicalHeight);
-    PlatformViewWrapper viewWrapper;
-    long textureId;
-    if (usesSoftwareRendering) {
-      viewWrapper = new PlatformViewWrapper(context);
-      textureId = -1;
-    } else {
-      final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
-      viewWrapper = new PlatformViewWrapper(context, renderTarget);
-      textureId = renderTarget.getId();
-    }
+    final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
+    PlatformViewWrapper viewWrapper = new PlatformViewWrapper(context, renderTarget);
+    long textureId = renderTarget.getId();
     viewWrapper.setTouchProcessor(androidTouchProcessor);
     viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
 
@@ -770,22 +757,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     this.textureRegistry = textureRegistry;
     platformViewsChannel = new PlatformViewsChannel(dartExecutor);
     platformViewsChannel.setPlatformViewsHandler(channelHandler);
-  }
-
-  /**
-   * Sets whether Flutter uses software rendering.
-   *
-   * <p>When software rendering is used, no GL context is available on the raster thread. When this
-   * is set to true, there's no Flutter composition of Android views and Flutter widgets since GL
-   * textures cannot be used.
-   *
-   * <p>Software rendering is only used for testing in emulators, and it should never be set to true
-   * in a production environment.
-   *
-   * @param useSoftwareRendering Whether software rendering is used.
-   */
-  public void setSoftwareRendering(boolean useSoftwareRendering) {
-    usesSoftwareRendering = useSoftwareRendering;
   }
 
   /**
