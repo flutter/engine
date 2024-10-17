@@ -359,7 +359,7 @@ class SemanticsFlag {
   //   - The `FlutterSemanticsFlag` enum in shell/platform/embedder/embedder.h.
   // - If the new flag affects the visibility of a [SemanticsNode] to accessibility services,
   //   update `flutter_test/controller.dart#SemanticsController._importantFlags`
-  //   accordingly
+  //   accordingly.
   // - If the new flag affects focusability of a semantics node, also update the
   //   value of `AccessibilityBridge.FOCUSABLE_FLAGS` in
   //   flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java.
