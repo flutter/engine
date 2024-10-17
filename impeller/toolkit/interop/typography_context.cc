@@ -71,8 +71,6 @@ bool TypographyContext::RegisterFont(std::unique_ptr<fml::Mapping> font_data,
   if (typeface == nullptr) {
     return false;
   }
-  SkString family_name;
-  typeface->getFamilyName(&family_name);
   size_t result = 0u;
   if (family_name_alias.empty()) {
     result = asset_font_manager_->registerTypeface(std::move(typeface));
