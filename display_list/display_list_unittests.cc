@@ -2945,7 +2945,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
   {
     builder1.Save();
     {
-      builder1.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+      builder1.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
       builder1.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
     }
@@ -2961,7 +2961,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
 
   DisplayListBuilder builder2;
   builder2.Save();
-  builder2.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+  builder2.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
   builder2.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
   builder2.Restore();
@@ -4533,7 +4533,7 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
 #define CLIP_EXPECTOR(name) ClipExpector name(__FILE__, __LINE__)
 
 struct ClipExpectation {
-  std::variant<DlRect, SkRRect, DlPath> shape;
+  std::variant<DlRect, DlRoundRect, DlPath> shape;
   bool is_oval;
   ClipOp clip_op;
   bool is_aa;
@@ -4543,7 +4543,7 @@ struct ClipExpectation {
       case 0:
         return is_oval ? "SkOval" : "SkRect";
       case 1:
-        return "SkRRect";
+        return "DlRoundRect";
       case 2:
         return "DlPath";
       default:
@@ -4562,7 +4562,7 @@ struct ClipExpectation {
       }
       break;
     case 1:
-      os << std::get<SkRRect>(expect.shape);
+      os << std::get<DlRoundRect>(expect.shape);
       break;
     case 2:
       os << std::get<DlPath>(expect.shape).GetSkPath();
@@ -4621,8 +4621,10 @@ class ClipExpector : public virtual DlOpReceiver,
   ClipExpector& addExpectation(const SkRRect& rrect,
                                ClipOp clip_op = ClipOp::kIntersect,
                                bool is_aa = false) {
+    auto dl_rrect = ToDlRoundRect(rrect);
+    EXPECT_EQ(ToSkRRect(dl_rrect), rrect);
     clip_expectations_.push_back({
-        .shape = rrect,
+        .shape = dl_rrect,
         .is_oval = false,
         .clip_op = clip_op,
         .is_aa = is_aa,
@@ -4658,9 +4660,9 @@ class ClipExpector : public virtual DlOpReceiver,
                 bool is_aa) override {
     check(bounds, clip_op, is_aa, true);
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     check(rrect, clip_op, is_aa);
   }
   void clipPath(const DlPath& path,
