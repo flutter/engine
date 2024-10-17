@@ -11,8 +11,9 @@ namespace impeller {
 TrackedObjectsVK::TrackedObjectsVK(
     const std::weak_ptr<const ContextVK>& context,
     const std::shared_ptr<CommandPoolVK>& pool,
+    std::shared_ptr<DescriptorPoolVK> descriptor_pool,
     std::unique_ptr<GPUProbe> probe)
-    : desc_pool_(context), probe_(std::move(probe)) {
+    : desc_pool_(std::move(descriptor_pool)), probe_(std::move(probe)) {
   if (!pool) {
     return;
   }
@@ -78,7 +79,7 @@ vk::CommandBuffer TrackedObjectsVK::GetCommandBuffer() const {
 }
 
 DescriptorPoolVK& TrackedObjectsVK::GetDescriptorPool() {
-  return desc_pool_;
+  return *desc_pool_;
 }
 
 GPUProbe& TrackedObjectsVK::GetGPUProbe() const {

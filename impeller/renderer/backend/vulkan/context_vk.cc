@@ -6,6 +6,7 @@
 
 #include "fml/concurrent_message_loop.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
 #include "impeller/renderer/render_target.h"
 
@@ -489,15 +490,28 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
+// DescriptorPool Lifecycle:
+// 1. End of frame will reset the descriptor pool (clearing this on a thread).
+//    There will still be references to the descriptor pool from the uncompleted
+//    command buffers.
+// 2. The last reference to the descriptor pool will be released from the fence
+//    waiter thread, which will schedule a task on the resource
+//    manager thread, which in turn will reset the command pool and make it
+//    available for reuse ("recycle").
+static thread_local std::shared_ptr<DescriptorPoolVK> tls_descriptor_pool;
+
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   const auto& recycler = GetCommandPoolRecycler();
   auto tls_pool = recycler->Get();
   if (!tls_pool) {
     return nullptr;
   }
-
+  if (!tls_descriptor_pool) {
+    tls_descriptor_pool = std::make_shared<DescriptorPoolVK>(weak_from_this());
+  }
   auto tracked_objects = std::make_shared<TrackedObjectsVK>(
-      weak_from_this(), std::move(tls_pool), GetGPUTracer()->CreateGPUProbe());
+      weak_from_this(), std::move(tls_pool), tls_descriptor_pool,
+      GetGPUTracer()->CreateGPUProbe());
   auto queue = GetGraphicsQueue();
 
   if (!tracked_objects || !tracked_objects->IsValid() || !queue) {
@@ -516,10 +530,9 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
       tracked_objects->GetCommandBuffer());
 
   return std::shared_ptr<CommandBufferVK>(new CommandBufferVK(
-      shared_from_this(),          //
-      GetDeviceHolder(),           //
-      std::move(tracked_objects),  //
-      GetFenceWaiter()             //
+      shared_from_this(),         //
+      GetDeviceHolder(),          //
+      std::move(tracked_objects)  //
       ));
 }
 
@@ -631,6 +644,7 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
 
 void ContextVK::DisposeThreadLocalCachedResources() {
   command_pool_recycler_->Dispose();
+  tls_descriptor_pool.reset();
 }
 
 const std::shared_ptr<YUVConversionLibraryVK>&

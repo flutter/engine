@@ -87,12 +87,10 @@ class CommandBufferVK final
 
   std::weak_ptr<const DeviceHolderVK> device_holder_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
-  std::shared_ptr<FenceWaiterVK> fence_waiter_;
 
   CommandBufferVK(std::weak_ptr<const Context> context,
                   std::weak_ptr<const DeviceHolderVK> device_holder,
-                  std::shared_ptr<TrackedObjectsVK> tracked_objects,
-                  std::shared_ptr<FenceWaiterVK> fence_waiter);
+                  std::shared_ptr<TrackedObjectsVK> tracked_objects);
 
   // |CommandBuffer|
   void SetLabel(std::string_view label) const override;
