@@ -63,6 +63,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.editing.ScribePlugin;
 import io.flutter.plugin.editing.SpellCheckPlugin;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -133,6 +134,7 @@ public class FlutterView extends FrameLayout
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private SpellCheckPlugin spellCheckPlugin;
+  @Nullable private ScribePlugin scribePlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
@@ -1120,10 +1122,13 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
+
     textInputPlugin =
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
+            // TODO(justinmc): This could just be part of TextInputChannel...
+            this.flutterEngine.getScribeChannel(),
             this.flutterEngine.getPlatformViewsController());
 
     try {
@@ -1134,6 +1139,12 @@ public class FlutterView extends FrameLayout
           new SpellCheckPlugin(textServicesManager, this.flutterEngine.getSpellCheckChannel());
     } catch (Exception e) {
       Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
+    }
+
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      scribePlugin =
+          new ScribePlugin(
+              this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
     }
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
