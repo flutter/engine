@@ -45,17 +45,13 @@ struct RoundingRadii {
            top_left == bottom_right;
   }
 
-  constexpr bool AreNearlyAllSame() const {
-    return top_left == top_right &&    //
-           top_left == bottom_left &&  //
-           top_left == bottom_right;
-  }
-
-  constexpr void Scale(Scalar scale) {
-    top_left *= scale;
-    top_right *= scale;
-    bottom_left *= scale;
-    bottom_right *= scale;
+  constexpr inline RoundingRadii operator*(Scalar scale) {
+    return {
+        .top_left = top_left * scale,
+        .top_right = top_right * scale,
+        .bottom_left = bottom_left * scale,
+        .bottom_right = bottom_right * scale,
+    };
   }
 
   [[nodiscard]] constexpr bool operator==(const RoundingRadii& rr) const {
@@ -65,8 +61,8 @@ struct RoundingRadii {
            bottom_right == rr.bottom_right;
   }
 
-  [[nodiscard]] constexpr bool operator!=(const RoundingRadii& r) const {
-    return !(*this == r);
+  [[nodiscard]] constexpr bool operator!=(const RoundingRadii& rr) const {
+    return !(*this == rr);
   }
 };
 
@@ -130,7 +126,7 @@ struct RoundRect {
   ///         along the top and left edges but not points along the
   ///         right and bottom edges so that a point is only ever
   ///         considered inside one of two abutting rectangles.
-  [[nodiscard]] constexpr bool Contains(const Point& p) const;
+  [[nodiscard]] bool Contains(const Point& p) const;
 
   /// @brief  Returns a new round rectangle translated by the given offset.
   [[nodiscard]] constexpr RoundRect Shift(Scalar dx, Scalar dy) const {
