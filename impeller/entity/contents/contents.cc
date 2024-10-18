@@ -110,12 +110,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
-    return std::nullopt;
-  }
+  renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer));
 
   auto snapshot = Snapshot{
       .texture = render_target.value().GetRenderTargetTexture(),
