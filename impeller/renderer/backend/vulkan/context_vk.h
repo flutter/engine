@@ -10,11 +10,9 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
-#include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
-#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
@@ -216,11 +214,11 @@ class ContextVK final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<ResourceManagerVK> resource_manager_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
-  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
   bool should_disable_surface_control_ = false;
 

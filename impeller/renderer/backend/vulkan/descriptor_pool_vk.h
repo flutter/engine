@@ -34,6 +34,8 @@ class DescriptorPoolVK {
       const vk::DescriptorSetLayout& layout,
       const ContextVK& context_vk);
 
+  void Destroy();
+
  private:
   std::weak_ptr<const ContextVK> context_;
   std::vector<vk::UniqueDescriptorPool> pools_;
