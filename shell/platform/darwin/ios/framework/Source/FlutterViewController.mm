@@ -141,13 +141,14 @@ typedef struct MouseState {
 @property(nonatomic, strong)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
 
-/**
- * Creates and registers plugins used by this view controller.
- */
+/// Creates and registers plugins used by this view controller.
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 
-/// Handle keyboard animation callbacks.
+/// Called when the first frame has been rendered. Invokes any registered first-frame callback.
+- (void)onFirstFrameRendered;
+
+/// Handles updating viewport metrics on keyboard animation.
 - (void)handleKeyboardAnimationCallback:(fml::TimePoint)targetTime;
 @end
 
@@ -612,7 +613,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   }
 }
 
-- (void)removeSplashScreenView:(dispatch_block_t _Nullable)onComplete {
+- (void)removeSplashScreenWithCompletion:(dispatch_block_t _Nullable)onComplete {
   NSAssert(self.splashScreenView, @"The splash screen view must not be nil");
   UIView* splashScreen = self.splashScreenView;
   // setSplashScreenView calls this method. Assign directly to ivar to avoid an infinite loop.
@@ -627,6 +628,17 @@ static void SendFakeTouchEvent(UIScreen* screen,
           onComplete();
         }
       }];
+}
+
+- (void)onFirstFrameRendered {
+  if (self.splashScreenView) {
+    __weak FlutterViewController* weakSelf = self;
+    [self removeSplashScreenWithCompletion:^{
+      [weakSelf callViewRenderedCallback];
+    }];
+  } else {
+    [self callViewRenderedCallback];
+  }
 }
 
 - (void)installFirstFrameCallback {
@@ -647,18 +659,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
     FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
-      FlutterViewController* strongSelf = weakSelf;
-      if (!strongSelf) {
-        return;
-      }
-
-      if (strongSelf.splashScreenView) {
-        [strongSelf removeSplashScreenView:^{
-          [strongSelf callViewRenderedCallback];
-        }];
-      } else {
-        [strongSelf callViewRenderedCallback];
-      }
+      [weakSelf onFirstFrameRendered];
     });
   });
 }
@@ -724,7 +725,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // Special case: user wants to remove the splash screen view.
   if (!view) {
     if (_splashScreenView) {
-      [self removeSplashScreenView:nil];
+      [self removeSplashScreenWithCompletion:nil];
     }
     return;
   }
