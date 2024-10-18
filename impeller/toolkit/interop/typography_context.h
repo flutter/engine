@@ -41,7 +41,7 @@ class TypographyContext final
   /// @return     If the font data could be successfully registered.
   ///
   bool RegisterFont(std::unique_ptr<fml::Mapping> font_data,
-                    const std::string& family_name_alias = "");
+                    const char* family_name_alias);
 
  private:
   std::shared_ptr<txt::FontCollection> collection_;

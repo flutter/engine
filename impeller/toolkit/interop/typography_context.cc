@@ -66,13 +66,13 @@ static sk_sp<SkTypeface> CreateTypefaceFromFontData(
 }
 
 bool TypographyContext::RegisterFont(std::unique_ptr<fml::Mapping> font_data,
-                                     const std::string& family_name_alias) {
+                                     const char* family_name_alias) {
   auto typeface = CreateTypefaceFromFontData(std::move(font_data));
   if (typeface == nullptr) {
     return false;
   }
   size_t result = 0u;
-  if (family_name_alias.empty()) {
+  if (family_name_alias == nullptr) {
     result = asset_font_manager_->registerTypeface(std::move(typeface));
   } else {
     result = asset_font_manager_->registerTypeface(std::move(typeface),

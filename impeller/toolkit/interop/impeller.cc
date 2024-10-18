@@ -1146,7 +1146,7 @@ bool ImpellerTypographyContextRegisterFont(ImpellerTypographyContext context,
       }  // release callback
   );
   return GetPeer(context)->RegisterFont(std::move(wrapped_contents),
-                                        ReadString(family_name_alias));
+                                        family_name_alias);
 }
 
 }  // namespace impeller::interop
