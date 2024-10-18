@@ -922,10 +922,15 @@ static void SendFakeTouchEvent(UIScreen* screen,
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
                                static_cast<int64_t>(transitionDuration / 2.0 * NSEC_PER_SEC)),
                  dispatch_get_main_queue(), ^{
+                   FlutterViewController* strongSelf = weakSelf;
+                   if (!strongSelf) {
+                     return;
+                   }
+
                    // `viewWillTransitionToSize` is only called after the previous rotation is
                    // complete. So there won't be race condition for this flag.
-                   weakSelf.shouldIgnoreViewportMetricsUpdatesDuringRotation = NO;
-                   [weakSelf updateViewportMetricsIfNeeded];
+                   strongSelf.shouldIgnoreViewportMetricsUpdatesDuringRotation = NO;
+                   [strongSelf updateViewportMetricsIfNeeded];
                  });
 }
 
@@ -2293,6 +2298,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Notifications may not be on the iOS UI thread
   __weak FlutterViewController* weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
+    FlutterViewController* strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+
     NSDictionary* info = notification.userInfo;
     NSNumber* update = info[@(flutter::kOverlayStyleUpdateNotificationKey)];
     if (update == nil) {
@@ -2300,9 +2310,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     UIStatusBarStyle style = static_cast<UIStatusBarStyle>(update.integerValue);
-    if (style != weakSelf.statusBarStyle) {
-      weakSelf.statusBarStyle = style;
-      [weakSelf setNeedsStatusBarAppearanceUpdate];
+    if (style != strongSelf.statusBarStyle) {
+      strongSelf.statusBarStyle = style;
+      [strongSelf setNeedsStatusBarAppearanceUpdate];
     }
   });
 }
