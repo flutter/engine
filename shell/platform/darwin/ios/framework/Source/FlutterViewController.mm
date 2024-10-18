@@ -149,7 +149,7 @@ typedef struct MouseState {
 - (void)onFirstFrameRendered;
 
 /// Handles updating viewport metrics on keyboard animation.
-- (void)handleKeyboardAnimationCallback:(fml::TimePoint)targetTime;
+- (void)handleKeyboardAnimationCallbackWithTargetTime:(fml::TimePoint)targetTime;
 @end
 
 @implementation FlutterViewController {
@@ -1722,7 +1722,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   __weak FlutterViewController* weakSelf = self;
   [self setUpKeyboardAnimationVsyncClient:^(fml::TimePoint targetTime) {
-    [weakSelf handleKeyboardAnimationCallback:targetTime];
+    [weakSelf handleKeyboardAnimationCallbackWithTargetTime:targetTime];
   }];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
@@ -1776,7 +1776,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                          toValue:self.targetViewInsetBottom];
 }
 
-- (void)handleKeyboardAnimationCallback:(fml::TimePoint)targetTime {
+- (void)handleKeyboardAnimationCallbackWithTargetTime:(fml::TimePoint)targetTime {
   // If the view controller's view is not loaded, bail out.
   if (!self.isViewLoaded) {
     return;
