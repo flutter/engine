@@ -187,6 +187,8 @@ typedef struct MouseState {
     _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches = [[NSMutableSet alloc] init];
 
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+    // Eliminate method calls in initializers and dealloc.
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
   }
@@ -199,6 +201,8 @@ typedef struct MouseState {
                          bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+    // Eliminate method calls in initializers and dealloc.
     [self sharedSetupWithProject:project initialRoute:nil];
   }
 
@@ -211,6 +215,8 @@ typedef struct MouseState {
                          bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+    // Eliminate method calls in initializers and dealloc.
     [self sharedSetupWithProject:project initialRoute:initialRoute];
   }
 
@@ -262,6 +268,9 @@ typedef struct MouseState {
   [_engine createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches = [[NSMutableSet alloc] init];
+
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+  // Eliminate method calls in initializers and dealloc.
   [self loadDefaultSplashScreenView];
   [self performCommonViewControllerInitialization];
 }
@@ -289,6 +298,8 @@ typedef struct MouseState {
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
 
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+  // Eliminate method calls in initializers and dealloc.
   [self setUpNotificationCenterObservers];
 }
 
@@ -601,6 +612,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 - (void)removeSplashScreenView:(dispatch_block_t _Nullable)onComplete {
   NSAssert(self.splashScreenView, @"The splash screen view must not be nil");
   UIView* splashScreen = self.splashScreenView;
+  // setSplashScreenView calls this method. Assign directly to ivar to avoid an infinite loop.
   _splashScreenView = nil;
   [UIView animateWithDuration:0.2
       animations:^{
@@ -960,6 +972,8 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // before any other members are destroyed.
   _weakFactory.reset();
 
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+  // Eliminate method calls in initializers and dealloc.
   [self removeInternalPlugins];
   [self deregisterNotifications];
 
@@ -1572,8 +1586,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (isLocal && ![isLocal boolValue]) {
     return YES;
   }
-
-  // Engine’s viewController is not current viewController.
   return self.engine.viewController != self;
 }
 
