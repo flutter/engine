@@ -283,7 +283,7 @@ void OnPointerMove(FlEngine* self,
                    int32_t device_id,
                    int modifiers_state);
 
-void SendPointerEventWithData(FlEngine* engine,
+void fl_engine_send_pointer_event(FlEngine* engine,
                               FlutterViewId view_id,
                               const FlutterPointerEvent& event_data,
                               PointerState* state);

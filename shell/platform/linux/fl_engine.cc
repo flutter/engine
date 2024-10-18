@@ -985,7 +985,7 @@ void SendPointerMove(FlEngine* self,
   event.y = y;
 
   SetEventPhaseFromCursorButtonState(self, &event, state);
-  SendPointerEventWithData(self, view_id, event, state);
+  fl_engine_send_pointer_event(self, view_id, event, state);
 }
 
 void SendPointerDown(FlEngine* self,
@@ -998,7 +998,7 @@ void SendPointerDown(FlEngine* self,
   event.y = y;
 
   SetEventPhaseFromCursorButtonState(self, &event, state);
-  SendPointerEventWithData(self, view_id, event, state);
+  fl_engine_send_pointer_event(self, view_id, event, state);
 
   state->flutter_state_is_down = true;
 }
@@ -1013,7 +1013,7 @@ void SendPointerUp(FlEngine* self,
   event.y = y;
 
   SetEventPhaseFromCursorButtonState(self, &event, state);
-  SendPointerEventWithData(self, view_id, event, state);
+  fl_engine_send_pointer_event(self, view_id, event, state);
   if (event.phase == FlutterPointerPhase::kUp) {
     state->flutter_state_is_down = false;
   }
@@ -1028,10 +1028,10 @@ void SendPointerLeave(FlEngine* self,
   event.x = x;
   event.y = y;
   event.phase = FlutterPointerPhase::kRemove;
-  SendPointerEventWithData(self, view_id, event, state);
+  fl_engine_send_pointer_event(self, view_id, event, state);
 }
 
-void SendPointerEventWithData(FlEngine* self,
+void fl_engine_send_pointer_event(FlEngine* self,
                               FlutterViewId view_id,
                               const FlutterPointerEvent& event_data,
                               PointerState* state) {
@@ -1044,7 +1044,7 @@ void SendPointerEventWithData(FlEngine* self,
     event.x = event_data.x;
     event.y = event_data.y;
     event.buttons = 0;
-    SendPointerEventWithData(self, view_id, event, state);
+    fl_engine_send_pointer_event(self, view_id, event, state);
   }
 
   // Don't double-add (e.g., if events are delivered out of order, so an add has
