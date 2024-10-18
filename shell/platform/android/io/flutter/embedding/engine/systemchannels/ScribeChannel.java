@@ -26,6 +26,9 @@ public class ScribeChannel {
   private static final String TAG = "ScribeChannel";
 
   @VisibleForTesting
+  public static final String METHOD_IS_FEATURE_AVAILABLE = "Scribe.isFeatureAvailable";
+
+  @VisibleForTesting
   public static final String METHOD_IS_STYLUS_HANDWRITING_AVAILABLE =
       "Scribe.isStylusHandwritingAvailable";
 
@@ -47,6 +50,9 @@ public class ScribeChannel {
           String method = call.method;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
+            case METHOD_IS_FEATURE_AVAILABLE:
+              isFeatureAvailable(call, result);
+              break;
             case METHOD_IS_STYLUS_HANDWRITING_AVAILABLE:
               isStylusHandwritingAvailable(call, result);
               break;
@@ -59,6 +65,15 @@ public class ScribeChannel {
           }
         }
       };
+
+  private void isFeatureAvailable(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    try {
+      final boolean isAvailable = scribeMethodHandler.isFeatureAvailable();
+      result.success(isAvailable);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
 
   private void isStylusHandwritingAvailable(
       @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -106,7 +121,13 @@ public class ScribeChannel {
   public interface ScribeMethodHandler {
     /**
      * Responds to the {@code result} with success and a boolean indicating whether or not stylus
-     * hadnwriting is available.
+     * handwriting is available.
+     */
+    boolean isFeatureAvailable();
+
+    /**
+     * Responds to the {@code result} with success and a boolean indicating whether or not stylus
+     * handwriting is available.
      */
     @TargetApi(API_LEVELS.API_34)
     @RequiresApi(API_LEVELS.API_34)

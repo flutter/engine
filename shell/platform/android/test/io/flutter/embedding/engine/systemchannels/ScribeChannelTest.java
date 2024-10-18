@@ -82,6 +82,30 @@ public class ScribeChannelTest {
   @Config(minSdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
+  public void respondsToIsFeatureAvailable() {
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(binaryMessageHandler, ScribeChannel.METHOD_IS_FEATURE_AVAILABLE);
+
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    // Should succeed and should tell whether or not Scribe is available by
+                    // using a boolean.
+                    return decodedReply.getClass() == java.lang.Boolean.class;
+                  } catch (FlutterException e) {
+                    return false;
+                  }
+                }));
+    verify(mockHandler).isFeatureAvailable();
+  }
+
+  @Config(minSdk = API_LEVELS.API_34)
+  @TargetApi(API_LEVELS.API_34)
+  @Test
   public void respondsToIsStylusHandwritingAvailable() {
     BinaryMessenger.BinaryReply mockReply =
         sendToBinaryMessageHandler(
@@ -126,6 +150,30 @@ public class ScribeChannelTest {
                   }
                 }));
     verify(mockHandler, never()).startStylusHandwriting();
+  }
+
+  @Config(sdk = API_LEVELS.API_33)
+  @TargetApi(API_LEVELS.API_33)
+  @Test
+  public void respondsToIsFeatureAvailableWhenAPILevelUnsupported() {
+    BinaryMessenger.BinaryReply mockReply =
+        sendToBinaryMessageHandler(binaryMessageHandler, ScribeChannel.METHOD_IS_FEATURE_AVAILABLE);
+
+    verify(mockReply)
+        .reply(
+            argThat(
+                (ByteBuffer reply) -> {
+                  reply.flip();
+                  try {
+                    final Object decodedReply = JSONMethodCodec.INSTANCE.decodeEnvelope(reply);
+                    // Should succeed and indicate that Scribe is not available.
+                    return decodedReply.getClass() == java.lang.Boolean.class
+                        && !((boolean) decodedReply);
+                  } catch (FlutterException e) {
+                    return false;
+                  }
+                }));
+    verify(mockHandler).isFeatureAvailable();
   }
 
   @Config(sdk = API_LEVELS.API_33)

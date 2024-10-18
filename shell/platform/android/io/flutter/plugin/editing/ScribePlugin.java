@@ -67,7 +67,8 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
   /**
    * Returns true if the InputMethodManager supports Scribe stylus handwriting input.
    *
-   * <p>Call this before calling startStylusHandwriting to make sure it's available.
+   * <p>Call this or isFeatureAvailable before calling startStylusHandwriting to make sure it's
+   * available.
    */
   @TargetApi(API_LEVELS.API_34)
   @RequiresApi(API_LEVELS.API_34)
@@ -87,5 +88,19 @@ public class ScribePlugin implements ScribeChannel.ScribeMethodHandler {
   @Override
   public void startStylusHandwriting() {
     mInputMethodManager.startStylusHandwriting(mView);
+  }
+
+  /**
+   * A convenience method to check if Scribe is available.
+   *
+   * <p>Differs from isStylusHandwritingAvailable in that it can be called from any API level
+   * without throwing an error.
+   *
+   * <p>Call this or isStylusHandwritingAvailable before calling startStylusHandwriting to make sure
+   * it's available.
+   */
+  @Override
+  public boolean isFeatureAvailable() {
+    return Build.VERSION.SDK_INT >= API_LEVELS.API_34 && isStylusHandwritingAvailable();
   }
 }

@@ -47,6 +47,15 @@ public class ScribePluginTest {
   @Config(minSdk = API_LEVELS.API_34)
   @TargetApi(API_LEVELS.API_34)
   @Test
+  public void scribePluginIsFeatureAvailable() {
+    assertEquals(scribePlugin.isFeatureAvailable(), true);
+
+    verify(mockImm).isStylusHandwritingAvailable();
+  }
+
+  @Config(minSdk = API_LEVELS.API_34)
+  @TargetApi(API_LEVELS.API_34)
+  @Test
   public void scribePluginIsStylusHandwritingAvailable() {
     assertEquals(scribePlugin.isStylusHandwritingAvailable(), true);
 
@@ -73,6 +82,13 @@ public class ScribePluginTest {
         () -> {
           scribePlugin.startStylusHandwriting();
         });
+  }
+
+  @Config(sdk = API_LEVELS.API_33)
+  @TargetApi(API_LEVELS.API_33)
+  @Test
+  public void scribePluginIsFeatureAvailableWhenAPILevelUnsupported() {
+    assertEquals(scribePlugin.isFeatureAvailable(), false);
   }
 
   @Config(sdk = API_LEVELS.API_33)
