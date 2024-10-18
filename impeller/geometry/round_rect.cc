@@ -60,7 +60,7 @@ RoundRect RoundRect::MakeRectRadii(const Rect& bounds,
               scale);
   // clang-format on
   if (scale < 1.0f) {
-    radii.Scale(scale);
+    radii = radii * scale;
   }
 
   return RoundRect(bounds, radii);
@@ -117,7 +117,7 @@ static constexpr Point kUpperRightDirection(1.0f, -1.0f);
 static constexpr Point kLowerLeftDirection(-1.0f, 1.0f);
 static constexpr Point kLowerRightDirection(1.0f, 1.0f);
 
-[[nodiscard]] constexpr bool RoundRect::Contains(const Point& p) const {
+[[nodiscard]] bool RoundRect::Contains(const Point& p) const {
   if (!bounds_.Contains(p)) {
     return false;
   }
