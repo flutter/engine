@@ -336,10 +336,14 @@ void CommandPoolRecyclerVK::DestroyThreadLocalPools(const ContextVK* context) {
   auto found = g_all_pools_map.find(context);
   if (found != g_all_pools_map.end()) {
     for (auto& [command_pool, desc_pool] : found->second) {
-      const auto& strong_pool = command_pool.lock();
+      const auto strong_pool = command_pool.lock();
       if (strong_pool) {
         // Delete all objects held by this pool.  The destroyed pool will still
         // remain in its thread's TLS map until that thread exits.
+        strong_pool->Destroy();
+      }
+      const auto strong_desc_pool = desc_pool.lock();
+      if (strong_desc_pool) {
         strong_pool->Destroy();
       }
     }
