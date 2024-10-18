@@ -1381,10 +1381,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     // When we capture weakSelf strongly in the above block on a background thread, we risk the
     // possibility that all other strong references to FlutterEngine go out of scope while the block
     // executes and that the engine is dealloc'ed at the end of the above block on a background
-    // thread. FlutterEngine owns a reference to a PlatformViewsController, which
-    // owns a WeakPtrFactory whose destructor asserts that it be freed on the platform thread. To
-    // avoid this, we strongly capture self in the current block, which is executed on the platform
-    // thread.
+    // thread. FlutterEngine is not safe to release on any thread other than the main thread.
     //
     // self is never nil here since it's a strong reference that's verified non-nil above, but we
     // use a conditional check to avoid an unused expression compiler warning.
