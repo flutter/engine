@@ -9,10 +9,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
+#include "display_list/effects/dl_image_filter.h"
 #include "impeller/core/sampler_descriptor.h"
-#include "impeller/display_list/image_filter.h"
 #include "impeller/display_list/paint.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/entity.h"
@@ -24,9 +25,20 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
+
+struct BackdropData {
+  size_t backdrop_count = 0;
+  bool all_filters_equal = true;
+  std::shared_ptr<Texture> texture_slot;
+  // A single snapshot of the backdrop filter that is used when there are
+  // multiple backdrops that share an identical filter.
+  std::optional<Snapshot> shared_filter_snapshot;
+  std::shared_ptr<flutter::DlImageFilter> last_backdrop;
+};
 
 struct CanvasStackEntry {
   Matrix transform;
@@ -123,6 +135,10 @@ class Canvas {
 
   ~Canvas() = default;
 
+  /// @brief Update the backdrop data used to group together backdrop filters
+  ///        within the same layer.
+  void SetBackdropData(std::unordered_map<int64_t, BackdropData> backdrop_data);
+
   /// @brief Return the culling bounds of the current render target, or nullopt
   ///        if there is no coverage.
   std::optional<Rect> GetLocalCoverageLimit() const;
@@ -132,10 +148,11 @@ class Canvas {
   void SaveLayer(
       const Paint& paint,
       std::optional<Rect> bounds = std::nullopt,
-      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
+      const flutter::DlImageFilter* backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
-      bool can_distribute_opacity = false);
+      bool can_distribute_opacity = false,
+      std::optional<int64_t> backdrop_id = std::nullopt);
 
   bool Restore();
 
@@ -197,23 +214,6 @@ class Canvas {
       SamplerDescriptor sampler = {},
       SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast);
 
-  void ClipPath(
-      const Path& path,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
-  void ClipRect(
-      const Rect& rect,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
-  void ClipOval(
-      const Rect& bounds,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
-  void ClipRRect(
-      const Rect& rect,
-      const Size& corner_radii,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
                      const Paint& paint);
@@ -224,6 +224,9 @@ class Canvas {
 
   void DrawAtlas(const std::shared_ptr<AtlasContents>& atlas_contents,
                  const Paint& paint);
+
+  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+                    Entity::ClipOperation clip_op);
 
   void EndReplay();
 
@@ -246,6 +249,12 @@ class Canvas {
   std::optional<Rect> initial_cull_rect_;
   std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
+  std::unordered_map<int64_t, BackdropData> backdrop_data_;
+
+  // All geometry objects created for regular draws can be stack allocated,
+  // but clip geometries must be cached for record/replay for backdrop filters
+  // and so must be kept alive longer.
+  std::vector<std::unique_ptr<Geometry>> clip_geometry_;
 
   uint64_t current_depth_ = 0u;
 
@@ -271,18 +280,22 @@ class Canvas {
 
   void Reset();
 
+  void AddRenderEntityWithFiltersToCurrentPass(Entity& entity,
+                                               const Geometry* geometry,
+                                               const Paint& paint,
+                                               bool reuse_depth = false);
+
   void AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth = false);
 
   void AddClipEntityToCurrentPass(Entity& entity);
-
-  void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
-                    Entity::ClipOperation clip_op);
 
   void RestoreClip();
 
   bool AttemptDrawBlurredRRect(const Rect& rect,
                                Size corner_radii,
                                const Paint& paint);
+
+  RenderPass& GetCurrentRenderPass() const;
 
   Canvas(const Canvas&) = delete;
 

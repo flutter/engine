@@ -7,7 +7,7 @@ import 'package:engine_tool/src/label.dart';
 import 'package:engine_tool/src/logger.dart';
 import 'package:test/test.dart';
 
-import '../utils.dart';
+import '../src/utils.dart';
 
 void main() {
   test('gn.desc handles a non-zero exit code', () async {
@@ -124,6 +124,77 @@ void main() {
         testOnly: false,
       )),
       isTrue,
+    );
+  });
+
+  test('parses a group', () async {
+    final testEnv = TestEnvironment.withTestEngine(
+      cannedProcesses: [
+        CannedProcess(
+          (List<String> command) => command.contains('desc'),
+          stdout: '''
+            {
+              "//foo/bar:baz_group": {
+                "deps": ["//foo/bar:baz_shared_library"],
+                "testonly": true,
+                "type": "group"
+              }
+            }
+          ''',
+        ),
+      ],
+    );
+    addTearDown(testEnv.cleanup);
+
+    final gn = Gn.fromEnvironment(testEnv.environment);
+    final targets = await gn.desc('out/Release', TargetPattern('//foo', 'bar'));
+    expect(targets, hasLength(1));
+
+    final groupTarget = targets.single;
+    expect(
+      groupTarget,
+      GroupBuildTarget(
+        label: Label('//foo/bar', 'baz_group'),
+        testOnly: true,
+        deps: [Label('//foo/bar', 'baz_shared_library')],
+      ),
+    );
+  });
+
+  test('parses a dart_test action as an executable', () async {
+    final testEnv = TestEnvironment.withTestEngine(
+      cannedProcesses: [
+        CannedProcess(
+          (List<String> command) => command.contains('desc'),
+          stdout: '''
+            {
+              "//foo/bar:baz_test": {
+                "outputs": ["//out/host_debug/foo/bar/baz_test"],
+                "testonly": true,
+                "type": "action",
+                "metadata": {
+                  "action_type": ["dart_test"]
+                }
+              }
+            }
+          ''',
+        ),
+      ],
+    );
+    addTearDown(testEnv.cleanup);
+
+    final gn = Gn.fromEnvironment(testEnv.environment);
+    final targets = await gn.desc('out/Release', TargetPattern('//foo', 'bar'));
+    expect(targets, hasLength(1));
+
+    final testTarget = targets.single;
+    expect(
+      testTarget,
+      ExecutableBuildTarget(
+        label: Label('//foo/bar', 'baz_test'),
+        testOnly: true,
+        executable: 'out/host_debug/foo/bar/baz_test',
+      ),
     );
   });
 }

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
+#include <cstdint>
 
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
@@ -46,7 +47,8 @@ void DlSkCanvasDispatcher::restore() {
 }
 void DlSkCanvasDispatcher::saveLayer(const DlRect& bounds,
                                      const SaveLayerOptions options,
-                                     const DlImageFilter* backdrop) {
+                                     const DlImageFilter* backdrop,
+                                     std::optional<int64_t> backdrop_id) {
   if (!options.content_is_clipped() && options.can_distribute_opacity() &&
       backdrop == nullptr) {
     // We know that:
@@ -70,8 +72,11 @@ void DlSkCanvasDispatcher::saveLayer(const DlRect& bounds,
     const sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
     const SkRect* sl_bounds =
         options.bounds_from_caller() ? &ToSkRect(bounds) : nullptr;
-    canvas_->saveLayer(
-        SkCanvas::SaveLayerRec(sl_bounds, paint, sk_backdrop.get(), 0));
+    SkCanvas::SaveLayerRec params(sl_bounds, paint, sk_backdrop.get(), 0);
+    if (sk_backdrop && backdrop->asBlur()) {
+      params.fBackdropTileMode = ToSk(backdrop->asBlur()->tile_mode());
+    }
+    canvas_->saveLayer(params);
     // saveLayer will apply the current opacity on behalf of the children
     // so they will inherit an opaque opacity.
     save_opacity(SK_Scalar1);

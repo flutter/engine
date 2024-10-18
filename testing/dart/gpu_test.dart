@@ -371,6 +371,46 @@ void main() async {
     await comparer.addGoldenImage(image, 'flutter_gpu_test_triangle.png');
   }, skip: !impellerEnabled);
 
+  // Renders a green triangle pointing downwards using polygon mode line.
+  test('Can render triangle with polygon mode line.', () async {
+    final state = createSimpleRenderPass();
+
+    final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+    state.renderPass.bindPipeline(pipeline);
+
+    // Configure blending with defaults (just to test the bindings).
+    state.renderPass.setColorBlendEnable(true);
+    state.renderPass.setColorBlendEquation(gpu.ColorBlendEquation());
+
+    // Set polygon mode.
+    state.renderPass.setPolygonMode(gpu.PolygonMode.line);
+
+    final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
+    final gpu.BufferView vertices = transients.emplace(float32(<double>[
+      -0.5, 0.5, //
+      0.0, -0.5, //
+      0.5, 0.5, //
+    ]));
+    final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
+      1, 0, 0, 0, // mvp
+      0, 1, 0, 0, // mvp
+      0, 0, 1, 0, // mvp
+      0, 0, 0, 1, // mvp
+      0, 1, 0, 1, // color
+    ]));
+    state.renderPass.bindVertexBuffer(vertices, 3);
+
+    final gpu.UniformSlot vertInfo =
+        pipeline.vertexShader.getUniformSlot('VertInfo');
+    state.renderPass.bindUniform(vertInfo, vertInfoData);
+    state.renderPass.draw();
+
+    state.commandBuffer.submit();
+
+    final ui.Image image = state.renderTexture.asImage();
+    await comparer.addGoldenImage(image, 'flutter_gpu_test_triangle_polygon_mode.png');
+  }, skip: !impellerEnabled);
+
   // Renders a hollow green triangle pointing downwards.
   test('Can render hollowed out triangle using stencil ops', () async {
     final state = createSimpleRenderPass();
@@ -432,11 +472,6 @@ void main() async {
     // the API.
     state.renderPass.setStencilConfig(
         gpu.StencilConfig(compareFunction: gpu.CompareFunction.equal));
-    // TODO(bdero): https://github.com/flutter/flutter/issues/155335
-    //              Re-binding the same uniform with `bindUniform` does not
-    //              replace the previous binding. We shouldn't need to clear the
-    //              command bindings to work around this.
-    state.renderPass.clearBindings();
     state.renderPass.bindUniform(vertInfo, outerGreenVertInfo);
     state.renderPass.draw();
 
@@ -471,22 +506,73 @@ void main() async {
 
       final gpu.UniformSlot vertInfo =
           pipeline.vertexShader.getUniformSlot('VertInfo');
-      // TODO(bdero): Overwrite bindings with the same slot so we don't need to clear.
-      //              https://github.com/flutter/flutter/issues/155335
-      state.renderPass.clearBindings();
       state.renderPass.bindVertexBuffer(vertices, 3);
       state.renderPass.bindUniform(vertInfo, vertInfoUboFront);
       state.renderPass.draw();
     }
 
+    // Draw the green rectangle.
+    // Defaults to clockwise winding order. So frontface culling should not
+    // impact the green triangle.
     state.renderPass.setCullMode(gpu.CullMode.frontFace);
     drawTriangle(Colors.lime);
+
+    // Backface cull a red triangle.
     state.renderPass.setCullMode(gpu.CullMode.backFace);
+    drawTriangle(Colors.red);
+
+    // Invert the winding mode and frontface cull a red rectangle.
+    state.renderPass.setWindingOrder(gpu.WindingOrder.counterClockwise);
+    state.renderPass.setCullMode(gpu.CullMode.frontFace);
     drawTriangle(Colors.red);
 
     state.commandBuffer.submit();
 
     final ui.Image image = state.renderTexture.asImage();
     await comparer.addGoldenImage(image, 'flutter_gpu_test_cull_mode.png');
+  }, skip: !impellerEnabled);
+
+  // Renders a hexagon using line strip primitive type.
+  test('Can render hollow hexagon using line strip primitive type', () async {
+    final state = createSimpleRenderPass();
+
+    final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+    state.renderPass.bindPipeline(pipeline);
+
+    // Configure blending with defaults (just to test the bindings).
+    state.renderPass.setColorBlendEnable(true);
+    state.renderPass.setColorBlendEquation(gpu.ColorBlendEquation());
+
+    // Set primitive type
+    state.renderPass.setPrimitiveType(gpu.PrimitiveType.lineStrip);
+
+    final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
+    final gpu.BufferView vertices = transients.emplace(float32(<double>[
+     1.0,  0.0,
+     0.5,  0.8,
+    -0.5,  0.8,
+    -1.0,  0.0,
+    -0.5, -0.8,
+     0.5, -0.8,
+     1.0,  0.0
+    ]));
+    final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
+      1, 0, 0, 0, // mvp
+      0, 1, 0, 0, // mvp
+      0, 0, 1, 0, // mvp
+      0, 0, 0, 1, // mvp
+      0, 1, 0, 1, // color
+    ]));
+    state.renderPass.bindVertexBuffer(vertices, 7);
+
+    final gpu.UniformSlot vertInfo =
+        pipeline.vertexShader.getUniformSlot('VertInfo');
+    state.renderPass.bindUniform(vertInfo, vertInfoData);
+    state.renderPass.draw();
+
+    state.commandBuffer.submit();
+
+    final ui.Image image = state.renderTexture.asImage();
+    await comparer.addGoldenImage(image, 'flutter_gpu_test_hexgon_line_strip.png');
   }, skip: !impellerEnabled);
 }
