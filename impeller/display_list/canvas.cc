@@ -164,7 +164,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   msaa_backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
   if (!msaa_backdrop_entity.Render(
           renderer,
-          *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+          *render_passes.back().inline_pass_context->GetRenderPass())) {
     VALIDATION_LOG << "Failed to render MSAA backdrop entity.";
     return nullptr;
   }
@@ -173,13 +173,12 @@ static std::shared_ptr<Texture> FlipBackdrop(
   // applied.
   auto& replay_entities = clip_coverage_stack.GetReplayEntities();
   for (const auto& replay : replay_entities) {
-    SetClipScissor(
-        replay.clip_coverage,
-        *render_passes.back().inline_pass_context->GetRenderPass(0).pass,
-        global_pass_position);
+    SetClipScissor(replay.clip_coverage,
+                   *render_passes.back().inline_pass_context->GetRenderPass(),
+                   global_pass_position);
     if (!replay.entity.Render(
             renderer,
-            *render_passes.back().inline_pass_context->GetRenderPass(0).pass)) {
+            *render_passes.back().inline_pass_context->GetRenderPass())) {
       VALIDATION_LOG << "Failed to render entity for clip restore.";
     }
   }
