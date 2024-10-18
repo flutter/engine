@@ -1387,7 +1387,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     // thread.
     //
     // self is never nil here since it's a strong reference that's verified non-nil above, but we
-    // use a conditional check to avoid and unused expression compiler warning.
+    // use a conditional check to avoid an unused expression compiler warning.
     FlutterEngine* strongSelf = self;
     if (!strongSelf) {
       return;
