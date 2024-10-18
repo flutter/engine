@@ -38,6 +38,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAATexture) {
   auto msaa_tex = color0.texture;
   auto resolve_tex = color0.resolve_texture;
 
+  FML_DCHECK(content_context);
   entity_pass_target.Flip(*content_context);
 
   color0 = entity_pass_target.GetRenderTarget()
@@ -97,6 +98,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
 
   ASSERT_EQ(msaa_tex, resolve_tex);
 
+  FML_DCHECK(content_context);
   entity_pass_target.Flip(*content_context);
 
   color0 = entity_pass_target.GetRenderTarget()
