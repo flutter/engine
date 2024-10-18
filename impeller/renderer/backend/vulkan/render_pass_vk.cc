@@ -81,16 +81,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
     const SharedHandleVK<vk::RenderPass>& recycled_renderpass,
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
-  BarrierVK barrier;
-  barrier.new_layout = vk::ImageLayout::eGeneral;
-  barrier.cmd_buffer = command_buffer->GetCommandBuffer();
-  barrier.src_access = vk::AccessFlagBits::eShaderRead;
-  barrier.src_stage = vk::PipelineStageFlagBits::eFragmentShader;
-  barrier.dst_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                       vk::AccessFlagBits::eTransferWrite;
-  barrier.dst_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                      vk::PipelineStageFlagBits::eTransfer;
-
   RenderPassBuilderVK builder;
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
@@ -101,9 +91,11 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         color.load_action,                                   //
         color.store_action                                   //
     );
-    TextureVK::Cast(*color.texture).SetLayout(barrier);
+    TextureVK::Cast(*color.texture)
+        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
     if (color.resolve_texture) {
-      TextureVK::Cast(*color.resolve_texture).SetLayout(barrier);
+      TextureVK::Cast(*color.resolve_texture)
+          .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
     }
   }
 
@@ -238,10 +230,9 @@ bool RenderPassVK::IsValid() const {
   return is_valid_;
 }
 
-void RenderPassVK::OnSetLabel(std::string label) {
+void RenderPassVK::OnSetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
-  ContextVK::Cast(*context_).SetDebugName(render_pass_->Get(),
-                                          std::string(label).c_str());
+  ContextVK::Cast(*context_).SetDebugName(render_pass_->Get(), label.data());
 #endif  // IMPELLER_DEBUG
 }
 
@@ -366,14 +357,18 @@ void RenderPassVK::SetScissor(IRect scissor) {
 }
 
 // |RenderPass|
+void RenderPassVK::SetElementCount(size_t count) {
+  element_count_ = count;
+}
+
+// |RenderPass|
 void RenderPassVK::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
 // |RenderPass|
 bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
-                                   size_t vertex_buffer_count,
-                                   size_t vertex_count) {
+                                   size_t vertex_buffer_count) {
   if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
@@ -389,8 +384,6 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
   // Bind the vertex buffers.
   command_buffer_vk_.bindVertexBuffers(0u, vertex_buffer_count, buffers,
                                        vertex_buffer_offsets);
-
-  vertex_count_ = vertex_count;
 
   return true;
 }
@@ -507,14 +500,14 @@ fml::Status RenderPassVK::Draw() {
   }
 
   if (has_index_buffer_) {
-    command_buffer_vk_.drawIndexed(vertex_count_,    // index count
+    command_buffer_vk_.drawIndexed(element_count_,   // index count
                                    instance_count_,  // instance count
                                    0u,               // first index
                                    base_vertex_,     // vertex offset
                                    0u                // first instance
     );
   } else {
-    command_buffer_vk_.draw(vertex_count_,    // vertex count
+    command_buffer_vk_.draw(element_count_,   // vertex count
                             instance_count_,  // instance count
                             base_vertex_,     // vertex offset
                             0u                // first instance
@@ -533,7 +526,7 @@ fml::Status RenderPassVK::Draw() {
   descriptor_write_offset_ = 0u;
   instance_count_ = 1u;
   base_vertex_ = 0u;
-  vertex_count_ = 0u;
+  element_count_ = 0u;
   pipeline_ = nullptr;
   pipeline_uses_input_attachments_ = false;
   immutable_sampler_ = nullptr;
