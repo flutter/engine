@@ -91,10 +91,6 @@ DescriptorPoolVK::~DescriptorPoolVK() {
   pools_.clear();
 }
 
-void DescriptorPoolVK::Destroy() {
-  pools_.clear();
-}
-
 fml::StatusOr<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSets(
     const vk::DescriptorSetLayout& layout,
     const ContextVK& context_vk) {

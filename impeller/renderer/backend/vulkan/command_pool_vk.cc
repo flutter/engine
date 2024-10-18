@@ -166,16 +166,12 @@ void CommandPoolVK::Destroy() {
 //    available for reuse ("recycle").
 static thread_local std::unique_ptr<CommandPoolMap> tls_command_pool_map;
 
-struct WeakThreadLocalData {
-  std::weak_ptr<CommandPoolVK> command_pool;
-  std::weak_ptr<DescriptorPoolVK> descriptor_pool;
-};
-
 // Map each context to a list of all thread-local command pools associated
 // with that context.
 static Mutex g_all_pools_map_mutex;
-static std::unordered_map<const ContextVK*,
-                          std::vector<WeakThreadLocalData>> g_all_pools_map
+static std::unordered_map<
+    const ContextVK*,
+    std::vector<std::weak_ptr<CommandPoolVK>>> g_all_pools_map
     IPLR_GUARDED_BY(g_all_pools_map_mutex);
 
 std::shared_ptr<DescriptorPoolVK> CommandPoolRecyclerVK::GetDescriptorPool() {
@@ -246,8 +242,7 @@ CommandPoolRecyclerVK::InitializeThreadLocalResources(
   auto descriptor_pool = std::make_shared<DescriptorPoolVK>(context_);
   {
     Lock all_pools_lock(g_all_pools_map_mutex);
-    g_all_pools_map[context.get()].push_back(WeakThreadLocalData{
-        .command_pool = command_pool, .descriptor_pool = descriptor_pool});
+    g_all_pools_map[context.get()].push_back(command_pool);
   }
 
   return pool_map[pool_key] =
@@ -335,15 +330,11 @@ void CommandPoolRecyclerVK::DestroyThreadLocalPools(const ContextVK* context) {
   Lock all_pools_lock(g_all_pools_map_mutex);
   auto found = g_all_pools_map.find(context);
   if (found != g_all_pools_map.end()) {
-    for (auto& [command_pool, desc_pool] : found->second) {
+    for (auto& command_pool : found->second) {
       const auto strong_pool = command_pool.lock();
       if (strong_pool) {
         // Delete all objects held by this pool.  The destroyed pool will still
         // remain in its thread's TLS map until that thread exits.
-        strong_pool->Destroy();
-      }
-      const auto strong_desc_pool = desc_pool.lock();
-      if (strong_desc_pool) {
         strong_pool->Destroy();
       }
     }
