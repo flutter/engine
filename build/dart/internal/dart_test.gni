@@ -24,6 +24,7 @@ template("dart_test") {
   gen_dartcli_call(target_name) {
     args = [
       "test",
+      "--reporter=json",
       invoker.main_dart,
     ]
     cwd = rebase_path(cwd)
