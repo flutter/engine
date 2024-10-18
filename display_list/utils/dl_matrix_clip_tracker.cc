@@ -312,7 +312,7 @@ bool DisplayListMatrixClipState::rrect_covers_cull(
   if (content.IsOval()) {
     return oval_covers_cull(content.GetBounds());
   }
-  if (!content.GetRadii().AreAllSame()) {
+  if (!content.GetRadii().AreAllCornersSame()) {
     return false;
   }
   DlPoint corners[4];

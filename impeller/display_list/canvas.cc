@@ -612,7 +612,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
 void Canvas::DrawRoundRect(const RoundRect& round_rect, const Paint& paint) {
   auto& rect = round_rect.GetBounds();
   auto& radii = round_rect.GetRadii();
-  if (radii.AreAllSame()) {
+  if (radii.AreAllCornersSame()) {
     if (AttemptDrawBlurredRRect(rect, radii.top_left, paint)) {
       return;
     }

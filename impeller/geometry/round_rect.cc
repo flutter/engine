@@ -25,10 +25,9 @@ static inline void AdjustScale(Scalar& radius1,
 
 RoundRect RoundRect::MakeRectRadii(const Rect& bounds,
                                    const RoundingRadii& in_radii) {
-  if (bounds.IsEmpty() || !bounds.IsFinite()) {
-    return RoundRect();
-  }
-  if (in_radii.AreAllEmpty() || !in_radii.IsFinite()) {
+  if (bounds.IsEmpty() || !bounds.IsFinite() ||  //
+      in_radii.AreAllCornersEmpty() || !in_radii.IsFinite()) {
+    // preserve the empty bounds as they might be strokable
     return RoundRect(bounds, RoundingRadii());
   }
 

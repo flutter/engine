@@ -32,17 +32,20 @@ struct RoundingRadii {
            bottom_right.IsFinite();
   }
 
-  constexpr bool AreAllEmpty() const {
+  constexpr bool AreAllCornersEmpty() const {
     return top_left.IsEmpty() &&     //
            top_right.IsEmpty() &&    //
            bottom_left.IsEmpty() &&  //
            bottom_right.IsEmpty();
   }
 
-  constexpr bool AreAllSame() const {
-    return top_left == top_right &&    //
-           top_left == bottom_left &&  //
-           top_left == bottom_right;
+  constexpr bool AreAllCornersSame(Scalar tolerance = kEhCloseEnough) const {
+    return ScalarNearlyEqual(top_left.width, top_right.width, tolerance) &&
+           ScalarNearlyEqual(top_left.width, bottom_right.width, tolerance) &&
+           ScalarNearlyEqual(top_left.width, bottom_left.width, tolerance) &&
+           ScalarNearlyEqual(top_left.height, top_right.height, tolerance) &&
+           ScalarNearlyEqual(top_left.height, bottom_right.height, tolerance) &&
+           ScalarNearlyEqual(top_left.height, bottom_left.height, tolerance);
   }
 
   constexpr inline RoundingRadii operator*(Scalar scale) {
@@ -108,11 +111,11 @@ struct RoundRect {
   [[nodiscard]] constexpr bool IsEmpty() const { return bounds_.IsEmpty(); }
 
   [[nodiscard]] constexpr bool IsRect() const {
-    return !bounds_.IsEmpty() && radii_.AreAllEmpty();
+    return !bounds_.IsEmpty() && radii_.AreAllCornersEmpty();
   }
 
   [[nodiscard]] constexpr bool IsOval() const {
-    return !bounds_.IsEmpty() && radii_.AreAllSame() &&
+    return !bounds_.IsEmpty() && radii_.AreAllCornersSame() &&
            ScalarNearlyEqual(radii_.top_left.width,
                              bounds_.GetWidth() * 0.5f) &&
            ScalarNearlyEqual(radii_.top_left.height,

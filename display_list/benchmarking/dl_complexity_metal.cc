@@ -255,7 +255,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRoundRect(
   //
   // Expensive: All filled style, symmetric w/AA.
   bool expensive = (DrawStyle() == DlDrawStyle::kFill) ||
-                   (rrect.GetRadii().AreAllSame() && IsAntiAliased());
+                   (rrect.GetRadii().AreAllCornersSame() && IsAntiAliased());
 
   unsigned int complexity;
 
@@ -305,7 +305,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDiffRoundRect(
   // currently use it anywhere in Flutter.
   if (DrawStyle() == DlDrawStyle::kFill) {
     unsigned int area = outer.GetBounds().Area();
-    if (!outer.GetRadii().AreAllSame()) {
+    if (!outer.GetRadii().AreAllCornersSame()) {
       // m = 1/1000
       // c = 1
       complexity = (area + 1000) / 10;

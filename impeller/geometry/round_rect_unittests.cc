@@ -14,8 +14,8 @@ namespace testing {
 TEST(RoundRectTest, RoundingRadiiEmptyDeclaration) {
   RoundingRadii radii;
 
-  EXPECT_TRUE(radii.AreAllEmpty());
-  EXPECT_TRUE(radii.AreAllSame());
+  EXPECT_TRUE(radii.AreAllCornersEmpty());
+  EXPECT_TRUE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size());
   EXPECT_EQ(radii.top_right, Size());
@@ -34,8 +34,8 @@ TEST(RoundRectTest, RoundingRadiiEmptyDeclaration) {
 TEST(RoundRectTest, RoundingRadiiDefaultConstructor) {
   RoundingRadii radii = RoundingRadii();
 
-  EXPECT_TRUE(radii.AreAllEmpty());
-  EXPECT_TRUE(radii.AreAllSame());
+  EXPECT_TRUE(radii.AreAllCornersEmpty());
+  EXPECT_TRUE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size());
   EXPECT_EQ(radii.top_right, Size());
@@ -46,8 +46,8 @@ TEST(RoundRectTest, RoundingRadiiDefaultConstructor) {
 TEST(RoundRectTest, RoundingRadiiScalarConstructor) {
   RoundingRadii radii = RoundingRadii::MakeRadius(5.0f);
 
-  EXPECT_FALSE(radii.AreAllEmpty());
-  EXPECT_TRUE(radii.AreAllSame());
+  EXPECT_FALSE(radii.AreAllCornersEmpty());
+  EXPECT_TRUE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size(5.0f, 5.0f));
   EXPECT_EQ(radii.top_right, Size(5.0f, 5.0f));
@@ -58,8 +58,8 @@ TEST(RoundRectTest, RoundingRadiiScalarConstructor) {
 TEST(RoundRectTest, RoundingRadiiEmptyScalarConstructor) {
   RoundingRadii radii = RoundingRadii::MakeRadius(-5.0f);
 
-  EXPECT_TRUE(radii.AreAllEmpty());
-  EXPECT_TRUE(radii.AreAllSame());
+  EXPECT_TRUE(radii.AreAllCornersEmpty());
+  EXPECT_TRUE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size(-5.0f, -5.0f));
   EXPECT_EQ(radii.top_right, Size(-5.0f, -5.0f));
@@ -70,8 +70,8 @@ TEST(RoundRectTest, RoundingRadiiEmptyScalarConstructor) {
 TEST(RoundRectTest, RoundingRadiiSizeConstructor) {
   RoundingRadii radii = RoundingRadii::MakeRadii(Size(5.0f, 6.0f));
 
-  EXPECT_FALSE(radii.AreAllEmpty());
-  EXPECT_TRUE(radii.AreAllSame());
+  EXPECT_FALSE(radii.AreAllCornersEmpty());
+  EXPECT_TRUE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size(5.0f, 6.0f));
   EXPECT_EQ(radii.top_right, Size(5.0f, 6.0f));
@@ -83,8 +83,8 @@ TEST(RoundRectTest, RoundingRadiiEmptySizeConstructor) {
   {
     RoundingRadii radii = RoundingRadii::MakeRadii(Size(-5.0f, 6.0f));
 
-    EXPECT_TRUE(radii.AreAllEmpty());
-    EXPECT_TRUE(radii.AreAllSame());
+    EXPECT_TRUE(radii.AreAllCornersEmpty());
+    EXPECT_TRUE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size(-5.0f, 6.0f));
     EXPECT_EQ(radii.top_right, Size(-5.0f, 6.0f));
@@ -95,8 +95,8 @@ TEST(RoundRectTest, RoundingRadiiEmptySizeConstructor) {
   {
     RoundingRadii radii = RoundingRadii::MakeRadii(Size(5.0f, -6.0f));
 
-    EXPECT_TRUE(radii.AreAllEmpty());
-    EXPECT_TRUE(radii.AreAllSame());
+    EXPECT_TRUE(radii.AreAllCornersEmpty());
+    EXPECT_TRUE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size(5.0f, -6.0f));
     EXPECT_EQ(radii.top_right, Size(5.0f, -6.0f));
@@ -113,8 +113,8 @@ TEST(RoundRectTest, RoundingRadiiNamedSizesConstructor) {
       .bottom_right = Size(8.0f, 8.5f),
   };
 
-  EXPECT_FALSE(radii.AreAllEmpty());
-  EXPECT_FALSE(radii.AreAllSame());
+  EXPECT_FALSE(radii.AreAllCornersEmpty());
+  EXPECT_FALSE(radii.AreAllCornersSame());
   EXPECT_TRUE(radii.IsFinite());
   EXPECT_EQ(radii.top_left, Size(5.0f, 5.5f));
   EXPECT_EQ(radii.top_right, Size(6.0f, 6.5f));
@@ -128,8 +128,8 @@ TEST(RoundRectTest, RoundingRadiiPartialNamedSizesConstructor) {
         .top_left = Size(5.0f, 5.5f),
     };
 
-    EXPECT_FALSE(radii.AreAllEmpty());
-    EXPECT_FALSE(radii.AreAllSame());
+    EXPECT_FALSE(radii.AreAllCornersEmpty());
+    EXPECT_FALSE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size(5.0f, 5.5f));
     EXPECT_EQ(radii.top_right, Size());
@@ -142,8 +142,8 @@ TEST(RoundRectTest, RoundingRadiiPartialNamedSizesConstructor) {
         .top_right = Size(6.0f, 6.5f),
     };
 
-    EXPECT_FALSE(radii.AreAllEmpty());
-    EXPECT_FALSE(radii.AreAllSame());
+    EXPECT_FALSE(radii.AreAllCornersEmpty());
+    EXPECT_FALSE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size());
     EXPECT_EQ(radii.top_right, Size(6.0f, 6.5f));
@@ -156,8 +156,8 @@ TEST(RoundRectTest, RoundingRadiiPartialNamedSizesConstructor) {
         .bottom_left = Size(7.0f, 7.5f),
     };
 
-    EXPECT_FALSE(radii.AreAllEmpty());
-    EXPECT_FALSE(radii.AreAllSame());
+    EXPECT_FALSE(radii.AreAllCornersEmpty());
+    EXPECT_FALSE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size());
     EXPECT_EQ(radii.top_right, Size());
@@ -170,8 +170,8 @@ TEST(RoundRectTest, RoundingRadiiPartialNamedSizesConstructor) {
         .bottom_right = Size(8.0f, 8.5f),
     };
 
-    EXPECT_FALSE(radii.AreAllEmpty());
-    EXPECT_FALSE(radii.AreAllSame());
+    EXPECT_FALSE(radii.AreAllCornersEmpty());
+    EXPECT_FALSE(radii.AreAllCornersSame());
     EXPECT_TRUE(radii.IsFinite());
     EXPECT_EQ(radii.top_left, Size());
     EXPECT_EQ(radii.top_right, Size());
@@ -189,8 +189,8 @@ TEST(RoundRectTest, RoundingRadiiMultiply) {
   };
   RoundingRadii doubled = radii * 2.0f;
 
-  EXPECT_FALSE(doubled.AreAllEmpty());
-  EXPECT_FALSE(doubled.AreAllSame());
+  EXPECT_FALSE(doubled.AreAllCornersEmpty());
+  EXPECT_FALSE(doubled.AreAllCornersSame());
   EXPECT_TRUE(doubled.IsFinite());
   EXPECT_EQ(doubled.top_left, Size(10.0f, 11.0f));
   EXPECT_EQ(doubled.top_right, Size(12.0f, 13.0f));
@@ -265,6 +265,58 @@ TEST(RoundRectTest, RoundingRadiiNotEquals) {
   }
 }
 
+TEST(RoundRectTest, RoundingRadiiCornersSameTolerance) {
+  RoundingRadii radii{
+      .top_left = {10, 20},
+      .top_right = {10.01, 20.01},
+      .bottom_left = {9.99, 19.99},
+      .bottom_right = {9.99, 20.01},
+  };
+
+  EXPECT_TRUE(radii.AreAllCornersSame(.02));
+
+  {
+    RoundingRadii different = radii;
+    different.top_left.width = 10.03;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.top_left.height = 20.03;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.top_right.width = 10.03;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.top_right.height = 20.03;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.bottom_left.width = 9.97;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.bottom_left.height = 19.97;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.bottom_right.width = 9.97;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+  {
+    RoundingRadii different = radii;
+    different.bottom_right.height = 20.03;
+    EXPECT_FALSE(different.AreAllCornersSame(.02));
+  }
+}
+
 TEST(RoundRectTest, EmptyDeclaration) {
   RoundRect round_rect;
 
@@ -316,7 +368,7 @@ TEST(RoundRectTest, EmptyRectConstruction) {
   EXPECT_FALSE(round_rect.IsOval());
   EXPECT_TRUE(round_rect.IsFinite());
   EXPECT_TRUE(round_rect.GetBounds().IsEmpty());
-  EXPECT_EQ(round_rect.GetBounds(), Rect());
+  EXPECT_EQ(round_rect.GetBounds(), Rect::MakeLTRB(20.0f, 20.0f, 10.0f, 10.0f));
   EXPECT_EQ(round_rect.GetRadii().top_left, Size());
   EXPECT_EQ(round_rect.GetRadii().top_right, Size());
   EXPECT_EQ(round_rect.GetRadii().bottom_left, Size());
@@ -749,74 +801,153 @@ TEST(RoundRectTest, ContractAndRequireRadiiAdjustment) {
                                      }));
 }
 
-TEST(RoundRectTest, RoundRectContains) {
+TEST(RoundRectTest, NoCornerRoundRectContains) {
   Rect bounds = Rect::MakeLTRB(-50.0f, -50.0f, 50.0f, 50.0f);
+  // RRect of bounds with no corners contains corners just barely
+  auto no_corners = RoundRect::MakeRectXY(bounds, 0.0f, 0.0f);
 
-  // TBD - rectangles have half-in, half-out containment so we need
-  // to be careful about testing containment of corners. These tests
-  // are a work in progress.
-  {
-    // RRect of bounds with no corners contains corners just barely
-    auto no_corners = RoundRect::MakeRectXY(bounds, 0.0f, 0.0f);
-    EXPECT_TRUE(no_corners.Contains({-50, -50}));
-    // EXPECT_TRUE(no_corners.Contains({-50, 50}));
-    // EXPECT_TRUE(no_corners.Contains({50, -50}));
-    // EXPECT_TRUE(no_corners.Contains({50, 50}));
-    EXPECT_FALSE(no_corners.Contains({-50.1, -50}));
-    EXPECT_FALSE(no_corners.Contains({-50, -50.1}));
-    EXPECT_FALSE(no_corners.Contains({-50.1, 50}));
-    EXPECT_FALSE(no_corners.Contains({-50, 50.1}));
-    EXPECT_FALSE(no_corners.Contains({50.1, -50}));
-    EXPECT_FALSE(no_corners.Contains({50, -50.1}));
-    EXPECT_FALSE(no_corners.Contains({50.1, 50}));
-    EXPECT_FALSE(no_corners.Contains({50, 50.1}));
-  }
+  EXPECT_TRUE(no_corners.Contains({-50, -50}));
+  // Rectangles have half-in, half-out containment so we need
+  // to be careful about testing containment of right/bottom corners.
+  EXPECT_TRUE(no_corners.Contains({-50, 49.99}));
+  EXPECT_TRUE(no_corners.Contains({49.99, -50}));
+  EXPECT_TRUE(no_corners.Contains({49.99, 49.99}));
+  EXPECT_FALSE(no_corners.Contains({-50.01, -50}));
+  EXPECT_FALSE(no_corners.Contains({-50, -50.01}));
+  EXPECT_FALSE(no_corners.Contains({-50.01, 50}));
+  EXPECT_FALSE(no_corners.Contains({-50, 50.01}));
+  EXPECT_FALSE(no_corners.Contains({50.01, -50}));
+  EXPECT_FALSE(no_corners.Contains({50, -50.01}));
+  EXPECT_FALSE(no_corners.Contains({50.01, 50}));
+  EXPECT_FALSE(no_corners.Contains({50, 50.01}));
+}
 
-  {
-    // RRect of bounds with even the tiniest corners does not contain corners
-    auto tiny_corners = RoundRect::MakeRectXY(bounds, 0.01f, 0.01f);
-    EXPECT_FALSE(tiny_corners.Contains({-50, -50}));
-    EXPECT_FALSE(tiny_corners.Contains({-50, 50}));
-    EXPECT_FALSE(tiny_corners.Contains({50, -50}));
-    EXPECT_FALSE(tiny_corners.Contains({50, 50}));
-  }
+TEST(RoundRectTest, TinyCornerRoundRectContains) {
+  Rect bounds = Rect::MakeLTRB(-50.0f, -50.0f, 50.0f, 50.0f);
+  // RRect of bounds with even the tiniest corners does not contain corners
+  auto tiny_corners = RoundRect::MakeRectXY(bounds, 0.01f, 0.01f);
 
-  {
-    // Expanded by 2.0 and then with a corner of 2.0 obviously still
-    // contains the corners
-    auto expanded_2_r_2 = RoundRect::MakeRectXY(bounds.Expand(2.0), 2.0f, 2.0f);
-    EXPECT_TRUE(expanded_2_r_2.Contains({-50, -50}));
-    EXPECT_TRUE(expanded_2_r_2.Contains({-50, 50}));
-    EXPECT_TRUE(expanded_2_r_2.Contains({50, -50}));
-    EXPECT_TRUE(expanded_2_r_2.Contains({50, 50}));
-  }
+  EXPECT_FALSE(tiny_corners.Contains({-50, -50}));
+  EXPECT_FALSE(tiny_corners.Contains({-50, 50}));
+  EXPECT_FALSE(tiny_corners.Contains({50, -50}));
+  EXPECT_FALSE(tiny_corners.Contains({50, 50}));
+}
 
-  // The corner point of the cull rect is at (c-2, c-2) relative to the
-  // corner of the rrect bounds so we compute its disance to the center
-  // of the circular part and compare it to the radius of the corner (c)
-  // to find the corner radius where it will start to leave the rounded
-  // rectangle:
+TEST(RoundRectTest, UniformCircularRoundRectContains) {
+  Rect bounds = Rect::MakeLTRB(-50.0f, -50.0f, 50.0f, 50.0f);
+  auto expanded_2_r_2 = RoundRect::MakeRectXY(bounds.Expand(2.0), 2.0f, 2.0f);
+
+  // Expanded by 2.0 and then with a corner of 2.0 obviously still
+  // contains the corners
+  EXPECT_TRUE(expanded_2_r_2.Contains({-50, -50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({-50, 50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({50, -50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({50, 50}));
+
+  // Now we try to box in the corner containment to exactly where the
+  // rounded corner of the expanded round rect with radii of 2.0 lies.
+  // The 45-degree diagonal point of a circle of radius 2.0 lies at:
   //
-  //     +-----------      +
-  //     |    __---^^      |
-  //     |  +/-------  +   |
-  //     |  / \        |   c
-  //     | /|   \     c-2  |
-  //     |/ |     \    |   |
-  //     || |       *  +   +
+  // (2 * sqrt(2) / 2, 2 * sqrt(2) / 2)
+  // (sqrt(2), sqrt(2))
   //
-  // sqrt(2*(c-2)*(c-2)) > c
-  // 2*(c-2)*(c-2) > c*c
-  // 2*(cc - 4c + 4) > cc
-  // 2cc - 8c + 8 > cc
-  // cc - 8c + 8 > 0
-  // c > 8 +/- sqrt(64 - 32) / 2
-  // c > ~6.828
-  // corners set to 6.82 should still cover the cull rect
-  // EXPECT_TRUE(state.rrect_covers_cull(SkRRect::MakeRectXY(test, 6.82f, 6.82f)));
-  // but corners set to 6.83 should not cover the cull rect
-  // EXPECT_FALSE(
-  //     state.rrect_covers_cull(SkRRect::MakeRectXY(test, 6.84f, 6.84f)));
+  // So we test +/- (50 + sqrt(2) +/- epsilon)
+  const auto coord_out = 50 + kSqrt2 + kEhCloseEnough;
+  const auto coord_in = 50 + kSqrt2 - kEhCloseEnough;
+  // Upper left corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({-coord_in, -coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({-coord_out, -coord_out}));
+  // Upper right corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({coord_in, -coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({coord_out, -coord_out}));
+  // Lower left corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({-coord_in, coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({-coord_out, coord_out}));
+  // Lower right corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({coord_in, coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({coord_out, coord_out}));
+}
+
+TEST(RoundRectTest, UniformEllipticalRoundRectContains) {
+  Rect bounds = Rect::MakeLTRB(-50.0f, -50.0f, 50.0f, 50.0f);
+  auto expanded_2_r_2 = RoundRect::MakeRectXY(bounds.Expand(2.0), 2.0f, 3.0f);
+
+  // Expanded by 2.0 and then with a corner of 2x3 should still
+  // contain the corners
+  EXPECT_TRUE(expanded_2_r_2.Contains({-50, -50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({-50, 50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({50, -50}));
+  EXPECT_TRUE(expanded_2_r_2.Contains({50, 50}));
+
+  // Now we try to box in the corner containment to exactly where the
+  // rounded corner of the expanded round rect with radii of 2x3 lies.
+  // The "45-degree diagonal point" of an ellipse of radii 2x3 lies at:
+  //
+  // (2 * sqrt(2) / 2, 3 * sqrt(2) / 2)
+  // (sqrt(2), 3 * sqrt(2) / 2)
+  //
+  // And the center(s) of these corners are at:
+  // (+/-(50 + 2 - 2), +/-(50 + 2 - 3))
+  // = (+/-50, +/-49)
+  const auto x_coord_out = 50 + kSqrt2 + kEhCloseEnough;
+  const auto x_coord_in = 50 + kSqrt2 - kEhCloseEnough;
+  const auto y_coord_out = 49 + 3 * kSqrt2 / 2 + kEhCloseEnough;
+  const auto y_coord_in = 49 + 3 * kSqrt2 / 2 - kEhCloseEnough;
+  // Upper left corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({-x_coord_in, -y_coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({-x_coord_out, -y_coord_out}));
+  // Upper right corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({x_coord_in, -y_coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({x_coord_out, -y_coord_out}));
+  // Lower left corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({-x_coord_in, y_coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({-x_coord_out, y_coord_out}));
+  // Lower right corner
+  EXPECT_TRUE(expanded_2_r_2.Contains({x_coord_in, y_coord_in}));
+  EXPECT_FALSE(expanded_2_r_2.Contains({x_coord_out, y_coord_out}));
+}
+
+TEST(RoundRectTest, DifferingCornersRoundRectContains) {
+  Rect bounds = Rect::MakeLTRB(-50.0f, -50.0f, 50.0f, 50.0f);
+  auto round_rect =
+      RoundRect::MakeRectRadii(bounds, {
+                                           .top_left = Size(2.0, 3.0),
+                                           .top_right = Size(4.0, 5.0),
+                                           .bottom_left = Size(6.0, 7.0),
+                                           .bottom_right = Size(8.0, 9.0),
+                                       });
+
+  // For a corner with radii {A, B}, the "45 degree point" on the
+  // corner curve will be at an offset of:
+  //
+  // (A * sqrt(2) / 2, B * sqrt(2) / 2)
+  //
+  // And the center(s) of these corners are at:
+  //
+  // (+/-(50 - A), +/-(50 - B))
+  auto coord = [](Scalar radius) {
+    return 50 - radius + radius * kSqrt2 / 2.0f - kEhCloseEnough;
+  };
+  auto coord_in = [&coord](Scalar radius) {
+    return coord(radius) - kEhCloseEnough;
+  };
+  auto coord_out = [&coord](Scalar radius) {
+    // For some reason 1 kEhCloseEnough is not enough to put us outside
+    // in some of the cases, so we use 2x the epsilon.
+    return coord(radius) + 2 * kEhCloseEnough;
+  };
+  // Upper left corner (radii = {2.0, 3.0})
+  EXPECT_TRUE(round_rect.Contains({-coord_in(2.0), -coord_in(3.0)}));
+  EXPECT_FALSE(round_rect.Contains({-coord_out(2.0), -coord_out(3.0)}));
+  // Upper right corner (radii = {4.0, 5.0})
+  EXPECT_TRUE(round_rect.Contains({coord_in(4.0), -coord_in(5.0)}));
+  EXPECT_FALSE(round_rect.Contains({coord_out(4.0), -coord_out(5.0)}));
+  // Lower left corner (radii = {6.0, 7.0})
+  EXPECT_TRUE(round_rect.Contains({-coord_in(6.0), coord_in(7.0)}));
+  EXPECT_FALSE(round_rect.Contains({-coord_out(6.0), coord_out(7.0)}));
+  // Lower right corner (radii = {8.0, 9.0})
+  EXPECT_TRUE(round_rect.Contains({coord_in(8.0), coord_in(9.0)}));
+  EXPECT_FALSE(round_rect.Contains({coord_out(8.0), coord_out(9.0)}));
 }
 
 }  // namespace testing

@@ -142,7 +142,7 @@ PathBuilder& PathBuilder::AddCircle(const Point& c, Scalar r) {
 PathBuilder& PathBuilder::AddRoundRect(RoundRect round_rect) {
   auto rect = round_rect.GetBounds();
   auto radii = round_rect.GetRadii();
-  if (radii.AreAllEmpty()) {
+  if (radii.AreAllCornersEmpty()) {
     return AddRect(rect);
   }
 

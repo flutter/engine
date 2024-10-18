@@ -257,7 +257,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRoundRect(
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   if (DrawStyle() == DlDrawStyle::kFill ||
-      ((rrect.GetRadii().AreAllSame()) && IsAntiAliased())) {
+      ((rrect.GetRadii().AreAllCornersSame()) && IsAntiAliased())) {
     unsigned int area = rrect.GetBounds().Area();
     // m = 1/3200
     // c = 0.5
@@ -309,7 +309,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDiffRoundRect(
   // currently use it anywhere in Flutter.
   if (DrawStyle() == DlDrawStyle::kFill) {
     unsigned int area = outer.GetBounds().Area();
-    if (!outer.GetRadii().AreAllSame()) {
+    if (!outer.GetRadii().AreAllCornersSame()) {
       // m = 1/500
       // c = 0.5
       complexity = (area + 250) / 5;

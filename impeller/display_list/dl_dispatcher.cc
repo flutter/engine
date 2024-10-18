@@ -458,7 +458,7 @@ void DlDispatcherBase::clipRoundRect(const DlRoundRect& rrect,
     GetCanvas().ClipGeometry(Geometry::MakeRect(rrect.GetBounds()), clip_op);
   } else if (rrect.IsOval()) {
     GetCanvas().ClipGeometry(Geometry::MakeOval(rrect.GetBounds()), clip_op);
-  } else if (rrect.GetRadii().AreAllSame()) {
+  } else if (rrect.GetRadii().AreAllCornersSame()) {
     GetCanvas().ClipGeometry(
         Geometry::MakeRoundRect(rrect.GetBounds(), rrect.GetRadii().top_left),
         clip_op);
@@ -585,13 +585,7 @@ void DlDispatcherBase::drawCircle(const DlPoint& center, DlScalar radius) {
 void DlDispatcherBase::drawRoundRect(const DlRoundRect& rrect) {
   AUTO_DEPTH_WATCHER(1u);
 
-  if (rrect.GetRadii().AreAllSame()) {
-    GetCanvas().DrawRoundRect(rrect, paint_);
-  } else {
-    PathBuilder builder;
-    builder.AddRoundRect(rrect);
-    GetCanvas().DrawPath(builder.TakePath(), paint_);
-  }
+  GetCanvas().DrawRoundRect(rrect, paint_);
 }
 
 // |flutter::DlOpReceiver|
