@@ -4001,7 +4001,7 @@ abstract class ImageFilter {
   ImageFilter._(); // ignore: unused_element
 
   /// Creates an image filter that applies a Gaussian blur.
-  factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp }) {
+  factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode? tileMode }) {
     return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
@@ -4083,7 +4083,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
 
   final double sigmaX;
   final double sigmaY;
-  final TileMode tileMode;
+  final TileMode? tileMode;
 
   // MakeBlurFilter
   late final _ImageFilter nativeFilter = _ImageFilter.blur(this);
@@ -4096,6 +4096,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
       case TileMode.mirror: return 'mirror';
       case TileMode.repeated: return 'repeated';
       case TileMode.decal: return 'decal';
+      case null: return 'unspecified';
     }
   }
 
@@ -4221,7 +4222,7 @@ base class _ImageFilter extends NativeFieldWrapperClass1 {
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
     : creator = filter {
     _constructor();
-    _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
+    _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode?.index ?? -1);
   }
 
   /// Creates an image filter that dilates each input pixel's channel values
