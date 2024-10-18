@@ -146,6 +146,9 @@ typedef struct MouseState {
  */
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
+
+/// Handle keyboard animation callbacks.
+- (void)handleKeyboardAnimationCallback:(fml::TimePoint)targetTime;
 @end
 
 @implementation FlutterViewController {
@@ -1719,48 +1722,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self invalidateKeyboardAnimationVSyncClient];
 
   __weak FlutterViewController* weakSelf = self;
-  FlutterKeyboardAnimationCallback keyboardAnimationCallback =
-      ^(fml::TimePoint keyboardAnimationTargetTime) {
-        FlutterViewController* strongSelf = weakSelf;
-        if (!strongSelf) {
-          return;
-        }
-
-        // If the view controller's view is not loaded, bail out.
-        if (!strongSelf.isViewLoaded) {
-          return;
-        }
-        // If the view for tracking keyboard animation is nil, means it is not
-        // created, bail out.
-        if (!strongSelf.keyboardAnimationView) {
-          return;
-        }
-        // If keyboardAnimationVSyncClient is nil, means the animation ends.
-        // And should bail out.
-        if (!strongSelf.keyboardAnimationVSyncClient) {
-          return;
-        }
-
-        if (!strongSelf.keyboardAnimationView.superview) {
-          // Ensure the keyboardAnimationView is in view hierarchy when animation running.
-          [strongSelf.view addSubview:strongSelf.keyboardAnimationView];
-        }
-
-        if (!strongSelf.keyboardSpringAnimation) {
-          if (strongSelf.keyboardAnimationView.layer.presentationLayer) {
-            strongSelf->_viewportMetrics.physical_view_inset_bottom =
-                strongSelf.keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-            [strongSelf updateViewportMetricsIfNeeded];
-          }
-        } else {
-          fml::TimeDelta timeElapsed =
-              keyboardAnimationTargetTime - strongSelf.keyboardAnimationStartTime;
-          strongSelf->_viewportMetrics.physical_view_inset_bottom =
-              [strongSelf.keyboardSpringAnimation curveFunction:timeElapsed.ToSecondsF()];
-          [strongSelf updateViewportMetricsIfNeeded];
-        }
-      };
-  [self setUpKeyboardAnimationVsyncClient:keyboardAnimationCallback];
+  [self setUpKeyboardAnimationVsyncClient:^(fml::TimePoint targetTime) {
+    [weakSelf handleKeyboardAnimationCallback:targetTime];
+  }];
   VSyncClient* currentVsyncClient = _keyboardAnimationVSyncClient;
 
   [UIView animateWithDuration:duration
@@ -1813,6 +1777,41 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                          toValue:self.targetViewInsetBottom];
 }
 
+- (void)handleKeyboardAnimationCallback:(fml::TimePoint)targetTime {
+  // If the view controller's view is not loaded, bail out.
+  if (!self.isViewLoaded) {
+    return;
+  }
+  // If the view for tracking keyboard animation is nil, means it is not
+  // created, bail out.
+  if (!self.keyboardAnimationView) {
+    return;
+  }
+  // If keyboardAnimationVSyncClient is nil, means the animation ends.
+  // And should bail out.
+  if (!self.keyboardAnimationVSyncClient) {
+    return;
+  }
+
+  if (!self.keyboardAnimationView.superview) {
+    // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+    [self.view addSubview:self.keyboardAnimationView];
+  }
+
+  if (!self.keyboardSpringAnimation) {
+    if (self.keyboardAnimationView.layer.presentationLayer) {
+      self->_viewportMetrics.physical_view_inset_bottom =
+          self.keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+      [self updateViewportMetricsIfNeeded];
+    }
+  } else {
+    fml::TimeDelta timeElapsed = targetTime - self.keyboardAnimationStartTime;
+    self->_viewportMetrics.physical_view_inset_bottom =
+        [self.keyboardSpringAnimation curveFunction:timeElapsed.ToSecondsF()];
+    [self updateViewportMetricsIfNeeded];
+  }
+}
+
 - (void)setUpKeyboardAnimationVsyncClient:
     (FlutterKeyboardAnimationCallback)keyboardAnimationCallback {
   if (!keyboardAnimationCallback) {
@@ -1825,9 +1824,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   FlutterKeyboardAnimationCallback animationCallback = [keyboardAnimationCallback copy];
   auto uiCallback = [animationCallback](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     fml::TimeDelta frameInterval = recorder->GetVsyncTargetTime() - recorder->GetVsyncStartTime();
-    fml::TimePoint keyboardAnimationTargetTime = recorder->GetVsyncTargetTime() + frameInterval;
+    fml::TimePoint targetTime = recorder->GetVsyncTargetTime() + frameInterval;
     dispatch_async(dispatch_get_main_queue(), ^(void) {
-      animationCallback(keyboardAnimationTargetTime);
+      animationCallback(targetTime);
     });
   };
 
