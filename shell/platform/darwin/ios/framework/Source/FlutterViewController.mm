@@ -658,9 +658,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
                                           rasterTaskRunner = self.engine.rasterTaskRunner]() {
     FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
-    platformTaskRunner->PostTask([weakSelf]() {
-      [weakSelf onFirstFrameRendered];
-    });
+    platformTaskRunner->PostTask([weakSelf]() { [weakSelf onFirstFrameRendered]; });
   });
 }
 
