@@ -490,13 +490,13 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-// DescriptorPool Lifecycle:
+// DescriptorPool Lifecycle (Same as CommandPool lifecycle)
 // 1. End of frame will reset the descriptor pool (clearing this on a thread).
 //    There will still be references to the descriptor pool from the uncompleted
 //    command buffers.
 // 2. The last reference to the descriptor pool will be released from the fence
 //    waiter thread, which will schedule a task on the resource
-//    manager thread, which in turn will reset the command pool and make it
+//    manager thread, which in turn will reset the descriptor pool and make it
 //    available for reuse ("recycle").
 static thread_local std::shared_ptr<DescriptorPoolVK> tls_descriptor_pool;
 
