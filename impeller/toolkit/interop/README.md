@@ -79,7 +79,7 @@ Users interact with Impeller objects using opaque handles. Impeller objects can 
 
 All Impeller objects are thread-safe reference-counted.
 
-### Reference Management
+## Reference Management
 
 Methods in the Impeller API follow a very strict convention. This makes it easy to write automated bindings generators that handle object lifecycles to various degrees:
 
@@ -90,6 +90,6 @@ Methods in the Impeller API follow a very strict convention. This makes it easy 
 * The framework may hold strong references to objects internally. When the user releases their last reference, it is not guaranteed that the object will be immediately destructed.
 * Reference counts can be incremented and decremented in a thread-safe manner. But, not all objects can be used safely from multiple thread concurrently. The thread safety attributes of the object should be documented in the header.
 
-### Null Safety
+## Null Safety
 
 The Impeller API passes [nullability completeness](https://clang.llvm.org/docs/DiagnosticsReference.html#wnullability-completeness) checks. All pointer arguments and return values are decorated with `IMPELLER_NULLABLE` and `IMPELLER_NONNULL`. Passing a null pointer to an argument decorated with `IMPELLER_NONNULL` will very likely result in a null pointer dereference. When generating automated bindings to other languages, it is recommended that these decorations be used to inform the API and perform additional checks.
