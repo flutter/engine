@@ -234,9 +234,22 @@ class DriverInfoVK {
   ///             If true, context setup should fail such that the device falls
   ///             back to OpenGLES.
   ///
-  /// @return     True if non-functional device, False otherwiise.
+  /// @return     True if non-functional device, False otherwise.
   ///
   bool IsKnownBadDriver() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Determines if the driver can batch submit command buffers
+  ///             without triggering erronious deadlock errors.
+  ///
+  ///             Early 600 series Adreno drivers would deadlock if a command
+  ///             buffer submission had too much work attached to it, this
+  ///             requires the renderer to split up command buffers that could
+  ///             be logically combined.
+  ///
+  /// @return     True if device can batch submit command buffers.
+  ///
+  bool CanBatchSubmitCommandBuffers() const;
 
  private:
   bool is_valid_ = false;

@@ -502,7 +502,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
     fml::ScopedCleanupClosure closure([&]() {
       blit_pass->EncodeCommands(context.GetResourceAllocator());
-      context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+      context.EnqueueCommandBuffer(std::move(cmd_buffer));
     });
 
     // ---------------------------------------------------------------------------
@@ -590,7 +590,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
-    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+    context.EnqueueCommandBuffer(std::move(cmd_buffer));
   });
 
   // Now append all remaining glyphs. This should never have any missing data...
