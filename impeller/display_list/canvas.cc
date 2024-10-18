@@ -1128,8 +1128,7 @@ void Canvas::SaveLayer(const Paint& paint,
     backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
 
     backdrop_entity.Render(
-        renderer_,
-        *render_passes_.back().inline_pass_context->GetRenderPass());
+        renderer_, *render_passes_.back().inline_pass_context->GetRenderPass());
   }
 }
 
