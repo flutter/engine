@@ -55,6 +55,7 @@ import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -647,6 +648,63 @@ public class FlutterViewTest {
     validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
+  }
+
+  @SuppressWarnings("deprecation")
+  @Test
+  @Config(sdk = 28)
+  public void onApplyWindowInsetsSetsDisplayCutouts() {
+    FlutterView flutterView = spy(new FlutterView(ctx));
+    assertEquals(0, flutterView.getSystemUiVisibility());
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
+    when(flutterView.getContext()).thenReturn(ctx);
+
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets,
+    // the viewport metrics default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    //Insets insets = Insets.of(100, 100, 100, 100);
+    //Insets systemGestureInsets = Insets.of(110, 110, 110, 110);
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    //mockSystemWindowInsets(windowInsets, -1, -1, -1, -1);
+    //when(windowInsets.getInsets(anyInt())).thenReturn(insets);
+    //when(windowInsets.getSystemGestureInsets()).thenReturn(systemGestureInsets);
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
+
+    //Insets waterfallInsets = Insets.of(200, 0, 200, 0);
+    //when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
+    //when(displayCutout.getSafeInsetTop()).thenReturn(150);
+    //when(displayCutout.getSafeInsetBottom()).thenReturn(150);
+    //when(displayCutout.getSafeInsetLeft()).thenReturn(150);
+    //when(displayCutout.getSafeInsetRight()).thenReturn(150);
+    List<Rect> boundingRects = Arrays.asList(
+            new Rect(0, 200, 300, 400),
+            new Rect(150, 0, 300, 150)
+    );
+    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
+
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    //validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
+
+    //assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
+    List<FlutterRenderer.DisplayFeature> features = viewportMetricsCaptor.getValue().displayFeatures;
+    assertEquals(2, features.size());
+    for (int i = 0; i < 2; i++) {
+      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i).type);
+      assertEquals(boundingRects.get(i), features.get(i).bounds);
+    }
   }
 
   @SuppressWarnings("deprecation")
