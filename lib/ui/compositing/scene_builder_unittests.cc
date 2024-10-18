@@ -12,7 +12,6 @@
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
-#include "lib/ui/compositing/scene.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)

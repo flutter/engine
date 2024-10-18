@@ -110,8 +110,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void save() override;
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override;
+                 const DlImageFilter* backdrop) override;
   void restore() override;
 
   void translate(DlScalar tx, DlScalar ty) override;
@@ -398,8 +397,7 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   void save() override { RecordByType(DisplayListOpType::kSave); }
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override {
+                 const DlImageFilter* backdrop) override {
     if (backdrop) {
       RecordByType(DisplayListOpType::kSaveLayerBackdrop);
     } else {

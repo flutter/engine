@@ -62,8 +62,7 @@ class DlCanvas {
   virtual void Save() = 0;
   virtual void SaveLayer(std::optional<const DlRect>& bounds,
                          const DlPaint* paint = nullptr,
-                         const DlImageFilter* backdrop = nullptr,
-                         std::optional<int64_t> backdrop_id = std::nullopt) = 0;
+                         const DlImageFilter* backdrop = nullptr) = 0;
   virtual void Restore() = 0;
   virtual int GetSaveCount() const = 0;
   virtual void RestoreToCount(int restore_count) = 0;
@@ -234,10 +233,9 @@ class DlCanvas {
 
   void SaveLayer(const SkRect* bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr,
-                 std::optional<int64_t> backdrop_id = std::nullopt) {
+                 const DlImageFilter* backdrop = nullptr) {
     auto optional_bounds = ToOptDlRect(bounds);
-    SaveLayer(optional_bounds, paint, backdrop, backdrop_id);
+    SaveLayer(optional_bounds, paint, backdrop);
   }
 
   void Transform(const SkMatrix* matrix) {

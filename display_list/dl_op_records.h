@@ -310,24 +310,19 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
 
   SaveLayerBackdropOp(const SaveLayerOptions& options,
                       const DlRect& rect,
-                      const DlImageFilter* backdrop,
-                      std::optional<int64_t> backdrop_id)
-      : SaveLayerOpBase(options, rect),
-        backdrop(backdrop->shared()),
-        backdrop_id_(backdrop_id) {}
+                      const DlImageFilter* backdrop)
+      : SaveLayerOpBase(options, rect), backdrop(backdrop->shared()) {}
 
   const std::shared_ptr<DlImageFilter> backdrop;
-  std::optional<int64_t> backdrop_id_;
 
   void dispatch(DlOpReceiver& receiver) const {
     receiver.saveLayer(rect, options, total_content_depth, max_blend_mode,
-                       backdrop.get(), backdrop_id_);
+                       backdrop.get());
   }
 
   DisplayListCompare equals(const SaveLayerBackdropOp* other) const {
     return (options == other->options && rect == other->rect &&
-            Equals(backdrop, other->backdrop) &&
-            backdrop_id_ == other->backdrop_id_)
+            Equals(backdrop, other->backdrop))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
   }

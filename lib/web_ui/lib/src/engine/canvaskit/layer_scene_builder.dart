@@ -110,7 +110,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.EngineLayer? oldLayer,
-    int? backdropId,
   }) {
     return pushLayer<BackdropFilterEngineLayer>(BackdropFilterEngineLayer(
       filter,

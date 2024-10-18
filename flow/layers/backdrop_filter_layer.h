@@ -13,8 +13,7 @@ namespace flutter {
 class BackdropFilterLayer : public ContainerLayer {
  public:
   BackdropFilterLayer(std::shared_ptr<const DlImageFilter> filter,
-                      DlBlendMode blend_mode,
-                      std::optional<int64_t> backdrop_id = std::nullopt);
+                      DlBlendMode blend_mode);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -25,7 +24,6 @@ class BackdropFilterLayer : public ContainerLayer {
  private:
   std::shared_ptr<const DlImageFilter> filter_;
   DlBlendMode blend_mode_;
-  std::optional<int64_t> backdrop_id_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
 };
