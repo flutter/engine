@@ -1180,14 +1180,15 @@ const float kFloatCompareEpsilon = 0.001;
   [child setSemanticsNode:&childNode];
   XCTAssertFalse(child.canBecomeFocused);
 
-  // frame
-  childNode.rect = SkRect::MakeXYWH(0, 0, 30, 30);
+  CGFloat scale = ((bridge->view().window.screen ?: UIScreen.mainScreen)).scale;
+
+  childNode.rect = SkRect::MakeXYWH(0, 0, 100 * scale, 100 * scale);
   [child setSemanticsNode:&childNode];
   flutter::SemanticsNode parentNode;
   parentNode.rect = SkRect::MakeXYWH(0, 0, 200, 200);
   [parent setSemanticsNode:&parentNode];
 
-  XCTAssertTrue(CGRectEqualToRect(child.frame, CGRectMake(0, 0, 10, 10)));
+  XCTAssertTrue(CGRectEqualToRect(child.frame, CGRectMake(0, 0, 100, 100)));
 }
 
 - (void)testUIFocusItemContainerConformance {
