@@ -112,7 +112,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
   // In cases where there are no contents, we
   // could instead check the clear color and initialize a 1x2 CPU texture
   // instead of ending the pass.
-  rendering_config.inline_pass_context->GetRenderPass(0);
+  rendering_config.inline_pass_context->GetRenderPass();
   if (!rendering_config.inline_pass_context->EndPass()) {
     VALIDATION_LOG
         << "Failed to end the current render pass in order to read from "
@@ -127,7 +127,7 @@ static std::shared_ptr<Texture> FlipBackdrop(
     return nullptr;
   }
 
-  std::shared_ptr<Texture> input_texture =
+  const std::shared_ptr<Texture>& input_texture =
       rendering_config.inline_pass_context->GetTexture();
 
   if (!input_texture) {
@@ -1168,7 +1168,7 @@ bool Canvas::Restore() {
     auto lazy_render_pass = std::move(render_passes_.back());
     render_passes_.pop_back();
     // Force the render pass to be constructed if it never was.
-    lazy_render_pass.inline_pass_context->GetRenderPass(0);
+    lazy_render_pass.inline_pass_context->GetRenderPass();
 
     SaveLayerState save_layer_state = save_layer_state_.back();
     save_layer_state_.pop_back();
@@ -1242,8 +1242,8 @@ bool Canvas::Restore() {
     }
 
     element_entity.Render(
-        renderer_,                                                         //
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass  //
+        renderer_,                                                   //
+        *render_passes_.back().inline_pass_context->GetRenderPass()  //
     );
     clip_coverage_stack_.PopSubpass();
     transform_stack_.pop_back();
@@ -1290,9 +1290,9 @@ bool Canvas::Restore() {
     if (clip_state_result.clip_did_change) {
       // We only need to update the pass scissor if the clip state has changed.
       SetClipScissor(
-          clip_coverage_stack_.CurrentClipCoverage(),                         //
-          *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,  //
-          GetGlobalPassPosition()                                             //
+          clip_coverage_stack_.CurrentClipCoverage(),                   //
+          *render_passes_.back().inline_pass_context->GetRenderPass(),  //
+          GetGlobalPassPosition()                                       //
       );
     }
 
@@ -1300,9 +1300,8 @@ bool Canvas::Restore() {
       return true;
     }
 
-    entity.Render(
-        renderer_,
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+    entity.Render(renderer_,
+                  *render_passes_.back().inline_pass_context->GetRenderPass());
   }
 
   return true;
@@ -1509,16 +1508,16 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
     }
   }
 
-  InlinePassContext::RenderPassResult result =
-      render_passes_.back().inline_pass_context->GetRenderPass(0);
-  if (!result.pass) {
+  const std::shared_ptr<RenderPass>& result =
+      render_passes_.back().inline_pass_context->GetRenderPass();
+  if (!result) {
     // Failure to produce a render pass should be explained by specific errors
     // in `InlinePassContext::GetRenderPass()`, so avoid log spam and don't
     // append a validation log here.
     return;
   }
 
-  entity.Render(renderer_, *result.pass);
+  entity.Render(renderer_, *result);
 }
 
 void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
@@ -1564,19 +1563,17 @@ void Canvas::AddClipEntityToCurrentPass(Entity& entity) {
 
   if (clip_state_result.clip_did_change) {
     // We only need to update the pass scissor if the clip state has changed.
-    SetClipScissor(
-        clip_coverage_stack_.CurrentClipCoverage(),
-        *render_passes_.back().inline_pass_context->GetRenderPass(0).pass,
-        GetGlobalPassPosition());
+    SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
+                   *render_passes_.back().inline_pass_context->GetRenderPass(),
+                   GetGlobalPassPosition());
   }
 
   if (!clip_state_result.should_render) {
     return;
   }
 
-  entity.Render(
-      renderer_,
-      *render_passes_.back().inline_pass_context->GetRenderPass(0).pass);
+  entity.Render(renderer_,
+                *render_passes_.back().inline_pass_context->GetRenderPass());
 }
 
 bool Canvas::BlitToOnscreen() {
@@ -1640,7 +1637,7 @@ bool Canvas::BlitToOnscreen() {
 
 void Canvas::EndReplay() {
   FML_DCHECK(render_passes_.size() == 1u);
-  render_passes_.back().inline_pass_context->GetRenderPass(0);
+  render_passes_.back().inline_pass_context->GetRenderPass();
   render_passes_.back().inline_pass_context->EndPass();
 
   // If requires_readback_ was true, then we rendered to an offscreen texture
