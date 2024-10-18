@@ -597,6 +597,7 @@ final List<RegExp> csReferencesByType = <RegExp>[
   RegExp(
     kIndent +
     r'Distributed under (MIT) license\.',
+    multiLine: true
   ),
 
   RegExp(
