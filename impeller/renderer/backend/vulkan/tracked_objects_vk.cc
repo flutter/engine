@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
 
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 
 namespace impeller {
