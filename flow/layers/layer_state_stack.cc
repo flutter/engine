@@ -52,8 +52,7 @@ class DummyDelegate : public LayerStateStack::Delegate {
   void saveLayer(const SkRect& bounds,
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override {}
+                 const DlImageFilter* backdrop) override {}
   void restore() override {}
 
   void translate(SkScalar tx, SkScalar ty) override {}
@@ -100,13 +99,10 @@ class DlCanvasDelegate : public LayerStateStack::Delegate {
   void saveLayer(const SkRect& bounds,
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend_mode,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override {
+                 const DlImageFilter* backdrop) override {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
     DlPaint paint;
-    std::optional<const DlRect> rect = ToDlRect(bounds);
-    canvas_->SaveLayer(rect, attributes.fill(paint, blend_mode), backdrop,
-                       backdrop_id);
+    canvas_->SaveLayer(&bounds, attributes.fill(paint, blend_mode), backdrop);
   }
   void restore() override { canvas_->Restore(); }
 
@@ -161,8 +157,7 @@ class PrerollDelegate : public LayerStateStack::Delegate {
   void saveLayer(const SkRect& bounds,
                  LayerStateStack::RenderingAttributes& attributes,
                  DlBlendMode blend,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override {
+                 const DlImageFilter* backdrop) override {
     save_stack_.emplace_back(state());
   }
   void restore() override { save_stack_.pop_back(); }
@@ -348,16 +343,13 @@ class BackdropFilterEntry : public SaveLayerEntry {
   BackdropFilterEntry(const SkRect& bounds,
                       const std::shared_ptr<const DlImageFilter>& filter,
                       DlBlendMode blend_mode,
-                      std::optional<int64_t> backdrop_id,
                       const LayerStateStack::RenderingAttributes& prev)
-      : SaveLayerEntry(bounds, blend_mode, prev),
-        filter_(filter),
-        backdrop_id_(backdrop_id) {}
+      : SaveLayerEntry(bounds, blend_mode, prev), filter_(filter) {}
   ~BackdropFilterEntry() override = default;
 
   void apply(LayerStateStack* stack) const override {
     stack->delegate_->saveLayer(bounds_, stack->outstanding_, blend_mode_,
-                                filter_.get(), backdrop_id_);
+                                filter_.get());
     stack->outstanding_ = {};
   }
 
@@ -374,7 +366,6 @@ class BackdropFilterEntry : public SaveLayerEntry {
 
  private:
   const std::shared_ptr<const DlImageFilter> filter_;
-  std::optional<int64_t> backdrop_id_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(BackdropFilterEntry);
 };
@@ -567,9 +558,8 @@ void MutatorContext::applyColorFilter(
 void MutatorContext::applyBackdropFilter(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter>& filter,
-    DlBlendMode blend_mode,
-    std::optional<int64_t> backdrop_id) {
-  layer_state_stack_->push_backdrop(bounds, filter, blend_mode, backdrop_id);
+    DlBlendMode blend_mode) {
+  layer_state_stack_->push_backdrop(bounds, filter, blend_mode);
 }
 
 void MutatorContext::translate(SkScalar tx, SkScalar ty) {
@@ -716,10 +706,9 @@ void LayerStateStack::push_image_filter(
 void LayerStateStack::push_backdrop(
     const SkRect& bounds,
     const std::shared_ptr<const DlImageFilter>& filter,
-    DlBlendMode blend_mode,
-    std::optional<int64_t> backdrop_id) {
+    DlBlendMode blend_mode) {
   state_stack_.emplace_back(std::make_unique<BackdropFilterEntry>(
-      bounds, filter, blend_mode, backdrop_id, outstanding_));
+      bounds, filter, blend_mode, outstanding_));
   apply_last_entry();
 }
 

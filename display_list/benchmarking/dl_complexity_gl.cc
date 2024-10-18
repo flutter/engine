@@ -51,8 +51,7 @@ unsigned int DisplayListGLComplexityCalculator::GLHelper::BatchedComplexity() {
 void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
     const DlRect& bounds,
     const SaveLayerOptions options,
-    const DlImageFilter* backdrop,
-    std::optional<int64_t> backdrop_id) {
+    const DlImageFilter* backdrop) {
   if (IsComplex()) {
     return;
   }
@@ -628,8 +627,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
   GLHelper helper(Ceiling() - CurrentComplexityScore());
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
     auto bounds = display_list->GetBounds();
-    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr,
-                     /*backdrop_id=*/-1);
+    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr);
   }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());

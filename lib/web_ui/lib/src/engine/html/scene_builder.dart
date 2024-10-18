@@ -240,7 +240,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.BackdropFilterEngineLayer? oldLayer,
-    int? backdropId,
   }) {
     return _pushSurface<PersistedBackdropFilter>(PersistedBackdropFilter(
         oldLayer as PersistedBackdropFilter?, filter));

@@ -82,8 +82,7 @@ class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
   void save() override {}
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop,
-                 std::optional<int64_t> backdrop_id) override {}
+                 const DlImageFilter* backdrop) override {}
   void restore() override {}
   void drawColor(DlColor color, DlBlendMode mode) override {}
   void drawPaint() override {}
