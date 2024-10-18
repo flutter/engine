@@ -194,9 +194,9 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
                                   int blend_mode,
                                   int filter_quality_index,
                                   const fml::RefPtr<EngineLayer>& old_layer) {
-  SkRect rect =
-      SkRect::MakeLTRB(SafeNarrow(mask_rect_left), SafeNarrow(mask_rect_top),
-                       SafeNarrow(mask_rect_right), SafeNarrow(mask_rect_bottom));
+  SkRect rect = SkRect::MakeLTRB(
+      SafeNarrow(mask_rect_left), SafeNarrow(mask_rect_top),
+      SafeNarrow(mask_rect_right), SafeNarrow(mask_rect_bottom));
   auto sampling = ImageFilter::SamplingFromIndex(filter_quality_index);
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
       shader->shader(sampling), rect, static_cast<DlBlendMode>(blend_mode));
