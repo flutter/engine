@@ -210,4 +210,8 @@ void CommandBufferVK::InsertDebugMarker(std::string_view label) const {
   }
 }
 
+DescriptorPoolVK& CommandBufferVK::GetDescriptorPool() const {
+  return tracked_objects_->GetDescriptorPool();
+}
+
 }  // namespace impeller

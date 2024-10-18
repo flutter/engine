@@ -8,6 +8,7 @@
 #include "fml/status_or.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
@@ -80,6 +81,9 @@ class CommandBufferVK final
 
   // Visible for testing.
   bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
+
+  // Visible for testing.
+  DescriptorPoolVK& GetDescriptorPool() const;
 
  private:
   friend class ContextVK;
