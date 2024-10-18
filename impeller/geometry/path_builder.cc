@@ -292,9 +292,6 @@ void PathBuilder::AddLinearComponentIfNeeded(const Point& p1, const Point& p2) {
 }
 
 void PathBuilder::AddLinearComponent(const Point& p1, const Point& p2) {
-  if (ScalarNearlyEqual(p1.x, p2.x) && ScalarNearlyEqual(p1.y, p2.y)) {
-    return;
-  }
   auto& points = prototype_.points;
   points.push_back(p1);
   points.push_back(p2);
