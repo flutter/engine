@@ -38,8 +38,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAATexture) {
   auto msaa_tex = color0.texture;
   auto resolve_tex = color0.resolve_texture;
 
-  entity_pass_target.Flip(
-      *content_context->GetContext()->GetResourceAllocator());
+  entity_pass_target.Flip(*content_context);
 
   color0 = entity_pass_target.GetRenderTarget()
                .GetColorAttachments()
@@ -98,8 +97,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
 
   ASSERT_EQ(msaa_tex, resolve_tex);
 
-  entity_pass_target.Flip(
-      *content_context->GetContext()->GetResourceAllocator());
+  entity_pass_target.Flip(*content_context);
 
   color0 = entity_pass_target.GetRenderTarget()
                .GetColorAttachments()

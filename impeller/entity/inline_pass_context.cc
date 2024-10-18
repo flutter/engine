@@ -22,9 +22,7 @@ InlinePassContext::InlinePassContext(const ContentContext& renderer,
     : renderer_(renderer), pass_target_(pass_target) {}
 
 InlinePassContext::~InlinePassContext() {
-  if (!is_collapsed_) {
-    EndPass();
-  }
+  EndPass();
 }
 
 bool InlinePassContext::IsValid() const {
@@ -161,7 +159,7 @@ const std::shared_ptr<RenderPass>& InlinePassContext::GetRenderPass() {
     VALIDATION_LOG << "Could not create render pass.";
     return pass_;
   }
-  pass_->SetLabel("EntityPass Render Pass: Depth=");
+  pass_->SetLabel("EntityPass Render Pass");
 
   ++pass_count_;
   return pass_;

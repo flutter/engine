@@ -42,9 +42,6 @@ class InlinePassContext {
   std::shared_ptr<RenderPass> pass_;
   uint32_t pass_count_ = 0;
 
-  // Whether this context is collapsed into a parent entity pass.
-  bool is_collapsed_ = false;
-
   InlinePassContext(const InlinePassContext&) = delete;
 
   InlinePassContext& operator=(const InlinePassContext&) = delete;
