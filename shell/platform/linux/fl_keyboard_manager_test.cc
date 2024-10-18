@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
+#include "flutter/shell/platform/linux/testing/mock_keymap.h"
 #include "flutter/shell/platform/linux/testing/mock_text_input_handler.h"
 #include "flutter/testing/testing.h"
 
@@ -533,6 +534,7 @@ class KeyboardTester {
 // Make sure that the keyboard can be disposed without crashes when there are
 // unresolved pending events.
 TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
 
@@ -553,6 +555,7 @@ TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
   g_autoptr(GPtrArray) redispatched =
@@ -640,6 +643,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   gboolean handler_handled = false;
   std::vector<CallRecord> call_records;
@@ -687,6 +691,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
 }
 
 TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
   g_autoptr(GPtrArray) redispatched =
@@ -746,6 +751,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 }
 
 TEST(FlKeyboardManagerTest, TextInputHandlerReturnsFalse) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   g_autoptr(GPtrArray) redispatched =
       g_ptr_array_new_with_free_func(g_object_unref);
@@ -769,6 +775,7 @@ TEST(FlKeyboardManagerTest, TextInputHandlerReturnsFalse) {
 }
 
 TEST(FlKeyboardManagerTest, TextInputHandlerReturnsTrue) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   g_autoptr(GPtrArray) redispatched =
       g_ptr_array_new_with_free_func(g_object_unref);
@@ -789,6 +796,7 @@ TEST(FlKeyboardManagerTest, TextInputHandlerReturnsTrue) {
 }
 
 TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
 
   std::vector<CallRecord> call_records;
@@ -882,6 +890,7 @@ TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
 }
 
 TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
   tester.recordEmbedderCallsTo(call_records);
@@ -920,6 +929,7 @@ TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
 }
 
 TEST(FlKeyboardManagerTest, GetPressedState) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   tester.respondToTextInputWith(true);
 
