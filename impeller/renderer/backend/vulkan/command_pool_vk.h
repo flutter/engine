@@ -83,8 +83,7 @@ struct ThreadLocalData {
 };
 
 // Associates a resource with a thread and context.
-using CommandPoolMap =
-    std::unordered_map<uint64_t, ThreadLocalData>;
+using CommandPoolMap = std::unordered_map<uint64_t, ThreadLocalData>;
 
 //------------------------------------------------------------------------------
 /// @brief      Creates and manages the lifecycle of |vk::CommandPool| objects.
@@ -171,7 +170,9 @@ class CommandPoolRecyclerVK final
   /// Create a DescriptorPoolVK and a CommandPoolVK and stash them in the TLS
   /// map.
   std::optional<ThreadLocalData> InitializeThreadLocalResources(
-      const std::shared_ptr<ContextVK>& context, CommandPoolMap& pool_map, uint64_t pool_key);
+      const std::shared_ptr<ContextVK>& context,
+      CommandPoolMap& pool_map,
+      uint64_t pool_key);
 
   CommandPoolRecyclerVK(const CommandPoolRecyclerVK&) = delete;
 
