@@ -1,5 +1,4 @@
-# DO NOT SUBMIT
-package: experimental/flutter/fuchsia
+package: flutter/fuchsia
 description: Flutter Fuchsia Artifacts
 install_mode: copy
 data:

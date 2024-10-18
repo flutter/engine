@@ -229,8 +229,6 @@ def RunCIPDCommandWithRetries(command):
   # Retry up to three times.  We've seen CIPD fail on verification in some
   # instances. Normally verification takes slightly more than 1 minute when
   # it succeeds.
-  # DO NOT SUBMIT
-  command.extend(['-service-url', 'https://chrome-infra-packages-dev.appspot.com'])
   num_tries = 3
   for tries in range(num_tries):
     try:
@@ -403,13 +401,8 @@ def main():
   should_upload = args.upload
   engine_version = args.engine_version
   if not engine_version:
-    # DO NOT SUBMIT
-    # A hacky way to upload a package before submitting the change.
-    # It should be removed.
-    engine_version = 'zijiehe-55932'
-    should_upload = True
-    # engine_version = 'HEAD'
-    # should_upload = False
+    engine_version = 'HEAD'
+    should_upload = False
 
   # Create and optionally upload CIPD package
   if args.cipd_dry_run or args.upload:
