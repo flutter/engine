@@ -36,8 +36,8 @@ bool RenderPassGLES::IsValid() const {
 }
 
 // |RenderPass|
-void RenderPassGLES::OnSetLabel(std::string label) {
-  label_ = std::move(label);
+void RenderPassGLES::OnSetLabel(std::string_view label) {
+  label_ = label;
 }
 
 void ConfigureBlending(const ProcTableGLES& gl,
@@ -455,7 +455,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     /// Finally! Invoke the draw call.
     ///
     if (command.index_type == IndexType::kNone) {
-      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+      gl.DrawArrays(mode, command.base_vertex, command.element_count);
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.index_buffer;
@@ -466,7 +466,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
         return false;
       }
       gl.DrawElements(mode,                             // mode
-                      command.vertex_count,             // count
+                      command.element_count,            // count
                       ToIndexType(command.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
                           index_buffer_view.range.offset))  // indices
