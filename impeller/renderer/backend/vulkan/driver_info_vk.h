@@ -10,6 +10,7 @@
 
 namespace impeller {
 
+// https://en.wikipedia.org/wiki/Adreno
 enum class AdrenoGPU {
   // I don't think the 400 series will ever run Vulkan, but if some show up we
   // can add them here.
