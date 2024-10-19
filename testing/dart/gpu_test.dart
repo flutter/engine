@@ -128,10 +128,6 @@ void drawTriangle(RenderPassState state, Vector4 color) {
       transients.emplace(unlitUBO(Matrix4.identity(), color));
   state.renderPass.bindVertexBuffer(vertices, 3);
 
-  // TODO(bdero): Overwrite bindings with the same slot so we don't need to clear.
-  //              https://github.com/flutter/flutter/issues/155335
-  state.renderPass.clearBindings();
-
   final gpu.UniformSlot vertInfo =
       pipeline.vertexShader.getUniformSlot('VertInfo');
   state.renderPass.bindUniform(vertInfo, vertInfoData);
