@@ -759,15 +759,13 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
-    fml::TaskRunner::RunNowOrPostTask(
-        startup_ui_thread_->GetTaskRunner(), [engine = weak_engine_] {
-          TRACE_EVENT0("flutter", "SET UP FONT MANAGER");
-          if (engine) {
-            engine->SetupDefaultFontManager();
-          }
-        });
+    fml::TaskRunner::RunNowOrPostTask(startup_ui_thread_->GetTaskRunner(),
+                                      [engine = weak_engine_] {
+                                        if (engine) {
+                                          engine->SetupDefaultFontManager();
+                                        }
+                                      });
   }
-  FML_LOG(ERROR) << "Joining";
   // Figure out how to do this later.
   startup_ui_thread_->Join();
 
