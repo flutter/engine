@@ -316,7 +316,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<std::unique_ptr<Engine>> engine_promise;
   auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
+      shell->startup_ui_thread_->GetTaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
@@ -440,6 +440,7 @@ Shell::Shell(DartVMRef vm,
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
       weak_factory_gpu_(nullptr),
+      startup_ui_thread_(std::make_unique<fml::Thread>("Startup Thread")),
       weak_factory_(this) {
   FML_CHECK(!settings.enable_software_rendering || !settings.enable_impeller)
       << "Software rendering is incompatible with Impeller.";
@@ -758,13 +759,17 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
-    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                      [engine = weak_engine_] {
-                                        if (engine) {
-                                          engine->SetupDefaultFontManager();
-                                        }
-                                      });
+    fml::TaskRunner::RunNowOrPostTask(
+        startup_ui_thread_->GetTaskRunner(), [engine = weak_engine_] {
+          TRACE_EVENT0("flutter", "SET UP FONT MANAGER");
+          if (engine) {
+            engine->SetupDefaultFontManager();
+          }
+        });
   }
+  FML_LOG(ERROR) << "Joining";
+  // Figure out how to do this later.
+  startup_ui_thread_->Join();
 
   is_set_up_ = true;
 

@@ -775,6 +775,8 @@ class Shell final : public PlatformView::Delegate,
   // rasterizer callbacks.
   std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
+  std::unique_ptr<fml::Thread> startup_ui_thread_;
+
   fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
 
