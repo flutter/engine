@@ -192,7 +192,7 @@ class ContextVK final : public Context,
   bool GetShouldDisableSurfaceControlSwapchain() const;
 
   // | Context |
-  void EnqueueCommandBuffer(
+  bool EnqueueCommandBuffer(
       std::shared_ptr<CommandBuffer> command_buffer) override;
 
   // | Context |

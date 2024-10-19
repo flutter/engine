@@ -111,7 +111,7 @@ const std::shared_ptr<ContextVK>& SurfaceContextVK::GetParent() const {
   return parent_;
 }
 
-void SurfaceContextVK::EnqueueCommandBuffer(
+bool SurfaceContextVK::EnqueueCommandBuffer(
     std::shared_ptr<CommandBuffer> command_buffer) {
   return parent_->EnqueueCommandBuffer(std::move(command_buffer));
 }

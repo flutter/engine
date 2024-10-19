@@ -320,7 +320,7 @@ void DriverInfoVK::DumpToLog() const {
 bool DriverInfoVK::CanBatchSubmitCommandBuffers() const {
   return vendor_ == VendorVK::kARM ||
          (adreno_gpu_.has_value() &&
-          adreno_gpu_.value() <= AdrenoGPU::kAdreno702);
+          adreno_gpu_.value() >= AdrenoGPU::kAdreno702);
 }
 
 bool DriverInfoVK::IsEmulator() const {

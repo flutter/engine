@@ -270,8 +270,8 @@ TEST(ContextVKTest, BatchSubmitCommandBuffersOnArm) {
               })
           .Build();
 
-  context->EnqueueCommandBuffer(context->CreateCommandBuffer());
-  context->EnqueueCommandBuffer(context->CreateCommandBuffer());
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
 
   // If command buffers are batch submitted, we should have created them but not
   // created the fence to track them after enqueing.
@@ -299,8 +299,8 @@ TEST(ContextVKTest, BatchSubmitCommandBuffersOnNonArm) {
               })
           .Build();
 
-  context->EnqueueCommandBuffer(context->CreateCommandBuffer());
-  context->EnqueueCommandBuffer(context->CreateCommandBuffer());
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
 
   // If command buffers are batch not submitted, we should have created them and
   // a corresponding fence immediately.

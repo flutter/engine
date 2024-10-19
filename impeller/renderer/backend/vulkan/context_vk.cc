@@ -591,12 +591,13 @@ std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
   return command_queue_vk_;
 }
 
-void ContextVK::EnqueueCommandBuffer(
+bool ContextVK::EnqueueCommandBuffer(
     std::shared_ptr<CommandBuffer> command_buffer) {
   if (should_batch_cmd_buffers_) {
     pending_command_buffers_.push_back(std::move(command_buffer));
+    return true;
   } else {
-    GetCommandQueue()->Submit({command_buffer});
+    return GetCommandQueue()->Submit({command_buffer}).ok();
   }
 }
 

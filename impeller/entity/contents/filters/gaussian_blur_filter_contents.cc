@@ -817,9 +817,14 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer_1));
-  renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer_2));
-  renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer_3));
+  if (!(renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_1)) &&
+        renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_2)) &&
+        renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_3)))) {
+    return std::nullopt;
+  }
 
   // The ping-pong approach requires that each render pass output has the same
   // size.
