@@ -64,7 +64,7 @@ class FilterInput {
   virtual Matrix GetLocalTransform(const Entity& entity) const;
 
   /// @brief  Get the transform of this `FilterInput`. This is equivalent to
-  ///         calling `entity.GetTransform() * GetLocalTransform()`.
+  ///         calling `entity.GetTransform().
   virtual Matrix GetTransform(const Entity& entity) const;
 
   /// @brief  Sets the effect transform of filter inputs.

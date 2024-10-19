@@ -68,10 +68,6 @@ class FilterContents : public Contents {
       const Matrix& matrix,
       const SamplerDescriptor& desc);
 
-  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
-      FilterInput::Ref input,
-      const Matrix& matrix);
-
   static std::shared_ptr<FilterContents> MakeYUVToRGBFilter(
       std::shared_ptr<Texture> y_texture,
       std::shared_ptr<Texture> uv_texture,
@@ -152,8 +148,6 @@ class FilterContents : public Contents {
   ///         that covers the indicated |output_limit|.
   std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
                                         const Rect& output_limit) const;
-
-  virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 

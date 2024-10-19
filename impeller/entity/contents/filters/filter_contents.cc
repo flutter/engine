@@ -4,27 +4,21 @@
 
 #include "impeller/entity/contents/filters/filter_contents.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
 #include <memory>
 #include <optional>
-#include <tuple>
 #include <utility>
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
 #include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
+
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 
@@ -91,15 +85,6 @@ std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
   filter->SetInputs({std::move(input)});
   filter->SetMatrix(matrix);
   filter->SetSamplerDescriptor(desc);
-  return filter;
-}
-
-std::shared_ptr<FilterContents> FilterContents::MakeLocalMatrixFilter(
-    FilterInput::Ref input,
-    const Matrix& matrix) {
-  auto filter = std::make_shared<LocalMatrixFilterContents>();
-  filter->SetInputs({std::move(input)});
-  filter->SetMatrix(matrix);
   return filter;
 }
 
@@ -257,12 +242,8 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
   return std::nullopt;
 }
 
-Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
-  return Matrix();
-}
-
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
-  return parent_transform * GetLocalTransform(parent_transform);
+  return parent_transform;
 }
 
 void FilterContents::SetRenderingMode(Entity::RenderingMode rendering_mode) {

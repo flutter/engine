@@ -60,17 +60,6 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
           skia_conversions::ToSamplerDescriptor(matrix_filter->sampling());
       return FilterContents::MakeMatrixFilter(input, matrix, desc);
     }
-    case flutter::DlImageFilterType::kLocalMatrix: {
-      auto matrix_filter = filter->asLocalMatrix();
-      FML_DCHECK(matrix_filter);
-      FML_DCHECK(matrix_filter->image_filter());
-
-      auto matrix = skia_conversions::ToMatrix(matrix_filter->matrix());
-      return FilterContents::MakeLocalMatrixFilter(
-          FilterInput::Make(
-              WrapInput(matrix_filter->image_filter().get(), input)),
-          matrix);
-    }
     case flutter::DlImageFilterType::kColorFilter: {
       auto image_color_filter = filter->asColorFilter();
       FML_DCHECK(image_color_filter);
@@ -101,6 +90,11 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
       return WrapInput(
           outer_dl_filter.get(),
           FilterInput::Make(WrapInput(inner_dl_filter.get(), input)));
+    }
+    case flutter::DlImageFilterType::kLocalMatrix: {
+      // This Filter type is never dispatched directly and is only used as a
+      // temporary structure for computing filter bounds.
+      FML_UNREACHABLE();
     }
   }
   FML_UNREACHABLE();
