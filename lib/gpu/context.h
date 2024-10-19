@@ -13,6 +13,8 @@
 namespace flutter {
 namespace gpu {
 
+bool SupportsNormalOffscreenMSAA(const impeller::Context& context);
+
 class Context : public RefCountedDartWrappable<Context> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(Context);
