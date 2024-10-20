@@ -12,7 +12,6 @@
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      fl_keyboard_manager,
                      FL,
@@ -95,13 +94,42 @@ void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* manager,
  */
 GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* manager);
 
+typedef guint (*FlKeyboardManagerLookupKeyHandler)(const GdkKeymapKey* key,
+                                                   gpointer user_data);
+
+/**
+ * fl_keyboard_manager_set_lookup_key_handler:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Set the handler for key lookup, for testing purposes only.
+ */
+void fl_keyboard_manager_set_lookup_key_handler(
+    FlKeyboardManager* manager,
+    FlKeyboardManagerLookupKeyHandler lookup_key_handler,
+    gpointer user_data);
+
 /**
  * fl_keyboard_manager_notify_layout_changed:
  * @manager: the #FlKeyboardManager self.
  *
- * Notify the manager the keyboard layout has changed.
+ * Notify the manager the keyboard layout has changed, for testing purposes
+ * only.
  */
 void fl_keyboard_manager_notify_layout_changed(FlKeyboardManager* manager);
+
+typedef void (*FlKeyboardManagerRedispatchEventHandler)(FlKeyEvent* event,
+                                                        gpointer user_data);
+
+/**
+ * fl_keyboard_manager_set_redispatch_handler:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Set the handler for redispatches, for testing purposes only.
+ */
+void fl_keyboard_manager_set_redispatch_handler(
+    FlKeyboardManager* manager,
+    FlKeyboardManagerRedispatchEventHandler redispatch_handler,
+    gpointer user_data);
 
 G_END_DECLS
 
