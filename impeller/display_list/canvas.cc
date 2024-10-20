@@ -1159,6 +1159,16 @@ void Canvas::SaveLayer(const Paint& paint,
         Save(0);
         return;
       }
+    } else {
+      // Render the backdrop entity.
+      Entity backdrop_entity;
+      backdrop_entity.SetContents(std::move(backdrop_filter_contents));
+      backdrop_entity.SetTransform(
+          Matrix::MakeTranslation(Vector3(GetGlobalPassPosition())));
+      backdrop_entity.SetClipDepth(++current_depth_);
+      backdrop_entity.Render(renderer_, GetCurrentRenderPass());
+      Save(0);
+      return;
     }
   }
 
@@ -1192,18 +1202,6 @@ void Canvas::SaveLayer(const Paint& paint,
   // causing parent clip coverage to get misaligned with the actual area that
   // the subpass will affect in the parent pass.
   clip_coverage_stack_.PushSubpass(subpass_coverage, GetClipHeight());
-
-  if (!backdrop_filter_contents) {
-    return;
-  }
-
-  // Render the backdrop entity.
-  Entity backdrop_entity;
-  backdrop_entity.SetContents(std::move(backdrop_filter_contents));
-  backdrop_entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-local_position)));
-  backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
-  backdrop_entity.Render(renderer_, GetCurrentRenderPass());
 }
 
 bool Canvas::Restore() {
