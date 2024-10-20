@@ -80,50 +80,14 @@ FLUTTER_ASSERT_ARC
 - (NSArray<id<UIFocusItem>>*)focusItemsInRect:(CGRect)rect {
   // It seems the iOS focus system rely heavily on this method (instead of
   // preferredFocusEnvironments) for directional navigation.
-  // The order of the items seems to be important, menus and dialogs become
-  // unreachable via FKA if the returned children are organized
-  // in hit-test order.
+  // Whether the item order in the returned array matters is unknown.
   //
   // Additionally, this method is only supposed to return items within the given
   // rect but returning everything in the subtree seems to work fine.
-  NSMutableArray<SemanticsObject*>* reversedItems =
-      [[NSMutableArray alloc] initWithCapacity:self.childrenInHitTestOrder.count];
-  for (NSUInteger i = 0; i < self.childrenInHitTestOrder.count; ++i) {
-    [reversedItems
-        addObject:self.childrenInHitTestOrder[self.childrenInHitTestOrder.count - 1 - i]];
-  }
-  return reversedItems;
+  return self.childrenInHitTestOrder;
 }
 
 - (id<UICoordinateSpace>)coordinateSpace {
   return self.bridge->view();
 }
-@end
-
-@interface FlutterScrollableSemanticsObject ()
-@property(nonatomic, readonly) UIScrollView* scrollView;
-@end
-
-@interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
-    UIFocusItemScrollableContainer>
-@end
-
-@implementation FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer)
-- (CGPoint)contentOffset {
-  return self.scrollView.contentOffset;
-}
-
-- (void)setContentOffset:(CGPoint)contentOffset {
-  // TODO(LongCatIsLooong): implement. This method is called by the focus engine
-  // to make the focused content visible in a scroll view when FKA is on.
-}
-
-- (CGSize)contentSize {
-  return self.scrollView.contentSize;
-}
-
-- (CGSize)visibleSize {
-  return self.scrollView.frame.size;
-}
-
 @end

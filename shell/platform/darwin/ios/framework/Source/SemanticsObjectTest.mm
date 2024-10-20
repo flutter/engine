@@ -1203,7 +1203,7 @@ const float kFloatCompareEpsilon = 0.001;
   // focusItemsInRect
   NSArray<id<UIFocusItem>>* itemsInRect = [parent focusItemsInRect:CGRectMake(0, 0, 100, 100)];
   XCTAssertEqual(itemsInRect.count, (unsigned long)2);
-  XCTAssertEqual(itemsInRect[0], child2);
-  XCTAssertEqual(itemsInRect[1], child1);
+  XCTAssertTrue([itemsInRect containsObject:child1]);
+  XCTAssertTrue([itemsInRect containsObject:child2]);
 }
 @end
