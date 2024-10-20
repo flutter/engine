@@ -12,6 +12,7 @@
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
@@ -36,6 +37,7 @@ class SurfaceContextVK;
 class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
 class CommandQueueVK;
+class DescriptorPoolVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -207,6 +209,11 @@ class ContextVK final : public Context,
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
+
+  using DescriptorPoolMap =
+      std::unordered_map<std::thread::id, std::shared_ptr<DescriptorPoolVK>>;
+
+  mutable DescriptorPoolMap cached_descriptor_pool_;
   bool should_disable_surface_control_ = false;
 
   const uint64_t hash_;
