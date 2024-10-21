@@ -709,13 +709,15 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   }
 }
 
+static const FlutterPointerEvent kDefaultFlutterPointerEvent = {};
+
 - (bool)testTrackpadGesturesAreSentToFramework:(id)engineMock {
   // Need to return a real renderer to allow view controller to load.
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
   __block bool called = false;
   __block FlutterPointerEvent last_event;
-  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])
+  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:kDefaultFlutterPointerEvent])
       .andDo((^(NSInvocation* invocation) {
         FlutterPointerEvent* event;
         [invocation getArgument:&event atIndex:2];
