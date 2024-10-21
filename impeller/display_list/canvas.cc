@@ -161,7 +161,7 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
 }  // namespace
 
 Canvas::Canvas(ContentContext& renderer,
-               RenderTarget& render_target,
+               const RenderTarget& render_target,
                bool requires_readback)
     : renderer_(renderer),
       render_target_(render_target),
@@ -173,7 +173,7 @@ Canvas::Canvas(ContentContext& renderer,
 }
 
 Canvas::Canvas(ContentContext& renderer,
-               RenderTarget& render_target,
+               const RenderTarget& render_target,
                bool requires_readback,
                Rect cull_rect)
     : renderer_(renderer),
@@ -186,7 +186,7 @@ Canvas::Canvas(ContentContext& renderer,
 }
 
 Canvas::Canvas(ContentContext& renderer,
-               RenderTarget& render_target,
+               const RenderTarget& render_target,
                bool requires_readback,
                IRect cull_rect)
     : renderer_(renderer),

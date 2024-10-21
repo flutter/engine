@@ -120,16 +120,16 @@ class Canvas {
       Entity::RenderingMode rendering_mode)>;
 
   Canvas(ContentContext& renderer,
-         RenderTarget& render_target,
+         const RenderTarget& render_target,
          bool requires_readback);
 
   explicit Canvas(ContentContext& renderer,
-                  RenderTarget& render_target,
+                  const RenderTarget& render_target,
                   bool requires_readback,
                   Rect cull_rect);
 
   explicit Canvas(ContentContext& renderer,
-                  RenderTarget& render_target,
+                  const RenderTarget& render_target,
                   bool requires_readback,
                   IRect cull_rect);
 
@@ -240,9 +240,12 @@ class Canvas {
     Rect coverage;
   };
 
+  // Visible for testing.
+  bool RequiresReadback() const { return requires_readback_; }
+
  private:
   ContentContext& renderer_;
-  RenderTarget& render_target_;
+  RenderTarget render_target_;
   bool requires_readback_;
   EntityPassClipStack clip_coverage_stack_;
 
