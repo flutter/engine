@@ -182,6 +182,7 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
       environment,
       plan.build,
       enableRbe: plan.useRbe,
+      extraGnArgs: plan.toGnArgs(),
     )) {
       return 1;
     }
