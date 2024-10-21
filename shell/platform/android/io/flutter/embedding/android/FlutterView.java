@@ -510,6 +510,7 @@ public class FlutterView extends FrameLayout
     if (windowInfoRepo != null && activity != null) {
       // Creating windowInfoListener on-demand instead of at initialization is necessary in order to
       // prevent it from capturing the wrong instance of `this` when spying for testing.
+      // See https://github.com/mockito/mockito/issues/3479
       windowInfoListener = this::setWindowInfoListenerDisplayFeatures;
       windowInfoRepo.addWindowLayoutInfoListener(
           activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
