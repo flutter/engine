@@ -987,8 +987,8 @@ final List<SkTileMode> _skTileModes = <SkTileMode>[
   canvasKit.TileMode.Decal,
 ];
 
-SkTileMode toSkTileMode(ui.TileMode mode) {
-  return _skTileModes[mode.index];
+SkTileMode toSkTileMode(ui.TileMode? mode) {
+  return mode == null ? canvasKit.TileMode.Clamp : _skTileModes[mode.index];
 }
 
 @JS()

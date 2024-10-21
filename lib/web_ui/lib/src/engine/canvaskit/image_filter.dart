@@ -24,9 +24,12 @@ abstract class CkManagedSkImageFilterConvertible implements ui.ImageFilter {
   /// Creates a temporary [SkImageFilter], passes it to [borrow], and then
   /// immediately deletes it.
   ///
+  /// If the filter is a blur ImageFilter, then the indicated tile mode
+  /// is used in place of a missing (null) tile filter.
+  ///
   /// [SkImageFilter] objects are not kept around so that their memory is
   /// reclaimed immediately, rather than waiting for the GC cycle.
-  void withSkImageFilter(SkImageFilterBorrow borrow);
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp});
 
   Matrix4 get transform;
 }
@@ -38,7 +41,7 @@ abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
   factory CkImageFilter.blur(
       {required double sigmaX,
       required double sigmaY,
-      required ui.TileMode tileMode}) = _CkBlurImageFilter;
+      required ui.TileMode? tileMode}) = _CkBlurImageFilter;
   factory CkImageFilter.color({required CkColorFilter colorFilter}) =
       CkColorFilterImageFilter;
   factory CkImageFilter.matrix(
@@ -65,7 +68,7 @@ class CkColorFilterImageFilter extends CkImageFilter {
   final CkColorFilter colorFilter;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final skImageFilter = colorFilter.initRawImageFilter();
     borrow(skImageFilter);
     skImageFilter.delete();
@@ -94,10 +97,10 @@ class _CkBlurImageFilter extends CkImageFilter {
 
   final double sigmaX;
   final double sigmaY;
-  final ui.TileMode tileMode;
+  final ui.TileMode? tileMode;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     /// Return the identity matrix when both sigmaX and sigmaY are 0. Replicates
     /// effect of applying no filter
     final SkImageFilter skImageFilter;
@@ -110,7 +113,7 @@ class _CkBlurImageFilter extends CkImageFilter {
       skImageFilter = canvasKit.ImageFilter.MakeBlur(
         sigmaX,
         sigmaY,
-        toSkTileMode(tileMode),
+        toSkTileMode(tileMode ?? defaultMode),
         null,
       );
     }
@@ -151,7 +154,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
   final Matrix4 _transform;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final skImageFilter =
         canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
@@ -190,7 +193,7 @@ class _CkDilateImageFilter extends CkImageFilter {
   final double radiusY;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final skImageFilter = canvasKit.ImageFilter.MakeDilate(
       radiusX,
       radiusY,
@@ -227,7 +230,7 @@ class _CkErodeImageFilter extends CkImageFilter {
   final double radiusY;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final skImageFilter = canvasKit.ImageFilter.MakeErode(
       radiusX,
       radiusY,
@@ -264,7 +267,7 @@ class _CkComposeImageFilter extends CkImageFilter {
   final CkImageFilter inner;
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     outer.withSkImageFilter((skOuter) {
       inner.withSkImageFilter((skInner) {
         final skImageFilter = canvasKit.ImageFilter.MakeCompose(
@@ -273,8 +276,8 @@ class _CkComposeImageFilter extends CkImageFilter {
         );
         borrow(skImageFilter);
         skImageFilter.delete();
-      });
-    });
+      }, defaultMode: defaultMode);
+    }, defaultMode: defaultMode);
   }
 
   @override

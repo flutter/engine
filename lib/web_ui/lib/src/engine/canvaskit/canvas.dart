@@ -342,7 +342,7 @@ class CkCanvas {
         0,
       );
       skPaint?.delete();
-    });
+    }, defaultMode: ui.TileMode.decal);
   }
 
   void scale(double sx, double sy) {

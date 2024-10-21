@@ -16,7 +16,7 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
-    ui.TileMode tileMode = ui.TileMode.clamp,
+    ui.TileMode? tileMode = null,
   }) => SkwasmBlurFilter(sigmaX, sigmaY, tileMode);
 
   factory SkwasmImageFilter.dilate({
@@ -77,11 +77,11 @@ class SkwasmBlurFilter extends SkwasmImageFilter {
 
   final double sigmaX;
   final double sigmaY;
-  final ui.TileMode tileMode;
+  final ui.TileMode? tileMode;
 
   @override
   void withRawImageFilter(ImageFilterHandleBorrow borrow) {
-    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, tileMode.index);
+    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, tileMode?.index ?? 0);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
   }
