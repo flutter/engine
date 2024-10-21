@@ -72,7 +72,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
     auto platform_message = std::make_unique<flutter::PlatformMessage>(channel, response);
     handler->HandlePlatformMessage(std::move(platform_message));
   });
-  [self waitForExpectationsWithTimeout:1.0 handler:nil];
+  [self waitForExpectations:@[ didCallReply ]];
   XCTAssertTrue(response->is_complete());
 }
 
@@ -100,7 +100,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
     handler->HandlePlatformMessage(std::move(platform_message));
     [didCallMessage fulfill];
   });
-  [self waitForExpectationsWithTimeout:1.0 handler:nil];
+  [self waitForExpectations:@[ didCallMessage ]];
   XCTAssertTrue(response->is_complete());
 }
 
@@ -128,7 +128,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
     auto platform_message = std::make_unique<flutter::PlatformMessage>(channel, response);
     handler->HandlePlatformMessage(std::move(platform_message));
   });
-  [self waitForExpectationsWithTimeout:1.0 handler:nil];
+  [self waitForExpectations:@[ didCallReply ]];
   XCTAssertTrue(response->is_complete());
 }
 @end

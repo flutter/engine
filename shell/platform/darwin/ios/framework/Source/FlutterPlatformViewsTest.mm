@@ -3587,7 +3587,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
     flutterPlatformViewsController->OnMethodCall(
         [FlutterMethodCall methodCallWithMethodName:@"dispose" arguments:@0], disposeResult);
-    [self waitForExpectationsWithTimeout:30 handler:nil];
+    [self waitForExpectations:@[ expectation ]];
 
     const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
     sk_sp<SkSurface> mock_sk_surface = SkSurfaces::Raster(image_info);

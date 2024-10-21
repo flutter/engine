@@ -1149,7 +1149,9 @@ const float kFloatCompareEpsilon = 0.001;
   [partialSemanticsObject selectAll:nil];
   [partialSemanticsObject delete:nil];
 
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[
+    copyExpectation, cutExpectation, pasteExpectation, selectAllExpectation, deleteExpectation
+  ]];
 }
 
 @end

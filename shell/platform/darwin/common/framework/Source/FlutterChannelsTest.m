@@ -91,7 +91,7 @@ FLUTTER_ASSERT_ARC
                    XCTAssertEqual(FlutterMethodNotImplemented, result);
                  }];
   OCMVerifyAll(binaryMessenger);
-  [self waitForExpectationsWithTimeout:1.0 handler:nil];
+  [self waitForExpectations:@[ didCallReply ]];
 }
 
 - (void)testMethodMessageHandler {
@@ -141,7 +141,7 @@ FLUTTER_ASSERT_ARC
     [didCallReply fulfill];
     XCTAssertEqual(replyEnvelopeData, reply);
   });
-  [self waitForExpectationsWithTimeout:1.0 handler:nil];
+  [self waitForExpectations:@[ didCallHandler, didCallReply ]];
 }
 
 - (void)testResize {
