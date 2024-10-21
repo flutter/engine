@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <unordered_map>
+
+#include "display_list/dl_tile_mode.h"
+#include "display_list/effects/dl_image_filter.h"
+#include "display_list/geometry/dl_geometry_types.h"
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/display_list/aiks_unittests.h"
 #include "impeller/display_list/canvas.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -12,15 +18,17 @@ namespace testing {
 
 std::unique_ptr<Canvas> CreateTestCanvas(
     ContentContext& context,
-    std::optional<Rect> cull_rect = std::nullopt) {
-  RenderTarget render_target = context.GetRenderTargetCache()->CreateOffscreen(
-      *context.GetContext(), {1, 1}, 1);
+    std::optional<Rect> cull_rect = std::nullopt,
+    bool requires_readback = false) {
+  RenderTarget render_target =
+      context.GetRenderTargetCache()->CreateOffscreenMSAA(*context.GetContext(),
+                                                          {100, 100}, 1);
 
   if (cull_rect.has_value()) {
-    return std::make_unique<Canvas>(context, render_target, false,
+    return std::make_unique<Canvas>(context, render_target, requires_readback,
                                     cull_rect.value());
   }
-  return std::make_unique<Canvas>(context, render_target, false);
+  return std::make_unique<Canvas>(context, render_target, requires_readback);
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
@@ -91,6 +99,112 @@ TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
   canvas->Translate(Size{100, 100});
   ASSERT_MATRIX_NEAR(canvas->GetCurrentTransform(),
                      Matrix::MakeTranslation({100.0, 100.0, 0.0}));
+}
+
+TEST_P(AiksTest, BackdropCountDownNormal) {
+  ContentContext context(GetContext(), nullptr);
+  if (!context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Test requires device with framebuffer fetch";
+  }
+  auto canvas = CreateTestCanvas(context, Rect::MakeLTRB(0, 0, 100, 100),
+                                 /*requires_readback=*/true);
+  // 3 backdrop filters
+  canvas->SetBackdropData({}, 3);
+
+  auto blur =
+      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+
+  EXPECT_TRUE(canvas->RequiresReadback());
+  canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
+                   {.color = Color::Azure()});
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents);
+  canvas->Restore();
+  EXPECT_TRUE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents);
+  canvas->Restore();
+  EXPECT_TRUE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
+}
+
+TEST_P(AiksTest, BackdropCountDownBackdropId) {
+  ContentContext context(GetContext(), nullptr);
+  if (!context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Test requires device with framebuffer fetch";
+  }
+  auto canvas = CreateTestCanvas(context, Rect::MakeLTRB(0, 0, 100, 100),
+                                 /*requires_readback=*/true);
+  // 3 backdrop filters all with same id.
+  std::unordered_map<int64_t, BackdropData> data;
+  data[1] = BackdropData{.backdrop_count = 3};
+  canvas->SetBackdropData(data, 3);
+
+  auto blur =
+      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+
+  EXPECT_TRUE(canvas->RequiresReadback());
+  canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
+                   {.color = Color::Azure()});
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1, /*can_distribute_opacity=*/false,
+                    /*backdrop_id=*/1);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1, /*can_distribute_opacity=*/false,
+                    /*backdrop_id=*/1);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1, /*can_distribute_opacity=*/false,
+                    /*backdrop_id=*/1);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
+}
+
+TEST_P(AiksTest, BackdropCountDownBackdropIdMixed) {
+  ContentContext context(GetContext(), nullptr);
+  if (!context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Test requires device with framebuffer fetch";
+  }
+  auto canvas = CreateTestCanvas(context, Rect::MakeLTRB(0, 0, 100, 100),
+                                 /*requires_readback=*/true);
+  // 3 backdrop filters, 2 with same id.
+  std::unordered_map<int64_t, BackdropData> data;
+  data[1] = BackdropData{.backdrop_count = 2};
+  canvas->SetBackdropData(data, 3);
+
+  auto blur =
+      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+
+  EXPECT_TRUE(canvas->RequiresReadback());
+  canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
+                   {.color = Color::Azure()});
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents, 1, false);
+  canvas->Restore();
+  EXPECT_TRUE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents, 1, false, 1);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
+
+  canvas->SaveLayer({}, std::nullopt, blur.get(),
+                    ContentBoundsPromise::kContainsContents, 1, false, 1);
+  canvas->Restore();
+  EXPECT_FALSE(canvas->RequiresReadback());
 }
 
 }  // namespace testing
