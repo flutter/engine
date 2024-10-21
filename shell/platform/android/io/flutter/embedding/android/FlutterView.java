@@ -144,7 +144,7 @@ public class FlutterView extends FrameLayout
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
-  private final List<FlutterRenderer.DisplayFeature> displayFeatures = new ArrayList<>();
+  private List<FlutterRenderer.DisplayFeature> displayFeatures = new ArrayList<>();
   private final List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
 
   private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener =
@@ -196,13 +196,7 @@ public class FlutterView extends FrameLayout
         }
       };
 
-  private final Consumer<WindowLayoutInfo> windowInfoListener =
-      new Consumer<WindowLayoutInfo>() {
-        @Override
-        public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowInfoListenerDisplayFeatures(layoutInfo);
-        }
-      };
+  private Consumer<WindowLayoutInfo> windowInfoListener;
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes.
@@ -514,6 +508,9 @@ public class FlutterView extends FrameLayout
     this.windowInfoRepo = createWindowInfoRepo();
     Activity activity = ViewUtils.getActivity(getContext());
     if (windowInfoRepo != null && activity != null) {
+      // Creating windowInfoListener on-demand instead of at initialization is necessary in order to
+      // prevent it from capturing the wrong instance of `this` when spying for testing.
+      windowInfoListener = this::setWindowInfoListenerDisplayFeatures;
       windowInfoRepo.addWindowLayoutInfoListener(
           activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
@@ -526,9 +523,10 @@ public class FlutterView extends FrameLayout
    */
   @Override
   protected void onDetachedFromWindow() {
-    if (windowInfoRepo != null) {
+    if (windowInfoRepo != null && windowInfoListener != null) {
       windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
     }
+    windowInfoListener = null;
     this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }

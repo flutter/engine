@@ -224,6 +224,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
       setAlpha(0.0f);
       flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
       flutterRenderer = null;
+      throw new RuntimeException("Detaching for some reason in FlutterSurfaceView");
 
     } else {
       Log.w(TAG, "detachFromRenderer() invoked when no FlutterRenderer was attached.");
