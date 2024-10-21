@@ -146,17 +146,20 @@ TEST_P(AiksTest, BackdropCountDownNormal) {
   EXPECT_TRUE(canvas->RequiresReadback());
   canvas->DrawRect(rect, {.color = Color::Azure()});
   canvas->SaveLayer({}, rect, blur.get(),
-                    ContentBoundsPromise::kContainsContents);
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1);
   canvas->Restore();
   EXPECT_TRUE(canvas->RequiresReadback());
 
   canvas->SaveLayer({}, rect, blur.get(),
-                    ContentBoundsPromise::kContainsContents);
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1);
   canvas->Restore();
   EXPECT_TRUE(canvas->RequiresReadback());
 
   canvas->SaveLayer({}, rect, blur.get(),
-                    ContentBoundsPromise::kContainsContents);
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1);
   canvas->Restore();
   EXPECT_FALSE(canvas->RequiresReadback());
 }
@@ -255,12 +258,14 @@ TEST_P(AiksTest, BackdropCountDownWithNestedSaveLayers) {
   canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
                    {.color = Color::Azure()});
   canvas->SaveLayer({}, std::nullopt, blur.get(),
-                    ContentBoundsPromise::kContainsContents, 1, false);
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/3);
 
   // This filter is nested in the first saveLayer. We cannot restore to onscreen
   // here.
   canvas->SaveLayer({}, std::nullopt, blur.get(),
-                    ContentBoundsPromise::kContainsContents, 1, false, 1);
+                    ContentBoundsPromise::kContainsContents,
+                    /*total_content_depth=*/1);
   canvas->Restore();
   EXPECT_TRUE(canvas->RequiresReadback());
 
