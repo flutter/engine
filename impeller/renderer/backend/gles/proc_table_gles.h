@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
 #include <string>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
@@ -22,8 +22,7 @@ bool GLErrorIsFatal(GLenum value);
 struct AutoErrorCheck {
   const PFNGLGETERRORPROC error_fn;
 
-  // TODO(matanlurey) Change to string_view.
-  // https://github.com/flutter/flutter/issues/135922
+  // TODO(135922) Change to string_view.
   const char* name;
 
   AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
@@ -37,12 +36,10 @@ struct AutoErrorCheck {
       }
       if (GLErrorIsFatal(error)) {
         FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
-                       << error << ")"
-                       << " encountered on call to " << name;
+                       << error << ")" << " encountered on call to " << name;
       } else {
         FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
-                       << ")"
-                       << " encountered on call to " << name;
+                       << ")" << " encountered on call to " << name;
       }
     }
   }
@@ -52,12 +49,10 @@ template <class T>
 struct GLProc {
   using GLFunctionType = T;
 
-  // TODO(matanlurey) Change to string_view.
-  // https://github.com/flutter/flutter/issues/135922
-
   //----------------------------------------------------------------------------
   /// The name of the GL function.
   ///
+  // TODO(135922) Change to string_view.
   const char* name = nullptr;
 
   //----------------------------------------------------------------------------
@@ -79,17 +74,14 @@ struct GLProc {
   ///
   template <class... Args>
   auto operator()(Args&&... args) const {
-#ifdef IMPELLER_DEBUG
+#if defined(IMPELLER_DEBUG) && !defined(NDEBUG)
     AutoErrorCheck error(error_fn, name);
     // We check for the existence of extensions, and reset the function pointer
     // but it's still called unconditionally below, and will segfault. This
     // validation log will at least give us a hint as to what's going on.
     FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
                              << "This is likely due to a missing extension.";
-#endif  // IMPELLER_DEBUG
-#ifdef IMPELLER_TRACE_ALL_GL_CALLS
-    TRACE_EVENT0("impeller", name);
-#endif  // IMPELLER_TRACE_ALL_GL_CALLS
+#endif  // defined(IMPELLER_DEBUG) && !defined(NDEBUG)
     return function(std::forward<Args>(args)...);
   }
 
@@ -112,10 +104,10 @@ struct GLProc {
   PROC(BlendEquationSeparate);               \
   PROC(BlendFuncSeparate);                   \
   PROC(BufferData);                          \
+  PROC(BufferSubData);                       \
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \
   PROC(ClearColor);                          \
-  PROC(ClearDepthf);                         \
   PROC(ClearStencil);                        \
   PROC(ColorMask);                           \
   PROC(CompileShader);                       \
@@ -130,7 +122,6 @@ struct GLProc {
   PROC(DeleteTextures);                      \
   PROC(DepthFunc);                           \
   PROC(DepthMask);                           \
-  PROC(DepthRangef);                         \
   PROC(DetachShader);                        \
   PROC(Disable);                             \
   PROC(DisableVertexAttribArray);            \
@@ -166,6 +157,7 @@ struct GLProc {
   PROC(IsShader);                            \
   PROC(IsTexture);                           \
   PROC(LinkProgram);                         \
+  PROC(PixelStorei);                         \
   PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
   PROC(ShaderBinary);                        \
@@ -174,6 +166,7 @@ struct GLProc {
   PROC(StencilMaskSeparate);                 \
   PROC(StencilOpSeparate);                   \
   PROC(TexImage2D);                          \
+  PROC(TexSubImage2D);                       \
   PROC(TexParameteri);                       \
   PROC(TexParameterfv);                      \
   PROC(Uniform1fv);                          \
@@ -185,18 +178,41 @@ struct GLProc {
   PROC(UseProgram);                          \
   PROC(VertexAttribPointer);                 \
   PROC(Viewport);                            \
+  PROC(GetShaderSource);                     \
   PROC(ReadPixels);
+
+// Calls specific to OpenGLES.
+void(glClearDepthf)(GLfloat depth);
+void(glDepthRangef)(GLfloat n, GLfloat f);
+
+#define FOR_EACH_IMPELLER_ES_ONLY_PROC(PROC) \
+  PROC(ClearDepthf);                         \
+  PROC(DepthRangef);
+
+// Calls specific to desktop GL.
+void(glClearDepth)(GLdouble depth);
+void(glDepthRange)(GLdouble n, GLdouble f);
+
+#define FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(PROC) \
+  PROC(ClearDepth);                               \
+  PROC(DepthRange);
 
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
-#define FOR_EACH_IMPELLER_EXT_PROC(PROC)   \
-  PROC(DebugMessageControlKHR);            \
-  PROC(DiscardFramebufferEXT);             \
-  PROC(FramebufferTexture2DMultisampleEXT) \
-  PROC(PushDebugGroupKHR);                 \
-  PROC(PopDebugGroupKHR);                  \
-  PROC(ObjectLabelKHR);                    \
-  PROC(RenderbufferStorageMultisampleEXT);
+#define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
+  PROC(DebugMessageControlKHR);             \
+  PROC(DiscardFramebufferEXT);              \
+  PROC(FramebufferTexture2DMultisampleEXT); \
+  PROC(PushDebugGroupKHR);                  \
+  PROC(PopDebugGroupKHR);                   \
+  PROC(ObjectLabelKHR);                     \
+  PROC(RenderbufferStorageMultisampleEXT);  \
+  PROC(GenQueriesEXT);                      \
+  PROC(DeleteQueriesEXT);                   \
+  PROC(GetQueryObjectui64vEXT);             \
+  PROC(BeginQueryEXT);                      \
+  PROC(EndQueryEXT);                        \
+  PROC(GetQueryObjectuivEXT);
 
 enum class DebugResourceType {
   kTexture,
@@ -219,6 +235,8 @@ class ProcTableGLES {
   GLProc<decltype(gl##name)> name = {"gl" #name, nullptr};
 
   FOR_EACH_IMPELLER_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_ES_ONLY_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
@@ -226,7 +244,14 @@ class ProcTableGLES {
 
   bool IsValid() const;
 
-  void ShaderSourceMapping(GLuint shader, const fml::Mapping& mapping) const;
+  /// @brief Set the source for the attached [shader].
+  ///
+  /// Optionally, [defines] may contain a string value that will be
+  /// append to the shader source after the version marker. This can be used to
+  /// support static specialization. For example, setting "#define Foo 1".
+  void ShaderSourceMapping(GLuint shader,
+                           const fml::Mapping& mapping,
+                           const std::vector<Scalar>& defines = {}) const;
 
   const DescriptionGLES* GetDescription() const;
 
@@ -246,13 +271,22 @@ class ProcTableGLES {
 
   void PopDebugGroup() const;
 
+  // Visible For testing.
+  std::optional<std::string> ComputeShaderWithDefines(
+      const fml::Mapping& mapping,
+      const std::vector<Scalar>& defines) const;
+
  private:
   bool is_valid_ = false;
   std::unique_ptr<DescriptionGLES> description_;
   std::shared_ptr<const CapabilitiesGLES> capabilities_;
   GLint debug_label_max_length_ = 0;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ProcTableGLES);
+  ProcTableGLES(const ProcTableGLES&) = delete;
+
+  ProcTableGLES& operator=(const ProcTableGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_

@@ -18,10 +18,10 @@
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
-#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/shell/common/platform_message_handler.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "third_party/dart/runtime/include/dart_api.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/dart_state.h"
@@ -52,9 +52,10 @@ class UIDartState : public tonic::DartState {
             fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
             std::string advisory_script_uri,
             std::string advisory_script_entrypoint,
-            std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+            bool deterministic_rendering_enabled,
             std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-            bool enable_impeller);
+            bool enable_impeller,
+            impeller::RuntimeStageBackend runtime_stage_backend);
 
     /// The task runners used by the shell hosting this runtime controller. This
     /// may be used by the isolate to scheduled asynchronous texture uploads or
@@ -90,8 +91,8 @@ class UIDartState : public tonic::DartState {
     /// transitioned to the running state explicitly by the caller.
     std::string advisory_script_entrypoint;
 
-    /// Cache for tracking path volatility.
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker;
+    /// Whether deterministic rendering practices should be used.
+    bool deterministic_rendering_enabled = false;
 
     /// The task runner whose tasks may be executed concurrently on a pool
     /// of shared worker threads.
@@ -99,6 +100,9 @@ class UIDartState : public tonic::DartState {
 
     /// Whether Impeller is enabled or not.
     bool enable_impeller = false;
+
+    /// The expected backend for runtime stage shaders.
+    impeller::RuntimeStageBackend runtime_stage_backend;
   };
 
   Dart_Port main_port() const { return main_port_; }
@@ -130,8 +134,6 @@ class UIDartState : public tonic::DartState {
 
   fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
-  std::shared_ptr<VolatilePathTracker> GetVolatilePathTracker() const;
-
   std::shared_ptr<fml::ConcurrentTaskRunner> GetConcurrentTaskRunner() const;
 
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
@@ -160,8 +162,17 @@ class UIDartState : public tonic::DartState {
   /// Returns `0` if called from a non-root isolate.
   int64_t GetRootIsolateToken() const;
 
+  /// Whether deterministic rendering practices are enabled for this application
+  bool IsDeterministicRenderingEnabled() const;
+
   /// Whether Impeller is enabled for this application.
   bool IsImpellerEnabled() const;
+
+  /// The expected type for runtime stage shaders.
+  impeller::RuntimeStageBackend GetRuntimeStageBackend() const;
+
+  virtual Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
+                                             char** error);
 
  protected:
   UIDartState(TaskObserverAdd add_callback,

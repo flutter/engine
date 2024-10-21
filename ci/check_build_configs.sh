@@ -27,15 +27,22 @@ function follow_links() (
   echo "$file"
 )
 
+function dart_bin() {
+  dart_path="$1/flutter/third_party/dart/tools/sdks/dart-sdk/bin"
+  if [[ ! -e "$dart_path" ]]; then
+    dart_path="$1/third_party/dart/tools/sdks/dart-sdk/bin"
+  fi
+  echo "$dart_path"
+}
+
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 FLUTTER_DIR="$(cd "$SCRIPT_DIR/.."; pwd -P)"
-DART_BIN="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin"
+DART_BIN=$(dart_bin "$SRC_DIR")
 DART="${DART_BIN}/dart"
 
 cd "$SCRIPT_DIR"
 "$DART" \
-  --disable-dart-dev \
   "$SRC_DIR/flutter/tools/pkg/engine_build_configs/bin/check.dart" \
   "$SRC_DIR"
 

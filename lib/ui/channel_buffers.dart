@@ -273,7 +273,7 @@ class _Channel {
 /// size a plugin can send a message using the control channel,
 /// as described below.
 ///
-/// Size 0 is appropriate for channels where channels sent before
+/// Size 0 is appropriate for channels where messages sent before
 /// the engine and framework are ready should be ignored. For
 /// example, a plugin that notifies the framework any time a
 /// radiation sensor detects an ionization event might set its size
@@ -400,6 +400,8 @@ class ChannelBuffers {
   @Native<Void Function(Handle, Bool)>(symbol: 'PlatformConfigurationNativeApi::SendChannelUpdate')
   external static void _sendChannelUpdate(String name, bool listening);
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   void sendChannelUpdate(String name, {required bool listening}) => _sendChannelUpdate(name, listening);
 
   /// Deprecated. Migrate to [setListener] instead.

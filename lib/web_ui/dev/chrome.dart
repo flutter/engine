@@ -9,28 +9,27 @@ import 'dart:math' as math;
 
 import 'package:image/image.dart';
 import 'package:path/path.dart' as path;
-import 'package:test_api/src/backend/runtime.dart';
+import 'package:test_api/backend.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
 import 'browser.dart';
-import 'browser_lock.dart';
 import 'browser_process.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
+import 'package_lock.dart';
+
+const String kBlankPageUrl = 'about:blank';
 
 /// Provides an environment for desktop Chrome.
 class ChromeEnvironment implements BrowserEnvironment {
   ChromeEnvironment({
-    required bool enableWasmGC,
     required bool useDwarf,
-  }) : _enableWasmGC = enableWasmGC,
-       _useDwarf = useDwarf;
+  }) : _useDwarf = useDwarf;
 
   late final BrowserInstallation _installation;
 
-  final bool _enableWasmGC;
   final bool _useDwarf;
 
   @override
@@ -42,7 +41,6 @@ class ChromeEnvironment implements BrowserEnvironment {
       url,
       _installation,
       debug: debug,
-      enableWasmGC: _enableWasmGC,
       useDwarf: _useDwarf
     );
   }
@@ -52,7 +50,7 @@ class ChromeEnvironment implements BrowserEnvironment {
 
   @override
   Future<void> prepare() async {
-    final String version = browserLock.chromeLock.version;
+    final String version = packageLock.chromeLock.version;
     _installation = await getOrInstallChrome(
       version,
       infoLog: isCi ? stdout : DevNull(),
@@ -83,10 +81,10 @@ class Chrome extends Browser {
     Uri url,
     BrowserInstallation installation, {
     required bool debug,
-    required bool enableWasmGC,
     required bool useDwarf,
   }) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
+    final Completer<String> exceptionCompleter = Completer<String>();
     return Chrome._(BrowserProcess(() async {
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
@@ -101,15 +99,9 @@ class Chrome extends Browser {
       final bool isChromeNoSandbox =
           Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       final String dir = await generateUserDirectory(installation, useDwarf);
-      final String jsFlags = enableWasmGC ? <String>[
-        '--experimental-wasm-gc',
-        '--experimental-wasm-stack-switching',
-        '--experimental-wasm-type-reflection',
-      ].join(' ') : '';
       final List<String> args = <String>[
-        if (jsFlags.isNotEmpty) '--js-flags=$jsFlags',
         '--user-data-dir=$dir',
-        url.toString(),
+        kBlankPageUrl,
         if (!debug)
           '--headless',
         if (isChromeNoSandbox)
@@ -150,6 +142,8 @@ class Chrome extends Browser {
       final Process process =
           await _spawnChromiumProcess(installation.executable, args);
 
+      await setupChromiumTab(url, exceptionCompleter);
+
       remoteDebuggerCompleter.complete(
           getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
 
@@ -157,10 +151,10 @@ class Chrome extends Browser {
           .then((_) => Directory(dir).deleteSync(recursive: true)));
 
       return process;
-    }), remoteDebuggerCompleter.future);
+    }), remoteDebuggerCompleter.future, exceptionCompleter.future);
   }
 
-  Chrome._(this._process, this.remoteDebuggerUrl);
+  Chrome._(this._process, this.remoteDebuggerUrl, this._onUncaughtException);
 
   static Future<String> generateUserDirectory(
     BrowserInstallation installation,
@@ -222,11 +216,16 @@ class Chrome extends Browser {
 
   final BrowserProcess _process;
 
+  final Future<String> _onUncaughtException;
+
   @override
   final Future<Uri> remoteDebuggerUrl;
 
   @override
   Future<void> get onExit => _process.onExit;
+
+  @override
+  Future<String>? get onUncaughtException => _onUncaughtException;
 
   @override
   Future<void> close() => _process.close();
@@ -388,4 +387,29 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
     // the raw URL rather than crashing.
     return base;
   }
+}
+
+Future<void> setupChromiumTab(
+    Uri url, Completer<String> exceptionCompleter) async {
+  final wip.ChromeConnection chromeConnection =
+      wip.ChromeConnection('localhost', kDevtoolsPort);
+  final wip.ChromeTab? chromeTab = await chromeConnection.getTab(
+      (wip.ChromeTab chromeTab) => chromeTab.url == kBlankPageUrl);
+  final wip.WipConnection wipConnection = await chromeTab!.connect();
+
+  await wipConnection.runtime.enable();
+
+  wipConnection.runtime.onExceptionThrown.listen(
+    (wip.ExceptionThrownEvent event) {
+      if (!exceptionCompleter.isCompleted) {
+        final String text = event.exceptionDetails.text;
+        final String? description = event.exceptionDetails.exception?.description;
+        exceptionCompleter.complete('$text: $description');
+      }
+    }
+  );
+
+  await wipConnection.page.enable();
+
+  await wipConnection.page.navigate(url.toString());
 }

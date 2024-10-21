@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../browser_detection.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
+
 import '../dom.dart';
 
 /// Various types of inputs used in text fields.
@@ -14,7 +15,7 @@ import '../dom.dart';
 abstract class EngineInputType {
   const EngineInputType();
 
-  static EngineInputType fromName(String name, {bool isDecimal = false}) {
+  static EngineInputType fromName(String name, {bool isDecimal = false, bool isMultiline = false}) {
     switch (name) {
       case 'TextInputType.number':
         return isDecimal ? decimal : number;
@@ -27,7 +28,7 @@ abstract class EngineInputType {
       case 'TextInputType.multiline':
         return multiline;
       case 'TextInputType.none':
-        return none;
+        return isMultiline ? multilineNone : none;
       case 'TextInputType.text':
       default:
         return text;
@@ -36,6 +37,9 @@ abstract class EngineInputType {
 
   /// No text input.
   static const NoTextInputType none = NoTextInputType();
+
+  /// Multi-line no text input.
+  static const MultilineNoTextInputType multilineNone = MultilineNoTextInputType();
 
   /// Single-line text input type.
   static const TextInputType text = TextInputType();
@@ -78,8 +82,8 @@ abstract class EngineInputType {
 
     // Only apply `inputmode` in mobile browsers so that the right virtual
     // keyboard shows up.
-    if (operatingSystem == OperatingSystem.iOs ||
-        operatingSystem == OperatingSystem.android ||
+    if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs ||
+        ui_web.browser.operatingSystem == ui_web.OperatingSystem.android ||
         inputmodeAttribute == EngineInputType.none.inputmodeAttribute) {
       domElement.setAttribute('inputmode', inputmodeAttribute!);
     }
@@ -92,6 +96,31 @@ class NoTextInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'none';
+}
+
+/// See: https://github.com/flutter/flutter/issues/125875
+/// Multi-line no text input from system virtual keyboard.
+///
+/// Use this for inputting multiple lines with a customized keyboard.
+///
+/// When Flutter uses a custom virtual keyboard, it sends [TextInputType.none]
+/// with a [isMultiline] flag to block the system virtual keyboard.
+///
+/// For [MultilineNoTextInputType] (mapped to [TextInputType.none] with
+/// [isMultiline] = true), it creates a <textarea> element with the
+/// inputmode="none" attribute.
+///
+/// For [NoTextInputType] (mapped to [TextInputType.none] with
+/// [isMultiline] = false), it creates an <input> element with the
+/// inputmode="none" attribute.
+class MultilineNoTextInputType extends MultilineInputType {
+  const MultilineNoTextInputType();
+
+  @override
+  String? get inputmodeAttribute => 'none';
+
+  @override
+  DomHTMLElement createDomElement() => createDomHTMLTextAreaElement();
 }
 
 /// Single-line text input type.

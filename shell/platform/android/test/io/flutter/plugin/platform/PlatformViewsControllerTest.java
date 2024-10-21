@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
@@ -356,38 +357,45 @@ public class PlatformViewsControllerTest {
             frameWorkTouch,
             false // usingVirtualDisplays
             );
-    assertEquals(resolvedEvent.getAction(), frameWorkTouch.action);
-    assertNotEquals(resolvedEvent.getAction(), original.getAction());
+    assertEquals(resolvedEvent.getAction(), original.getAction());
+    assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
   }
 
-  @Ignore
-  @Test
-  public void itUsesActionEventTypeFromMotionEventForHybridPlatformViews() {
-    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
-    PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    MotionEvent original =
-        MotionEvent.obtain(
-            100, // downTime
-            100, // eventTime
-            1, // action
-            0, // x
-            0, // y
-            0 // metaState
-            );
-
-    // track an event that will later get passed to us from framework
+  private MotionEvent makePlatformViewTouchAndInvokeToMotionEvent(
+      PlatformViewsController platformViewsController,
+      MotionEventTracker motionEventTracker,
+      MotionEvent original,
+      boolean usingVirtualDisplays) {
     MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
 
-    PlatformViewTouch frameWorkTouch =
+    // Construct a PlatformViewTouch.rawPointerPropertiesList by doing the inverse of
+    // PlatformViewsController.parsePointerPropertiesList.
+    List<List<Integer>> pointerProperties =
+        Arrays.asList(Arrays.asList(original.getPointerId(0), original.getToolType(0)));
+    // Construct a PlatformViewTouch.rawPointerCoords by doing the inverse of
+    // PlatformViewsController.parsePointerCoordsList.
+    List<List<Double>> pointerCoordinates =
+        Arrays.asList(
+            Arrays.asList(
+                (double) original.getOrientation(),
+                (double) original.getPressure(),
+                (double) original.getSize(),
+                (double) original.getToolMajor(),
+                (double) original.getToolMinor(),
+                (double) original.getTouchMajor(),
+                (double) original.getTouchMinor(),
+                (double) original.getX(),
+                (double) original.getY()));
+    // Make a platform view touch from the motion event.
+    PlatformViewTouch frameWorkTouchNonVd =
         new PlatformViewTouch(
             0, // viewId
             original.getDownTime(),
             original.getEventTime(),
-            2, // action
+            original.getAction(),
             1, // pointerCount
-            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
-            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
+            pointerProperties, // pointer properties
+            pointerCoordinates, // pointer coords
             original.getMetaState(),
             original.getButtonState(),
             original.getXPrecision(),
@@ -398,11 +406,38 @@ public class PlatformViewsControllerTest {
             original.getFlags(),
             motionEventId.getId());
 
-    MotionEvent resolvedEvent =
-        platformViewsController.toMotionEvent(
-            /*density=*/ 1, frameWorkTouch, /*usingVirtualDisplay=*/ false);
+    return platformViewsController.toMotionEvent(
+        1, // density
+        frameWorkTouchNonVd,
+        usingVirtualDisplays);
+  }
 
-    assertEquals(resolvedEvent.getAction(), frameWorkTouch.action);
+  @Test
+  public void toMotionEvent_returnsSameCoordsForVdAndNonVd() {
+    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    MotionEvent original =
+        MotionEvent.obtain(
+            10, // downTime
+            10, // eventTime
+            261, // action
+            1, // x
+            1, // y
+            0 // metaState
+            );
+
+    MotionEvent resolvedNonVdEvent =
+        makePlatformViewTouchAndInvokeToMotionEvent(
+            platformViewsController, motionEventTracker, original, false);
+
+    MotionEvent resolvedVdEvent =
+        makePlatformViewTouchAndInvokeToMotionEvent(
+            platformViewsController, motionEventTracker, original, true);
+
+    assertEquals(resolvedVdEvent.getEventTime(), resolvedNonVdEvent.getEventTime());
+    assertEquals(resolvedVdEvent.getX(), resolvedNonVdEvent.getX(), 0.001f);
+    assertEquals(resolvedVdEvent.getY(), resolvedNonVdEvent.getY(), 0.001f);
   }
 
   @Test
@@ -426,7 +461,7 @@ public class PlatformViewsControllerTest {
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
 
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     View resultAndroidView = platformViewsController.getPlatformViewById(platformViewId);
     assertNotNull(resultAndroidView);
@@ -612,11 +647,7 @@ public class PlatformViewsControllerTest {
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-        });
+    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
   }
 
   @Test
@@ -640,11 +671,7 @@ public class PlatformViewsControllerTest {
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-        });
+    assertFalse(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
   }
 
   @Test
@@ -866,7 +893,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
     assertTrue(androidView.getParent() instanceof FlutterMutatorView);
@@ -877,7 +904,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
     assertTrue(androidView.getParent() instanceof FlutterMutatorView);
@@ -906,7 +933,7 @@ public class PlatformViewsControllerTest {
     // Simulate create call from the framework.
     createPlatformView(
         jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
 
     when(platformView.getView()).thenReturn(null);
 
@@ -1045,7 +1072,7 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertTrue(platformViewsController.initializePlatformViewIfNeeded(platformViewId));
     assertEquals(flutterView.getChildCount(), 2);
 
     // Simulate first frame from the framework.
@@ -1547,14 +1574,18 @@ public class PlatformViewsControllerTest {
         new TextureRegistry() {
           public void TextureRegistry() {}
 
+          @NonNull
           @Override
           public SurfaceTextureEntry createSurfaceTexture() {
             return registerSurfaceTexture(mock(SurfaceTexture.class));
           }
 
+          @NonNull
           @Override
-          public SurfaceTextureEntry registerSurfaceTexture(SurfaceTexture surfaceTexture) {
+          public SurfaceTextureEntry registerSurfaceTexture(
+              @NonNull SurfaceTexture surfaceTexture) {
             return new SurfaceTextureEntry() {
+              @NonNull
               @Override
               public SurfaceTexture surfaceTexture() {
                 return mock(SurfaceTexture.class);
@@ -1570,6 +1601,7 @@ public class PlatformViewsControllerTest {
             };
           }
 
+          @NonNull
           @Override
           public ImageTextureEntry createImageTexture() {
             return new ImageTextureEntry() {
@@ -1583,11 +1615,48 @@ public class PlatformViewsControllerTest {
 
               @Override
               public void pushImage(Image image) {}
+            };
+          }
+
+          @NonNull
+          @Override
+          public SurfaceProducer createSurfaceProducer() {
+            return new SurfaceProducer() {
+              @Override
+              public void setCallback(SurfaceProducer.Callback cb) {}
 
               @Override
-              public Image acquireLatestImage() {
+              public long id() {
+                return 0;
+              }
+
+              @Override
+              public void release() {}
+
+              @Override
+              public int getWidth() {
+                return 0;
+              }
+
+              @Override
+              public int getHeight() {
+                return 0;
+              }
+
+              @Override
+              public void setSize(int width, int height) {}
+
+              @Override
+              public Surface getSurface() {
                 return null;
               }
+
+              @Override
+              public boolean handlesCropAndRotation() {
+                return false;
+              }
+
+              public void scheduleFrame() {}
             };
           }
         };

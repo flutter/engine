@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXTURE_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXTURE_CONTENTS_H_
 
-#include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/geometry/path.h"
 
 namespace impeller {
 
@@ -28,7 +25,7 @@ class TextureContents final : public Contents {
   ///         when image filters are applied.
   static std::shared_ptr<TextureContents> MakeRect(Rect destination);
 
-  void SetLabel(std::string label);
+  void SetLabel(std::string_view label);
 
   void SetDestinationRect(Rect rect);
 
@@ -43,6 +40,10 @@ class TextureContents final : public Contents {
   void SetSourceRect(const Rect& source_rect);
 
   const Rect& GetSourceRect() const;
+
+  void SetStrictSourceRect(bool strict);
+
+  bool GetStrictSourceRect() const;
 
   void SetOpacity(Scalar opacity);
 
@@ -60,15 +61,13 @@ class TextureContents final : public Contents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Texture Snapshot") const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
@@ -84,11 +83,16 @@ class TextureContents final : public Contents {
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
   Rect source_rect_;
+  bool strict_source_rect_enabled_ = false;
   Scalar opacity_ = 1.0f;
   Scalar inherited_opacity_ = 1.0f;
   bool defer_applying_opacity_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureContents);
+  TextureContents(const TextureContents&) = delete;
+
+  TextureContents& operator=(const TextureContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXTURE_CONTENTS_H_

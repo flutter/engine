@@ -6,15 +6,16 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
+#include "flutter/display_list/testing/dl_test_snippets.h"
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/GrRecordingContext.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -22,23 +23,23 @@ namespace testing {
 DlPaint GetPaintForRun(unsigned attributes) {
   DlPaint paint;
 
-  if (attributes & kStrokedStyle_Flag && attributes & kFilledStyle_Flag) {
+  if (attributes & kStrokedStyle && attributes & kFilledStyle) {
     // Not currently exposed by Flutter, but we can probably benchmark this in
     // the future
     paint.setDrawStyle(DlDrawStyle::kStrokeAndFill);
-  } else if (attributes & kStrokedStyle_Flag) {
+  } else if (attributes & kStrokedStyle) {
     paint.setDrawStyle(DlDrawStyle::kStroke);
-  } else if (attributes & kFilledStyle_Flag) {
+  } else if (attributes & kFilledStyle) {
     paint.setDrawStyle(DlDrawStyle::kFill);
   }
 
-  if (attributes & kHairlineStroke_Flag) {
+  if (attributes & kHairlineStroke) {
     paint.setStrokeWidth(0.0f);
   } else {
     paint.setStrokeWidth(1.0f);
   }
 
-  paint.setAntiAlias(attributes & kAntiAliasing_Flag);
+  paint.setAntiAlias(attributes & kAntiAliasing);
   return paint;
 }
 
@@ -56,17 +57,15 @@ void AnnotateAttributes(unsigned attributes,
                         benchmark::State& state,
                         const DisplayListAttributeFlags flags) {
   if (flags.always_stroked()) {
-    state.counters["HairlineStroke"] =
-        attributes & kHairlineStroke_Flag ? 1 : 0;
+    state.counters["HairlineStroke"] = attributes & kHairlineStroke ? 1 : 0;
   }
   if (flags.applies_style()) {
-    state.counters["HairlineStroke"] =
-        attributes & kHairlineStroke_Flag ? 1 : 0;
-    state.counters["StrokedStyle"] = attributes & kStrokedStyle_Flag ? 1 : 0;
-    state.counters["FilledStyle"] = attributes & kFilledStyle_Flag ? 1 : 0;
+    state.counters["HairlineStroke"] = attributes & kHairlineStroke ? 1 : 0;
+    state.counters["StrokedStyle"] = attributes & kStrokedStyle ? 1 : 0;
+    state.counters["FilledStyle"] = attributes & kFilledStyle ? 1 : 0;
   }
   if (flags.applies_anti_alias()) {
-    state.counters["AntiAliasing"] = attributes & kAntiAliasing_Flag ? 1 : 0;
+    state.counters["AntiAliasing"] = attributes & kAntiAliasing ? 1 : 0;
   }
 }
 
@@ -807,7 +806,7 @@ void BM_DrawVertices(benchmark::State& state,
     std::shared_ptr<DlVertices> vertices =
         GetTestVertices(p, radius, 50, mode, vertex_count);
     total_vertex_count += vertex_count;
-    builder.DrawVertices(vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(vertices, DlBlendMode::kSrc, paint);
   }
 
   state.counters["VertexCount"] = total_vertex_count;
@@ -1203,7 +1202,7 @@ void BM_DrawTextBlob(benchmark::State& state,
 
   for (size_t i = 0; i < draw_calls; i++) {
     character[0] = 'A' + (i % 26);
-    auto blob = SkTextBlob::MakeFromString(character, SkFont());
+    auto blob = SkTextBlob::MakeFromString(character, CreateTestFontOfSize(20));
     builder.DrawTextBlob(blob, 50.0f, 50.0f, paint);
   }
 

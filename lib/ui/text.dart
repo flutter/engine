@@ -3,6 +3,12 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+/// A [TextStyle.height] value that indicates the text span should take
+/// the height defined by the font, which may not be exactly the height of
+/// [TextStyle.fontSize].
+// To change the sentinel value, search for "kTextHeightNone" in the source code.
+const double kTextHeightNone = 0.0;
+
 /// Whether to use the italic type variation of glyphs in the font.
 ///
 /// Some modern fonts allow this to be selected in a more fine-grained manner.
@@ -1191,6 +1197,57 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
+/// The measurements of a character (or a sequence of visually connected
+/// characters) within a paragraph.
+///
+/// See also:
+///
+///  * [Paragraph.getGlyphInfoAt], which finds the [GlyphInfo] associated with
+///    a code unit in the text.
+///  * [Paragraph.getClosestGlyphInfoForOffset], which finds the [GlyphInfo] of
+///    the glyph(s) onscreen that's closest to the given [Offset].
+final class GlyphInfo {
+  /// Creates a [GlyphInfo] with the specified values.
+  GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection);
+
+  GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR)
+    : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
+      graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
+      writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
+
+  /// The layout bounding rect of the associated character, in the paragraph's
+  /// coordinates.
+  ///
+  /// This is **not** a tight bounding box that encloses the character's outline.
+  /// The vertical extent reported is derived from the font metrics (instead of
+  /// glyph metrics), and the horizontal extent is the horizontal advance of the
+  /// character.
+  final Rect graphemeClusterLayoutBounds;
+
+  /// The UTF-16 range of the associated character in the text.
+  final TextRange graphemeClusterCodeUnitRange;
+
+  /// The writing direction within the [GlyphInfo].
+  final TextDirection writingDirection;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is GlyphInfo
+        && graphemeClusterLayoutBounds == other.graphemeClusterLayoutBounds
+        && graphemeClusterCodeUnitRange == other.graphemeClusterCodeUnitRange
+        && writingDirection == other.writingDirection;
+  }
+
+  @override
+  int get hashCode => Object.hash(graphemeClusterLayoutBounds, graphemeClusterCodeUnitRange, writingDirection);
+
+  @override
+  String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -1636,10 +1693,10 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
+  /// * `height`: The height of this text span, as a multiplier of the font size. Setting the `height` to `kTextHeightNone` will allow the line height
   ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
-  /// * `leadingDistribution`: When `height` is specified, how the extra vertical space should be distributed over and under the text. Defaults
-  ///   to the paragraph's [TextHeightBehavior] if left unspecified.
+  /// * `leadingDistribution`: When `height` is set to a non-null that is not `kTextHeightNone`, how the extra vertical space should be distributed over and under the text.
+  ///   Defaults to the paragraph's [TextHeightBehavior] if left unspecified.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -1774,6 +1831,7 @@ class TextStyle {
   @override
   String toString() {
     final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    final String heightText = _encoded[0] & 0x02000 == 0x02000  ? (_height == kTextHeightNone ? 'kTextHeightNone' : '${_height}x') : 'unspecified';
     return 'TextStyle('
              'color: ${              _encoded[0] & 0x00002 == 0x00002  ? Color(_encoded[1])                           : "unspecified"}, '
              'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? TextDecoration._(_encoded[2])                : "unspecified"}, '
@@ -1792,7 +1850,7 @@ class TextStyle {
              'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                                    : "unspecified"}, '
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                         : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                           : "unspecified"}, '
-             'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                                : "unspecified"}, '
+             'height: $heightText, '
              'leadingDistribution: ${_leadingDistribution ?? "unspecified"}, '
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                      : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                                  : "unspecified"}, '
@@ -1872,7 +1930,9 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (height != null) {
+  // Paragraph styles are unique in a paragraph, there is no inheriting so
+  // height == null and height == kTextHeightNone are semantically equivalent.
+  if (height != null && height != kTextHeightNone) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
@@ -1922,9 +1982,10 @@ class ParagraphStyle {
   ///
   /// * `height`: The fallback height of the spans as a multiplier of the font
   ///   size. The fallback height is used when no height is provided through
-  ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
-  ///   the line height to take the height as defined by the font, which may not
-  ///   be exactly the height of the `fontSize`.
+  ///   [TextStyle.height]. Omitting `height` here (or setting it to
+  ///   [kTextHeightNone]) and in [TextStyle] will allow the line height to take
+  ///   the height as defined by the font, which may not be exactly the height of
+  ///   the `fontSize`.
   ///
   /// * `textHeightBehavior`: Specifies how the `height` multiplier is
   ///   applied to ascent of the first line and the descent of the last line.
@@ -2059,9 +2120,12 @@ ByteData _encodeStrut(
   FontWeight? fontWeight,
   FontStyle? fontStyle,
   bool? forceStrutHeight) {
+  // Strut styles are unique in a paragraph, there is no inheriting so
+  // height == null and height == kTextHeightNone are semantically equivalent.
+  final bool hasHeightOverride = height != null && height != kTextHeightNone;
   if (fontFamily == null &&
     fontSize == null &&
-    height == null &&
+    !hasHeightOverride &&
     leadingDistribution == null &&
     leading == null &&
     fontWeight == null &&
@@ -2095,7 +2159,7 @@ ByteData _encodeStrut(
     data.setFloat32(byteCount, fontSize, _kFakeHostEndian);
     byteCount += 4;
   }
-  if (height != null) {
+  if (hasHeightOverride) {
     bitmask |= 1 << 5;
     data.setFloat32(byteCount, height, _kFakeHostEndian);
     byteCount += 4;
@@ -2135,12 +2199,13 @@ class StrutStyle {
   /// * `height`: The minimum height of the line boxes, as a multiplier of the
   ///   font size. The lines of the paragraph will be at least
   ///   `(height + leading) * fontSize` tall when `fontSize` is not null. Omitting
-  ///   `height` will allow the minimum line height to take the height as defined
-  ///   by the font, which may not be exactly the height of the `fontSize`. When
-  ///   `fontSize` is null, there is no minimum line height. Tall glyphs due to
-  ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
-  ///   height after layout to be taller than specified here. The `fontSize` must
-  ///   be provided for this property to take effect.
+  ///   `height` (or setting it to [kTextHeightNone]) will allow the minimum line
+  ///   height to take the height as defined by the font, which may not be exactly
+  ///   the height of the `fontSize`. When `fontSize` is null, there is no minimum
+  ///   line height. Tall glyphs due to baseline alignment or large
+  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
+  ///   taller than specified here. The `fontSize` must be provided for
+  ///   this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. `fontSize` must be provided for this property to take
@@ -2772,6 +2837,18 @@ class LineMetrics {
     required this.lineNumber,
   });
 
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  );
+
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
@@ -2957,7 +3034,30 @@ abstract class Paragraph {
   List<TextBox> getBoxesForPlaceholders();
 
   /// Returns the text position closest to the given offset.
+  ///
+  /// This method always returns a [TextPosition] for any given [offset], even
+  /// when the [offset] is not close to any text, or when the paragraph is empty.
+  /// This is useful for determining the text to select when the user drags the
+  /// text selection handle.
+  ///
+  /// See also:
+  ///
+  ///  * [getClosestGlyphInfoForOffset], which returns more information about
+  ///    the closest character to an [Offset].
   TextPosition getPositionForOffset(Offset offset);
+
+  /// Returns the [GlyphInfo] of the glyph closest to the given `offset` in the
+  /// paragraph coordinate system, or null if if the text is empty, or is
+  /// entirely clipped or ellipsized away.
+  ///
+  /// This method first finds the line closest to `offset.dy`, and then returns
+  /// the [GlyphInfo] of the closest glyph(s) within that line.
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
+
+  /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in
+  /// the paragraph, or null if the given `codeUnitOffset` is out of the visible
+  /// lines or is ellipsized.
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
@@ -2991,6 +3091,32 @@ abstract class Paragraph {
   /// This can potentially return a large amount of data, so it is not recommended
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
+
+  /// Returns the [LineMetrics] for the line at `lineNumber`, or null if the
+  /// given `lineNumber` is greater than or equal to [numberOfLines].
+  LineMetrics? getLineMetricsAt(int lineNumber);
+
+  /// The total number of visible lines in the paragraph.
+  ///
+  /// Returns a non-negative number. If `maxLines` is non-null, the value of
+  /// [numberOfLines] never exceeds `maxLines`.
+  int get numberOfLines;
+
+  /// Returns the line number of the line that contains the code unit that
+  /// `codeUnitOffset` points to.
+  ///
+  /// This method returns null if the given `codeUnitOffset` is out of bounds, or
+  /// is logically after the last visible codepoint. This includes the case where
+  /// its codepoint belongs to a visible line, but the text layout library
+  /// replaced it with an ellipsis.
+  ///
+  /// If the target code unit points to a control character that introduces
+  /// mandatory line breaks (most notably the line feed character `LF`, typically
+  /// represented in strings as the escape sequence "\n"), to conform to
+  /// [the unicode rules](https://unicode.org/reports/tr14/#LB4), the control
+  /// character itself is always considered to be at the end of "current" line
+  /// rather than the beginning of the new line.
+  int? getLineNumberAt(int codeUnitOffset);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -3098,6 +3224,16 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   external List<int> _getPositionForOffset(double dx, double dy);
 
   @override
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset) => _getGlyphInfoAt(codeUnitOffset, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getGlyphInfoAt')
+  external GlyphInfo? _getGlyphInfoAt(int codeUnitOffset, Function constructor);
+
+  @override
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset) => _getClosestGlyphInfoForOffset(offset.dx, offset.dy, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Double, Double, Handle)>(symbol: 'Paragraph::getClosestGlyphInfo')
+  external GlyphInfo? _getClosestGlyphInfoForOffset(double dx, double dy, Function constructor);
+
+  @override
   TextRange getWordBoundary(TextPosition position) {
     final int characterPosition;
     switch (position.affinity) {
@@ -3170,6 +3306,23 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   external Float64List _computeLineMetrics();
 
   @override
+  LineMetrics? getLineMetricsAt(int lineNumber) => _getLineMetricsAt(lineNumber, LineMetrics._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getLineMetricsAt')
+  external LineMetrics? _getLineMetricsAt(int lineNumber, Function constructor);
+
+  @override
+  @Native<Uint32 Function(Pointer<Void>)>(symbol: 'Paragraph::getNumberOfLines')
+  external int get numberOfLines;
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) {
+    final int lineNumber = _getLineNumber(codeUnitOffset);
+    return lineNumber < 0 ? null : lineNumber;
+  }
+  @Native<Int32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
+  external int _getLineNumber(int codeUnitOffset);
+
+  @override
   void dispose() {
     assert(!_disposed);
     assert(() {
@@ -3195,6 +3348,27 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
     }());
     return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
   }
+
+  @override
+  String toString() {
+    String? result;
+    assert(() {
+      if (_disposed && _needsLayout) {
+        result = 'Paragraph(DISPOSED while dirty)';
+      }
+      if (_disposed && !_needsLayout) {
+        result = 'Paragraph(DISPOSED)';
+      }
+      return true;
+    }());
+    if (result != null) {
+      return result!;
+    }
+    if (_needsLayout) {
+      return 'Paragraph(dirty)';
+    }
+    return 'Paragraph()';
+  }
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -3215,23 +3389,6 @@ abstract class ParagraphBuilder {
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   factory ParagraphBuilder(ParagraphStyle style) = _NativeParagraphBuilder;
-
-  /// Whether the rounding hack enabled by default in SkParagraph and TextPainter
-  /// is disabled.
-  ///
-  /// Do not rely on this getter as it exists for migration purposes only and
-  /// will soon be removed.
-  @Deprecated('''
-    The shouldDisableRoundingHack flag is for internal migration purposes only and should not be used.
-  ''')
-  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
-  static bool _shouldDisableRoundingHack = true;
-  /// Do not call this method as it is for migration purposes only and will soon
-  /// be removed.
-  // ignore: use_setters_to_change_properties
-  static void setDisableRoundingHack(bool disableRoundingHack) {
-    _shouldDisableRoundingHack = disableRoundingHack;
-  }
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount;
@@ -3350,11 +3507,10 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._height ?? 0,
         style._ellipsis ?? '',
         _encodeLocale(style._locale),
-        !ParagraphBuilder.shouldDisableRoundingHack,
       );
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle, Bool)>(symbol: 'ParagraphBuilder::Create')
+  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>(symbol: 'ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3364,7 +3520,7 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       double height,
       String ellipsis,
       String locale,
-      bool applyRoundingHack);
+  );
 
   @override
   int get placeholderCount => _placeholderCount;
@@ -3518,6 +3674,9 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
 
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'ParagraphBuilder::build')
   external void _build(_NativeParagraph outParagraph);
+
+  @override
+  String toString() => 'ParagraphBuilder';
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

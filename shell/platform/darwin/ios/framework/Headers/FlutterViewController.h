@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERVIEWCONTROLLER_H_
-#define FLUTTER_FLUTTERVIEWCONTROLLER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
 
 #import <UIKit/UIKit.h>
 #include <sys/cdefs.h>
@@ -11,6 +11,7 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterDartProject.h"
 #import "FlutterEngine.h"
+#import "FlutterHourFormat.h"
 #import "FlutterMacros.h"
 #import "FlutterPlugin.h"
 #import "FlutterTexture.h"
@@ -26,6 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  * with the update.
  */
 FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterSemanticsUpdateNotification;
 
 /**
@@ -256,4 +258,4 @@ FLUTTER_DARWIN_EXPORT
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_

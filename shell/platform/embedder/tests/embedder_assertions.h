@@ -15,6 +15,8 @@
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+// NOLINTBEGIN(google-objc-function-naming)
+
 //------------------------------------------------------------------------------
 // Equality
 //------------------------------------------------------------------------------
@@ -65,6 +67,13 @@ inline bool operator==(const FlutterOpenGLFramebuffer& a,
          a.destruction_callback == b.destruction_callback;
 }
 
+inline bool operator==(const FlutterOpenGLSurface& a,
+                       const FlutterOpenGLSurface& b) {
+  return a.make_current_callback == b.make_current_callback &&
+         a.user_data == b.user_data && a.format == b.format &&
+         a.destruction_callback == b.destruction_callback;
+}
+
 inline bool operator==(const FlutterMetalTexture& a,
                        const FlutterMetalTexture& b) {
   return a.texture_id == b.texture_id && a.texture == b.texture;
@@ -96,6 +105,8 @@ inline bool operator==(const FlutterOpenGLBackingStore& a,
       return a.texture == b.texture;
     case kFlutterOpenGLTargetTypeFramebuffer:
       return a.framebuffer == b.framebuffer;
+    case kFlutterOpenGLTargetTypeSurface:
+      return a.surface == b.surface;
   }
 
   return false;
@@ -295,6 +306,15 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterOpenGLSurface& item) {
+  return out << "(FlutterOpenGLSurface) Make Current Callback: "
+             << reinterpret_cast<void*>(item.make_current_callback)
+             << " User Data: " << item.user_data << "Format: " << item.format
+             << " Destruction Callback: "
+             << reinterpret_cast<void*>(item.destruction_callback);
+}
+
+inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterMetalTexture& item) {
   return out << "(FlutterMetalTexture) Texture ID: " << std::hex
              << item.texture_id << std::dec << " Handle: 0x" << std::hex
@@ -366,6 +386,8 @@ inline std::string FlutterOpenGLTargetTypeToString(
       return "kFlutterOpenGLTargetTypeTexture";
     case kFlutterOpenGLTargetTypeFramebuffer:
       return "kFlutterOpenGLTargetTypeFramebuffer";
+    case kFlutterOpenGLTargetTypeSurface:
+      return "kFlutterOpenGLTargetTypeSurface";
   }
   return "Unknown";
 }
@@ -403,6 +425,9 @@ inline std::ostream& operator<<(std::ostream& out,
       break;
     case kFlutterOpenGLTargetTypeFramebuffer:
       out << item.framebuffer;
+      break;
+    case kFlutterOpenGLTargetTypeSurface:
+      out << item.surface;
       break;
   }
   return out;
@@ -575,5 +600,7 @@ inline FlutterRoundedRect FlutterRoundedRectMake(const SkRRect& rect) {
       FlutterSizeMake(rect.radii(SkRRect::Corner::kLowerLeft_Corner));
   return r;
 }
+
+// NOLINTEND(google-objc-function-naming)
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_ASSERTIONS_H_

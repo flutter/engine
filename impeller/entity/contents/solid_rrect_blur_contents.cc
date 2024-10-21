@@ -8,22 +8,32 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
+
+namespace {
+// Generous padding to make sure blurs with large sigmas are fully visible. Used
+// to expand the geometry around the rrect.  Larger sigmas have more subtle
+// gradients so they need larger padding to avoid hard cutoffs.  Sigma is
+// maximized to 3.5 since that should cover 99.95% of all samples.  3.0 should
+// cover 99.7% but that was seen to be not enough for large sigmas.
+Scalar PadForSigma(Scalar sigma) {
+  Scalar scalar = std::min((1.0f / 47.6f) * sigma + 2.5f, 3.5f);
+  return sigma * scalar;
+}
+}  // namespace
 
 SolidRRectBlurContents::SolidRRectBlurContents() = default;
 
 SolidRRectBlurContents::~SolidRRectBlurContents() = default;
 
 void SolidRRectBlurContents::SetRRect(std::optional<Rect> rect,
-                                      Scalar corner_radius) {
+                                      Size corner_radii) {
   rect_ = rect;
-  corner_radius_ = corner_radius;
+  corner_radii_ = corner_radii;
 }
 
 void SolidRRectBlurContents::SetSigma(Sigma sigma) {
@@ -38,19 +48,66 @@ Color SolidRRectBlurContents::GetColor() const {
   return color_;
 }
 
+static Point eccentricity(Point v, double sInverse) {
+  Point vOverS = v * sInverse * 0.5;
+  Point vOverS_squared = -(vOverS * vOverS);
+  return {std::exp(vOverS_squared.x), std::exp(vOverS_squared.y)};
+}
+
+static Scalar kTwoOverSqrtPi = 2.0 / std::sqrt(kPi);
+
+// use crate::math::compute_erf7;
+static Scalar computeErf7(Scalar x) {
+  x *= kTwoOverSqrtPi;
+  float xx = x * x;
+  x = x + (0.24295 + (0.03395 + 0.0104 * xx) * xx) * (x * xx);
+  return x / sqrt(1.0 + x * x);
+}
+
+static Point NegPos(Scalar v) {
+  return {std::min(v, 0.0f), std::max(v, 0.0f)};
+}
+
+static void SetupFragInfo(
+    RRectBlurPipeline::FragmentShader::FragInfo& frag_info,
+    Scalar blurSigma,
+    Point center,
+    Point rSize,
+    Scalar radius) {
+  Scalar sigma = std::max(blurSigma * kSqrt2, 1.f);
+
+  frag_info.center = rSize * 0.5f;
+  frag_info.minEdge = std::min(rSize.x, rSize.y);
+  double rMax = 0.5 * frag_info.minEdge;
+  double r0 = std::min(std::hypot(radius, sigma * 1.15), rMax);
+  frag_info.r1 = std::min(std::hypot(radius, sigma * 2.0), rMax);
+
+  frag_info.exponent = 2.0 * frag_info.r1 / r0;
+
+  frag_info.sInv = 1.0 / sigma;
+
+  // Pull in long end (make less eccentric).
+  Point eccentricV = eccentricity(rSize, frag_info.sInv);
+  double delta = 1.25 * sigma * (eccentricV.x - eccentricV.y);
+  rSize += NegPos(delta);
+
+  frag_info.adjust = rSize * 0.5 - frag_info.r1;
+  frag_info.exponentInv = 1.0 / frag_info.exponent;
+  frag_info.scale =
+      0.5 * computeErf7(frag_info.sInv * 0.5 *
+                        (std::max(rSize.x, rSize.y) - 0.5 * radius));
+}
+
 std::optional<Rect> SolidRRectBlurContents::GetCoverage(
     const Entity& entity) const {
   if (!rect_.has_value()) {
     return std::nullopt;
   }
 
-  Scalar radius = sigma_.sigma * 2;
+  Scalar radius = PadForSigma(sigma_.sigma);
 
-  auto ltrb = rect_->GetLTRB();
-  Rect bounds = Rect::MakeLTRB(ltrb[0] - radius, ltrb[1] - radius,
-                               ltrb[2] + radius, ltrb[3] + radius);
-  return bounds.TransformBounds(entity.GetTransformation());
-};
+  return rect_->Expand(radius).TransformBounds(entity.GetTransform());
+}
 
 bool SolidRRectBlurContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
@@ -62,30 +119,26 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   using VS = RRectBlurPipeline::VertexShader;
   using FS = RRectBlurPipeline::FragmentShader;
 
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-
-  // Clamp the max kernel width/height to 1000.
-  auto blur_sigma = std::min(sigma_.sigma, 250.0f);
-  // Increase quality by make the radius a bit bigger than the typical
+  // Clamp the max kernel width/height to 1000 to limit the extent
+  // of the blur and to kEhCloseEnough to prevent NaN calculations
+  // trying to evaluate a Guassian distribution with a sigma of 0.
+  Scalar blur_sigma = std::clamp(sigma_.sigma, kEhCloseEnough, 250.0f);
+  // Increase quality by making the radius a bit bigger than the typical
   // sigma->radius conversion we use for slower blurs.
-  auto blur_radius = blur_sigma * 2;
-  auto positive_rect = rect_->GetPositive();
-  {
-    auto left = -blur_radius;
-    auto top = -blur_radius;
-    auto right = positive_rect.size.width + blur_radius;
-    auto bottom = positive_rect.size.height + blur_radius;
+  Scalar blur_radius = PadForSigma(blur_sigma);
+  Rect positive_rect = rect_->GetPositive();
+  Scalar left = -blur_radius;
+  Scalar top = -blur_radius;
+  Scalar right = positive_rect.GetWidth() + blur_radius;
+  Scalar bottom = positive_rect.GetHeight() + blur_radius;
 
-    vtx_builder.AddVertices({
-        {Point(left, top)},
-        {Point(right, top)},
-        {Point(left, bottom)},
-        {Point(right, bottom)},
-    });
-  }
+  std::array<VS::PerVertexData, 4> vertices = {
+      VS::PerVertexData{Point(left, top)},
+      VS::PerVertexData{Point(right, top)},
+      VS::PerVertexData{Point(left, bottom)},
+      VS::PerVertexData{Point(right, bottom)},
+  };
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "RRect Shadow");
   ContentContextOptions opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangleStrip;
   Color color = color_;
@@ -93,27 +146,30 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
     opts.is_for_rrect_blur_clear = true;
     color = Color::White();
   }
-  cmd.pipeline = renderer.GetRRectBlurPipeline(opts);
-  cmd.stencil_reference = entity.GetClipDepth();
-
-  cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation() *
-                   Matrix::MakeTranslation({positive_rect.origin});
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  frame_info.mvp = Entity::GetShaderTransform(
+      entity.GetShaderClipDepth(), pass,
+      entity.GetTransform() *
+          Matrix::MakeTranslation(positive_rect.GetOrigin()));
 
   FS::FragInfo frag_info;
   frag_info.color = color;
-  frag_info.blur_sigma = blur_sigma;
-  frag_info.rect_size = Point(positive_rect.size);
-  frag_info.corner_radius =
-      std::min(corner_radius_, std::min(positive_rect.size.width / 2.0f,
-                                        positive_rect.size.height / 2.0f));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+  Scalar radius = std::min(std::clamp(corner_radii_.width, kEhCloseEnough,
+                                      positive_rect.GetWidth() * 0.5f),
+                           std::clamp(corner_radii_.height, kEhCloseEnough,
+                                      positive_rect.GetHeight() * 0.5f));
+  SetupFragInfo(frag_info, blur_sigma, positive_rect.GetCenter(),
+                Point(positive_rect.GetSize()), radius);
+  auto& host_buffer = renderer.GetTransientsBuffer();
+  pass.SetCommandLabel("RRect Shadow");
+  pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
+  pass.SetVertexBuffer(CreateVertexBuffer(vertices, host_buffer));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+  FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+
+  if (!pass.Draw().ok()) {
     return false;
   }
 

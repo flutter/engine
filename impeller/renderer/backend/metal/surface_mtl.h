@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
 
 #include <QuartzCore/CAMetalLayer.h>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
@@ -58,8 +58,22 @@ class SurfaceMTL final : public Surface {
   // Returns a Rect defining the area of the surface in device pixels
   IRect coverage() const;
 
+  /// Mark this surface as presenting with a transaction.
+  ///
+  /// If true, [Present] will block on the scheduling of a command buffer.
+  void PresentWithTransaction(bool present_with_transaction) {
+    present_with_transaction_ = present_with_transaction;
+  }
+
+  /// @brief Perform the final blit and trigger end of frame workloads.
+  bool PreparePresent() const;
+
   // |Surface|
   bool Present() const override;
+
+  void SetFrameBoundary(bool frame_boundary) {
+    frame_boundary_ = frame_boundary;
+  }
 
  private:
   std::weak_ptr<Context> context_;
@@ -69,6 +83,9 @@ class SurfaceMTL final : public Surface {
   std::shared_ptr<Texture> destination_texture_;
   bool requires_blit_ = false;
   std::optional<IRect> clip_rect_;
+  bool frame_boundary_ = false;
+  bool present_with_transaction_ = false;
+  mutable bool prepared_ = false;
 
   static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 
@@ -81,7 +98,11 @@ class SurfaceMTL final : public Surface {
              bool requires_blit,
              std::optional<IRect> clip_rect);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceMTL);
+  SurfaceMTL(const SurfaceMTL&) = delete;
+
+  SurfaceMTL& operator=(const SurfaceMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_

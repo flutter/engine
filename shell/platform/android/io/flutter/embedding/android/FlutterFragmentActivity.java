@@ -16,9 +16,9 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DA
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DART_ENTRYPOINT_ARGS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
-import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.deepLinkEnabled;
 
 import android.content.Context;
 import android.content.Intent;
@@ -27,7 +27,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +44,6 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.util.ViewUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,8 +65,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   // FlutterFragment management.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   // TODO(mattcarroll): replace ID with R.id when build system supports R.java
-  public static final int FRAGMENT_CONTAINER_ID =
-      ViewUtils.generateViewId(609893468); // random number
+  public static final int FRAGMENT_CONTAINER_ID = View.generateViewId();
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterFragmentActivity}, which executes a
@@ -521,6 +518,7 @@ public class FlutterFragmentActivity extends FragmentActivity
             ? TransparencyMode.opaque
             : TransparencyMode.transparent;
     final boolean shouldDelayFirstAndroidViewDraw = renderMode == RenderMode.surface;
+    final boolean shouldAutomaticallyHandleOnBackPressed = true;
 
     if (getCachedEngineId() != null) {
       Log.v(
@@ -545,6 +543,7 @@ public class FlutterFragmentActivity extends FragmentActivity
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
           .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+          .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
           .build();
     } else {
       Log.v(
@@ -572,8 +571,7 @@ public class FlutterFragmentActivity extends FragmentActivity
               + shouldAttachEngineToActivity());
 
       if (getCachedEngineGroupId() != null) {
-        return flutterFragment
-            .withNewEngineInGroup(getCachedEngineGroupId())
+        return FlutterFragment.withNewEngineInGroup(getCachedEngineGroupId())
             .dartEntrypoint(getDartEntrypointFunctionName())
             .initialRoute(getInitialRoute())
             .handleDeeplinking(shouldHandleDeeplinking())
@@ -581,6 +579,7 @@ public class FlutterFragmentActivity extends FragmentActivity
             .transparencyMode(transparencyMode)
             .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
             .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+            .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
             .build();
       }
 
@@ -596,17 +595,16 @@ public class FlutterFragmentActivity extends FragmentActivity
           .transparencyMode(transparencyMode)
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+          .shouldAutomaticallyHandleOnBackPressed(shouldAutomaticallyHandleOnBackPressed)
           .build();
     }
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      Window window = getWindow();
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-    }
+    Window window = getWindow();
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.setStatusBarColor(0x40000000);
+    window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
   }
 
   @Override
@@ -623,12 +621,6 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   @Override
-  @SuppressWarnings("MissingSuperCall")
-  public void onBackPressed() {
-    flutterFragment.onBackPressed();
-  }
-
-  @Override
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -636,6 +628,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   @Override
+  @SuppressWarnings("MissingSuperCall")
   public void onUserLeaveHint() {
     flutterFragment.onUserLeaveHint();
   }
@@ -702,9 +695,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   protected boolean shouldHandleDeeplinking() {
     try {
       Bundle metaData = getMetaData();
-      boolean shouldHandleDeeplinking =
-          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
-      return shouldHandleDeeplinking;
+      return deepLinkEnabled(metaData);
     } catch (PackageManager.NameNotFoundException e) {
       return false;
     }

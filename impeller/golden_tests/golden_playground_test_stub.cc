@@ -4,8 +4,6 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
-#include "impeller/aiks/picture.h"
-
 namespace impeller {
 
 GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
@@ -20,20 +18,20 @@ void GoldenPlaygroundTest::SetTypographerContext(
 void GoldenPlaygroundTest::TearDown() {}
 
 void GoldenPlaygroundTest::SetUp() {
-  GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
+  GTEST_SKIP() << "GoldenPlaygroundTest doesn't support this backend type.";
 }
 
 PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
   return false;
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    AiksPlaygroundCallback
-        callback) {  // NOLINT(performance-unnecessary-value-param)
+    const sk_sp<flutter::DisplayList>& list) {
   return false;
 }
 
@@ -43,9 +41,15 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
   return nullptr;
 }
 
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
-    const char* asset_name) const {
+sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
   return nullptr;
+}
+
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+    const char* asset_name) const {
+  return {};
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -65,5 +69,17 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
 }
 
 void GoldenPlaygroundTest::SetWindowSize(ISize size) {}
+
+fml::Status GoldenPlaygroundTest::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
+
+std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
+}
 
 }  // namespace impeller

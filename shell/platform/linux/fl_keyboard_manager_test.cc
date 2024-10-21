@@ -15,8 +15,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
-#include "flutter/shell/platform/linux/testing/mock_binary_messenger.h"
-#include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
+#include "flutter/shell/platform/linux/testing/mock_keymap.h"
+#include "flutter/shell/platform/linux/testing/mock_text_input_handler.h"
 #include "flutter/testing/testing.h"
 
 #include "gmock/gmock.h"
@@ -71,9 +71,9 @@ typedef std::function<void(AsyncKeyCallback callback)> ChannelCallHandler;
 typedef std::function<void(const FlutterKeyEvent* event,
                            AsyncKeyCallback callback)>
     EmbedderCallHandler;
-typedef std::function<void(std::unique_ptr<FlKeyEvent>)> RedispatchHandler;
+typedef std::function<void(FlKeyEvent*)> RedispatchHandler;
 
-// A type that can record all kinds of effects that the keyboard manager
+// A type that can record all kinds of effects that the keyboard handler
 // triggers.
 //
 // An instance of `CallRecord` might not have all the fields filled.
@@ -110,10 +110,6 @@ constexpr guint16 kKeyCodeSemicolon = 0x2fu;
 constexpr guint16 kKeyCodeKeyLeftBracket = 0x22u;
 
 static constexpr char kKeyEventChannelName[] = "flutter/keyevent";
-static constexpr char kKeyboardChannelName[] = "flutter/keyboard";
-static constexpr char kGetKeyboardStateMethod[] = "getKeyboardState";
-static constexpr uint64_t kMockPhysicalKey = 42;
-static constexpr uint64_t kMockLogicalKey = 42;
 
 // All key clues for a keyboard layout.
 //
@@ -177,8 +173,16 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_binary_messenger_get_type(),
                           fl_mock_key_binary_messenger_iface_init))
 
+static void fl_mock_key_binary_messenger_init(FlMockKeyBinaryMessenger* self) {}
+
+static void fl_mock_key_binary_messenger_dispose(GObject* object) {
+  G_OBJECT_CLASS(fl_mock_key_binary_messenger_parent_class)->dispose(object);
+}
+
 static void fl_mock_key_binary_messenger_class_init(
-    FlMockKeyBinaryMessengerClass* klass) {}
+    FlMockKeyBinaryMessengerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_mock_key_binary_messenger_dispose;
+}
 
 static void fl_mock_key_binary_messenger_send_on_channel(
     FlBinaryMessenger* messenger,
@@ -255,8 +259,6 @@ static void fl_mock_key_binary_messenger_iface_init(
       fl_mock_binary_messenger_set_warns_on_channel_overflow;
 }
 
-static void fl_mock_key_binary_messenger_init(FlMockKeyBinaryMessenger* self) {}
-
 static FlMockKeyBinaryMessenger* fl_mock_key_binary_messenger_new() {
   FlMockKeyBinaryMessenger* self = FL_MOCK_KEY_BINARY_MESSENGER(
       g_object_new(fl_mock_key_binary_messenger_get_type(), NULL));
@@ -281,9 +283,6 @@ struct _FlMockViewDelegate {
   FlMockKeyBinaryMessenger* messenger;
   EmbedderCallHandler embedder_handler;
   bool text_filter_result;
-  RedispatchHandler redispatch_handler;
-  KeyboardLayoutNotifier layout_notifier;
-  const MockLayoutData* layout_data;
 };
 
 static void fl_mock_view_keyboard_delegate_iface_init(
@@ -310,8 +309,6 @@ static void fl_mock_view_delegate_class_init(FlMockViewDelegateClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_mock_view_delegate_dispose;
 }
 
-static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event);
-
 static void fl_mock_view_keyboard_send_key_event(
     FlKeyboardViewDelegate* view_delegate,
     const FlutterKeyEvent* event,
@@ -332,59 +329,10 @@ static gboolean fl_mock_view_keyboard_text_filter_key_press(
   return self->text_filter_result;
 }
 
-static FlBinaryMessenger* fl_mock_view_keyboard_get_messenger(
-    FlKeyboardViewDelegate* view_delegate) {
-  FlMockViewDelegate* self = FL_MOCK_VIEW_DELEGATE(view_delegate);
-  return FL_BINARY_MESSENGER(self->messenger);
-}
-
-static void fl_mock_view_keyboard_redispatch_event(
-    FlKeyboardViewDelegate* view_delegate,
-    std::unique_ptr<FlKeyEvent> event) {
-  FlMockViewDelegate* self = FL_MOCK_VIEW_DELEGATE(view_delegate);
-  if (self->redispatch_handler) {
-    self->redispatch_handler(std::move(event));
-  }
-}
-
-static void fl_mock_view_keyboard_subscribe_to_layout_change(
-    FlKeyboardViewDelegate* delegate,
-    KeyboardLayoutNotifier notifier) {
-  FlMockViewDelegate* self = FL_MOCK_VIEW_DELEGATE(delegate);
-  self->layout_notifier = std::move(notifier);
-}
-
-static guint fl_mock_view_keyboard_lookup_key(FlKeyboardViewDelegate* delegate,
-                                              const GdkKeymapKey* key) {
-  FlMockViewDelegate* self = FL_MOCK_VIEW_DELEGATE(delegate);
-  guint8 group = static_cast<guint8>(key->group);
-  EXPECT_LT(group, self->layout_data->size());
-  const MockGroupLayoutData* group_layout = (*self->layout_data)[group];
-  EXPECT_TRUE(group_layout != nullptr);
-  EXPECT_TRUE(key->level == 0 || key->level == 1);
-  bool shift = key->level == 1;
-  return (*group_layout)[key->keycode * 2 + shift];
-}
-
-static GHashTable* fl_mock_view_keyboard_get_keyboard_state(
-    FlKeyboardViewDelegate* view_delegate) {
-  GHashTable* result = g_hash_table_new(g_direct_hash, g_direct_equal);
-  g_hash_table_insert(result, reinterpret_cast<gpointer>(kMockPhysicalKey),
-                      reinterpret_cast<gpointer>(kMockLogicalKey));
-
-  return result;
-}
-
 static void fl_mock_view_keyboard_delegate_iface_init(
     FlKeyboardViewDelegateInterface* iface) {
   iface->send_key_event = fl_mock_view_keyboard_send_key_event;
   iface->text_filter_key_press = fl_mock_view_keyboard_text_filter_key_press;
-  iface->get_messenger = fl_mock_view_keyboard_get_messenger;
-  iface->redispatch_event = fl_mock_view_keyboard_redispatch_event;
-  iface->subscribe_to_layout_change =
-      fl_mock_view_keyboard_subscribe_to_layout_change;
-  iface->lookup_key = fl_mock_view_keyboard_lookup_key;
-  iface->get_keyboard_state = fl_mock_view_keyboard_get_keyboard_state;
 }
 
 static FlMockViewDelegate* fl_mock_view_delegate_new() {
@@ -409,72 +357,45 @@ static void fl_mock_view_set_text_filter_result(FlMockViewDelegate* self,
   self->text_filter_result = result;
 }
 
-static void fl_mock_view_set_redispatch_handler(FlMockViewDelegate* self,
-                                                RedispatchHandler handler) {
-  self->redispatch_handler = std::move(handler);
-}
-
-static void fl_mock_view_set_layout(FlMockViewDelegate* self,
-                                    const MockLayoutData* layout) {
-  self->layout_data = layout;
-  if (self->layout_notifier != nullptr) {
-    self->layout_notifier();
-  }
-}
-
 /***** End FlMockViewDelegate *****/
-
-// Return a newly allocated #FlKeyEvent that is a clone to the given #event
-// but with #origin and #dispose set to 0.
-static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
-  FlKeyEvent* new_event = fl_key_event_clone(event);
-  new_event->origin = nullptr;
-  new_event->dispose_origin = nullptr;
-  return new_event;
-}
-
-// Create a new #FlKeyEvent with the given information.
-//
-// The #origin will be another #FlKeyEvent with the exact information,
-// so that it can be used to redispatch, and is freed upon disposal.
-static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
-                                            guint keyval,
-                                            guint16 keycode,
-                                            int state,
-                                            gboolean is_modifier,
-                                            guint8 group = 0) {
-  FlKeyEvent* event = g_new(FlKeyEvent, 1);
-  event->is_press = is_press;
-  event->time = 0;
-  event->state = state;
-  event->keyval = keyval;
-  event->string = nullptr;
-  event->group = group;
-  event->keycode = keycode;
-  FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
-  event->origin = origin_event;
-  event->dispose_origin = [](gpointer origin) { g_free(origin); };
-  return event;
-}
 
 class KeyboardTester {
  public:
   KeyboardTester() {
-    ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
-
     view_ = fl_mock_view_delegate_new();
     respondToEmbedderCallsWith(false);
     respondToChannelCallsWith(false);
     respondToTextInputWith(false);
     setLayout(kLayoutUs);
 
-    manager_ =
-        fl_keyboard_manager_new(messenger, FL_KEYBOARD_VIEW_DELEGATE(view_));
+    manager_ = fl_keyboard_manager_new(FL_BINARY_MESSENGER(view_->messenger),
+                                       FL_KEYBOARD_VIEW_DELEGATE(view_));
+    fl_keyboard_manager_set_lookup_key_handler(
+        manager_,
+        [](const GdkKeymapKey* key, gpointer user_data) {
+          KeyboardTester* self = reinterpret_cast<KeyboardTester*>(user_data);
+          guint8 group = static_cast<guint8>(key->group);
+          EXPECT_LT(group, self->layout_data_->size());
+          const MockGroupLayoutData* group_layout =
+              (*self->layout_data_)[group];
+          EXPECT_TRUE(group_layout != nullptr);
+          EXPECT_TRUE(key->level == 0 || key->level == 1);
+          bool shift = key->level == 1;
+          return (*group_layout)[key->keycode * 2 + shift];
+        },
+        this);
+    fl_keyboard_manager_set_redispatch_handler(
+        manager_,
+        [](FlKeyEvent* event, gpointer user_data) {
+
+        },
+        nullptr);
   }
 
   ~KeyboardTester() {
     g_clear_object(&view_);
     g_clear_object(&manager_);
+    g_clear_pointer(&redispatched_events_, g_ptr_array_unref);
   }
 
   FlKeyboardManager* manager() { return manager_; }
@@ -493,21 +414,20 @@ class KeyboardTester {
   // Returns the number of events redispatched. If any result is unexpected
   // (handled), return a minus number `-x` instead, where `x` is the index of
   // the first unexpected redispatch.
-  int redispatchEventsAndClear(
-      std::vector<std::unique_ptr<FlKeyEvent>>& events) {
-    size_t event_count = events.size();
+  int redispatchEventsAndClear(GPtrArray* events) {
+    guint event_count = events->len;
     int first_error = -1;
     during_redispatch_ = true;
-    for (size_t event_id = 0; event_id < event_count; event_id += 1) {
-      bool handled = fl_keyboard_manager_handle_event(
-          manager_, events[event_id].release());
+    for (guint event_id = 0; event_id < event_count; event_id += 1) {
+      FlKeyEvent* event = FL_KEY_EVENT(g_ptr_array_index(events, event_id));
+      bool handled = fl_keyboard_manager_handle_event(manager_, event);
       EXPECT_FALSE(handled);
       if (handled) {
         first_error = first_error == -1 ? event_id : first_error;
       }
     }
     during_redispatch_ = false;
-    events.clear();
+    g_ptr_array_set_size(events, 0);
     return first_error < 0 ? event_count : -first_error;
   }
 
@@ -579,22 +499,30 @@ class KeyboardTester {
     fl_mock_view_set_text_filter_result(view_, response);
   }
 
-  void recordRedispatchedEventsTo(
-      std::vector<std::unique_ptr<FlKeyEvent>>& storage) {
-    fl_mock_view_set_redispatch_handler(
-        view_, [&storage](std::unique_ptr<FlKeyEvent> key) {
-          storage.push_back(std::move(key));
-        });
+  void recordRedispatchedEventsTo(GPtrArray* storage) {
+    redispatched_events_ = g_ptr_array_ref(storage);
+    fl_keyboard_manager_set_redispatch_handler(
+        manager_,
+        [](FlKeyEvent* event, gpointer user_data) {
+          KeyboardTester* self = reinterpret_cast<KeyboardTester*>(user_data);
+          g_ptr_array_add(self->redispatched_events_, g_object_ref(event));
+        },
+        this);
   }
 
   void setLayout(const MockLayoutData& layout) {
-    fl_mock_view_set_layout(view_, &layout);
+    layout_data_ = &layout;
+    if (manager_ != nullptr) {
+      fl_keyboard_manager_notify_layout_changed(manager_);
+    }
   }
 
  private:
   FlMockViewDelegate* view_;
-  FlKeyboardManager* manager_;
+  FlKeyboardManager* manager_ = nullptr;
+  GPtrArray* redispatched_events_ = nullptr;
   bool during_redispatch_ = false;
+  const MockLayoutData* layout_data_;
 
   static gboolean _flushChannelMessagesCb(gpointer data) {
     g_autoptr(GMainLoop) loop = reinterpret_cast<GMainLoop*>(data);
@@ -606,19 +534,20 @@ class KeyboardTester {
 // Make sure that the keyboard can be disposed without crashes when there are
 // unresolved pending events.
 TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
 
   // Record calls so that they aren't responded.
   tester.recordEmbedderCallsTo(call_records);
-  fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  fl_keyboard_manager_handle_event(tester.manager(), event1);
 
   tester.respondToEmbedderCallsWith(true);
-  fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      0, FALSE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  fl_keyboard_manager_handle_event(tester.manager(), event2);
 
   tester.flushChannelMessages();
 
@@ -626,63 +555,69 @@ TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
-  std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
+  g_autoptr(GPtrArray) redispatched =
+      g_ptr_array_new_with_free_func(g_object_unref);
 
-  gboolean manager_handled = false;
+  gboolean handler_handled = false;
 
   /// Test 1: One event that is handled by the framework
   tester.recordEmbedderCallsTo(call_records);
   tester.recordRedispatchedEventsTo(redispatched);
 
   // Dispatch a key event
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event1);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 1u);
   EXPECT_KEY_EVENT(call_records[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                    kLogicalKeyA, "a", false);
 
   call_records[0].callback(true);
   tester.flushChannelMessages();
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   call_records.clear();
 
   /// Test 2: Two events that are unhandled by the framework
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      0, FALSE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event2);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 1u);
   EXPECT_KEY_EVENT(call_records[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                    kLogicalKeyA, nullptr, false);
 
   // Dispatch another key event
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x0, false));
+  g_autoptr(FlKeyEvent) event3 = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyB, GDK_KEY_b, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event3);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 2u);
   EXPECT_KEY_EVENT(call_records[1], kFlutterKeyEventTypeDown, kPhysicalKeyB,
                    kLogicalKeyB, "b", false);
 
   // Resolve the second event first to test out-of-order response
   call_records[1].callback(false);
-  EXPECT_EQ(redispatched.size(), 1u);
-  EXPECT_EQ(redispatched[0]->keyval, 0x62u);
+  EXPECT_EQ(redispatched->len, 1u);
+  EXPECT_EQ(
+      fl_key_event_get_keyval(FL_KEY_EVENT(g_ptr_array_index(redispatched, 0))),
+      0x62u);
   call_records[0].callback(false);
   tester.flushChannelMessages();
-  EXPECT_EQ(redispatched.size(), 2u);
-  EXPECT_EQ(redispatched[1]->keyval, 0x61u);
+  EXPECT_EQ(redispatched->len, 2u);
+  EXPECT_EQ(
+      fl_key_event_get_keyval(FL_KEY_EVENT(g_ptr_array_index(redispatched, 1))),
+      0x61u);
 
   EXPECT_FALSE(fl_keyboard_manager_is_state_clear(tester.manager()));
   call_records.clear();
@@ -695,12 +630,12 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
   /// redispatching only works once.
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event4 = fl_key_event_new(
+      0, FALSE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event4);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 1u);
 
   call_records[0].callback(true);
@@ -708,41 +643,43 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 }
 
 TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
-  gboolean manager_handled = false;
+  gboolean handler_handled = false;
   std::vector<CallRecord> call_records;
-  std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
+  g_autoptr(GPtrArray) redispatched =
+      g_ptr_array_new_with_free_func(g_object_unref);
 
   /// Test 1: One event that is handled by the framework
   tester.respondToEmbedderCallsWithAndRecordsTo(true, call_records);
   tester.recordRedispatchedEventsTo(redispatched);
 
   // Dispatch a key event
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event1);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(handler_handled, true);
   EXPECT_EQ(call_records.size(), 1u);
   EXPECT_KEY_EVENT(call_records[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                    kLogicalKeyA, "a", false);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(redispatched->len, 0u);
   call_records.clear();
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
-  redispatched.clear();
+  g_ptr_array_set_size(redispatched, 0);
 
   /// Test 2: An event unhandled by the framework
   tester.respondToEmbedderCallsWithAndRecordsTo(false, call_records);
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      0, FALSE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event2);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(handler_handled, true);
   EXPECT_EQ(call_records.size(), 1u);
   EXPECT_KEY_EVENT(call_records[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                    kLogicalKeyA, nullptr, false);
-  EXPECT_EQ(redispatched.size(), 1u);
+  EXPECT_EQ(redispatched->len, 1u);
   call_records.clear();
 
   EXPECT_FALSE(fl_keyboard_manager_is_state_clear(tester.manager()));
@@ -754,11 +691,13 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
 }
 
 TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
-  std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
+  g_autoptr(GPtrArray) redispatched =
+      g_ptr_array_new_with_free_func(g_object_unref);
 
-  gboolean manager_handled = false;
+  gboolean handler_handled = false;
 
   tester.recordEmbedderCallsTo(call_records);
   tester.recordChannelCallsTo(call_records);
@@ -766,12 +705,12 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   /// Test 1: One delegate responds true, the other false
 
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event1);
 
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 2u);
 
   EXPECT_EQ(call_records[0].type, CallRecord::kKeyCallEmbedder);
@@ -780,18 +719,18 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   call_records[0].callback(true);
   call_records[1].callback(false);
   tester.flushChannelMessages();
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(redispatched->len, 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
   call_records.clear();
 
   /// Test 2: All delegates respond false
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(false, GDK_KEY_a, kKeyCodeKeyA, 0x0, false));
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      0, FALSE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event2);
 
-  EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  EXPECT_EQ(redispatched->len, 0u);
   EXPECT_EQ(call_records.size(), 2u);
 
   EXPECT_EQ(call_records[0].type, CallRecord::kKeyCallEmbedder);
@@ -804,28 +743,30 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   // Resolve redispatch
   tester.flushChannelMessages();
-  EXPECT_EQ(redispatched.size(), 1u);
+  EXPECT_EQ(redispatched->len, 1u);
   EXPECT_EQ(tester.redispatchEventsAndClear(redispatched), 1);
   EXPECT_EQ(call_records.size(), 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 }
 
-TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
+TEST(FlKeyboardManagerTest, TextInputHandlerReturnsFalse) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
-  std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
-  gboolean manager_handled = false;
+  g_autoptr(GPtrArray) redispatched =
+      g_ptr_array_new_with_free_func(g_object_unref);
+  gboolean handler_handled = false;
   tester.recordRedispatchedEventsTo(redispatched);
   tester.respondToTextInputWith(false);
 
   // Dispatch a key event.
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+  g_autoptr(FlKeyEvent) event = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(handler_handled, true);
   // The event was redispatched because no one handles it.
-  EXPECT_EQ(redispatched.size(), 1u);
+  EXPECT_EQ(redispatched->len, 1u);
 
   // Resolve redispatched event.
   EXPECT_EQ(tester.redispatchEventsAndClear(redispatched), 1);
@@ -833,38 +774,41 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 }
 
-TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
+TEST(FlKeyboardManagerTest, TextInputHandlerReturnsTrue) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
-  std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
-  gboolean manager_handled = false;
+  g_autoptr(GPtrArray) redispatched =
+      g_ptr_array_new_with_free_func(g_object_unref);
+  gboolean handler_handled = false;
   tester.recordRedispatchedEventsTo(redispatched);
   tester.respondToTextInputWith(true);
 
   // Dispatch a key event.
-  manager_handled = fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+  g_autoptr(FlKeyEvent) event = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  handler_handled = fl_keyboard_manager_handle_event(tester.manager(), event);
   tester.flushChannelMessages();
-  EXPECT_EQ(manager_handled, true);
-  // The event was not redispatched because text input plugin handles it.
-  EXPECT_EQ(redispatched.size(), 0u);
+  EXPECT_EQ(handler_handled, true);
+  // The event was not redispatched because handler handles it.
+  EXPECT_EQ(redispatched->len, 0u);
 
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 }
 
 TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
 
   std::vector<CallRecord> call_records;
   tester.recordEmbedderCallsTo(call_records);
 
   auto sendTap = [&](guint8 keycode, guint keyval, guint8 group) {
-    fl_keyboard_manager_handle_event(
-        tester.manager(),
-        fl_key_event_new_by_mock(true, keyval, keycode, 0, false, group));
-    fl_keyboard_manager_handle_event(
-        tester.manager(),
-        fl_key_event_new_by_mock(false, keyval, keycode, 0, false, group));
+    g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+        0, TRUE, keycode, keyval, static_cast<GdkModifierType>(0), group);
+    fl_keyboard_manager_handle_event(tester.manager(), event1);
+    g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+        0, FALSE, keycode, keyval, static_cast<GdkModifierType>(0), group);
+    fl_keyboard_manager_handle_event(tester.manager(), event2);
   };
 
   /* US keyboard layout */
@@ -946,6 +890,7 @@ TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
 }
 
 TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   std::vector<CallRecord> call_records;
   tester.recordEmbedderCallsTo(call_records);
@@ -984,13 +929,14 @@ TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
 }
 
 TEST(FlKeyboardManagerTest, GetPressedState) {
+  ::testing::NiceMock<flutter::testing::MockKeymap> mock_keymap;
   KeyboardTester tester;
   tester.respondToTextInputWith(true);
 
   // Dispatch a key event.
-  fl_keyboard_manager_handle_event(
-      tester.manager(),
-      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+  g_autoptr(FlKeyEvent) event = fl_key_event_new(
+      0, TRUE, kKeyCodeKeyA, GDK_KEY_a, static_cast<GdkModifierType>(0), 0);
+  fl_keyboard_manager_handle_event(tester.manager(), event);
 
   GHashTable* pressedState =
       fl_keyboard_manager_get_pressed_state(tester.manager());
@@ -999,29 +945,6 @@ TEST(FlKeyboardManagerTest, GetPressedState) {
   gpointer physical_key =
       g_hash_table_lookup(pressedState, uint64_to_gpointer(kPhysicalKeyA));
   EXPECT_EQ(gpointer_to_uint64(physical_key), kLogicalKeyA);
-}
-
-TEST(FlKeyboardPluginTest, KeyboardChannelGetPressedState) {
-  ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
-
-  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
-      messenger, FL_KEYBOARD_VIEW_DELEGATE(fl_mock_view_delegate_new()));
-  EXPECT_NE(manager, nullptr);
-
-  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
-  g_autoptr(GBytes) message = fl_method_codec_encode_method_call(
-      FL_METHOD_CODEC(codec), kGetKeyboardStateMethod, nullptr, nullptr);
-
-  g_autoptr(FlValue) response = fl_value_new_map();
-  fl_value_set_take(response, fl_value_new_int(kMockPhysicalKey),
-                    fl_value_new_int(kMockLogicalKey));
-  EXPECT_CALL(messenger,
-              fl_binary_messenger_send_response(
-                  ::testing::Eq<FlBinaryMessenger*>(messenger), ::testing::_,
-                  MethodSuccessResponse(response), ::testing::_))
-      .WillOnce(::testing::Return(true));
-
-  messenger.ReceiveMessage(kKeyboardChannelName, message);
 }
 
 // The following layout data is generated using DEBUG_PRINT_LAYOUT.

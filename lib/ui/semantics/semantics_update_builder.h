@@ -49,6 +49,7 @@ class SemanticsUpdateBuilder
       double bottom,
       double elevation,
       double thickness,
+      std::string identifier,
       std::string label,
       const std::vector<NativeStringAttribute*>& labelAttributes,
       std::string value,
@@ -64,7 +65,9 @@ class SemanticsUpdateBuilder
       const tonic::Float64List& transform,
       const tonic::Int32List& childrenInTraversalOrder,
       const tonic::Int32List& childrenInHitTestOrder,
-      const tonic::Int32List& customAccessibilityActions);
+      const tonic::Int32List& customAccessibilityActions,
+      int headingLevel,
+      std::string linkUrl);
 
   void updateCustomAction(int id,
                           std::string label,

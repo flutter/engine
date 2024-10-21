@@ -43,6 +43,9 @@ external set windowFlutterCanvasKit(CanvasKit? value);
 @JS('window.flutterCanvasKit')
 external CanvasKit? get windowFlutterCanvasKit;
 
+@JS('window.flutterCanvasKitLoaded')
+external JSPromise<JSAny>? get windowFlutterCanvasKitLoaded;
+
 @JS()
 @anonymous
 @staticInterop
@@ -161,6 +164,13 @@ extension CanvasKitExtension on CanvasKit {
       DomCanvasElement canvas, SkWebGLContextOptions options) =>
         _GetWebGLContext(canvas, options).toDartDouble;
 
+  @JS('GetWebGLContext')
+  external JSNumber _GetOffscreenWebGLContext(
+      DomOffscreenCanvas canvas, SkWebGLContextOptions options);
+  double GetOffscreenWebGLContext(
+          DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
+      _GetOffscreenWebGLContext(canvas, options).toDartDouble;
+
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
   SkGrContext MakeGrContext(double glContext) =>
@@ -198,6 +208,9 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeRenderTarget(grContext, width.toJS, height.toJS);
 
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
+
+  @JS('MakeSWCanvasSurface')
+  external SkSurface MakeOffscreenSWCanvasSurface(DomOffscreenCanvas canvas);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
@@ -240,18 +253,19 @@ extension CanvasKitExtension on CanvasKit {
     DomImageBitmap imageBitmap,
     bool hasPremultipliedAlpha,
   ) => _MakeLazyImageFromTextureSource3(
-    imageBitmap,
+    imageBitmap as JSObject,
     0.toJS,
     hasPremultipliedAlpha.toJS,
   );
 }
 
-@JS('window.CanvasKitInit')
-external JSAny _CanvasKitInit(CanvasKitInitOptions options);
+@JS()
+@staticInterop
+class CanvasKitModule {}
 
-Future<CanvasKit> CanvasKitInit(CanvasKitInitOptions options) {
-  return js_util.promiseToFuture<CanvasKit>(
-          _CanvasKitInit(options).toObjectShallow);
+extension CanvasKitModuleExtension on CanvasKitModule {
+  @JS('default')
+  external JSPromise<JSAny> defaultExport(CanvasKitInitOptions options);
 }
 
 typedef LocateFileCallback = String Function(String file, String unusedBase);
@@ -1170,10 +1184,10 @@ extension SkImageExtension on SkImage {
                           matrix?.toJS);
 
   @JS('readPixels')
-  external JSUint8Array _readPixels(
+  external JSUint8Array? _readPixels(
       JSNumber srcX, JSNumber srcY, SkImageInfo imageInfo);
-  Uint8List readPixels(double srcX, double srcY, SkImageInfo imageInfo) =>
-      _readPixels(srcX.toJS, srcY.toJS, imageInfo).toDart;
+  Uint8List? readPixels(double srcX, double srcY, SkImageInfo imageInfo) =>
+      _readPixels(srcX.toJS, srcY.toJS, imageInfo)?.toDart;
 
   @JS('encodeToBytes')
   external JSUint8Array? _encodeToBytes();
@@ -1339,7 +1353,7 @@ extension SkPaintExtension on SkPaint {
 
   @JS('setColorInt')
   external JSVoid _setColorInt(JSNumber color);
-  void setColorInt(double color) => _setColorInt(color.toJS);
+  void setColorInt(int color) => _setColorInt(color.toJS);
 
   external JSVoid setShader(SkShader? shader);
   external JSVoid setMaskFilter(SkMaskFilter? maskFilter);
@@ -1480,6 +1494,18 @@ extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
     SkImageFilter outer,
     SkImageFilter inner,
   );
+
+  external SkImageFilter MakeDilate(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
+  );
+
+  external SkImageFilter MakeErode(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
+  );
 }
 
 @JS()
@@ -1490,6 +1516,9 @@ class SkImageFilter {}
 extension SkImageFilterExtension on SkImageFilter {
   external JSVoid delete();
 
+  @JS('isDeleted')
+  external JSBoolean _isDeleted();
+  bool isDeleted() => _isDeleted().toDart;
 
   @JS('getOutputBounds')
   external JSInt32Array _getOutputBounds(JSFloat32Array bounds);
@@ -2597,6 +2626,10 @@ extension SkCanvasExtension on SkCanvas {
   List<dynamic> getLocalToDevice() => _getLocalToDevice().toObjectShallow as
       List<dynamic>;
 
+  @JS('quickReject')
+  external JSBoolean _quickReject(JSFloat32Array rect);
+  bool quickReject(Float32List rect) => _quickReject(rect.toJS).toDart;
+
   external JSVoid drawPicture(SkPicture picture);
 
   @JS('drawParagraph')
@@ -2932,7 +2965,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   external set fontStyle(SkFontStyle? value);
 
   @JS('shadows')
-  external set _shadows(JSArray? value);
+  external set _shadows(JSArray<JSAny?>? value);
   set shadows(List<SkTextShadow>? value) =>
       // TODO(joshualitt): remove this cast when we reify JS types on JS
       // backends.
@@ -2940,7 +2973,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
       _shadows = (value as List<JSAny>?)?.toJS;
 
   @JS('fontFeatures')
-  external set _fontFeatures(JSArray? value);
+  external set _fontFeatures(JSArray<JSAny?>? value);
   set fontFeatures(List<SkFontFeature>? value) =>
       // TODO(joshualitt): remove this cast when we reify JS types on JS
       // backends.
@@ -2948,7 +2981,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
       _fontFeatures = (value as List<JSAny>?)?.toJS;
 
   @JS('fontVariations')
-  external set _fontVariations(JSArray? value);
+  external set _fontVariations(JSArray<JSAny?>? value);
   set fontVariations(List<SkFontVariation>? value) =>
       // TODO(joshualitt): remove this cast when we reify JS types on JS
       // backends.
@@ -3186,6 +3219,29 @@ extension SkLineMetricsExtension on SkLineMetrics {
 @JS()
 @anonymous
 @staticInterop
+class SkGlyphClusterInfo {}
+
+extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
+  @JS('graphemeLayoutBounds')
+  external JSArray<JSAny?> get _bounds;
+
+  @JS('dir')
+  external SkTextDirection get _direction;
+
+  @JS('graphemeClusterTextRange')
+  external SkTextRange get _textRange;
+
+  ui.GlyphInfo get _glyphInfo {
+    final List<JSNumber> list = _bounds.toDart.cast<JSNumber>();
+    final ui.Rect bounds = ui.Rect.fromLTRB(list[0].toDartDouble, list[1].toDartDouble, list[2].toDartDouble, list[3].toDartDouble);
+    final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
+    return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
+  }
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkRectWithDirection {}
 
 extension SkRectWithDirectionExtension on SkRectWithDirection {
@@ -3223,9 +3279,21 @@ extension SkParagraphExtension on SkParagraph {
   double getIdeographicBaseline() => _getIdeographicBaseline().toDartDouble;
 
   @JS('getLineMetrics')
-  external JSArray _getLineMetrics();
+  external JSArray<JSAny?> _getLineMetrics();
   List<SkLineMetrics> getLineMetrics() =>
       _getLineMetrics().toDart.cast<SkLineMetrics>();
+
+  @JS('getLineMetricsAt')
+  external SkLineMetrics? _getLineMetricsAt(JSNumber index);
+  SkLineMetrics? getLineMetricsAt(double index) => _getLineMetricsAt(index.toJS);
+
+  @JS('getNumberOfLines')
+  external JSNumber _getNumberOfLines();
+  double getNumberOfLines() => _getNumberOfLines().toDartDouble;
+
+  @JS('getLineNumberAt')
+  external JSNumber _getLineNumberAt(JSNumber index);
+  double getLineNumberAt(double index) => _getLineNumberAt(index.toJS).toDartDouble;
 
   @JS('getLongestLine')
   external JSNumber _getLongestLine();
@@ -3244,7 +3312,7 @@ extension SkParagraphExtension on SkParagraph {
   double getMaxWidth() => _getMaxWidth().toDartDouble;
 
   @JS('getRectsForRange')
-  external JSArray _getRectsForRange(
+  external JSArray<JSAny?> _getRectsForRange(
     JSNumber start,
     JSNumber end,
     SkRectHeightStyle heightStyle,
@@ -3259,7 +3327,7 @@ extension SkParagraphExtension on SkParagraph {
                          widthStyle).toDart.cast<SkRectWithDirection>();
 
   @JS('getRectsForPlaceholders')
-  external JSArray _getRectsForPlaceholders();
+  external JSArray<JSAny?> _getRectsForPlaceholders();
   List<SkRectWithDirection> getRectsForPlaceholders() =>
       _getRectsForPlaceholders().toDart.cast<SkRectWithDirection>();
 
@@ -3272,6 +3340,14 @@ extension SkParagraphExtension on SkParagraph {
     double x,
     double y,
   ) => _getGlyphPositionAtCoordinate(x.toJS, y.toJS);
+
+  @JS('getGlyphInfoAt')
+  external SkGlyphClusterInfo? _getGlyphInfoAt(JSNumber position);
+  ui.GlyphInfo? getGlyphInfoAt(double position) => _getGlyphInfoAt(position.toJS)?._glyphInfo;
+
+  @JS('getClosestGlyphInfoAtCoordinate')
+  external SkGlyphClusterInfo? _getClosestGlyphInfoAtCoordinate(JSNumber x, JSNumber y);
+  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAtCoordinate(x.toJS, y.toJS)?._glyphInfo;
 
   @JS('getWordBoundary')
   external SkTextRange _getWordBoundary(JSNumber position);
@@ -3549,13 +3625,13 @@ SkRuntimeEffect? MakeRuntimeEffect(String program) =>
 extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
   @JS('makeShader')
   external SkShader? _makeShader(JSAny uniforms);
-  SkShader? makeShader(List<Object> uniforms) =>
+  SkShader? makeShader(SkFloat32List uniforms) =>
       _makeShader(uniforms.toJSAnyShallow);
 
   @JS('makeShaderWithChildren')
   external SkShader? _makeShaderWithChildren(JSAny uniforms, JSAny children);
   SkShader? makeShaderWithChildren(
-      List<Object> uniforms, List<Object?> children) =>
+          SkFloat32List uniforms, List<Object?> children) =>
           _makeShaderWithChildren(uniforms.toJSAnyShallow,
               children.toJSAnyShallow);
 }
@@ -3593,11 +3669,11 @@ String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
 /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
 /// and intialize the CanvasKit wasm.
 Future<CanvasKit> downloadCanvasKit() async {
-  await _downloadOneOf(_canvasKitJsUrls);
+  final CanvasKitModule canvasKitModule = await _downloadOneOf(_canvasKitJsUrls);
 
-  final CanvasKit canvasKit = await CanvasKitInit(CanvasKitInitOptions(
+  final CanvasKit canvasKit = (await canvasKitModule.defaultExport(CanvasKitInitOptions(
     locateFile: createLocateFileCallback(canvasKitWasmModuleUrl),
-  ));
+  )).toDart) as CanvasKit;
 
   if (canvasKit.ParagraphBuilder.RequiresClientICU() && !browserSupportsCanvaskitChromium) {
     throw Exception(
@@ -3613,10 +3689,12 @@ Future<CanvasKit> downloadCanvasKit() async {
 /// downloads it.
 ///
 /// If none of the URLs can be downloaded, throws an [Exception].
-Future<void> _downloadOneOf(Iterable<String> urls) async {
+Future<CanvasKitModule> _downloadOneOf(Iterable<String> urls) async {
   for (final String url in urls) {
-    if (await _downloadCanvasKitJs(url)) {
-      return;
+    try {
+      return await _downloadCanvasKitJs(url);
+    } catch (_) {
+      continue;
     }
   }
 
@@ -3626,36 +3704,15 @@ Future<void> _downloadOneOf(Iterable<String> urls) async {
   );
 }
 
+String _resolveUrl(String url) {
+  return createDomURL(url, domWindow.document.baseUri).toJSString().toDart;
+}
+
 /// Downloads the CanvasKit JavaScript file at [url].
 ///
 /// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
 /// file was successfully downloaded, or `false` if it failed.
-Future<bool> _downloadCanvasKitJs(String url) {
-  final DomHTMLScriptElement canvasKitScript =
-      createDomHTMLScriptElement(configuration.nonce);
-  canvasKitScript.src = createTrustedScriptUrl(url);
-
-  final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
-
-  late final DomEventListener loadCallback;
-  late final DomEventListener errorCallback;
-
-  void loadEventHandler(DomEvent _) {
-    canvasKitScript.remove();
-    canvasKitLoadCompleter.complete(true);
-  }
-  void errorEventHandler(DomEvent errorEvent) {
-    canvasKitScript.remove();
-    canvasKitLoadCompleter.complete(false);
-  }
-
-  loadCallback = createDomEventListener(loadEventHandler);
-  errorCallback = createDomEventListener(errorEventHandler);
-
-  canvasKitScript.addEventListener('load', loadCallback);
-  canvasKitScript.addEventListener('error', errorCallback);
-
-  domDocument.head!.appendChild(canvasKitScript);
-
-  return canvasKitLoadCompleter.future;
+Future<CanvasKitModule> _downloadCanvasKitJs(String url) async {
+  final JSAny scriptUrl = createTrustedScriptUrl(_resolveUrl(url));
+  return (await importModule(scriptUrl).toDart) as CanvasKitModule;
 }

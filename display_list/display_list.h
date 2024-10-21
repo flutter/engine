@@ -8,7 +8,9 @@
 #include <memory>
 #include <optional>
 
+#include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
@@ -56,7 +58,6 @@ namespace flutter {
 
 #define FOR_EACH_DISPLAY_LIST_OP(V) \
   V(SetAntiAlias)                   \
-  V(SetDither)                      \
   V(SetInvertColors)                \
                                     \
   V(SetStrokeCap)                   \
@@ -68,9 +69,6 @@ namespace flutter {
                                     \
   V(SetColor)                       \
   V(SetBlendMode)                   \
-                                    \
-  V(SetPodPathEffect)               \
-  V(ClearPathEffect)                \
                                     \
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
@@ -89,9 +87,7 @@ namespace flutter {
                                     \
   V(Save)                           \
   V(SaveLayer)                      \
-  V(SaveLayerBounds)                \
   V(SaveLayerBackdrop)              \
-  V(SaveLayerBackdropBounds)        \
   V(Restore)                        \
                                     \
   V(Translate)                      \
@@ -103,21 +99,24 @@ namespace flutter {
   V(TransformReset)                 \
                                     \
   V(ClipIntersectRect)              \
-  V(ClipIntersectRRect)             \
+  V(ClipIntersectOval)              \
+  V(ClipIntersectRoundRect)         \
   V(ClipIntersectPath)              \
   V(ClipDifferenceRect)             \
-  V(ClipDifferenceRRect)            \
+  V(ClipDifferenceOval)             \
+  V(ClipDifferenceRoundRect)        \
   V(ClipDifferencePath)             \
                                     \
   V(DrawPaint)                      \
   V(DrawColor)                      \
                                     \
   V(DrawLine)                       \
+  V(DrawDashedLine)                 \
   V(DrawRect)                       \
   V(DrawOval)                       \
   V(DrawCircle)                     \
-  V(DrawRRect)                      \
-  V(DrawDRRect)                     \
+  V(DrawRoundRect)                  \
+  V(DrawDiffRoundRect)              \
   V(DrawArc)                        \
   V(DrawPath)                       \
                                     \
@@ -144,11 +143,25 @@ namespace flutter {
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType {
   FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE)
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_TO_ENUM_VALUE(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
+
+  // empty comment to make formatter happy
+  kInvalidOp,
+  kMaxOp = kInvalidOp,
 };
 #undef DL_OP_TO_ENUM_VALUE
+
+enum class DisplayListOpCategory {
+  kAttribute,
+  kTransform,
+  kClip,
+  kSave,
+  kSaveLayer,
+  kRestore,
+  kRendering,
+  kSubDisplayList,
+  kInvalidCategory,
+  kMaxCategory = kInvalidCategory,
+};
 
 class DlOpReceiver;
 class DisplayListBuilder;
@@ -166,6 +179,7 @@ class SaveLayerOptions {
   SaveLayerOptions without_optimizations() const {
     SaveLayerOptions options;
     options.fRendersWithAttributes = fRendersWithAttributes;
+    options.fBoundsFromCaller = fBoundsFromCaller;
     return options;
   }
 
@@ -180,6 +194,47 @@ class SaveLayerOptions {
   SaveLayerOptions with_can_distribute_opacity() const {
     SaveLayerOptions options(this);
     options.fCanDistributeOpacity = true;
+    return options;
+  }
+
+  // Returns true iff the bounds for the saveLayer operation were provided
+  // by the caller, otherwise the bounds will have been computed by the
+  // DisplayListBuilder and provided for reference.
+  bool bounds_from_caller() const { return fBoundsFromCaller; }
+  SaveLayerOptions with_bounds_from_caller() const {
+    SaveLayerOptions options(this);
+    options.fBoundsFromCaller = true;
+    return options;
+  }
+  SaveLayerOptions without_bounds_from_caller() const {
+    SaveLayerOptions options(this);
+    options.fBoundsFromCaller = false;
+    return options;
+  }
+  bool bounds_were_calculated() const { return !fBoundsFromCaller; }
+
+  // Returns true iff the bounds for the saveLayer do not fully cover the
+  // contained rendering operations. This will only occur if the original
+  // caller supplied bounds and those bounds were not a strict superset
+  // of the content bounds computed by the DisplayListBuilder.
+  bool content_is_clipped() const { return fContentIsClipped; }
+  SaveLayerOptions with_content_is_clipped() const {
+    SaveLayerOptions options(this);
+    options.fContentIsClipped = true;
+    return options;
+  }
+
+  bool contains_backdrop_filter() const { return fHasBackdropFilter; }
+  SaveLayerOptions with_contains_backdrop_filter() const {
+    SaveLayerOptions options(this);
+    options.fHasBackdropFilter = true;
+    return options;
+  }
+
+  bool content_is_unbounded() const { return fContentIsUnbounded; }
+  SaveLayerOptions with_content_is_unbounded() const {
+    SaveLayerOptions options(this);
+    options.fContentIsUnbounded = true;
     return options;
   }
 
@@ -199,6 +254,10 @@ class SaveLayerOptions {
     struct {
       unsigned fRendersWithAttributes : 1;
       unsigned fCanDistributeOpacity : 1;
+      unsigned fBoundsFromCaller : 1;
+      unsigned fContentIsClipped : 1;
+      unsigned fHasBackdropFilter : 1;
+      unsigned fContentIsUnbounded : 1;
     };
     uint32_t flags_;
   };
@@ -210,7 +269,9 @@ class DisplayListStorage {
   DisplayListStorage() = default;
   DisplayListStorage(DisplayListStorage&&) = default;
 
-  uint8_t* get() const { return ptr_.get(); }
+  uint8_t* get() { return ptr_.get(); }
+
+  const uint8_t* get() const { return ptr_.get(); }
 
   void realloc(size_t count) {
     ptr_.reset(static_cast<uint8_t*>(std::realloc(ptr_.release(), count)));
@@ -224,7 +285,7 @@ class DisplayListStorage {
   std::unique_ptr<uint8_t, FreeDeleter> ptr_;
 };
 
-class Culler;
+using DlIndex = uint32_t;
 
 // The base class that contains a sequence of rendering operations
 // for dispatch to a DlOpReceiver. These objects must be instantiated
@@ -247,13 +308,16 @@ class DisplayList : public SkRefCnt {
            (nested ? nested_byte_count_ : 0);
   }
 
-  unsigned int op_count(bool nested = false) const {
+  uint32_t op_count(bool nested = false) const {
     return op_count_ + (nested ? nested_op_count_ : 0);
   }
+
+  uint32_t total_depth() const { return total_depth_; }
 
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() const { return bounds_; }
+  const DlRect& GetBounds() const { return ToDlRect(bounds_); }
 
   bool has_rtree() const { return rtree_ != nullptr; }
   sk_sp<const DlRTree> rtree() const { return rtree_; }
@@ -280,28 +344,219 @@ class DisplayList : public SkRefCnt {
     return modifies_transparent_black_;
   }
 
+  const DisplayListStorage& GetStorage() const { return storage_; }
+
+  /// @brief    Indicates if there are any saveLayer operations at the root
+  ///           surface level of the DisplayList that use a backdrop filter.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the backdrop filter to do its work.
+  bool root_has_backdrop_filter() const { return root_has_backdrop_filter_; }
+
+  /// @brief    Indicates if a rendering operation at the root level of the
+  ///           DisplayList had an unbounded result, not otherwise limited by
+  ///           a clip operation.
+  ///
+  /// This condition can occur in a number of situations. The most common
+  /// situation is when there is a drawPaint or drawColor rendering
+  /// operation which fills out the entire drawable surface unless it is
+  /// bounded by a clip. Other situations include an operation rendered
+  /// through an ImageFilter that cannot compute the resulting bounds or
+  /// when an unclipped backdrop filter is applied by a save layer.
+  bool root_is_unbounded() const { return root_is_unbounded_; }
+
+  /// @brief    Indicates the maximum DlBlendMode used on any rendering op
+  ///           in the root surface of the DisplayList.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the indicated blend mode to do its work.
+  DlBlendMode max_root_blend_mode() const { return max_root_blend_mode_; }
+
+  /// @brief   Iterator utility class used for the |DisplayList::begin|
+  ///          and |DisplayList::end| methods. It implements just the
+  ///          basic methods to enable iteration-style for loops.
+  class Iterator {
+   public:
+    DlIndex operator*() const { return value_; }
+    bool operator!=(const Iterator& other) { return value_ != other.value_; }
+    Iterator& operator++() {
+      value_++;
+      return *this;
+    }
+
+   private:
+    explicit Iterator(DlIndex value) : value_(value) {}
+
+    DlIndex value_;
+
+    friend class DisplayList;
+  };
+
+  /// @brief   Return the number of stored records in the DisplayList.
+  ///
+  /// Each stored record represents a dispatchable operation that will be
+  /// sent to a |DlOpReceiver| by the |Dispatch| method. You can directly
+  /// simulate the |Dispatch| method using a simple for loop on the indices:
+  ///
+  /// {
+  ///   for (DlIndex i = 0u; i < display_list->GetRecordCount(); i++) {
+  ///     display_list->Dispatch(my_receiver, i);
+  ///   }
+  /// }
+  ///
+  /// @see |Dispatch(receiver, index)|
+  /// @see |begin|
+  /// @see |end|
+  /// @see |GetCulledIndices|
+  DlIndex GetRecordCount() const { return offsets_.size(); }
+
+  /// @brief   Return an iterator to the start of the stored records,
+  ///          enabling the iteration form of a for loop.
+  ///
+  /// Each stored record represents a dispatchable operation that will be
+  /// sent to a |DlOpReceiver| by the |Dispatch| method. You can directly
+  /// simulate the |Dispatch| method using a simple for loop on the indices:
+  ///
+  /// {
+  ///   for (DlIndex i : *display_list) {
+  ///     display_list->Dispatch(my_receiver, i);
+  ///   }
+  /// }
+  ///
+  /// @see |end|
+  /// @see |GetCulledIndices|
+  Iterator begin() const { return Iterator(0u); }
+
+  /// @brief   Return an iterator to the end of the stored records,
+  ///          enabling the iteration form of a for loop.
+  ///
+  /// Each stored record represents a dispatchable operation that will be
+  /// sent to a |DlOpReceiver| by the |Dispatch| method. You can directly
+  /// simulate the |Dispatch| method using a simple for loop on the indices:
+  ///
+  /// {
+  ///   for (DlIndex i : *display_list) {
+  ///     display_list->Dispatch(my_receiver, i);
+  ///   }
+  /// }
+  ///
+  /// @see |begin|
+  /// @see |GetCulledIndices|
+  Iterator end() const { return Iterator(offsets_.size()); }
+
+  /// @brief   Dispatch a single stored operation by its index.
+  ///
+  /// Each stored record represents a dispatchable operation that will be
+  /// sent to a |DlOpReceiver| by the |Dispatch| method. You can use this
+  /// method to dispatch a single operation to your receiver with an index
+  /// between |0u| (inclusive) and |GetRecordCount()| (exclusive), as in:
+  ///
+  /// {
+  ///   for (DlIndex i = 0u; i < display_list->GetRecordCount(); i++) {
+  ///     display_list->Dispatch(my_receiver, i);
+  ///   }
+  /// }
+  ///
+  /// If the index is out of the range of the stored records, this method
+  /// will not call any methods on the receiver and return false. You can
+  /// check the return value for true if you want to make sure you are
+  /// using valid indices.
+  ///
+  /// @see |GetRecordCount|
+  /// @see |begin|
+  /// @see |end|
+  /// @see |GetCulledIndices|
+  bool Dispatch(DlOpReceiver& receiver, DlIndex index) const;
+
+  /// @brief   Return an enum describing the specific op type stored at
+  ///          the indicated index.
+  ///
+  /// The specific types of the records are subject to change without notice
+  /// as the DisplayList code is developed and optimized. These values are
+  /// useful mostly for debugging purposes and should not be used in
+  /// production code.
+  ///
+  /// @see |GetOpCategory| for a more stable description of the records
+  DisplayListOpType GetOpType(DlIndex index) const;
+
+  /// @brief   Return an enum describing the general category of the
+  ///          operation record stored at the indicated index.
+  ///
+  /// The categories are general and stable and can be used fairly safely
+  /// in production code to plan how to dispatch or reorder ops during
+  /// final rendering.
+  ///
+  /// @see |GetOpType| for a more detailed description of the records
+  ///                  primarily for debugging use
+  DisplayListOpCategory GetOpCategory(DlIndex index) const;
+
+  /// @brief   Return an enum describing the general category of the
+  ///          operation record with the given type.
+  ///
+  /// @see |GetOpType| for a more detailed description of the records
+  ///                  primarily for debugging use
+  static DisplayListOpCategory GetOpCategory(DisplayListOpType type);
+
+  /// @brief   Return a vector of valid indices for records stored in
+  ///          the DisplayList that must be dispatched if you are
+  ///          restricted to the indicated cull_rect.
+  ///
+  /// This method can be used along with indexed dispatching to implement
+  /// RTree culling while still maintaining control over planning of
+  /// operations to be rendered, as in:
+  ///
+  /// {
+  ///   std::vector<DlIndex> indices =
+  ///       display_list->GetCulledIndices(cull-rect);
+  ///   for (DlIndex i : indices) {
+  ///     display_list->Dispatch(my_receiver, i);
+  ///   }
+  /// }
+  ///
+  /// The indices returned in the vector will automatically deal with
+  /// including or culling related operations such as attributes, clips
+  /// and transforms that will provide state for any rendering operations
+  /// selected by the culling checks.
+  ///
+  /// @see |GetOpType| for a more detailed description of the records
+  ///                  primarily for debugging use
+  ///
+  /// @see |Dispatch(receiver, index)|
+  std::vector<DlIndex> GetCulledIndices(const SkRect& cull_rect) const;
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
-              unsigned int op_count,
+              uint32_t op_count,
               size_t nested_byte_count,
-              unsigned int nested_op_count,
+              uint32_t nested_op_count,
+              uint32_t total_depth,
               const SkRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
               bool modifies_transparent_black,
+              DlBlendMode max_root_blend_mode,
+              bool root_has_backdrop_filter,
+              bool root_is_unbounded,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
 
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  static void DisposeOps(const uint8_t* ptr, const uint8_t* end);
 
   const DisplayListStorage storage_;
+  const std::vector<size_t> offsets_;
   const size_t byte_count_;
-  const unsigned int op_count_;
+  const uint32_t op_count_;
 
   const size_t nested_byte_count_;
-  const unsigned int nested_op_count_;
+  const uint32_t nested_op_count_;
+
+  const uint32_t total_depth_;
 
   const uint32_t unique_id_;
   const SkRect bounds_;
@@ -309,13 +564,16 @@ class DisplayList : public SkRefCnt {
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
   const bool modifies_transparent_black_;
+  const bool root_has_backdrop_filter_;
+  const bool root_is_unbounded_;
+  const DlBlendMode max_root_blend_mode_;
 
   const sk_sp<const DlRTree> rtree_;
 
-  void Dispatch(DlOpReceiver& ctx,
-                uint8_t* ptr,
-                uint8_t* end,
-                Culler& culler) const;
+  void DispatchOneOp(DlOpReceiver& receiver, const uint8_t* ptr) const;
+
+  void RTreeResultsToIndexVector(std::vector<DlIndex>& indices,
+                                 const std::vector<int>& rtree_results) const;
 
   friend class DisplayListBuilder;
 };

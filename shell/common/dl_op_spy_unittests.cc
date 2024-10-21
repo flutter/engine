@@ -4,9 +4,11 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/shell/common/dl_op_spy.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 
 namespace flutter {
@@ -173,6 +175,27 @@ TEST(DlOpSpy, DrawLine) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
     builder.DrawLine(SkPoint::Make(0, 1), SkPoint::Make(1, 2), paint);
+    sk_sp<DisplayList> dl = builder.Build();
+    DlOpSpy dl_op_spy;
+    dl->Dispatch(dl_op_spy);
+    ASSERT_NO_DRAW(dl_op_spy, dl);
+  }
+}
+
+TEST(DlOpSpy, DrawDashedLine) {
+  {  // black
+    DisplayListBuilder builder;
+    DlPaint paint(DlColor::kBlack());
+    builder.DrawDashedLine(DlPoint(0, 1), DlPoint(1, 2), 1.0f, 1.0f, paint);
+    sk_sp<DisplayList> dl = builder.Build();
+    DlOpSpy dl_op_spy;
+    dl->Dispatch(dl_op_spy);
+    ASSERT_DID_DRAW(dl_op_spy, dl);
+  }
+  {  // transparent
+    DisplayListBuilder builder;
+    DlPaint paint(DlColor::kTransparent());
+    builder.DrawDashedLine(DlPoint(0, 1), DlPoint(1, 2), 1.0f, 1.0f, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -367,7 +390,7 @@ TEST(DlOpSpy, DrawVertices) {
     };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
-    builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(dl_vertices, DlBlendMode::kSrc, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -393,7 +416,7 @@ TEST(DlOpSpy, DrawVertices) {
     };
     auto dl_vertices = DlVertices::Make(DlVertexMode::kTriangles, 3, vertices,
                                         texture_coordinates, colors, 0);
-    builder.DrawVertices(dl_vertices.get(), DlBlendMode::kSrc, paint);
+    builder.DrawVertices(dl_vertices, DlBlendMode::kSrc, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -545,7 +568,7 @@ TEST(DlOpSpy, DrawTextBlob) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
     std::string string = "xx";
-    SkFont font;
+    SkFont font = CreateTestFontOfSize(12);
     auto text_blob = SkTextBlob::MakeFromString(string.c_str(), font);
     builder.DrawTextBlob(text_blob, 1, 1, paint);
     sk_sp<DisplayList> dl = builder.Build();
@@ -557,7 +580,7 @@ TEST(DlOpSpy, DrawTextBlob) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
     std::string string = "xx";
-    SkFont font;
+    SkFont font = CreateTestFontOfSize(12);
     auto text_blob = SkTextBlob::MakeFromString(string.c_str(), font);
     builder.DrawTextBlob(text_blob, 1, 1, paint);
     sk_sp<DisplayList> dl = builder.Build();

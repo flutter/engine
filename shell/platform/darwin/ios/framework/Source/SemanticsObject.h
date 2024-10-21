@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
 
 #import <UIKit/UIKit.h>
 
@@ -38,7 +38,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(nonatomic, assign) SemanticsObject* parent;
+@property(nonatomic, weak, readonly) SemanticsObject* parent;
 
 /**
  * The accessibility bridge that this semantics object is attached to. This
@@ -64,13 +64,13 @@ constexpr float kScrollExtentMaxForInf = 1000;
  * Direct children of this semantics object. Each child's `parent` property must
  * be equal to this object.
  */
-@property(nonatomic, strong) NSArray<SemanticsObject*>* children;
+@property(nonatomic, copy) NSArray<SemanticsObject*>* children;
 
 /**
  * Direct children of this semantics object in hit test order. Each child's `parent` property
  * must be equal to this object.
  */
-@property(nonatomic, strong) NSArray<SemanticsObject*>* childrenInHitTestOrder;
+@property(nonatomic, copy) NSArray<SemanticsObject*>* childrenInHitTestOrder;
 
 /**
  * The UIAccessibility that represents this object.
@@ -235,4 +235,4 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_

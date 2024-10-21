@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
 
 #include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/sampler_descriptor.h"
-#include "impeller/core/texture.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/snapshot.h"
@@ -40,6 +38,17 @@ class Contents {
     enum class Type { kNoChange, kAppend, kRestore };
 
     Type type = Type::kNoChange;
+    // TODO(jonahwilliams): this should probably use the Entity::ClipOperation
+    // enum, but that has transitive import errors.
+    bool is_difference_or_non_square = false;
+
+    /// @brief This coverage is the outer coverage of the clip.
+    ///
+    /// For example, if the clip is a circular clip, this is the rectangle that
+    /// contains the circle and not the rectangle that is contained within the
+    /// circle. This means that we cannot use the coverage alone to determine if
+    /// a clip can be culled, and instead also use the somewhat hacky
+    /// "is_difference_or_non_square" field.
     std::optional<Rect> coverage = std::nullopt;
   };
 
@@ -54,12 +63,6 @@ class Contents {
   Contents();
 
   virtual ~Contents();
-
-  /// @brief  Add any text data to the specified lazy atlas. The scale parameter
-  ///         must be used again later when drawing the text.
-  virtual void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) {}
 
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
@@ -93,7 +96,9 @@ class Contents {
   ///        properties (e.g. the blend mode), clips/visibility culling, or
   ///        inherited opacity.
   ///
-  virtual bool IsOpaque() const;
+  /// @param transform The current transform matrix of the entity that will
+  /// render this contents.
+  virtual bool IsOpaque(const Matrix& transform) const;
 
   //----------------------------------------------------------------------------
   /// @brief Given the current pass space bounding rectangle of the clip
@@ -120,10 +125,8 @@ class Contents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Snapshot") const;
-
-  virtual bool ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Return the color source's intrinsic size, if available.
@@ -135,18 +138,6 @@ class Contents {
   std::optional<Size> GetColorSourceSize() const;
 
   void SetColorSourceSize(Size size);
-
-  //----------------------------------------------------------------------------
-  /// @brief Whether or not this contents can accept the opacity peephole
-  ///        optimization.
-  ///
-  ///        By default all contents return false. Contents are responsible
-  ///        for determining whether or not their own geometries intersect in
-  ///        a way that makes accepting opacity impossible. It is always safe
-  ///        to return false, especially if computing overlap would be
-  ///        computationally expensive.
-  ///
-  virtual bool CanInheritOpacity(const Entity& entity) const;
 
   //----------------------------------------------------------------------------
   /// @brief Inherit the provided opacity.
@@ -165,12 +156,6 @@ class Contents {
   ///
   virtual std::optional<Color> AsBackgroundColor(const Entity& entity,
                                                  ISize target_size) const;
-
-  //----------------------------------------------------------------------------
-  /// @brief Cast to a filter. Returns `nullptr` if this Contents is not a
-  ///        filter.
-  ///
-  virtual const FilterContents* AsFilter() const;
 
   //----------------------------------------------------------------------------
   /// @brief      If possible, applies a color filter to this contents inputs on
@@ -195,7 +180,11 @@ class Contents {
   std::optional<Rect> coverage_hint_;
   std::optional<Size> color_source_size_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Contents);
+  Contents(const Contents&) = delete;
+
+  Contents& operator=(const Contents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_

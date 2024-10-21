@@ -5,9 +5,11 @@
 #import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 #include "ios_context.h"
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
-IOSContextSoftware::IOSContextSoftware() : IOSContext(MsaaSampleCount::kNone) {}
+IOSContextSoftware::IOSContextSoftware() = default;
 
 // |IOSContext|
 IOSContextSoftware::~IOSContextSoftware() = default;
@@ -36,7 +38,7 @@ std::unique_ptr<Texture> IOSContextSoftware::CreateExternalTexture(
   // message.
   NSLog(@"Flutter: Attempted to composite external texture sources using the software backend. "
         @"This backend is only used on simulators. This feature is only available on actual "
-        @"devices where OpenGL or Metal is used for rendering.");
+        @"devices where Metal is used for rendering.");
 
   // Not supported in this backend.
   return nullptr;

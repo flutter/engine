@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -22,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import com.getkeepsafe.relinker.ReLinker;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
@@ -137,12 +140,11 @@ public class FlutterJNI {
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
-  public void loadLibrary() {
+  public void loadLibrary(Context context) {
     if (FlutterJNI.loadLibraryCalled) {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
-
-    System.loadLibrary("flutter");
+    ReLinker.loadLibrary(context, "flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -151,9 +153,10 @@ public class FlutterJNI {
   private static native void nativePrefetchDefaultFontManager();
 
   /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   * Prefetch the default font manager provided by txt::GetDefaultFontManager() which is a
+   * process-wide singleton owned by Skia. Note that, the first call to txt::GetDefaultFontManager()
+   * will take noticeable time, but later calls will return a reference to the preexisting font
+   * manager.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
@@ -237,17 +240,6 @@ public class FlutterJNI {
     return nativeGetIsSoftwareRenderingEnabled();
   }
 
-  private native boolean nativeGetDisableImageReaderPlatformViews();
-
-  /**
-   * Checks launch settings for whether image reader platform views are disabled.
-   *
-   * <p>The value is the same per program.
-   */
-  @UiThread
-  public boolean getDisableImageReaderPlatformViews() {
-    return nativeGetDisableImageReaderPlatformViews();
-  }
   /**
    * VM Service URI for the VM instance.
    *
@@ -563,7 +555,7 @@ public class FlutterJNI {
   @VisibleForTesting
   @Nullable
   public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       ImageDecoder.Source source = ImageDecoder.createSource(buffer);
       try {
         return ImageDecoder.decodeBitmap(
@@ -752,13 +744,6 @@ public class FlutterJNI {
       int[] displayFeaturesType,
       int[] displayFeaturesState);
 
-  @UiThread
-  public void SetIsRenderingToImageView(boolean value) {
-    nativeSetIsRenderingToImageView(nativeShellHolderId, value);
-  }
-
-  private native void nativeSetIsRenderingToImageView(long nativeShellHolderId, boolean value);
-
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -888,7 +873,13 @@ public class FlutterJNI {
   @UiThread
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setSemanticsEnabledInNative(enabled);
+    }
+  }
+
+  @VisibleForTesting
+  public void setSemanticsEnabledInNative(boolean enabled) {
     nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
   }
 
@@ -899,7 +890,13 @@ public class FlutterJNI {
   @UiThread
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
+    if (isAttached()) {
+      setAccessibilityFeaturesInNative(flags);
+    }
+  }
+
+  @VisibleForTesting
+  public void setAccessibilityFeaturesInNative(int flags) {
     nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
   }
 
@@ -931,19 +928,19 @@ public class FlutterJNI {
    */
   @UiThread
   public void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRegisterImageTexture(
         nativeShellHolderId,
         textureId,
-        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+        new WeakReference<TextureRegistry.ImageConsumer>(imageTexture));
   }
 
   private native void nativeRegisterImageTexture(
       long nativeShellHolderId,
       long textureId,
-      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+      @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -960,6 +957,16 @@ public class FlutterJNI {
   }
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
+
+  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  @UiThread
+  public void scheduleFrame() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeScheduleFrame(nativeShellHolderId);
+  }
+
+  private native void nativeScheduleFrame(long nativeShellHolderId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long,
@@ -1291,22 +1298,17 @@ public class FlutterJNI {
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
       // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
-      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-        Locale.Builder localeBuilder = new Locale.Builder();
-        if (!languageCode.isEmpty()) {
-          localeBuilder.setLanguage(languageCode);
-        }
-        if (!countryCode.isEmpty()) {
-          localeBuilder.setRegion(countryCode);
-        }
-        if (!scriptCode.isEmpty()) {
-          localeBuilder.setScript(scriptCode);
-        }
-        supportedLocales.add(localeBuilder.build());
-      } else {
-        // Pre-API 21, we fall back on scriptCode-less locales.
-        supportedLocales.add(new Locale(languageCode, countryCode));
+      Locale.Builder localeBuilder = new Locale.Builder();
+      if (!languageCode.isEmpty()) {
+        localeBuilder.setLanguage(languageCode);
       }
+      if (!countryCode.isEmpty()) {
+        localeBuilder.setRegion(countryCode);
+      }
+      if (!scriptCode.isEmpty()) {
+        localeBuilder.setScript(scriptCode);
+      }
+      supportedLocales.add(localeBuilder.build());
     }
 
     Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
@@ -1317,11 +1319,7 @@ public class FlutterJNI {
     String[] output = new String[localeDataLength];
     output[0] = result.getLanguage();
     output[1] = result.getCountry();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-      output[2] = result.getScript();
-    } else {
-      output[2] = "";
-    }
+    output[2] = result.getScript();
     return output;
   }
 
@@ -1538,4 +1536,14 @@ public class FlutterJNI {
   public interface AsyncWaitForVsyncDelegate {
     void asyncWaitForVsync(final long cookie);
   }
+
+  /**
+   * Whether Android Hardware Buffer import is known to not work on this particular vendor + API
+   * level and should be disabled.
+   */
+  public boolean ShouldDisableAHB() {
+    return nativeShouldDisableAHB();
+  }
+
+  private native boolean nativeShouldDisableAHB();
 }

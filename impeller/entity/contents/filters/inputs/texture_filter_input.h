@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_TEXTURE_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_TEXTURE_FILTER_INPUT_H_
 
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
@@ -15,14 +16,11 @@ class TextureFilterInput final : public FilterInput {
   ~TextureFilterInput() override;
 
   // |FilterInput|
-  Variant GetInput() const override;
-
-  // |FilterInput|
-  std::optional<Snapshot> GetSnapshot(
-      const std::string& label,
-      const ContentContext& renderer,
-      const Entity& entity,
-      std::optional<Rect> coverage_limit) const override;
+  std::optional<Snapshot> GetSnapshot(const std::string& label,
+                                      const ContentContext& renderer,
+                                      const Entity& entity,
+                                      std::optional<Rect> coverage_limit,
+                                      int32_t mip_count) const override;
 
   // |FilterInput|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -31,8 +29,8 @@ class TextureFilterInput final : public FilterInput {
   Matrix GetLocalTransform(const Entity& entity) const override;
 
  private:
-  TextureFilterInput(std::shared_ptr<Texture> texture,
-                     Matrix local_transform = Matrix());
+  explicit TextureFilterInput(std::shared_ptr<Texture> texture,
+                              Matrix local_transform = Matrix());
 
   std::shared_ptr<Texture> texture_;
   Matrix local_transform_;
@@ -41,3 +39,5 @@ class TextureFilterInput final : public FilterInput {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_TEXTURE_FILTER_INPUT_H_

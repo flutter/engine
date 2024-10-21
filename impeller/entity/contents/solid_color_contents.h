@@ -2,33 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
 
-#include <functional>
-#include <memory>
-#include <vector>
-
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path.h"
 
 namespace impeller {
-
-class Path;
-class HostBuffer;
-struct VertexBuffer;
 
 class SolidColorContents final : public ColorSourceContents {
  public:
   SolidColorContents();
 
   ~SolidColorContents() override;
-
-  static std::unique_ptr<SolidColorContents> Make(const Path& path,
-                                                  Color color);
 
   void SetColor(Color color);
 
@@ -38,7 +25,7 @@ class SolidColorContents final : public ColorSourceContents {
   bool IsSolidColor() const override;
 
   // |Contents|
-  bool IsOpaque() const override;
+  bool IsOpaque(const Matrix& transform) const override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -58,7 +45,11 @@ class SolidColorContents final : public ColorSourceContents {
  private:
   Color color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SolidColorContents);
+  SolidColorContents(const SolidColorContents&) = delete;
+
+  SolidColorContents& operator=(const SolidColorContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_

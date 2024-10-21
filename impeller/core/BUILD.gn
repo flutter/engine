@@ -8,12 +8,8 @@ impeller_component("core") {
   sources = [
     "allocator.cc",
     "allocator.h",
-    "buffer.cc",
-    "buffer.h",
     "buffer_view.cc",
     "buffer_view.h",
-    "capture.cc",
-    "capture.h",
     "device_buffer.cc",
     "device_buffer.h",
     "device_buffer_descriptor.cc",
@@ -47,7 +43,6 @@ impeller_component("core") {
   deps = [
     "../base",
     "../geometry",
-    "../image",
     "//flutter/fml",
   ]
 }

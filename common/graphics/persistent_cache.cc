@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/common/graphics/persistent_cache.h"
 
 #include <future>
@@ -22,7 +24,7 @@
 #include "flutter/shell/version/version.h"
 #include "openssl/sha.h"
 #include "rapidjson/document.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
 
@@ -483,3 +485,5 @@ PersistentCache::GetSkpsFromAssetManager() const {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

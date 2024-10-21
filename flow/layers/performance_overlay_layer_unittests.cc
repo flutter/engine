@@ -7,11 +7,11 @@
 #include <cstdint>
 #include <sstream>
 
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/shell/common/base64.h"
-#include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
@@ -38,9 +38,8 @@ static std::string GetGoldenFilePath(int refresh_rate, bool is_new) {
   std::stringstream ss;
   // This unit test should only be run on Linux (not even on Mac since it's a
   // golden test). Hence we don't have to worry about the "/" vs. "\".
-  ss << flutter::GetGoldenDir() << "/"
-     << "performance_overlay_gold_" << refresh_rate << "fps"
-     << (is_new ? "_new" : "") << ".png";
+  ss << flutter::GetGoldenDir() << "/" << "performance_overlay_gold_"
+     << refresh_rate << "fps" << (is_new ? "_new" : "") << ".png";
   return ss.str();
 }
 
@@ -118,9 +117,9 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
     b64_char[b64_size] = 0;  // make it null terminated for printing
 
     EXPECT_TRUE(golden_data_matches)
-        << "Golden file mismatch. Please check "
-        << "the difference between " << golden_file_path << " and "
-        << new_golden_file_path << ", and  replace the former "
+        << "Golden file mismatch. Please check " << "the difference between "
+        << golden_file_path << " and " << new_golden_file_path
+        << ", and  replace the former "
         << "with the latter if the difference looks good.\nS\n"
         << "See also the base64 encoded " << new_golden_file_path << ":\n"
         << b64_char;
@@ -131,6 +130,36 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 }  // namespace
 
 using PerformanceOverlayLayerTest = LayerTest;
+
+class ImageSizeTextBlobInspector : public virtual DlOpReceiver,
+                                   virtual IgnoreAttributeDispatchHelper,
+                                   virtual IgnoreTransformDispatchHelper,
+                                   virtual IgnoreClipDispatchHelper,
+                                   virtual IgnoreDrawDispatchHelper {
+ public:
+  void drawImage(const sk_sp<DlImage> image,
+                 const DlPoint& point,
+                 DlImageSampling sampling,
+                 bool render_with_attributes) override {
+    sizes_.push_back(image->GetBounds().GetSize());
+  }
+
+  void drawTextBlob(const sk_sp<SkTextBlob> blob,
+                    DlScalar x,
+                    DlScalar y) override {
+    text_blobs_.push_back(blob);
+    text_positions_.push_back(DlPoint(x, y));
+  }
+
+  const std::vector<DlISize>& sizes() { return sizes_; }
+  const std::vector<sk_sp<SkTextBlob>> text_blobs() { return text_blobs_; }
+  const std::vector<DlPoint> text_positions() { return text_positions_; }
+
+ private:
+  std::vector<DlISize> sizes_;
+  std::vector<sk_sp<SkTextBlob>> text_blobs_;
+  std::vector<DlPoint> text_positions_;
+};
 
 TEST_F(PerformanceOverlayLayerTest, PaintingEmptyLayerDies) {
   const uint64_t overlay_opts = kVisualizeRasterizerStatistics;
@@ -158,8 +187,12 @@ TEST_F(PerformanceOverlayLayerTest, InvalidOptions) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   // Nothing is drawn if options are invalid (0).
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
+  layer->Paint(display_list_paint_context());
+
+  DisplayListBuilder expected_builder;
+  auto expected_dl = expected_builder.Build();
+
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_dl));
 }
 
 TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
@@ -175,13 +208,15 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   EXPECT_EQ(layer->paint_bounds(), layer_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  layer->Paint(paint_context());
+  layer->Paint(display_list_paint_context());
   auto overlay_text = PerformanceOverlayLayer::MakeStatisticsText(
-      paint_context().raster_time, "Raster", "");
+      display_list_paint_context().raster_time, "Raster", "");
   auto overlay_text_data = overlay_text->serialize(SkSerialProcs{});
   // Historically SK_ColorGRAY (== 0xFF888888) was used here
   DlPaint text_paint(DlColor(0xFF888888));
-  SkPoint text_position = SkPoint::Make(16.0f, 22.0f);
+  DlPoint text_position = DlPoint(16.0f, 22.0f);
+  ImageSizeTextBlobInspector inspector;
+  display_list()->Dispatch(inspector);
 
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
@@ -189,10 +224,12 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
 #endif  // OS_FUCHSIA
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawTextData{overlay_text_data, text_paint,
-                                            text_position}}}));
+  ASSERT_EQ(inspector.sizes().size(), 0u);
+  ASSERT_EQ(inspector.text_blobs().size(), 1u);
+  ASSERT_EQ(inspector.text_positions().size(), 1u);
+  auto text_data = inspector.text_blobs().front()->serialize(SkSerialProcs{});
+  EXPECT_TRUE(text_data->equals(overlay_text_data.get()));
+  EXPECT_EQ(inspector.text_positions().front(), text_position);
 }
 
 TEST_F(PerformanceOverlayLayerTest, MarkAsDirtyWhenResized) {
@@ -203,21 +240,31 @@ TEST_F(PerformanceOverlayLayerTest, MarkAsDirtyWhenResized) {
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
   layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 48.0f, 48.0f));
   layer->Preroll(preroll_context());
-  layer->Paint(paint_context());
-  auto data = mock_canvas().draw_calls().front().data;
-  auto image_data = std::get<MockCanvas::DrawImageDataNoPaint>(data);
-  auto first_draw_width = image_data.image->width();
+  layer->Paint(display_list_paint_context());
+  DlISize first_draw_size;
+  {
+    ImageSizeTextBlobInspector inspector;
+    display_list()->Dispatch(inspector);
+    ASSERT_EQ(inspector.sizes().size(), 1u);
+    ASSERT_EQ(inspector.text_blobs().size(), 0u);
+    ASSERT_EQ(inspector.text_positions().size(), 0u);
+    first_draw_size = inspector.sizes().front();
+  }
 
   // Create a second PerformanceOverlayLayer with different bounds.
   layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
   layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f));
   layer->Preroll(preroll_context());
-  layer->Paint(paint_context());
-  data = mock_canvas().draw_calls().back().data;
-  image_data = std::get<MockCanvas::DrawImageDataNoPaint>(data);
-  auto refreshed_draw_width = image_data.image->width();
-
-  EXPECT_NE(first_draw_width, refreshed_draw_width);
+  reset_display_list();
+  layer->Paint(display_list_paint_context());
+  {
+    ImageSizeTextBlobInspector inspector;
+    display_list()->Dispatch(inspector);
+    ASSERT_EQ(inspector.sizes().size(), 1u);
+    ASSERT_EQ(inspector.text_blobs().size(), 0u);
+    ASSERT_EQ(inspector.text_positions().size(), 0u);
+    EXPECT_NE(first_draw_size, inspector.sizes().front());
+  }
 }
 
 TEST(PerformanceOverlayLayerDefault, Gold) {

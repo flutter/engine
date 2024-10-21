@@ -14,8 +14,6 @@
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
-typedef std::function<void()> KeyboardLayoutNotifier;
-
 G_BEGIN_DECLS
 
 G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
@@ -27,7 +25,7 @@ G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
 /**
  * FlKeyboardViewDelegate:
  *
- * An interface for a class that provides `FlKeyboardManager` with
+ * An interface for a class that provides `FlKeyboardHandler` with
  * platform-related features.
  *
  * This interface is typically implemented by `FlView`.
@@ -44,27 +42,16 @@ struct _FlKeyboardViewDelegateInterface {
   gboolean (*text_filter_key_press)(FlKeyboardViewDelegate* delegate,
                                     FlKeyEvent* event);
 
-  FlBinaryMessenger* (*get_messenger)(FlKeyboardViewDelegate* delegate);
-
-  void (*redispatch_event)(FlKeyboardViewDelegate* delegate,
-                           std::unique_ptr<FlKeyEvent> event);
-
-  void (*subscribe_to_layout_change)(FlKeyboardViewDelegate* delegate,
-                                     KeyboardLayoutNotifier notifier);
-
-  guint (*lookup_key)(FlKeyboardViewDelegate* view_delegate,
-                      const GdkKeymapKey* key);
-
   GHashTable* (*get_keyboard_state)(FlKeyboardViewDelegate* delegate);
 };
 
 /**
  * fl_keyboard_view_delegate_send_key_event:
  *
- * Handles `FlKeyboardManager`'s request to send a `FlutterKeyEvent` through the
+ * Handles `FlKeyboardHandler`'s request to send a `FlutterKeyEvent` through the
  * embedder API to the framework.
  *
- * The ownership of the `event` is kept by the keyboard manager, and the `event`
+ * The ownership of the `event` is kept by the keyboard handler, and the `event`
  * might be immediately destroyed after this function returns.
  *
  * The `callback` must eventually be called exactly once with the event result
@@ -78,45 +65,14 @@ void fl_keyboard_view_delegate_send_key_event(FlKeyboardViewDelegate* delegate,
 /**
  * fl_keyboard_view_delegate_text_filter_key_press:
  *
- * Handles `FlKeyboardManager`'s request to check if the GTK text input IM
+ * Handles `FlKeyboardHandler`'s request to check if the GTK text input IM
  * filter would like to handle a GDK event.
  *
- * The ownership of the `event` is kept by the keyboard manager.
+ * The ownership of the `event` is kept by the keyboard handler.
  */
 gboolean fl_keyboard_view_delegate_text_filter_key_press(
     FlKeyboardViewDelegate* delegate,
     FlKeyEvent* event);
-
-/**
- * fl_keyboard_view_delegate_get_messenger:
- *
- * Returns a binary messenger that can be used to send messages to the
- * framework.
- *
- * The ownership of messenger is kept by the view delegate.
- */
-FlBinaryMessenger* fl_keyboard_view_delegate_get_messenger(
-    FlKeyboardViewDelegate* delegate);
-
-/**
- * fl_keyboard_view_delegate_redispatch_event:
- *
- * Handles `FlKeyboardManager`'s request to insert a GDK event to the system for
- * redispatching.
- *
- * The ownership of event will be transferred to the view delegate. The view
- * delegate is responsible to call fl_key_event_dispose.
- */
-void fl_keyboard_view_delegate_redispatch_event(
-    FlKeyboardViewDelegate* delegate,
-    std::unique_ptr<FlKeyEvent> event);
-
-void fl_keyboard_view_delegate_subscribe_to_layout_change(
-    FlKeyboardViewDelegate* delegate,
-    KeyboardLayoutNotifier notifier);
-
-guint fl_keyboard_view_delegate_lookup_key(FlKeyboardViewDelegate* delegate,
-                                           const GdkKeymapKey* key);
 
 /**
  * fl_keyboard_view_delegate_get_keyboard_state:

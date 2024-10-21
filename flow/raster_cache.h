@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FLOW_RASTER_CACHE_H_
 #define FLUTTER_FLOW_RASTER_CACHE_H_
 
+#if !SLIMPELLER
+
 #include <memory>
 #include <unordered_map>
 
@@ -117,7 +119,7 @@ class RasterCache {
  public:
   struct Context {
     GrDirectContext* gr_context;
-    const SkColorSpace* dst_color_space;
+    const sk_sp<SkColorSpace> dst_color_space;
     const SkMatrix& matrix;
     const SkRect& logical_rect;
     const char* flow_type;
@@ -165,8 +167,6 @@ class RasterCache {
   void EndFrame();
 
   void Clear();
-
-  void SetCheckboardCacheImages(bool checkerboard);
 
   const RasterCacheMetrics& picture_metrics() const { return picture_metrics_; }
   const RasterCacheMetrics& layer_metrics() const { return layer_metrics_; }
@@ -264,7 +264,7 @@ class RasterCache {
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
   mutable RasterCacheKey::Map<Entry> cache_;
-  bool checkerboard_images_;
+  bool checkerboard_images_ = false;
 
   void TraceStatsToTimeline() const;
 
@@ -275,5 +275,11 @@ class RasterCache {
 };
 
 }  // namespace flutter
+
+#else  //  !SLIMPELLER
+
+class RasterCache;
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_FLOW_RASTER_CACHE_H_

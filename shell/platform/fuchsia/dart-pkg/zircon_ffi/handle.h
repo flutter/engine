@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_
-#define SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_
 
 #include "macros.h"
 
@@ -43,13 +43,13 @@ ZIRCON_FFI_EXPORT void zircon_dart_handle_list_free(
     zircon_dart_handle_list_t* list);
 
 // Returns 1 if the handle is valid.
-ZIRCON_FFI_EXPORT int32_t
-zircon_dart_handle_is_valid(zircon_dart_handle_t* handle);
+ZIRCON_FFI_EXPORT int32_t zircon_dart_handle_is_valid(
+    zircon_dart_handle_t* handle);
 
 // Closes the handle, but doesn't release any ffi-associated memory. Returns 1
 // on success.
-ZIRCON_FFI_EXPORT int32_t
-zircon_dart_handle_close(zircon_dart_handle_t* handle);
+ZIRCON_FFI_EXPORT int32_t zircon_dart_handle_close(
+    zircon_dart_handle_t* handle);
 
 // Closes the zircon handle if valid and frees the memory.
 ZIRCON_FFI_EXPORT void zircon_dart_handle_free(zircon_dart_handle_t* handle);
@@ -80,4 +80,4 @@ ZIRCON_FFI_EXPORT int zircon_dart_handle_attach_finalizer(
 }
 #endif
 
-#endif  // SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_HANDLE_H_

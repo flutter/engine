@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_
 
+#if !SLIMPELLER
+
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
@@ -12,13 +14,13 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
 
 class IOSContextMetalSkia final : public IOSContext {
  public:
-  explicit IOSContextMetalSkia(MsaaSampleCount msaa_samples);
+  explicit IOSContextMetalSkia();
 
   ~IOSContextMetalSkia();
 
@@ -50,5 +52,7 @@ class IOSContextMetalSkia final : public IOSContext {
 };
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_

@@ -4,15 +4,17 @@
 
 #import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 
-#import "flutter/fml/trace_event.h"
-#import "flutter/lib/ui/window/platform_message.h"
-#import "flutter/shell/platform/darwin/common/buffer_conversions.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/lib/ui/window/platform_message_response.h"
+#include "flutter/shell/platform/darwin/common/buffer_conversions.h"
+
+FLUTTER_ASSERT_ARC
 
 static uint64_t platform_message_counter = 1;
 
-@interface FLTSerialTaskQueue : NSObject <FlutterTaskQueue>
-@property(nonatomic, strong) dispatch_queue_t queue;
+@interface FLTSerialTaskQueue : NSObject <FlutterTaskQueueDispatch>
+@property(nonatomic, readonly) dispatch_queue_t queue;
 @end
 
 @implementation FLTSerialTaskQueue
@@ -24,11 +26,6 @@ static uint64_t platform_message_counter = 1;
   return self;
 }
 
-- (void)dealloc {
-  dispatch_release(_queue);
-  [super dealloc];
-}
-
 - (void)dispatch:(dispatch_block_t)block {
   dispatch_async(self.queue, block);
 }
@@ -37,7 +34,7 @@ static uint64_t platform_message_counter = 1;
 namespace flutter {
 
 NSObject<FlutterTaskQueue>* PlatformMessageHandlerIos::MakeBackgroundTaskQueue() {
-  return [[[FLTSerialTaskQueue alloc] init] autorelease];
+  return [[FLTSerialTaskQueue alloc] init];
 }
 
 PlatformMessageHandlerIos::PlatformMessageHandlerIos(
@@ -118,14 +115,20 @@ void PlatformMessageHandlerIos::SetMessageHandler(const std::string& channel,
                                                   FlutterBinaryMessageHandler handler,
                                                   NSObject<FlutterTaskQueue>* task_queue) {
   FML_CHECK(platform_task_runner_->RunsTasksOnCurrentThread());
+  // Use `respondsToSelector` instead of `conformsToProtocol` to accomodate
+  // injecting your own `FlutterTaskQueue`. This is not a supported usage but
+  // not one worth breaking.
+  FML_CHECK(!task_queue || [task_queue respondsToSelector:@selector(dispatch:)]);
   /// TODO(gaaclarke): This should be migrated to a lockfree datastructure.
   std::lock_guard lock(message_handlers_mutex_);
   message_handlers_.erase(channel);
   if (handler) {
     message_handlers_[channel] = {
-        .task_queue = fml::scoped_nsprotocol([task_queue retain]),
+        .task_queue =
+            fml::scoped_nsprotocol(static_cast<NSObject<FlutterTaskQueueDispatch>*>(task_queue)),
         .handler =
-            fml::ScopedBlock<FlutterBinaryMessageHandler>{handler, fml::OwnershipPolicy::kRetain},
+            fml::ScopedBlock<FlutterBinaryMessageHandler>{
+                handler, fml::scoped_policy::OwnershipPolicy::kRetain},
     };
   }
 }

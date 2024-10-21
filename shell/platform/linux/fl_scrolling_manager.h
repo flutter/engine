@@ -6,13 +6,11 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_SCROLLING_MANAGER_H_
 
 #include <gdk/gdk.h>
-#include <functional>
 
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_SCROLLING_MANAGER fl_scrolling_manager_get_type()
 G_DECLARE_FINAL_TYPE(FlScrollingManager,
                      fl_scrolling_manager,
                      FL,
@@ -33,7 +31,7 @@ FlScrollingManager* fl_scrolling_manager_new(
 
 /**
  * fl_scrolling_manager_set_last_mouse_position:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  * @x: the mouse x-position, in window coordinates.
  * @y: the mouse y-position, in window coordinates.
  *
@@ -46,7 +44,7 @@ void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* manager,
 
 /**
  * fl_scrolling_manager_handle_scroll_event:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  * @event: the scroll event.
  * @scale_factor: the GTK scaling factor of the window.
  *
@@ -58,7 +56,7 @@ void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
 
 /**
  * fl_scrolling_manager_handle_rotation_begin:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  *
  * Inform the scrolling manager that a rotation gesture has begun.
  */
@@ -66,7 +64,7 @@ void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_rotation_update:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  * @rotation: the rotation angle, in radians.
  *
  * Inform the scrolling manager that a rotation gesture has updated.
@@ -76,7 +74,7 @@ void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* manager,
 
 /**
  * fl_scrolling_manager_handle_rotation_end:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  *
  * Inform the scrolling manager that a rotation gesture has ended.
  */
@@ -84,7 +82,7 @@ void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_zoom_begin:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  *
  * Inform the scrolling manager that a zoom gesture has begun.
  */
@@ -92,7 +90,7 @@ void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* manager);
 
 /**
  * fl_scrolling_manager_handle_zoom_update:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  * @scale: the zoom scale.
  *
  * Inform the scrolling manager that a zoom gesture has updated.
@@ -102,7 +100,7 @@ void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* manager,
 
 /**
  * fl_scrolling_manager_handle_zoom_end:
- * @manager: the #FlScrollingManager self.
+ * @manager: an #FlScrollingManager.
  *
  * Inform the scrolling manager that a zoom gesture has ended.
  */

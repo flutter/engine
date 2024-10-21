@@ -513,6 +513,26 @@ FlutterEngineResult FlutterEngineUnregisterExternalTexture(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count) {
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         const FlutterAddViewInfo* info) {
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            const FlutterRemoveViewInfo* info) {
+  return kSuccess;
+}
+
 }  // namespace
 
 FlutterEngineResult FlutterEngineGetProcAddresses(
@@ -552,5 +572,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   table->UnregisterExternalTexture = &FlutterEngineUnregisterExternalTexture;
   table->UpdateAccessibilityFeatures =
       &FlutterEngineUpdateAccessibilityFeatures;
+  table->NotifyDisplayUpdate = &FlutterEngineNotifyDisplayUpdate;
+  table->AddView = &FlutterEngineAddView;
+  table->RemoveView = &FlutterEngineRemoveView;
   return kSuccess;
 }

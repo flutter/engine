@@ -11,6 +11,7 @@
 
 #include "flutter/display_list/geometry/dl_region.h"
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 
@@ -143,7 +144,7 @@ class DlRTree : public SkRefCnt {
               std::vector<int>* results) const;
 
   std::vector<Node> nodes_;
-  int leaf_count_;
+  int leaf_count_ = 0;
   int invalid_id_;
   mutable std::optional<DlRegion> region_;
 };

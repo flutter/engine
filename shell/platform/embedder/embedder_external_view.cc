@@ -7,6 +7,8 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrRecordingContext.h"
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
@@ -43,7 +45,7 @@ EmbedderExternalView::~EmbedderExternalView() = default;
 
 EmbedderExternalView::RenderTargetDescriptor
 EmbedderExternalView::CreateRenderTargetDescriptor() const {
-  return {view_identifier_, render_surface_size_};
+  return RenderTargetDescriptor(render_surface_size_);
 }
 
 DlCanvas* EmbedderExternalView::GetCanvas() {
@@ -62,9 +64,8 @@ bool EmbedderExternalView::HasPlatformView() const {
   return view_identifier_.platform_view_id.has_value();
 }
 
-std::list<SkRect> EmbedderExternalView::GetEngineRenderedContentsRegion(
-    const SkRect& query) const {
-  return slice_->searchNonOverlappingDrawnRects(query);
+const DlRegion& EmbedderExternalView::GetDlRegion() const {
+  return slice_->getRegion();
 }
 
 bool EmbedderExternalView::HasEngineRenderedContents() {
@@ -75,6 +76,7 @@ bool EmbedderExternalView::HasEngineRenderedContents() {
   DlOpSpy dl_op_spy;
   slice_->dispatch(dl_op_spy);
   has_engine_rendered_contents_ = dl_op_spy.did_draw() && !slice_->is_empty();
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return has_engine_rendered_contents_.value();
 }
 
@@ -87,7 +89,29 @@ const EmbeddedViewParams* EmbedderExternalView::GetEmbeddedViewParams() const {
   return embedded_view_params_.get();
 }
 
-bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
+// TODO(https://github.com/flutter/flutter/issues/151670): Implement this for
+//  Impeller as well.
+#if !SLIMPELLER
+static void InvalidateApiState(SkSurface& skia_surface) {
+  auto recording_context = skia_surface.recordingContext();
+
+  // Should never happen.
+  FML_DCHECK(recording_context) << "Recording context was null.";
+
+  auto direct_context = recording_context->asDirectContext();
+  if (direct_context == nullptr) {
+    // Can happen when using software rendering.
+    // Print an error but otherwise continue in that case.
+    FML_LOG(ERROR) << "Embedder asked to invalidate cached graphics API state "
+                      "but Flutter is not using a graphics API.";
+  } else {
+    direct_context->resetContext(kAll_GrBackendState);
+  }
+}
+#endif
+
+bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
+                                  bool clear_surface) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
   TryEndRecording();
   FML_DCHECK(HasEngineRenderedContents())
@@ -102,18 +126,52 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
     auto dl_builder = DisplayListBuilder();
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
+    auto display_list = dl_builder.Build();
 
-    auto dispatcher = impeller::DlDispatcher();
-    dispatcher.drawDisplayList(dl_builder.Build(), 1);
-    return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
-                                *impeller_target);
+    auto cull_rect =
+        impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
+    SkIRect sk_cull_rect =
+        SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+
+    return impeller::RenderToOnscreen(aiks_context->GetContentContext(),  //
+                                      *impeller_target,                   //
+                                      display_list,                       //
+                                      sk_cull_rect,                       //
+                                      /*reset_host_buffer=*/true          //
+    );
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
+#if SLIMPELLER
+  FML_LOG(FATAL) << "Impeller opt-out unavailable.";
+  return false;
+#else   // SLIMPELLER
   auto skia_surface = render_target.GetSkiaSurface();
   if (!skia_surface) {
     return false;
   }
+
+  auto [ok, invalidate_api_state] = render_target.MaybeMakeCurrent();
+
+  if (invalidate_api_state) {
+    InvalidateApiState(*skia_surface);
+  }
+  if (!ok) {
+    FML_LOG(ERROR) << "Could not make the surface current.";
+    return false;
+  }
+
+  // Clear the current render target (most likely EGLSurface) at the
+  // end of this scope.
+  fml::ScopedCleanupClosure clear_current_surface([&]() {
+    auto [ok, invalidate_api_state] = render_target.MaybeClearCurrent();
+    if (invalidate_api_state) {
+      InvalidateApiState(*skia_surface);
+    }
+    if (!ok) {
+      FML_LOG(ERROR) << "Could not clear the current surface.";
+    }
+  });
 
   FML_DCHECK(render_target.GetRenderTargetSize() == render_surface_size_);
 
@@ -124,10 +182,13 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   DlSkCanvasAdapter dl_canvas(canvas);
   int restore_count = dl_canvas.GetSaveCount();
   dl_canvas.SetTransform(surface_transformation_);
-  dl_canvas.Clear(DlColor::kTransparent());
+  if (clear_surface) {
+    dl_canvas.Clear(DlColor::kTransparent());
+  }
   slice_->render_into(&dl_canvas);
   dl_canvas.RestoreToCount(restore_count);
   dl_canvas.Flush();
+#endif  //  !SLIMPELLER
 
   return true;
 }

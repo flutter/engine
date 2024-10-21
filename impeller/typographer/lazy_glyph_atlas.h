@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
 
-#include <unordered_map>
-
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -21,12 +19,16 @@ class LazyGlyphAtlas {
 
   ~LazyGlyphAtlas();
 
-  void AddTextFrame(const TextFrame& frame, Scalar scale);
+  void AddTextFrame(const TextFrame& frame,
+                    Scalar scale,
+                    Point offset,
+                    const GlyphProperties& properties);
 
   void ResetTextFrames();
 
-  std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
+  const std::shared_ptr<GlyphAtlas>& CreateOrGetGlyphAtlas(
       Context& context,
+      HostBuffer& host_buffer,
       GlyphAtlas::Type type) const;
 
  private:
@@ -36,10 +38,14 @@ class LazyGlyphAtlas {
   FontGlyphMap color_glyph_map_;
   std::shared_ptr<GlyphAtlasContext> alpha_context_;
   std::shared_ptr<GlyphAtlasContext> color_context_;
-  mutable std::unordered_map<GlyphAtlas::Type, std::shared_ptr<GlyphAtlas>>
-      atlas_map_;
+  mutable std::shared_ptr<GlyphAtlas> alpha_atlas_;
+  mutable std::shared_ptr<GlyphAtlas> color_atlas_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(LazyGlyphAtlas);
+  LazyGlyphAtlas(const LazyGlyphAtlas&) = delete;
+
+  LazyGlyphAtlas& operator=(const LazyGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_

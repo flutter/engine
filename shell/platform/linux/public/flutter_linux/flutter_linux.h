@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FLUTTER_LINUX_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FLUTTER_LINUX_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FLUTTER_LINUX_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FLUTTER_LINUX_H_
 
 #define __FLUTTER_LINUX_INSIDE__
 
+#include <flutter_linux/fl_application.h>
 #include <flutter_linux/fl_basic_message_channel.h>
 #include <flutter_linux/fl_binary_codec.h>
 #include <flutter_linux/fl_binary_messenger.h>
@@ -34,4 +35,4 @@
 
 #undef __FLUTTER_LINUX_INSIDE__
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FLUTTER_LINUX_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FLUTTER_LINUX_H_

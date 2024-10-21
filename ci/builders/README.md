@@ -7,10 +7,6 @@ the sub-build-generated artifacts explicitly. The Build Definition Language, Eng
 Recipes V2 and the generation of artifacts using GN+Ninja set the groundwork
 for efficient builds with dependency reusability.
 
-**Author: Godofredo Contreras (godofredoc)**\
-**Go Link: flutter.dev/go/engine-build-definition-language**\
-**Created:** 01/2023   /  **Last updated:** 04/2023
-
 ## Glossary
 
 * **[recipes](https://github.com/luci/recipes-py)** - domain specific
@@ -56,7 +52,7 @@ in the `config_name` under `properties`:
     properties:
       config_name: mac_android_aot_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14e300c" }
+        { "sdk_version": "15a240d" }
 
 ```
 
@@ -143,13 +139,14 @@ The following is the high level structure of the build component:
            "generators": [],
            "ninja": {},
            "tests": []
+           "postsubmit_overrides": {}
 }
 ```
 
 Each build element will be translated to an independent sub-build and its
 entire out directory will be uploaded to CAS.
 
-`gn`, `ninja`, `generators` and `tests` properties are optional. Gn and
+`gn`, `ninja`, `generators`, `tests` and `postsubmit_overrides` properties are optional. Gn and
 ninja properties can be used without generators or tests. Generators with
 no gn and ninja properties is also supported.
 
@@ -295,12 +292,13 @@ configuration.
 "tests": [
    {
        "language": "python3",
+       "test_timeout_secs": 600,
        "name": "Host Tests for host_debug_impeller_vulkan",
        "parameters": [
            "--variant",
            "host_debug_impeller_vulkan",
            "--type",
-           "impeller-vulkan",
+           "impeller",
            "--engine-capture-core-dump"
        ],
        "script": "flutter/testing/run_tests.py",
@@ -316,6 +314,8 @@ In general any executable found in the path can be used as language. The
 default is empty which means no interpreter will be used to run the script
 and it is assumed the script is already an executable with the right
 permissions to run in the target platform.
+* **test_timeout_secs** - the timeout in seconds for the step running the test. This value overrides the
+default 1 hour timeout. When debugging, or if a third-party program is known to misbehave, it is recommended to add timeouts to allow LUCI services to collect logs.
 * **name** - the name of the step running the script.
 * **parameters** - flags or parameters passed to the script. Parameters
 accept magic environment variables(placeholders replaced before executing
@@ -325,6 +325,8 @@ directory.
 * **contexts** - a list of available contexts to add to the text execution step.
 The list of supported contexts can be found [here](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#687). As of 06/20/23 two contexts are supported:
 "android_virtual_device" and "metric_center_token".
+* **test_if** - a regex of what branches this test should run on. Defaults
+to everywhere.
 
 The test scripts will run in a deferred context (failing the step only after
 logs have been uploaded). Tester and builder recipes provide an environment
@@ -340,6 +342,33 @@ to an [environment variable "token_path"](https://flutter.googlesource.com/recip
 Note that to keep the recipes generic they don’t know anything about what
 the test script is doing and it is the responsibility of the test script to
 copy the relevant files to the FLUTTER\_LOGS\_DIR directory.
+
+#### postsubmit_overrides
+
+Used to override top level build properties for postsubmit environments. An example is when we need to run different gn commands for presubmit and postsubmit
+environments. Currently only `gn` override is supported.
+
+```json
+{
+   "name": "host_debug",
+   "gn": [
+      "--runtime-mode",
+      "debug",
+      "--prebuilt-dart-sdk",
+      "--build-embedder-examples"
+   ],
+   "ninja": {},
+   "postsubmit_overrides": {
+     "gn": [
+        "--runtime-mode",
+        "release"
+     ],
+   }
+}
+```
+
+The example above shows how to override the gn command for postsubmit builds of host_debug.
+
 
 #### Generators
 
@@ -402,7 +431,7 @@ be relative to the checkout directory.
         "--simulator-arm64-out-dir",
         "out/ios_debug_sim_arm64"
     ],
-    "script": "flutter/sky/tools/create_full_ios_framework.py",
+    "script": "flutter/sky/tools/create_ios_framework.py",
     "language": "python3"
 }
 ```
@@ -486,7 +515,8 @@ Engine test example:
               "--shard-variants=host_debug"
             ],
             "max_attempts": 1,
-            "script": "flutter/ci/clang_tidy.sh"
+            "script": "flutter/ci/clang_tidy.sh",
+            "test_timeout_secs": 600,
          }
        ]
     }
@@ -533,6 +563,8 @@ The property's description is as follows:
 * **parameters** a list of parameters passed to the script execution.
 * **max_attempts** an integer with the maximum number of runs in case of failure.
 * **script** the path relative to checkout/src/ to run.
+* **test_timeout_secs** - the timeout in seconds for the step running the test. This value overrides the
+default 1 hour timeout. When debugging, or if a third-party program is known to misbehave, it is recommended to add timeouts to allow LUCI services to collect logs.
 
 ### Global Generators
 
@@ -625,7 +657,11 @@ copied verbatim from the executions details of the build.
 The following example will run the generator to create the ios artifacts:
 
 ```bash
-python3 flutter/sky/tools/create_full_ios_framework.py --dst out/release \
---arm64-out-dir out/ios_release --simulator-x64-out-dir out/ios_debug_sim \
---simulator-arm64-out-dir out/ios_debug_sim_arm64 --dsym --strip
+python3 flutter/sky/tools/create_ios_framework.py   \
+  --dst out/release                                 \
+  --arm64-out-dir out/ios_release                   \
+  --simulator-x64-out-dir out/ios_debug_sim         \
+  --simulator-arm64-out-dir out/ios_debug_sim_arm64 \
+  --dsym                                            \
+  --strip
 ```

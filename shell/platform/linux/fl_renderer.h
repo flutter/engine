@@ -7,10 +7,10 @@
 
 #include <gtk/gtk.h>
 
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
-
 #include "flutter/shell/platform/embedder/embedder.h"
+
+#include "flutter/shell/platform/linux/fl_renderable.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
 G_BEGIN_DECLS
 
@@ -20,7 +20,9 @@ G_BEGIN_DECLS
  */
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_RENDERER_ERROR_FAILED,
+  // NOLINTEND(readability-identifier-naming)
 } FlRendererError;
 
 GQuark fl_renderer_error_quark(void) G_GNUC_CONST;
@@ -37,96 +39,65 @@ struct _FlRendererClass {
   GObjectClass parent_class;
 
   /**
-   * Virtual method called when Flutter needs #GdkGLContext to render.
+   * Virtual method called when Flutter needs to make the OpenGL context
+   * current.
    * @renderer: an #FlRenderer.
-   * @widget: the widget being rendered on.
-   * @visible: (out): the GL context for visible surface.
-   * @resource: (out): the GL context for resource loading.
-   * @error: (allow-none): #GError location to store the error occurring, or
-   * %NULL to ignore.
-   *
-   * Returns: %TRUE if both contexts were created, %FALSE if there was an error.
    */
-  gboolean (*create_contexts)(FlRenderer* renderer,
-                              GtkWidget* widget,
-                              GdkGLContext** visible,
-                              GdkGLContext** resource,
-                              GError** error);
+  void (*make_current)(FlRenderer* renderer);
 
   /**
-   * Virtual method called when Flutter needs OpenGL proc address.
+   * Virtual method called when Flutter needs to make the OpenGL resource
+   * context current.
    * @renderer: an #FlRenderer.
-   * @name: proc name.
-   *
-   * Returns: OpenGL proc address.
    */
-  void* (*get_proc_address)();
+  void (*make_resource_current)(FlRenderer* renderer);
 
   /**
-   * Virtual method called when Flutter needs a backing store for a specific
-   * #FlutterLayer.
+   * Virtual method called when Flutter needs to clear the OpenGL context.
    * @renderer: an #FlRenderer.
-   * @config: backing store config.
-   * @backing_store_out: saves created backing store.
-   *
-   * Returns %TRUE if successful.
    */
-  gboolean (*create_backing_store)(FlRenderer* renderer,
-                                   const FlutterBackingStoreConfig* config,
-                                   FlutterBackingStore* backing_store_out);
+  void (*clear_current)(FlRenderer* renderer);
 
   /**
-   * Virtual method called when Flutter wants to release the backing store.
+   * Virtual method called when Flutter wants to get the refresh rate of the
+   * renderer.
    * @renderer: an #FlRenderer.
-   * @backing_store: backing store to be released.
    *
-   * Returns %TRUE if successful.
+   * Returns: The refresh rate of the display in Hz. If the refresh rate is
+   * not available, returns -1.0.
    */
-  gboolean (*collect_backing_store)(FlRenderer* renderer,
-                                    const FlutterBackingStore* backing_store);
-
-  /**
-   * Virtual method called when Flutter wants to composite layers onto the
-   * screen.
-   * @renderer: an #FlRenderer.
-   * @layers: layers to be composited.
-   * @layers_count: number of layers.
-   *
-   * Returns %TRUE if successful.
-   */
-  gboolean (*present_layers)(FlRenderer* renderer,
-                             const FlutterLayer** layers,
-                             size_t layers_count);
+  gdouble (*get_refresh_rate)(FlRenderer* renderer);
 };
 
 /**
- * fl_renderer_start:
+ * fl_renderer_set_engine:
  * @renderer: an #FlRenderer.
- * @view: the view Flutter is renderering to.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
+ * @engine: an #FlEngine.
  *
- * Start the renderer.
- *
- * Returns: %TRUE if successfully started.
+ * Called when the renderer is connected to an engine.
  */
-gboolean fl_renderer_start(FlRenderer* renderer, FlView* view, GError** error);
+void fl_renderer_set_engine(FlRenderer* renderer, FlEngine* engine);
 
 /**
- * fl_renderer_get_view:
+ * fl_renderer_add_renderable:
  * @renderer: an #FlRenderer.
+ * @view_id: the ID of the view.
+ * @renderable: object that is to be rendered on.
  *
- * Returns: targeted #FlView or %NULL if headless.
+ * Add a view to render on.
  */
-FlView* fl_renderer_get_view(FlRenderer* renderer);
+void fl_renderer_add_renderable(FlRenderer* renderer,
+                                FlutterViewId view_id,
+                                FlRenderable* renderable);
 
 /**
- * fl_renderer_get_context:
+ * fl_renderer_remove_view:
  * @renderer: an #FlRenderer.
+ * @view_id: the ID of the view.
  *
- * Returns: GL context for GLAreas or %NULL if headless.
+ * Remove a view from the renderer.
  */
-GdkGLContext* fl_renderer_get_context(FlRenderer* renderer);
+void fl_renderer_remove_view(FlRenderer* renderer, FlutterViewId view_id);
 
 /**
  * fl_renderer_get_proc_address:
@@ -142,39 +113,26 @@ void* fl_renderer_get_proc_address(FlRenderer* renderer, const char* name);
 /**
  * fl_renderer_make_current:
  * @renderer: an #FlRenderer.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
  *
  * Makes the rendering context current.
- *
- * Returns %TRUE if successful.
  */
-gboolean fl_renderer_make_current(FlRenderer* renderer, GError** error);
+void fl_renderer_make_current(FlRenderer* renderer);
 
 /**
  * fl_renderer_make_resource_current:
  * @renderer: an #FlRenderer.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
  *
  * Makes the resource rendering context current.
- *
- * Returns %TRUE if successful.
  */
-gboolean fl_renderer_make_resource_current(FlRenderer* renderer,
-                                           GError** error);
+void fl_renderer_make_resource_current(FlRenderer* renderer);
 
 /**
  * fl_renderer_clear_current:
  * @renderer: an #FlRenderer.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
  *
  * Clears the current rendering context.
- *
- * Returns %TRUE if successful.
  */
-gboolean fl_renderer_clear_current(FlRenderer* renderer, GError** error);
+void fl_renderer_clear_current(FlRenderer* renderer);
 
 /**
  * fl_renderer_get_fbo:
@@ -218,6 +176,7 @@ gboolean fl_renderer_collect_backing_store(
 /**
  * fl_renderer_present_layers:
  * @renderer: an #FlRenderer.
+ * @view_id: view to present.
  * @layers: layers to be composited.
  * @layers_count: number of layers.
  *
@@ -227,6 +186,7 @@ gboolean fl_renderer_collect_backing_store(
  * Returns %TRUE if successful.
  */
 gboolean fl_renderer_present_layers(FlRenderer* renderer,
+                                    FlutterViewId view_id,
                                     const FlutterLayer** layers,
                                     size_t layers_count);
 
@@ -243,6 +203,48 @@ gboolean fl_renderer_present_layers(FlRenderer* renderer,
 void fl_renderer_wait_for_frame(FlRenderer* renderer,
                                 int target_width,
                                 int target_height);
+
+/**
+ * fl_renderer_setup:
+ * @renderer: an #FlRenderer.
+ *
+ * Creates OpenGL resources required before rendering. Requires an active OpenGL
+ * context.
+ */
+void fl_renderer_setup(FlRenderer* renderer);
+
+/**
+ * fl_renderer_render:
+ * @renderer: an #FlRenderer.
+ * @view_id: view to render.
+ * @width: width of the window in pixels.
+ * @height: height of the window in pixels.
+ * @background_color: color to use for background.
+ *
+ * Performs OpenGL commands to render current Flutter view.
+ */
+void fl_renderer_render(FlRenderer* renderer,
+                        FlutterViewId view_id,
+                        int width,
+                        int height,
+                        const GdkRGBA* background_color);
+
+/**
+ * fl_renderer_cleanup:
+ *
+ * Removes OpenGL resources used for rendering. Requires an active OpenGL
+ * context.
+ */
+void fl_renderer_cleanup(FlRenderer* renderer);
+
+/**
+ * fl_renderer_get_refresh_rate:
+ * @renderer: an #FlRenderer.
+ *
+ * Returns: The refresh rate of the display in Hz. If the refresh rate is
+ * not available, returns -1.0.
+ */
+gdouble fl_renderer_get_refresh_rate(FlRenderer* renderer);
 
 G_END_DECLS
 

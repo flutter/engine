@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_COMPUTE_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_COMPUTE_PLAYGROUND_TEST_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/testing/testing.h"
 #include "impeller/core/device_buffer.h"
-#include "impeller/geometry/scalar.h"
 #include "impeller/playground/playground.h"
 
 namespace impeller {
@@ -31,15 +30,12 @@ class ComputePlaygroundTest
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
 
-  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
-      const char* asset_name) const;
-
   // |Playground|
   std::string GetWindowTitle() const override;
 
   template <typename T>
   std::shared_ptr<DeviceBuffer> CreateHostVisibleDeviceBuffer(
-      std::shared_ptr<Context> context,
+      const std::shared_ptr<Context>& context,
       const std::string& label) {
     DeviceBufferDescriptor desc;
     desc.storage_mode = StorageMode::kHostVisible;
@@ -52,7 +48,9 @@ class ComputePlaygroundTest
  private:
   fml::TimeDelta start_time_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ComputePlaygroundTest);
+  ComputePlaygroundTest(const ComputePlaygroundTest&) = delete;
+
+  ComputePlaygroundTest& operator=(const ComputePlaygroundTest&) = delete;
 };
 
 #define INSTANTIATE_COMPUTE_SUITE(playground)                              \
@@ -64,3 +62,5 @@ class ComputePlaygroundTest
              info) { return PlaygroundBackendToString(info.param); });
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_COMPUTE_PLAYGROUND_TEST_H_

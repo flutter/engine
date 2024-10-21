@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
-#define FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#ifndef FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#define FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
 #include <vector>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/mock_layer.h"
-#include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -31,7 +30,7 @@ class MockRasterCacheResult : public RasterCacheResult {
 
   void draw(DlCanvas& canvas,
             const DlPaint* paint = nullptr,
-            bool preserve_rtree = false) const override{};
+            bool preserve_rtree = false) const override {};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
@@ -63,7 +62,7 @@ class MockRasterCache : public RasterCache {
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {
     preroll_state_stack_.set_preroll_delegate(SkMatrix::I());
-    paint_state_stack_.set_delegate(&mock_canvas_);
+    paint_state_stack_.set_delegate(&builder_);
   }
 
   void AddMockLayer(int width, int height);
@@ -72,7 +71,7 @@ class MockRasterCache : public RasterCache {
  private:
   LayerStateStack preroll_state_stack_;
   LayerStateStack paint_state_stack_;
-  MockCanvas mock_canvas_;
+  DisplayListBuilder builder_;
   sk_sp<SkColorSpace> color_space_ = SkColorSpace::MakeSRGB();
   MutatorsStack mutators_stack_;
   FixedRefreshRateStopwatch raster_time_;
@@ -84,7 +83,7 @@ class MockRasterCache : public RasterCache {
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
       .state_stack                   = preroll_state_stack_,
-      .dst_color_space               = color_space_.get(),
+      .dst_color_space               = color_space_,
       .surface_needs_readback        = false,
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,
@@ -100,7 +99,7 @@ class MockRasterCache : public RasterCache {
       .state_stack                   = paint_state_stack_,
       .canvas                        = nullptr,
       .gr_context                    = nullptr,
-      .dst_color_space               = color_space_.get(),
+      .dst_color_space               = color_space_,
       .view_embedder                 = nullptr,
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,
@@ -149,4 +148,4 @@ bool RasterCacheItemTryToRasterCache(
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#endif  // FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_

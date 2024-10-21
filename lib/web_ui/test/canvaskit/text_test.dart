@@ -97,81 +97,34 @@ void testMain() {
     group('test fonts in flutterTester environment', () {
       final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
       ui_web.debugEmulateFlutterTesterEnvironment = true;
-      tearDownAll(() => ui_web.debugEmulateFlutterTesterEnvironment = resetValue);
+      tearDownAll(() {
+        ui_web.debugEmulateFlutterTesterEnvironment = resetValue;
+      });
       const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
 
       test('The default test font is used when a non-test fontFamily is specified', () {
         final String defaultTestFontFamily = testFonts.first;
 
-        expect(CkTextStyle(fontFamily: 'BogusFontFamily').fontFamily, defaultTestFontFamily);
-        expect(CkParagraphStyle(fontFamily: 'BogusFontFamily').getTextStyle().fontFamily, defaultTestFontFamily);
+        expect(CkTextStyle(fontFamily: 'BogusFontFamily').effectiveFontFamily, defaultTestFontFamily);
+        expect(CkParagraphStyle(fontFamily: 'BogusFontFamily').getTextStyle().effectiveFontFamily, defaultTestFontFamily);
         expect(CkStrutStyle(fontFamily: 'BogusFontFamily'), CkStrutStyle(fontFamily: defaultTestFontFamily));
       });
 
       test('The default test font is used when fontFamily is unspecified', () {
         final String defaultTestFontFamily = testFonts.first;
 
-        expect(CkTextStyle().fontFamily, defaultTestFontFamily);
-        expect(CkParagraphStyle().getTextStyle().fontFamily, defaultTestFontFamily);
+        expect(CkTextStyle().effectiveFontFamily, defaultTestFontFamily);
+        expect(CkParagraphStyle().getTextStyle().effectiveFontFamily, defaultTestFontFamily);
         expect(CkStrutStyle(), CkStrutStyle(fontFamily: defaultTestFontFamily));
       });
 
       test('Can specify test fontFamily to use', () {
         for (final String testFont in testFonts) {
-          expect(CkTextStyle(fontFamily: testFont).fontFamily, testFont);
-          expect(CkParagraphStyle(fontFamily: testFont).getTextStyle().fontFamily, testFont);
+          expect(CkTextStyle(fontFamily: testFont).effectiveFontFamily, testFont);
+          expect(CkParagraphStyle(fontFamily: testFont).getTextStyle().effectiveFontFamily, testFont);
         }
       });
     });
-
-    test('rounding hack disabled by default', () {
-      expect(ui.ParagraphBuilder.shouldDisableRoundingHack, isTrue);
-
-      const double fontSize = 1.25;
-      const String text = '12345';
-      assert((fontSize * text.length).truncate() != fontSize * text.length);
-      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
-        ui.ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'),
-      );
-      builder.addText(text);
-      final ui.Paragraph paragraph = builder.build()
-        ..layout(const ui.ParagraphConstraints(width: text.length * fontSize));
-
-      expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
-      switch (paragraph.computeLineMetrics()) {
-        case [ui.LineMetrics(width: final double width)]:
-          expect(width, text.length * fontSize);
-        case final List<ui.LineMetrics> metrics:
-          expect(metrics, hasLength(1));
-      }
-    });
-
-    test('setDisableRoundinghHack to false works in tests', () {
-      bool assertsEnabled = false;
-      assert(() {
-        assertsEnabled = true;
-        return true;
-      }());
-      if (!assertsEnabled){
-        return;
-      }
-
-      if (ui.ParagraphBuilder.shouldDisableRoundingHack) {
-        ui.ParagraphBuilder.setDisableRoundingHack(false);
-        addTearDown(() => ui.ParagraphBuilder.setDisableRoundingHack(true));
-      }
-
-      assert(!ui.ParagraphBuilder.shouldDisableRoundingHack);
-      const double fontSize = 1.25;
-      const String text = '12345';
-      assert((fontSize * text.length).truncate() != fontSize * text.length);
-      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'));
-      builder.addText(text);
-      final ui.Paragraph paragraph = builder.build()
-        ..layout(const ui.ParagraphConstraints(width: text.length * fontSize));
-      expect(paragraph.computeLineMetrics().length, greaterThan(1));
-    });
-
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);
 }

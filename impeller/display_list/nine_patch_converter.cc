@@ -57,11 +57,11 @@ std::vector<double> NinePatchConverter::InitSlices(double img0,
   // clang-format on
 }
 
-void NinePatchConverter::DrawNinePatch(const std::shared_ptr<Image>& image,
+void NinePatchConverter::DrawNinePatch(const std::shared_ptr<Texture>& image,
                                        Rect center,
                                        Rect dst,
                                        const SamplerDescriptor& sampler,
-                                       CanvasType* canvas,
+                                       Canvas* canvas,
                                        Paint* paint) {
   if (dst.IsEmpty()) {
     return;
@@ -86,7 +86,7 @@ void NinePatchConverter::DrawNinePatch(const std::shared_ptr<Image>& image,
       // DrawImageAtlas.
       canvas->DrawImageRect(image, Rect::MakeLTRB(srcX0, srcY0, srcX1, srcY1),
                             Rect::MakeLTRB(dstX0, dstY0, dstX1, dstY1), *paint,
-                            sampler);
+                            sampler, SourceRectConstraint::kStrict);
     }
   }
 }

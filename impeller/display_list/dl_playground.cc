@@ -5,11 +5,15 @@
 #include "impeller/display_list/dl_playground.h"
 
 #include "flutter/testing/testing.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 
 namespace impeller {
 
@@ -41,41 +45,45 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
           wireframe = !wireframe;
           context.GetContentContext().SetWireframe(wireframe);
         }
-
-        auto list = callback();
-
-        DlDispatcher dispatcher;
-        list->Dispatch(dispatcher);
-        auto picture = dispatcher.EndRecordingAsPicture();
-
-        return context.Render(picture, render_target);
+        return RenderToOnscreen(
+            context.GetContentContext(),  //
+            render_target,                //
+            callback(),                   //
+            SkIRect::MakeWH(render_target.GetRenderTargetSize().width,
+                            render_target.GetRenderTargetSize().height),  //
+            /*reset_host_buffer=*/true                                    //
+        );
       });
 }
 
-static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
-  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!mapping) {
-    return nullptr;
-  }
-  auto data = SkData::MakeWithProc(
-      mapping->GetMapping(), mapping->GetSize(),
-      [](const void* ptr, void* context) {
-        delete reinterpret_cast<fml::Mapping*>(context);
-      },
-      mapping.get());
-  mapping.release();
-  return data;
+std::unique_ptr<testing::Screenshot> DlPlayground::MakeScreenshot(
+    const sk_sp<flutter::DisplayList>& list) {
+  return nullptr;
 }
 
 SkFont DlPlayground::CreateTestFontOfSize(SkScalar scalar) {
   static constexpr const char* kTestFontFixture = "Roboto-Regular.ttf";
-  auto mapping = OpenFixtureAsSkData(kTestFontFixture);
+  auto mapping = flutter::testing::OpenFixtureAsSkData(kTestFontFixture);
   FML_CHECK(mapping);
-  return SkFont{SkTypeface::MakeFromData(mapping), scalar};
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  return SkFont{font_mgr->makeFromData(mapping), scalar};
 }
 
 SkFont DlPlayground::CreateTestFont() {
   return CreateTestFontOfSize(50);
+}
+
+sk_sp<flutter::DlImage> DlPlayground::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
+  std::shared_ptr<fml::Mapping> mapping =
+      flutter::testing::OpenFixtureAsMapping(fixture_name);
+  std::shared_ptr<Texture> texture = Playground::CreateTextureForMapping(
+      GetContext(), mapping, enable_mipmapping);
+  if (texture) {
+    texture->SetLabel(fixture_name);
+  }
+  return DlImageImpeller::Make(texture);
 }
 
 }  // namespace impeller

@@ -19,7 +19,11 @@ static std::mutex g_test_lock;
 
 static std::weak_ptr<MockGLES> g_mock_gles;
 
+static ProcTableGLES::Resolver g_resolver;
+
 static std::vector<const unsigned char*> g_extensions;
+
+static const unsigned char* g_version;
 
 // Has friend visibility into MockGLES to record calls.
 void RecordGLCall(const char* name) {
@@ -38,7 +42,7 @@ struct CheckSameSignature<Ret(Args...), Ret(Args...)> : std::true_type {};
 void doNothing() {}
 
 auto const kMockVendor = (unsigned char*)"MockGLES";
-auto const kMockVersion = (unsigned char*)"3.0";
+const auto kMockShadingLanguageVersion = (unsigned char*)"GLSL ES 1.0";
 auto const kExtensions = std::vector<const unsigned char*>{
     (unsigned char*)"GL_KHR_debug"  //
 };
@@ -48,9 +52,9 @@ const unsigned char* mockGetString(GLenum name) {
     case GL_VENDOR:
       return kMockVendor;
     case GL_VERSION:
-      return kMockVersion;
+      return g_version;
     case GL_SHADING_LANGUAGE_VERSION:
-      return kMockVersion;
+      return kMockShadingLanguageVersion;
     default:
       return (unsigned char*)"";
   }
@@ -112,18 +116,68 @@ void mockPushDebugGroupKHR(GLenum source,
 static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
 
+void mockGenQueriesEXT(GLsizei n, GLuint* ids) {
+  RecordGLCall("glGenQueriesEXT");
+  for (auto i = 0; i < n; i++) {
+    ids[i] = i + 1;
+  }
+}
+
+static_assert(CheckSameSignature<decltype(mockGenQueriesEXT),  //
+                                 decltype(glGenQueriesEXT)>::value);
+
+void mockBeginQueryEXT(GLenum target, GLuint id) {
+  RecordGLCall("glBeginQueryEXT");
+}
+
+static_assert(CheckSameSignature<decltype(mockBeginQueryEXT),  //
+                                 decltype(glBeginQueryEXT)>::value);
+
+void mockEndQueryEXT(GLuint id) {
+  RecordGLCall("glEndQueryEXT");
+}
+
+static_assert(CheckSameSignature<decltype(mockEndQueryEXT),  //
+                                 decltype(glEndQueryEXT)>::value);
+
+void mockGetQueryObjectuivEXT(GLuint id, GLenum target, GLuint* result) {
+  RecordGLCall("glGetQueryObjectuivEXT");
+  *result = GL_TRUE;
+}
+
+static_assert(CheckSameSignature<decltype(mockGetQueryObjectuivEXT),  //
+                                 decltype(glGetQueryObjectuivEXT)>::value);
+
+void mockGetQueryObjectui64vEXT(GLuint id, GLenum target, GLuint64* result) {
+  RecordGLCall("glGetQueryObjectui64vEXT");
+  *result = 1000u;
+}
+
+static_assert(CheckSameSignature<decltype(mockGetQueryObjectui64vEXT),  //
+                                 decltype(glGetQueryObjectui64vEXT)>::value);
+
+void mockDeleteQueriesEXT(GLsizei size, const GLuint* queries) {
+  RecordGLCall("glDeleteQueriesEXT");
+}
+
+static_assert(CheckSameSignature<decltype(mockDeleteQueriesEXT),  //
+                                 decltype(glDeleteQueriesEXT)>::value);
+
 std::shared_ptr<MockGLES> MockGLES::Init(
-    const std::optional<std::vector<const unsigned char*>>& extensions) {
+    const std::optional<std::vector<const unsigned char*>>& extensions,
+    const char* version_string,
+    ProcTableGLES::Resolver resolver) {
   // If we cannot obtain a lock, MockGLES is already being used elsewhere.
   FML_CHECK(g_test_lock.try_lock())
       << "MockGLES is already being used by another test.";
+  g_version = (unsigned char*)version_string;
   g_extensions = extensions.value_or(kExtensions);
-  auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES());
+  auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES(std::move(resolver)));
   g_mock_gles = mock_gles;
   return mock_gles;
 }
 
-const ProcTableGLES::Resolver kMockResolver = [](const char* name) {
+const ProcTableGLES::Resolver kMockResolverGLES = [](const char* name) {
   if (strcmp(name, "glPopDebugGroupKHR") == 0) {
     return reinterpret_cast<void*>(&mockPopDebugGroupKHR);
   } else if (strcmp(name, "glPushDebugGroupKHR") == 0) {
@@ -136,12 +190,25 @@ const ProcTableGLES::Resolver kMockResolver = [](const char* name) {
     return reinterpret_cast<void*>(&mockGetIntegerv);
   } else if (strcmp(name, "glGetError") == 0) {
     return reinterpret_cast<void*>(&mockGetError);
+  } else if (strcmp(name, "glGenQueriesEXT") == 0) {
+    return reinterpret_cast<void*>(&mockGenQueriesEXT);
+  } else if (strcmp(name, "glBeginQueryEXT") == 0) {
+    return reinterpret_cast<void*>(&mockBeginQueryEXT);
+  } else if (strcmp(name, "glEndQueryEXT") == 0) {
+    return reinterpret_cast<void*>(&mockEndQueryEXT);
+  } else if (strcmp(name, "glDeleteQueriesEXT") == 0) {
+    return reinterpret_cast<void*>(&mockDeleteQueriesEXT);
+  } else if (strcmp(name, "glGetQueryObjectui64vEXT") == 0) {
+    return reinterpret_cast<void*>(mockGetQueryObjectui64vEXT);
+  } else if (strcmp(name, "glGetQueryObjectuivEXT") == 0) {
+    return reinterpret_cast<void*>(mockGetQueryObjectuivEXT);
   } else {
     return reinterpret_cast<void*>(&doNothing);
   }
 };
 
-MockGLES::MockGLES() : proc_table_(kMockResolver) {}
+MockGLES::MockGLES(ProcTableGLES::Resolver resolver)
+    : proc_table_(std::move(resolver)) {}
 
 MockGLES::~MockGLES() {
   g_test_lock.unlock();

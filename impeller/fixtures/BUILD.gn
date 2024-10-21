@@ -5,19 +5,47 @@
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
+impeller_shaders("modern_shader_fixtures") {
+  name = "modern_fixtures"
+
+  # 2.3 adds support for framebuffer fetch in Metal.
+  metal_version = "2.3"
+
+  # Specify that framebuffer fetch is required for all backends. Compilation of
+  # shaders will be gated on capability checks.
+  require_framebuffer_fetch = true
+
+  # These shaders are not performance critical and malioc analysis of shaders
+  # that use framebuffer fetch is unsupported anyway.
+  analyze = false
+
+  shaders = [
+    "sepia.frag",
+    "sepia.vert",
+    "swizzle.frag",
+  ]
+}
+
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
+
+  # 2.3 adds support for framebuffer fetch in Metal.
+  metal_version = "2.3"
 
   # Not analyzing because they are not performance critical, and mipmap uses
   # textureLod, which uses an extension that malioc does not support.
   analyze = false
+
   shaders = [
     "array.frag",
     "array.vert",
+    "baby.frag",
+    "baby.vert",
     "box_fade.frag",
     "box_fade.vert",
-    "colors.vert",
     "colors.frag",
+    "colors.vert",
+    "half.frag",
     "impeller.frag",
     "impeller.vert",
     "inactive_uniforms.frag",
@@ -26,13 +54,18 @@ impeller_shaders("shader_fixtures") {
     "instanced_draw.vert",
     "mipmaps.frag",
     "mipmaps.vert",
+    "planet.frag",
+    "planet.vert",
     "sample.comp",
+    "simple.vert",
+    "spec_constant.frag",
+    "spec_constant.vert",
     "stage1.comp",
     "stage2.comp",
-    "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
-    "half.frag",
+    "texture.frag",
+    "texture.vert",
   ]
 
   if (impeller_enable_opengles) {
@@ -45,22 +78,24 @@ impeller_shaders("shader_fixtures") {
   }
 }
 
-scenec("scene_fixtures") {
-  geometry = [
-    "flutter_logo_baked.glb",
-    "two_triangles.glb",
-  ]
-  type = "gltf"
-}
-
 impellerc("runtime_stages") {
   shaders = [
     "ink_sparkle.frag",
     "runtime_stage_example.frag",
+    "runtime_stage_simple.frag",
+    "runtime_stage_position.frag",
     "gradient.frag",
+    "uniforms_and_sampler_1.frag",
+    "uniforms_and_sampler_2.frag",
   ]
   sl_file_extension = "iplr"
-  shader_target_flag = "--runtime-stage-metal"
+
+  shader_target_flags = [
+    "--runtime-stage-metal",
+    "--runtime-stage-gles",
+    "--runtime-stage-vulkan",
+  ]
+
   iplr = true
 }
 
@@ -68,6 +103,7 @@ test_fixtures("file_fixtures") {
   fixtures = [
     "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
     "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     "airplane.jpg",
     "bay_bridge.jpg",
@@ -76,14 +112,17 @@ test_fixtures("file_fixtures") {
     "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
-    "flutter_logo_baked.glb",
+    "flutter_gpu_texture.frag",
+    "flutter_gpu_texture.vert",
+    "flutter_gpu_unlit.frag",
+    "flutter_gpu_unlit.vert",
     "kalimba.jpg",
+    "monkey.png",
     "multiple_stages.hlsl",
+    "nine_patch_corners.png",
     "resources_limit.vert",
     "sample.comp",
     "sample.frag",
-    "sample.tesc",
-    "sample.tese",
     "sample.vert",
     "sample_with_binding.vert",
     "simple.vert.hlsl",
@@ -91,6 +130,7 @@ test_fixtures("file_fixtures") {
     "stage1.comp",
     "stage2.comp",
     "struct_def_bug.vert",
+    "struct_internal.frag",
     "table_mountain_nx.png",
     "table_mountain_ny.png",
     "table_mountain_nz.png",
@@ -98,20 +138,42 @@ test_fixtures("file_fixtures") {
     "table_mountain_py.png",
     "table_mountain_pz.png",
     "test_texture.frag",
-    "two_triangles.glb",
     "types.h",
     "wtf.otf",
+    "texture_lookup.frag",
   ]
   if (host_os == "mac") {
     fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
   }
   fixtures +=
-      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ]) +
-      filter_include(get_target_outputs(":scene_fixtures"), [ "*.ipscene" ])
-  deps = [
-    ":runtime_stages",
-    ":scene_fixtures",
+      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
+  deps = [ ":runtime_stages" ]
+}
+
+impellerc("flutter_gpu_shaders") {
+  shaders = [
+    # Temporarily build Flutter GPU test shaders as runtime stages.
+    "flutter_gpu_unlit.frag",
+    "flutter_gpu_unlit.vert",
+    "flutter_gpu_texture.frag",
+    "flutter_gpu_texture.vert",
   ]
+
+  fixtures = rebase_path("//flutter/impeller/fixtures")
+  shader_bundle = "{\"UnlitFragment\": {\"type\": \"fragment\", \"file\": \"${fixtures}/flutter_gpu_unlit.frag\"}, \"UnlitVertex\": {\"type\": \"vertex\", \"file\": \"${fixtures}/flutter_gpu_unlit.vert\"}, \"TextureFragment\": {\"type\": \"fragment\", \"file\": \"${fixtures}/flutter_gpu_texture.frag\"}, \"TextureVertex\": {\"type\": \"vertex\", \"file\": \"${fixtures}/flutter_gpu_texture.vert\"}}"
+  shader_bundle_output = "playground.shaderbundle"
+}
+
+test_fixtures("flutter_gpu_fixtures") {
+  dart_main = "dart_tests.dart"
+
+  fixtures = filter_include(get_target_outputs(":flutter_gpu_shaders"),
+                            [
+                              "*.iplr",
+                              "*.shaderbundle",
+                            ])
+
+  deps = [ ":flutter_gpu_shaders" ]
 }
 
 group("fixtures") {
@@ -119,7 +181,7 @@ group("fixtures") {
 
   public_deps = [
     ":file_fixtures",
-    ":scene_fixtures",
+    ":modern_shader_fixtures",
     ":shader_fixtures",
   ]
 }

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/context_mtl.h"
+#include <Metal/Metal.h>
 
-#include <Foundation/Foundation.h>
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
@@ -12,6 +12,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/sync_switch.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
@@ -56,7 +57,6 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
   return CapabilitiesBuilder()
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
-      .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
       .SetSupportsDecalSamplerAddressMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
@@ -66,8 +66,10 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsCompute(true)
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
-      .SetSupportsReadFromOnscreenTexture(true)
       .SetSupportsDeviceTransientTextures(true)
+      .SetDefaultGlyphAtlasFormat(PixelFormat::kA8UNormInt)
+      .SetSupportsTriangleFan(false)
+      .SetMaximumRenderPassAttachmentSize(DeviceMaxTextureSizeSupported(device))
       .Build();
 }
 
@@ -75,7 +77,8 @@ ContextMTL::ContextMTL(
     id<MTLDevice> device,
     id<MTLCommandQueue> command_queue,
     NSArray<id<MTLLibrary>>* shader_libraries,
-    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
+    std::optional<PixelFormat> pixel_format_override)
     : device_(device),
       command_queue_(command_queue),
       is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)) {
@@ -87,24 +90,6 @@ ContextMTL::ContextMTL(
 
   sync_switch_observer_.reset(new SyncSwitchObserver(*this));
   is_gpu_disabled_sync_switch_->AddObserver(sync_switch_observer_.get());
-
-  // Worker task runner.
-  {
-    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-        std::min(4u, std::thread::hardware_concurrency()));
-    raster_message_loop_->PostTaskToAllWorkers([]() {
-      // See https://github.com/flutter/flutter/issues/65752
-      // Intentionally opt out of QoS for raster task workloads.
-      [[NSThread currentThread] setThreadPriority:1.0];
-      sched_param param;
-      int policy;
-      pthread_t thread = pthread_self();
-      if (!pthread_getschedparam(thread, &policy, &param)) {
-        param.sched_priority = 50;
-        pthread_setschedparam(thread, policy, &param);
-      }
-    });
-  }
 
   // Setup the shader library.
   {
@@ -146,9 +131,13 @@ ContextMTL::ContextMTL(
   }
 
   device_capabilities_ =
-      InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+      InferMetalCapabilities(device_, pixel_format_override.has_value()
+                                          ? pixel_format_override.value()
+                                          : PixelFormat::kB8G8R8A8UNormInt);
+  command_queue_ip_ = std::make_shared<CommandQueue>();
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
+  capture_manager_ = std::make_shared<ImpellerMetalCaptureManager>(device_);
 #endif  // IMPELLER_DEBUG
   is_valid_ = true;
 }
@@ -255,17 +244,18 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
     std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
-    const std::string& library_label) {
+    const std::string& library_label,
+    std::optional<PixelFormat> pixel_format_override) {
   auto device = CreateMetalDevice();
   auto command_queue = CreateMetalCommandQueue(device);
   if (!command_queue) {
     return nullptr;
   }
-  auto context = std::shared_ptr<ContextMTL>(
-      new ContextMTL(device, command_queue,
-                     MTLShaderLibraryFromFileData(device, shader_libraries_data,
-                                                  library_label),
-                     std::move(is_gpu_disabled_sync_switch)));
+  auto context = std::shared_ptr<ContextMTL>(new ContextMTL(
+      device, command_queue,
+      MTLShaderLibraryFromFileData(device, shader_libraries_data,
+                                   library_label),
+      std::move(is_gpu_disabled_sync_switch), pixel_format_override));
   if (!context->IsValid()) {
     FML_LOG(ERROR) << "Could not create Metal context.";
     return nullptr;
@@ -330,20 +320,13 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
 }
 
 // |Context|
-void ContextMTL::Shutdown() {
-  raster_message_loop_.reset();
-}
+void ContextMTL::Shutdown() {}
 
 #ifdef IMPELLER_DEBUG
 std::shared_ptr<GPUTracerMTL> ContextMTL::GetGPUTracer() const {
   return gpu_tracer_;
 }
 #endif  // IMPELLER_DEBUG
-
-const std::shared_ptr<fml::ConcurrentTaskRunner>
-ContextMTL::GetWorkerTaskRunner() const {
-  return raster_message_loop_->GetTaskRunner();
-}
 
 std::shared_ptr<const fml::SyncSwitch> ContextMTL::GetIsGpuDisabledSyncSwitch()
     const {
@@ -357,7 +340,7 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
   }
 
   auto buffer = std::shared_ptr<CommandBufferMTL>(
-      new CommandBufferMTL(weak_from_this(), queue));
+      new CommandBufferMTL(weak_from_this(), device_, queue));
   if (!buffer->IsValid()) {
     return nullptr;
   }
@@ -376,6 +359,11 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
   return device_capabilities_;
 }
 
+void ContextMTL::SetCapabilities(
+    const std::shared_ptr<const Capabilities>& capabilities) {
+  device_capabilities_ = capabilities;
+}
+
 // |Context|
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   device_capabilities_ = InferMetalCapabilities(device_, format);
@@ -391,19 +379,41 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
   return buffer;
 }
 
-void ContextMTL::StoreTaskForGPU(std::function<void()> task) {
-  tasks_awaiting_gpu_.emplace_back(std::move(task));
-  while (tasks_awaiting_gpu_.size() > kMaxTasksAwaitingGPU) {
-    tasks_awaiting_gpu_.front()();
-    tasks_awaiting_gpu_.pop_front();
+void ContextMTL::StoreTaskForGPU(const fml::closure& task,
+                                 const fml::closure& failure) {
+  std::vector<PendingTasks> failed_tasks;
+  {
+    Lock lock(tasks_awaiting_gpu_mutex_);
+    tasks_awaiting_gpu_.push_back(PendingTasks{task, failure});
+    int32_t failed_task_count =
+        tasks_awaiting_gpu_.size() - kMaxTasksAwaitingGPU;
+    if (failed_task_count > 0) {
+      failed_tasks.reserve(failed_task_count);
+      failed_tasks.insert(failed_tasks.end(),
+                          std::make_move_iterator(tasks_awaiting_gpu_.begin()),
+                          std::make_move_iterator(tasks_awaiting_gpu_.begin() +
+                                                  failed_task_count));
+      tasks_awaiting_gpu_.erase(
+          tasks_awaiting_gpu_.begin(),
+          tasks_awaiting_gpu_.begin() + failed_task_count);
+    }
+  }
+  for (const PendingTasks& task : failed_tasks) {
+    if (task.failure) {
+      task.failure();
+    }
   }
 }
 
 void ContextMTL::FlushTasksAwaitingGPU() {
-  for (const auto& task : tasks_awaiting_gpu_) {
-    task();
+  std::deque<PendingTasks> tasks_awaiting_gpu;
+  {
+    Lock lock(tasks_awaiting_gpu_mutex_);
+    std::swap(tasks_awaiting_gpu, tasks_awaiting_gpu_);
   }
-  tasks_awaiting_gpu_.clear();
+  for (const auto& task : tasks_awaiting_gpu) {
+    task.task();
+  }
 }
 
 ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
@@ -413,6 +423,42 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
   if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }
+}
+
+// |Context|
+std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
+  return command_queue_ip_;
+}
+
+#ifdef IMPELLER_DEBUG
+const std::shared_ptr<ImpellerMetalCaptureManager>
+ContextMTL::GetCaptureManager() const {
+  return capture_manager_;
+}
+#endif  // IMPELLER_DEBUG
+
+ImpellerMetalCaptureManager::ImpellerMetalCaptureManager(id<MTLDevice> device) {
+  current_capture_scope_ = [[MTLCaptureManager sharedCaptureManager]
+      newCaptureScopeWithDevice:device];
+  [current_capture_scope_ setLabel:@"Impeller Frame"];
+}
+
+bool ImpellerMetalCaptureManager::CaptureScopeActive() const {
+  return scope_active_;
+}
+
+void ImpellerMetalCaptureManager::StartCapture() {
+  if (scope_active_) {
+    return;
+  }
+  scope_active_ = true;
+  [current_capture_scope_ beginScope];
+}
+
+void ImpellerMetalCaptureManager::FinishCapture() {
+  FML_DCHECK(scope_active_);
+  [current_capture_scope_ endScope];
+  scope_active_ = false;
 }
 
 }  // namespace impeller

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
+#define FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +15,11 @@
 
 namespace impeller {
 
+#define ONLY_ON_FLOAT_M(Modifiers, Return) \
+  template <typename U = T>                \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Return>
+#define ONLY_ON_FLOAT(Return) DL_ONLY_ON_FLOAT_M(, Return)
+
 template <class T>
 struct TSize {
   using Type = T;
@@ -24,6 +30,9 @@ struct TSize {
   constexpr TSize() {}
 
   constexpr TSize(Type width, Type height) : width(width), height(height) {}
+
+  constexpr explicit TSize(Type dimension)
+      : width(dimension), height(dimension) {}
 
   template <class U>
   explicit constexpr TSize(const TSize<U>& other)
@@ -41,6 +50,13 @@ struct TSize {
 
   constexpr TSize operator*(Scalar scale) const {
     return {width * scale, height * scale};
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  inline TSize operator*=(U scale) {
+    width *= static_cast<Type>(scale);
+    height *= static_cast<Type>(scale);
+    return *this;
   }
 
   constexpr TSize operator/(Scalar scale) const {
@@ -68,6 +84,8 @@ struct TSize {
     return {width - s.width, height - s.height};
   }
 
+  constexpr TSize operator-() const { return {-width, -height}; }
+
   constexpr TSize Min(const TSize& o) const {
     return {
         std::min(width, o.width),
@@ -81,6 +99,8 @@ struct TSize {
         std::max(height, o.height),
     };
   }
+
+  constexpr Type MaxDimension() const { return std::max(width, height); }
 
   constexpr TSize Abs() const { return {std::fabs(width), std::fabs(height)}; }
 
@@ -96,13 +116,13 @@ struct TSize {
 
   constexpr Type Area() const { return width * height; }
 
-  constexpr bool IsPositive() const { return width > 0 && height > 0; }
+  /// Returns true if either of the width or height are 0, negative, or NaN.
+  constexpr bool IsEmpty() const { return !(width > 0 && height > 0); }
 
-  constexpr bool IsNegative() const { return width < 0 || height < 0; }
+  ONLY_ON_FLOAT_M(constexpr, bool)
+  IsFinite() const { return std::isfinite(width) && std::isfinite(height); }
 
-  constexpr bool IsZero() const { return width == 0 || height == 0; }
-
-  constexpr bool IsEmpty() const { return IsNegative() || IsZero(); }
+  constexpr bool IsSquare() const { return width == height; }
 
   template <class U>
   static constexpr TSize Ceil(const TSize<U>& other) {
@@ -112,7 +132,7 @@ struct TSize {
 
   constexpr size_t MipCount() const {
     constexpr size_t minimum_mip = 1u;
-    if (!IsPositive()) {
+    if (IsEmpty()) {
       return minimum_mip;
     }
     size_t result = std::max(ceil(log2(width)), ceil(log2(height)));
@@ -129,11 +149,13 @@ constexpr TSize<T> operator*(U s, const TSize<T>& p) {
 
 template <class T, class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
 constexpr TSize<T> operator/(U s, const TSize<T>& p) {
-  return {static_cast<T>(s) / p.x, static_cast<T>(s) / p.y};
+  return {static_cast<T>(s) / p.width, static_cast<T>(s) / p.height};
 }
 
 using Size = TSize<Scalar>;
-using ISize = TSize<int64_t>;
+using ISize32 = TSize<int32_t>;
+using ISize64 = TSize<int64_t>;
+using ISize = ISize64;
 
 static_assert(sizeof(Size) == 2 * sizeof(Scalar));
 
@@ -149,3 +171,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_SIZE_H_

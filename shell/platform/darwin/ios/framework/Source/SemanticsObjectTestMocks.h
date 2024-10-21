@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_TEST_MOCKS_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_TEST_MOCKS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECTTESTMOCKS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECTTESTMOCKS_H_
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 
 const CGRect kScreenSize = CGRectMake(0, 0, 600, 800);
 
 namespace flutter {
-namespace {
+namespace testing {
 
 class SemanticsActionObservation {
  public:
@@ -43,7 +43,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
+  std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const override {
     return nil;
   }
   std::vector<SemanticsActionObservation> observations;
@@ -74,7 +74,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
+  std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const override {
     return nil;
   }
   std::vector<SemanticsActionObservation> observations;
@@ -83,7 +83,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
  private:
   UIView* view_;
 };
-}  // namespace
+}  // namespace testing
 }  // namespace flutter
 
 @interface SemanticsObject (Tests)
@@ -92,4 +92,4 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event;
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_TEST_MOCKS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECTTESTMOCKS_H_

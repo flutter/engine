@@ -15,14 +15,14 @@ import '../paragraph/helper.dart';
 /// info in the following tests only pass in Chrome, they are slightly different
 /// on each browser. So we need to ignore position info on non-Chrome browsers
 /// when comparing expectations with actual output.
-bool get isBlink => browserEngine == BrowserEngine.blink;
+bool get isBlink => ui_web.browser.browserEngine == ui_web.BrowserEngine.blink;
 
 String fontFamilyToAttribute(String fontFamily) {
   fontFamily = canonicalizeFontFamily(fontFamily)!;
-  if (browserEngine == BrowserEngine.firefox) {
+  if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
     return fontFamily.replaceAll('"', '&quot;');
-  } else if (browserEngine == BrowserEngine.blink ||
-      browserEngine == BrowserEngine.webkit) {
+  } else if (ui_web.browser.browserEngine == ui_web.BrowserEngine.blink ||
+      ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     return fontFamily.replaceAll('"', '');
   }
   return fontFamily;
@@ -33,7 +33,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
 
   test('empty paragraph', () {
     final CanvasParagraph paragraph1 = rich(
@@ -529,8 +529,8 @@ String spanStyle({
 }
 
 TextStyle styleWithDefaults({
-  String fontFamily = FlutterViewEmbedder.defaultFontFamily,
-  double fontSize = FlutterViewEmbedder.defaultFontSize,
+  String fontFamily = StyleManager.defaultFontFamily,
+  double fontSize = StyleManager.defaultFontSize,
   FontWeight? fontWeight,
   FontStyle? fontStyle,
   double? height,

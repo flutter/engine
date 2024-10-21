@@ -20,7 +20,6 @@ import java.util.*;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class FlutterShellArgs {
-  private static final String TAG = "FlutterShellArgs";
   public static final String ARG_KEY_TRACE_STARTUP = "trace-startup";
   public static final String ARG_TRACE_STARTUP = "--trace-startup";
   public static final String ARG_KEY_START_PAUSED = "start-paused";
@@ -39,18 +38,15 @@ public class FlutterShellArgs {
   public static final String ARG_SKIA_DETERMINISTIC_RENDERING = "--skia-deterministic-rendering";
   public static final String ARG_KEY_TRACE_SKIA = "trace-skia";
   public static final String ARG_TRACE_SKIA = "--trace-skia";
-  public static final String ARG_KEY_DISABLE_IMAGE_READER_PLATFORM_VIEWS =
-      "disable-image-reader-platform-views";
-  public static final String ARG_DISABLE_IMAGE_READER_PLATFORM_VIEWS =
-      "--disable-image-reader-platform-views";
   public static final String ARG_KEY_TRACE_SKIA_ALLOWLIST = "trace-skia-allowlist";
   public static final String ARG_TRACE_SKIA_ALLOWLIST = "--trace-skia-allowlist=";
   public static final String ARG_KEY_TRACE_SYSTRACE = "trace-systrace";
   public static final String ARG_TRACE_SYSTRACE = "--trace-systrace";
   public static final String ARG_KEY_TRACE_TO_FILE = "trace-to-file";
   public static final String ARG_TRACE_TO_FILE = "--trace-to-file";
-  public static final String ARG_KEY_ENABLE_IMPELLER = "enable-impeller";
-  public static final String ARG_ENABLE_IMPELLER = "--enable-impeller";
+  public static final String ARG_KEY_TOGGLE_IMPELLER = "enable-impeller";
+  public static final String ARG_ENABLE_IMPELLER = "--enable-impeller=true";
+  public static final String ARG_DISABLE_IMPELLER = "--enable-impeller=false";
   public static final String ARG_KEY_ENABLE_VULKAN_VALIDATION = "enable-vulkan-validation";
   public static final String ARG_ENABLE_VULKAN_VALIDATION = "--enable-vulkan-validation";
   public static final String ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION =
@@ -70,16 +66,12 @@ public class FlutterShellArgs {
   public static final String ARG_KEY_OBSERVATORY_PORT = "observatory-port";
   public static final String ARG_KEY_DART_FLAGS = "dart-flags";
   public static final String ARG_DART_FLAGS = "--dart-flags";
-  public static final String ARG_KEY_MSAA_SAMPLES = "msaa-samples";
-  public static final String ARG_MSAA_SAMPLES = "--msaa-samples";
 
   @NonNull
   public static FlutterShellArgs fromIntent(@NonNull Intent intent) {
     // Before adding more entries to this list, consider that arbitrary
     // Android applications can generate intents with extra data and that
     // there are many security-sensitive args in the binary.
-    // TODO(mattcarroll): I left this warning as-is, but we should clarify what exactly this warning
-    // is warning against.
     ArrayList<String> args = new ArrayList<>();
 
     if (intent.getBooleanExtra(ARG_KEY_TRACE_STARTUP, false)) {
@@ -130,11 +122,12 @@ public class FlutterShellArgs {
     if (intent.hasExtra(ARG_KEY_TRACE_TO_FILE)) {
       args.add(ARG_TRACE_TO_FILE + "=" + intent.getStringExtra(ARG_KEY_TRACE_TO_FILE));
     }
-    if (intent.getBooleanExtra(ARG_KEY_ENABLE_IMPELLER, false)) {
-      args.add(ARG_ENABLE_IMPELLER);
-    }
-    if (intent.getBooleanExtra(ARG_KEY_DISABLE_IMAGE_READER_PLATFORM_VIEWS, false)) {
-      args.add(ARG_DISABLE_IMAGE_READER_PLATFORM_VIEWS);
+    if (intent.hasExtra(ARG_KEY_TOGGLE_IMPELLER)) {
+      if (intent.getBooleanExtra(ARG_KEY_TOGGLE_IMPELLER, false)) {
+        args.add(ARG_ENABLE_IMPELLER);
+      } else {
+        args.add(ARG_DISABLE_IMPELLER);
+      }
     }
     if (intent.getBooleanExtra(ARG_KEY_ENABLE_VULKAN_VALIDATION, false)) {
       args.add(ARG_ENABLE_VULKAN_VALIDATION);
@@ -150,10 +143,6 @@ public class FlutterShellArgs {
     }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
-    }
-    final int msaaSamples = intent.getIntExtra("msaa-samples", 0);
-    if (msaaSamples > 1) {
-      args.add("--msaa-samples=" + Integer.toString(msaaSamples));
     }
 
     // NOTE: all flags provided with this argument are subject to filtering

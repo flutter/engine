@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 declare_args() {
   flutter_use_fontconfig = false
@@ -82,14 +85,14 @@ source_set("txt") {
     "//flutter/display_list",
     "//flutter/fml",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
-    "//third_party/harfbuzz",
-    "//third_party/icu",
-    "//third_party/skia",
+    "//flutter/skia",
+    "//flutter/third_party/harfbuzz",
+    "//flutter/third_party/icu",
   ]
 
   deps = [
-    "//third_party/skia",
-    "//third_party/skia/modules/skparagraph",
+    "//flutter/skia",
+    "//flutter/skia/modules/skparagraph",
   ]
 
   libs = []
@@ -109,7 +112,7 @@ source_set("txt") {
     sources += [ "src/txt/platform_linux.cc" ]
   } else if (is_fuchsia) {
     sources += [ "src/txt/platform_fuchsia.cc" ]
-    deps += [ "$fuchsia_sdk_root/fidl:fuchsia.fonts" ]
+    deps += [ "${fuchsia_sdk}/fidl/fuchsia.fonts" ]
   } else if (is_win) {
     sources += [ "src/txt/platform_windows.cc" ]
   } else {
@@ -119,7 +122,14 @@ source_set("txt") {
 
 if (enable_unittests) {
   test_fixtures("txt_fixtures") {
-    fixtures = [ "third_party/fonts/Roboto-Regular.ttf" ]
+    fixtures = [
+      "third_party/fonts/Roboto-Regular.ttf",
+      "third_party/fonts/NotoColorEmoji.ttf",
+    ]
+
+    if (host_os == "mac") {
+      fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
+    }
   }
 
   executable("txt_benchmarks") {
@@ -136,9 +146,9 @@ if (enable_unittests) {
       ":txt",
       ":txt_fixtures",
       "//flutter/fml",
+      "//flutter/skia/modules/skparagraph",
       "//flutter/testing:testing_lib",
-      "//third_party/benchmark",
-      "//third_party/skia/modules/skparagraph",
+      "//flutter/third_party/benchmark",
     ]
   }
 
@@ -147,6 +157,7 @@ if (enable_unittests) {
 
     sources = [
       "tests/font_collection_tests.cc",
+      "tests/paragraph_builder_skia_tests.cc",
       "tests/paragraph_unittests.cc",
       "tests/txt_run_all_unittests.cc",
     ]
@@ -164,15 +175,15 @@ if (enable_unittests) {
       ":txt_fixtures",
       "//flutter/fml",
       "//flutter/runtime:test_font",
+      "//flutter/skia/modules/skparagraph:skparagraph",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
-      "//third_party/skia/modules/skparagraph:skparagraph",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     if (is_fuchsia) {
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 }

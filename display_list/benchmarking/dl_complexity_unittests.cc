@@ -102,7 +102,7 @@ TEST(DisplayListComplexity, StrokeWidth) {
   auto display_list_stroke_0 = builder_stroke_0.Build();
 
   DisplayListBuilder builder_stroke_1;
-  builder_stroke_0.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
+  builder_stroke_1.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
                             DlPaint().setStrokeWidth(1.0f));
   auto display_list_stroke_1 = builder_stroke_1.Build();
 
@@ -295,7 +295,7 @@ TEST(DisplayListComplexity, DrawVertices) {
   auto vertices = DlVertices::Make(DlVertexMode::kTriangles, points.size(),
                                    points.data(), nullptr, nullptr);
   DisplayListBuilder builder;
-  builder.DrawVertices(vertices.get(), DlBlendMode::kSrc, DlPaint());
+  builder.DrawVertices(vertices, DlBlendMode::kSrc, DlPaint());
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -306,7 +306,7 @@ TEST(DisplayListComplexity, DrawVertices) {
 
 TEST(DisplayListComplexity, DrawTextBlob) {
   auto text_blob = SkTextBlob::MakeFromString(
-      "The quick brown fox jumps over the lazy dog.", SkFont());
+      "The quick brown fox jumps over the lazy dog.", CreateTestFontOfSize(20));
 
   DisplayListBuilder builder;
   builder.DrawTextBlob(text_blob, 0.0f, 0.0f, DlPaint());

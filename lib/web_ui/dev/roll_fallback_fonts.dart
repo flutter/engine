@@ -73,11 +73,12 @@ class RollFallbackFontsCommand extends Command<bool>
         (googleFontsResult['items'] as List<dynamic>)
             .cast<Map<String, dynamic>>();
     final Map<String, Uri> urlForFamily = <String, Uri>{};
-    for (final Map<String, dynamic> fontData in fontDatas) {
+    for (final Map<String, Object?> fontData in fontDatas) {
       if (fallbackFonts.contains(fontData['family'])) {
-        final Uri uri = Uri.parse(fontData['files']['regular'] as String)
+        final files = fontData['files']! as Map<String, Object?>;
+        final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
-        urlForFamily[fontData['family'] as String] = uri;
+        urlForFamily[fontData['family']! as String] = uri;
       }
     }
     final Map<String, String> charsetForFamily = <String, String>{};
@@ -323,7 +324,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     );
     await runProcess('gclient', <String>[
       'setdep',
-      '--revision=src/third_party/google_fonts_for_unit_tests:$packageName@$versionString',
+      '--revision=src/flutter/third_party/google_fonts_for_unit_tests:$packageName@$versionString',
       '--deps-file=$depFilePath'
     ]);
   }
@@ -365,6 +366,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Egyptian Hieroglyphs',
   'Noto Sans Elbasan',
   'Noto Sans Elymaic',
+  'Noto Sans Ethiopic',
   'Noto Sans Georgian',
   'Noto Sans Glagolitic',
   'Noto Sans Gothic',
@@ -473,6 +475,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Warang Citi',
   'Noto Sans Yi',
   'Noto Sans Zanabazar Square',
+  'Noto Serif Tibetan',
 ];
 
 bool _checkForLicenseAttribution(Uint8List fontBytes) {

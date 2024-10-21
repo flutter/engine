@@ -10,6 +10,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/test_initialization.dart';
 
@@ -18,7 +19,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
   group('loadFontFromList', () {
     const String testFontUrl = '/assets/fonts/ahem.ttf';
 
@@ -33,7 +34,7 @@ Future<void> testMain() async {
       );
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        skip: browserEngine == BrowserEngine.webkit);
+        skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), isFalse);
@@ -44,7 +45,7 @@ Future<void> testMain() async {
       expect(_containsFontFamily('Blehm'), isTrue);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        skip: browserEngine == BrowserEngine.webkit);
+        skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loading font should clear measurement caches', () async {
       final EngineParagraphStyle style = EngineParagraphStyle();
@@ -67,13 +68,13 @@ Future<void> testMain() async {
       expect(Spanometer.rulers.length, 0);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        skip: browserEngine == BrowserEngine.webkit);
+        skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
-      final ui.PlatformMessageCallback? oldHandler = ui.window.onPlatformMessage;
+      final ui.PlatformMessageCallback? oldHandler = ui.PlatformDispatcher.instance.onPlatformMessage;
       String? actualName;
       String? message;
-      window.onPlatformMessage = (String name, ByteData? data,
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data,
           ui.PlatformMessageResponseCallback? callback) {
         actualName = name;
         final ByteBuffer buffer = data!.buffer;
@@ -86,12 +87,12 @@ Future<void> testMain() async {
       final Completer<void> completer = Completer<void>();
       domWindow.requestAnimationFrame((_) { completer.complete();});
       await completer.future;
-      window.onPlatformMessage = oldHandler;
+      ui.PlatformDispatcher.instance.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        skip: browserEngine == BrowserEngine.webkit);
+        skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
   });
 }
 

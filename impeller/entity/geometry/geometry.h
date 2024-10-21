@@ -2,60 +2,59 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
 
 #include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
 class Tessellator;
 
+/// @brief The minimum stroke size can be less than one physical pixel because
+///        of MSAA, but no less that half a physical pixel otherwise we might
+///        not hit one of the sample positions.
+static constexpr Scalar kMinStrokeSizeMSAA = 0.5f;
+
+static constexpr Scalar kMinStrokeSize = 1.0f;
+
 struct GeometryResult {
-  PrimitiveType type;
+  enum class Mode {
+    /// The geometry has no overlapping triangles.
+    kNormal,
+    /// The geometry may have overlapping triangles. The geometry should be
+    /// stenciled with the NonZero fill rule.
+    kNonZero,
+    /// The geometry may have overlapping triangles. The geometry should be
+    /// stenciled with the EvenOdd fill rule.
+    kEvenOdd,
+    /// The geometry may have overlapping triangles, but they should not
+    /// overdraw or cancel each other out. This is a special case for stroke
+    /// geometry.
+    kPreventOverdraw,
+  };
+
+  PrimitiveType type = PrimitiveType::kTriangleStrip;
   VertexBuffer vertex_buffer;
   Matrix transform;
-  bool prevent_overdraw;
+  Mode mode = Mode::kNormal;
 };
 
-enum GeometryVertexType {
-  kPosition,
-  kColor,
-  kUV,
+static const GeometryResult kEmptyResult = {
+    .vertex_buffer =
+        {
+            .index_type = IndexType::kNone,
+        },
 };
-
-/// @brief Compute UV geometry for a VBB that contains only position geometry.
-///
-/// texture_origin should be set to 0, 0 for stroke and stroke based geometry,
-/// like the point field.
-VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
-ComputeUVGeometryCPU(
-    VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& input,
-    Point texture_origin,
-    Size texture_coverage,
-    Matrix effect_transform);
-
-GeometryResult ComputeUVGeometryForRect(Rect source_rect,
-                                        Rect texture_coverage,
-                                        Matrix effect_transform,
-                                        const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass);
-
-/// @brief Given a polyline created from a convex filled path, perform a
-/// tessellation.
-std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline);
 
 class Geometry {
  public:
-  Geometry();
-
-  virtual ~Geometry();
+  virtual ~Geometry() {}
 
   static std::unique_ptr<Geometry> MakeFillPath(
       const Path& path,
@@ -70,7 +69,24 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeCover();
 
-  static std::unique_ptr<Geometry> MakeRect(Rect rect);
+  static std::unique_ptr<Geometry> MakeRect(const Rect& rect);
+
+  static std::unique_ptr<Geometry> MakeOval(const Rect& rect);
+
+  static std::unique_ptr<Geometry> MakeLine(const Point& p0,
+                                            const Point& p1,
+                                            Scalar width,
+                                            Cap cap);
+
+  static std::unique_ptr<Geometry> MakeCircle(const Point& center,
+                                              Scalar radius);
+
+  static std::unique_ptr<Geometry> MakeStrokedCircle(const Point& center,
+                                                     Scalar radius,
+                                                     Scalar stroke_width);
+
+  static std::unique_ptr<Geometry> MakeRoundRect(const Rect& rect,
+                                                 const Size& radii);
 
   static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
@@ -78,17 +94,16 @@ class Geometry {
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
-                                           RenderPass& pass) = 0;
+                                           RenderPass& pass) const = 0;
 
-  virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                             Matrix effect_transform,
-                                             const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass);
-
-  virtual GeometryVertexType GetVertexType() const = 0;
+  virtual GeometryResult::Mode GetResultMode() const;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
+
+  /// @brief Compute an alpha value to simulate lower coverage of fractional
+  ///        pixel strokes.
+  static Scalar ComputeStrokeAlphaCoverage(const Matrix& entity,
+                                           Scalar stroke_width);
 
   /// @brief    Determines if this geometry, transformed by the given
   ///           `transform`, will completely cover all surface area of the given
@@ -101,6 +116,23 @@ class Geometry {
   ///           given `rect`. May return `false` in many undetected cases where
   ///           the transformed geometry does in fact cover the `rect`.
   virtual bool CoversArea(const Matrix& transform, const Rect& rect) const;
+
+  virtual bool IsAxisAlignedRect() const;
+
+  virtual bool CanApplyMaskFilter() const;
+
+  virtual Scalar ComputeAlphaCoverage(const Matrix& transform) const {
+    return 1.0;
+  }
+
+ protected:
+  static GeometryResult ComputePositionGeometry(
+      const ContentContext& renderer,
+      const Tessellator::VertexGenerator& generator,
+      const Entity& entity,
+      RenderPass& pass);
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_

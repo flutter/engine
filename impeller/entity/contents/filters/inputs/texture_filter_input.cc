@@ -16,15 +16,12 @@ TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture,
 
 TextureFilterInput::~TextureFilterInput() = default;
 
-FilterInput::Variant TextureFilterInput::GetInput() const {
-  return texture_;
-}
-
 std::optional<Snapshot> TextureFilterInput::GetSnapshot(
     const std::string& label,
     const ContentContext& renderer,
     const Entity& entity,
-    std::optional<Rect> coverage_limit) const {
+    std::optional<Rect> coverage_limit,
+    int32_t mip_count) const {
   auto snapshot =
       Snapshot{.texture = texture_, .transform = GetTransform(entity)};
   if (texture_->GetMipCount() > 1) {

@@ -5,17 +5,11 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_
 
-#include <unordered_map>
-
-#include "flutter/common/task_runners.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/platform_message_handler.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
-
-@protocol FlutterTaskQueue
-- (void)dispatch:(dispatch_block_t)block;
-@end
+#import "flutter/shell/platform/darwin/ios/flutter_task_queue_dispatch.h"
 
 namespace flutter {
 
@@ -23,7 +17,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
  public:
   static NSObject<FlutterTaskQueue>* MakeBackgroundTaskQueue();
 
-  PlatformMessageHandlerIos(fml::RefPtr<fml::TaskRunner> platform_task_runner);
+  explicit PlatformMessageHandlerIos(fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
@@ -39,7 +33,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
                          NSObject<FlutterTaskQueue>* task_queue);
 
   struct HandlerInfo {
-    fml::scoped_nsprotocol<NSObject<FlutterTaskQueue>*> task_queue;
+    fml::scoped_nsprotocol<NSObject<FlutterTaskQueueDispatch>*> task_queue;
     fml::ScopedBlock<FlutterBinaryMessageHandler> handler;
   };
 
@@ -52,4 +46,4 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
 }  // namespace flutter
 
-#endif
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_

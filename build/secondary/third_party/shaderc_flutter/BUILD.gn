@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-shaderc_base = "//third_party/shaderc"
+shaderc_base = "//flutter/third_party/shaderc"
 
 config("shaderc_util_config") {
   include_dirs = [ "$shaderc_base/libshaderc_util/include/" ]
@@ -12,11 +12,11 @@ source_set("shaderc_util_flutter") {
   public_configs = [ ":shaderc_util_config" ]
 
   configs +=
-      [ "//third_party/vulkan-deps/spirv-tools/src:spvtools_public_config" ]
+      [ "//flutter/third_party/vulkan-deps/spirv-tools/src:spvtools_public_config" ]
 
   public_deps = [
-    "//third_party/vulkan-deps/glslang/src:glslang_sources",
-    "//third_party/vulkan-deps/spirv-tools/src:spvtools",
+    "//flutter/third_party/vulkan-deps/glslang/src:glslang_sources",
+    "//flutter/third_party/vulkan-deps/spirv-tools/src:spvtools",
   ]
 
   defines = [ "ENABLE_HLSL=1" ]
@@ -62,13 +62,13 @@ source_set("shaderc_flutter") {
   public_configs = [ ":shaderc_config" ]
 
   configs +=
-      [ "//third_party/vulkan-deps/spirv-tools/src:spvtools_public_config" ]
+      [ "//flutter/third_party/vulkan-deps/spirv-tools/src:spvtools_public_config" ]
 
   deps = [ ":shaderc_util_flutter" ]
 
   public_deps = [
-    "//third_party/vulkan-deps/glslang/src:glslang_sources",
-    "//third_party/vulkan-deps/spirv-tools/src:spvtools",
+    "//flutter/third_party/vulkan-deps/glslang/src:glslang_sources",
+    "//flutter/third_party/vulkan-deps/spirv-tools/src:spvtools",
   ]
 
   sources = [

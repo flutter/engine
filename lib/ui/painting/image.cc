@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <limits>
+#include "tonic/logging/dart_invoke.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_encoding_impeller.h"
@@ -29,6 +30,11 @@ CanvasImage::CanvasImage() = default;
 
 CanvasImage::~CanvasImage() = default;
 
+Dart_Handle CanvasImage::CreateOuterWrapping() {
+  Dart_Handle ui_lib = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+  return tonic::DartInvokeField(ui_lib, "_wrapImage", {ToDart(this)});
+}
+
 Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
   return EncodeImage(this, format, callback);
 }
@@ -46,8 +52,7 @@ int CanvasImage::colorSpace() {
     return ImageEncodingImpeller::GetColorSpace(image_->impeller_texture());
 #endif  // IMPELLER_SUPPORTS_RENDERING
   }
-
-  return -1;
+  return ColorSpace::kSRGB;
 }
 
 }  // namespace flutter

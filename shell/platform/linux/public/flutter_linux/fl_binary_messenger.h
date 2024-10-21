@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_BINARY_MESSENGER_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_BINARY_MESSENGER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_BINARY_MESSENGER_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_BINARY_MESSENGER_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
@@ -27,9 +27,12 @@ G_BEGIN_DECLS
 #define FL_BINARY_MESSENGER_ERROR fl_binary_messenger_codec_error_quark()
 
 typedef enum {
+  // Part of the public API, so fixing the name is a breaking change.
+  // NOLINTNEXTLINE(readability-identifier-naming)
   FL_BINARY_MESSENGER_ERROR_ALREADY_RESPONDED,
 } FlBinaryMessengerError;
 
+G_MODULE_EXPORT
 GQuark fl_binary_messenger_codec_error_quark(void) G_GNUC_CONST;
 
 G_MODULE_EXPORT
@@ -101,6 +104,8 @@ struct _FlBinaryMessengerInterface {
   void (*set_warns_on_channel_overflow)(FlBinaryMessenger* messenger,
                                         const gchar* channel,
                                         bool warns);
+
+  void (*shutdown)(FlBinaryMessenger* messenger);
 };
 
 struct _FlBinaryMessengerResponseHandleClass {
@@ -226,4 +231,4 @@ void fl_binary_messenger_set_warns_on_channel_overflow(
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_BINARY_MESSENGER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_BINARY_MESSENGER_H_

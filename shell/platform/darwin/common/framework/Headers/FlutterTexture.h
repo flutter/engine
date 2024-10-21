@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERTEXTURE_H_
-#define FLUTTER_FLUTTERTEXTURE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERTEXTURE_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERTEXTURE_H_
 
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
@@ -19,7 +19,14 @@ FLUTTER_DARWIN_EXPORT
  * See also: https://github.com/flutter/plugins/tree/master/packages/camera
  */
 @protocol FlutterTexture <NSObject>
-/** Copy the contents of the texture into a `CVPixelBuffer`. */
+/**
+ * Copy the contents of the texture into a `CVPixelBuffer`.
+ *
+ * The type of the pixel buffer is one of the following:
+ * - `kCVPixelFormatType_32BGRA`
+ * - `kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange`
+ * - `kCVPixelFormatType_420YpCbCr8BiPlanarFullRange`
+ */
 - (CVPixelBufferRef _Nullable)copyPixelBuffer;
 
 /**
@@ -59,4 +66,4 @@ FLUTTER_DARWIN_EXPORT
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERTEXTURE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERTEXTURE_H_

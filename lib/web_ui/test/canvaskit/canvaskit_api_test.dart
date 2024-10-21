@@ -366,11 +366,13 @@ half4 main(vec2 fragCoord) {
     final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
     expect(invalidEffect, isNull);
 
-    final SkShader? shader = effect!.makeShader(<double>[]);
+    final SkFloat32List emptyUniforms = mallocFloat32List(0);
+    final SkShader? shader = effect!.makeShader(emptyUniforms);
     expect(shader, isNotNull);
 
     // mismatched uniforms returns null.
-    final SkShader? invalidShader = effect.makeShader(<double>[1]);
+    final SkFloat32List mismatchedUniforms = mallocFloat32List(1);
+    final SkShader? invalidShader = effect.makeShader(mismatchedUniforms);
 
     expect(invalidShader, isNull);
 
@@ -382,8 +384,16 @@ return u_color;
 }
 ''';
 
+    final SkFloat32List uniforms = mallocFloat32List(4);
+    final uniformData = uniforms.toTypedArray();
+
+    uniformData[0] = 1.0;
+    uniformData[1] = 0.0;
+    uniformData[2] = 0.0;
+    uniformData[3] = 1.0;
+
     final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
-      !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
+      !.makeShader(uniforms);
 
     expect(shaderWithUniform, isNotNull);
   });
@@ -526,6 +536,20 @@ void _imageFilterTests() {
         canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
         canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       ),
+      isNotNull,
+    );
+  });
+
+  test('MakeDilate', () {
+    expect(
+      canvasKit.ImageFilter.MakeDilate(1, 2, null),
+      isNotNull,
+    );
+  });
+
+  test('MakeErode', () {
+    expect(
+      canvasKit.ImageFilter.MakeErode(1, 2, null),
       isNotNull,
     );
   });
@@ -1408,6 +1432,25 @@ void _canvasTests() {
     ]);
   });
 
+  test('quickReject', () {
+    expect(canvas.quickReject(toSkRect(const ui.Rect.fromLTRB(1, 2, 3, 4))), isFalse);
+    canvas.save();
+    canvas.clipRect(
+      toSkRect(const ui.Rect.fromLTRB(10, 10, 20, 20)),
+      canvasKit.ClipOp.Intersect,
+      false,
+    );
+    expect(
+      canvas.quickReject(toSkRect(const ui.Rect.fromLTRB(5, 5, 15, 15))),
+      isFalse,
+    );
+    expect(
+      canvas.quickReject(toSkRect(const ui.Rect.fromLTRB(25, 25, 35, 35))),
+      isTrue,
+    );
+    canvas.restore();
+  });
+
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder
@@ -1673,7 +1716,7 @@ void _paragraphTests() {
       expect(actual, within<double>(distance: actual / 100, from: expected));
     }
 
-    expectAlmost(paragraph.getAlphabeticBaseline(), 85.5);
+    expectAlmost(paragraph.getAlphabeticBaseline(), 78.6);
     expect(paragraph.didExceedMaxLines(), isFalse);
     expectAlmost(paragraph.getHeight(), 108);
     expectAlmost(paragraph.getIdeographicBaseline(), 108);
@@ -1699,7 +1742,7 @@ void _paragraphTests() {
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
-    expectAlmost(lineMetrics.baseline, 85.5);
+    expectAlmost(lineMetrics.baseline, 78.6);
     expectAlmost(lineMetrics.height, 108);
     expectAlmost(lineMetrics.left, 2.5);
     expectAlmost(lineMetrics.width, 263);
@@ -1928,8 +1971,8 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final DomFinalizationRegistry registry = createDomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object(), Object());
+    final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object().toExternalReference, Object().toExternalReference);
   });
 }
 

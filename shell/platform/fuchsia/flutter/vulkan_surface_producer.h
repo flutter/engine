@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_PRODUCER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_PRODUCER_H_
 
 #include <lib/async/cpp/time.h>
 #include <lib/async/default.h>
-#include <lib/syslog/global.h>
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/fml/macros.h"
@@ -15,7 +15,7 @@
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_provider.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 #include "logging.h"
 #include "vulkan_surface.h"
@@ -83,3 +83,5 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
 };
 
 }  // namespace flutter_runner
+
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_PRODUCER_H_

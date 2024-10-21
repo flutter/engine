@@ -20,12 +20,10 @@ import 'package:ui/src/engine.dart';
 /// 4. GC decides to perform a GC cycle and collects CkPaint.
 /// 5. The finalizer function is called with the SkPaint as the sole argument.
 /// 6. We call `delete` on SkPaint.
-DomFinalizationRegistry _finalizationRegistry = createDomFinalizationRegistry(
-  (JSBoxedDartObject boxedUniq) {
-    final UniqueRef<Object> uniq = boxedUniq.toDart as UniqueRef<Object>;
-    uniq.collect();
-  }.toJS
-);
+DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
+  ((ExternalDartReference<UniqueRef<Object>> boxedUniq) =>
+    boxedUniq.toDartObject.collect()
+  ).toJS);
 
 NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
 
@@ -34,7 +32,7 @@ NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemory
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner, ref.toJSBox);
+      _finalizationRegistry.register(owner.toExternalReference, ref.toExternalReference);
     }
   }
 }

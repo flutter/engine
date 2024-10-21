@@ -7,7 +7,6 @@
 #include <utility>
 
 #include "flutter/display_list/dl_builder.h"
-#include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/flow/raster_cache.h"
@@ -22,8 +21,10 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
     : offset_(offset), display_list_(std::move(display_list)) {
   if (display_list_) {
     bounds_ = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+#if !SLIMPELLER
     display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
         display_list_, offset_, is_complex, will_change);
+#endif  //  !SLIMPELLER
   }
 }
 
@@ -95,8 +96,10 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 void DisplayListLayer::Preroll(PrerollContext* context) {
   DisplayList* disp_list = display_list();
 
+#if !SLIMPELLER
   AutoCache cache = AutoCache(display_list_raster_cache_item_.get(), context,
                               context->state_stack.transform_3x3());
+#endif  //  !SLIMPELLER
   if (disp_list->can_apply_group_opacity()) {
     context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
   }
@@ -110,6 +113,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   auto mutator = context.state_stack.save();
   mutator.translate(offset_.x(), offset_.y());
 
+#if !SLIMPELLER
   if (context.raster_cache) {
     // Always apply the integral transform in the presence of a raster cache
     // whether or not we successfully draw from the cache
@@ -124,39 +128,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       }
     }
   }
+#endif  //  !SLIMPELLER
 
   SkScalar opacity = context.state_stack.outstanding_opacity();
-
-  if (context.enable_leaf_layer_tracing) {
-    const auto canvas_size = context.canvas->GetBaseLayerSize();
-    auto offscreen_surface =
-        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
-
-    const auto& ctm = context.canvas->GetTransform();
-
-    const auto start_time = fml::TimePoint::Now();
-    {
-      // render display list to offscreen surface.
-      auto* canvas = offscreen_surface->GetCanvas();
-      {
-        DlAutoCanvasRestore save(canvas, true);
-        canvas->Clear(DlColor::kTransparent());
-        canvas->SetTransform(ctm);
-        canvas->DrawDisplayList(display_list_, opacity);
-      }
-      canvas->Flush();
-    }
-    const fml::TimeDelta offscreen_render_time =
-        fml::TimePoint::Now() - start_time;
-
-    const SkRect device_bounds =
-        RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
-    sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
-    LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
-                                    raster_data, device_bounds);
-    context.layer_snapshot_store->Add(snapshot_data);
-  }
-
   context.canvas->DrawDisplayList(display_list_, opacity);
 }
 

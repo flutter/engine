@@ -8,10 +8,10 @@
 #include <gdk/gdk.h>
 
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      fl_keyboard_manager,
                      FL,
@@ -21,7 +21,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 /**
  * FlKeyboardManager:
  *
- * Processes keyboard events and cooperate with `TextInputPlugin`.
+ * Processes keyboard events and cooperate with `TextInputManager`.
  *
  * A keyboard event goes through a few sections, each can choose to handle the
  * event, and only unhandled events can move to the next section:
@@ -30,12 +30,13 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  *   simultaneously. After both responders have responded (asynchronously), the
  *   event is considered handled if either responder handles it.
  * - Text input: Events are sent to IM filter (usually owned by
- *   `TextInputPlugin`) and are handled synchronously.
+ *   `TextInputManager`) and are handled synchronously.
  * - Redispatching: Events are inserted back to the system for redispatching.
  */
 
 /**
  * fl_keyboard_manager_new:
+ * @messenger: an #FlBinaryMessenger.
  * @view_delegate: An interface that the manager requires to communicate with
  * the platform. Usually implemented by FlView.
  *
@@ -92,6 +93,43 @@ void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* manager,
  * pressed keys, mapping from the logical key to the physical key.*
  */
 GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* manager);
+
+typedef guint (*FlKeyboardManagerLookupKeyHandler)(const GdkKeymapKey* key,
+                                                   gpointer user_data);
+
+/**
+ * fl_keyboard_manager_set_lookup_key_handler:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Set the handler for key lookup, for testing purposes only.
+ */
+void fl_keyboard_manager_set_lookup_key_handler(
+    FlKeyboardManager* manager,
+    FlKeyboardManagerLookupKeyHandler lookup_key_handler,
+    gpointer user_data);
+
+/**
+ * fl_keyboard_manager_notify_layout_changed:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Notify the manager the keyboard layout has changed, for testing purposes
+ * only.
+ */
+void fl_keyboard_manager_notify_layout_changed(FlKeyboardManager* manager);
+
+typedef void (*FlKeyboardManagerRedispatchEventHandler)(FlKeyEvent* event,
+                                                        gpointer user_data);
+
+/**
+ * fl_keyboard_manager_set_redispatch_handler:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Set the handler for redispatches, for testing purposes only.
+ */
+void fl_keyboard_manager_set_redispatch_handler(
+    FlKeyboardManager* manager,
+    FlKeyboardManagerRedispatchEventHandler redispatch_handler,
+    gpointer user_data);
 
 G_END_DECLS
 

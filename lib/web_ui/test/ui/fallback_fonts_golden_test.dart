@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -23,6 +24,7 @@ const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 100);
 void testMain() {
   group('Font fallbacks', () {
     setUpUnitTests(
+      withImplicitView: true,
       emulateTesterEnvironment: false,
       setUpTestViewDimensions: false,
     );
@@ -31,30 +33,52 @@ void testMain() {
       debugDisableFontFallbacks = false;
     });
 
-    /// Used to save and restore [ui.window.onPlatformMessage] after each test.
+    /// Used to save and restore [ui.PlatformDispatcher.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
     final List<String> downloadedFontFamilies = <String>[];
 
     setUp(() {
       renderer.fontCollection.debugResetFallbackFonts();
-      renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
-      renderer.fontCollection.fontFallbackManager!.downloadQueue.debugOnLoadFontFamily
-        = (String family) => downloadedFontFamilies.add(family);
-      savedCallback = ui.window.onPlatformMessage;
+      debugOverrideJsConfiguration(<String, Object?>{
+        'fontFallbackBaseUrl': 'assets/fallback_fonts/',
+      }.jsify() as JsFlutterConfiguration?);
+      renderer.fontCollection.fontFallbackManager!.downloadQueue
+              .debugOnLoadFontFamily =
+          (String family) => downloadedFontFamilies.add(family);
+      savedCallback = ui.PlatformDispatcher.instance.onPlatformMessage;
     });
 
     tearDown(() {
       downloadedFontFamilies.clear();
-      ui.window.onPlatformMessage = savedCallback;
+      ui.PlatformDispatcher.instance.onPlatformMessage = savedCallback;
     });
 
     test('Roboto is always a fallback font', () {
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, contains('Roboto'));
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          contains('Roboto'));
+    });
+
+    test('can override font fallback base URL using JS', () {
+      expect(
+        renderer.fontCollection.fontFallbackManager!.downloadQueue
+            .fallbackFontUrlPrefix,
+        'assets/fallback_fonts/',
+      );
+      debugOverrideJsConfiguration(<String, Object?>{
+        'fontFallbackBaseUrl': 'http://my-special-fonts.com/',
+      }.jsify() as JsFlutterConfiguration?);
+
+      expect(
+        renderer.fontCollection.fontFallbackManager!.downloadQueue
+            .fallbackFontUrlPrefix,
+        'http://my-special-fonts.com/',
+      );
     });
 
     test('will download Noto Sans Arabic if Arabic text is added', () async {
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>['Roboto']);
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -91,9 +115,11 @@ void testMain() {
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     });
 
-    test('will put the Noto Color Emoji font before other fallback fonts in the list',
+    test(
+        'will put the Noto Color Emoji font before other fallback fonts in the list',
         () async {
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>['Roboto']);
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // Arabic fallback font.
@@ -119,16 +145,20 @@ void testMain() {
 
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
 
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>[
-        'Roboto',
-        'Noto Color Emoji',
-        'Noto Sans Arabic',
-      ]);
+      expect(
+          renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          <String>[
+            'Roboto',
+            'Noto Color Emoji',
+            'Noto Sans Arabic',
+          ]);
     });
 
-    test('will download Noto Color Emojis and Noto Symbols if no matching Noto Font',
+    test(
+        'will download Noto Color Emojis and Noto Symbols if no matching Noto Font',
         () async {
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>['Roboto']);
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -169,7 +199,8 @@ void testMain() {
     ///
     /// Then it does the same, but asserts that the families aren't downloaded again
     /// (because they already exist in memory).
-    Future<void> checkDownloadedFamiliesForString(String text, List<String> expectedFamilies) async {
+    Future<void> checkDownloadedFamiliesForString(
+        String text, List<String> expectedFamilies) async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
       ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
       pb.addText(text);
@@ -216,7 +247,22 @@ void testMain() {
       ]);
     });
 
-    test('findMinimumFontsForCodePoints for all supported code points', () async {
+    // https://github.com/flutter/flutter/issues/148797
+    test('can find Tibetan script glyphs (Dzongkha)', () async {
+      await checkDownloadedFamiliesForString('འཛམ་གླིང་སྤྱི་ཚོགས', <String>[
+        'Noto Serif Tibetan',
+      ]);
+    });
+
+    // https://github.com/flutter/flutter/issues/149616
+    test('can find Ethiopic script glyphs ()', () async {
+      await checkDownloadedFamiliesForString('ኢትዮጵያ', <String>[
+        'Noto Sans Ethiopic',
+      ]);
+    });
+
+    test('findMinimumFontsForCodePoints for all supported code points',
+        () async {
       // Collect all supported code points from all fallback fonts in the Noto
       // font tree.
       final Set<String> testedFonts = <String>{};
@@ -278,6 +324,7 @@ void testMain() {
             'Noto Sans Egyptian Hieroglyphs',
             'Noto Sans Elbasan',
             'Noto Sans Elymaic',
+            'Noto Sans Ethiopic',
             'Noto Sans Georgian',
             'Noto Sans Glagolitic',
             'Noto Sans Gothic',
@@ -386,6 +433,7 @@ void testMain() {
             'Noto Sans Warang Citi',
             'Noto Sans Yi',
             'Noto Sans Zanabazar Square',
+            'Noto Serif Tibetan',
           }));
 
       // Construct random paragraphs out of supported code points.
@@ -430,8 +478,28 @@ void testMain() {
         }
       }
     });
+
+    test('fallback fonts do not download when debugDisableFontFallbacks is set', () async {
+      debugDisableFontFallbacks = true;
+
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>['Roboto']);
+
+      // Creating this paragraph would cause us to start to download the
+      // fallback font if we didn't disable font fallbacks.
+      final ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(),
+      );
+      pb.addText('Hello 😊');
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+
+      // Make sure we didn't download the fallback font.
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          isNot(contains('Noto Color Emoji')));
+    });
   },
-  // HTML renderer doesn't use the fallback font manager.
-  skip: isHtml,
-  timeout: const Timeout.factor(4));
+      // HTML renderer doesn't use the fallback font manager.
+      skip: isHtml,
+      timeout: const Timeout.factor(4));
 }

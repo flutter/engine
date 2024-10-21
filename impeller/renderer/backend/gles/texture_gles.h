@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
-#include "flutter/fml/macros.h"
+#include <bitset>
+
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -17,6 +19,7 @@ class TextureGLES final : public Texture,
  public:
   enum class Type {
     kTexture,
+    kTextureMultisampled,
     kRenderBuffer,
     kRenderBufferMultisampled,
   };
@@ -31,8 +34,19 @@ class TextureGLES final : public Texture,
               TextureDescriptor desc,
               IsWrapped wrapped);
 
+  TextureGLES(ReactorGLES::Ref reactor,
+              TextureDescriptor desc,
+              HandleGLES external_handle);
+
+  static std::shared_ptr<TextureGLES> WrapFBO(ReactorGLES::Ref reactor,
+                                              TextureDescriptor desc,
+                                              GLuint fbo);
+
   // |Texture|
   ~TextureGLES() override;
+
+  // |Texture|
+  bool IsValid() const override;
 
   std::optional<GLuint> GetGLHandle() const;
 
@@ -40,34 +54,48 @@ class TextureGLES final : public Texture,
 
   [[nodiscard]] bool GenerateMipmap();
 
-  enum class AttachmentPoint {
+  enum class AttachmentType {
     kColor0,
     kDepth,
     kStencil,
   };
-  [[nodiscard]] bool SetAsFramebufferAttachment(GLenum target,
-                                                AttachmentPoint point) const;
+  [[nodiscard]] bool SetAsFramebufferAttachment(
+      GLenum target,
+      AttachmentType attachment_type) const;
 
   Type GetType() const;
 
-  bool IsWrapped() const { return is_wrapped_; }
+  bool IsWrapped() const;
+
+  std::optional<GLuint> GetFBO() const;
+
+  // For non cubemap textures, 0 indicates uninitialized and 1 indicates
+  // initialized. For cubemap textures, each face is initialized separately with
+  // each bit tracking the initialization of the corresponding slice.
+  void MarkSliceInitialized(size_t slice) const;
+
+  bool IsSliceInitialized(size_t slice) const;
 
  private:
-  friend class AllocatorMTL;
-
   ReactorGLES::Ref reactor_;
   const Type type_;
   HandleGLES handle_;
-  mutable bool contents_initialized_ = false;
+  mutable std::bitset<6> slices_initialized_ = 0;
   const bool is_wrapped_;
+  const std::optional<GLuint> wrapped_fbo_;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
               TextureDescriptor desc,
-              bool is_wrapped);
+              bool is_wrapped,
+              std::optional<GLuint> fbo,
+              std::optional<HandleGLES> external_handle);
 
   // |Texture|
   void SetLabel(std::string_view label) override;
+
+  // |Texture|
+  void SetLabel(std::string_view label, std::string_view trailing) override;
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
@@ -79,9 +107,6 @@ class TextureGLES final : public Texture,
                      size_t slice) override;
 
   // |Texture|
-  bool IsValid() const override;
-
-  // |Texture|
   ISize GetSize() const override;
 
   // |Texture|
@@ -89,7 +114,11 @@ class TextureGLES final : public Texture,
 
   void InitializeContentsIfNecessary() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureGLES);
+  TextureGLES(const TextureGLES&) = delete;
+
+  TextureGLES& operator=(const TextureGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_

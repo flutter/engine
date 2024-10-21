@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_FILTER_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_FILTER_CONTENTS_H_
 
 #include "impeller/entity/contents/filters/filter_contents.h"
 
@@ -44,11 +45,20 @@ class ColorFilterContents : public FilterContents {
 
   std::optional<Scalar> GetAlpha() const;
 
+  // |FilterContents|
+  std::optional<Rect> GetFilterSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
+
  private:
   AbsorbOpacity absorb_opacity_ = AbsorbOpacity::kNo;
   std::optional<Scalar> alpha_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterContents);
+  ColorFilterContents(const ColorFilterContents&) = delete;
+
+  ColorFilterContents& operator=(const ColorFilterContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_FILTER_CONTENTS_H_

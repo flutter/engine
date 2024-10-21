@@ -31,14 +31,14 @@ using EnginePtr = std::unique_ptr<FlutterDesktopEngine, EngineDeleter>;
 // Deleter for FlutterViewControllerRef objects.
 struct ViewControllerDeleter {
   typedef FlutterDesktopViewControllerRef pointer;
-  void operator()(FlutterDesktopViewControllerRef engine) {
-    FlutterDesktopViewControllerDestroy(engine);
+  void operator()(FlutterDesktopViewControllerRef controller) {
+    FlutterDesktopViewControllerDestroy(controller);
   }
 };
 
 // Unique pointer wrapper for FlutterDesktopViewControllerRef.
 using ViewControllerPtr =
-    std::unique_ptr<FlutterDesktopViewControllerState, ViewControllerDeleter>;
+    std::unique_ptr<FlutterDesktopViewController, ViewControllerDeleter>;
 
 // Test configuration builder for WindowsTests.
 //
@@ -64,8 +64,16 @@ class WindowsConfigBuilder {
   // Returns a configured and initialized engine.
   EnginePtr InitializeEngine() const;
 
-  // Returns a configured and initialized view controller running the default
-  // Dart entrypoint.
+  // Returns a configured and initialized engine that runs the configured Dart
+  // entrypoint.
+  //
+  // Returns null on failure.
+  EnginePtr RunHeadless() const;
+
+  // Returns a configured and initialized view controller that runs the
+  // configured Dart entrypoint and owns its engine.
+  //
+  // Returns null on failure.
   ViewControllerPtr Run() const;
 
  private:

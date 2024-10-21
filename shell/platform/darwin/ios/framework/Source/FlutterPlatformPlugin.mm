@@ -10,8 +10,12 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
+
+FLUTTER_ASSERT_ARC
 
 namespace {
 
@@ -41,7 +45,7 @@ const char* const kOverlayStyleUpdateNotificationKey =
 using namespace flutter;
 
 static void SetStatusBarHiddenForSharedApplication(BOOL hidden) {
-#if APPLICATION_EXTENSION_API_ONLY
+#if not APPLICATION_EXTENSION_API_ONLY
   [UIApplication sharedApplication].statusBarHidden = hidden;
 #else
   FML_LOG(WARNING) << "Application based status bar styling is not available in app extension.";
@@ -49,7 +53,7 @@ static void SetStatusBarHiddenForSharedApplication(BOOL hidden) {
 }
 
 static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
-#if APPLICATION_EXTENSION_API_ONLY
+#if not APPLICATION_EXTENSION_API_ONLY
   // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
   // in favor of delegating to the view controller.
   [[UIApplication sharedApplication] setStatusBarStyle:style];
@@ -68,16 +72,17 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
  *        info.plist makes this value to be false.
  */
 @property(nonatomic, assign) BOOL enableViewControllerBasedStatusBarAppearance;
+@property(nonatomic, weak) FlutterEngine* engine;
 
+/**
+ * @brief Used to detect whether or not this device supports live text input from the camera.
+ */
+@property(nonatomic, strong) UITextField* textField;
 @end
 
-@implementation FlutterPlatformPlugin {
-  fml::WeakPtr<FlutterEngine> _engine;
-  // Used to detect whether this device has live text input ability or not.
-  UITextField* _textField;
-}
+@implementation FlutterPlatformPlugin
 
-- (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
+- (instancetype)initWithEngine:(FlutterEngine*)engine {
   FML_DCHECK(engine) << "engine must be set";
   self = [super init];
 
@@ -147,17 +152,70 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   } else if ([method isEqualToString:@"Share.invoke"]) {
     [self showShareViewController:args];
     result(nil);
+  } else if ([method isEqualToString:@"ContextMenu.showSystemContextMenu"]) {
+    [self showSystemContextMenu:args];
+    result(nil);
+  } else if ([method isEqualToString:@"ContextMenu.hideSystemContextMenu"]) {
+    [self hideSystemContextMenu];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
+- (void)showSystemContextMenu:(NSDictionary*)args {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* textInputPlugin = [self.engine textInputPlugin];
+    BOOL shownEditMenu = [textInputPlugin showEditMenu:args];
+    if (!shownEditMenu) {
+      FML_LOG(ERROR) << "Only text input supports system context menu for now. Ensure the system "
+                        "context menu is shown with an active text input connection. See "
+                        "https://github.com/flutter/flutter/issues/143033.";
+    }
+  }
+}
+
+- (void)hideSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* textInputPlugin = [self.engine textInputPlugin];
+    [textInputPlugin hideEditMenu];
+  }
+}
+
 - (void)showShareViewController:(NSString*)content {
-  UIViewController* engineViewController = [_engine.get() viewController];
+  UIViewController* engineViewController = [self.engine viewController];
+
   NSArray* itemsToShare = @[ content ?: [NSNull null] ];
   UIActivityViewController* activityViewController =
-      [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
-                                         applicationActivities:nil] autorelease];
+      [[UIActivityViewController alloc] initWithActivityItems:itemsToShare
+                                        applicationActivities:nil];
+
+  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    // On iPad, the share screen is presented in a popover view, and requires a
+    // sourceView and sourceRect
+    FlutterTextInputPlugin* _textInputPlugin = [self.engine textInputPlugin];
+    UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
+
+    // firstRectForRange cannot be used here as it's current implementation does
+    // not always return the full rect of the range.
+    CGRect firstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.start];
+    CGRect transformedFirstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:firstRect];
+    CGRect lastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.end];
+    CGRect transformedLastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:lastRect];
+
+    activityViewController.popoverPresentationController.sourceView = engineViewController.view;
+    // In case of RTL Language, get the minimum x coordinate
+    activityViewController.popoverPresentationController.sourceRect =
+        CGRectMake(fmin(transformedFirstRect.origin.x, transformedLastRect.origin.x),
+                   transformedFirstRect.origin.y,
+                   abs(transformedLastRect.origin.x - transformedFirstRect.origin.x),
+                   transformedFirstRect.size.height);
+  }
+
   [engineViewController presentViewController:activityViewController animated:YES completion:nil];
 }
 
@@ -191,16 +249,13 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   }
 
   if ([@"HapticFeedbackType.lightImpact" isEqualToString:feedbackType]) {
-    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] autorelease]
-        impactOccurred];
+    [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
   } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString:feedbackType]) {
-    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] autorelease]
-        impactOccurred];
+    [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] impactOccurred];
   } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString:feedbackType]) {
-    [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] autorelease]
-        impactOccurred];
+    [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] impactOccurred];
   } else if ([@"HapticFeedbackType.selectionClick" isEqualToString:feedbackType]) {
-    [[[[UISelectionFeedbackGenerator alloc] init] autorelease] selectionChanged];
+    [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
   }
 }
 
@@ -248,7 +303,7 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
                       object:nil];
   }
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    [_engine.get() viewController].prefersStatusBarHidden = statusBarShouldBeHidden;
+    [self.engine viewController].prefersStatusBarHidden = statusBarShouldBeHidden;
   } else {
     // Checks if the top status bar should be visible. This platform ignores all
     // other overlays
@@ -263,7 +318,7 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
   BOOL edgeToEdge = [mode isEqualToString:@"SystemUiMode.edgeToEdge"];
   if (self.enableViewControllerBasedStatusBarAppearance) {
-    [_engine.get() viewController].prefersStatusBarHidden = !edgeToEdge;
+    [self.engine viewController].prefersStatusBarHidden = !edgeToEdge;
   } else {
     // Checks if the top status bar should be visible, reflected by edge to edge setting. This
     // platform ignores all other system ui modes.
@@ -320,7 +375,7 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
 
-  FlutterViewController* engineViewController = [_engine.get() viewController];
+  FlutterViewController* engineViewController = [self.engine viewController];
   UINavigationController* navigationController = [engineViewController navigationController];
   if (navigationController) {
     [navigationController popViewControllerAnimated:isAnimated];
@@ -372,9 +427,9 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
 }
 
 - (void)showLookUpViewController:(NSString*)term {
-  UIViewController* engineViewController = [_engine.get() viewController];
+  UIViewController* engineViewController = [self.engine viewController];
   UIReferenceLibraryViewController* referenceLibraryViewController =
-      [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
+      [[UIReferenceLibraryViewController alloc] initWithTerm:term];
   [engineViewController presentViewController:referenceLibraryViewController
                                      animated:YES
                                    completion:nil];
@@ -387,8 +442,4 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   return _textField;
 }
 
-- (void)dealloc {
-  [_textField release];
-  [super dealloc];
-}
 @end

@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "impeller/tessellator/tessellator_libtess.h"
+
 namespace impeller {
 PathBuilder* CreatePathBuilder() {
   return new PathBuilder();
@@ -41,10 +43,9 @@ struct Vertices* Tessellate(PathBuilder* builder,
                             int fill_type,
                             Scalar tolerance) {
   auto path = builder->CopyPath(static_cast<FillType>(fill_type));
-  auto polyline = path.CreatePolyline(tolerance);
   std::vector<float> points;
-  if (Tessellator{}.Tessellate(
-          path.GetFillType(), polyline,
+  if (TessellatorLibtess{}.Tessellate(
+          path, tolerance,
           [&points](const float* vertices, size_t vertices_count,
                     const uint16_t* indices, size_t indices_count) {
             // Results are expected to be re-duplicated.
@@ -58,7 +59,7 @@ struct Vertices* Tessellate(PathBuilder* builder,
               points.push_back(point.y);
             }
             return true;
-          }) != Tessellator::Result::kSuccess) {
+          }) != TessellatorLibtess::Result::kSuccess) {
     return nullptr;
   }
 

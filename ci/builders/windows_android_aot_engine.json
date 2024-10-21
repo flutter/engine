@@ -3,12 +3,12 @@
         {
             "archives": [
                 {
-                    "base_path": "out/android_profile/zip_archives/",
+                    "base_path": "out/ci/android_profile/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/android_profile/zip_archives/android-arm-profile/windows-x64.zip"
+                        "out/ci/android_profile/zip_archives/android-arm-profile/windows-x64.zip"
                     ],
-                    "name": "android_profile",
+                    "name": "ci/android_profile",
                     "realm": "production"
                 }
             ],
@@ -16,44 +16,22 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
-                "--runtime-mode",
-                "profile",
-                "--android"
-            ],
-            "name": "android_profile",
-            "ninja": {
-                "config": "android_profile",
-                "targets": [
-                    "flutter/build/archives:archive_win_gen_snapshot"
-                ]
-            }
-        },
-        {
-            "archives": [
-                {
-                    "base_path": "out/android_profile_arm64/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [
-                        "out/android_profile_arm64/zip_archives/android-arm64-profile/windows-x64.zip"
-                    ],
-                    "name": "android_profile_arm64",
-                    "realm": "production"
-                }
-            ],
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Windows-10"
-            ],
-            "gn": [
+                "--target-dir",
+                "ci/android_profile",
                 "--runtime-mode",
                 "profile",
                 "--android",
-                "--android-cpu=arm64"
+                "--no-goma",
+                "--rbe"
             ],
-            "name": "android_profile_arm64",
+            "name": "ci\\android_profile",
+            "description": "Produces profile mode artifacts to target 32-bit arm Android from a Windows host.",
             "ninja": {
-                "config": "android_profile_arm64",
+                "config": "ci/android_profile",
                 "targets": [
                     "flutter/build/archives:archive_win_gen_snapshot"
                 ]
@@ -62,12 +40,12 @@
         {
             "archives": [
                 {
-                    "base_path": "out/android_profile_x64/zip_archives/",
+                    "base_path": "out/ci/android_profile_arm64/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/android_profile_x64/zip_archives/android-x64-profile/windows-x64.zip"
+                        "out/ci/android_profile_arm64/zip_archives/android-arm64-profile/windows-x64.zip"
                     ],
-                    "name": "android_profile_x64",
+                    "name": "ci/android_profile_arm64",
                     "realm": "production"
                 }
             ],
@@ -75,15 +53,23 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_profile_arm64",
                 "--runtime-mode",
                 "profile",
                 "--android",
-                "--android-cpu=x64"
+                "--android-cpu=arm64",
+                "--no-goma",
+                "--rbe"
             ],
-            "name": "android_profile_x64",
+            "name": "ci\\android_profile_arm64",
+            "description": "Produces profile mode artifacts to target 64-bit arm Android from a Windows host.",
             "ninja": {
-                "config": "android_profile_x64",
+                "config": "ci/android_profile_arm64",
                 "targets": [
                     "flutter/build/archives:archive_win_gen_snapshot"
                 ]
@@ -92,12 +78,12 @@
         {
             "archives": [
                 {
-                    "base_path": "out/android_release/zip_archives/",
+                    "base_path": "out/ci/android_profile_x64/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/android_release/zip_archives/android-arm-release/windows-x64.zip"
+                        "out/ci/android_profile_x64/zip_archives/android-x64-profile/windows-x64.zip"
                     ],
-                    "name": "android_release",
+                    "name": "ci/android_profile_x64",
                     "realm": "production"
                 }
             ],
@@ -105,14 +91,23 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_profile_x64",
                 "--runtime-mode",
-                "release",
-                "--android"
+                "profile",
+                "--android",
+                "--android-cpu=x64",
+                "--no-goma",
+                "--rbe"
             ],
-            "name": "android_release",
+            "name": "ci\\android_profile_x64",
+            "description": "Produces profile mode artifacts to target x64 Android from a Windows host.",
             "ninja": {
-                "config": "android_release",
+                "config": "ci/android_profile_x64",
                 "targets": [
                     "flutter/build/archives:archive_win_gen_snapshot"
                 ]
@@ -121,12 +116,12 @@
         {
             "archives": [
                 {
-                    "base_path": "out/android_release_arm64/zip_archives/",
+                    "base_path": "out/ci/android_release/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/android_release_arm64/zip_archives/android-arm64-release/windows-x64.zip"
+                        "out/ci/android_release/zip_archives/android-arm-release/windows-x64.zip"
                     ],
-                    "name": "android_release_arm64",
+                    "name": "ci/android_release",
                     "realm": "production"
                 }
             ],
@@ -134,15 +129,22 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_release",
                 "--runtime-mode",
                 "release",
                 "--android",
-                "--android-cpu=arm64"
+                "--no-goma",
+                "--rbe"
             ],
-            "name": "android_release_arm64",
+            "name": "ci\\android_release",
+            "description": "Produces release mode artifacts to target 32-bit arm Android from a Windows host.",
             "ninja": {
-                "config": "android_release_arm64",
+                "config": "ci/android_release",
                 "targets": [
                     "flutter/build/archives:archive_win_gen_snapshot"
                 ]
@@ -151,12 +153,12 @@
         {
             "archives": [
                 {
-                    "base_path": "out/android_release_x64/zip_archives/",
+                    "base_path": "out/ci/android_release_arm64/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/android_release_x64/zip_archives/android-x64-release/windows-x64.zip"
+                        "out/ci/android_release_arm64/zip_archives/android-arm64-release/windows-x64.zip"
                     ],
-                    "name": "android_release_x64",
+                    "name": "ci/android_release_arm64",
                     "realm": "production"
                 }
             ],
@@ -164,15 +166,61 @@
                 "device_type=none",
                 "os=Windows-10"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_release_arm64",
                 "--runtime-mode",
                 "release",
                 "--android",
-                "--android-cpu=x64"
+                "--android-cpu=arm64",
+                "--no-goma",
+                "--rbe"
             ],
-            "name": "android_release_x64",
+            "name": "ci\\android_release_arm64",
+            "description": "Produces release mode artifacts to target 64-bit arm Android from a Windows host.",
             "ninja": {
-                "config": "android_release_x64",
+                "config": "ci/android_release_arm64",
+                "targets": [
+                    "flutter/build/archives:archive_win_gen_snapshot"
+                ]
+            }
+        },
+        {
+            "archives": [
+                {
+                    "base_path": "out/ci/android_release_x64/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                        "out/ci/android_release_x64/zip_archives/android-x64-release/windows-x64.zip"
+                    ],
+                    "name": "ci/android_release_x64",
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Windows-10"
+            ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
+            "gn": [
+                "--target-dir",
+                "ci/android_release_x64",
+                "--runtime-mode",
+                "release",
+                "--android",
+                "--android-cpu=x64",
+                "--no-goma",
+                "--rbe"
+            ],
+            "name": "ci\\android_release_x64",
+            "description": "Produces release mode artifacts to target x64 Android from a Windows host.",
+            "ninja": {
+                "config": "ci/android_release_x64",
                 "targets": [
                     "flutter/build/archives:archive_win_gen_snapshot"
                 ]

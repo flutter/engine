@@ -3,12 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
-
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
-
-#include "flutter/fml/logging.h"
 
 #pragma mark - UndoManager channel method names.
 static NSString* const kSetUndoStateMethod = @"UndoManager.setUndoState";
@@ -17,15 +11,20 @@ static NSString* const kSetUndoStateMethod = @"UndoManager.setUndoState";
 static NSString* const kCanUndo = @"canUndo";
 static NSString* const kCanRedo = @"canRedo";
 
-@implementation FlutterUndoManagerPlugin {
-  id<FlutterUndoManagerDelegate> _undoManagerDelegate;
-}
+@interface FlutterUndoManagerPlugin ()
+@property(nonatomic, weak, readonly) id<FlutterUndoManagerDelegate> undoManagerDelegate;
+
+// When the delegate is `FlutterEngine` this will be the `FlutterViewController`'s undo manager.
+// Strongly retain to ensure this target's actions are completely removed during dealloc.
+@property(nonatomic) NSUndoManager* undoManager;
+@end
+
+@implementation FlutterUndoManagerPlugin
 
 - (instancetype)initWithDelegate:(id<FlutterUndoManagerDelegate>)undoManagerDelegate {
   self = [super init];
 
   if (self) {
-    // `_undoManagerDelegate` is a weak reference because it should retain FlutterUndoManagerPlugin.
     _undoManagerDelegate = undoManagerDelegate;
   }
 
@@ -33,14 +32,14 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (void)dealloc {
-  [self resetUndoManager];
-  [super dealloc];
+  [_undoManager removeAllActionsWithTarget:self];
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSString* method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:kSetUndoStateMethod]) {
+    self.undoManager = self.undoManagerDelegate.undoManager;
     [self setUndoState:args];
     result(nil);
   } else {
@@ -48,46 +47,43 @@ static NSString* const kCanRedo = @"canRedo";
   }
 }
 
-- (NSUndoManager*)undoManager {
-  return _viewController.undoManager;
+- (void)resetUndoManager {
+  [self.undoManager removeAllActionsWithTarget:self];
 }
 
-- (void)resetUndoManager API_AVAILABLE(ios(9.0)) {
-  [[self undoManager] removeAllActionsWithTarget:self];
+- (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction {
+  NSUndoManager* undoManager = self.undoManager;
+  [undoManager beginUndoGrouping];
+  [undoManager registerUndoWithTarget:self
+                              handler:^(FlutterUndoManagerPlugin* target) {
+                                // Register undo with opposite direction.
+                                FlutterUndoRedoDirection newDirection =
+                                    (direction == FlutterUndoRedoDirectionRedo)
+                                        ? FlutterUndoRedoDirectionUndo
+                                        : FlutterUndoRedoDirectionRedo;
+                                [target registerUndoWithDirection:newDirection];
+                                // Invoke method on delegate.
+                                [target.undoManagerDelegate handleUndoWithDirection:direction];
+                              }];
+  [undoManager endUndoGrouping];
 }
 
-- (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction API_AVAILABLE(ios(9.0)) {
-  [[self undoManager] beginUndoGrouping];
-  [[self undoManager] registerUndoWithTarget:self
-                                     handler:^(id target) {
-                                       // Register undo with opposite direction.
-                                       FlutterUndoRedoDirection newDirection =
-                                           (direction == FlutterUndoRedoDirectionRedo)
-                                               ? FlutterUndoRedoDirectionUndo
-                                               : FlutterUndoRedoDirectionRedo;
-                                       [target registerUndoWithDirection:newDirection];
-                                       // Invoke method on delegate.
-                                       [_undoManagerDelegate flutterUndoManagerPlugin:self
-                                                              handleUndoWithDirection:direction];
-                                     }];
-  [[self undoManager] endUndoGrouping];
+- (void)registerRedo {
+  NSUndoManager* undoManager = self.undoManager;
+  [undoManager beginUndoGrouping];
+  [undoManager registerUndoWithTarget:self
+                              handler:^(id target) {
+                                // Register undo with opposite direction.
+                                [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
+                              }];
+  [undoManager endUndoGrouping];
+  [undoManager undo];
 }
 
-- (void)registerRedo API_AVAILABLE(ios(9.0)) {
-  [[self undoManager] beginUndoGrouping];
-  [[self undoManager]
-      registerUndoWithTarget:self
-                     handler:^(id target) {
-                       // Register undo with opposite direction.
-                       [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
-                     }];
-  [[self undoManager] endUndoGrouping];
-  [[self undoManager] undo];
-}
-
-- (void)setUndoState:(NSDictionary*)dictionary API_AVAILABLE(ios(9.0)) {
-  BOOL groupsByEvent = [self undoManager].groupsByEvent;
-  [self undoManager].groupsByEvent = NO;
+- (void)setUndoState:(NSDictionary*)dictionary {
+  NSUndoManager* undoManager = self.undoManager;
+  BOOL groupsByEvent = undoManager.groupsByEvent;
+  undoManager.groupsByEvent = NO;
   BOOL canUndo = [dictionary[kCanUndo] boolValue];
   BOOL canRedo = [dictionary[kCanRedo] boolValue];
 
@@ -99,16 +95,15 @@ static NSString* const kCanRedo = @"canRedo";
   if (canRedo) {
     [self registerRedo];
   }
-
-  if (_viewController.engine.textInputPlugin.textInputView != nil) {
+  UIView<UITextInput>* textInputView = self.undoManagerDelegate.activeTextInputView;
+  if (textInputView != nil) {
     // This is needed to notify the iPadOS keyboard that it needs to update the
     // state of the UIBarButtons. Otherwise, the state changes to NSUndoManager
     // will not show up until the next keystroke (or other trigger).
-    UITextInputAssistantItem* assistantItem =
-        _viewController.engine.textInputPlugin.textInputView.inputAssistantItem;
+    UITextInputAssistantItem* assistantItem = textInputView.inputAssistantItem;
     assistantItem.leadingBarButtonGroups = assistantItem.leadingBarButtonGroups;
   }
-  [self undoManager].groupsByEvent = groupsByEvent;
+  undoManager.groupsByEvent = groupsByEvent;
 }
 
 @end

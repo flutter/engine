@@ -6,12 +6,11 @@
 #include <optional>
 
 #include "fml/logging.h"
-#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 
@@ -19,11 +18,16 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  opts.sample_count = pass.GetSampleCount();
+  opts.color_attachment_pixel_format = pass.GetRenderTargetPixelFormat();
+
+  bool has_depth_stencil_attachments =
+      pass.HasDepthAttachment() && pass.HasStencilAttachment();
+  FML_DCHECK(pass.HasDepthAttachment() == pass.HasStencilAttachment());
+
+  opts.has_depth_stencil_attachments = has_depth_stencil_attachments;
+  opts.depth_compare = CompareFunction::kGreater;
+  opts.stencil_mode = ContentContextOptions::StencilMode::kIgnore;
   return opts;
 }
 
@@ -45,7 +49,7 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
-bool Contents::IsOpaque() const {
+bool Contents::IsOpaque(const Matrix& transform) const {
   return false;
 }
 
@@ -62,9 +66,16 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
+    return std::nullopt;
+  }
+
+  std::shared_ptr<CommandBuffer> command_buffer =
+      renderer.GetContext()->CreateCommandBuffer();
+  if (!command_buffer) {
     return std::nullopt;
   }
 
@@ -81,36 +92,37 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     }
   }
 
-  auto texture = renderer.MakeSubpass(
-      label, ISize::Ceil(coverage->size),
+  ISize subpass_size = ISize::Ceil(coverage->GetSize());
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      label, subpass_size, command_buffer,
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-            entity.GetTransformation());
+        sub_entity.SetTransform(
+            Matrix::MakeTranslation(Vector3(-coverage->GetOrigin())) *
+            entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
-      msaa_enabled);
+      msaa_enabled, /*depth_stencil_enabled=*/true,
+      std::min(mip_count, static_cast<int32_t>(subpass_size.MipCount())));
 
-  if (!texture) {
+  if (!render_target.ok()) {
+    return std::nullopt;
+  }
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
   auto snapshot = Snapshot{
-      .texture = texture,
-      .transform = Matrix::MakeTranslation(coverage->origin),
+      .texture = render_target.value().GetRenderTargetTexture(),
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin()),
   };
   if (sampler_descriptor.has_value()) {
     snapshot.sampler_descriptor = sampler_descriptor.value();
   }
 
   return snapshot;
-}
-
-bool Contents::CanInheritOpacity(const Entity& entity) const {
-  return false;
 }
 
 void Contents::SetInheritedOpacity(Scalar opacity) {
@@ -123,29 +135,9 @@ std::optional<Color> Contents::AsBackgroundColor(const Entity& entity,
   return {};
 }
 
-const FilterContents* Contents::AsFilter() const {
-  return nullptr;
-}
-
 bool Contents::ApplyColorFilter(
     const Contents::ColorFilterProc& color_filter_proc) {
   return false;
-}
-
-bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const {
-  if (!clip_coverage.has_value()) {
-    return false;
-  }
-
-  auto coverage = GetCoverage(entity);
-  if (!coverage.has_value()) {
-    return false;
-  }
-  if (coverage == Rect::MakeMaximum()) {
-    return true;
-  }
-  return clip_coverage->IntersectsWithRect(coverage.value());
 }
 
 void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {

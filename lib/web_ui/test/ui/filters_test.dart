@@ -20,6 +20,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests(
+    withImplicitView: true,
     setUpTestViewDimensions: false,
   );
 
@@ -60,7 +61,7 @@ Future<void> testMain() async {
         radiusY: 5.0,
     ));
     await matchGoldenFile('ui_filter_dilate_imagefilter.png', region: region);
-  }, skip: !isSkwasm); // Only skwasm supports dilate filter right now
+  }, skip: isHtml); // HTML renderer does not support the dilate filter
 
   test('erode filter', () async {
     await drawTestImageWithPaint(ui.Paint()..imageFilter = ui.ImageFilter.erode(
@@ -68,7 +69,7 @@ Future<void> testMain() async {
         radiusY: 5.0,
     ));
     await matchGoldenFile('ui_filter_erode_imagefilter.png', region: region);
-  }, skip: !isSkwasm); // Only skwasm supports erode filter
+  }, skip: isHtml); // HTML renderer does not support the erode filter
 
   test('matrix filter', () async {
     await drawTestImageWithPaint(ui.Paint()..imageFilter = ui.ImageFilter.matrix(
@@ -101,7 +102,7 @@ Future<void> testMain() async {
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = filter);
     await matchGoldenFile('ui_filter_composed_imagefilters.png', region: region);
-  }, skip: !isSkwasm); // Only Skwasm implements composable filters right now.
+  }, skip: isHtml); // Only Skwasm and CanvasKit implement composable filters right now.
 
   test('compose with colorfilter', () async {
     final ui.ImageFilter filter = ui.ImageFilter.compose(
@@ -116,26 +117,26 @@ Future<void> testMain() async {
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = filter);
     await matchGoldenFile('ui_filter_composed_colorfilter.png', region: region);
-  }, skip: !isSkwasm); // Only Skwasm implements composable filters right now.
+  }, skip: isHtml); // Only Skwasm and CanvasKit implements composable filters right now.
 
   test('color filter as image filter', () async {
     const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
-      ui.Color.fromRGBO(0, 0, 255, 128),
+      ui.Color.fromARGB(128, 0, 0, 255),
       ui.BlendMode.srcOver,
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = colorFilter);
     await matchGoldenFile('ui_filter_colorfilter_as_imagefilter.png', region: region);
-    expect(colorFilter.toString(), 'ColorFilter.mode(Color(0x800000ff), BlendMode.srcOver)');
+    expect(colorFilter.toString(), 'ColorFilter.mode(${const ui.Color(0x800000ff)}, BlendMode.srcOver)');
   });
 
   test('mode color filter', () async {
     const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
-      ui.Color.fromRGBO(0, 0, 255, 128),
+      ui.Color.fromARGB(128, 0, 0, 255),
       ui.BlendMode.srcOver,
     );
     await drawTestImageWithPaint(ui.Paint()..colorFilter = colorFilter);
     await matchGoldenFile('ui_filter_mode_colorfilter.png', region: region);
-    expect(colorFilter.toString(), 'ColorFilter.mode(Color(0x800000ff), BlendMode.srcOver)');
+    expect(colorFilter.toString(), 'ColorFilter.mode(${const ui.Color(0x800000ff)}, BlendMode.srcOver)');
   });
 
   test('linearToSRGBGamma color filter', () async {

@@ -4,8 +4,10 @@
 
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
-#include "flutter/fml/logging.h"
+#include "flutter/flutter_vma/flutter_vma.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 
@@ -30,7 +32,6 @@ uint8_t* DeviceBufferVK::OnGetContents() const {
 bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
                                       Range source_range,
                                       size_t offset) {
-  TRACE_EVENT0("impeller", "CopyToDeviceBuffer");
   uint8_t* dest = OnGetContents();
 
   if (!dest) {
@@ -47,7 +48,8 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   return true;
 }
 
-bool DeviceBufferVK::SetLabel(const std::string& label) {
+bool DeviceBufferVK::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   auto context = context_.lock();
   if (!context || !resource_->buffer.is_valid()) {
     // The context could have died at this point.
@@ -56,14 +58,31 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
 
   ::vmaSetAllocationName(resource_->buffer.get().allocator,   //
                          resource_->buffer.get().allocation,  //
-                         label.c_str()                        //
+                         label.data()                         //
   );
 
   return ContextVK::Cast(*context).SetDebugName(resource_->buffer.get().buffer,
                                                 label);
+#else
+  return true;
+#endif  // IMPELLER_DEBUG
 }
 
-bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
+void DeviceBufferVK::Flush(std::optional<Range> range) const {
+  auto flush_range = range.value_or(Range{0, GetDeviceBufferDescriptor().size});
+  ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                       resource_->buffer.get().allocation, flush_range.offset,
+                       flush_range.length);
+}
+
+void DeviceBufferVK::Invalidate(std::optional<Range> range) const {
+  auto flush_range = range.value_or(Range{0, GetDeviceBufferDescriptor().size});
+  ::vmaInvalidateAllocation(resource_->buffer.get().allocator,
+                            resource_->buffer.get().allocation,
+                            flush_range.offset, flush_range.length);
+}
+
+bool DeviceBufferVK::SetLabel(std::string_view label, Range range) {
   // We do not have the ability to name ranges. Just name the whole thing.
   return SetLabel(label);
 }

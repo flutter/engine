@@ -73,14 +73,11 @@ static uint64_t to_lower(uint64_t n) {
   return n;
 }
 
-/* Define FlKeyEmbedderUserData */
-
 /**
  * FlKeyEmbedderUserData:
  * The user_data used when #FlKeyEmbedderResponder sends message through the
  * embedder.SendKeyEvent API.
  */
-#define FL_TYPE_EMBEDDER_USER_DATA fl_key_embedder_user_data_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyEmbedderUserData,
                      fl_key_embedder_user_data,
                      FL,
@@ -90,7 +87,7 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderUserData,
 struct _FlKeyEmbedderUserData {
   GObject parent_instance;
 
-  FlKeyResponderAsyncCallback callback;
+  FlKeyEmbedderResponderAsyncCallback callback;
   gpointer user_data;
 };
 
@@ -115,17 +112,15 @@ static void fl_key_embedder_user_data_dispose(GObject* object) {
 //
 // The callback and the user_data might be nullptr.
 static FlKeyEmbedderUserData* fl_key_embedder_user_data_new(
-    FlKeyResponderAsyncCallback callback,
+    FlKeyEmbedderResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderUserData* self = FL_KEY_EMBEDDER_USER_DATA(
-      g_object_new(FL_TYPE_EMBEDDER_USER_DATA, nullptr));
+      g_object_new(fl_key_embedder_user_data_get_type(), nullptr));
 
   self->callback = callback;
   self->user_data = user_data;
   return self;
 }
-
-/* Define FlKeyEmbedderResponder */
 
 namespace {
 
@@ -141,6 +136,7 @@ struct _FlKeyEmbedderResponder {
   GObject parent_instance;
 
   EmbedderSendKeyEvent send_key_event;
+  void* send_key_event_user_data;
 
   // Internal record for states of whether a key is pressed.
   //
@@ -196,30 +192,9 @@ struct _FlKeyEmbedderResponder {
   GHashTable* logical_key_to_lock_bit;
 };
 
-static void fl_key_embedder_responder_iface_init(
-    FlKeyResponderInterface* iface);
 static void fl_key_embedder_responder_dispose(GObject* object);
 
-#define FL_TYPE_EMBEDDER_RESPONDER_USER_DATA \
-  fl_key_embedder_responder_get_type()
-G_DEFINE_TYPE_WITH_CODE(
-    FlKeyEmbedderResponder,
-    fl_key_embedder_responder,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
-                          fl_key_embedder_responder_iface_init))
-
-static void fl_key_embedder_responder_handle_event(
-    FlKeyResponder* responder,
-    FlKeyEvent* event,
-    uint64_t specified_logical_key,
-    FlKeyResponderAsyncCallback callback,
-    gpointer user_data);
-
-static void fl_key_embedder_responder_iface_init(
-    FlKeyResponderInterface* iface) {
-  iface->handle_event = fl_key_embedder_responder_handle_event;
-}
+G_DEFINE_TYPE(FlKeyEmbedderResponder, fl_key_embedder_responder, G_TYPE_OBJECT)
 
 // Initializes the FlKeyEmbedderResponder class methods.
 static void fl_key_embedder_responder_class_init(
@@ -260,11 +235,13 @@ static void initialize_logical_key_to_lock_bit_loop_body(gpointer lock_bit,
 
 // Creates a new FlKeyEmbedderResponder instance.
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(
-    EmbedderSendKeyEvent send_key_event) {
+    EmbedderSendKeyEvent send_key_event,
+    void* send_key_event_user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(
-      g_object_new(FL_TYPE_EMBEDDER_RESPONDER_USER_DATA, nullptr));
+      g_object_new(fl_key_embedder_responder_get_type(), nullptr));
 
-  self->send_key_event = std::move(send_key_event);
+  self->send_key_event = send_key_event;
+  self->send_key_event_user_data = send_key_event_user_data;
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->mapping_records = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -288,22 +265,20 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(
   return self;
 }
 
-/* Implement FlKeyEmbedderUserData */
-
 static uint64_t apply_id_plane(uint64_t logical_id, uint64_t plane) {
   return (logical_id & kValueMask) | plane;
 }
 
-static uint64_t event_to_physical_key(const FlKeyEvent* event) {
-  auto found = xkb_to_physical_key_map.find(event->keycode);
+static uint64_t event_to_physical_key(FlKeyEvent* event) {
+  auto found = xkb_to_physical_key_map.find(fl_key_event_get_keycode(event));
   if (found != xkb_to_physical_key_map.end()) {
     return found->second;
   }
-  return apply_id_plane(event->keycode, kGtkPlane);
+  return apply_id_plane(fl_key_event_get_keycode(event), kGtkPlane);
 }
 
-static uint64_t event_to_logical_key(const FlKeyEvent* event) {
-  guint keyval = event->keyval;
+static uint64_t event_to_logical_key(FlKeyEvent* event) {
+  guint keyval = fl_key_event_get_keyval(event);
   auto found = gtk_keyval_to_logical_key_map.find(keyval);
   if (found != gtk_keyval_to_logical_key_map.end()) {
     return found->second;
@@ -316,14 +291,15 @@ static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   return apply_id_plane(keyval, kGtkPlane);
 }
 
-static uint64_t event_to_timestamp(const FlKeyEvent* event) {
-  return kMicrosecondsPerMillisecond * static_cast<double>(event->time);
+static uint64_t event_to_timestamp(FlKeyEvent* event) {
+  return kMicrosecondsPerMillisecond *
+         static_cast<double>(fl_key_event_get_time(event));
 }
 
-// Returns a newly accocated UTF-8 string from event->keyval that must be
-// freed later with g_free().
-static char* event_to_character(const FlKeyEvent* event) {
-  gunichar unicodeChar = gdk_keyval_to_unicode(event->keyval);
+// Returns a newly accocated UTF-8 string from fl_key_event_get_keyval(event)
+// that must be freed later with g_free().
+static char* event_to_character(FlKeyEvent* event) {
+  gunichar unicodeChar = gdk_keyval_to_unicode(fl_key_event_get_keyval(event));
   glong items_written;
   gchar* result = g_ucs4_to_utf8(&unicodeChar, 1, NULL, &items_written, NULL);
   if (items_written == 0) {
@@ -360,7 +336,8 @@ static void synthesize_simple_event(FlKeyEmbedderResponder* self,
   out_event.character = nullptr;
   out_event.synthesized = true;
   self->sent_any_events = true;
-  self->send_key_event(&out_event, nullptr, nullptr);
+  self->send_key_event(&out_event, nullptr, nullptr,
+                       self->send_key_event_user_data);
 }
 
 namespace {
@@ -769,10 +746,10 @@ static uint64_t corrected_modifier_physical_key(
 }
 
 static void fl_key_embedder_responder_handle_event_impl(
-    FlKeyResponder* responder,
+    FlKeyEmbedderResponder* responder,
     FlKeyEvent* event,
     uint64_t specified_logical_key,
-    FlKeyResponderAsyncCallback callback,
+    FlKeyEmbedderResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
 
@@ -786,11 +763,11 @@ static void fl_key_embedder_responder_handle_event_impl(
   const uint64_t physical_key = corrected_modifier_physical_key(
       self->modifier_bit_to_checked_keys, physical_key_from_event, logical_key);
   const double timestamp = event_to_timestamp(event);
-  const bool is_down_event = event->is_press;
+  const bool is_down_event = fl_key_event_get_is_press(event);
 
   SyncStateLoopContext sync_state_context;
   sync_state_context.self = self;
-  sync_state_context.state = event->state;
+  sync_state_context.state = fl_key_event_get_state(event);
   sync_state_context.timestamp = timestamp;
   sync_state_context.is_down = is_down_event;
   sync_state_context.event_logical_key = logical_key;
@@ -850,22 +827,22 @@ static void fl_key_embedder_responder_handle_event_impl(
   FlKeyEmbedderUserData* response_data =
       fl_key_embedder_user_data_new(callback, user_data);
   self->sent_any_events = true;
-  self->send_key_event(&out_event, handle_response, response_data);
+  self->send_key_event(&out_event, handle_response, response_data,
+                       self->send_key_event_user_data);
 }
 
-// Sends a key event to the framework.
-static void fl_key_embedder_responder_handle_event(
-    FlKeyResponder* responder,
+void fl_key_embedder_responder_handle_event(
+    FlKeyEmbedderResponder* self,
     FlKeyEvent* event,
     uint64_t specified_logical_key,
-    FlKeyResponderAsyncCallback callback,
+    FlKeyEmbedderResponderAsyncCallback callback,
     gpointer user_data) {
-  FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   self->sent_any_events = false;
   fl_key_embedder_responder_handle_event_impl(
-      responder, event, specified_logical_key, callback, user_data);
+      self, event, specified_logical_key, callback, user_data);
   if (!self->sent_any_events) {
-    self->send_key_event(&kEmptyEvent, nullptr, nullptr);
+    self->send_key_event(&kEmptyEvent, nullptr, nullptr,
+                         self->send_key_event_user_data);
   }
 }
 

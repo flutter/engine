@@ -11,7 +11,7 @@
 #include <string>
 
 #include "flutter/fml/trace_event.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter_runner {
 
@@ -35,10 +35,12 @@ VulkanSurfacePool::VulkanSurfacePool(vulkan::VulkanProvider& vulkan_provider,
   FML_CHECK(context_ != nullptr);
 
   zx_status_t status = fdio_service_connect(
-      "/svc/fuchsia.sysmem.Allocator",
+      "/svc/fuchsia.sysmem2.Allocator",
       sysmem_allocator_.NewRequest().TakeChannel().release());
-  sysmem_allocator_->SetDebugClientInfo(GetCurrentProcessName(),
-                                        GetCurrentProcessId());
+  sysmem_allocator_->SetDebugClientInfo(
+      std::move(fuchsia::sysmem2::AllocatorSetDebugClientInfoRequest{}
+                    .set_name(GetCurrentProcessName())
+                    .set_id(GetCurrentProcessId())));
   FML_DCHECK(status == ZX_OK);
 
   status = fdio_service_connect(

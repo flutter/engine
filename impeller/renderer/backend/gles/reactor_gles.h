@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_
 
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -163,11 +163,12 @@ class ReactorGLES {
   ///             This can be called on any thread. Even one that doesn't have
   ///             an OpenGL context.
   ///
-  /// @param[in]  type  The type of handle to create.
+  /// @param[in]  type             The type of handle to create.
+  /// @param[in]  external_handle  An already created GL handle if one exists.
   ///
   /// @return     The reactor handle.
   ///
-  HandleGLES CreateHandle(HandleType type);
+  HandleGLES CreateHandle(HandleType type, GLuint external_handle = GL_NONE);
 
   //----------------------------------------------------------------------------
   /// @brief      Collect a reactor handle.
@@ -189,7 +190,14 @@ class ReactorGLES {
   /// @param[in]  handle  The handle
   /// @param[in]  label   The label
   ///
-  void SetDebugLabel(const HandleGLES& handle, std::string label);
+  void SetDebugLabel(const HandleGLES& handle, std::string_view label);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Whether the device is capable of writing debug labels.
+  ///
+  ///             This function is useful for short circuiting expensive debug
+  ///             labeling.
+  bool CanSetDebugLabels() const;
 
   using Operation = std::function<void(const ReactorGLES& reactor)>;
 
@@ -247,8 +255,8 @@ class ReactorGLES {
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
 
   mutable Mutex workers_mutex_;
-  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_
-      IPLR_GUARDED_BY(workers_mutex_);
+  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(
+      workers_mutex_);
 
   bool can_set_debug_labels_ = false;
   bool is_valid_ = false;
@@ -265,7 +273,11 @@ class ReactorGLES {
 
   void SetupDebugGroups();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ReactorGLES);
+  ReactorGLES(const ReactorGLES&) = delete;
+
+  ReactorGLES& operator=(const ReactorGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_

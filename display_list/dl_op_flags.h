@@ -10,7 +10,6 @@
 
 namespace flutter {
 
-class DlPathEffect;
 /// The base class for the classes that maintain a list of
 /// attributes that might be important for a number of operations
 /// including which rendering attributes need to be set before
@@ -81,15 +80,13 @@ class DisplayListFlags {
 
   // clang-format off
   static constexpr int kUsesAntiAlias       = 1 << 10;
-  static constexpr int kUsesDither          = 1 << 11;
-  static constexpr int kUsesAlpha           = 1 << 12;
-  static constexpr int kUsesColor           = 1 << 13;
-  static constexpr int kUsesBlend           = 1 << 14;
-  static constexpr int kUsesShader          = 1 << 15;
-  static constexpr int kUsesColorFilter     = 1 << 16;
-  static constexpr int kUsesPathEffect      = 1 << 17;
-  static constexpr int kUsesMaskFilter      = 1 << 18;
-  static constexpr int kUsesImageFilter     = 1 << 19;
+  static constexpr int kUsesAlpha           = 1 << 11;
+  static constexpr int kUsesColor           = 1 << 12;
+  static constexpr int kUsesBlend           = 1 << 13;
+  static constexpr int kUsesShader          = 1 << 14;
+  static constexpr int kUsesColorFilter     = 1 << 15;
+  static constexpr int kUsesMaskFilter      = 1 << 16;
+  static constexpr int kUsesImageFilter     = 1 << 17;
 
   // Some ops have an optional paint argument. If the version
   // stored in the DisplayList ignores the paint, but there
@@ -102,9 +99,8 @@ class DisplayListFlags {
   // clang-format on
 
   static constexpr int kAnyAttributeMask =  //
-      kUsesAntiAlias | kUsesDither | kUsesAlpha | kUsesColor | kUsesBlend |
-      kUsesShader | kUsesColorFilter | kUsesPathEffect | kUsesMaskFilter |
-      kUsesImageFilter;
+      kUsesAntiAlias | kUsesAlpha | kUsesColor | kUsesBlend | kUsesShader |
+      kUsesColorFilter | kUsesMaskFilter | kUsesImageFilter;
 };
 
 class DisplayListFlagsBase : protected DisplayListFlags {
@@ -166,14 +162,13 @@ class DisplayListSpecialGeometryFlags : DisplayListFlagsBase {
 
 class DisplayListAttributeFlags : DisplayListFlagsBase {
  public:
-  const DisplayListSpecialGeometryFlags WithPathEffect(
-      const DlPathEffect* effect,
-      bool is_stroked) const;
+  const DisplayListSpecialGeometryFlags GeometryFlags(bool is_stroked) const {
+    return special_flags_;
+  }
 
   constexpr bool ignores_paint() const { return has_any(kIgnoresPaint); }
 
   constexpr bool applies_anti_alias() const { return has_any(kUsesAntiAlias); }
-  constexpr bool applies_dither() const { return has_any(kUsesDither); }
   constexpr bool applies_color() const { return has_any(kUsesColor); }
   constexpr bool applies_alpha() const { return has_any(kUsesAlpha); }
   constexpr bool applies_alpha_or_color() const {
@@ -201,9 +196,6 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   }
   /// The primitive honors the DlBlendMode
   constexpr bool applies_blend() const { return has_any(kUsesBlend); }
-  constexpr bool applies_path_effect() const {
-    return has_any(kUsesPathEffect);
-  }
   /// The primitive honors the DlMaskFilter whether set using the
   /// filter object or using the convenience method |setMaskBlurFilter|
   constexpr bool applies_mask_filter() const {
@@ -257,8 +249,7 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
 class DisplayListOpFlags : DisplayListFlags {
  private:
   // Flags common to all primitives that apply colors
-  static constexpr int kBasePaintFlags = (kUsesDither |       //
-                                          kUsesColor |        //
+  static constexpr int kBasePaintFlags = (kUsesColor |        //
                                           kUsesAlpha |        //
                                           kUsesBlend |        //
                                           kUsesShader |       //
@@ -268,19 +259,16 @@ class DisplayListOpFlags : DisplayListFlags {
   // Flags common to all primitives that stroke or fill
   static constexpr int kBaseStrokeOrFillFlags = (kIsDrawnGeometry |  //
                                                  kUsesAntiAlias |    //
-                                                 kUsesMaskFilter |   //
-                                                 kUsesPathEffect);
+                                                 kUsesMaskFilter);
 
   // Flags common to primitives that stroke geometry
   static constexpr int kBaseStrokeFlags = (kIsStrokedGeometry |  //
                                            kUsesAntiAlias |      //
-                                           kUsesMaskFilter |     //
-                                           kUsesPathEffect);
+                                           kUsesMaskFilter);
 
   // Flags common to primitives that render an image with paint attributes
   static constexpr int kBaseImageFlags = (kIsNonGeometric |   //
                                           kUsesAlpha |        //
-                                          kUsesDither |       //
                                           kUsesBlend |        //
                                           kUsesColorFilter |  //
                                           kUsesImageFilter);
@@ -376,7 +364,6 @@ class DisplayListOpFlags : DisplayListFlags {
   };
   static constexpr DisplayListAttributeFlags kDrawVerticesFlags{
       kIsNonGeometric |   //
-      kUsesDither |       //
       kUsesAlpha |        //
       kUsesShader |       //
       kUsesBlend |        //

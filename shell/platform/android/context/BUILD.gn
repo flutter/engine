@@ -14,9 +14,10 @@ source_set("context") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
+    "//flutter/common",
     "//flutter/fml",
     "//flutter/impeller/renderer",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 
   if (shell_enable_vulkan) {

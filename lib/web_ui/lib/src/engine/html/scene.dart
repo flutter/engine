@@ -2,21 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../vector_math.dart';
-import '../window.dart';
-import 'surface.dart';
 
 class SurfaceScene implements ui.Scene {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
   /// To create a Scene object, use a [SceneBuilder].
-  SurfaceScene(this.webOnlyRootElement);
+  SurfaceScene(this.webOnlyRootElement, {
+    required this.timingRecorder,
+  });
 
   final DomElement? webOnlyRootElement;
+  final FrameTimingRecorder? timingRecorder;
 
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
@@ -45,9 +44,18 @@ class PersistedScene extends PersistedContainerSurface {
 
   @override
   void recomputeTransformAndClip() {
-    // The scene clip is the size of the entire window.
-    final ui.Size screen = window.physicalSize;
-    localClipBounds = ui.Rect.fromLTRB(0, 0, screen.width, screen.height);
+    // Must be the true DPR from the browser, nothing overridable.
+    // See: https://github.com/flutter/flutter/issues/143124
+    final double browserDpr = EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    // The scene clip is the size of the entire window **in Logical pixels**.
+    //
+    // Even though the majority of the engine uses `physicalSize`, there are some
+    // bits (like the HTML renderer, or dynamic view sizing) that are implemented
+    // using CSS, and CSS operates in logical pixels.
+    //
+    // See also: [EngineFlutterView.resize].
+    final ui.Size bounds = window.physicalSize / browserDpr;
+    localClipBounds = ui.Rect.fromLTRB(0, 0, bounds.width, bounds.height);
     projectedClip = null;
   }
 

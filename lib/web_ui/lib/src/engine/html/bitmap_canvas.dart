@@ -6,21 +6,20 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../canvas_pool.dart';
 import '../display.dart';
 import '../dom.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
-import '../html_image_codec.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
-import '../window.dart';
 import 'clip.dart';
 import 'color_filter.dart';
 import 'dom_canvas.dart';
+import 'image.dart';
 import 'painting.dart';
 import 'path/path.dart';
 import 'recording_canvas.dart';
@@ -208,7 +207,8 @@ class BitmapCanvas extends EngineCanvas {
 
   static int heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * EngineFlutterDisplay.instance.browserDevicePixelRatio)
+    return (boundsHeight *
+                EngineFlutterDisplay.instance.browserDevicePixelRatio)
             .ceil() +
         2 * kPaddingPixels;
   }
@@ -253,7 +253,8 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    return _devicePixelRatio ==
+        EngineFlutterDisplay.instance.browserDevicePixelRatio;
   }
 
   /// Returns a "data://" URI containing a representation of the image in this
@@ -366,12 +367,12 @@ class BitmapCanvas extends EngineCanvas {
       return false;
     }
     return _renderStrategy.isInsideSvgFilterTree ||
-      _contains3dTransform ||
-      (_childOverdraw &&
-          !_canvasPool.hasCanvas &&
-          paint.maskFilter == null &&
-          paint.shader == null &&
-          paint.style != ui.PaintingStyle.stroke);
+        _contains3dTransform ||
+        (_childOverdraw &&
+            !_canvasPool.hasCanvas &&
+            paint.maskFilter == null &&
+            paint.shader == null &&
+            paint.style != ui.PaintingStyle.stroke);
   }
 
   /// Same as [_useDomForRenderingFill] but allows stroke as well.
@@ -382,13 +383,13 @@ class BitmapCanvas extends EngineCanvas {
       return false;
     }
     return _renderStrategy.isInsideSvgFilterTree ||
-      _contains3dTransform ||
-      ((_childOverdraw ||
-              _renderStrategy.hasImageElements ||
-              _renderStrategy.hasParagraphs) &&
-          !_canvasPool.hasCanvas &&
-          paint.maskFilter == null &&
-          paint.shader == null);
+        _contains3dTransform ||
+        ((_childOverdraw ||
+                _renderStrategy.hasImageElements ||
+                _renderStrategy.hasParagraphs) &&
+            !_canvasPool.hasCanvas &&
+            paint.maskFilter == null &&
+            paint.shader == null);
   }
 
   @override
@@ -513,7 +514,8 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
     if (_useDomForRenderingFillAndStroke(paint)) {
-      final ui.Rect rect = adjustRectForDom(ui.Rect.fromCircle(center: c, radius: radius), paint);
+      final ui.Rect rect = adjustRectForDom(
+          ui.Rect.fromCircle(center: c, radius: radius), paint);
       final DomHTMLElement element = buildDrawRectElement(
           rect, paint, 'draw-circle', _canvasPool.currentTransform);
       _drawElement(element, rect.topLeft, paint);
@@ -573,7 +575,8 @@ class BitmapCanvas extends EngineCanvas {
       final bool isStroke = paint.style == ui.PaintingStyle.stroke;
       final String cssColor = colorValueToCssString(paint.color);
       final double sigma = paint.maskFilter!.webOnlySigma;
-      if (browserEngine == BrowserEngine.webkit && !isStroke) {
+      if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+          !isStroke) {
         // A bug in webkit leaves artifacts when this element is animated
         // with filter: blur, we use boxShadow instead.
         element.style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
@@ -626,7 +629,8 @@ class BitmapCanvas extends EngineCanvas {
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image as HtmlImage;
     final ui.BlendMode? blendMode = paint.blendMode;
-    final EngineHtmlColorFilter? colorFilter = createHtmlColorFilter(paint.colorFilter);
+    final EngineHtmlColorFilter? colorFilter =
+        createHtmlColorFilter(paint.colorFilter);
     DomHTMLElement imgElement;
     if (colorFilter is ModeHtmlColorFilter) {
       imgElement = _createImageElementWithBlend(
@@ -749,8 +753,7 @@ class BitmapCanvas extends EngineCanvas {
         targetWidth *= image.width / src.width;
         targetHeight *= image.height / src.height;
       }
-      _applyTargetSize(
-          imgElement as DomHTMLElement, targetWidth, targetHeight);
+      _applyTargetSize(imgElement as DomHTMLElement, targetWidth, targetHeight);
       if (requiresClipping) {
         restore();
       }
@@ -820,7 +823,6 @@ class BitmapCanvas extends EngineCanvas {
           ..backgroundBlendMode =
               blendModeToCssMixBlendMode(colorFilterBlendMode) ?? ''
           ..backgroundColor = filterColor!.toCssString();
-        break;
     }
     return imgElement;
   }
@@ -832,7 +834,8 @@ class BitmapCanvas extends EngineCanvas {
       ui.BlendMode colorFilterBlendMode,
       SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
-    final SvgFilter svgFilter = svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
+    final SvgFilter svgFilter =
+        svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
     rootElement.append(svgFilter.element);
     _children.add(svgFilter.element);
     final DomHTMLElement imgElement = _reuseOrCreateImage(image);
@@ -894,7 +897,8 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
-  void drawText(String text, double x, double y, {ui.PaintingStyle? style, List<ui.Shadow>? shadows}) {
+  void drawText(String text, double x, double y,
+      {ui.PaintingStyle? style, List<ui.Shadow>? shadows}) {
     final DomCanvasRenderingContext2D ctx = _canvasPool.context;
     if (shadows != null) {
       ctx.save();
@@ -933,27 +937,23 @@ class BitmapCanvas extends EngineCanvas {
         // Cannot composite if the paragraph cannot be drawn into bitmap canvas
         // in the first place.
         paragraph.canDrawOnCanvas &&
-        // Cannot composite if there's no bitmap canvas to composite into.
-        // Creating a new bitmap canvas just to draw text doesn't make sense.
-        _canvasPool.hasCanvas &&
-        !_childOverdraw &&
-        // Bitmap canvas introduces correctness issues in the presence of SVG
-        // filters, so prefer plain HTML in this case.
-        !_renderStrategy.isInsideSvgFilterTree;
+            // Cannot composite if there's no bitmap canvas to composite into.
+            // Creating a new bitmap canvas just to draw text doesn't make sense.
+            _canvasPool.hasCanvas &&
+            !_childOverdraw &&
+            // Bitmap canvas introduces correctness issues in the presence of SVG
+            // filters, so prefer plain HTML in this case.
+            !_renderStrategy.isInsideSvgFilterTree;
 
     if (canCompositeIntoBitmapCanvas) {
       paragraph.paint(this, offset);
       return;
     }
 
-    final DomElement paragraphElement =
-        drawParagraphElement(paragraph, offset);
+    final DomElement paragraphElement = drawParagraphElement(paragraph, offset);
     if (_canvasPool.isClipped) {
-      final List<DomElement> clipElements = _clipContent(
-          _canvasPool.clipStack!,
-          paragraphElement,
-          offset,
-          _canvasPool.currentTransform);
+      final List<DomElement> clipElements = _clipContent(_canvasPool.clipStack!,
+          paragraphElement, offset, _canvasPool.currentTransform);
       for (final DomElement clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
@@ -1036,7 +1036,7 @@ class BitmapCanvas extends EngineCanvas {
     _drawPointsPaint.color = paint.color;
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
-    final double dpr = ui.window.devicePixelRatio;
+    final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
     // Use hairline (device pixel when strokeWidth is not specified).
     final double strokeWidth =
         paint.strokeWidth == null ? 1.0 / dpr : paint.strokeWidth!;
@@ -1051,7 +1051,8 @@ class BitmapCanvas extends EngineCanvas {
   void endOfPaint() {
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
-    if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
+    if (_contains3dTransform &&
+        ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
       // Copy the children list to avoid concurrent modification.
       final List<DomElement> children = rootElement.children.toList();
       for (final DomElement element in children) {
@@ -1077,14 +1078,16 @@ class BitmapCanvas extends EngineCanvas {
   /// viewport.
   ui.Rect _computeScreenBounds(Matrix4 targetTransform) {
     final Matrix4 inverted = targetTransform.clone()..invert();
-    final double dpr = ui.window.devicePixelRatio;
+    final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
     final double width = ui.window.physicalSize.width * dpr;
     final double height = ui.window.physicalSize.height * dpr;
     final Vector3 topLeft = inverted.perspectiveTransform(x: 0, y: 0, z: 0);
-    final Vector3 topRight = inverted.perspectiveTransform(x: width, y: 0, z: 0);
+    final Vector3 topRight =
+        inverted.perspectiveTransform(x: width, y: 0, z: 0);
     final Vector3 bottomRight =
         inverted.perspectiveTransform(x: width, y: height, z: 0);
-    final Vector3 bottomLeft = inverted.perspectiveTransform(x: 0, y: height, z: 0);
+    final Vector3 bottomLeft =
+        inverted.perspectiveTransform(x: 0, y: height, z: 0);
     return ui.Rect.fromLTRB(
       math.min(topLeft.x,
           math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))),
@@ -1255,13 +1258,17 @@ SvgBlendMode? blendModeToSvgEnum(ui.BlendMode? blendMode) {
     case ui.BlendMode.srcATop:
       return const SvgBlendMode(kCompositeSourceAtop, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.dstOver:
-      return const SvgBlendMode(kCompositeDestinationOver, SVG_FEBLEND_MODE_UNKNOWN);
+      return const SvgBlendMode(
+          kCompositeDestinationOver, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.dstIn:
-      return const SvgBlendMode(kCompositeDestinationIn, SVG_FEBLEND_MODE_UNKNOWN);
+      return const SvgBlendMode(
+          kCompositeDestinationIn, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.dstOut:
-      return const SvgBlendMode(kCompositeDestinationOut, SVG_FEBLEND_MODE_UNKNOWN);
+      return const SvgBlendMode(
+          kCompositeDestinationOut, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.dstATop:
-      return const SvgBlendMode(kCompositeDestinationAtop, SVG_FEBLEND_MODE_UNKNOWN);
+      return const SvgBlendMode(
+          kCompositeDestinationAtop, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.plus:
       return const SvgBlendMode(kCompositeLighter, SVG_FEBLEND_MODE_UNKNOWN);
     case ui.BlendMode.src:
@@ -1272,7 +1279,8 @@ SvgBlendMode? blendModeToSvgEnum(ui.BlendMode? blendMode) {
     // Falling back to multiply, ignoring alpha channel.
     // TODO(ferhat): only used for debug, find better fallback for web.
     case ui.BlendMode.modulate:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_MULTIPLY);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_MULTIPLY);
     case ui.BlendMode.screen:
       return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SCREEN);
     case ui.BlendMode.overlay:
@@ -1282,32 +1290,40 @@ SvgBlendMode? blendModeToSvgEnum(ui.BlendMode? blendMode) {
     case ui.BlendMode.lighten:
       return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LIGHTEN);
     case ui.BlendMode.colorDodge:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_DODGE);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_DODGE);
     case ui.BlendMode.colorBurn:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_BURN);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_BURN);
     case ui.BlendMode.hardLight:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HARD_LIGHT);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_HARD_LIGHT);
     case ui.BlendMode.softLight:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SOFT_LIGHT);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_SOFT_LIGHT);
     case ui.BlendMode.difference:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_DIFFERENCE);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_DIFFERENCE);
     case ui.BlendMode.exclusion:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_EXCLUSION);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_EXCLUSION);
     case ui.BlendMode.hue:
       return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HUE);
     case ui.BlendMode.saturation:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SATURATION);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_SATURATION);
     case ui.BlendMode.color:
       return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR);
     case ui.BlendMode.luminosity:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LUMINOSITY);
+      return const SvgBlendMode(
+          kCompositeSourceOver, SVG_FEBLEND_MODE_LUMINOSITY);
     default:
       assert(
         false,
         'Flutter Web does not support the blend mode: $blendMode',
       );
 
-    return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_NORMAL);
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_NORMAL);
   }
 }
 
@@ -1321,7 +1337,6 @@ String? stringForStrokeCap(ui.StrokeCap? strokeCap) {
     case ui.StrokeCap.round:
       return 'round';
     case ui.StrokeCap.square:
-    default:
       return 'square';
   }
 }
@@ -1333,7 +1348,6 @@ String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
     case ui.StrokeJoin.bevel:
       return 'bevel';
     case ui.StrokeJoin.miter:
-    default:
       return 'miter';
   }
 }
@@ -1345,8 +1359,8 @@ String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
 /// overflow:hidden with bounds to clip child or sets a clip-path to clip
 /// it's contents. The clipping rectangles are nested and returned together
 /// with a list of svg elements that provide clip-paths.
-List<DomElement> _clipContent(List<SaveClipEntry> clipStack,
-    DomElement content, ui.Offset offset, Matrix4 currentTransform) {
+List<DomElement> _clipContent(List<SaveClipEntry> clipStack, DomElement content,
+    ui.Offset offset, Matrix4 currentTransform) {
   DomElement? root, curElement;
   final List<DomElement> clipDefs = <DomElement>[];
   final int len = clipStack.length;
@@ -1451,13 +1465,13 @@ List<DomElement> _clipContent(List<SaveClipEntry> clipStack,
 /// Only supported in non-WebKit browsers.
 String maskFilterToCanvasFilter(ui.MaskFilter? maskFilter) {
   assert(
-    browserEngine != BrowserEngine.webkit,
+    ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit,
     'WebKit (Safari) does not support `filter` canvas property.',
   );
   if (maskFilter != null) {
     // Multiply by device-pixel ratio because the canvas' pixel width and height
     // are larger than its CSS width and height by device-pixel ratio.
-    return 'blur(${maskFilter.webOnlySigma * window.devicePixelRatio}px)';
+    return 'blur(${maskFilter.webOnlySigma * EngineFlutterDisplay.instance.devicePixelRatio}px)';
   } else {
     return 'none';
   }

@@ -138,8 +138,8 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   static SkVector map_vectors_affine(const SkMatrix& ctm,
                                      SkScalar x,
                                      SkScalar y) {
-    FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
-    FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
+    FML_DCHECK(std::isfinite(x) && x >= 0);
+    FML_DCHECK(std::isfinite(y) && y >= 0);
     FML_DCHECK(ctm.isFinite() && !ctm.hasPerspective());
 
     // The x and y scalars would have been used to expand a local space
@@ -231,7 +231,7 @@ class DlBlurImageFilter final : public DlImageFilter {
   static std::shared_ptr<DlImageFilter> Make(SkScalar sigma_x,
                                              SkScalar sigma_y,
                                              DlTileMode tile_mode) {
-    if (!SkScalarIsFinite(sigma_x) || !SkScalarIsFinite(sigma_y)) {
+    if (!std::isfinite(sigma_x) || !std::isfinite(sigma_y)) {
       return nullptr;
     }
     if (sigma_x < SK_ScalarNearlyZero && sigma_y < SK_ScalarNearlyZero) {
@@ -281,7 +281,8 @@ class DlBlurImageFilter final : public DlImageFilter {
   bool equals_(const DlImageFilter& other) const override {
     FML_DCHECK(other.type() == DlImageFilterType::kBlur);
     auto that = static_cast<const DlBlurImageFilter*>(&other);
-    return (sigma_x_ == that->sigma_x_ && sigma_y_ == that->sigma_y_ &&
+    return (SkScalarNearlyEqual(sigma_x_, that->sigma_x_) &&
+            SkScalarNearlyEqual(sigma_y_, that->sigma_y_) &&
             tile_mode_ == that->tile_mode_);
   }
 
@@ -302,8 +303,8 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
                                              SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+    if (std::isfinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
+        std::isfinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
       return std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -366,8 +367,8 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
                                              SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+    if (std::isfinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
+        std::isfinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
       return std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -665,7 +666,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
 class DlLocalMatrixImageFilter final : public DlImageFilter {
  public:
   explicit DlLocalMatrixImageFilter(const SkMatrix& matrix,
-                                    std::shared_ptr<DlImageFilter> filter)
+                                    std::shared_ptr<const DlImageFilter> filter)
       : matrix_(matrix), image_filter_(std::move(filter)) {}
   explicit DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter* filter)
       : DlLocalMatrixImageFilter(filter->matrix_, filter->image_filter_) {}
@@ -682,7 +683,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
 
   const SkMatrix& matrix() const { return matrix_; }
 
-  const std::shared_ptr<DlImageFilter> image_filter() const {
+  const std::shared_ptr<const DlImageFilter> image_filter() const {
     return image_filter_;
   }
 
@@ -700,7 +701,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      output_bounds = input_bounds;
+      return &output_bounds;
     }
     return image_filter_->map_local_bounds(input_bounds, output_bounds);
   }
@@ -709,7 +711,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      output_bounds = input_bounds;
+      return &output_bounds;
     }
     return image_filter_->map_device_bounds(
         input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
@@ -719,7 +722,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      input_bounds = output_bounds;
+      return &input_bounds;
     }
     return image_filter_->get_input_device_bounds(
         output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);
@@ -735,7 +739,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
 
  private:
   SkMatrix matrix_;
-  std::shared_ptr<DlImageFilter> image_filter_;
+  std::shared_ptr<const DlImageFilter> image_filter_;
 };
 
 }  // namespace flutter

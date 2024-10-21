@@ -22,8 +22,10 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
@@ -64,8 +66,8 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
                                               void* texture) {
   GrMtlTextureInfo info;
   info.fTexture.reset([(id<MTLTexture>)texture retain]);
-  GrBackendTexture backend_texture(texture_size.width(), texture_size.height(),
-                                   skgpu::Mipmapped::kNo, info);
+  GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(
+      texture_size.width(), texture_size.height(), skgpu::Mipmapped::kNo, info);
 
   return SkSurfaces::WrapBackendTexture(skia_context.get(), backend_texture,
                                         kTopLeft_GrSurfaceOrigin, 1, kBGRA_8888_SkColorType,
@@ -138,7 +140,7 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers, size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -326,7 +328,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers, size_t layers_count) {
         ASSERT_EQ(layers_count, 5u);
 
         // Layer Root
@@ -610,6 +612,84 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
   texture_->Paint(ctx, SkRect::MakeXYWH(0, 0, 100, 100), false, sampling);
 
   EXPECT_TRUE(resolve_called);
+}
+
+TEST_F(EmbedderTest, CanRenderWithImpellerMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_test.png", rendered_scene));
+}
+
+TEST_F(EmbedderTest, CanRenderTextWithImpellerMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_text_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_text_test.png", rendered_scene));
+}
+
+TEST_F(EmbedderTest, CanRenderTextWithImpellerAndCompositorMetal) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_text_test");
+  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+
+  builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture("impeller_text_test.png", rendered_scene));
 }
 
 }  // namespace testing

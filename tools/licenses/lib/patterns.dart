@@ -49,8 +49,8 @@ final RegExp copyrightMentionOkPattern = RegExp(
      r'|// The copyright below was added in 2009, but I see no record'
      r'|This ICU code derived from:'
      r'|the contents of which are also included in zip.h' // seen in minizip's unzip.c, but the upshot of the crazy license situation there is that we don't have to do anything
-     r'|" inflate 1\.2\.1\d Copyright 1995-2022 Mark Adler ";'
-     r'|" deflate 1\.2\.1\d Copyright 1995-2022 Jean-loup Gailly and Mark Adler ";'
+     r'|" inflate 1\.3\.0\.\d Copyright 1995-2023 Mark Adler ";'
+     r'|" deflate 1\.3\.0\.\d Copyright 1995-2023 Jean-loup Gailly and Mark Adler ";'
      r'|const char zip_copyright\[\] =" zip 1\.01 Copyright 1998-2004 Gilles Vollant - http://www.winimage.com/zLibDll";'
      r'|#define JCOPYRIGHT_SHORT "Copyright \(C\) 1991-2016 The libjpeg-turbo Project and many others"'
      r"|r'[^']*©[^']*'" // e.g. flutter/third_party/web_locale_keymap/lib/web_locale_keymap/key_mappings.g.dart
@@ -61,6 +61,11 @@ final RegExp copyrightMentionOkPattern = RegExp(
      r'|const char inflate_copyright\[\] =\n *" inflate 1\.2\.11 Copyright 1995-2017 Mark Adler ";' // found in some freetype files
      r'|" Copyright \(C\) 2016 and later: Unicode, Inc\. and others\. License & terms of use: http://www\.unicode\.org/copyright\.html "'
      r'|"\* / \\\\& ⁊ # % † ‡ ‧ ° © ® ™]"'
+     // It is very likely for copyright-like chars to appear in Unicode
+     // data files in contexts unrelated to copyright.
+     // Imagine that, who would have thought!
+     //                      v--- this one.
+     r'|"\\\\& ⁊ # % † ‡ ‧ ° © ® ™]"'
      r'|" \*   Copyright \(C\) International Business Machines\n"'
      r'|fprintf\(out, "// Copyright \(C\) 2016 and later: Unicode, Inc\. and others\.\\n"\);'
      r'|fprintf\(out, "// License & terms of use: http://www\.unicode\.org/copyright\.html\\n\\n"\);'
@@ -525,7 +530,7 @@ final List<RegExp> csReferencesByType = <RegExp>[
   ),
 
   // MPL
-  // root_certificates
+  // fallback_root_certificates
   RegExp(
     r'/\* This Source Code Form is subject to the terms of the Mozilla Public *\n'
     r'^( \*)( )License, v\. 2\.0\. +If a copy of the MPL was not distributed with this *\n'
@@ -1007,13 +1012,11 @@ final List<RegExp> csTemplateLicenses = <RegExp>[
   // Seen in Mesa, among others.
   RegExp(
     kIndent +
-    (
-      r'(?:' // this bit is optional
-      r'Licensed under the MIT license:\n' // seen in expat
-      r'\1\2? *\n' // blank line
-      r'\1\2' // this is the prefix for the next block (handled by kIndent if this optional bit is skipped)
-      r')?' // end of optional bit
-    )
+    r'(?:' // this bit is optional
+    r'Licensed under the MIT license:\n' // seen in expat
+    r'\1\2? *\n' // blank line
+    r'\1\2' // this is the prefix for the next block (handled by kIndent if this optional bit is skipped)
+    r')?' // end of optional bit
     +
     (
       r'Permission is hereby granted, free of charge, to any person obtaining '
@@ -1265,40 +1268,36 @@ final List<RegExp> csTemplateLicenses = <RegExp>[
   // freetype2.
   RegExp(
     kIndent +
-    (
-      r'Permission to use, copy, modify, distribute, and sell this software and its '
-      r'documentation for any purpose is hereby granted without fee, provided that '
-      r'the above copyright notice appear in all copies and that both that '
-      r'copyright notice and this permission notice appear in supporting '
-      r'documentation\. '
-      r'The above copyright notice and this permission notice shall be included in '
-      r'all copies or substantial portions of the Software\. '
-      r'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
-      r'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, '
-      r'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\.  IN NO EVENT SHALL THE '
-      r'OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN '
-      r'AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
-      r'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\. '
-      r'Except as contained in this notice, the name of The Open Group shall not be '
-      r'used in advertising or otherwise to promote the sale, use or other dealings '
-      r'in this Software without prior written authorization from The Open Group\. '
-      .replaceAll(' ', _linebreak)
-    ),
+    r'Permission to use, copy, modify, distribute, and sell this software and its '
+    r'documentation for any purpose is hereby granted without fee, provided that '
+    r'the above copyright notice appear in all copies and that both that '
+    r'copyright notice and this permission notice appear in supporting '
+    r'documentation\. '
+    r'The above copyright notice and this permission notice shall be included in '
+    r'all copies or substantial portions of the Software\. '
+    r'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
+    r'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, '
+    r'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\.  IN NO EVENT SHALL THE '
+    r'OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN '
+    r'AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
+    r'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\. '
+    r'Except as contained in this notice, the name of The Open Group shall not be '
+    r'used in advertising or otherwise to promote the sale, use or other dealings '
+    r'in this Software without prior written authorization from The Open Group\. '
+    .replaceAll(' ', _linebreak),
     multiLine: true,
   ),
 
   // libjpeg-turbo
   RegExp(
     kIndent +
-    (
-      r'Permission to use, copy, modify, and distribute this software and its '
-      r'documentation for any purpose and without fee is hereby granted, provided '
-      r'that the above copyright notice appear in all copies and that both that '
-      r'copyright notice and this permission notice appear in supporting '
-      r'documentation\. This software is provided "as is" without express or '
-      r'implied warranty\.'
-      .replaceAll(' ', _linebreak)
-    ),
+    r'Permission to use, copy, modify, and distribute this software and its '
+    r'documentation for any purpose and without fee is hereby granted, provided '
+    r'that the above copyright notice appear in all copies and that both that '
+    r'copyright notice and this permission notice appear in supporting '
+    r'documentation\. This software is provided "as is" without express or '
+    r'implied warranty\.'
+    .replaceAll(' ', _linebreak),
     multiLine: true,
   ),
 ];
@@ -1352,17 +1351,15 @@ final List<RegExp> csNoticeLicenses = <RegExp>[
   // Freetype
   RegExp(
     kIndent +
-    (
-      r'This software was written by Alexander Peslyak in 2001\. No copyright is '
-      r'claimed, and the software is hereby placed in the public domain\. In case '
-      r'this attempt to disclaim copyright and place the software in the public '
-      r'domain is deemed null and void, then the software is Copyright \(c\) 2001 '
-      r'Alexander Peslyak and it is hereby released to the general public under the '
-      r'following terms: Redistribution and use in source and binary forms, with or '
-      r"without modification, are permitted\. There\'s ABSOLUTELY NO WARRANTY, "
-      r'express or implied\.(?: \(This is a heavily cut-down "BSD license"\.\))?'
-      .replaceAll(' ', _linebreak)
-    ),
+    r'This software was written by Alexander Peslyak in 2001\. No copyright is '
+    r'claimed, and the software is hereby placed in the public domain\. In case '
+    r'this attempt to disclaim copyright and place the software in the public '
+    r'domain is deemed null and void, then the software is Copyright \(c\) 2001 '
+    r'Alexander Peslyak and it is hereby released to the general public under the '
+    r'following terms: Redistribution and use in source and binary forms, with or '
+    r"without modification, are permitted\. There\'s ABSOLUTELY NO WARRANTY, "
+    r'express or implied\.(?: \(This is a heavily cut-down "BSD license"\.\))?'
+    .replaceAll(' ', _linebreak),
     multiLine: true,
   ),
 
@@ -1464,12 +1461,10 @@ final List<RegExp> csNoticeLicenses = <RegExp>[
   // Seen in libjpeg-turbo (with a copyright), zlib.h
   RegExp(
     kIndent +
-    (
-      r" This software is provided 'as-is', without any express or implied "
-      r'warranty\. In no event will the authors be held liable for any damages '
-      r'arising from the use of this software\.'
-      .replaceAll(' ', _linebreak)
-    )
+    r" This software is provided 'as-is', without any express or implied "
+    r'warranty\. In no event will the authors be held liable for any damages '
+    r'arising from the use of this software\.'
+    .replaceAll(' ', _linebreak)
     +
     (
       r' Permission is granted to anyone to use this software for any purpose, '
@@ -1608,7 +1603,7 @@ final List<RegExp> csStrayCopyrights = <RegExp>[
     multiLine: true,
   ),
 
-  // third_party/inja/third_party/include/hayai/hayai_clock.hpp
+  // flutter/third_party/inja/third_party/include/hayai/hayai_clock.hpp
   // Advice was to just ignore these copyright notices given the LICENSE.md file
   // in the same directory.
   RegExp(

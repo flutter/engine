@@ -38,6 +38,7 @@ struct PointerState {
   double scale;
   double rotation;
   int64_t buttons;
+  int64_t view_id;
 };
 
 //------------------------------------------------------------------------------
@@ -75,7 +76,26 @@ struct PointerState {
 ///
 class PointerDataPacketConverter {
  public:
-  PointerDataPacketConverter();
+  // Used by PointerDataPacketConverter to query the system status.
+  //
+  // Typically RuntimeController.
+  class Delegate {
+   public:
+    Delegate() = default;
+
+    virtual ~Delegate() = default;
+
+    // Returns true if the specified view exists.
+    virtual bool ViewExists(int64_t view_id) const = 0;
+  };
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a PointerDataPacketConverter.
+  ///
+  /// @param[in]  delegate   A delegate to fulfill the query to the app state.
+  ///                        The delegate must exist throughout the lifetime
+  ///                        of this class. Typically `RuntimeController`.
+  explicit PointerDataPacketConverter(const Delegate& delegate);
   ~PointerDataPacketConverter();
 
   //----------------------------------------------------------------------------
@@ -85,21 +105,24 @@ class PointerDataPacketConverter {
   ///             pointer transitions. This method will fill out that
   ///             information and attempt to correct pointer transitions.
   ///
+  ///             Pointer data with invalid view IDs will be ignored.
+  ///
   /// @param[in]  packet                   The raw pointer packet sent from
   ///                                      embedding.
   ///
   /// @return     A full converted packet with all the required information
-  /// filled.
-  ///             It may contain synthetic pointer data as the result of
+  ///             filled. It may contain synthetic pointer data as the result of
   ///             converter's attempt to correct illegal pointer transitions.
   ///
-  std::unique_ptr<PointerDataPacket> Convert(
-      std::unique_ptr<PointerDataPacket> packet);
+  std::unique_ptr<PointerDataPacket> Convert(const PointerDataPacket& packet);
 
  private:
+  const Delegate& delegate_;
+
+  // A map from pointer device ID to the state of the pointer.
   std::map<int64_t, PointerState> states_;
 
-  int64_t pointer_;
+  int64_t pointer_ = 0;
 
   void ConvertPointerData(PointerData pointer_data,
                           std::vector<PointerData>& converted_pointers);

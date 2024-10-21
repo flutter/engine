@@ -5,6 +5,8 @@
 #ifndef FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
 #define FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
 
+#if !SLIMPELLER
+
 #include <memory>
 #include <mutex>
 #include <set>
@@ -13,7 +15,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/unique_fd.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/ganesh/GrContextOptions.h"
 
 class GrDirectContext;
 
@@ -178,5 +180,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 };
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_

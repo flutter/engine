@@ -32,3 +32,13 @@ below explain how to fetch the license information for the dependencies.
    `$version_tag` is the output of `date +%Y-%m-%dT%T%z`.
 1. Update the `DEPS` file entry for `android_embedding_dependencies` with the
    new tag: `last_updated:"$version_tag"`.
+1. Update the GN list `embedding_dependencies_jars` in
+   `src/flutter/shell/platform/android/BUILD.gn`.
+
+## Updating Gradle Lockfiles in the Framework After Adding Dependencies
+If you land a pr that changes the versions of the embedding dependencies,
+or adds a new dependency and makes use of it, you will also need to
+perform a manual roll of that change to the framework that re-generates
+the Gradle lockfiles using the script at
+`<framework_repo>/dev/tools/bin/generate_gradle_lockfiles.dart`
+(run with the `--no-gradle-generation` and `--no-exclusion` flags).

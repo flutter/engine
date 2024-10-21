@@ -13,14 +13,14 @@ import 'package:webdriver/async_io.dart' show WebDriver, createDriver;
 import 'browser.dart';
 
 abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
-  late final int portNumber;
+  late int portNumber;
   late final Process _driverProcess;
 
   Future<Process> spawnDriverProcess();
   Uri get driverUri;
 
   /// Finds and returns an unused port on the test host in the local port range.
-  Future<int> _pickUnusedPort() async {
+  Future<int> pickUnusedPort() async {
     // Use bind to allocate an unused port, then unbind from that port to
     // make it available for use.
     final ServerSocket socket = await ServerSocket.bind('localhost', 0);
@@ -33,7 +33,7 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
 
   @override
   Future<void> prepare() async {
-    portNumber = await _pickUnusedPort();
+    portNumber = await pickUnusedPort();
 
     _driverProcess = await spawnDriverProcess();
 
@@ -81,14 +81,30 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
 class WebDriverBrowser extends Browser {
   WebDriverBrowser(this._driver, this._url) {
     _driver.get(_url);
+    _activateLoopFuture = () async {
+      // Some browsers (i.e. Safari) stop actually executing our unit tests if
+      // their window is occluded or non-visible. This hacky solution of
+      // re-activating the window every two seconds prevents our unit tests from
+      // stalling out if the window becomes obscured by some other thing that
+      // may appear on the system.
+      while (!_shouldStopActivating) {
+        await (await _driver.window).setAsActive();
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    }();
   }
 
   final WebDriver _driver;
   final Uri _url;
   final Completer<void> _onExitCompleter = Completer<void>();
+  bool _shouldStopActivating = false;
+  late final Future<void> _activateLoopFuture;
 
   @override
   Future<void> close() async {
+    _shouldStopActivating = true;
+    await _activateLoopFuture;
+
     await (await _driver.window).close();
     if (!_onExitCompleter.isCompleted) {
       _onExitCompleter.complete();

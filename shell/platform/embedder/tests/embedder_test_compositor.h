@@ -11,7 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
 namespace testing {
@@ -21,8 +21,9 @@ class EmbedderTestCompositor {
   using PlatformViewRendererCallback =
       std::function<sk_sp<SkImage>(const FlutterLayer& layer,
                                    GrDirectContext* context)>;
-  using PresentCallback =
-      std::function<void(const FlutterLayer** layers, size_t layers_count)>;
+  using PresentCallback = std::function<void(FlutterViewId view_id,
+                                             const FlutterLayer** layers,
+                                             size_t layers_count)>;
 
   EmbedderTestCompositor(SkISize surface_size, sk_sp<GrDirectContext> context);
 
@@ -36,7 +37,9 @@ class EmbedderTestCompositor {
 
   bool CollectBackingStore(const FlutterBackingStore* backing_store);
 
-  bool Present(const FlutterLayer** layers, size_t layers_count);
+  bool Present(FlutterViewId view_id,
+               const FlutterLayer** layers,
+               size_t layers_count);
 
   void SetPlatformViewRendererCallback(
       const PlatformViewRendererCallback& callback);
@@ -98,4 +101,4 @@ class EmbedderTestCompositor {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_H_

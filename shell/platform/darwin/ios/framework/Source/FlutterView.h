@@ -2,18 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
 
+#import <Metal/Metal.h>
 #import <UIKit/UIKit.h>
 
-#include <memory>
-
-#include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/rasterizer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @protocol FlutterViewEngineDelegate <NSObject>
 
@@ -22,7 +18,7 @@
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode;
 
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
+- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController;
 
 /**
  * A callback that is called when iOS queries accessibility information of the Flutter view.
@@ -47,9 +43,10 @@
                  enableWideGamut:(BOOL)isWideGamutEnabled NS_DESIGNATED_INITIALIZER;
 
 - (UIScreen*)screen;
+- (MTLPixelFormat)pixelFormat;
 
 // Set by FlutterEngine or FlutterViewController to override software rendering.
 @property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_

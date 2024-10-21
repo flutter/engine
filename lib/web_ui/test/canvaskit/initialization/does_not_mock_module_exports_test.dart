@@ -6,6 +6,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -14,14 +16,7 @@ void testMain() {
   group('initializeEngineServices', () {
     test('does not mock module loaders', () async {
       // Initialize CanvasKit...
-      await initializeEngineServices();
-
-      // CanvasKitInit should be defined...
-      expect(
-        js_util.hasProperty(domWindow, 'CanvasKitInit'),
-        isTrue,
-        reason: 'CanvasKitInit should be defined on Window',
-      );
+      await bootstrapAndRunApp();
 
       // window.exports and window.module should be undefined!
       expect(

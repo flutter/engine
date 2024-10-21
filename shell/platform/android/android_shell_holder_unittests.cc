@@ -1,4 +1,9 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include <memory>
+
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -35,20 +40,24 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
               SurfaceTextureAttachToGLContext,
               (JavaLocalRef surface_texture, int textureId),
               (override));
+  MOCK_METHOD(bool,
+              SurfaceTextureShouldUpdate,
+              (JavaLocalRef surface_texture),
+              (override));
   MOCK_METHOD(void,
               SurfaceTextureUpdateTexImage,
               (JavaLocalRef surface_texture),
               (override));
-  MOCK_METHOD(void,
+  MOCK_METHOD(SkM44,
               SurfaceTextureGetTransformMatrix,
-              (JavaLocalRef surface_texture, SkMatrix& transform),
+              (JavaLocalRef surface_texture),
               (override));
   MOCK_METHOD(void,
               SurfaceTextureDetachFromGLContext,
               (JavaLocalRef surface_texture),
               (override));
   MOCK_METHOD(JavaLocalRef,
-              ImageTextureEntryAcquireLatestImage,
+              ImageProducerTextureEntryAcquireLatestImage,
               (JavaLocalRef image_texture_entry),
               (override));
   MOCK_METHOD(JavaLocalRef,
@@ -151,5 +160,33 @@ TEST(AndroidShellHolder, HandlePlatformMessage) {
   holder->GetPlatformMessageHandler()
       ->InvokePlatformMessageEmptyResponseCallback(response_id);
 }
+
+TEST(AndroidShellHolder, CreateWithMergedPlatformAndUIThread) {
+  Settings settings;
+  auto jni = std::make_shared<MockPlatformViewAndroidJNI>();
+  auto holder = std::make_unique<AndroidShellHolder>(settings, jni);
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(
+      nullptr, /*is_fake_window=*/true);
+  holder->GetPlatformView()->NotifyCreated(window);
+
+  EXPECT_EQ(
+      holder->GetShellForTesting()->GetTaskRunners().GetUITaskRunner(),
+      holder->GetShellForTesting()->GetTaskRunners().GetPlatformTaskRunner());
+}
+
+TEST(AndroidShellHolder, CreateWithUnMergedPlatformAndUIThread) {
+  Settings settings;
+  settings.merged_platform_ui_thread = false;
+  auto jni = std::make_shared<MockPlatformViewAndroidJNI>();
+  auto holder = std::make_unique<AndroidShellHolder>(settings, jni);
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(
+      nullptr, /*is_fake_window=*/true);
+  holder->GetPlatformView()->NotifyCreated(window);
+
+  EXPECT_NE(
+      holder->GetShellForTesting()->GetTaskRunners().GetUITaskRunner(),
+      holder->GetShellForTesting()->GetTaskRunners().GetPlatformTaskRunner());
+}
+
 }  // namespace testing
 }  // namespace flutter

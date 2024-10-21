@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_MATRIX_FILTER_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_MATRIX_FILTER_CONTENTS_H_
 
 #include <memory>
 #include <optional>
@@ -34,7 +35,12 @@ class ColorMatrixFilterContents final : public ColorFilterContents {
 
   ColorMatrix matrix_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ColorMatrixFilterContents);
+  ColorMatrixFilterContents(const ColorMatrixFilterContents&) = delete;
+
+  ColorMatrixFilterContents& operator=(const ColorMatrixFilterContents&) =
+      delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_COLOR_MATRIX_FILTER_CONTENTS_H_

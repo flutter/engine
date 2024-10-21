@@ -5,8 +5,8 @@
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/sampler_vk.h"
 
 namespace impeller {
 
@@ -19,6 +19,7 @@ TextureVK::TextureVK(std::weak_ptr<Context> context,
 TextureVK::~TextureVK() = default;
 
 void TextureVK::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   auto context = context_.lock();
   if (!context) {
     // The context may have died.
@@ -26,6 +27,20 @@ void TextureVK::SetLabel(std::string_view label) {
   }
   ContextVK::Cast(*context).SetDebugName(GetImage(), label);
   ContextVK::Cast(*context).SetDebugName(GetImageView(), label);
+#endif  // IMPELLER_DEBUG
+}
+
+void TextureVK::SetLabel(std::string_view label, std::string_view trailing) {
+#ifdef IMPELLER_DEBUG
+  auto context = context_.lock();
+  if (!context) {
+    // The context may have died.
+    return;
+  }
+
+  ContextVK::Cast(*context).SetDebugName(GetImage(), label, trailing);
+  ContextVK::Cast(*context).SetDebugName(GetImageView(), label, trailing);
+#endif  // IMPELLER_DEBUG
 }
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
@@ -63,13 +78,13 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
     return false;
   }
 
-  const auto encoder = CommandBufferVK::Cast(*cmd_buffer).GetEncoder();
+  auto& cmd_buffer_vk = CommandBufferVK::Cast(*cmd_buffer);
 
-  if (!encoder->Track(staging_buffer) || !encoder->Track(source_)) {
+  if (!cmd_buffer_vk.Track(staging_buffer) || !cmd_buffer_vk.Track(source_)) {
     return false;
   }
 
-  const auto& vk_cmd_buffer = encoder->GetCommandBuffer();
+  const auto& vk_cmd_buffer = cmd_buffer_vk.GetCommandBuffer();
 
   BarrierVK barrier;
   barrier.cmd_buffer = vk_cmd_buffer;
@@ -107,7 +122,25 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
       &copy                                               // regions
   );
 
-  return cmd_buffer->SubmitCommands();
+  // Transition to shader-read.
+  {
+    BarrierVK barrier;
+    barrier.cmd_buffer = vk_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                         vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+    barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    if (!SetLayout(barrier)) {
+      return false;
+    }
+  }
+
+  return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
@@ -149,6 +182,50 @@ vk::ImageLayout TextureVK::SetLayoutWithoutEncoding(
 
 vk::ImageLayout TextureVK::GetLayout() const {
   return source_ ? source_->GetLayout() : vk::ImageLayout::eUndefined;
+}
+
+vk::ImageView TextureVK::GetRenderTargetView() const {
+  return source_->GetRenderTargetView();
+}
+
+void TextureVK::SetCachedFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) {
+  source_->SetCachedFramebuffer(framebuffer);
+}
+
+void TextureVK::SetCachedRenderPass(
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  source_->SetCachedRenderPass(render_pass);
+}
+
+SharedHandleVK<vk::Framebuffer> TextureVK::GetCachedFramebuffer() const {
+  return source_->GetCachedFramebuffer();
+}
+
+SharedHandleVK<vk::RenderPass> TextureVK::GetCachedRenderPass() const {
+  return source_->GetCachedRenderPass();
+}
+
+void TextureVK::SetMipMapGenerated() {
+  mipmap_generated_ = true;
+}
+
+bool TextureVK::IsSwapchainImage() const {
+  return source_->IsSwapchainImage();
+}
+
+std::shared_ptr<SamplerVK> TextureVK::GetImmutableSamplerVariant(
+    const SamplerVK& sampler) const {
+  if (!source_) {
+    return nullptr;
+  }
+  auto conversion = source_->GetYUVConversion();
+  if (!conversion) {
+    // Most textures don't need a sampler conversion and will go down this path.
+    // Only needed for YUV sampling from external textures.
+    return nullptr;
+  }
+  return sampler.CreateVariantForConversion(std::move(conversion));
 }
 
 }  // namespace impeller

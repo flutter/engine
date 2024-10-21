@@ -41,22 +41,22 @@ static void AndroidPlatformThreadConfigSetter(
   fml::Thread::SetCurrentThreadName(config);
   // set thread priority
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND: {
+    case fml::Thread::ThreadPriority::kBackground: {
       fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
-    case fml::Thread::ThreadPriority::DISPLAY: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+    case fml::Thread::ThreadPriority::kDisplay: {
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
-    case fml::Thread::ThreadPriority::RASTER: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+    case fml::Thread::ThreadPriority::kRaster: {
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -89,23 +89,25 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  auto mask =
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
+  auto mask = ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  if (!settings.merged_platform_ui_thread) {
+    mask |= ThreadHost::Type::kUi;
+  }
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
   host_config.ui_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::UI, thread_label),
-      fml::Thread::ThreadPriority::DISPLAY);
+          flutter::ThreadHost::Type::kUi, thread_label),
+      fml::Thread::ThreadPriority::kDisplay);
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::RASTER, thread_label),
-      fml::Thread::ThreadPriority::RASTER);
+          flutter::ThreadHost::Type::kRaster, thread_label),
+      fml::Thread::ThreadPriority::kRaster);
   host_config.io_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::IO, thread_label),
-      fml::Thread::ThreadPriority::NORMAL);
+          flutter::ThreadHost::Type::kIo, thread_label),
+      fml::Thread::ThreadPriority::kNormal);
 
   thread_host_ = std::make_shared<ThreadHost>(host_config);
 
@@ -118,8 +120,7 @@ AndroidShellHolder::AndroidShellHolder(
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             shell.GetSettings()
-                .enable_software_rendering,   // use software rendering
-            shell.GetSettings().msaa_samples  // msaa sample count
+                .enable_software_rendering  // use software rendering
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         return platform_view_android;
@@ -138,7 +139,11 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
-  ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  if (settings.merged_platform_ui_thread) {
+    ui_runner = platform_runner;
+  } else {
+    ui_runner = thread_host_->ui_thread->GetTaskRunner();
+  }
   io_runner = thread_host_->io_thread->GetTaskRunner();
 
   flutter::TaskRunners task_runners(thread_label,     // label
@@ -296,7 +301,8 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
   if (!IsValid()) {
-    return {nullptr, SkISize::MakeEmpty(), ""};
+    return {nullptr, SkISize::MakeEmpty(), "",
+            Rasterizer::ScreenshotFormat::kUnknown};
   }
   return shell_->Screenshot(type, base64_encode);
 }
@@ -350,10 +356,6 @@ void AndroidShellHolder::UpdateDisplayMetrics() {
   std::vector<std::unique_ptr<Display>> displays;
   displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
   shell_->OnDisplayUpdates(std::move(displays));
-}
-
-void AndroidShellHolder::SetIsRenderingToImageView(bool value) {
-  platform_view_->SetIsRenderingToImageView(value);
 }
 
 }  // namespace flutter

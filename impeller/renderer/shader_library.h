@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_SHADER_LIBRARY_H_
+#define FLUTTER_IMPELLER_RENDERER_SHADER_LIBRARY_H_
 
 #include <future>
 #include <memory>
 #include <string_view>
 
-#include "flutter/fml/macros.h"
 #include "fml/mapping.h"
 #include "impeller/core/shader_types.h"
 
@@ -39,7 +39,11 @@ class ShaderLibrary : public std::enable_shared_from_this<ShaderLibrary> {
   ShaderLibrary();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibrary);
+  ShaderLibrary(const ShaderLibrary&) = delete;
+
+  ShaderLibrary& operator=(const ShaderLibrary&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_SHADER_LIBRARY_H_

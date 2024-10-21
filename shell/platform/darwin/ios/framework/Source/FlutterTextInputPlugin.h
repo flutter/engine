@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
 
 #import <UIKit/UIKit.h>
 
@@ -15,15 +15,19 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
 typedef NS_ENUM(NSInteger, FlutterScribbleFocusStatus) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterScribbleFocusStatusUnfocused,
   FlutterScribbleFocusStatusFocusing,
   FlutterScribbleFocusStatusFocused,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterScribbleInteractionStatusNone,
   FlutterScribbleInteractionStatusStarted,
   FlutterScribbleInteractionStatusEnding,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 @interface FlutterTextInputPlugin
@@ -56,6 +60,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
  */
 - (void)setUpIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
 - (void)resetViewResponder;
+- (BOOL)showEditMenu:(NSDictionary*)args API_AVAILABLE(ios(16.0));
+- (void)hideEditMenu API_AVAILABLE(ios(16.0));
 
 @end
 
@@ -124,7 +130,8 @@ API_AVAILABLE(ios(13.0)) @interface FlutterTextPlaceholder : UITextPlaceholder
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 FLUTTER_DARWIN_EXPORT
 #endif
-@interface FlutterTextInputView : UIView <UITextInput, UIScribbleInteractionDelegate>
+@interface FlutterTextInputView
+    : UIView <UITextInput, UIScribbleInteractionDelegate, UIEditMenuInteractionDelegate>
 
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* text;
@@ -154,6 +161,8 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, weak) id<FlutterViewResponder> viewResponder;
 @property(nonatomic) FlutterScribbleFocusStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
+
+@property(nonatomic, strong) UIEditMenuInteraction* editMenuInteraction API_AVAILABLE(ios(16.0));
 - (void)resetScribbleInteractionStatusIfEnding;
 - (BOOL)isScribbleAvailable;
 
@@ -163,10 +172,14 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
+// TODO(louisehsu): These are being exposed to support Share in FlutterPlatformPlugin
+// Consider moving that feature into FlutterTextInputPlugin to avoid exposing extra methods
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect;
+- (CGRect)caretRectForPosition:(UITextPosition*)position;
 @end
 
 @interface UIView (FindFirstResponder)
 @property(nonatomic, readonly) id flutterFirstResponder;
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

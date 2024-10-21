@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/status.h"
 
 namespace fml {
@@ -30,8 +31,20 @@ namespace fml {
 template <typename T>
 class StatusOr {
  public:
+  // These constructors are intended be compatible with absl::status_or.
+  // NOLINTNEXTLINE(google-explicit-constructor)
   StatusOr(const T& value) : status_(), value_(value) {}
-  StatusOr(const Status& status) : status_(status), value_() {}
+
+  // These constructors are intended be compatible with absl::status_or.
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  StatusOr(T&& value) : status_(), value_(std::move(value)) {}
+
+  // These constructors are intended be compatible with absl::status_or.
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  StatusOr(const Status& status) : status_(status), value_() {
+    // It's not valid to construct a StatusOr with an OK status and no value.
+    FML_CHECK(!status_.ok());
+  }
 
   StatusOr(const StatusOr&) = default;
   StatusOr(StatusOr&&) = default;
@@ -62,13 +75,21 @@ class StatusOr {
   bool ok() const { return status_.ok(); }
 
   const T& value() const {
-    FML_CHECK(status_.ok());
-    return value_.value();
+    if (value_.has_value()) {
+      FML_DCHECK(status_.ok());
+      return value_.value();
+    }
+    FML_LOG(FATAL) << "StatusOr::value() called on error Status";
+    FML_UNREACHABLE();
   }
 
   T& value() {
-    FML_CHECK(status_.ok());
-    return value_.value();
+    if (value_.has_value()) {
+      FML_DCHECK(status_.ok());
+      return value_.value();
+    }
+    FML_LOG(FATAL) << "StatusOr::value() called on error Status";
+    FML_UNREACHABLE();
   }
 
  private:
@@ -78,4 +99,4 @@ class StatusOr {
 
 }  // namespace fml
 
-#endif
+#endif  // FLUTTER_FML_STATUS_OR_H_

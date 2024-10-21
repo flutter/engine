@@ -4,28 +4,24 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
+#include "flow/surface_frame.h"
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
-#include "impeller/renderer/renderer.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
 GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     GPUSurfaceGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context)
+    std::shared_ptr<impeller::Context> context,
+    bool render_to_surface)
     : weak_factory_(this) {
   if (delegate == nullptr) {
     return;
   }
 
   if (!context || !context->IsValid()) {
-    return;
-  }
-
-  auto renderer = std::make_shared<impeller::Renderer>(context);
-  if (!renderer->IsValid()) {
     return;
   }
 
@@ -38,7 +34,7 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
 
   delegate_ = delegate;
   impeller_context_ = std::move(context);
-  impeller_renderer_ = std::move(renderer);
+  render_to_surface_ = render_to_surface;
   aiks_context_ = std::move(aiks_context);
   is_valid_ = true;
 }
@@ -82,6 +78,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     return nullptr;
   }
 
+  if (!render_to_surface_) {
+    return std::make_unique<SurfaceFrame>(
+        nullptr, SurfaceFrame::FramebufferInfo{.supports_readback = true},
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
+          return true;
+        },
+        [](const SurfaceFrame& surface_frame) { return true; }, size);
+  }
+
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
@@ -93,46 +98,43 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       impeller::ISize{size.width(), size.height()}  // fbo_size
   );
 
-  SurfaceFrame::SubmitCallback submit_callback =
-      fml::MakeCopyable([renderer = impeller_renderer_,  //
-                         aiks_context = aiks_context_,   //
-                         surface = std::move(surface)    //
-  ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
-        if (!aiks_context) {
-          return false;
-        }
+  impeller::RenderTarget render_target = surface->GetRenderTarget();
 
-        auto display_list = surface_frame.BuildDisplayList();
-        if (!display_list) {
-          FML_LOG(ERROR) << "Could not build display list for surface frame.";
-          return false;
-        }
+  SurfaceFrame::EncodeCallback encode_calback =
+      [aiks_context = aiks_context_,  //
+       render_target](SurfaceFrame& surface_frame,
+                      DlCanvas* canvas) mutable -> bool {
+    if (!aiks_context) {
+      return false;
+    }
 
-        auto cull_rect =
-            surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
-        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
-        display_list->Dispatch(
-            impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
+    auto display_list = surface_frame.BuildDisplayList();
+    if (!display_list) {
+      FML_LOG(ERROR) << "Could not build display list for surface frame.";
+      return false;
+    }
 
-        return renderer->Render(
-            std::move(surface),
-            fml::MakeCopyable(
-                [aiks_context, picture = std::move(picture)](
-                    impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
-                }));
-      });
+    auto cull_rect = render_target.GetRenderTargetSize();
+    SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.width, cull_rect.height);
+    return impeller::RenderToOnscreen(aiks_context->GetContentContext(),  //
+                                      render_target,                      //
+                                      display_list,                       //
+                                      sk_cull_rect,                       //
+                                      /*reset_host_buffer=*/true          //
+    );
+    return true;
+  };
 
   return std::make_unique<SurfaceFrame>(
       nullptr,                                // surface
       delegate_->GLContextFramebufferInfo(),  // framebuffer info
-      submit_callback,                        // submit callback
-      size,                                   // frame size
-      std::move(context_switch),              // context result
-      true                                    // display list fallback
+      encode_calback,                         // encode callback
+      fml::MakeCopyable([surface = std::move(surface)](const SurfaceFrame&) {
+        return surface->Present();
+      }),                         // submit callback
+      size,                       // frame size
+      std::move(context_switch),  // context result
+      true                        // display list fallback
   );
 }
 

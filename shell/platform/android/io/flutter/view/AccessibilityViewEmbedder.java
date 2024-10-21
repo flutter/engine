@@ -4,6 +4,8 @@
 
 package io.flutter.view;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.os.Build;
@@ -230,34 +232,28 @@ class AccessibilityViewEmbedder {
     output.setText(input.getText());
     output.setVisibleToUser(input.isVisibleToUser());
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-      output.setEditable(input.isEditable());
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      output.setCanOpenPopup(input.canOpenPopup());
-      output.setCollectionInfo(input.getCollectionInfo());
-      output.setCollectionItemInfo(input.getCollectionItemInfo());
-      output.setContentInvalid(input.isContentInvalid());
-      output.setDismissable(input.isDismissable());
-      output.setInputType(input.getInputType());
-      output.setLiveRegion(input.getLiveRegion());
-      output.setMultiLine(input.isMultiLine());
-      output.setRangeInfo(input.getRangeInfo());
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      output.setError(input.getError());
-      output.setMaxTextLength(input.getMaxTextLength());
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    output.setEditable(input.isEditable());
+    output.setCanOpenPopup(input.canOpenPopup());
+    output.setCollectionInfo(input.getCollectionInfo());
+    output.setCollectionItemInfo(input.getCollectionItemInfo());
+    output.setContentInvalid(input.isContentInvalid());
+    output.setDismissable(input.isDismissable());
+    output.setInputType(input.getInputType());
+    output.setLiveRegion(input.getLiveRegion());
+    output.setMultiLine(input.isMultiLine());
+    output.setRangeInfo(input.getRangeInfo());
+    output.setError(input.getError());
+    output.setMaxTextLength(input.getMaxTextLength());
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_23) {
       output.setContextClickable(input.isContextClickable());
       // TODO(amirh): copy traversal before and after.
       // https://github.com/flutter/flutter/issues/29718
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       output.setDrawingOrder(input.getDrawingOrder());
       output.setImportantForAccessibility(input.isImportantForAccessibility());
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       output.setAvailableExtraData(input.getAvailableExtraData());
       output.setHintText(input.getHintText());
       output.setShowingHintText(input.isShowingHintText());
@@ -453,7 +449,7 @@ class AccessibilityViewEmbedder {
         Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
       }
       // Reflection access is not allowed starting Android P on these methods.
-      if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT <= API_LEVELS.API_26) {
         try {
           getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
         } catch (NoSuchMethodException e) {
@@ -571,7 +567,7 @@ class AccessibilityViewEmbedder {
     // details change from our assumptions in this method, this will silently break.
     @Nullable
     private static Long yoinkParentIdFromParcel(AccessibilityNodeInfo node) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
         Log.w(TAG, "Unexpected Android version. Unable to find the parent ID.");
         return null;
       }

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_VULKAN_PROCS_VULKAN_HANDLE_H_
+#define FLUTTER_VULKAN_PROCS_VULKAN_HANDLE_H_
 
 #include <functional>
 
@@ -24,7 +25,7 @@ class VulkanHandle {
       : handle_(handle), disposer_(disposer) {}
 
   VulkanHandle(VulkanHandle&& other)
-      : handle_(other.handle_), disposer_(other.disposer_) {
+      : handle_(other.handle_), disposer_(std::move(other.disposer_)) {
     other.handle_ = VK_NULL_HANDLE;
     other.disposer_ = nullptr;
   }
@@ -76,3 +77,5 @@ class VulkanHandle {
 };
 
 }  // namespace vulkan
+
+#endif  // FLUTTER_VULKAN_PROCS_VULKAN_HANDLE_H_

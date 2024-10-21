@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#ifndef FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
+#define FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_blend_mode.h"
@@ -12,9 +12,9 @@
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/dl_sampling_options.h"
-#include "flutter/display_list/effects/dl_path_effect.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/image/dl_image.h"
-#include "flutter/display_list/utils/dl_bounds_accumulator.h"
+#include "flutter/display_list/utils/dl_accumulation_rect.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
 #include "flutter/fml/macros.h"
@@ -38,10 +38,13 @@ class DisplayListBuilder final : public virtual DlCanvas,
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
                               bool prepare_rtree = false);
 
+  DisplayListBuilder(DlScalar width, DlScalar height)
+      : DisplayListBuilder(SkRect::MakeWH(width, height)) {}
+
   ~DisplayListBuilder();
 
   // |DlCanvas|
-  SkISize GetBaseLayerSize() const override;
+  DlISize GetBaseLayerDimensions() const override;
   // |DlCanvas|
   SkImageInfo GetImageInfo() const override;
 
@@ -49,79 +52,69 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void Save() override;
 
   // |DlCanvas|
-  void SaveLayer(const SkRect* bounds,
+  void SaveLayer(std::optional<const DlRect>& bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr) override;
+                 const DlImageFilter* backdrop = nullptr,
+                 std::optional<int64_t> backdrop_id = std::nullopt) override;
   // |DlCanvas|
   void Restore() override;
   // |DlCanvas|
-  int GetSaveCount() const override { return layer_stack_.size(); }
+  int GetSaveCount() const override { return save_stack_.size(); }
   // |DlCanvas|
   void RestoreToCount(int restore_count) override;
 
   // |DlCanvas|
-  void Translate(SkScalar tx, SkScalar ty) override;
+  void Translate(DlScalar tx, DlScalar ty) override;
   // |DlCanvas|
-  void Scale(SkScalar sx, SkScalar sy) override;
+  void Scale(DlScalar sx, DlScalar sy) override;
   // |DlCanvas|
-  void Rotate(SkScalar degrees) override;
+  void Rotate(DlScalar degrees) override;
   // |DlCanvas|
-  void Skew(SkScalar sx, SkScalar sy) override;
+  void Skew(DlScalar sx, DlScalar sy) override;
 
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
   // |DlCanvas|
-  void Transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                         SkScalar myx, SkScalar myy, SkScalar myt) override;
+  void Transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                         DlScalar myx, DlScalar myy, DlScalar myt) override;
   // full 4x4 transform in row major order
   // |DlCanvas|
   void TransformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) override;
   // clang-format on
   // |DlCanvas|
   void TransformReset() override;
   // |DlCanvas|
-  void Transform(const SkMatrix* matrix) override;
+  void Transform(const DlMatrix& matrix) override;
   // |DlCanvas|
-  void Transform(const SkM44* matrix44) override;
-  // |DlCanvas|
-  void SetTransform(const SkMatrix* matrix) override {
+  void SetTransform(const DlMatrix& matrix) override {
     TransformReset();
     Transform(matrix);
   }
-  // |DlCanvas|
-  void SetTransform(const SkM44* matrix44) override {
-    TransformReset();
-    Transform(matrix44);
-  }
-  using DlCanvas::Transform;
 
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
   // |DlCanvas|
-  SkM44 GetTransformFullPerspective() const override {
-    return tracker_.matrix_4x4();
-  }
-  /// Returns the 3x3 partial perspective transform representing all transform
-  /// operations executed so far in this DisplayList within the enclosing
-  /// save stack.
-  // |DlCanvas|
-  SkMatrix GetTransform() const override { return tracker_.matrix_3x3(); }
+  DlMatrix GetMatrix() const override { return global_state().matrix(); }
 
   // |DlCanvas|
-  void ClipRect(const SkRect& rect,
+  void ClipRect(const DlRect& rect,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
-  void ClipRRect(const SkRRect& rrect,
-                 ClipOp clip_op = ClipOp::kIntersect,
-                 bool is_aa = false) override;
+  void ClipOval(const DlRect& bounds,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
   // |DlCanvas|
-  void ClipPath(const SkPath& path,
+  void ClipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op = ClipOp::kIntersect,
+                     bool is_aa = false) override;
+  // |DlCanvas|
+  void ClipPath(const DlPath& path,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
 
@@ -129,124 +122,132 @@ class DisplayListBuilder final : public virtual DlCanvas,
   /// measured in the coordinate space within which this DisplayList will
   /// be rendered.
   // |DlCanvas|
-  SkRect GetDestinationClipBounds() const override {
-    return tracker_.device_cull_rect();
+  DlRect GetDestinationClipCoverage() const override {
+    return global_state().GetDeviceCullCoverage();
   }
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// transformed into the local coordinate space in which currently
   /// recorded rendering operations are interpreted.
   // |DlCanvas|
-  SkRect GetLocalClipBounds() const override {
-    return tracker_.local_cull_rect();
+  DlRect GetLocalClipCoverage() const override {
+    return global_state().GetLocalCullCoverage();
   }
 
   /// Return true iff the supplied bounds are easily shown to be outside
   /// of the current clip bounds. This method may conservatively return
   /// false if it cannot make the determination.
   // |DlCanvas|
-  bool QuickReject(const SkRect& bounds) const override;
+  bool QuickReject(const DlRect& bounds) const override;
 
   // |DlCanvas|
   void DrawPaint(const DlPaint& paint) override;
   // |DlCanvas|
   void DrawColor(DlColor color, DlBlendMode mode) override;
   // |DlCanvas|
-  void DrawLine(const SkPoint& p0,
-                const SkPoint& p1,
+  void DrawLine(const DlPoint& p0,
+                const DlPoint& p1,
                 const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawRect(const SkRect& rect, const DlPaint& paint) override;
+  void DrawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length,
+                      const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
+  void DrawRect(const DlRect& rect, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawCircle(const SkPoint& center,
-                  SkScalar radius,
+  void DrawOval(const DlRect& bounds, const DlPaint& paint) override;
+  // |DlCanvas|
+  void DrawCircle(const DlPoint& center,
+                  DlScalar radius,
                   const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawRRect(const SkRRect& rrect, const DlPaint& paint) override;
+  void DrawRoundRect(const DlRoundRect& rrect, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawDRRect(const SkRRect& outer,
-                  const SkRRect& inner,
-                  const DlPaint& paint) override;
+  void DrawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner,
+                         const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawPath(const SkPath& path, const DlPaint& paint) override;
+  void DrawPath(const DlPath& path, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawArc(const SkRect& bounds,
-               SkScalar start,
-               SkScalar sweep,
+  void DrawArc(const DlRect& bounds,
+               DlScalar start,
+               DlScalar sweep,
                bool useCenter,
                const DlPaint& paint) override;
   // |DlCanvas|
   void DrawPoints(PointMode mode,
                   uint32_t count,
-                  const SkPoint pts[],
+                  const DlPoint pts[],
                   const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
-  using DlCanvas::DrawVertices;
   // |DlCanvas|
   void DrawImage(const sk_sp<DlImage>& image,
-                 const SkPoint point,
+                 const DlPoint& point,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawImageRect(
       const sk_sp<DlImage>& image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlRect& src,
+      const DlRect& dst,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
-  using DlCanvas::DrawImageRect;
   // |DlCanvas|
   void DrawImageNine(const sk_sp<DlImage>& image,
-                     const SkIRect& center,
-                     const SkRect& dst,
+                     const DlIRect& center,
+                     const DlRect& dst,
                      DlFilterMode filter,
                      const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawAtlas(const sk_sp<DlImage>& atlas,
                  const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cullRect,
+                 const DlRect* cullRect,
                  const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawDisplayList(const sk_sp<DisplayList> display_list,
-                       SkScalar opacity = SK_Scalar1) override;
+                       DlScalar opacity = SK_Scalar1) override;
   // |DlCanvas|
   void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
-                    SkScalar x,
-                    SkScalar y,
+                    DlScalar x,
+                    DlScalar y,
                     const DlPaint& paint) override;
 
   void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
-                     SkScalar x,
-                     SkScalar y) override;
+                     DlScalar x,
+                     DlScalar y) override;
 
   void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
-                     SkScalar x,
-                     SkScalar y,
+                     DlScalar x,
+                     DlScalar y,
                      const DlPaint& paint) override;
 
   // |DlCanvas|
-  void DrawShadow(const SkPath& path,
+  void DrawShadow(const DlPath& path,
                   const DlColor color,
-                  const SkScalar elevation,
+                  const DlScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override;
+                  DlScalar dpr) override;
 
   // |DlCanvas|
   void Flush() override {}
 
   sk_sp<DisplayList> Build();
 
+  ENABLE_DL_CANVAS_BACKWARDS_COMPATIBILITY
+
  private:
+  void Init(bool prepare_rtree);
+
   // This method exposes the internal stateful DlOpReceiver implementation
   // of the DisplayListBuilder, primarily for testing purposes. Its use
   // is obsolete and forbidden in every other case and is only shared to a
@@ -259,6 +260,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       DisplayListBuilder& builder);
   friend DlPaint DisplayListBuilderTestingAttributes(
       DisplayListBuilder& builder);
+  friend int DisplayListBuilderTestingLastOpIndex(DisplayListBuilder& builder);
 
   void SetAttributesFromPaint(const DlPaint& paint,
                               const DisplayListAttributeFlags flags);
@@ -267,12 +269,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void setAntiAlias(bool aa) override {
     if (current_.isAntiAlias() != aa) {
       onSetAntiAlias(aa);
-    }
-  }
-  // |DlOpReceiver|
-  void setDither(bool dither) override {
-    if (current_.isDither() != dither) {
-      onSetDither(dither);
     }
   }
   // |DlOpReceiver|
@@ -342,12 +338,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
     }
   }
   // |DlOpReceiver|
-  void setPathEffect(const DlPathEffect* effect) override {
-    if (NotEquals(current_.getPathEffect(), effect)) {
-      onSetPathEffect(effect);
-    }
-  }
-  // |DlOpReceiver|
   void setMaskFilter(const DlMaskFilter* filter) override {
     if (NotEquals(current_.getMaskFilter(), filter)) {
       onSetMaskFilter(filter);
@@ -355,40 +345,42 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   DlPaint CurrentAttributes() const { return current_; }
+  int LastOpIndex() const { return op_index_ - 1; }
 
   // |DlOpReceiver|
   void save() override { Save(); }
   // Only the |renders_with_attributes()| option will be accepted here. Any
   // other flags will be ignored and calculated anew as the DisplayList is
-  // built. Alternatively, use the |saveLayer(SkRect, bool)| method.
+  // built. Alternatively, use the |saveLayer(DlRect, bool)| method.
   // |DlOpReceiver|
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
   // |DlOpReceiver|
   void restore() override { Restore(); }
 
   // |DlOpReceiver|
-  void translate(SkScalar tx, SkScalar ty) override { Translate(tx, ty); }
+  void translate(DlScalar tx, DlScalar ty) override { Translate(tx, ty); }
   // |DlOpReceiver|
-  void scale(SkScalar sx, SkScalar sy) override { Scale(sx, sy); }
+  void scale(DlScalar sx, DlScalar sy) override { Scale(sx, sy); }
   // |DlOpReceiver|
-  void rotate(SkScalar degrees) override { Rotate(degrees); }
+  void rotate(DlScalar degrees) override { Rotate(degrees); }
   // |DlOpReceiver|
-  void skew(SkScalar sx, SkScalar sy) override { Skew(sx, sy); }
+  void skew(DlScalar sx, DlScalar sy) override { Skew(sx, sy); }
 
   // clang-format off
   // |DlOpReceiver|
-  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                         SkScalar myx, SkScalar myy, SkScalar myt) override {
+  void transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                         DlScalar myx, DlScalar myy, DlScalar myt) override {
     Transform2DAffine(mxx, mxy, mxt, myx, myy, myt);
   }
   // |DlOpReceiver|
   void transformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) override {
     TransformFullPerspective(mxx, mxy, mxz, mxt,
                              myx, myy, myz, myt,
                              mzx, mzy, mzz, mzt,
@@ -399,15 +391,21 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void transformReset() override { TransformReset(); }
 
   // |DlOpReceiver|
-  void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override {
+  void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override {
     ClipRect(rect, clip_op, is_aa);
   }
   // |DlOpReceiver|
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override {
-    ClipRRect(rrect, clip_op, is_aa);
+  void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override {
+    ClipOval(bounds, clip_op, is_aa);
   }
   // |DlOpReceiver|
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override {
+    ClipRoundRect(rrect, clip_op, is_aa);
+  }
+  // |DlOpReceiver|
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override {
     ClipPath(path, clip_op, is_aa);
   }
 
@@ -418,204 +416,291 @@ class DisplayListBuilder final : public virtual DlCanvas,
     DrawColor(color, mode);
   }
   // |DlOpReceiver|
-  void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+  void drawLine(const DlPoint& p0, const DlPoint& p1) override;
   // |DlOpReceiver|
-  void drawRect(const SkRect& rect) override;
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
   // |DlOpReceiver|
-  void drawOval(const SkRect& bounds) override;
+  void drawRect(const DlRect& rect) override;
   // |DlOpReceiver|
-  void drawCircle(const SkPoint& center, SkScalar radius) override;
+  void drawOval(const DlRect& bounds) override;
   // |DlOpReceiver|
-  void drawRRect(const SkRRect& rrect) override;
+  void drawCircle(const DlPoint& center, DlScalar radius) override;
   // |DlOpReceiver|
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
   // |DlOpReceiver|
-  void drawPath(const SkPath& path) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
   // |DlOpReceiver|
-  void drawArc(const SkRect& bounds,
-               SkScalar start,
-               SkScalar sweep,
+  void drawPath(const DlPath& path) override;
+  // |DlOpReceiver|
+  void drawArc(const DlRect& bounds,
+               DlScalar start,
+               DlScalar sweep,
                bool useCenter) override;
   // |DlOpReceiver|
-  void drawPoints(PointMode mode, uint32_t count, const SkPoint pts[]) override;
+  void drawPoints(PointMode mode, uint32_t count, const DlPoint pts[]) override;
   // |DlOpReceiver|
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
 
   // |DlOpReceiver|
   void drawImage(const sk_sp<DlImage> image,
-                 const SkPoint point,
+                 const DlPoint& point,
                  DlImageSampling sampling,
                  bool render_with_attributes) override;
   // |DlOpReceiver|
   void drawImageRect(
       const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlRect& src,
+      const DlRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
   // |DlOpReceiver|
   void drawImageNine(const sk_sp<DlImage> image,
-                     const SkIRect& center,
-                     const SkRect& dst,
+                     const DlIRect& center,
+                     const DlRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override;
   // |DlOpReceiver|
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cullRect,
+                 const DlRect* cullRect,
                  bool render_with_attributes) override;
 
   // |DlOpReceiver|
   void drawDisplayList(const sk_sp<DisplayList> display_list,
-                       SkScalar opacity) override {
+                       DlScalar opacity) override {
     DrawDisplayList(display_list, opacity);
   }
   // |DlOpReceiver|
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
-                    SkScalar x,
-                    SkScalar y) override;
+                    DlScalar x,
+                    DlScalar y) override;
   // |DlOpReceiver|
-  void drawShadow(const SkPath& path,
+  void drawShadow(const DlPath& path,
                   const DlColor color,
-                  const SkScalar elevation,
+                  const DlScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override {
+                  DlScalar dpr) override {
     DrawShadow(path, color, elevation, transparent_occluder, dpr);
   }
 
   void checkForDeferredSave();
 
   DisplayListStorage storage_;
-  size_t used_ = 0;
-  size_t allocated_ = 0;
-  int render_op_count_ = 0;
-  int op_index_ = 0;
+  size_t used_ = 0u;
+  size_t allocated_ = 0u;
+  uint32_t render_op_count_ = 0u;
+  uint32_t depth_ = 0u;
+  // Most rendering ops will use 1 depth value, but some attributes may
+  // require an additional depth value (due to implicit saveLayers)
+  uint32_t render_op_depth_cost_ = 1u;
+  DlIndex op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
-  int nested_op_count_ = 0;
+  uint32_t nested_op_count_ = 0;
 
   bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
-  void* Push(size_t extra, int op_inc, Args&&... args);
+  void* Push(size_t extra, Args&&... args);
 
-  void intersect(const SkRect& rect);
-
-  // kInvalidSigma is used to indicate that no MaskBlur is currently set.
-  static constexpr SkScalar kInvalidSigma = 0.0;
-  static bool mask_sigma_valid(SkScalar sigma) {
-    return SkScalarIsFinite(sigma) && sigma > 0.0;
-  }
-
-  class LayerInfo {
-   public:
-    explicit LayerInfo(
-        size_t save_offset = 0,
-        bool has_layer = false,
-        const std::shared_ptr<const DlImageFilter>& filter = nullptr)
-        : save_offset_(save_offset),
-          has_layer_(has_layer),
-          filter_(filter) {}
-
-    // The offset into the memory buffer where the saveLayer DLOp record
-    // for this saveLayer() call is placed. This may be needed if the
-    // eventual restore() call has discovered important information about
-    // the records inside the saveLayer that may impact how the saveLayer
-    // is handled (e.g., |cannot_inherit_opacity| == false).
-    // This offset is only valid if |has_layer| is true.
-    size_t save_offset() const { return save_offset_; }
-
-    bool has_layer() const { return has_layer_; }
-    bool cannot_inherit_opacity() const { return cannot_inherit_opacity_; }
-    bool has_compatible_op() const { return has_compatible_op_; }
-    bool affects_transparent_layer() const {
-      return affects_transparent_layer_;
-    }
-
-    bool is_group_opacity_compatible() const {
-      return !cannot_inherit_opacity_;
-    }
-
-    void mark_incompatible() { cannot_inherit_opacity_ = true; }
-
-    // For now this only allows a single compatible op to mark the
-    // layer as being compatible with group opacity. If we start
-    // computing bounds of ops in the Builder methods then we
-    // can upgrade this to checking for overlapping ops.
-    // See https://github.com/flutter/flutter/issues/93899
-    void add_compatible_op() {
-      if (!cannot_inherit_opacity_) {
-        if (has_compatible_op_) {
-          cannot_inherit_opacity_ = true;
-        } else {
-          has_compatible_op_ = true;
-        }
-      }
-    }
-
-    // Records that the current layer contains an op that produces visible
-    // output on a transparent surface.
-    void add_visible_op() {
-      affects_transparent_layer_ = true;
-    }
-
-    // The filter to apply to the layer bounds when it is restored
-    std::shared_ptr<const DlImageFilter> filter() { return filter_; }
-
-    // is_unbounded should be set to true if we ever encounter an operation
-    // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
-    // or cannot compute its bounds (some effects and filters) and there
-    // was no outstanding clip op at the time.
-    // When the layer is restored, the outer layer may then process this
-    // unbounded state by accumulating its own clip or transferring the
-    // unbounded state to its own outer layer.
-    // Typically the DisplayList will have been constructed with a cull
-    // rect which will act as a default clip for the outermost layer and
-    // the unbounded state of all sub layers will eventually be caught by
-    // that cull rect so that the overall unbounded state of the entire
-    // DisplayList will never be true.
-    //
-    // For historical consistency it is worth noting that SkPicture used
-    // to treat these same conditions as a Nop (they accumulate the
-    // SkPicture cull rect, but if no cull rect was specified then it is
-    // an empty Rect and so has no effect on the bounds).
-    //
-    // Flutter is unlikely to ever run into this as the Dart mechanisms
-    // all supply a non-null cull rect for all Dart Picture objects,
-    // even if that cull rect is kGiantRect.
-    void set_unbounded() { is_unbounded_ = true; }
-
-    // |is_unbounded| should be called after |getLayerBounds| in case
-    // a problem was found during the computation of those bounds,
-    // the layer will have one last chance to flag an unbounded state.
-    bool is_unbounded() const { return is_unbounded_; }
-
-   private:
-    size_t save_offset_;
-    bool has_layer_;
-    bool cannot_inherit_opacity_ = false;
-    bool has_compatible_op_ = false;
-    std::shared_ptr<const DlImageFilter> filter_;
-    bool is_unbounded_ = false;
-    bool has_deferred_save_op_ = false;
-    bool is_nop_ = false;
-    bool affects_transparent_layer_ = false;
-
-    friend class DisplayListBuilder;
+  struct RTreeData {
+    std::vector<SkRect> rects;
+    std::vector<int> indices;
   };
 
-  std::vector<LayerInfo> layer_stack_;
-  LayerInfo* current_layer_;
-  DisplayListMatrixClipTracker tracker_;
-  std::unique_ptr<BoundsAccumulator> accumulator_;
-  BoundsAccumulator* accumulator() { return accumulator_.get(); }
+  struct LayerInfo {
+    LayerInfo(const std::shared_ptr<const DlImageFilter>& filter,
+              size_t rtree_rects_start_index)
+        : filter(filter),
+          rtree_rects_start_index(rtree_rects_start_index) {}
+
+    // The filter that will be applied to the contents of the saveLayer
+    // when it is restored into the parent layer.
+    const std::shared_ptr<const DlImageFilter> filter;
+
+    // The index of the rtree rects when the saveLayer was called, used
+    // only in the case that the saveLayer has a filter so that the
+    // accumulated rects can be updated in the corresponding restore call.
+    const size_t rtree_rects_start_index = 0;
+
+    // The bounds accumulator for the entire DisplayList, relative to its root
+    // (not used when accumulating rects for an rtree, though)
+    AccumulationRect global_space_accumulator;
+
+    // The bounds accumulator to set/verify the bounds of the most recently
+    // invoked saveLayer call, relative to the root of that saveLayer
+    AccumulationRect layer_local_accumulator;
+
+    DlBlendMode max_blend_mode = DlBlendMode::kClear;
+
+    bool opacity_incompatible_op_detected = false;
+    bool affects_transparent_layer = false;
+    bool contains_backdrop_filter = false;
+    bool is_unbounded = false;
+
+    bool is_group_opacity_compatible() const {
+      return !opacity_incompatible_op_detected &&
+             !layer_local_accumulator.overlap_detected();
+    }
+
+    void update_blend_mode(DlBlendMode mode) {
+      if (max_blend_mode < mode) {
+        max_blend_mode = mode;
+      }
+    }
+  };
+
+  // The SaveInfo class stores internal data common to both Save and
+  // SaveLayer calls
+  class SaveInfo {
+   public:
+    // For vector reallocation calls to copy vector data
+    SaveInfo(const SaveInfo& copy) = default;
+    SaveInfo(SaveInfo&& copy) = default;
+
+    // For constructor (root layer) initialization
+    explicit SaveInfo(const DlRect& cull_rect)
+        : is_save_layer(true),
+          has_valid_clip(false),
+          global_state(cull_rect),
+          layer_state(cull_rect),
+          layer_info(new LayerInfo(nullptr, 0u)) {}
+
+    // For regular save calls:
+    // Passing a pointer to the parent_info so as to distinguish this
+    // call from the copy constructors used during vector reallocations
+    explicit SaveInfo(const SaveInfo* parent_info)
+        : is_save_layer(false),
+          has_deferred_save_op(true),
+          has_valid_clip(parent_info->has_valid_clip),
+          global_state(parent_info->global_state),
+          layer_state(parent_info->layer_state),
+          layer_info(parent_info->layer_info) {}
+
+    // For saveLayer calls:
+    explicit SaveInfo(const SaveInfo* parent_info,
+                      const std::shared_ptr<const DlImageFilter>& filter,
+                      int rtree_rect_index)
+        : is_save_layer(true),
+          has_valid_clip(false),
+          global_state(parent_info->global_state),
+          layer_state(kMaxCullRect),
+          layer_info(new LayerInfo(filter, rtree_rect_index)) {}
+
+    const bool is_save_layer;
+
+    bool has_deferred_save_op = false;
+    bool is_nop = false;
+    bool has_valid_clip;
+
+    // The depth when the save call is recorded, used to compute the total
+    // depth of its content when the associated restore is called.
+    uint32_t save_depth = 0;
+
+    // The offset into the buffer where the associated save op is recorded
+    // (which is not necessarily the same as when the Save() method is called
+    // due to deferred saves)
+    size_t save_offset = 0;
+
+    // The transform and clip accumulated since the root of the DisplayList
+    DisplayListMatrixClipState global_state;
+
+    // The transform and clip accumulated since the most recent saveLayer,
+    // used to compute and update its bounds when the restore is called.
+    DisplayListMatrixClipState layer_state;
+
+    std::shared_ptr<LayerInfo> layer_info;
+
+    // Records the given bounds after transforming by the global and
+    // layer matrices.
+    bool AccumulateBoundsLocal(const SkRect& bounds);
+
+    // Simply transfers the local bounds to the parent
+    void TransferBoundsToParent(const SaveInfo& parent);
+  };
+
+  const DlRect original_cull_rect_;
+  std::vector<SaveInfo> save_stack_;
+  std::optional<RTreeData> rtree_data_;
+
+  DlPaint current_;
+
+  // Returns a reference to the SaveInfo structure at the top of the current
+  // save_stack vector. Note that the clip and matrix state can be accessed
+  // more directly through global_state() and layer_state().
+  SaveInfo& current_info() { return save_stack_.back(); }
+  const SaveInfo& current_info() const { return save_stack_.back(); }
+
+  // Returns a reference to the SaveInfo structure just below the top
+  // of the current save_stack state.
+  SaveInfo& parent_info() { return *std::prev(save_stack_.end(), 2); }
+  const SaveInfo& parent_info() const {
+    return *std::prev(save_stack_.end(), 2);
+  }
+
+  // Returns a reference to the LayerInfo structure at the top of the current
+  // save_stack vector. Note that the clip and matrix state can be accessed
+  // more directly through global_state() and layer_state().
+  LayerInfo& current_layer() { return *save_stack_.back().layer_info; }
+  const LayerInfo& current_layer() const {
+    return *save_stack_.back().layer_info;
+  }
+
+  // Returns a reference to the LayerInfo structure just below the top
+  // of the current save_stack state.
+  LayerInfo& parent_layer() {
+    return *std::prev(save_stack_.end(), 2)->layer_info;
+  }
+  const LayerInfo& parent_layer() const {
+    return *std::prev(save_stack_.end(), 2)->layer_info;
+  }
+
+  // Returns a reference to the matrix and clip state for the entire
+  // DisplayList. The initial transform of this state is identity and
+  // the initial cull_rect is the root original_cull_rect supplied
+  // in the constructor. It is a summary of all transform and clip
+  // calls that have happened since the DisplayList was created
+  // (and have not yet been removed by a restore() call).
+  DisplayListMatrixClipState& global_state() {
+    return current_info().global_state;
+  }
+  const DisplayListMatrixClipState& global_state() const {
+    return current_info().global_state;
+  }
+
+  // Returns a reference to the matrix and clip state relative to the
+  // current layer, whether that is defined by the most recent saveLayer
+  // call, or by the initial root state of the entire DisplayList for
+  // calls not surrounded by a saveLayer/restore pair. It is a summary
+  // of only those transform and clip calls that have happened since
+  // the creation of the DisplayList or since the most recent saveLayer
+  // (and have not yet been removed by a restore() call).
+  DisplayListMatrixClipState& layer_local_state() {
+    return current_info().layer_state;
+  }
+  const DisplayListMatrixClipState& layer_local_state() const {
+    return current_info().layer_state;
+  }
+
+  void RestoreLayer();
+  void TransferLayerBounds(const SkRect& content_bounds);
+  bool AdjustRTreeRects(RTreeData& data,
+                        const DlImageFilter& filter,
+                        const SkMatrix& matrix,
+                        const SkRect& clip,
+                        size_t rect_index);
 
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.
@@ -641,10 +726,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // Update the opacity compatibility flags of the current layer for an op
   // that has determined its compatibility as indicated by |compatible|.
   void UpdateLayerOpacityCompatibility(bool compatible) {
-    if (compatible) {
-      current_layer_->add_compatible_op();
-    } else {
-      current_layer_->mark_incompatible();
+    if (!compatible) {
+      current_layer().opacity_incompatible_op_detected = true;
     }
   }
 
@@ -673,52 +756,18 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   void onSetAntiAlias(bool aa);
-  void onSetDither(bool dither);
   void onSetInvertColors(bool invert);
   void onSetStrokeCap(DlStrokeCap cap);
   void onSetStrokeJoin(DlStrokeJoin join);
   void onSetDrawStyle(DlDrawStyle style);
-  void onSetStrokeWidth(SkScalar width);
-  void onSetStrokeMiter(SkScalar limit);
+  void onSetStrokeWidth(DlScalar width);
+  void onSetStrokeMiter(DlScalar limit);
   void onSetColor(DlColor color);
   void onSetBlendMode(DlBlendMode mode);
   void onSetColorSource(const DlColorSource* source);
   void onSetImageFilter(const DlImageFilter* filter);
   void onSetColorFilter(const DlColorFilter* filter);
-  void onSetPathEffect(const DlPathEffect* effect);
   void onSetMaskFilter(const DlMaskFilter* filter);
-
-  // The DisplayList had an unbounded call with no cull rect or clip
-  // to contain it. Should only be called after the stream is fully
-  // built.
-  // Unbounded operations are calls like |drawColor| which are defined
-  // to flood the entire surface, or calls that relied on a rendering
-  // attribute which is unable to compute bounds (should be rare).
-  // In those cases the bounds will represent only the accumulation
-  // of the bounded calls and this flag will be set to indicate that
-  // condition.
-  bool is_unbounded() const {
-    FML_DCHECK(layer_stack_.size() == 1);
-    return layer_stack_.front().is_unbounded();
-  }
-
-  SkRect bounds() const {
-    FML_DCHECK(layer_stack_.size() == 1);
-    if (is_unbounded()) {
-      FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
-    }
-
-    return accumulator_->bounds();
-  }
-
-  sk_sp<DlRTree> rtree() {
-    FML_DCHECK(layer_stack_.size() == 1);
-    if (is_unbounded()) {
-      FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
-    }
-
-    return accumulator_->rtree();
-  }
 
   static DisplayListAttributeFlags FlagsForPointMode(PointMode mode);
 
@@ -732,30 +781,29 @@ class DisplayListBuilder final : public virtual DlCanvas,
   OpResult PaintResult(const DlPaint& paint,
                        DisplayListAttributeFlags flags = kDrawPaintFlags);
 
-  void UpdateLayerResult(OpResult result) {
+  void UpdateLayerResult(OpResult result, DlBlendMode mode) {
     switch (result) {
       case OpResult::kNoEffect:
       case OpResult::kPreservesTransparency:
         break;
       case OpResult::kAffectsAll:
-        current_layer_->add_visible_op();
+        current_layer().affects_transparent_layer = true;
         break;
     }
+    current_layer().update_blend_mode(mode);
+  }
+  void UpdateLayerResult(OpResult result, bool uses_attributes = true) {
+    UpdateLayerResult(result, uses_attributes ? current_.getBlendMode()
+                                              : DlBlendMode::kSrcOver);
   }
 
   // kAnyColor is a non-opaque and non-transparent color that will not
   // trigger any short-circuit tests about the results of a blend.
-  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlpha(0x80);
+  static constexpr DlColor kAnyColor = DlColor::kMidGrey().withAlphaF(0.5f);
   static_assert(!kAnyColor.isOpaque());
   static_assert(!kAnyColor.isTransparent());
   static DlColor GetEffectiveColor(const DlPaint& paint,
                                    DisplayListAttributeFlags flags);
-
-  // Computes the bounds of an operation adjusted for a given ImageFilter
-  // and returns whether the computation was possible. If the method
-  // returns false then the caller should assume the worst about the bounds.
-  static bool ComputeFilteredBounds(SkRect& bounds,
-                                    const DlImageFilter* filter);
 
   // Adjusts the indicated bounds for the given flags and returns true if
   // the calculation was possible, or false if it could not be estimated.
@@ -763,7 +811,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // Records the fact that we encountered an op that either could not
   // estimate its bounds or that fills all of the destination space.
-  bool AccumulateUnbounded();
+  bool AccumulateUnbounded(const SaveInfo& save);
+  bool AccumulateUnbounded() {
+    return AccumulateUnbounded(current_info());
+  }
 
   // Records the bounds for an op after modifying them according to the
   // supplied attribute flags and transforming by the current matrix.
@@ -780,11 +831,12 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // Records the given bounds after transforming by the current matrix
   // and clipping against the current clip.
-  bool AccumulateBounds(SkRect& bounds);
-
-  DlPaint current_;
+  bool AccumulateBounds(const SkRect& bounds, SaveInfo& layer, int id);
+  bool AccumulateBounds(const SkRect& bounds) {
+    return AccumulateBounds(bounds, current_info(), op_index_);
+  }
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#endif  // FLUTTER_DISPLAY_LIST_DL_BUILDER_H_

@@ -2,24 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_CONTEXT_ANDROID_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_CONTEXT_ANDROID_CONTEXT_H_
 
+#include "common/settings.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/impeller/renderer/context.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
-
-enum class AndroidRenderingAPI {
-  kSoftware,
-  kOpenGLES,
-  kVulkan,
-  /// @brief Attempt to create a Vulkan surface, if that fails then fall back
-  /// to GLES.
-  kAutoselect,
-};
 
 //------------------------------------------------------------------------------
 /// @brief      Holds state that is shared across Android surfaces.
@@ -29,6 +21,13 @@ class AndroidContext {
   explicit AndroidContext(AndroidRenderingAPI rendering_api);
 
   virtual ~AndroidContext();
+
+  struct ContextSettings {
+    bool enable_validation = false;
+    bool enable_gpu_tracing = false;
+    bool disable_surface_control = false;
+    bool quiet = false;
+  };
 
   AndroidRenderingAPI RenderingApi() const;
 
@@ -83,4 +82,4 @@ class AndroidContext {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_CONTEXT_ANDROID_CONTEXT_H_

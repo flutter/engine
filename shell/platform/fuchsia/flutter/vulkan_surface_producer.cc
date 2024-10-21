@@ -16,14 +16,14 @@
 #include "flutter_vma/flutter_skia_vma.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSemaphore.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSemaphore.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
-#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
+#include "third_party/skia/include/gpu/vk/VulkanBackendContext.h"
+#include "third_party/skia/include/gpu/vk/VulkanExtensions.h"
 
 namespace flutter_runner {
 
@@ -112,8 +112,8 @@ bool VulkanSurfaceProducer::Initialize() {
     return false;
   }
 
-  uint32_t skia_features = 0;
-  if (!logical_device_->GetPhysicalDeviceFeaturesSkia(&skia_features)) {
+  VkPhysicalDeviceFeatures features;
+  if (!logical_device_->GetPhysicalDeviceFeatures(&features)) {
     FML_LOG(ERROR)
         << "VulkanSurfaceProducer: Failed to get physical device features.";
 
@@ -125,18 +125,16 @@ bool VulkanSurfaceProducer::Initialize() {
       logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
       vk_, true);
 
-  GrVkBackendContext backend_context;
+  skgpu::VulkanBackendContext backend_context;
   backend_context.fInstance = application_->GetInstance();
   backend_context.fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
   backend_context.fDevice = logical_device_->GetHandle();
   backend_context.fQueue = logical_device_->GetQueueHandle();
   backend_context.fGraphicsQueueIndex =
       logical_device_->GetGraphicsQueueIndex();
-  backend_context.fMinAPIVersion = application_->GetAPIVersion();
   backend_context.fMaxAPIVersion = application_->GetAPIVersion();
-  backend_context.fFeatures = skia_features;
+  backend_context.fDeviceFeatures = &features;
   backend_context.fGetProc = std::move(getProc);
-  backend_context.fOwnsInstanceAndDevice = false;
   backend_context.fMemoryAllocator = memory_allocator_;
 
   // The memory_requirements_2 extension is required on Fuchsia as the AMD
@@ -146,7 +144,7 @@ bool VulkanSurfaceProducer::Initialize() {
   };
   const int device_extensions_count =
       sizeof(device_extensions) / sizeof(device_extensions[0]);
-  GrVkExtensions vk_extensions;
+  skgpu::VulkanExtensions vk_extensions;
   vk_extensions.init(backend_context.fGetProc, backend_context.fInstance,
                      backend_context.fPhysicalDevice, 0, nullptr,
                      device_extensions_count, device_extensions);
@@ -235,22 +233,21 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
     }
 
     VkImageMemoryBarrier image_barrier = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .pNext = nullptr,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = 0,
-      .oldLayout = imageInfo.fImageLayout,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask = 0,
+        .oldLayout = imageInfo.fImageLayout,
     // Understand why this is causing issues on Intel. TODO(fxb/53449)
 #if defined(__aarch64__)
-      .newLayout = imageInfo.fImageLayout,
+        .newLayout = imageInfo.fImageLayout,
 #else
-      .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
 #endif
-      .srcQueueFamilyIndex = 0,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
-      .image = vk_surface->GetVkImage(),
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}
-    };
+        .srcQueueFamilyIndex = 0,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
+        .image = vk_surface->GetVkImage(),
+        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
 
     if (!command_buffer->InsertPipelineBarrier(
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

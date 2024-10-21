@@ -9,15 +9,15 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
 template <typename SyncSwitch>
 sk_sp<SkImage> ConvertToRasterUsingResourceContext(
-    sk_sp<SkImage> image,
-    fml::WeakPtr<GrDirectContext> resource_context,
+    const sk_sp<SkImage>& image,
+    const fml::WeakPtr<GrDirectContext>& resource_context,
     const std::shared_ptr<const SyncSwitch>& is_gpu_disabled_sync_switch) {
   sk_sp<SkSurface> surface;
   SkImageInfo surface_info = SkImageInfo::MakeN32Premul(image->dimensions());

@@ -5,5 +5,5 @@
 import("//flutter/tools/fuchsia/dart/dart_tool.gni")
 
 dart_prebuilt_tool("gen_kernel") {
-  snapshot = "//third_party/dart/pkg/vm/bin/gen_kernel.dart"
+  snapshot = "$dart_src/pkg/vm/bin/gen_kernel.dart"
 }

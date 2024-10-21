@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/painting/image_encoding_impeller.h"
 
 #include "flutter/lib/ui/painting/image.h"
+#include "fml/status.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/command_buffer.h"
@@ -25,6 +26,8 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
       return SkColorType::kBGRA_8888_SkColorType;
     case impeller::PixelFormat::kB10G10R10XR:
       return SkColorType::kBGR_101010x_XR_SkColorType;
+    case impeller::PixelFormat::kB10G10R10A10XR:
+      return SkColorType::kBGRA_10101010_XR_SkColorType;
     default:
       return std::nullopt;
   }
@@ -34,11 +37,8 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     SkColorType color_type,
     SkISize dimensions) {
-  auto buffer_view = buffer->AsBufferView();
-
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
-
   SkBitmap bitmap;
   auto func = [](void* addr, void* context) {
     auto buffer =
@@ -47,7 +47,7 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     delete buffer;
   };
   auto bytes_per_pixel = image_info.bytesPerPixel();
-  bitmap.installPixels(image_info, buffer_view.contents,
+  bitmap.installPixels(image_info, buffer->OnGetContents(),
                        dimensions.width() * bytes_per_pixel, func,
                        new std::shared_ptr<impeller::DeviceBuffer>(buffer));
   bitmap.setImmutable();
@@ -91,8 +91,7 @@ void DoConvertImageToRasterImpellerWithRetry(
     // task on the Context so it can be executed when the GPU becomes available.
     if (status.code() == fml::StatusCode::kUnavailable) {
       impeller_context->StoreTaskForGPU(
-          [dl_image, encode_task = std::move(encode_task),
-           is_gpu_disabled_sync_switch, impeller_context,
+          [dl_image, encode_task, is_gpu_disabled_sync_switch, impeller_context,
            retry_runner]() mutable {
             auto retry_task = [dl_image, encode_task = std::move(encode_task),
                                is_gpu_disabled_sync_switch, impeller_context] {
@@ -112,6 +111,10 @@ void DoConvertImageToRasterImpellerWithRetry(
             } else {
               retry_task();
             }
+          },
+          [encode_task]() {
+            encode_task(
+                fml::Status(fml::StatusCode::kUnavailable, "GPU unavailable."));
           });
     } else {
       // Pass on errors that are not `kUnavailable`.
@@ -157,6 +160,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
 
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
+  buffer_desc.readback = true;  // set to false for testing.
   buffer_desc.size =
       texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   auto buffer =
@@ -174,13 +178,18 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
       encode_task(fml::Status(fml::StatusCode::kUnknown, ""));
       return;
     }
+    buffer->Invalidate();
     auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
     encode_task(sk_image);
   };
 
-  if (!command_buffer->SubmitCommands(completion)) {
+  if (!impeller_context->GetCommandQueue()
+           ->Submit({command_buffer}, completion)
+           .ok()) {
     FML_LOG(ERROR) << "Failed to submit commands.";
   }
+
+  impeller_context->DisposeThreadLocalCachedResources();
 }
 
 void ImageEncodingImpeller::ConvertImageToRaster(

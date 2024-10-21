@@ -10,11 +10,10 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/display_list/aiks_context.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
-#include "flutter/impeller/renderer/renderer.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
@@ -22,7 +21,7 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
     : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                          const std::shared_ptr<impeller::Context>& context,
+                          const std::shared_ptr<impeller::AiksContext>& context,
                           bool render_to_surface = true);
 
   // |Surface|
@@ -36,7 +35,6 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
  private:
   const GPUSurfaceMetalDelegate* delegate_;
   const MTLRenderTargetType render_target_type_;
-  std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   fml::scoped_nsprotocol<id<MTLTexture>> last_texture_;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
@@ -47,7 +45,8 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
   bool disable_partial_repaint_ = false;
   // Accumulated damage for each framebuffer; Key is address of underlying
   // MTLTexture for each drawable
-  std::map<uintptr_t, SkIRect> damage_;
+  std::shared_ptr<std::map<uintptr_t, SkIRect>> damage_ =
+      std::make_shared<std::map<uintptr_t, SkIRect>>();
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(

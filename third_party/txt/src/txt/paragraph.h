@@ -21,7 +21,10 @@
 #include "flutter/display_list/dl_builder.h"
 #include "line_metrics.h"
 #include "paragraph_style.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/modules/skparagraph/include/Metrics.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 class SkCanvas;
 
@@ -173,11 +176,36 @@ class Paragraph {
   virtual PositionWithAffinity GetGlyphPositionAtCoordinate(double dx,
                                                             double dy) = 0;
 
+  virtual bool GetGlyphInfoAt(
+      unsigned offset,
+      skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const = 0;
+
+  virtual bool GetClosestGlyphInfoAtCoordinate(
+      double dx,
+      double dy,
+      skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const = 0;
+
   // Finds the first and last glyphs that define a word containing the glyph at
   // index offset.
   virtual Range<size_t> GetWordBoundary(size_t offset) = 0;
 
   virtual std::vector<LineMetrics>& GetLineMetrics() = 0;
+
+  virtual bool GetLineMetricsAt(
+      int lineNumber,
+      skia::textlayout::LineMetrics* lineMetrics) const = 0;
+
+  // Returns the total number of visible lines in the paragraph.
+  virtual size_t GetNumberOfLines() const = 0;
+
+  // Returns the zero-indexed line number that contains the given code unit
+  // offset. Returns -1 if the given offset is out of bounds, or points to a
+  // codepoint that is logically after the last visible codepoint.
+  //
+  // If the offset points to a hard line break, this method returns the line
+  // number of the line this hard line break breaks, intead of the new line it
+  // creates.
+  virtual int GetLineNumberAt(size_t utf16Offset) const = 0;
 };
 
 }  // namespace txt

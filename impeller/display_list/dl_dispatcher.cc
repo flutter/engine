@@ -8,142 +8,112 @@
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
+#include "display_list/effects/dl_color_source.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
-#include "impeller/aiks/color_filter.h"
 #include "impeller/core/formats.h"
+#include "impeller/display_list/aiks_context.h"
+#include "impeller/display_list/canvas.h"
+#include "impeller/display_list/dl_atlas_geometry.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/display_list/skia_conversions.h"
+#include "impeller/entity/contents/atlas_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
-
-#if IMPELLER_ENABLE_3D
-#include "impeller/entity/contents/scene_contents.h"
-#endif  // IMPELLER_ENABLE_3D
+#include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {
 
+#if !defined(NDEBUG)
+#define USE_DEPTH_WATCHER true
+#else
+#define USE_DEPTH_WATCHER false
+#endif  //  !defined(NDEBUG)
+
+#if USE_DEPTH_WATCHER
+
+// Invoke this macro at the top of any DlOpReceiver dispatch function
+// using a number indicating the maximum depth that the operation is
+// expected to consume in the Canvas. Most rendering ops consume 1
+// except for DrawImageNine that currently consumes 1 per section (i.e. 9).
+// Attribute, clip and transform ops do not consume depth but this
+// macro can still be used with an argument of 0 to verify that expectation.
+//
+// The watchdog object allocated here will automatically double-check
+// the depth usage at any exit point to the function, or any other
+// point at which it falls out of scope.
+#define AUTO_DEPTH_WATCHER(d)                            \
+  DepthWatcher _watcher(__FILE__, __LINE__, GetCanvas(), \
+                        paint_.mask_blur_descriptor.has_value(), d)
+
+// While the AUTO_DEPTH_WATCHER macro will check the depth usage at
+// any exit point from the dispatch function, sometimes the dispatch
+// functions are somewhat compounded and result in multiple Canvas
+// calls.
+//
+// Invoke this macro at any key points in the middle of a dispatch
+// function to verify that you still haven't exceeded the maximum
+// allowed depth. This is especially useful if the function does
+// an implicit save/restore where the restore call might assert the
+// depth constraints in a function in Canvas that can't be as easily
+// traced back to a given dispatch function as these macros can.
+#define AUTO_DEPTH_CHECK() _watcher.check(__FILE__, __LINE__)
+
+// Helper class, use the AUTO_DEPTH_WATCHER macros to access it
+struct DepthWatcher {
+  DepthWatcher(const std::string& file,
+               int line,
+               const impeller::Canvas& canvas,
+               bool has_mask_blur,
+               int allowed)
+      : file_(file),
+        line_(line),
+        canvas_(canvas),
+        allowed_(has_mask_blur ? allowed + 1 : allowed),
+        old_depth_(canvas.GetOpDepth()),
+        old_max_(canvas.GetMaxOpDepth()) {}
+
+  ~DepthWatcher() { check(file_, line_); }
+
+  void check(const std::string& file, int line) {
+    FML_CHECK(canvas_.GetOpDepth() <= (old_depth_ + allowed_) &&
+              canvas_.GetOpDepth() <= old_max_)
+        << std::endl
+        << "from " << file << ":" << line << std::endl
+        << "old/allowed/current/max = " << old_depth_ << "/" << allowed_ << "/"
+        << canvas_.GetOpDepth() << "/" << old_max_;
+  }
+
+ private:
+  const std::string file_;
+  const int line_;
+
+  const impeller::Canvas& canvas_;
+  const uint64_t allowed_;
+  const uint64_t old_depth_;
+  const uint64_t old_max_;
+};
+
+#else  // USE_DEPTH_WATCHER
+
+#define AUTO_DEPTH_WATCHER(d)
+#define AUTO_DEPTH_CHECK()
+
+#endif  // USE_DEPTH_WATCHER
+
 #define UNIMPLEMENTED \
   FML_DLOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
-
-DlDispatcher::DlDispatcher() = default;
-
-DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
-
-DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
-
-DlDispatcher::~DlDispatcher() = default;
-
-static BlendMode ToBlendMode(flutter::DlBlendMode mode) {
-  switch (mode) {
-    case flutter::DlBlendMode::kClear:
-      return BlendMode::kClear;
-    case flutter::DlBlendMode::kSrc:
-      return BlendMode::kSource;
-    case flutter::DlBlendMode::kDst:
-      return BlendMode::kDestination;
-    case flutter::DlBlendMode::kSrcOver:
-      return BlendMode::kSourceOver;
-    case flutter::DlBlendMode::kDstOver:
-      return BlendMode::kDestinationOver;
-    case flutter::DlBlendMode::kSrcIn:
-      return BlendMode::kSourceIn;
-    case flutter::DlBlendMode::kDstIn:
-      return BlendMode::kDestinationIn;
-    case flutter::DlBlendMode::kSrcOut:
-      return BlendMode::kSourceOut;
-    case flutter::DlBlendMode::kDstOut:
-      return BlendMode::kDestinationOut;
-    case flutter::DlBlendMode::kSrcATop:
-      return BlendMode::kSourceATop;
-    case flutter::DlBlendMode::kDstATop:
-      return BlendMode::kDestinationATop;
-    case flutter::DlBlendMode::kXor:
-      return BlendMode::kXor;
-    case flutter::DlBlendMode::kPlus:
-      return BlendMode::kPlus;
-    case flutter::DlBlendMode::kModulate:
-      return BlendMode::kModulate;
-    case flutter::DlBlendMode::kScreen:
-      return BlendMode::kScreen;
-    case flutter::DlBlendMode::kOverlay:
-      return BlendMode::kOverlay;
-    case flutter::DlBlendMode::kDarken:
-      return BlendMode::kDarken;
-    case flutter::DlBlendMode::kLighten:
-      return BlendMode::kLighten;
-    case flutter::DlBlendMode::kColorDodge:
-      return BlendMode::kColorDodge;
-    case flutter::DlBlendMode::kColorBurn:
-      return BlendMode::kColorBurn;
-    case flutter::DlBlendMode::kHardLight:
-      return BlendMode::kHardLight;
-    case flutter::DlBlendMode::kSoftLight:
-      return BlendMode::kSoftLight;
-    case flutter::DlBlendMode::kDifference:
-      return BlendMode::kDifference;
-    case flutter::DlBlendMode::kExclusion:
-      return BlendMode::kExclusion;
-    case flutter::DlBlendMode::kMultiply:
-      return BlendMode::kMultiply;
-    case flutter::DlBlendMode::kHue:
-      return BlendMode::kHue;
-    case flutter::DlBlendMode::kSaturation:
-      return BlendMode::kSaturation;
-    case flutter::DlBlendMode::kColor:
-      return BlendMode::kColor;
-    case flutter::DlBlendMode::kLuminosity:
-      return BlendMode::kLuminosity;
-  }
-  FML_UNREACHABLE();
-}
-
-static Entity::TileMode ToTileMode(flutter::DlTileMode tile_mode) {
-  switch (tile_mode) {
-    case flutter::DlTileMode::kClamp:
-      return Entity::TileMode::kClamp;
-    case flutter::DlTileMode::kRepeat:
-      return Entity::TileMode::kRepeat;
-    case flutter::DlTileMode::kMirror:
-      return Entity::TileMode::kMirror;
-    case flutter::DlTileMode::kDecal:
-      return Entity::TileMode::kDecal;
-  }
-}
-
-static impeller::SamplerDescriptor ToSamplerDescriptor(
-    const flutter::DlImageSampling options) {
-  impeller::SamplerDescriptor desc;
-  switch (options) {
-    case flutter::DlImageSampling::kNearestNeighbor:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
-      desc.label = "Nearest Sampler";
-      break;
-    case flutter::DlImageSampling::kLinear:
-    // Impeller doesn't support cubic sampling, but linear is closer to correct
-    // than nearest for this case.
-    case flutter::DlImageSampling::kCubic:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
-      desc.label = "Linear Sampler";
-      break;
-    case flutter::DlImageSampling::kMipmapLinear:
-      desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
-      desc.mip_filter = impeller::MipFilter::kLinear;
-      desc.label = "Mipmap Linear Sampler";
-      break;
-  }
-  return desc;
-}
 
 static impeller::SamplerDescriptor ToSamplerDescriptor(
     const flutter::DlFilterMode options) {
@@ -163,25 +133,11 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   return desc;
 }
 
-static Matrix ToMatrix(const SkMatrix& m) {
-  return Matrix{
-      // clang-format off
-      m[0], m[3], 0, m[6],
-      m[1], m[4], 0, m[7],
-      0,    0,    1, 0,
-      m[2], m[5], 0, m[8],
-      // clang-format on
-  };
-}
-
 // |flutter::DlOpReceiver|
-void DlDispatcher::setAntiAlias(bool aa) {
+void DlDispatcherBase::setAntiAlias(bool aa) {
+  AUTO_DEPTH_WATCHER(0u);
+
   // Nothing to do because AA is implicit.
-}
-
-// |flutter::DlOpReceiver|
-void DlDispatcher::setDither(bool dither) {
-  paint_.dither = dither;
 }
 
 static Paint::Style ToStyle(flutter::DlDrawStyle style) {
@@ -198,32 +154,37 @@ static Paint::Style ToStyle(flutter::DlDrawStyle style) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
+void DlDispatcherBase::setDrawStyle(flutter::DlDrawStyle style) {
+  AUTO_DEPTH_WATCHER(0u);
+
   paint_.style = ToStyle(style);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setColor(flutter::DlColor color) {
-  paint_.color = {
-      color.getRedF(),
-      color.getGreenF(),
-      color.getBlueF(),
-      color.getAlphaF(),
-  };
+void DlDispatcherBase::setColor(flutter::DlColor color) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  paint_.color = skia_conversions::ToColor(color);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeWidth(SkScalar width) {
+void DlDispatcherBase::setStrokeWidth(DlScalar width) {
+  AUTO_DEPTH_WATCHER(0u);
+
   paint_.stroke_width = width;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeMiter(SkScalar limit) {
+void DlDispatcherBase::setStrokeMiter(DlScalar limit) {
+  AUTO_DEPTH_WATCHER(0u);
+
   paint_.stroke_miter = limit;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
+void DlDispatcherBase::setStrokeCap(flutter::DlStrokeCap cap) {
+  AUTO_DEPTH_WATCHER(0u);
+
   switch (cap) {
     case flutter::DlStrokeCap::kButt:
       paint_.stroke_cap = Cap::kButt;
@@ -238,7 +199,9 @@ void DlDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
+void DlDispatcherBase::setStrokeJoin(flutter::DlStrokeJoin join) {
+  AUTO_DEPTH_WATCHER(0u);
+
   switch (join) {
     case flutter::DlStrokeJoin::kMiter:
       paint_.stroke_join = Join::kMiter;
@@ -252,246 +215,36 @@ void DlDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
   }
 }
 
-static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
-  auto result = std::vector<Color>();
-  if (colors == nullptr) {
-    return result;
-  }
-  for (int i = 0; i < count; i++) {
-    result.push_back(skia_conversions::ToColor(colors[i]));
-  }
-  return result;
-}
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::setColorSource(const flutter::DlColorSource* source) {
+  AUTO_DEPTH_WATCHER(0u);
 
-static std::optional<ColorSource::Type> ToColorSourceType(
-    flutter::DlColorSourceType type) {
-  switch (type) {
-    case flutter::DlColorSourceType::kColor:
-      return ColorSource::Type::kColor;
-    case flutter::DlColorSourceType::kImage:
-      return ColorSource::Type::kImage;
-    case flutter::DlColorSourceType::kLinearGradient:
-      return ColorSource::Type::kLinearGradient;
-    case flutter::DlColorSourceType::kRadialGradient:
-      return ColorSource::Type::kRadialGradient;
-    case flutter::DlColorSourceType::kConicalGradient:
-      return ColorSource::Type::kConicalGradient;
-    case flutter::DlColorSourceType::kSweepGradient:
-      return ColorSource::Type::kSweepGradient;
-    case flutter::DlColorSourceType::kRuntimeEffect:
-      return ColorSource::Type::kRuntimeEffect;
-#ifdef IMPELLER_ENABLE_3D
-    case flutter::DlColorSourceType::kScene:
-      return ColorSource::Type::kScene;
-#endif  // IMPELLER_ENABLE_3D
+  if (!source || source->type() == flutter::DlColorSourceType::kColor) {
+    paint_.color_source = nullptr;
+  } else {
+    paint_.color_source = source;
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
-  if (!source) {
-    paint_.color_source = ColorSource::MakeColor();
-    return;
-  }
+void DlDispatcherBase::setColorFilter(const flutter::DlColorFilter* filter) {
+  AUTO_DEPTH_WATCHER(0u);
 
-  std::optional<ColorSource::Type> type = ToColorSourceType(source->type());
-
-  if (!type.has_value()) {
-    FML_LOG(ERROR) << "Requested ColorSourceType::kUnknown";
-    paint_.color_source = ColorSource::MakeColor();
-    return;
-  }
-
-  switch (type.value()) {
-    case ColorSource::Type::kColor: {
-      const flutter::DlColorColorSource* color = source->asColor();
-
-      paint_.color_source = ColorSource::MakeColor();
-      setColor(color->color());
-      FML_DCHECK(color);
-      return;
-    }
-    case ColorSource::Type::kLinearGradient: {
-      const flutter::DlLinearGradientColorSource* linear =
-          source->asLinearGradient();
-      FML_DCHECK(linear);
-      auto start_point = skia_conversions::ToPoint(linear->start_point());
-      auto end_point = skia_conversions::ToPoint(linear->end_point());
-      std::vector<Color> colors;
-      std::vector<float> stops;
-      skia_conversions::ConvertStops(linear, colors, stops);
-
-      auto tile_mode = ToTileMode(linear->tile_mode());
-      auto matrix = ToMatrix(linear->matrix());
-
-      paint_.color_source = ColorSource::MakeLinearGradient(
-          start_point, end_point, std::move(colors), std::move(stops),
-          tile_mode, matrix);
-      return;
-    }
-    case ColorSource::Type::kConicalGradient: {
-      const flutter::DlConicalGradientColorSource* conical_gradient =
-          source->asConicalGradient();
-      FML_DCHECK(conical_gradient);
-      Point center = skia_conversions::ToPoint(conical_gradient->end_center());
-      SkScalar radius = conical_gradient->end_radius();
-      Point focus_center =
-          skia_conversions::ToPoint(conical_gradient->start_center());
-      SkScalar focus_radius = conical_gradient->start_radius();
-      std::vector<Color> colors;
-      std::vector<float> stops;
-      skia_conversions::ConvertStops(conical_gradient, colors, stops);
-
-      auto tile_mode = ToTileMode(conical_gradient->tile_mode());
-      auto matrix = ToMatrix(conical_gradient->matrix());
-
-      paint_.color_source = ColorSource::MakeConicalGradient(
-          center, radius, std::move(colors), std::move(stops), focus_center,
-          focus_radius, tile_mode, matrix);
-      return;
-    }
-    case ColorSource::Type::kRadialGradient: {
-      const flutter::DlRadialGradientColorSource* radialGradient =
-          source->asRadialGradient();
-      FML_DCHECK(radialGradient);
-      auto center = skia_conversions::ToPoint(radialGradient->center());
-      auto radius = radialGradient->radius();
-      std::vector<Color> colors;
-      std::vector<float> stops;
-      skia_conversions::ConvertStops(radialGradient, colors, stops);
-
-      auto tile_mode = ToTileMode(radialGradient->tile_mode());
-      auto matrix = ToMatrix(radialGradient->matrix());
-      paint_.color_source =
-          ColorSource::MakeRadialGradient(center, radius, std::move(colors),
-                                          std::move(stops), tile_mode, matrix);
-      return;
-    }
-    case ColorSource::Type::kSweepGradient: {
-      const flutter::DlSweepGradientColorSource* sweepGradient =
-          source->asSweepGradient();
-      FML_DCHECK(sweepGradient);
-
-      auto center = skia_conversions::ToPoint(sweepGradient->center());
-      auto start_angle = Degrees(sweepGradient->start());
-      auto end_angle = Degrees(sweepGradient->end());
-      std::vector<Color> colors;
-      std::vector<float> stops;
-      skia_conversions::ConvertStops(sweepGradient, colors, stops);
-
-      auto tile_mode = ToTileMode(sweepGradient->tile_mode());
-      auto matrix = ToMatrix(sweepGradient->matrix());
-      paint_.color_source = ColorSource::MakeSweepGradient(
-          center, start_angle, end_angle, std::move(colors), std::move(stops),
-          tile_mode, matrix);
-      return;
-    }
-    case ColorSource::Type::kImage: {
-      const flutter::DlImageColorSource* image_color_source = source->asImage();
-      FML_DCHECK(image_color_source &&
-                 image_color_source->image()->impeller_texture());
-      auto texture = image_color_source->image()->impeller_texture();
-      auto x_tile_mode = ToTileMode(image_color_source->horizontal_tile_mode());
-      auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
-      auto desc = ToSamplerDescriptor(image_color_source->sampling());
-      auto matrix = ToMatrix(image_color_source->matrix());
-      paint_.color_source = ColorSource::MakeImage(texture, x_tile_mode,
-                                                   y_tile_mode, desc, matrix);
-      return;
-    }
-    case ColorSource::Type::kRuntimeEffect: {
-      const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
-          source->asRuntimeEffect();
-      auto runtime_stage =
-          runtime_effect_color_source->runtime_effect()->runtime_stage();
-      auto uniform_data = runtime_effect_color_source->uniform_data();
-      auto samplers = runtime_effect_color_source->samplers();
-
-      std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
-
-      for (auto& sampler : samplers) {
-        if (sampler == nullptr) {
-          return;
-        }
-        auto* image = sampler->asImage();
-        if (!sampler->asImage()) {
-          UNIMPLEMENTED;
-          return;
-        }
-        FML_DCHECK(image->image()->impeller_texture());
-        texture_inputs.push_back({
-            .sampler_descriptor = ToSamplerDescriptor(image->sampling()),
-            .texture = image->image()->impeller_texture(),
-        });
-      }
-
-      paint_.color_source = ColorSource::MakeRuntimeEffect(
-          runtime_stage, uniform_data, texture_inputs);
-      return;
-    }
-    case ColorSource::Type::kScene: {
-#ifdef IMPELLER_ENABLE_3D
-      const flutter::DlSceneColorSource* scene_color_source = source->asScene();
-      std::shared_ptr<scene::Node> scene_node =
-          scene_color_source->scene_node();
-      Matrix camera_transform = scene_color_source->camera_matrix();
-
-      paint_.color_source =
-          ColorSource::MakeScene(scene_node, camera_transform);
-#else   // IMPELLER_ENABLE_3D
-      FML_LOG(ERROR) << "ColorSourceType::kScene can only be used if Impeller "
-                        "Scene is enabled.";
-#endif  // IMPELLER_ENABLE_3D
-      return;
-    }
-  }
-}
-
-static std::shared_ptr<ColorFilter> ToColorFilter(
-    const flutter::DlColorFilter* filter) {
-  if (filter == nullptr) {
-    return nullptr;
-  }
-  switch (filter->type()) {
-    case flutter::DlColorFilterType::kBlend: {
-      auto dl_blend = filter->asBlend();
-      auto blend_mode = ToBlendMode(dl_blend->mode());
-      auto color = skia_conversions::ToColor(dl_blend->color());
-      return ColorFilter::MakeBlend(blend_mode, color);
-    }
-    case flutter::DlColorFilterType::kMatrix: {
-      const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
-      impeller::ColorMatrix color_matrix;
-      dl_matrix->get_matrix(color_matrix.array);
-      return ColorFilter::MakeMatrix(color_matrix);
-    }
-    case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return ColorFilter::MakeSrgbToLinear();
-    case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return ColorFilter::MakeLinearToSrgb();
-  }
-  return nullptr;
+  paint_.color_filter = filter;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
-  paint_.color_filter = ToColorFilter(filter);
-}
+void DlDispatcherBase::setInvertColors(bool invert) {
+  AUTO_DEPTH_WATCHER(0u);
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::setInvertColors(bool invert) {
   paint_.invert_colors = invert;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setBlendMode(flutter::DlBlendMode dl_mode) {
-  paint_.blend_mode = ToBlendMode(dl_mode);
-}
+void DlDispatcherBase::setBlendMode(flutter::DlBlendMode dl_mode) {
+  AUTO_DEPTH_WATCHER(0u);
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::setPathEffect(const flutter::DlPathEffect* effect) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
+  paint_.blend_mode = skia_conversions::ToBlendMode(dl_mode);
 }
 
 static FilterContents::BlurStyle ToBlurStyle(flutter::DlBlurStyle blur_style) {
@@ -508,7 +261,9 @@ static FilterContents::BlurStyle ToBlurStyle(flutter::DlBlurStyle blur_style) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
+void DlDispatcherBase::setMaskFilter(const flutter::DlMaskFilter* filter) {
+  AUTO_DEPTH_WATCHER(0u);
+
   // Needs https://github.com/flutter/flutter/issues/95434
   if (filter == nullptr) {
     paint_.mask_blur_descriptor = std::nullopt;
@@ -521,153 +276,98 @@ void DlDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
       paint_.mask_blur_descriptor = {
           .style = ToBlurStyle(blur->style()),
           .sigma = Sigma(blur->sigma()),
+          .respect_ctm = blur->respectCTM(),
       };
       break;
     }
   }
 }
 
-static std::shared_ptr<ImageFilter> ToImageFilter(
-    const flutter::DlImageFilter* filter) {
-  if (filter == nullptr) {
-    return nullptr;
-  }
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::setImageFilter(const flutter::DlImageFilter* filter) {
+  AUTO_DEPTH_WATCHER(0u);
 
-  switch (filter->type()) {
-    case flutter::DlImageFilterType::kBlur: {
-      auto blur = filter->asBlur();
-      auto sigma_x = Sigma(blur->sigma_x());
-      auto sigma_y = Sigma(blur->sigma_y());
-      auto tile_mode = ToTileMode(blur->tile_mode());
-      return ImageFilter::MakeBlur(
-          sigma_x, sigma_y, FilterContents::BlurStyle::kNormal, tile_mode);
-    }
-    case flutter::DlImageFilterType::kDilate: {
-      auto dilate = filter->asDilate();
-      FML_DCHECK(dilate);
-      if (dilate->radius_x() < 0 || dilate->radius_y() < 0) {
-        return nullptr;
-      }
-      auto radius_x = Radius(dilate->radius_x());
-      auto radius_y = Radius(dilate->radius_y());
-      return ImageFilter::MakeDilate(radius_x, radius_y);
-    }
-    case flutter::DlImageFilterType::kErode: {
-      auto erode = filter->asErode();
-      FML_DCHECK(erode);
-      if (erode->radius_x() < 0 || erode->radius_y() < 0) {
-        return nullptr;
-      }
-      auto radius_x = Radius(erode->radius_x());
-      auto radius_y = Radius(erode->radius_y());
-      return ImageFilter::MakeErode(radius_x, radius_y);
-    }
-    case flutter::DlImageFilterType::kMatrix: {
-      auto matrix_filter = filter->asMatrix();
-      FML_DCHECK(matrix_filter);
-      auto matrix = ToMatrix(matrix_filter->matrix());
-      auto desc = ToSamplerDescriptor(matrix_filter->sampling());
-      return ImageFilter::MakeMatrix(matrix, desc);
-    }
-    case flutter::DlImageFilterType::kCompose: {
-      auto compose = filter->asCompose();
-      FML_DCHECK(compose);
-      auto outer_dl_filter = compose->outer();
-      auto inner_dl_filter = compose->inner();
-      auto outer_filter = ToImageFilter(outer_dl_filter.get());
-      auto inner_filter = ToImageFilter(inner_dl_filter.get());
-      if (!outer_filter) {
-        return inner_filter;
-      }
-      if (!inner_filter) {
-        return outer_filter;
-      }
-      FML_DCHECK(outer_filter && inner_filter);
-
-      return ImageFilter::MakeCompose(*inner_filter, *outer_filter);
-    }
-    case flutter::DlImageFilterType::kColorFilter: {
-      auto color_filter_image_filter = filter->asColorFilter();
-      FML_DCHECK(color_filter_image_filter);
-      auto color_filter =
-          ToColorFilter(color_filter_image_filter->color_filter().get());
-      if (!color_filter) {
-        return nullptr;
-      }
-      // When color filters are used as image filters, set the color filter's
-      // "absorb opacity" flag to false. For image filters, the snapshot
-      // opacity needs to be deferred until the result of the filter chain is
-      // being blended with the layer.
-      return ImageFilter::MakeFromColorFilter(*color_filter);
-    }
-    case flutter::DlImageFilterType::kLocalMatrix: {
-      auto local_matrix_filter = filter->asLocalMatrix();
-      FML_DCHECK(local_matrix_filter);
-      auto internal_filter = local_matrix_filter->image_filter();
-      FML_DCHECK(internal_filter);
-
-      auto image_filter = ToImageFilter(internal_filter.get());
-      if (!image_filter) {
-        return nullptr;
-      }
-
-      auto matrix = ToMatrix(local_matrix_filter->matrix());
-      return ImageFilter::MakeLocalMatrix(matrix, *image_filter);
-    }
-  }
+  paint_.image_filter = filter;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
-  paint_.image_filter = ToImageFilter(filter);
+void DlDispatcherBase::save(uint32_t total_content_depth) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().Save(total_content_depth);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::save() {
-  canvas_.Save();
-}
+void DlDispatcherBase::saveLayer(const DlRect& bounds,
+                                 const flutter::SaveLayerOptions& options,
+                                 uint32_t total_content_depth,
+                                 flutter::DlBlendMode max_content_mode,
+                                 const flutter::DlImageFilter* backdrop,
+                                 std::optional<int64_t> backdrop_id) {
+  AUTO_DEPTH_WATCHER(1u);
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::saveLayer(const SkRect* bounds,
-                             const flutter::SaveLayerOptions options,
-                             const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
-  canvas_.SaveLayer(paint, skia_conversions::ToRect(bounds),
-                    ToImageFilter(backdrop));
+  auto promise = options.content_is_clipped()
+                     ? ContentBoundsPromise::kMayClipContents
+                     : ContentBoundsPromise::kContainsContents;
+  std::optional<Rect> impeller_bounds;
+  // If the content is unbounded but has developer specified bounds, we take
+  // the original bounds so that we clip the content as expected.
+  if (!options.content_is_unbounded() || options.bounds_from_caller()) {
+    impeller_bounds = bounds;
+  }
+
+  GetCanvas().SaveLayer(
+      paint, impeller_bounds, backdrop, promise, total_content_depth,
+      // Unbounded content can still have user specified bounds that require a
+      // saveLayer to be created to perform the clip.
+      options.can_distribute_opacity() && !options.content_is_unbounded(),
+      backdrop_id  //
+  );
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::restore() {
-  canvas_.Restore();
+void DlDispatcherBase::restore() {
+  GetCanvas().Restore();
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::translate(SkScalar tx, SkScalar ty) {
-  canvas_.Translate({tx, ty, 0.0});
+void DlDispatcherBase::translate(DlScalar tx, DlScalar ty) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().Translate({tx, ty, 0.0});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::scale(SkScalar sx, SkScalar sy) {
-  canvas_.Scale({sx, sy, 1.0});
+void DlDispatcherBase::scale(DlScalar sx, DlScalar sy) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().Scale({sx, sy, 1.0});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::rotate(SkScalar degrees) {
-  canvas_.Rotate(Degrees{degrees});
+void DlDispatcherBase::rotate(DlScalar degrees) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().Rotate(Degrees{degrees});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::skew(SkScalar sx, SkScalar sy) {
-  canvas_.Skew(sx, sy);
+void DlDispatcherBase::skew(DlScalar sx, DlScalar sy) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().Skew(sx, sy);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::transform2DAffine(SkScalar mxx,
-                                     SkScalar mxy,
-                                     SkScalar mxt,
-                                     SkScalar myx,
-                                     SkScalar myy,
-                                     SkScalar myt) {
+void DlDispatcherBase::transform2DAffine(DlScalar mxx,
+                                         DlScalar mxy,
+                                         DlScalar mxt,
+                                         DlScalar myx,
+                                         DlScalar myy,
+                                         DlScalar myt) {
+  AUTO_DEPTH_WATCHER(0u);
+
   // clang-format off
   transformFullPerspective(
     mxx, mxy,  0, mxt,
@@ -679,39 +379,43 @@ void DlDispatcher::transform2DAffine(SkScalar mxx,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::transformFullPerspective(SkScalar mxx,
-                                            SkScalar mxy,
-                                            SkScalar mxz,
-                                            SkScalar mxt,
-                                            SkScalar myx,
-                                            SkScalar myy,
-                                            SkScalar myz,
-                                            SkScalar myt,
-                                            SkScalar mzx,
-                                            SkScalar mzy,
-                                            SkScalar mzz,
-                                            SkScalar mzt,
-                                            SkScalar mwx,
-                                            SkScalar mwy,
-                                            SkScalar mwz,
-                                            SkScalar mwt) {
+void DlDispatcherBase::transformFullPerspective(DlScalar mxx,
+                                                DlScalar mxy,
+                                                DlScalar mxz,
+                                                DlScalar mxt,
+                                                DlScalar myx,
+                                                DlScalar myy,
+                                                DlScalar myz,
+                                                DlScalar myt,
+                                                DlScalar mzx,
+                                                DlScalar mzy,
+                                                DlScalar mzz,
+                                                DlScalar mzt,
+                                                DlScalar mwx,
+                                                DlScalar mwy,
+                                                DlScalar mwz,
+                                                DlScalar mwt) {
+  AUTO_DEPTH_WATCHER(0u);
+
   // The order of arguments is row-major but Impeller matrices are
   // column-major.
   // clang-format off
-  auto xformation = Matrix{
+  auto transform = Matrix{
     mxx, myx, mzx, mwx,
     mxy, myy, mzy, mwy,
     mxz, myz, mzz, mwz,
     mxt, myt, mzt, mwt
   };
   // clang-format on
-  canvas_.Transform(xformation);
+  GetCanvas().Transform(transform);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::transformReset() {
-  canvas_.ResetTransform();
-  canvas_.Transform(initial_matrix_);
+void DlDispatcherBase::transformReset() {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().ResetTransform();
+  GetCanvas().Transform(initial_matrix_);
 }
 
 static Entity::ClipOperation ToClipOperation(
@@ -725,136 +429,228 @@ static Entity::ClipOperation ToClipOperation(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) {
-  canvas_.ClipRect(skia_conversions::ToRect(rect), ToClipOperation(clip_op));
+void DlDispatcherBase::clipRect(const DlRect& rect,
+                                ClipOp clip_op,
+                                bool is_aa) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().ClipGeometry(Geometry::MakeRect(rect), ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) {
-  if (rrect.isSimple()) {
-    canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, ToClipOperation(clip_op));
+void DlDispatcherBase::clipOval(const DlRect& bounds,
+                                ClipOp clip_op,
+                                bool is_aa) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  GetCanvas().ClipGeometry(Geometry::MakeOval(bounds),
+                           ToClipOperation(clip_op));
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::clipRoundRect(const DlRoundRect& rrect,
+                                     ClipOp sk_op,
+                                     bool is_aa) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  auto clip_op = ToClipOperation(sk_op);
+  if (rrect.IsRect()) {
+    GetCanvas().ClipGeometry(Geometry::MakeRect(rrect.GetBounds()), clip_op);
+  } else if (rrect.IsOval()) {
+    GetCanvas().ClipGeometry(Geometry::MakeOval(rrect.GetBounds()), clip_op);
+  } else if (rrect.GetRadii().AreAllCornersSame()) {
+    GetCanvas().ClipGeometry(
+        Geometry::MakeRoundRect(rrect.GetBounds(), rrect.GetRadii().top_left),
+        clip_op);
   } else {
-    canvas_.ClipPath(skia_conversions::ToPath(rrect), ToClipOperation(clip_op));
+    GetCanvas().ClipGeometry(
+        Geometry::MakeFillPath(PathBuilder{}.AddRoundRect(rrect).TakePath()),
+        clip_op);
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) {
-  canvas_.ClipPath(skia_conversions::ToPath(path), ToClipOperation(clip_op));
+void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
+  AUTO_DEPTH_WATCHER(0u);
+
+  auto clip_op = ToClipOperation(sk_op);
+
+  DlRect rect;
+  if (path.IsRect(&rect)) {
+    GetCanvas().ClipGeometry(Geometry::MakeRect(rect), clip_op);
+  } else if (path.IsOval(&rect)) {
+    GetCanvas().ClipGeometry(Geometry::MakeOval(rect), clip_op);
+  } else {
+    SkRRect rrect;
+    if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
+      GetCanvas().ClipGeometry(
+          Geometry::MakeRoundRect(
+              skia_conversions::ToRect(rrect.rect()),
+              skia_conversions::ToSize(rrect.getSimpleRadii())),
+          clip_op);
+    } else {
+      GetCanvas().ClipGeometry(Geometry::MakeFillPath(path.GetPath()), clip_op);
+    }
+  }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawColor(flutter::DlColor color,
-                             flutter::DlBlendMode dl_mode) {
+void DlDispatcherBase::drawColor(flutter::DlColor color,
+                                 flutter::DlBlendMode dl_mode) {
+  AUTO_DEPTH_WATCHER(1u);
+
   Paint paint;
   paint.color = skia_conversions::ToColor(color);
-  paint.blend_mode = ToBlendMode(dl_mode);
-  canvas_.DrawPaint(paint);
+  paint.blend_mode = skia_conversions::ToBlendMode(dl_mode);
+  GetCanvas().DrawPaint(paint);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawPaint() {
-  canvas_.DrawPaint(paint_);
+void DlDispatcherBase::drawPaint() {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawPaint(paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  auto path =
-      PathBuilder{}
-          .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
-          .SetConvexity(Convexity::kConvex)
-          .TakePath();
-  Paint paint = paint_;
-  paint.style = Paint::Style::kStroke;
-  canvas_.DrawPath(path, paint);
+void DlDispatcherBase::drawLine(const DlPoint& p0, const DlPoint& p1) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawLine(p0, p1, paint_);
 }
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::drawRect(const SkRect& rect) {
-  canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
-}
+void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
+                                      const DlPoint& p1,
+                                      DlScalar on_length,
+                                      DlScalar off_length) {
+  AUTO_DEPTH_WATCHER(1u);
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::drawOval(const SkRect& bounds) {
-  if (bounds.width() == bounds.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
-                       bounds.width() * 0.5, paint_);
+  Scalar length = p0.GetDistance(p1);
+  // Reasons to defer to regular DrawLine:
+  //   length is non-positive - drawLine will draw appropriate "dot"
+  //   off_length is non-positive - no gaps, drawLine will draw it solid
+  //   on_length is negative - invalid dashing
+  // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
+  if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
+    Point delta = (p1 - p0) / length;  // length > 0 already tested
+    PathBuilder builder;
+
+    Scalar consumed = 0.0f;
+    while (consumed < length) {
+      builder.MoveTo(p0 + delta * consumed);
+
+      Scalar dash_end = consumed + on_length;
+      if (dash_end < length) {
+        builder.LineTo(p0 + delta * dash_end);
+      } else {
+        builder.LineTo(p1);
+        // Should happen anyway due to the math, but let's make it explicit
+        // in case of bit errors. We're done with this line.
+        break;
+      }
+
+      consumed = dash_end + off_length;
+    }
+
+    Paint stroke_paint = paint_;
+    stroke_paint.style = Paint::Style::kStroke;
+    GetCanvas().DrawPath(builder.TakePath(), stroke_paint);
   } else {
-    auto path = PathBuilder{}
-                    .AddOval(skia_conversions::ToRect(bounds))
-                    .SetConvexity(Convexity::kConvex)
-                    .TakePath();
-    canvas_.DrawPath(path, paint_);
+    drawLine(p0, p1);
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
-  canvas_.DrawCircle(skia_conversions::ToPoint(center), radius, paint_);
+void DlDispatcherBase::drawRect(const DlRect& rect) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawRect(rect, paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
-    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
-  } else {
-    canvas_.DrawPath(skia_conversions::ToPath(rrect), paint_);
-  }
+void DlDispatcherBase::drawOval(const DlRect& bounds) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawOval(bounds, paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
+void DlDispatcherBase::drawCircle(const DlPoint& center, DlScalar radius) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawCircle(center, radius, paint_);
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::drawRoundRect(const DlRoundRect& rrect) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawRoundRect(rrect, paint_);
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::drawDiffRoundRect(const DlRoundRect& outer,
+                                         const DlRoundRect& inner) {
+  AUTO_DEPTH_WATCHER(1u);
+
   PathBuilder builder;
-  builder.AddPath(skia_conversions::ToPath(outer));
-  builder.AddPath(skia_conversions::ToPath(inner));
-  canvas_.DrawPath(builder.TakePath(FillType::kOdd), paint_);
+  builder.AddRoundRect(outer);
+  builder.AddRoundRect(inner);
+  GetCanvas().DrawPath(builder.TakePath(FillType::kOdd), paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawPath(const SkPath& path) {
-  SkRect rect;
+void DlDispatcherBase::drawPath(const DlPath& path) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  SimplifyOrDrawPath(GetCanvas(), path, paint_);
+}
+
+void DlDispatcherBase::SimplifyOrDrawPath(Canvas& canvas,
+                                          const DlPath& path,
+                                          const Paint& paint) {
+  DlRect rect;
 
   // We can't "optimize" a path into a rectangle if it's open.
   bool closed;
-  if (path.isRect(&rect, &closed) && closed) {
-    canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
+  if (path.IsRect(&rect, &closed) && closed) {
+    canvas.DrawRect(rect, paint);
     return;
   }
 
   SkRRect rrect;
-  if (path.isRRect(&rrect) && rrect.isSimple()) {
-    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
+  if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
+    canvas.DrawRoundRect(flutter::ToDlRoundRect(rrect), paint);
     return;
   }
 
-  SkRect oval;
-  if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
-                       oval.width() * 0.5, paint_);
+  if (path.IsOval(&rect)) {
+    canvas.DrawOval(rect, paint);
     return;
   }
 
-  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  canvas.DrawPath(path.GetPath(), paint);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawArc(const SkRect& oval_bounds,
-                           SkScalar start_degrees,
-                           SkScalar sweep_degrees,
-                           bool use_center) {
+void DlDispatcherBase::drawArc(const DlRect& oval_bounds,
+                               DlScalar start_degrees,
+                               DlScalar sweep_degrees,
+                               bool use_center) {
+  AUTO_DEPTH_WATCHER(1u);
+
   PathBuilder builder;
-  builder.AddArc(skia_conversions::ToRect(oval_bounds), Degrees(start_degrees),
-                 Degrees(sweep_degrees), use_center);
-  canvas_.DrawPath(builder.TakePath(), paint_);
+  builder.AddArc(oval_bounds, Degrees(start_degrees), Degrees(sweep_degrees),
+                 use_center);
+  GetCanvas().DrawPath(builder.TakePath(), paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawPoints(PointMode mode,
-                              uint32_t count,
-                              const SkPoint points[]) {
+void DlDispatcherBase::drawPoints(PointMode mode,
+                                  uint32_t count,
+                                  const DlPoint points[]) {
+  AUTO_DEPTH_WATCHER(1u);
+
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
@@ -866,24 +662,22 @@ void DlDispatcher::drawPoints(PointMode mode,
       if (radius > 0) {
         radius /= 2.0;
       }
-      canvas_.DrawPoints(skia_conversions::ToPoints(points, count), radius,
-                         paint, point_style);
+      GetCanvas().DrawPoints(skia_conversions::ToPoints(points, count), radius,
+                             paint, point_style);
     } break;
     case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {
-        Point p0 = skia_conversions::ToPoint(points[i - 1]);
-        Point p1 = skia_conversions::ToPoint(points[i]);
-        auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-        canvas_.DrawPath(path, paint);
+        Point p0 = points[i - 1];
+        Point p1 = points[i];
+        GetCanvas().DrawLine(p0, p1, paint);
       }
       break;
     case flutter::DlCanvas::PointMode::kPolygon:
       if (count > 1) {
-        Point p0 = skia_conversions::ToPoint(points[0]);
+        Point p0 = points[0];
         for (uint32_t i = 1; i < count; i++) {
-          Point p1 = skia_conversions::ToPoint(points[i]);
-          auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-          canvas_.DrawPath(path, paint);
+          Point p1 = points[i];
+          GetCanvas().DrawLine(p0, p1, paint);
           p0 = p1;
         }
       }
@@ -891,17 +685,17 @@ void DlDispatcher::drawPoints(PointMode mode,
   }
 }
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::drawVertices(const flutter::DlVertices* vertices,
-                                flutter::DlBlendMode dl_mode) {
-  canvas_.DrawVertices(MakeVertices(vertices), ToBlendMode(dl_mode), paint_);
-}
+void DlDispatcherBase::drawVertices(
+    const std::shared_ptr<flutter::DlVertices>& vertices,
+    flutter::DlBlendMode dl_mode) {}
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
-                             const SkPoint point,
-                             flutter::DlImageSampling sampling,
-                             bool render_with_attributes) {
+void DlDispatcherBase::drawImage(const sk_sp<flutter::DlImage> image,
+                                 const DlPoint& point,
+                                 flutter::DlImageSampling sampling,
+                                 bool render_with_attributes) {
+  AUTO_DEPTH_WATCHER(1u);
+
   if (!image) {
     return;
   }
@@ -912,9 +706,8 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
   }
 
   const auto size = texture->GetSize();
-  const auto src = SkRect::MakeWH(size.width, size.height);
-  const auto dest =
-      SkRect::MakeXYWH(point.fX, point.fY, size.width, size.height);
+  const auto src = DlRect::MakeWH(size.width, size.height);
+  const auto dest = DlRect::MakeXYWH(point.x, point.y, size.width, size.height);
 
   drawImageRect(image,                      // image
                 src,                        // source rect
@@ -926,72 +719,83 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImageRect(
+void DlDispatcherBase::drawImageRect(
     const sk_sp<flutter::DlImage> image,
-    const SkRect& src,
-    const SkRect& dst,
+    const DlRect& src,
+    const DlRect& dst,
     flutter::DlImageSampling sampling,
     bool render_with_attributes,
     SrcRectConstraint constraint = SrcRectConstraint::kFast) {
-  canvas_.DrawImageRect(
-      std::make_shared<Image>(image->impeller_texture()),  // image
-      skia_conversions::ToRect(src),                       // source rect
-      skia_conversions::ToRect(dst),                       // destination rect
-      render_with_attributes ? paint_ : Paint(),           // paint
-      ToSamplerDescriptor(sampling)                        // sampling
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawImageRect(
+      image->impeller_texture(),                       // image
+      src,                                             // source rect
+      dst,                                             // destination rect
+      render_with_attributes ? paint_ : Paint(),       // paint
+      skia_conversions::ToSamplerDescriptor(sampling)  // sampling
   );
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
-                                 const SkIRect& center,
-                                 const SkRect& dst,
-                                 flutter::DlFilterMode filter,
-                                 bool render_with_attributes) {
+void DlDispatcherBase::drawImageNine(const sk_sp<flutter::DlImage> image,
+                                     const DlIRect& center,
+                                     const DlRect& dst,
+                                     flutter::DlFilterMode filter,
+                                     bool render_with_attributes) {
+  AUTO_DEPTH_WATCHER(9u);
+
   NinePatchConverter converter = {};
-  converter.DrawNinePatch(
-      std::make_shared<Image>(image->impeller_texture()),
-      Rect::MakeLTRB(center.fLeft, center.fTop, center.fRight, center.fBottom),
-      skia_conversions::ToRect(dst), ToSamplerDescriptor(filter), &canvas_,
-      &paint_);
+  converter.DrawNinePatch(image->impeller_texture(),
+                          Rect::MakeLTRB(center.GetLeft(), center.GetTop(),
+                                         center.GetRight(), center.GetBottom()),
+                          dst, ToSamplerDescriptor(filter), &GetCanvas(),
+                          &paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
-                             const SkRSXform xform[],
-                             const SkRect tex[],
-                             const flutter::DlColor colors[],
-                             int count,
-                             flutter::DlBlendMode mode,
-                             flutter::DlImageSampling sampling,
-                             const SkRect* cull_rect,
-                             bool render_with_attributes) {
-  canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
-                    skia_conversions::ToRSXForms(xform, count),
-                    skia_conversions::ToRects(tex, count),
-                    ToColors(colors, count), ToBlendMode(mode),
-                    ToSamplerDescriptor(sampling),
-                    skia_conversions::ToRect(cull_rect), paint_);
+void DlDispatcherBase::drawAtlas(const sk_sp<flutter::DlImage> atlas,
+                                 const SkRSXform xform[],
+                                 const DlRect tex[],
+                                 const flutter::DlColor colors[],
+                                 int count,
+                                 flutter::DlBlendMode mode,
+                                 flutter::DlImageSampling sampling,
+                                 const DlRect* cull_rect,
+                                 bool render_with_attributes) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  auto geometry =
+      DlAtlasGeometry(atlas->impeller_texture(),                        //
+                      xform,                                            //
+                      tex,                                              //
+                      colors,                                           //
+                      static_cast<size_t>(count),                       //
+                      skia_conversions::ToBlendMode(mode),              //
+                      skia_conversions::ToSamplerDescriptor(sampling),  //
+                      skia_conversions::ToRect(cull_rect)               //
+      );
+  auto atlas_contents = std::make_shared<AtlasContents>();
+  atlas_contents->SetGeometry(&geometry);
+
+  GetCanvas().DrawAtlas(atlas_contents, paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawDisplayList(
+void DlDispatcherBase::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
-    SkScalar opacity) {
+    DlScalar opacity) {
+  AUTO_DEPTH_WATCHER(display_list->total_depth());
+
   // Save all values that must remain untouched after the operation.
   Paint saved_paint = paint_;
   Matrix saved_initial_matrix = initial_matrix_;
-  int restore_count = canvas_.GetSaveCount();
-
-  // The display list may alter the clip, which must be restored to the current
-  // clip at the end of playback.
-  canvas_.Save();
 
   // Establish a new baseline for interpreting the new DL.
   // Matrix and clip are left untouched, the current
   // transform is saved as the new base matrix, and paint
   // values are reset to defaults.
-  initial_matrix_ = canvas_.GetCurrentTransformation();
+  initial_matrix_ = GetCanvas().GetCurrentTransform();
   paint_ = Paint();
 
   // Handle passed opacity in the most brute-force way by using
@@ -999,10 +803,18 @@ void DlDispatcher::drawDisplayList(
   // opacity, this could also be handled by modulating all of its
   // attribute settings (for example, color), by the indicated
   // opacity.
+  int restore_count = GetCanvas().GetSaveCount();
   if (opacity < SK_Scalar1) {
     Paint save_paint;
     save_paint.color = Color(0, 0, 0, opacity);
-    canvas_.SaveLayer(save_paint);
+    GetCanvas().SaveLayer(
+        save_paint, skia_conversions::ToRect(display_list->bounds()), nullptr,
+        ContentBoundsPromise::kContainsContents, display_list->total_depth(),
+        display_list->can_apply_group_opacity());
+  } else {
+    // The display list may alter the clip, which must be restored to the
+    // current clip at the end of playback.
+    GetCanvas().Save(display_list->total_depth());
   }
 
   // TODO(131445): Remove this restriction if we can correctly cull with
@@ -1013,14 +825,16 @@ void DlDispatcher::drawDisplayList(
     // the ops based on a rectangle expressed in its "destination bounds"
     // so we need the canvas to transform those into the current local
     // coordinate space into which the DisplayList will be rendered.
-    auto cull_bounds = canvas_.GetCurrentLocalCullingBounds();
-    if (cull_bounds.has_value()) {
-      Rect cull_rect = cull_bounds.value();
+    auto global_culling_bounds = GetCanvas().GetLocalCoverageLimit();
+    if (global_culling_bounds.has_value()) {
+      Rect cull_rect = global_culling_bounds->TransformBounds(
+          GetCanvas().GetCurrentTransform().Invert());
       display_list->Dispatch(
           *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
                                   cull_rect.GetRight(), cull_rect.GetBottom()));
     } else {
-      display_list->Dispatch(*this);
+      // If the culling bounds are empty, this display list can be skipped
+      // entirely.
     }
   } else {
     display_list->Dispatch(*this);
@@ -1028,35 +842,42 @@ void DlDispatcher::drawDisplayList(
 
   // Restore all saved state back to what it was before we interpreted
   // the display_list
-  canvas_.RestoreToCount(restore_count);
+  AUTO_DEPTH_CHECK();
+  GetCanvas().RestoreToCount(restore_count);
   initial_matrix_ = saved_initial_matrix;
   paint_ = saved_paint;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                                SkScalar x,
-                                SkScalar y) {
+void DlDispatcherBase::drawTextBlob(const sk_sp<SkTextBlob> blob,
+                                    DlScalar x,
+                                    DlScalar y) {
   // When running with Impeller enabled Skia text blobs are converted to
   // Impeller text frames in paragraph_skia.cc
   UNIMPLEMENTED;
 }
 
-void DlDispatcher::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                                 SkScalar x,
-                                 SkScalar y) {
-  canvas_.DrawTextFrame(text_frame,             //
-                        impeller::Point{x, y},  //
-                        paint_                  //
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::drawTextFrame(
+    const std::shared_ptr<TextFrame>& text_frame,
+    DlScalar x,
+    DlScalar y) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawTextFrame(text_frame,             //
+                            impeller::Point{x, y},  //
+                            paint_                  //
   );
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawShadow(const SkPath& path,
-                              const flutter::DlColor color,
-                              const SkScalar elevation,
-                              bool transparent_occluder,
-                              SkScalar dpr) {
+void DlDispatcherBase::drawShadow(const DlPath& path,
+                                  const flutter::DlColor color,
+                                  const DlScalar elevation,
+                                  bool transparent_occluder,
+                                  DlScalar dpr) {
+  AUTO_DEPTH_WATCHER(1u);
+
   Color spot_color = skia_conversions::ToColor(color);
   spot_color.alpha *= 0.25;
 
@@ -1098,34 +919,389 @@ void DlDispatcher::drawShadow(const SkPath& path,
   paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
       .style = FilterContents::BlurStyle::kNormal,
       .sigma = Radius{kLightRadius * occluder_z /
-                      canvas_.GetCurrentTransformation().GetScale().y},
+                      GetCanvas().GetCurrentTransform().GetScale().y},
   };
 
-  canvas_.Save();
-  canvas_.PreConcat(
+  GetCanvas().Save(1u);
+  GetCanvas().PreConcat(
       Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
 
-  SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
-    canvas_.DrawRect(skia_conversions::ToRect(rect), paint);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
-    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
-                       oval.width() * 0.5, paint);
-  } else {
-    canvas_.DrawPath(skia_conversions::ToPath(path), paint);
-  }
+  SimplifyOrDrawPath(GetCanvas(), path, paint);
+  AUTO_DEPTH_CHECK();
 
-  canvas_.Restore();
+  GetCanvas().Restore();
 }
 
-Picture DlDispatcher::EndRecordingAsPicture() {
-  TRACE_EVENT0("impeller", "DisplayListDispatcher::EndRecordingAsPicture");
-  return canvas_.EndRecordingAsPicture();
+/// Subclasses
+
+static bool RequiresReadbackForBlends(
+    const ContentContext& renderer,
+    flutter::DlBlendMode max_root_blend_mode) {
+  return !renderer.GetDeviceCapabilities().SupportsFramebufferFetch() &&
+         skia_conversions::ToBlendMode(max_root_blend_mode) >
+             Entity::kLastPipelineBlendMode;
+}
+
+CanvasDlDispatcher::CanvasDlDispatcher(ContentContext& renderer,
+                                       RenderTarget& render_target,
+                                       bool has_root_backdrop_filter,
+                                       flutter::DlBlendMode max_root_blend_mode,
+                                       IRect cull_rect)
+    : canvas_(renderer,
+              render_target,
+              has_root_backdrop_filter ||
+                  RequiresReadbackForBlends(renderer, max_root_blend_mode),
+              cull_rect),
+      renderer_(renderer) {}
+
+Canvas& CanvasDlDispatcher::GetCanvas() {
+  return canvas_;
+}
+
+void CanvasDlDispatcher::drawVertices(
+    const std::shared_ptr<flutter::DlVertices>& vertices,
+    flutter::DlBlendMode dl_mode) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawVertices(
+      std::make_shared<DlVerticesGeometry>(vertices, renderer_),
+      skia_conversions::ToBlendMode(dl_mode), paint_);
+}
+
+void CanvasDlDispatcher::SetBackdropData(
+    std::unordered_map<int64_t, BackdropData> backdrop) {
+  GetCanvas().SetBackdropData(std::move(backdrop));
+}
+
+//// Text Frame Dispatcher
+
+TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
+                                         const Matrix& initial_matrix,
+                                         const Rect cull_rect)
+    : renderer_(renderer), matrix_(initial_matrix) {
+  cull_rect_state_.push_back(cull_rect);
+}
+
+TextFrameDispatcher::~TextFrameDispatcher() {
+  FML_DCHECK(cull_rect_state_.size() == 1);
+}
+
+void TextFrameDispatcher::save() {
+  stack_.emplace_back(matrix_);
+  cull_rect_state_.push_back(cull_rect_state_.back());
+}
+
+void TextFrameDispatcher::saveLayer(const DlRect& bounds,
+                                    const flutter::SaveLayerOptions options,
+                                    const flutter::DlImageFilter* backdrop,
+                                    std::optional<int64_t> backdrop_id) {
+  save();
+
+  if (backdrop != nullptr && backdrop_id.has_value()) {
+    std::shared_ptr<flutter::DlImageFilter> shared_backdrop =
+        backdrop->shared();
+    std::unordered_map<int64_t, BackdropData>::iterator existing =
+        backdrop_data_.find(backdrop_id.value());
+    if (existing == backdrop_data_.end()) {
+      backdrop_data_[backdrop_id.value()] =
+          BackdropData{.backdrop_count = 1, .last_backdrop = shared_backdrop};
+    } else {
+      BackdropData& data = existing->second;
+      data.backdrop_count++;
+      if (data.all_filters_equal) {
+        data.all_filters_equal = (*data.last_backdrop == *shared_backdrop);
+        data.last_backdrop = shared_backdrop;
+      }
+    }
+  }
+
+  // This dispatcher does not track enough state to accurately compute
+  // cull rects with image filters.
+  auto global_cull_rect = cull_rect_state_.back();
+  if (has_image_filter_ || global_cull_rect.IsMaximum()) {
+    cull_rect_state_.back() = Rect::MakeMaximum();
+  } else {
+    auto global_save_bounds = bounds.TransformBounds(matrix_);
+    auto new_cull_rect = global_cull_rect.Intersection(global_save_bounds);
+    if (new_cull_rect.has_value()) {
+      cull_rect_state_.back() = new_cull_rect.value();
+    } else {
+      cull_rect_state_.back() = Rect::MakeLTRB(0, 0, 0, 0);
+    }
+  }
+}
+
+void TextFrameDispatcher::restore() {
+  matrix_ = stack_.back();
+  stack_.pop_back();
+  cull_rect_state_.pop_back();
+}
+
+void TextFrameDispatcher::translate(DlScalar tx, DlScalar ty) {
+  matrix_ = matrix_.Translate({tx, ty});
+}
+
+void TextFrameDispatcher::scale(DlScalar sx, DlScalar sy) {
+  matrix_ = matrix_.Scale({sx, sy, 1.0f});
+}
+
+void TextFrameDispatcher::rotate(DlScalar degrees) {
+  matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
+}
+
+void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
+  matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
+}
+
+// clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void TextFrameDispatcher::transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                                              DlScalar myx, DlScalar myy, DlScalar myt) {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx,  myx,  0.0f, 0.0f,
+        mxy,  myy,  0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        mxt,  myt,  0.0f, 1.0f
+    );
+  }
+
+  // full 4x4 transform in row major order
+  void TextFrameDispatcher::transformFullPerspective(
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx, myx, mzx, mwx,
+        mxy, myy, mzy, mwy,
+        mxz, myz, mzz, mwz,
+        mxt, myt, mzt, mwt
+    );
+  }
+// clang-format on
+
+void TextFrameDispatcher::transformReset() {
+  matrix_ = Matrix();
+}
+
+void TextFrameDispatcher::drawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    DlScalar x,
+    DlScalar y) {
+  GlyphProperties properties;
+  if (paint_.style == Paint::Style::kStroke) {
+    properties.stroke = true;
+    properties.stroke_cap = paint_.stroke_cap;
+    properties.stroke_join = paint_.stroke_join;
+    properties.stroke_miter = paint_.stroke_miter;
+    properties.stroke_width = paint_.stroke_width;
+  }
+  if (text_frame->HasColor()) {
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties.color = paint_.color.WithAlpha(1.0);
+  }
+  auto scale =
+      (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,  //
+                                              scale,        //
+                                              Point(x, y),  //
+                                              properties    //
+  );
+}
+
+const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
+  auto cull_rect = cull_rect_state_.back();
+  if (!cull_rect.IsEmpty() && !cull_rect.IsMaximum()) {
+    Matrix inverse = matrix_.Invert();
+    cull_rect = cull_rect.TransformBounds(inverse);
+  }
+  return cull_rect;
+}
+
+void TextFrameDispatcher::drawDisplayList(
+    const sk_sp<flutter::DisplayList> display_list,
+    DlScalar opacity) {
+  [[maybe_unused]] size_t stack_depth = stack_.size();
+  save();
+  Paint old_paint = paint_;
+  paint_ = Paint{};
+  bool old_has_image_filter = has_image_filter_;
+  has_image_filter_ = false;
+
+  if (matrix_.HasPerspective()) {
+    display_list->Dispatch(*this);
+  } else {
+    Rect local_cull_bounds = GetCurrentLocalCullingBounds();
+    if (local_cull_bounds.IsMaximum()) {
+      display_list->Dispatch(*this);
+    } else if (!local_cull_bounds.IsEmpty()) {
+      IRect cull_rect = IRect::RoundOut(local_cull_bounds);
+      display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
+                                                      cull_rect.GetTop(),    //
+                                                      cull_rect.GetRight(),  //
+                                                      cull_rect.GetBottom()  //
+                                                      ));
+    }
+  }
+
+  restore();
+  paint_ = old_paint;
+  has_image_filter_ = old_has_image_filter;
+  FML_DCHECK(stack_depth == stack_.size());
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
+  paint_.style = ToStyle(style);
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setColor(flutter::DlColor color) {
+  paint_.color = skia_conversions::ToColor(color);
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setStrokeWidth(DlScalar width) {
+  paint_.stroke_width = width;
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setStrokeMiter(DlScalar limit) {
+  paint_.stroke_miter = limit;
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
+  switch (cap) {
+    case flutter::DlStrokeCap::kButt:
+      paint_.stroke_cap = Cap::kButt;
+      break;
+    case flutter::DlStrokeCap::kRound:
+      paint_.stroke_cap = Cap::kRound;
+      break;
+    case flutter::DlStrokeCap::kSquare:
+      paint_.stroke_cap = Cap::kSquare;
+      break;
+  }
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
+  switch (join) {
+    case flutter::DlStrokeJoin::kMiter:
+      paint_.stroke_join = Join::kMiter;
+      break;
+    case flutter::DlStrokeJoin::kRound:
+      paint_.stroke_join = Join::kRound;
+      break;
+    case flutter::DlStrokeJoin::kBevel:
+      paint_.stroke_join = Join::kBevel;
+      break;
+  }
+}
+
+// |flutter::DlOpReceiver|
+void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
+  if (filter == nullptr) {
+    has_image_filter_ = false;
+  } else {
+    has_image_filter_ = true;
+  }
+}
+
+std::unordered_map<int64_t, BackdropData>
+TextFrameDispatcher::TakeBackdropData() {
+  std::unordered_map<int64_t, BackdropData> temp;
+  std::swap(temp, backdrop_data_);
+  return temp;
+}
+
+std::shared_ptr<Texture> DisplayListToTexture(
+    const sk_sp<flutter::DisplayList>& display_list,
+    ISize size,
+    AiksContext& context,
+    bool reset_host_buffer,
+    bool generate_mips) {
+  int mip_count = 1;
+  if (generate_mips) {
+    mip_count = size.MipCount();
+  }
+  // Do not use the render target cache as the lifecycle of this texture
+  // will outlive a particular frame.
+  impeller::RenderTargetAllocator render_target_allocator =
+      impeller::RenderTargetAllocator(
+          context.GetContext()->GetResourceAllocator());
+  impeller::RenderTarget target;
+  if (context.GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    target = render_target_allocator.CreateOffscreenMSAA(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/mip_count,
+        "Picture Snapshot MSAA",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+    );
+  } else {
+    target = render_target_allocator.CreateOffscreen(
+        *context.GetContext(),  // context
+        size,                   // size
+        /*mip_count=*/mip_count,
+        "Picture Snapshot",  // label
+        impeller::RenderTarget::
+            kDefaultColorAttachmentConfig  // color_attachment_config
+    );
+  }
+
+  SkIRect sk_cull_rect = SkIRect::MakeWH(size.width, size.height);
+  impeller::TextFrameDispatcher collector(
+      context.GetContentContext(), impeller::Matrix(), Rect::MakeSize(size));
+  display_list->Dispatch(collector, sk_cull_rect);
+  impeller::CanvasDlDispatcher impeller_dispatcher(
+      context.GetContentContext(),               //
+      target,                                    //
+      display_list->root_has_backdrop_filter(),  //
+      display_list->max_root_blend_mode(),       //
+      impeller::IRect::MakeSize(size)            //
+  );
+  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+  impeller_dispatcher.FinishRecording();
+
+  if (reset_host_buffer) {
+    context.GetContentContext().GetTransientsBuffer().Reset();
+  }
+  context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+
+  return target.GetRenderTargetTexture();
+}
+
+bool RenderToOnscreen(ContentContext& context,
+                      RenderTarget render_target,
+                      const sk_sp<flutter::DisplayList>& display_list,
+                      SkIRect cull_rect,
+                      bool reset_host_buffer) {
+  Rect ip_cull_rect = Rect::MakeLTRB(cull_rect.left(), cull_rect.top(),
+                                     cull_rect.right(), cull_rect.bottom());
+  TextFrameDispatcher collector(context, impeller::Matrix(), ip_cull_rect);
+  display_list->Dispatch(collector, cull_rect);
+
+  impeller::CanvasDlDispatcher impeller_dispatcher(
+      context,                                   //
+      render_target,                             //
+      display_list->root_has_backdrop_filter(),  //
+      display_list->max_root_blend_mode(),       //
+      IRect::RoundOut(ip_cull_rect)              //
+  );
+  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  display_list->Dispatch(impeller_dispatcher, cull_rect);
+  impeller_dispatcher.FinishRecording();
+  if (reset_host_buffer) {
+    context.GetTransientsBuffer().Reset();
+  }
+  context.GetLazyGlyphAtlas()->ResetTextFrames();
+
+  return true;
 }
 
 }  // namespace impeller

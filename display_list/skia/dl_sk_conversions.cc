@@ -19,14 +19,13 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
+SkPaint ToSk(const DlPaint& paint) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());
   sk_paint.setColor(ToSk(paint.getColor()));
   sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
+  sk_paint.setStyle(ToSk(paint.getDrawStyle()));
   sk_paint.setStrokeWidth(paint.getStrokeWidth());
   sk_paint.setStrokeMiter(paint.getStrokeMiter());
   sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
@@ -44,33 +43,40 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
 
   auto color_source = paint.getColorSourcePtr();
   if (color_source) {
-    // On the Impeller backend, we will only support dithering of *gradients*,
-    // and it will be enabled by default (without the option to disable it).
-    // Until Skia support is completely removed, we only want to respect the
-    // dither flag for gradients (otherwise it will also apply to, for example,
-    // images, which is not supported in Impeller).
-    //
-    // See https://github.com/flutter/flutter/issues/112498.
-    if (color_source->isGradient()) {
-      // Originates from `dart:ui#Paint.enableDithering`.
-      auto user_specified_dither = paint.isDither();
-      sk_paint.setDither(user_specified_dither);
-    }
+    // Unconditionally set dither to true for gradient shaders.
+    sk_paint.setDither(color_source->isGradient());
     sk_paint.setShader(ToSk(color_source));
   }
 
   sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
-  sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
 
   return sk_paint;
+}
+
+SkPaint ToStrokedSk(const DlPaint& paint) {
+  DlPaint stroked_paint = paint;
+  stroked_paint.setDrawStyle(DlDrawStyle::kStroke);
+  return ToSk(stroked_paint);
+}
+
+SkPaint ToNonShaderSk(const DlPaint& paint) {
+  DlPaint non_shader_paint = paint;
+  non_shader_paint.setColorSource(nullptr);
+  return ToSk(non_shader_paint);
 }
 
 sk_sp<SkShader> ToSk(const DlColorSource* source) {
   if (!source) {
     return nullptr;
   }
-  static auto ToSkColors = [](const DlGradientColorSourceBase* gradient) {
-    return reinterpret_cast<const SkColor*>(gradient->colors());
+  static auto ToSkColors =
+      [](const DlGradientColorSourceBase* gradient) -> std::vector<SkColor> {
+    std::vector<SkColor> sk_colors;
+    sk_colors.reserve(gradient->stop_count());
+    for (int i = 0; i < gradient->stop_count(); ++i) {
+      sk_colors.push_back(gradient->colors()[i].argb());
+    }
+    return sk_colors;
   };
   switch (source->type()) {
     case DlColorSourceType::kColor: {
@@ -96,8 +102,9 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       FML_DCHECK(linear_source != nullptr);
       SkPoint pts[] = {linear_source->start_point(),
                        linear_source->end_point()};
+      std::vector<SkColor> skcolors = ToSkColors(linear_source);
       return SkGradientShader::MakeLinear(
-          pts, ToSkColors(linear_source), linear_source->stops(),
+          pts, skcolors.data(), linear_source->stops(),
           linear_source->stop_count(), ToSk(linear_source->tile_mode()), 0,
           linear_source->matrix_ptr());
     }
@@ -107,7 +114,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       FML_DCHECK(radial_source != nullptr);
       return SkGradientShader::MakeRadial(
           radial_source->center(), radial_source->radius(),
-          ToSkColors(radial_source), radial_source->stops(),
+          ToSkColors(radial_source).data(), radial_source->stops(),
           radial_source->stop_count(), ToSk(radial_source->tile_mode()), 0,
           radial_source->matrix_ptr());
     }
@@ -118,7 +125,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       return SkGradientShader::MakeTwoPointConical(
           conical_source->start_center(), conical_source->start_radius(),
           conical_source->end_center(), conical_source->end_radius(),
-          ToSkColors(conical_source), conical_source->stops(),
+          ToSkColors(conical_source).data(), conical_source->stops(),
           conical_source->stop_count(), ToSk(conical_source->tile_mode()), 0,
           conical_source->matrix_ptr());
     }
@@ -128,7 +135,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       FML_DCHECK(sweep_source != nullptr);
       return SkGradientShader::MakeSweep(
           sweep_source->center().x(), sweep_source->center().y(),
-          ToSkColors(sweep_source), sweep_source->stops(),
+          ToSkColors(sweep_source).data(), sweep_source->stops(),
           sweep_source->stop_count(), ToSk(sweep_source->tile_mode()),
           sweep_source->start(), sweep_source->end(), 0,
           sweep_source->matrix_ptr());
@@ -165,11 +172,6 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       return runtime_effect->skia_runtime_effect()->makeShader(
           sk_uniform_data, sk_samplers.data(), sk_samplers.size());
     }
-#ifdef IMPELLER_ENABLE_3D
-    case DlColorSourceType::kScene: {
-      return nullptr;
-    }
-#endif  // IMPELLER_ENABLE_3D
   }
 }
 
@@ -274,26 +276,19 @@ sk_sp<SkMaskFilter> ToSk(const DlMaskFilter* filter) {
   }
 }
 
-sk_sp<SkPathEffect> ToSk(const DlPathEffect* effect) {
-  if (!effect) {
-    return nullptr;
-  }
-  switch (effect->type()) {
-    case DlPathEffectType::kDash: {
-      const DlDashPathEffect* dash_effect = effect->asDash();
-      FML_DCHECK(dash_effect != nullptr);
-      return SkDashPathEffect::Make(dash_effect->intervals(),
-                                    dash_effect->count(), dash_effect->phase());
+sk_sp<SkVertices> ToSk(const std::shared_ptr<DlVertices>& vertices) {
+  std::vector<SkColor> sk_colors;
+  const SkColor* sk_colors_ptr = nullptr;
+  if (vertices->colors()) {
+    sk_colors.reserve(vertices->vertex_count());
+    for (int i = 0; i < vertices->vertex_count(); ++i) {
+      sk_colors.push_back(vertices->colors()[i].argb());
     }
+    sk_colors_ptr = sk_colors.data();
   }
-}
-
-sk_sp<SkVertices> ToSk(const DlVertices* vertices) {
-  const SkColor* sk_colors =
-      reinterpret_cast<const SkColor*>(vertices->colors());
   return SkVertices::MakeCopy(ToSk(vertices->mode()), vertices->vertex_count(),
                               vertices->vertices(),
-                              vertices->texture_coordinates(), sk_colors,
+                              vertices->texture_coordinates(), sk_colors_ptr,
                               vertices->index_count(), vertices->indices());
 }
 

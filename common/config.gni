@@ -28,6 +28,13 @@ declare_args() {
   #TODO(cyanglaz): Remove above comment about test flag when the entire iOS embedder supports app extension
   #https://github.com/flutter/flutter/issues/124289
   darwin_extension_safe = false
+
+  # Whether binary size optimizations with the assumption that Impeller is the
+  # only supported rendering engine are enabled.
+  #
+  # See [go/slimpeller-dashboard](https://github.com/orgs/flutter/projects/21)
+  # for details.
+  slimpeller = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -60,6 +67,10 @@ if (flutter_runtime_mode == "debug") {
   ]
 } else {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
+}
+
+if (slimpeller) {
+  feature_defines_list += [ "SLIMPELLER=1" ]
 }
 
 if (is_ios || is_mac) {
@@ -97,37 +108,37 @@ if (target_platform_name == "mac") {
 full_target_platform_name = "$target_platform_name-$target_cpu"
 
 # Prebuilt Dart SDK location
+_target_os_name = target_os
+if (_target_os_name == "mac") {
+  _target_os_name = "macos"
+} else if (_target_os_name == "win") {
+  _target_os_name = "windows"
+}
+
+_host_os_name = host_os
+if (_host_os_name == "mac") {
+  _host_os_name = "macos"
+} else if (_host_os_name == "win") {
+  _host_os_name = "windows"
+}
+
+# When building 32-bit Android development artifacts for Windows host (like
+# gen_snapshot), the host_cpu is set to x86. However, the correct prebuilt
+# Dart SDK to use during this build is still the 64-bit one.
+_host_cpu = host_cpu
+if (host_os == "win" && host_cpu == "x86") {
+  _host_cpu = "x64"
+}
+
+_target_prebuilt_config = "$_target_os_name-$target_cpu"
+_host_prebuilt_config = "$_host_os_name-$_host_cpu"
+
+target_prebuilts_path = "//flutter/prebuilts/$_target_prebuilt_config"
+host_prebuilts_path = "//flutter/prebuilts/$_host_prebuilt_config"
 
 if (flutter_prebuilt_dart_sdk) {
-  _target_os_name = target_os
-  if (_target_os_name == "mac") {
-    _target_os_name = "macos"
-  } else if (_target_os_name == "win") {
-    _target_os_name = "windows"
-  }
-
-  _host_os_name = host_os
-  if (_host_os_name == "mac") {
-    _host_os_name = "macos"
-  } else if (_host_os_name == "win") {
-    _host_os_name = "windows"
-  }
-
-  # When building 32-bit Android development artifacts for Windows host (like
-  # gen_snapshot), the host_cpu is set to x86. However, the correct prebuilt
-  # Dart SDK to use during this build is still the 64-bit one.
-  _host_cpu = host_cpu
-  if (host_os == "win" && host_cpu == "x86") {
-    _host_cpu = "x64"
-  }
-
-  _target_prebuilt_dart_sdk_config = "$_target_os_name-$target_cpu"
-  _host_prebuilt_dart_sdk_config = "$_host_os_name-$_host_cpu"
-
-  target_prebuilt_dart_sdk =
-      "//flutter/prebuilts/$_target_prebuilt_dart_sdk_config/dart-sdk"
-  host_prebuilt_dart_sdk =
-      "//flutter/prebuilts/$_host_prebuilt_dart_sdk_config/dart-sdk"
+  target_prebuilt_dart_sdk = "$target_prebuilts_path/dart-sdk"
+  host_prebuilt_dart_sdk = "$host_prebuilts_path/dart-sdk"
 
   # There is no prebuilt Dart SDK targeting Fuchsia, iOS, and Android, but we
   # also don't need one, so even when the build is targeting one of these
@@ -135,18 +146,24 @@ if (flutter_prebuilt_dart_sdk) {
   if (current_toolchain == host_toolchain || target_os == "android" ||
       target_os == "fuchsia" || target_os == "ios" || target_os == "wasm") {
     prebuilt_dart_sdk = host_prebuilt_dart_sdk
-    prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
+    prebuilt_dart_sdk_config = _host_prebuilt_config
   } else {
     prebuilt_dart_sdk = target_prebuilt_dart_sdk
-    prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
+    prebuilt_dart_sdk_config = _target_prebuilt_config
   }
 }
 
 # Flutter SDK artifacts should only be built when either doing host builds, or
 # for cross-compiled desktop targets.
+#
+# !is_android is necessary because of the way that Android 32-bit arm
+# gen_snapshot is built on Windows using the host toolchain, since we have no
+# 32-bit arm toolchain for Windows. See comments in //flutter/tools/gn for
+# details.
+#
 # TODO: We can't build the engine artifacts for arm (32-bit) right now;
-# see https://github.com/flutter/flutter/issues/74322
+# see https://github.com/flutter/flutter/issues/74322.
 build_engine_artifacts =
-    flutter_build_engine_artifacts &&
+    flutter_build_engine_artifacts && !is_android &&
     (current_toolchain == host_toolchain ||
      (is_linux && !is_chromeos && current_cpu != "arm") || is_mac || is_win)

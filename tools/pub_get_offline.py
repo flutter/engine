@@ -14,21 +14,21 @@ import os
 import subprocess
 import sys
 
-SRC_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(THIS_DIR, '..', 'third_party', 'pyyaml', 'lib'))
+import yaml  # pylint: disable=import-error, wrong-import-position
+
+SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
 
 ALL_PACKAGES = [
+    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'ci'),
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
-    os.path.join(ENGINE_DIR, 'impeller', 'golden_tests_harvester'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
-    os.path.join(ENGINE_DIR, 'testing', 'android_background_image'),
     os.path.join(ENGINE_DIR, 'testing', 'benchmark'),
     os.path.join(ENGINE_DIR, 'testing', 'dart'),
-    os.path.join(ENGINE_DIR, 'testing', 'litetest'),
     os.path.join(ENGINE_DIR, 'testing', 'scenario_app'),
     os.path.join(ENGINE_DIR, 'testing', 'skia_gold_client'),
     os.path.join(ENGINE_DIR, 'testing', 'smoke_test_failure'),
@@ -37,9 +37,15 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'tools', 'api_check'),
     os.path.join(ENGINE_DIR, 'tools', 'build_bucket_golden_scraper'),
     os.path.join(ENGINE_DIR, 'tools', 'clang_tidy'),
+    os.path.join(ENGINE_DIR, 'tools', 'clangd_check'),
+    os.path.join(ENGINE_DIR, 'tools', 'compare_goldens'),
     os.path.join(ENGINE_DIR, 'tools', 'const_finder'),
+    os.path.join(ENGINE_DIR, 'tools', 'dir_contents_diff'),
+    os.path.join(ENGINE_DIR, 'tools', 'engine_tool'),
     os.path.join(ENGINE_DIR, 'tools', 'gen_web_locale_keymap'),
     os.path.join(ENGINE_DIR, 'tools', 'githooks'),
+    os.path.join(ENGINE_DIR, 'tools', 'golden_tests_harvester'),
+    os.path.join(ENGINE_DIR, 'tools', 'header_guard_check'),
     os.path.join(ENGINE_DIR, 'tools', 'licenses'),
     os.path.join(ENGINE_DIR, 'tools', 'path_ops', 'dart'),
     os.path.join(ENGINE_DIR, 'tools', 'pkg', 'engine_build_configs'),
@@ -61,7 +67,14 @@ def fetch_package(pub, package):
   return 0
 
 
-def check_package(package):
+def package_uses_workspace_resolution(package):
+  pubspec = os.path.join(package, 'pubspec.yaml')
+
+  with open(pubspec) as pubspec_file:
+    return yaml.safe_load(pubspec_file).get('resolution') == 'workspace'
+
+
+def check_package_config(package):
   package_config = os.path.join(package, '.dart_tool', 'package_config.json')
   pub_count = 0
   with open(package_config) as config_file:
@@ -70,14 +83,12 @@ def check_package(package):
     for package_data in packages_data:
       package_uri = package_data['rootUri']
       package_name = package_data['name']
-      if '.pub-cache' in package_uri and 'pub.dartlang.org' in package_uri:
+      if '.pub-cache' in package_uri and ('pub.dartlang.org' in package_uri or
+                                          'pub.dev' in package_uri):
         print('Error: package "%s" was fetched from pub' % package_name)
         pub_count = pub_count + 1
   if pub_count > 0:
-    print(
-        'Error: %d packages were fetched from pub for %s' %
-        (pub_count, package)
-    )
+    print('Error: %d packages were fetched from pub for %s' % (pub_count, package))
     print(
         'Please fix the pubspec.yaml for %s '
         'so that all dependencies are path dependencies' % package
@@ -117,30 +128,31 @@ def find_unlisted_packages():
 
 
 def main():
+  # Intentionally use the Dart SDK prebuilt instead of the Flutter prebuilt
+  # (i.e. prebuilts/{platform}/dart-sdk/bin/dart) because the script has to run
+  # in a monorepo build *before* the newer Dart SDK has been built from source.
   dart_sdk_bin = os.path.join(
-      SRC_ROOT, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
+      SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
   )
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()
   if len(unlisted) > 0:
     for pkg in unlisted:
-      print(
-          'The Dart package "%s" must be checked in flutter/tools/pub_get_offline.py'
-          % pkg
-      )
+      print('The Dart package "%s" must be checked in flutter/tools/pub_get_offline.py' % pkg)
     return 1
 
   dart = 'dart'
   if os.name == 'nt':
     dart = 'dart.exe'
-  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', 'get', '--offline']
+  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', '--suppress-analytics', 'get', '--offline']
 
   pub_count = 0
   for package in ALL_PACKAGES:
     if fetch_package(pubcmd, package) != 0:
       return 1
-    pub_count = pub_count + check_package(package)
+    if not package_uses_workspace_resolution(package):
+      pub_count = pub_count + check_package_config(package)
 
   if pub_count > 0:
     return 1

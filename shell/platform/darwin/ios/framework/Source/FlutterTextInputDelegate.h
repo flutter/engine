@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
 
 #import <Foundation/Foundation.h>
 
@@ -11,6 +11,7 @@
 @class FlutterTextInputView;
 
 typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterTextInputActionUnspecified,
   FlutterTextInputActionDone,
   FlutterTextInputActionGo,
@@ -22,12 +23,15 @@ typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
   FlutterTextInputActionRoute,
   FlutterTextInputActionEmergencyCall,
   FlutterTextInputActionNewline,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterFloatingCursorDragStateStart,
   FlutterFloatingCursorDragStateUpdate,
   FlutterFloatingCursorDragStateEnd,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 @protocol FlutterTextInputDelegate <NSObject>
@@ -61,6 +65,8 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView removeTextPlaceholder:(int)client;
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     didResignFirstResponderWithTextInputClient:(int)client;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    willDismissEditMenuWithTextInputClient:(int)client;
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_

@@ -2,22 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_FORMATS_H_
+#define FLUTTER_IMPELLER_CORE_FORMATS_H_
 
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
+#include "impeller/base/mask.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
+
+enum class WindingOrder {
+  kClockwise,
+  kCounterClockwise,
+};
 
 class Texture;
 
@@ -91,7 +96,7 @@ constexpr const char* StorageModeToString(StorageMode mode) {
 ///             esoteric formats and use blit passes to convert to a
 ///             non-esoteric pass.
 ///
-enum class PixelFormat {
+enum class PixelFormat : uint8_t {
   kUnknown,
   kA8UNormInt,
   kR8UNormInt,
@@ -110,6 +115,27 @@ enum class PixelFormat {
   kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
+
+constexpr bool IsDepthWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
+
+constexpr bool IsStencilWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
   switch (format) {
@@ -266,23 +292,20 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   return false;
 }
 
-enum class SampleCount {
+enum class SampleCount : uint8_t {
   kCount1 = 1,
   kCount4 = 4,
 };
 
-using TextureUsageMask = uint64_t;
-
-enum class TextureUsage : TextureUsageMask {
+enum class TextureUsage {
   kUnknown = 0,
   kShaderRead = 1 << 0,
   kShaderWrite = 1 << 1,
   kRenderTarget = 1 << 2,
 };
+IMPELLER_ENUM_IS_MASK(TextureUsage);
 
-constexpr bool TextureUsageIsRenderTarget(TextureUsageMask mask) {
-  return static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) & mask;
-}
+using TextureUsageMask = Mask<TextureUsage>;
 
 constexpr const char* TextureUsageToString(TextureUsage usage) {
   switch (usage) {
@@ -325,14 +348,42 @@ enum class IndexType {
   kNone,
 };
 
-enum class PrimitiveType {
+/// Decides how backend draws pixels based on input vertices.
+enum class PrimitiveType : uint8_t {
+  /// Draws a triangle for each separate set of three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, DEF].
   kTriangle,
+
+  /// Draws a triangle for every adjacent three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, BCD, CDE, DEF].
   kTriangleStrip,
+
+  /// Draws a line for each separate set of two vertices.
+  ///
+  /// Vertices [A, B, C] will produce discontinued line
+  /// [AB, BC].
   kLine,
+
+  /// Draws a continuous line that connect every input vertices
+  ///
+  /// Vertices [A, B, C] will produce one continuous line
+  /// [ABC].
   kLineStrip,
+
+  /// Draws a point at each input vertex.
   kPoint,
-  // Triangle fans are implementation dependent and need extra extensions
-  // checks. Hence, they are not supported here.
+
+  /// Draws a triangle for every two vertices, after the first.
+  ///
+  /// The first vertex acts as the hub, all following vertices connect with
+  /// this hub to "fan" out from the first vertex.
+  ///
+  /// Triangle fans are not supported in Metal and need a capability check.
+  kTriangleFan,
 };
 
 enum class PolygonMode {
@@ -358,19 +409,32 @@ struct Viewport {
   }
 };
 
+/// @brief      Describes how the texture should be sampled when the texture
+///             is being shrunk (minified) or expanded (magnified) to fit to
+///             the sample point.
 enum class MinMagFilter {
   /// Select nearest to the sample point. Most widely supported.
   kNearest,
+
   /// Select two points and linearly interpolate between them. Some formats
   /// may not support this.
   kLinear,
 };
 
+/// @brief      Options for selecting and filtering between mipmap levels.
 enum class MipFilter {
-  /// Sample from the nearest mip level.
+  /// @brief    The texture is sampled as if it only had a single mipmap level.
+  ///
+  ///           All samples are read from level 0.
+  kBase,
+
+  /// @brief    The nearst mipmap level is selected.
   kNearest,
-  /// Sample from the two nearest mip levels and linearly interpolate between
-  /// them.
+
+  /// @brief    Sample from the two nearest mip levels and linearly interpolate.
+  ///
+  ///           If the filter falls between levels, both levels are sampled, and
+  ///           their results linearly interpolated between levels.
   kLinear,
 };
 
@@ -387,7 +451,7 @@ enum class SamplerAddressMode {
   kDecal,
 };
 
-enum class ColorWriteMask : uint64_t {
+enum class ColorWriteMaskBits : uint64_t {
   kNone = 0,
   kRed = 1 << 0,
   kGreen = 1 << 1,
@@ -395,6 +459,9 @@ enum class ColorWriteMask : uint64_t {
   kAlpha = 1 << 3,
   kAll = kRed | kGreen | kBlue | kAlpha,
 };
+IMPELLER_ENUM_IS_MASK(ColorWriteMaskBits);
+
+using ColorWriteMask = Mask<ColorWriteMaskBits>;
 
 constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
   switch (format) {
@@ -460,8 +527,7 @@ struct ColorAttachmentDescriptor {
   BlendOperation alpha_blend_op = BlendOperation::kAdd;
   BlendFactor dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
 
-  std::underlying_type_t<ColorWriteMask> write_mask =
-      static_cast<uint64_t>(ColorWriteMask::kAll);
+  ColorWriteMask write_mask = ColorWriteMaskBits::kAll;
 
   constexpr bool operator==(const ColorAttachmentDescriptor& o) const {
     return format == o.format &&                                  //
@@ -476,14 +542,14 @@ struct ColorAttachmentDescriptor {
   }
 
   constexpr size_t Hash() const {
-    return fml::HashCombine(format, blending_enabled, src_color_blend_factor,
-                            color_blend_op, dst_color_blend_factor,
-                            src_alpha_blend_factor, alpha_blend_op,
-                            dst_alpha_blend_factor, write_mask);
+    return fml::HashCombine(
+        format, blending_enabled, src_color_blend_factor, color_blend_op,
+        dst_color_blend_factor, src_alpha_blend_factor, alpha_blend_op,
+        dst_alpha_blend_factor, static_cast<uint64_t>(write_mask));
   }
 };
 
-enum class CompareFunction {
+enum class CompareFunction : uint8_t {
   /// Comparison test never passes.
   kNever,
   /// Comparison test passes always passes.
@@ -502,7 +568,7 @@ enum class CompareFunction {
   kGreaterEqual,
 };
 
-enum class StencilOperation {
+enum class StencilOperation : uint8_t {
   /// Don't modify the current stencil value.
   kKeep,
   /// Reset the stencil value to zero.
@@ -637,3 +703,5 @@ struct hash<impeller::StencilAttachmentDescriptor> {
 };
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_CORE_FORMATS_H_

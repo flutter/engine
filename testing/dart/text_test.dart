@@ -11,8 +11,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
+import 'package:test/test.dart';
 
 Future<Uint8List> readFile(String fileName) async {
   final File file = File(path.join('flutter', 'testing', 'resources', fileName));
@@ -54,12 +54,14 @@ void testParagraphStyle() {
   final ParagraphStyle ps1 = ParagraphStyle(textDirection: TextDirection.rtl, fontSize: 14.0);
   final ParagraphStyle ps2 = ParagraphStyle(textAlign: TextAlign.center, fontWeight: FontWeight.w800, fontSize: 10.0, height: 100.0);
   final ParagraphStyle ps3 = ParagraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: 123.0);
+  final ParagraphStyle ps4 = ParagraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: kTextHeightNone);
 
   test('ParagraphStyle toString works', () {
     expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
     expect(ps1.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.rtl, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
     expect(ps2.toString(), equals('ParagraphStyle(textAlign: TextAlign.center, textDirection: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 10.0, height: 100.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
     expect(ps3.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: 123.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps4.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
   });
 }
 
@@ -69,6 +71,7 @@ void testTextStyle() {
   final TextStyle ts2 = TextStyle(fontFamily: 'test');
   final TextStyle ts3 = TextStyle(fontFamily: 'foo', fontFamilyFallback: <String>['Roboto', 'test']);
   final TextStyle ts4 = TextStyle(leadingDistribution: TextLeadingDistribution.even);
+  final TextStyle ts5 = TextStyle(height: kTextHeightNone);
 
   test('TextStyle toString works', () {
     expect(
@@ -77,7 +80,7 @@ void testTextStyle() {
     );
     expect(
       ts1.toString(),
-      equals('TextStyle(color: Color(0xff00ff00), decoration: unspecified, decorationColor: unspecified, decorationStyle: unspecified, decorationThickness: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, textBaseline: unspecified, fontFamily: unspecified, fontFamilyFallback: unspecified, fontSize: 10.0, letterSpacing: unspecified, wordSpacing: unspecified, height: 100.0x, leadingDistribution: unspecified, locale: unspecified, background: unspecified, foreground: unspecified, shadows: unspecified, fontFeatures: unspecified, fontVariations: unspecified)'),
+      equals('TextStyle(color: ${const Color(0xFF00FF00)}, decoration: unspecified, decorationColor: unspecified, decorationStyle: unspecified, decorationThickness: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, textBaseline: unspecified, fontFamily: unspecified, fontFamilyFallback: unspecified, fontSize: 10.0, letterSpacing: unspecified, wordSpacing: unspecified, height: 100.0x, leadingDistribution: unspecified, locale: unspecified, background: unspecified, foreground: unspecified, shadows: unspecified, fontFeatures: unspecified, fontVariations: unspecified)'),
     );
     expect(
       ts2.toString(),
@@ -90,6 +93,10 @@ void testTextStyle() {
     expect(
       ts4.toString(),
       equals('TextStyle(color: unspecified, decoration: unspecified, decorationColor: unspecified, decorationStyle: unspecified, decorationThickness: unspecified, fontWeight: unspecified, fontStyle: unspecified, textBaseline: unspecified, fontFamily: unspecified, fontFamilyFallback: unspecified, fontSize: unspecified, letterSpacing: unspecified, wordSpacing: unspecified, height: unspecified, leadingDistribution: TextLeadingDistribution.even, locale: unspecified, background: unspecified, foreground: unspecified, shadows: unspecified, fontFeatures: unspecified, fontVariations: unspecified)'),
+    );
+    expect(
+      ts5.toString(),
+      equals('TextStyle(color: unspecified, decoration: unspecified, decorationColor: unspecified, decorationStyle: unspecified, decorationThickness: unspecified, fontWeight: unspecified, fontStyle: unspecified, textBaseline: unspecified, fontFamily: unspecified, fontFamilyFallback: unspecified, fontSize: unspecified, letterSpacing: unspecified, wordSpacing: unspecified, height: kTextHeightNone, leadingDistribution: unspecified, locale: unspecified, background: unspecified, foreground: unspecified, shadows: unspecified, fontFeatures: unspecified, fontVariations: unspecified)'),
     );
   });
 }
@@ -190,6 +197,18 @@ void testTextRange() {
     expect(const TextRange(start: 1, end: 2).textInside('hello'), equals('e'));
     expect(const TextRange(start: 5, end: 5).textInside('hello'), isEmpty);
     expect(const TextRange(start: 0, end: 5).textInside('hello'), equals('hello'));
+  });
+}
+
+void testGlyphInfo() {
+  test('constructor', () {
+    const Rect testRect = Rect.fromLTWH(1, 2, 3, 4);
+    const TextRange testRange = TextRange(start: 5, end: 6);
+    const TextDirection testDirection = TextDirection.ltr;
+    final GlyphInfo info = GlyphInfo(testRect, testRange, testDirection);
+    expect(info.graphemeClusterLayoutBounds, testRect);
+    expect(info.graphemeClusterCodeUnitRange, testRange);
+    expect(info.writingDirection, testDirection);
   });
 }
 
@@ -336,6 +355,7 @@ void main() {
   testTextStyle();
   testTextHeightBehavior();
   testTextRange();
+  testGlyphInfo();
   testLoadFontFromList();
   testFontFeatureClass();
   testFontVariation();

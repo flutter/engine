@@ -5,8 +5,8 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../dom.dart';
 import 'semantics.dart';
 
@@ -43,7 +43,7 @@ String placeholderMessage = 'Enable accessibility';
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
   SemanticsEnabler _semanticsEnabler =
-      isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
+      ui_web.browser.isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
 
   @visibleForTesting
   set semanticsEnabler(SemanticsEnabler semanticsEnabler) {
@@ -138,7 +138,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
-    if (EngineSemanticsOwner.instance.semanticsEnabled) {
+    if (EngineSemantics.instance.semanticsEnabled) {
       // Semantics already enabled, forward to framework as normal.
       return true;
     }
@@ -167,7 +167,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
-    EngineSemanticsOwner.instance.semanticsEnabled = true;
+    EngineSemantics.instance.semanticsEnabled = true;
     dispose();
     return false;
   }
@@ -257,7 +257,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
-      final bool removeNow = browserEngine != BrowserEngine.webkit ||
+      final bool removeNow = ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit ||
           event.type == 'touchend' ||
           event.type == 'pointerup' ||
           event.type == 'click';
@@ -267,7 +267,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
-    if (EngineSemanticsOwner.instance.semanticsEnabled) {
+    if (EngineSemantics.instance.semanticsEnabled) {
       // Semantics already enabled, forward to framework as normal.
       return true;
     }
@@ -357,7 +357,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       _schedulePlaceholderRemoval = true;
       semanticsActivationTimer = Timer(_periodToConsumeEvents, () {
         dispose();
-        EngineSemanticsOwner.instance.semanticsEnabled = true;
+        EngineSemantics.instance.semanticsEnabled = true;
       });
       return false;
     }

@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import 'bitmap_canvas.dart';
 import 'color_filter.dart';
+import 'resource_manager.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
 
@@ -39,7 +39,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   DomElement? _shaderElement;
-  final bool isWebKit = browserEngine == BrowserEngine.webkit;
+  final bool isWebKit = ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
 
   @override
   void adoptElements(PersistedShaderMask oldSurface) {
@@ -56,7 +56,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
-    flutterViewEmbedder.removeResource(_shaderElement);
+    ResourceManager.instance.removeResource(_shaderElement);
     _shaderElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
@@ -83,7 +83,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   void apply() {
-    flutterViewEmbedder.removeResource(_shaderElement);
+    ResourceManager.instance.removeResource(_shaderElement);
     _shaderElement = null;
     if (shader is ui.Gradient) {
       rootElement!.style
@@ -166,7 +166,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       } else {
         rootElement!.style.filter = 'url(#${svgFilter.id})';
       }
-      flutterViewEmbedder.addResource(_shaderElement!);
+      ResourceManager.instance.addResource(_shaderElement!);
     }
   }
 

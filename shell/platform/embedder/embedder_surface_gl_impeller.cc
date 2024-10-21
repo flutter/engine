@@ -7,12 +7,10 @@
 #include <utility>
 
 #include "impeller/entity/gles/entity_shaders_gles.h"
+#include "impeller/entity/gles/framebuffer_blend_shaders_gles.h"
+#include "impeller/entity/gles/modern_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
-
-#if IMPELLER_ENABLE_3D
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
-#endif  // IMPELLER_ENABLE_3D
 
 namespace flutter {
 
@@ -44,7 +42,7 @@ class ReactorWorker final : public impeller::ReactorGLES::Worker {
 };
 
 EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
-    EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
+    EmbedderSurfaceGLSkia::GLDispatchTable gl_dispatch_table,
     bool fbo_reset_after_present,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : gl_dispatch_table_(std::move(gl_dispatch_table)),
@@ -65,12 +63,15 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
   gl_dispatch_table_.gl_make_current_callback();
 
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
-    std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_gles_data,
-                                           impeller_entity_shaders_gles_length),
-#if IMPELLER_ENABLE_3D
-    std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_gles_data,
-                                           impeller_scene_shaders_gles_length),
-#endif  // IMPELLER_ENABLE_3D
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_entity_shaders_gles_data,
+          impeller_entity_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_modern_shaders_gles_data,
+          impeller_modern_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_gles_data,
+          impeller_framebuffer_blend_shaders_gles_length),
   };
   auto gl = std::make_unique<impeller::ProcTableGLES>(
       gl_dispatch_table_.gl_proc_resolver);
@@ -78,8 +79,8 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
     return;
   }
 
-  impeller_context_ =
-      impeller::ContextGLES::Create(std::move(gl), shader_mappings);
+  impeller_context_ = impeller::ContextGLES::Create(
+      std::move(gl), shader_mappings, /*enable_gpu_tracing=*/false);
 
   if (!impeller_context_) {
     FML_LOG(ERROR) << "Could not create Impeller context.";
@@ -93,7 +94,7 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
   }
 
   gl_dispatch_table_.gl_clear_current_callback();
-  FML_LOG(ERROR) << "Using the Impeller rendering backend (OpenGL).";
+  FML_LOG(IMPORTANT) << "Using the Impeller rendering backend (OpenGL).";
   valid_ = true;
 }
 
@@ -151,8 +152,8 @@ SkMatrix EmbedderSurfaceGLImpeller::GLContextSurfaceTransformation() const {
 }
 
 // |GPUSurfaceGLDelegate|
-EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGLImpeller::GetGLProcResolver()
-    const {
+EmbedderSurfaceGLSkia::GLProcResolver
+EmbedderSurfaceGLImpeller::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
@@ -169,9 +170,15 @@ EmbedderSurfaceGLImpeller::GLContextFramebufferInfo() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
+  // Ensure that the GL context is current before creating the GPU surface.
+  // GPUSurfaceGLImpeller initialization will set up shader pipelines, and the
+  // current thread needs to be able to execute reactor operations.
+  GLContextMakeCurrent();
+
   return std::make_unique<GPUSurfaceGLImpeller>(
-      this,              // GPU surface GL delegate
-      impeller_context_  // render to surface
+      this,                     // GPU surface GL delegate
+      impeller_context_,        // Impeller context
+      !external_view_embedder_  // render to surface
   );
 }
 

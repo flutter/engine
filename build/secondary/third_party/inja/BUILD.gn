@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_root = "//third_party/inja"
+source_root = "//flutter/third_party/inja"
 
 config("inja_public_config") {
   include_dirs = [ "$source_root/include" ]
@@ -39,5 +39,5 @@ source_set("inja") {
     "$source_root/include/inja/utils.hpp",
   ]
 
-  public_deps = [ "//third_party/json" ]
+  public_deps = [ "//flutter/third_party/json" ]
 }

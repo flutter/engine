@@ -15,18 +15,12 @@ import re
 import sys
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-sys.path += [
-    os.path.join(
-        THIS_DIR, '..', '..', '..', '..', 'third_party', 'pyyaml', 'lib3'
-    )
-]
+sys.path.insert(0, os.path.join(THIS_DIR, '..', '..', '..', 'third_party', 'pyyaml', 'lib'))
 import yaml
 
 DEFAULT_LANGUAGE_VERSION = '2.8'
 
-Package = collections.namedtuple(
-    'Package', ['name', 'rootUri', 'languageVersion', 'packageUri']
-)
+Package = collections.namedtuple('Package', ['name', 'rootUri', 'languageVersion', 'packageUri'])
 
 
 class PackageConfig:
@@ -55,10 +49,15 @@ def language_version_from_pubspec(pubspec):
     if not parsed:
       return DEFAULT_LANGUAGE_VERSION
 
-    # If a format like sdk: '>=a.b' or sdk: 'a.b' is found, we'll use a.b.
+    # If any format like:
+    #   sdk: '>=a.b'
+    #   sdk: '^a.b'
+    #   sdk: 'a.b'
+    # ... is found, we 'a.b' as the language version.
+    #
     # In all other cases we default to "2.8"
     env_sdk = parsed.get('environment', {}).get('sdk', 'any')
-    match = re.search(r'^(>=)?((0|[1-9]\d*)\.(0|[1-9]\d*))', env_sdk)
+    match = re.search(r'^(>=|\^)?((0|[1-9]\d*)\.(0|[1-9]\d*))', env_sdk)
     if match:
       min_sdk_version = match.group(2)
     else:
@@ -109,12 +108,8 @@ def collect_packages(items, relative_to):
 
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument(
-      '--input', help='Path to original package_config', required=True
-  )
-  parser.add_argument(
-      '--output', help='Path to the updated package_config', required=True
-  )
+  parser.add_argument('--input', help='Path to original package_config', required=True)
+  parser.add_argument('--output', help='Path to the updated package_config', required=True)
   parser.add_argument('--root', help='Path to fuchsia root', required=True)
   parser.add_argument('--depfile', help='Path to the depfile', required=True)
   args = parser.parse_args()
@@ -133,11 +128,7 @@ def main():
   with open(args.output, 'w') as output_file:
     package_config = PackageConfig(packages)
     json.dump(
-        package_config.asdict(),
-        output_file,
-        indent=2,
-        sort_keys=True,
-        separators=(',', ': ')
+        package_config.asdict(), output_file, indent=2, sort_keys=True, separators=(',', ': ')
     )
 
   return 0

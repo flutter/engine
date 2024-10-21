@@ -6,12 +6,11 @@ part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
-///
-/// \warning When changes are made to this class, the equivalent APIs in
-///         `lib/ui/semantics/semantics_node.h` and in each of the embedders
-///         *must* be updated.
-/// See also:
-///   - file://./../../lib/ui/semantics/semantics_node.h
+//
+// > [!Warning]
+// > When changes are made to this class, the equivalent APIs in
+// > `lib/ui/semantics/semantics_node.h` and in each of the embedders
+// > *must* be updated.
 class SemanticsAction {
   const SemanticsAction._(this.index, this.name);
 
@@ -45,8 +44,10 @@ class SemanticsAction {
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
   static const int _kSetTextIndex = 1 << 21;
+  static const int _kFocusIndex = 1 << 22;
   // READ THIS: if you add an action here, you MUST update the
-  // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
+  // numSemanticsActions value in testing/dart/semantics_test.dart and
+  // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests
   // will fail.
 
   /// The equivalent of a user briefly tapping the screen with the finger
@@ -156,6 +157,10 @@ class SemanticsAction {
   /// The accessibility focus is different from the input focus. The input focus
   /// is usually held by the element that currently responds to keyboard inputs.
   /// Accessibility focus and input focus can be held by two different nodes!
+  ///
+  /// See also:
+  ///
+  ///    * [focus], which controls the input focus.
   static const SemanticsAction didGainAccessibilityFocus = SemanticsAction._(_kDidGainAccessibilityFocusIndex, 'didGainAccessibilityFocus');
 
   /// Indicates that the node has lost accessibility focus.
@@ -202,6 +207,53 @@ class SemanticsAction {
   /// movement should extend (or start) a selection.
   static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex, 'moveCursorBackwardByWord');
 
+  /// Move the input focus to the respective widget.
+  ///
+  /// Most commonly, the input focus determines which widget will receive
+  /// keyboard input. Semantics nodes that can receive this action are expected
+  /// to have [SemanticsFlag.isFocusable] set. Examples of such focusable
+  /// widgets include buttons, checkboxes, switches, and text fields.
+  ///
+  /// Upon receiving this action, the corresponding widget must move input focus
+  /// to itself. Doing otherwise is likely to lead to a poor user experience,
+  /// such as user input routed to a wrong widget. Text fields in particular,
+  /// must immediately become editable, opening a virtual keyboard, if needed.
+  /// Buttons must respond to tap/click events from the keyboard.
+  ///
+  /// Widget reaction to this action must be idempotent. It is possible to
+  /// receive this action more than once, or when the widget is already focused.
+  ///
+  /// Focus behavior is specific to the platform and to the assistive technology
+  /// used. Typically on desktop operating systems, such as Windows, macOS, and
+  /// Linux, moving accessibility focus will also move the input focus. On
+  /// mobile it is more common for the accessibility focus to be detached from
+  /// the input focus. In order to synchronize the two, a user takes an explicit
+  /// action (e.g. double-tap to activate). Sometimes this behavior is
+  /// configurable. For example, VoiceOver on macOS can be configured in the
+  /// global OS user settings to either move the input focus together with the
+  /// VoiceOver focus, or to keep the two detached. For this reason, widgets
+  /// should not expect to receive [didGainAccessibilityFocus] and [focus]
+  /// actions to be reported in any particular combination or order.
+  ///
+  /// On the web, the DOM "focus" event is equivalent to
+  /// [SemanticsAction.focus]. Accessibility focus is not observable from within
+  /// the browser. Instead, the browser, based on the platform features and user
+  /// preferences, makes the determination on whether input focus should be
+  /// moved to an element and, if so, fires a DOM "focus" event. This event is
+  /// forwarded to the framework as [SemanticsAction.focus]. For this reason, on
+  /// the web, the engine never sends [didGainAccessibilityFocus].
+  ///
+  /// On Android input focus is observable as `AccessibilityAction#ACTION_FOCUS`
+  /// and is separate from accessibility focus, which is observed as
+  /// `AccessibilityAction#ACTION_ACCESSIBILITY_FOCUS`.
+  ///
+  /// See also:
+  ///
+  ///    * [didGainAccessibilityFocus], which informs the framework about
+  ///      accessibility focus ring, such as the TalkBack (Android) and
+  ///      VoiceOver (iOS), moving which does not move the input focus.
+  static const SemanticsAction focus = SemanticsAction._(_kFocusIndex, 'focus');
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -229,10 +281,15 @@ class SemanticsAction {
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
     _kSetTextIndex: setText,
+    _kFocusIndex: focus,
   };
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static SemanticsAction? fromIndex(int index) => _kActionById[index];
 
   @override
@@ -285,14 +342,27 @@ class SemanticsFlag {
   static const int _kIsCheckStateMixedIndex = 1 << 25;
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
-  // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
-  // value in testing/dart/semantics_test.dart, or tests will fail. Also,
-  // please update the Flag enum in
-  // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
-  // and the SemanticsFlag class in lib/web_ui/lib/semantics.dart. If the new flag
-  // affects the visibility of a [SemanticsNode] to accessibility services,
-  // `flutter_test/controller.dart#SemanticsController._importantFlags`
-  // must be updated as well.
+  static const int _kHasSelectedStateIndex = 1 << 28;
+  // READ THIS: if you add a flag here, you MUST update the following:
+  //
+  // - Add an appropriately named and documented `static const SemanticsFlag`
+  //   field to this class.
+  // - Add the new flag to `_kFlagById` in this file.
+  // - Make changes in lib/web_ui/lib/semantics.dart in the web engine that mirror
+  //   the changes in this file (i.e. `_k*Index`, `static const SemanticsFlag`,
+  //   `_kFlagById`).
+  // - Increment the `numSemanticsFlags` value in testing/dart/semantics_test.dart
+  //   and in lib/web_ui/test/engine/semantics/semantics_api_test.dart.
+  // - Add the new flag to platform-specific enums:
+  //   - The `Flag` enum in flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java.
+  //   - The `SemanticsFlags` enum in lib/ui/semantics/semantics_node.h.
+  //   - The `FlutterSemanticsFlag` enum in shell/platform/embedder/embedder.h.
+  // - If the new flag affects the visibility of a [SemanticsNode] to accessibility services,
+  //   update `flutter_test/controller.dart#SemanticsController._importantFlags`
+  //   accordingly.
+  // - If the new flag affects focusability of a semantics node, also update the
+  //   value of `AccessibilityBridge.FOCUSABLE_FLAGS` in
+  //   flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java.
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
@@ -328,8 +398,19 @@ class SemanticsFlag {
   /// Must be false when the checkbox is either checked or unchecked.
   static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex, 'isCheckStateMixed');
 
+  /// The semantics node has the quality of either being "selected" or "unselected".
+  ///
+  /// Whether the widget corresponding to this node is currently selected or not
+  /// is determined by the [isSelected] flag.
+  ///
+  /// When this flag is not set, the corresponding widget cannot be selected by
+  /// the user, and the presence or the lack of [isSelected] does not carry any
+  /// meaning.
+  static const SemanticsFlag hasSelectedState = SemanticsFlag._(_kHasSelectedStateIndex, 'hasSelectedState');
 
   /// Whether a semantics node is selected.
+  ///
+  /// This flag only has meaning in nodes that have [hasSelectedState] flag set.
   ///
   /// If true, the semantics node is "selected". If false, the semantics node is
   /// "unselected".
@@ -556,6 +637,7 @@ class SemanticsFlag {
   static const Map<int, SemanticsFlag> _kFlagById = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
+    _kHasSelectedStateIndex: hasSelectedState,
     _kIsSelectedIndex: isSelected,
     _kIsButtonIndex: isButton,
     _kIsTextFieldIndex: isTextField,
@@ -584,8 +666,12 @@ class SemanticsFlag {
     _kIsExpandedIndex: isExpanded,
   };
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
 
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   static SemanticsFlag? fromIndex(int index) => _kFlagById[index];
 
   @override
@@ -730,6 +816,10 @@ abstract class SemanticsUpdateBuilder {
   /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
   /// an action that is no longer possible.
   ///
+  /// The `identifier` is a string that describes the node for UI automation
+  /// tools that work by querying the accessibility hierarchy, such as Android
+  /// UI Automator, iOS XCUITest, or Appium. It's not exposed to users.
+  ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
   /// string will become the `value` string after a [SemanticsAction.increase]
@@ -738,8 +828,8 @@ abstract class SemanticsUpdateBuilder {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The `labelAttirbutes`, `valueAttirbutes`, `hintAttributes`,
-  /// `increasedValueAttirbutes`, and `decreasedValueAttributes` are the lists of
+  /// The `labelAttributes`, `valueAttributes`, `hintAttributes`,
+  /// `increasedValueAttributes`, and `decreasedValueAttributes` are the lists of
   /// [StringAttribute] carried by the `label`, `value`, `hint`, `increasedValue`,
   /// and `decreasedValue` respectively. Their contents must not be changed during
   /// the semantics update.
@@ -786,6 +876,21 @@ abstract class SemanticsUpdateBuilder {
   /// z-direction starting at `elevation`. Basically, in the z-direction the
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
+  ///
+  /// The `headingLevel` describes that this node is a heading and the hierarchy
+  /// level this node represents as a heading. A value of 0 indicates that this
+  /// node is not a heading. A value of 1 or greater indicates that this node is
+  /// a heading at the specified level. The valid value range is from 1 to 6,
+  /// inclusive. This attribute is only used for Web platform, and it will have
+  /// no effect on other platforms.
+  ///
+  /// The `linkUrl` describes the URI that this node links to. If the node is
+  /// not a link, this should be an empty string.
+  ///
+  /// See also:
+  ///
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
   void updateNode({
     required int id,
     required int flags,
@@ -803,6 +908,7 @@ abstract class SemanticsUpdateBuilder {
     required double elevation,
     required double thickness,
     required Rect rect,
+    required String identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -813,12 +919,14 @@ abstract class SemanticsUpdateBuilder {
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int headingLevel = 0,
+    String linkUrl = '',
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -872,6 +980,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required double elevation,
     required double thickness,
     required Rect rect,
+    required String identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -882,14 +991,20 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int headingLevel = 0,
+    String linkUrl = '',
   }) {
     assert(_matrix4IsValid(transform));
+    assert (
+      headingLevel >= 0 && headingLevel <= 6,
+      'Heading level must be between 1 and 6, or 0 to indicate that this node is not a heading.'
+    );
     _updateNode(
       id,
       flags,
@@ -910,6 +1025,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       rect.bottom,
       elevation,
       thickness,
+      identifier,
       label,
       labelAttributes,
       value,
@@ -920,12 +1036,14 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       decreasedValueAttributes,
       hint,
       hintAttributes,
-      tooltip ?? '',
+      tooltip,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
+      headingLevel,
+      linkUrl,
     );
   }
   @Native<
@@ -961,10 +1079,13 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
+          Handle,
           Int32,
           Handle,
           Handle,
           Handle,
+          Handle,
+          Int32,
           Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
@@ -986,6 +1107,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       double bottom,
       double elevation,
       double thickness,
+      String? identifier,
       String label,
       List<StringAttribute> labelAttributes,
       String value,
@@ -1001,7 +1123,9 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalActions);
+      Int32List additionalActions,
+      int headingLevel,
+      String linkUrl);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
@@ -1018,6 +1142,9 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
   }
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SemanticsUpdateBuilder::build')
   external void _build(_NativeSemanticsUpdate outSemanticsUpdate);
+
+  @override
+  String toString() => 'SemanticsUpdateBuilder';
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -1047,4 +1174,7 @@ base class _NativeSemanticsUpdate extends NativeFieldWrapperClass1 implements Se
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'SemanticsUpdate::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'SemanticsUpdate';
 }

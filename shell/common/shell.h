@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_SHELL_H_
-#define SHELL_COMMON_SHELL_H_
+#ifndef FLUTTER_SHELL_COMMON_SHELL_H_
+#define FLUTTER_SHELL_COMMON_SHELL_H_
 
 #include <functional>
 #include <mutex>
@@ -28,7 +28,6 @@
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/platform_data.h"
@@ -40,11 +39,14 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/resource_cache_limit_calculator.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "impeller/renderer/context.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace flutter {
 
 /// Error exit codes for the Dart isolate.
 enum class DartErrorCode {
+  // NOLINTBEGIN(readability-identifier-naming)
   /// No error has occurred.
   NoError = 0,
   /// The Dart error code for an API error.
@@ -53,6 +55,7 @@ enum class DartErrorCode {
   CompilationError = 254,
   /// The Dart error code for an unknown error.
   UnknownError = 255
+  // NOLINTEND(readability-identifier-naming)
 };
 
 /// Values for |Shell::SetGpuAvailability|.
@@ -126,8 +129,8 @@ class Shell final : public PlatformView::Delegate,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)>
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+      impeller::RuntimeStageBackend runtime_stage_type)>
       EngineCreateCallback;
 
   //----------------------------------------------------------------------------
@@ -298,37 +301,6 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  /// @brief  Allocates resources for a new non-implicit view.
-  ///
-  ///         This method returns immediately and does not wait for the task on
-  ///         the UI thread to finish. This is safe because operations are
-  ///         either initiated from the UI thread (such as rendering), or are
-  ///         sent as posted tasks that are queued. In either case, it's ok for
-  ///         the engine to have views that the Dart VM doesn't.
-  ///
-  ///         The implicit view should never be added with this function.
-  ///         Instead, it is added internally on Shell initialization. Trying to
-  ///         add `kFlutterImplicitViewId` triggers an assertion.
-  ///
-  /// @param[in]  view_id           The view ID of the new view.
-  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
-  ///
-  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
-
-  /// @brief  Deallocates resources for a non-implicit view.
-  ///
-  ///         This method returns immediately and does not wait for the task on
-  ///         the UI thread to finish. This means that the Dart VM might still
-  ///         send messages regarding this view ID for a short while, even
-  ///         though this view ID is already invalid.
-  ///
-  ///         The implicit view should never be removed. Trying to remove
-  ///         `kFlutterImplicitViewId` triggers an assertion.
-  ///
-  /// @param[in]  view_id     The view ID of the view to be removed.
-  ///
-  void RemoveView(int64_t view_id);
-
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data
   ///             of the last layer tree rendered by the rasterizer in this
@@ -477,7 +449,6 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
   std::shared_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
-  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
   std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
   std::atomic<bool> route_messages_through_platform_thread_ = false;
 
@@ -539,7 +510,6 @@ class Shell final : public PlatformView::Delegate,
         const std::shared_ptr<ResourceCacheLimitCalculator>&
             resource_cache_limit_calculator,
         const Settings& settings,
-        std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
@@ -587,6 +557,15 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewScheduleFrame() override;
+
+  // |PlatformView::Delegate|
+  void OnPlatformViewAddView(int64_t view_id,
+                             const ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override;
+
+  // |PlatformView::Delegate|
+  void OnPlatformViewRemoveView(int64_t view_id,
+                                RemoveViewCallback callback) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
@@ -774,15 +753,6 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   //
-  // Renders a frame and responds with various statistics pertaining to the
-  // raster call. These include time taken to raster every leaf layer and also
-  // leaf layer snapshots.
-  bool OnServiceProtocolRenderFrameWithRasterStats(
-      const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document* response);
-
-  // Service protocol handler
-  //
   // Forces the FontCollection to reload the font manifest. Used to support
   // hot reload for fonts.
   bool OnServiceProtocolReloadAssetFonts(
@@ -813,4 +783,4 @@ class Shell final : public PlatformView::Delegate,
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SHELL_H_
+#endif  // FLUTTER_SHELL_COMMON_SHELL_H_

@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
 
 #include <cstdint>
 #include <functional>
-
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
-#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -29,19 +26,12 @@ struct Glyph {
   ///
   Type type = Type::kPath;
 
-  //------------------------------------------------------------------------------
-  /// @brief  Visibility coverage of the glyph in text run space (relative to
-  ///         the baseline, no scaling applied).
-  ///
-  Rect bounds;
-
-  Glyph(uint16_t p_index, Type p_type, Rect p_bounds)
-      : index(p_index), type(p_type), bounds(p_bounds) {}
+  Glyph(uint16_t p_index, Type p_type) : index(p_index), type(p_type) {}
 };
 
 // Many Glyph instances are instantiated, so care should be taken when
 // increasing the size.
-static_assert(sizeof(Glyph) == 20);
+static_assert(sizeof(Glyph) == 4);
 
 }  // namespace impeller
 
@@ -69,3 +59,5 @@ struct std::less<impeller::Glyph> {
     return lhs.index < rhs.index;
   }
 };
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_

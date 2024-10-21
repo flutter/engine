@@ -20,8 +20,8 @@ typedef PlatformViewFactoryCall = ({int viewId, Object? params});
 void testMain() {
   group('PlatformViewMessageHandler', () {
     group('handlePlatformViewCall', () {
-      const String viewType = 'forTest';
-      const int viewId = 6;
+      const String platformViewType = 'forTest';
+      const int platformViewId = 6;
       late PlatformViewManager contentManager;
       late Completer<ByteData?> completer;
 
@@ -34,55 +34,52 @@ void testMain() {
         test('unregistered viewType, fails with descriptive exception',
             () async {
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(platformViewType, platformViewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           try {
             codec.decodeEnvelope(response!);
           } on PlatformException catch (e) {
             expect(e.code, 'unregistered_view_type');
-            expect(e.message, contains(viewType));
+            expect(e.message, contains(platformViewType));
             expect(e.details, contains('registerViewFactory'));
           }
         });
 
         test('duplicate viewId, fails with descriptive exception', () async {
           contentManager.registerFactory(
-              viewType, (int id) => createDomHTMLDivElement());
-          contentManager.renderContent(viewType, viewId, null);
+              platformViewType, (int id) => createDomHTMLDivElement());
+          contentManager.renderContent(platformViewType, platformViewId, null);
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(platformViewType, platformViewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           try {
             codec.decodeEnvelope(response!);
           } on PlatformException catch (e) {
             expect(e.code, 'recreating_view');
-            expect(e.details, contains('$viewId'));
+            expect(e.details, contains('$platformViewId'));
           }
         });
 
         test('returns a successEnvelope when the view is created normally',
             () async {
           contentManager.registerFactory(
-              viewType, (int id) => createDomHTMLDivElement()..id = 'success');
+              platformViewType, (int id) => createDomHTMLDivElement()..id = 'success');
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(platformViewType, platformViewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           expect(codec.decodeEnvelope(response!), isNull,
@@ -90,47 +87,49 @@ void testMain() {
                   'The response should be a success envelope, with null in it.');
         });
 
-        test('inserts the created view into the platformViewsContainer',
+        test('caches the created view so it can be retrieved (not on the DOM)',
             () async {
           final DomElement platformViewsContainer = createDomElement('pv-container');
           contentManager.registerFactory(
-              viewType, (int id) => createDomHTMLDivElement()..id = 'success');
+              platformViewType, (int id) => createDomHTMLDivElement()..id = 'success');
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: platformViewsContainer,
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(platformViewType, platformViewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
 
-          expect(
-            platformViewsContainer.children.single,
-            isNotNull,
-            reason: 'The container has a single child, the created view.',
-          );
-          final DomElement platformView = platformViewsContainer.children.single;
-          expect(
-            platformView.querySelector('div#success'),
-            isNotNull,
-            reason: 'The element created by the factory should be present in the created view.',
-          );
           expect(
             codec.decodeEnvelope(response!),
             isNull,
             reason: 'The response should be a success envelope, with null in it.',
           );
+          expect(
+            contentManager.knowsViewId(platformViewId),
+            isTrue,
+            reason: 'The contentManager should have pre-rendered the platformViewId.'
+          );
+          expect(
+            contentManager.getViewById(platformViewId).matches('div#success'),
+            isNotNull,
+            reason: 'The element created by the factory should be retrievable.',
+          );
+          expect(
+            platformViewsContainer.children,
+            hasLength(0),
+            reason: 'The view should not have been injected into the DOM',
+          );
         });
 
         test('passes creation params to the factory', () async {
           final List<PlatformViewFactoryCall> factoryCalls = <PlatformViewFactoryCall>[];
-          contentManager.registerFactory(viewType, (int viewId, {Object? params}) {
+          contentManager.registerFactory(platformViewType, (int viewId, {Object? params}) {
             factoryCalls.add((viewId: viewId, params: params));
             return createDomHTMLDivElement();
           });
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
 
@@ -138,25 +137,29 @@ void testMain() {
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 111),
+            'create',
+            _getCreateArguments(platformViewType, 111),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 222, <dynamic, dynamic>{'foo': 'bar'}),
+            'create',
+            _getCreateArguments(platformViewType, 222, <dynamic, dynamic>{'foo': 'bar'}),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 333, 'foobar'),
+            'create',
+            _getCreateArguments(platformViewType, 333, 'foobar'),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 444, <dynamic>[1, null, 'str']),
+            'create',
+            _getCreateArguments(platformViewType, 444, <dynamic>[1, null, 'str']),
             completers.last.complete,
           );
 
@@ -184,19 +187,18 @@ void testMain() {
         });
 
         test('fails if the factory returns a non-DOM object', () async {
-          contentManager.registerFactory(viewType, (int viewId) {
+          contentManager.registerFactory(platformViewType, (int viewId) {
             // Return an object that's not a DOM element.
             return Object();
           });
 
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(platformViewType, platformViewId);
 
           expect(() {
-            messageHandler.handlePlatformViewCall(message, (_) {});
+            messageHandler.handlePlatformViewCall('create', arguments, (_) {});
           }, throwsA(isA<TypeError>()));
         });
       });
@@ -210,12 +212,10 @@ void testMain() {
 
         test('never fails, even for unknown viewIds', () async {
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getDisposeMessage(viewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('dispose', platformViewId, completer.complete);
 
           final ByteData? response = await completer.future;
           expect(codec.decodeEnvelope(response!), isNull,
@@ -225,15 +225,13 @@ void testMain() {
 
         test('never fails, even for unknown viewIds', () async {
           final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
-            platformViewsContainer: createDomElement('div'),
             contentManager: _FakePlatformViewManager(viewIdCompleter.complete),
           );
-          final ByteData? message = _getDisposeMessage(viewId);
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('dispose', platformViewId, completer.complete);
 
           final int disposedViewId = await viewIdCompleter.future;
-          expect(disposedViewId, viewId,
+          expect(disposedViewId, platformViewId,
               reason:
                   'The viewId to dispose should be passed to the contentManager');
         });
@@ -254,20 +252,10 @@ class _FakePlatformViewManager extends PlatformViewManager {
   }
 }
 
-ByteData? _getCreateMessage(String viewType, int viewId, [Object? params]) {
-  return codec.encodeMethodCall(MethodCall(
-    'create',
-    <String, dynamic>{
-      'id': viewId,
-      'viewType': viewType,
-      if (params != null) 'params': params,
-    },
-  ));
-}
-
-ByteData? _getDisposeMessage(int viewId) {
-  return codec.encodeMethodCall(MethodCall(
-    'dispose',
-    viewId,
-  ));
+Map<dynamic, dynamic> _getCreateArguments(String viewType, int viewId, [Object? params]) {
+  return <String, dynamic>{
+    'id': viewId,
+    'viewType': viewType,
+    if (params != null) 'params': params,
+  };
 }

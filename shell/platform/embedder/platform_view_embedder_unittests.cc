@@ -23,6 +23,16 @@ class MockDelegate : public PlatformView::Delegate {
   MOCK_METHOD(void, OnPlatformViewDestroyed, (), (override));
   MOCK_METHOD(void, OnPlatformViewScheduleFrame, (), (override));
   MOCK_METHOD(void,
+              OnPlatformViewAddView,
+              (int64_t view_id,
+               const ViewportMetrics& viewport_metrics,
+               AddViewCallback callback),
+              (override));
+  MOCK_METHOD(void,
+              OnPlatformViewRemoveView,
+              (int64_t view_id, RemoveViewCallback callback),
+              (override));
+  MOCK_METHOD(void,
               OnPlatformViewSetNextFrameCallback,
               (const fml::closure& closure),
               (override));
@@ -94,7 +104,7 @@ class MockResponse : public PlatformMessageResponse {
 
 TEST(PlatformViewEmbedderTest, HasPlatformMessageHandler) {
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   flutter::TaskRunners task_runners = flutter::TaskRunners(
       "HasPlatformMessageHandler", thread_host.platform_thread->GetTaskRunner(),
       nullptr, nullptr, nullptr);
@@ -116,7 +126,7 @@ TEST(PlatformViewEmbedderTest, HasPlatformMessageHandler) {
 
 TEST(PlatformViewEmbedderTest, Dispatches) {
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   flutter::TaskRunners task_runners = flutter::TaskRunners(
       "HasPlatformMessageHandler", thread_host.platform_thread->GetTaskRunner(),
       nullptr, nullptr, nullptr);
@@ -161,7 +171,7 @@ TEST(PlatformViewEmbedderTest, Dispatches) {
 
 TEST(PlatformViewEmbedderTest, DeletionDisabledDispatch) {
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   flutter::TaskRunners task_runners = flutter::TaskRunners(
       "HasPlatformMessageHandler", thread_host.platform_thread->GetTaskRunner(),
       nullptr, nullptr, nullptr);

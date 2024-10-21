@@ -2,17 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/build/dart/dart.gni")
 import("//flutter/common/config.gni")
 
 copy("frontend_server") {
   if (flutter_prebuilt_dart_sdk) {
-    snapshot =
-        "$host_prebuilt_dart_sdk/bin/snapshots/frontend_server.dart.snapshot"
+    snapshot = "$host_prebuilt_dart_sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
   } else {
-    deps = [ "//third_party/dart/utils/kernel-service:frontend_server" ]
-    snapshot = "$root_out_dir/frontend_server.dart.snapshot"
+    deps = [ "$dart_src/utils/kernel-service:frontend_server_aot" ]
+    snapshot = "$root_out_dir/frontend_server_aot.dart.snapshot"
   }
 
   sources = [ snapshot ]
-  outputs = [ "$root_gen_dir/frontend_server.dart.snapshot" ]
+  outputs = [ "$root_gen_dir/frontend_server_aot.dart.snapshot" ]
 }

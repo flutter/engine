@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_TESTING_H_
-#define TESTING_TESTING_H_
+#ifndef FLUTTER_TESTING_TESTING_H_
+#define FLUTTER_TESTING_TESTING_H_
 
 #include <string>
 #include <vector>
@@ -12,6 +12,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/testing/assertions.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkData.h"
 
 namespace flutter {
 namespace testing {
@@ -74,6 +75,17 @@ std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(
     const std::string& fixture_name);
 
 //------------------------------------------------------------------------------
+/// @brief      Opens a fixture of the given file name and returns a Skia SkData
+///             holding its contents.
+///
+/// @param[in]  fixture_name  The fixture name
+///
+/// @return     An SkData, or null if the fixture does not exist or its contents
+///             cannot be mapped in.
+///
+sk_sp<SkData> OpenFixtureAsSkData(const std::string& fixture_name);
+
+//------------------------------------------------------------------------------
 /// @brief      Gets the name of the currently running test. This is useful in
 ///             generating logs or assets based on test name.
 ///
@@ -106,4 +118,4 @@ bool MemsetPatternSetOrCheck(std::vector<uint8_t>& buffer, MemsetPatternOp op);
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_TESTING_H_
+#endif  // FLUTTER_TESTING_TESTING_H_

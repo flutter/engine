@@ -9,6 +9,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../common/matchers.dart';
 
@@ -408,7 +409,7 @@ void testMain() {
     // Regression test for https://github.com/flutter/flutter/issues/44470
     test('Should handle contains for devicepixelratio != 1.0', () {
       js_util.setProperty(domWindow, 'devicePixelRatio', 4.0);
-      window.debugOverrideDevicePixelRatio(4.0);
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(4.0);
       final Path path = Path()
         ..moveTo(50, 0)
         ..lineTo(100, 100)
@@ -417,10 +418,10 @@ void testMain() {
         ..close();
       expect(path.contains(const Offset(50, 50)), isTrue);
       js_util.setProperty(domWindow, 'devicePixelRatio', 1.0);
-      window.debugOverrideDevicePixelRatio(1.0);
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
       // TODO(ferhat): Investigate failure on CI. Locally this passes.
       // [Exception... "Failure"  nsresult: "0x80004005 (NS_ERROR_FAILURE)"
-    }, skip: browserEngine == BrowserEngine.firefox);
+    }, skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
 
     // Path contains should handle case where invalid RRect with large
     // corner radius is used for hit test. Use case is a RenderPhysicalShape

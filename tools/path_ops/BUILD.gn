@@ -5,11 +5,13 @@
 import("//flutter/shell/version/version.gni")
 
 shared_library("path_ops") {
+  public_configs = [ "//flutter:config" ]
+
   sources = [
     "path_ops.cc",
     "path_ops.h",
   ]
-  deps = [ "//third_party/skia" ]
+  deps = [ "//flutter/skia" ]
 
   metadata = {
     entitlement_file_path = [ "libpath_ops.dylib" ]

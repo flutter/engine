@@ -13,7 +13,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/task_source.h"
-#include "flutter/fml/thread_local.h"
 
 namespace fml {
 
@@ -32,7 +31,7 @@ class TaskSourceGradeHolder {
 };
 }  // namespace
 
-FML_THREAD_LOCAL ThreadLocalUniquePtr<TaskSourceGradeHolder>
+static thread_local std::unique_ptr<TaskSourceGradeHolder>
     tls_task_source_grade;
 
 TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
@@ -55,8 +54,7 @@ TaskQueueId MessageLoopTaskQueues::CreateTaskQueue() {
   return loop_id;
 }
 
-MessageLoopTaskQueues::MessageLoopTaskQueues()
-    : task_queue_id_counter_(0), order_(0) {
+MessageLoopTaskQueues::MessageLoopTaskQueues() : order_(0) {
   tls_task_source_grade.reset(
       new TaskSourceGradeHolder{TaskSourceGrade::kUnspecified});
 }
@@ -134,9 +132,8 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
     return nullptr;
   }
   fml::closure invocation = top.task.GetTask();
-  queue_entries_.at(top.task_queue_id)
-      ->task_source->PopTask(top.task.GetTaskSourceGrade());
   const auto task_source_grade = top.task.GetTaskSourceGrade();
+  queue_entries_.at(top.task_queue_id)->task_source->PopTask(task_source_grade);
   tls_task_source_grade.reset(new TaskSourceGradeHolder{task_source_grade});
   return invocation;
 }

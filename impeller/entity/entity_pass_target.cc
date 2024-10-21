@@ -11,11 +11,14 @@
 namespace impeller {
 
 EntityPassTarget::EntityPassTarget(const RenderTarget& render_target,
-                                   bool supports_read_from_resolve)
+                                   bool supports_read_from_resolve,
+                                   bool supports_implicit_msaa)
     : target_(render_target),
-      supports_read_from_resolve_(supports_read_from_resolve) {}
+      supports_read_from_resolve_(supports_read_from_resolve),
+      supports_implicit_msaa_(supports_implicit_msaa) {}
 
-std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
+std::shared_ptr<Texture> EntityPassTarget::Flip(
+    const ContentContext& renderer) {
   auto color0 = target_.GetColorAttachments().find(0)->second;
   if (!color0.resolve_texture) {
     VALIDATION_LOG << "EntityPassTarget Flip should never be called for a "
@@ -38,14 +41,25 @@ std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
     // The second texture is allocated lazily to avoid unused allocations.
     TextureDescriptor new_descriptor =
         color0.resolve_texture->GetTextureDescriptor();
-    secondary_color_texture_ = allocator.CreateTexture(new_descriptor);
+    RenderTarget target = renderer.GetRenderTargetCache()->CreateOffscreenMSAA(
+        *renderer.GetContext(), new_descriptor.size, 1);
+    secondary_color_texture_ = target.GetRenderTargetTexture();
 
     if (!secondary_color_texture_) {
       return nullptr;
     }
   }
 
-  std::swap(color0.resolve_texture, secondary_color_texture_);
+  // If the color0 resolve texture is the same as the texture, then we're
+  // running on the GLES backend with implicit resolve.
+  if (supports_implicit_msaa_) {
+    auto new_secondary = color0.resolve_texture;
+    color0.resolve_texture = secondary_color_texture_;
+    color0.texture = secondary_color_texture_;
+    secondary_color_texture_ = new_secondary;
+  } else {
+    std::swap(color0.resolve_texture, secondary_color_texture_);
+  }
 
   target_.SetColorAttachment(color0, 0);
 
@@ -54,12 +68,16 @@ std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
   return secondary_color_texture_;
 }
 
-const RenderTarget& EntityPassTarget::GetRenderTarget() const {
+RenderTarget& EntityPassTarget::GetRenderTarget() {
   return target_;
 }
 
 bool EntityPassTarget::IsValid() const {
   return target_.IsValid();
+}
+
+void EntityPassTarget::RemoveSecondary() {
+  secondary_color_texture_ = nullptr;
 }
 
 }  // namespace impeller

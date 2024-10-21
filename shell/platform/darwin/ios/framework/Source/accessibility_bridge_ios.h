@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
 
 #include <memory>
 #include <vector>
@@ -14,7 +14,7 @@
 @class UIView;
 
 namespace flutter {
-class FlutterPlatformViewsController;
+class PlatformViewsController;
 
 /// Interface that represents an accessibility bridge for iOS.
 class AccessibilityBridgeIos {
@@ -39,9 +39,9 @@ class AccessibilityBridgeIos {
    * The input id is the uid of the newly focused SemanticObject.
    */
   virtual void AccessibilityObjectDidLoseFocus(int32_t id) = 0;
-  virtual std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const = 0;
+  virtual std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const = 0;
 };
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_

@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 
 namespace fml {
@@ -78,7 +77,7 @@ class Semaphore {
   void Signal();
 
  private:
-  std::unique_ptr<PlatformSemaphore> _impl;
+  std::unique_ptr<PlatformSemaphore> impl_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Semaphore);
 };

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
+#ifndef FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_
+#define FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_
 
 #include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/dl_blend_mode.h"
@@ -101,7 +101,6 @@ class ComplexityCalculatorHelper
 
   virtual ~ComplexityCalculatorHelper() = default;
 
-  void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
   void setStrokeCap(DlStrokeCap cap) override {}
   void setStrokeJoin(DlStrokeJoin join) override {}
@@ -111,7 +110,6 @@ class ComplexityCalculatorHelper
   void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
-  void setPathEffect(const DlPathEffect* effect) override {}
   void setMaskFilter(const DlMaskFilter* filter) override {}
 
   void save() override {}
@@ -147,8 +145,8 @@ class ComplexityCalculatorHelper
 
   void drawImageRect(
       const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlRect& src,
+      const DlRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override {
@@ -161,12 +159,12 @@ class ComplexityCalculatorHelper
 
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cull_rect,
+                 const DlRect* cull_rect,
                  bool render_with_attributes) override {
     if (IsComplex()) {
       return;
@@ -174,7 +172,7 @@ class ComplexityCalculatorHelper
     // This API just does a series of drawImage calls from the atlas
     // This is equivalent to calling drawImageRect lots of times
     for (int i = 0; i < count; i++) {
-      ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true,
+      ImageRect(SkISize::Make(tex[i].GetWidth(), tex[i].GetHeight()), true,
                 render_with_attributes, true);
     }
   }
@@ -216,14 +214,15 @@ class ComplexityCalculatorHelper
   inline unsigned int Ceiling() { return ceiling_; }
   inline unsigned int CurrentComplexityScore() { return complexity_score_; }
 
-  unsigned int CalculatePathComplexity(const SkPath& path,
+  unsigned int CalculatePathComplexity(const DlPath& dl_path,
                                        unsigned int line_verb_cost,
                                        unsigned int quad_verb_cost,
                                        unsigned int conic_verb_cost,
                                        unsigned int cubic_verb_cost) {
+    const SkPath& path = dl_path.GetSkPath();
     int verb_count = path.countVerbs();
-    uint8_t verbs[verb_count];
-    path.getVerbs(verbs, verb_count);
+    std::vector<uint8_t> verbs(verb_count);
+    path.getVerbs(verbs.data(), verbs.size());
 
     unsigned int complexity = 0;
     for (int i = 0; i < verb_count; i++) {
@@ -269,4 +268,4 @@ class ComplexityCalculatorHelper
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
+#endif  // FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_

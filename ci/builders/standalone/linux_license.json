@@ -4,10 +4,8 @@
         "os=Linux"
     ],
     "cas_archive": false,
-    "gclient_variables": {
-        "download_android_deps": false
-    },
     "name": "licenses",
+    "description": "Runs the license check script.",
     "tests": [
         {
             "name": "licenses check",

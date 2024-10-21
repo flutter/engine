@@ -6,15 +6,16 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:test_api/src/backend/runtime.dart';
-import 'package:test_core/src/util/io.dart';
+import 'package:test_api/backend.dart';
+// TODO(ditman): Fix ignore when https://github.com/flutter/flutter/issues/143599 is resolved.
+import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 
 import 'browser.dart';
-import 'browser_lock.dart';
 import 'browser_process.dart';
 import 'common.dart';
 import 'environment.dart';
 import 'firefox_installer.dart';
+import 'package_lock.dart';
 
 /// Provides an environment for the desktop Firefox.
 class FirefoxEnvironment implements BrowserEnvironment {
@@ -31,7 +32,7 @@ class FirefoxEnvironment implements BrowserEnvironment {
   @override
   Future<void> prepare() async {
     _installation = await getOrInstallFirefox(
-      browserLock.firefoxLock.version,
+      packageLock.firefoxLock.version,
       infoLog: isCi ? stdout : DevNull(),
     );
   }

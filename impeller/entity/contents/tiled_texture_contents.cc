@@ -4,15 +4,11 @@
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
-#include "impeller/entity/contents/clip_contents.h"
+#include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/texture_fill.frag.h"
-#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/geometry/path_builder.h"
+#include "impeller/entity/tiled_texture_fill_external.frag.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -66,11 +62,12 @@ std::shared_ptr<Texture> TiledTextureContents::CreateFilterTexture(
   }
   auto color_filter_contents = color_filter_(FilterInput::Make(texture_));
   auto snapshot = color_filter_contents->RenderToSnapshot(
-      renderer,                          // renderer
-      Entity(),                          // entity
-      std::nullopt,                      // coverage_limit
-      std::nullopt,                      // sampler_descriptor
-      true,                              // msaa_enabled
+      renderer,      // renderer
+      Entity(),      // entity
+      std::nullopt,  // coverage_limit
+      std::nullopt,  // sampler_descriptor
+      true,          // msaa_enabled
+      /*mip_count=*/1,
       "TiledTextureContents Snapshot");  // label
   if (snapshot.has_value()) {
     return snapshot.value().texture;
@@ -78,7 +75,7 @@ std::shared_ptr<Texture> TiledTextureContents::CreateFilterTexture(
   return nullptr;
 }
 
-SamplerDescriptor TiledTextureContents::CreateDescriptor(
+SamplerDescriptor TiledTextureContents::CreateSamplerDescriptor(
     const Capabilities& capabilities) const {
   SamplerDescriptor descriptor = sampler_descriptor_;
   auto width_mode = TileModeToAddressMode(x_tile_mode_, capabilities);
@@ -99,7 +96,7 @@ bool TiledTextureContents::UsesEmulatedTileMode(
 }
 
 // |Contents|
-bool TiledTextureContents::IsOpaque() const {
+bool TiledTextureContents::IsOpaque(const Matrix& transform) const {
   if (GetOpacityFactor() < 1 || x_tile_mode_ == Entity::TileMode::kDecal ||
       y_tile_mode_ == Entity::TileMode::kDecal) {
     return false;
@@ -107,7 +104,7 @@ bool TiledTextureContents::IsOpaque() const {
   if (color_filter_) {
     return false;
   }
-  return texture_->IsOpaque();
+  return texture_->IsOpaque() && !AppliesAlphaForStrokeCoverage(transform);
 }
 
 bool TiledTextureContents::Render(const ContentContext& renderer,
@@ -117,7 +114,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  using VS = TextureFillVertexShader;
+  using VS = TextureUvFillVertexShader;
   using FS = TiledTextureFillFragmentShader;
 
   const auto texture_size = texture_->GetSize();
@@ -125,74 +122,50 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  auto& host_buffer = pass.GetTransientsBuffer();
-
-  auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect({0, 0}, Size(texture_size)), GetInverseEffectTransform(), renderer,
-      entity, pass);
-  bool uses_emulated_tile_mode =
-      UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
-
   VS::FrameInfo frame_info;
-  frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frame_info.alpha = GetOpacityFactor();
+  frame_info.uv_transform =
+      Rect::MakeSize(texture_size).GetNormalizingTransform() *
+      GetInverseEffectTransform();
 
-  Command cmd;
-  if (uses_emulated_tile_mode) {
-    DEBUG_COMMAND_INFO(cmd, "TiledTextureFill");
-  } else {
-    DEBUG_COMMAND_INFO(cmd, "TextureFill");
-  }
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetTiledTexturePipeline(options);
+      };
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [this, &renderer, &entity](RenderPass& pass) {
+        auto& host_buffer = renderer.GetTransientsBuffer();
+#ifdef IMPELLER_DEBUG
+        pass.SetCommandLabel("TextureFill");
+#endif  // IMPELLER_DEBUG
 
-  cmd.stencil_reference = entity.GetClipDepth();
+        FS::FragInfo frag_info;
+        frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
+        frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
+        frag_info.alpha =
+            GetOpacityFactor() *
+            GetGeometry()->ComputeAlphaCoverage(entity.GetTransform());
+        FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  cmd.pipeline = uses_emulated_tile_mode
-                     ? renderer.GetTiledTexturePipeline(options)
-                     : renderer.GetTexturePipeline(options);
+        if (color_filter_) {
+          auto filtered_texture = CreateFilterTexture(renderer);
+          if (!filtered_texture) {
+            return false;
+          }
+          FS::BindTextureSampler(
+              pass, filtered_texture,
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  CreateSamplerDescriptor(renderer.GetDeviceCapabilities())));
+        } else {
+          FS::BindTextureSampler(
+              pass, texture_,
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  CreateSamplerDescriptor(renderer.GetDeviceCapabilities())));
+        }
 
-  cmd.BindVertices(geometry_result.vertex_buffer);
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-
-  if (uses_emulated_tile_mode) {
-    FS::FragInfo frag_info;
-    frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
-    frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  }
-
-  if (color_filter_) {
-    auto filtered_texture = CreateFilterTexture(renderer);
-    if (!filtered_texture) {
-      return false;
-    }
-    FS::BindTextureSampler(
-        cmd, filtered_texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            CreateDescriptor(renderer.GetDeviceCapabilities())));
-  } else {
-    FS::BindTextureSampler(
-        cmd, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            CreateDescriptor(renderer.GetDeviceCapabilities())));
-  }
-
-  if (!pass.AddCommand(std::move(cmd))) {
-    return false;
-  }
-
-  if (geometry_result.prevent_overdraw) {
-    auto restore = ClipRestoreContents();
-    restore.SetRestoreCoverage(GetCoverage(entity));
-    return restore.Render(renderer, entity, pass);
-  }
-  return true;
+        return true;
+      });
 }
 
 std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
@@ -201,11 +174,24 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
-  if (GetInverseEffectTransform().IsIdentity()) {
+  std::optional<Rect> geometry_coverage = GetGeometry()->GetCoverage({});
+  if (GetInverseEffectTransform().IsIdentity() &&
+      GetGeometry()->IsAxisAlignedRect() &&
+      (!geometry_coverage.has_value() ||
+       Rect::MakeSize(texture_->GetSize())
+           .Contains(geometry_coverage.value()))) {
+    auto coverage = GetCoverage(entity);
+    if (!coverage.has_value()) {
+      return std::nullopt;
+    }
+    auto scale = Vector2(coverage->GetSize() / Size(texture_->GetSize()));
+
     return Snapshot{
         .texture = texture_,
-        .transform = entity.GetTransformation(),
+        .transform = Matrix::MakeTranslation(coverage->GetOrigin()) *
+                     Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = GetOpacityFactor(),
     };
@@ -217,7 +203,8 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
       std::nullopt,                                      // coverage_limit
       sampler_descriptor.value_or(sampler_descriptor_),  // sampler_descriptor
       true,                                              // msaa_enabled
-      label);                                            // label
+      /*mip_count=*/1,
+      label);  // label
 }
 
 }  // namespace impeller

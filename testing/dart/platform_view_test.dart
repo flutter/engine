@@ -4,16 +4,18 @@
 
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('PlatformView layers do not emit errors from tester', () async {
     final SceneBuilder builder = SceneBuilder();
     builder.addPlatformView(1);
-    final Scene scene = builder.build();
-
-    PlatformDispatcher.instance.implicitView!.render(scene);
-    scene.dispose();
+    PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+      final Scene scene = builder.build();
+      PlatformDispatcher.instance.implicitView!.render(scene);
+      scene.dispose();
+    };
+    PlatformDispatcher.instance.scheduleFrame();
     // Test harness asserts that this does not emit an error from the shell logs.
   });
 }

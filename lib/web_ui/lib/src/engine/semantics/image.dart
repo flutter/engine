@@ -10,11 +10,11 @@ import 'semantics.dart';
 /// Uses aria img role to convey this semantic information to the element.
 ///
 /// Screen-readers takes advantage of "aria-label" to describe the visual.
-class ImageRoleManager extends PrimaryRoleManager {
-  ImageRoleManager(SemanticsObject semanticsObject)
-      : super.blank(PrimaryRole.image, semanticsObject) {
-    // The following secondary roles can coexist with images. `LabelAndValue` is
-    // not used because this role manager uses special auxiliary elements to
+class SemanticImage extends SemanticRole {
+  SemanticImage(SemanticsObject semanticsObject)
+      : super.blank(SemanticRoleKind.image, semanticsObject) {
+    // The following behaviors can coexist with images. `LabelAndValue` is
+    // not used because this behavior uses special auxiliary elements to
     // supply ARIA labels.
     // TODO(yjbanov): reevaluate usage of aux elements, https://github.com/flutter/flutter/issues/129317
     addFocusManagement();
@@ -22,6 +22,9 @@ class ImageRoleManager extends PrimaryRoleManager {
     addRouteName();
     addTappable();
   }
+
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 
   /// The element with role="img" and aria-label could block access to all
   /// children elements, therefore create an auxiliary element and  describe the
@@ -49,14 +52,14 @@ class ImageRoleManager extends PrimaryRoleManager {
             ..height = '${semanticsObject.rect!.height}px';
         }
         _auxiliaryImageElement!.style.fontSize = '6px';
-        semanticsObject.element.append(_auxiliaryImageElement!);
+        append(_auxiliaryImageElement!);
       }
 
       _auxiliaryImageElement!.setAttribute('role', 'img');
       _setLabel(_auxiliaryImageElement);
     } else if (semanticsObject.isVisualOnly) {
-      semanticsObject.setAriaRole('img');
-      _setLabel(semanticsObject.element);
+      setAriaRole('img');
+      _setLabel(element);
       _cleanUpAuxiliaryElement();
     } else {
       _cleanUpAuxiliaryElement();
@@ -78,7 +81,7 @@ class ImageRoleManager extends PrimaryRoleManager {
   }
 
   void _cleanupElement() {
-    semanticsObject.element.removeAttribute('aria-label');
+    removeAttribute('aria-label');
   }
 
   @override

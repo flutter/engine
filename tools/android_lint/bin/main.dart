@@ -48,12 +48,13 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   }
 
   final Directory androidSdkDir = Directory(
-    path.join(inArgument, 'third_party', 'android_tools', 'sdk'),
+    path.join(inArgument, 'flutter', 'third_party', 'android_tools', 'sdk'),
   );
 
   if (!androidSdkDir.existsSync()) {
     print('The Android SDK for this engine is missing from the '
-        'third_party/android_tools directory. Have you run gclient sync?\n');
+        'flutter/third_party/android_tools directory. Have you run gclient '
+        'sync?\n');
     print(argParser.usage);
     return -1;
   }
@@ -73,7 +74,7 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
 <!-- WILL AUTOMATICALLY FIND ALL .java FILES AND INCLUDE THEM HERE       -->
 <project>
   <sdk dir="${androidSdkDir.path}" />
-  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-T">
+  <module name="FlutterEngine" android="true" library="true" compile-sdk-version="android-U">
   <manifest file="${path.join(androidDir.path, 'AndroidManifest.xml')}" />
 ''');
   for (final FileSystemEntity entity in androidDir.listSync(recursive: true)) {
@@ -95,7 +96,7 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   final List<String> lintArgs = <String>[
     path.join(androidSdkDir.path, 'cmdline-tools', 'latest', 'bin', 'lint'),
     '--project', projectXmlPath,
-    '--compile-sdk-version', '33',
+    '--compile-sdk-version', '34',
     '--showall',
     '--exitcode', // Set non-zero exit code on errors
     '-Wall',
@@ -165,9 +166,9 @@ ArgParser setupOptions() {
 
 String getJavaHome(String src) {
   if (Platform.isMacOS) {
-    return path.normalize('$src/third_party/java/openjdk/Contents/Home/');
+    return path.normalize('$src/flutter/third_party/java/openjdk/Contents/Home/');
   }
-  return path.normalize('$src/third_party/java/openjdk/');
+  return path.normalize('$src/flutter/third_party/java/openjdk/');
 }
 
 /// The root directory of this project.

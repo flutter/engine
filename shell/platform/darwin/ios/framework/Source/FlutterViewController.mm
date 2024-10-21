@@ -9,6 +9,7 @@
 #import <os/log.h>
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
@@ -58,6 +59,11 @@ typedef struct MouseState {
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+// TODO(dkwingsmt): Make the view ID property public once the iOS shell
+// supports multiple views.
+// https://github.com/flutter/flutter/issues/138168
+@property(nonatomic, readonly) int64_t viewIdentifier;
+
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -112,7 +118,7 @@ typedef struct MouseState {
 @end
 
 @implementation FlutterViewController {
-  std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
@@ -148,6 +154,7 @@ typedef struct MouseState {
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
 @synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
+@dynamic viewIdentifier;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -171,7 +178,7 @@ typedef struct MouseState {
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
                                                       opaque:self.isViewOpaque
                                              enableWideGamut:engine.project.isWideGamutEnabled]);
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+    _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
     [self performCommonViewControllerInitialization];
@@ -232,7 +239,7 @@ typedef struct MouseState {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -286,8 +293,8 @@ typedef struct MouseState {
   return _engine.get();
 }
 
-- (fml::WeakPtr<FlutterViewController>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterViewController>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)setUpNotificationCenterObservers {
@@ -617,7 +624,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   }
 
   // Start on the platform thread.
-  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
+  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakNSObject],
                                           platformTaskRunner = [_engine.get() platformTaskRunner],
                                           rasterTaskRunner = [_engine.get() rasterTaskRunner]]() {
     FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
@@ -641,6 +648,12 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 #pragma mark - Properties
+
+- (int64_t)viewIdentifier {
+  // TODO(dkwingsmt): Fill the view ID property with the correct value once the
+  // iOS shell supports multiple views.
+  return flutter::kFlutterImplicitViewId;
+}
 
 - (UIView*)splashScreenView {
   if (!_splashScreenView) {
@@ -717,7 +730,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::kRetain);
+  _flutterViewRenderedCallback.reset(callback, fml::scoped_policy::OwnershipPolicy::kRetain);
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -800,7 +813,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 
 - (void)addInternalPlugins {
   self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
         if (weakSelf) {
@@ -928,6 +941,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
       pointer_data.change = flutter::PointerData::Change::kCancel;
       pointer_data.device = device.longLongValue;
       pointer_data.pointer_identifier = 0;
+      pointer_data.view_id = self.viewIdentifier;
 
       // Anything we put here will be arbitrary since there are no touches.
       pointer_data.physical_x = 0;
@@ -1176,6 +1190,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     pointer_data.device = reinterpret_cast<int64_t>(touch);
 
+    pointer_data.view_id = self.viewIdentifier;
+
     // Pointer will be generated in pointer_data_packet_converter.cc.
     pointer_data.pointer_identifier = 0;
 
@@ -1305,7 +1321,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  double displayRefreshRate = DisplayLinkManager.displayRefreshRate;
   const double epsilon = 0.1;
   if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
 
@@ -1702,7 +1718,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
 
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterKeyboardAnimationCallback keyboardAnimationCallback = ^(
       fml::TimePoint keyboardAnimationTargetTime) {
     if (!weakSelf) {
@@ -1845,6 +1861,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
   [self.keyboardManager handlePress:press nextAction:next];
+}
+
+- (void)sendDeepLinkToFramework:(NSURL*)url completionHandler:(void (^)(BOOL success))completion {
+  [_engine.get()
+      waitForFirstFrame:3.0
+               callback:^(BOOL didTimeout) {
+                 if (didTimeout) {
+                   FML_LOG(ERROR) << "Timeout waiting for the first frame when launching an URL.";
+                   completion(NO);
+                 } else {
+                   // invove the method and get the result
+                   [[_engine.get() navigationChannel]
+                       invokeMethod:@"pushRouteInformation"
+                          arguments:@{
+                            @"location" : url.absoluteString ?: [NSNull null],
+                          }
+                             result:^(id _Nullable result) {
+                               BOOL success =
+                                   [result isKindOfClass:[NSNumber class]] && [result boolValue];
+                               if (!success) {
+                                 // Logging the error if the result is not successful
+                                 FML_LOG(ERROR) << "Failed to handle route information in Flutter.";
+                               }
+                               completion(success);
+                             }];
+                 }
+               }];
 }
 
 // The documentation for presses* handlers (implemented below) is entirely
@@ -2088,6 +2131,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return flags;
 }
 
+- (BOOL)accessibilityPerformEscape {
+  FlutterMethodChannel* navigationChannel = [_engine.get() navigationChannel];
+  if (navigationChannel) {
+    [self popRoute];
+    return YES;
+  }
+  return NO;
+}
+
 + (BOOL)accessibilityIsOnOffSwitchLabelsEnabled {
   if (@available(iOS 13, *)) {
     return UIAccessibilityIsOnOffSwitchLabelsEnabled();
@@ -2106,10 +2158,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)onUserSettingsChanged:(NSNotification*)notification {
   [[_engine.get() settingsChannel] sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
-    @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
+    @"alwaysUse24HourFormat" : @([FlutterHourFormat isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
-    @"nativeSpellCheckServiceDefined" : @true
+    @"nativeSpellCheckServiceDefined" : @true,
+    @"supportsShowingSystemContextMenu" : @([self supportsShowingSystemContextMenu])
   }];
 }
 
@@ -2171,22 +2224,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #endif
 }
 
-- (BOOL)isAlwaysUse24HourFormat {
-  // iOS does not report its "24-Hour Time" user setting in the API. Instead, it applies
-  // it automatically to NSDateFormatter when used with [NSLocale currentLocale]. It is
-  // essential that [NSLocale currentLocale] is used. Any custom locale, even the one
-  // that's the same as [NSLocale currentLocale] will ignore the 24-hour option (there
-  // must be some internal field that's not exposed to developers).
-  //
-  // Therefore this option behaves differently across Android and iOS. On Android this
-  // setting is exposed standalone, and can therefore be applied to all locales, whether
-  // the "current system locale" or a custom one. On iOS it only applies to the current
-  // system locale. Widget implementors must take this into account in order to provide
-  // platform-idiomatic behavior in their widgets.
-  NSString* dateFormat = [NSDateFormatter dateFormatFromTemplate:@"j"
-                                                         options:0
-                                                          locale:[NSLocale currentLocale]];
-  return [dateFormat rangeOfString:@"a"].location == NSNotFound;
+- (BOOL)supportsShowingSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    return YES;
+  } else {
+    return NO;
+  }
 }
 
 // The brightness mode of the platform, e.g., light or dark, expressed as a string that
@@ -2262,7 +2305,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Platform views
 
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
   return [_engine.get() platformViewsController];
 }
 
@@ -2369,7 +2412,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
-- (flutter::PointerData)generatePointerDataAtLastMouseLocation API_AVAILABLE(ios(13.4)) {
+- (flutter::PointerData)updateMousePointerDataFrom:(UIGestureRecognizer*)gestureRecognizer
+    API_AVAILABLE(ios(13.4)) {
+  CGPoint location = [gestureRecognizer locationInView:self.view];
+  CGFloat scale = [self flutterScreenIfViewLoaded].scale;
+  _mouseState.location = {location.x * scale, location.y * scale};
   flutter::PointerData pointer_data;
   pointer_data.Clear();
   pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
@@ -2389,16 +2436,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (gestureRecognizer == _continuousScrollingPanGestureRecognizer &&
       event.type == UIEventTypeScroll) {
     // Events with type UIEventTypeScroll are only received when running on macOS under emulation.
-    flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+    flutter::PointerData pointer_data = [self updateMousePointerDataFrom:gestureRecognizer];
     pointer_data.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
+    pointer_data.view_id = self.viewIdentifier;
 
     if (event.timestamp < _scrollInertiaEventAppKitDeadline) {
       // Only send the event if it occured before the expected natural end of gesture momentum.
       // If received after the deadline, it's not likely the event is from a user-initiated cancel.
       auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-      packet->SetPointerData(/*index=*/0, pointer_data);
+      packet->SetPointerData(/*i=*/0, pointer_data);
       [_engine.get() dispatchPointerDataPacket:std::move(packet)];
       _scrollInertiaEventAppKitDeadline = 0;
     }
@@ -2407,15 +2455,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return YES;
 }
 
-- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  CGPoint location = [recognizer locationInView:self.view];
-  CGFloat scale = [self flutterScreenIfViewLoaded].scale;
+- (void)hoverEvent:(UIHoverGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint oldLocation = _mouseState.location;
-  _mouseState.location = {location.x * scale, location.y * scale};
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+  pointer_data.view_id = self.viewIdentifier;
 
   switch (_hoverGestureRecognizer.state) {
     case UIGestureRecognizerStateBegan:
@@ -2449,17 +2495,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // is received with the same position as the previous one, it can only be from a finger
     // making or breaking contact with the trackpad surface.
     auto packet = std::make_unique<flutter::PointerDataPacket>(2);
-    packet->SetPointerData(/*index=*/0, pointer_data);
+    packet->SetPointerData(/*i=*/0, pointer_data);
     flutter::PointerData inertia_cancel = pointer_data;
     inertia_cancel.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     inertia_cancel.kind = flutter::PointerData::DeviceKind::kTrackpad;
     inertia_cancel.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
-    packet->SetPointerData(/*index=*/1, inertia_cancel);
+    inertia_cancel.view_id = self.viewIdentifier;
+    packet->SetPointerData(/*i=*/1, inertia_cancel);
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
     _scrollInertiaEventStartline = DBL_MAX;
   } else {
     auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-    packet->SetPointerData(/*index=*/0, pointer_data);
+    packet->SetPointerData(/*i=*/0, pointer_data);
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
   }
 }
@@ -2471,12 +2518,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   translation.x *= scale;
   translation.y *= scale;
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
   pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
   pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
+  pointer_data.view_id = self.viewIdentifier;
 
   // The translation reported by UIPanGestureRecognizer is the total translation
   // generated by the pan gesture since the gesture began. We need to be able
@@ -2489,7 +2537,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
@@ -2497,9 +2545,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [self flutterScreenIfViewLoaded].scale;
 
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  pointer_data.view_id = self.viewIdentifier;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -2540,14 +2589,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data = [self updateMousePointerDataFrom:recognizer];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  pointer_data.view_id = self.viewIdentifier;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -2569,7 +2619,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 

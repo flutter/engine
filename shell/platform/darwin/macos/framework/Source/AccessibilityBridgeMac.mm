@@ -33,7 +33,7 @@ void AccessibilityBridgeMac::OnAccessibilityEvent(
   ui::AXNode* ax_node = targeted_event.node;
   std::vector<AccessibilityBridgeMac::NSAccessibilityEvent> events =
       MacOSEventsFromAXEvent(targeted_event.event_params.event, *ax_node);
-  for (AccessibilityBridgeMac::NSAccessibilityEvent event : events) {
+  for (const AccessibilityBridgeMac::NSAccessibilityEvent& event : events) {
     if (event.user_info != nil) {
       DispatchMacOSNotificationWithUserInfo(event.target, event.name, event.user_info);
     } else {
@@ -165,11 +165,11 @@ AccessibilityBridgeMac::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event
         // If it is a text field, the value change notifications are handled by
         // the FlutterTextField directly. Only need to make sure it is the
         // first responder.
-        FlutterTextField* native_text_field =
-            (FlutterTextField*)mac_platform_node_delegate->GetNativeViewAccessible();
+        id native_text_field = mac_platform_node_delegate->GetNativeViewAccessible();
+        FML_DCHECK([native_text_field isKindOfClass:FlutterTextField.class]);
         id focused = mac_platform_node_delegate->GetFocus();
         if (!focused || native_text_field == focused) {
-          [native_text_field startEditing];
+          [(FlutterTextField*)native_text_field startEditing];
         }
         break;
       }

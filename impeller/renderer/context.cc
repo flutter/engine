@@ -4,16 +4,25 @@
 
 #include "impeller/renderer/context.h"
 
-#include "impeller/core/capture.h"
+#include <utility>
 
 namespace impeller {
 
 Context::~Context() = default;
 
-Context::Context() : capture(CaptureContext::MakeInactive()) {}
+Context::Context() = default;
 
 bool Context::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   return false;
+}
+
+bool Context::EnqueueCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) {
+  return GetCommandQueue()->Submit({std::move(command_buffer)}).ok();
+}
+
+bool Context::FlushCommandBuffers() {
+  return true;
 }
 
 }  // namespace impeller

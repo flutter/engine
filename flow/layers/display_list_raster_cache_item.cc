@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/flow/layers/display_list_raster_cache_item.h"
 
 #include <optional>
@@ -14,7 +16,7 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 namespace flutter {
 
@@ -174,3 +176,5 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       display_list_->rtree());
 }
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

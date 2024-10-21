@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_ASSETS_APK_ASSET_PROVIDER_H_
-#define FLUTTER_ASSETS_APK_ASSET_PROVIDER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_APK_ASSET_PROVIDER_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_APK_ASSET_PROVIDER_H_
 
 #include <android/asset_manager_jni.h>
 #include <jni.h>
@@ -43,6 +43,8 @@ class APKAssetProvider final : public AssetResolver {
   // delete the returned pointer.
   APKAssetProviderInternal* GetImpl() const { return impl_.get(); }
 
+  bool operator==(const AssetResolver& other) const override;
+
  private:
   std::shared_ptr<APKAssetProviderInternal> impl_;
 
@@ -59,9 +61,14 @@ class APKAssetProvider final : public AssetResolver {
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;
 
+  // |AssetResolver|
+  const APKAssetProvider* as_apk_asset_provider() const override {
+    return this;
+  }
+
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetProvider);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_ASSETS_APK_ASSET_PROVIDER_H
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_APK_ASSET_PROVIDER_H_

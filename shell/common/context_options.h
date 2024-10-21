@@ -5,10 +5,12 @@
 #ifndef FLUTTER_SHELL_COMMON_CONTEXT_OPTIONS_H_
 #define FLUTTER_SHELL_COMMON_CONTEXT_OPTIONS_H_
 
+#if !SLIMPELLER
+
 #include <optional>
 
 #include "flutter/fml/macros.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/ganesh/GrContextOptions.h"
 
 namespace flutter {
 
@@ -39,5 +41,7 @@ GrContextOptions MakeDefaultContextOptions(
     std::optional<GrBackendApi> api = std::nullopt);
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_SHELL_COMMON_CONTEXT_OPTIONS_H_

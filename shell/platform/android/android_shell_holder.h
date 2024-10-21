@@ -105,7 +105,8 @@ class AndroidShellHolder {
 
   void UpdateDisplayMetrics();
 
-  void SetIsRenderingToImageView(bool value);
+  // Visible for testing.
+  const std::unique_ptr<Shell>& GetShellForTesting() const { return shell_; }
 
  private:
   const flutter::Settings settings_;

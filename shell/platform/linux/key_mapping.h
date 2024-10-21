@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef KEYBOARD_MAP_H_
-#define KEYBOARD_MAP_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_KEY_MAPPING_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_KEY_MAPPING_H_
 
 #include <gdk/gdk.h>
 #include <cinttypes>
@@ -44,11 +44,12 @@ typedef struct {
   // The logical key for this key.
   uint64_t logical_key;
 
-  // If the goal is mandatory, the keyboard manager will make sure to find a
+  // If the goal is mandatory, the keyboard handler will make sure to find a
   // logical key for this character, falling back to the US keyboard layout.
   bool mandatory;
 } LayoutGoal;
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern const std::vector<LayoutGoal> layout_goals;
 
-#endif  // KEYBOARD_MAP_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_KEY_MAPPING_H_

@@ -7,7 +7,9 @@ package io.flutter.embedding.android;
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -16,10 +18,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnPreDrawListener;
+import android.window.BackEvent;
+import android.window.OnBackAnimationCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
+import io.flutter.Build.API_LEVELS;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -578,6 +584,7 @@ import java.util.List;
     ensureAlive();
     if (flutterEngine != null) {
       updateSystemUiOverlays();
+      flutterEngine.getPlatformViewsController().onResume();
     } else {
       Log.w(TAG, "onPostResume() invoked before FlutterFragment was attached to an Activity.");
     }
@@ -639,6 +646,12 @@ import java.util.List;
     // See https://github.com/flutter/flutter/issues/93276
     previousVisibility = flutterView.getVisibility();
     flutterView.setVisibility(View.GONE);
+    if (flutterEngine != null) {
+      // When an Activity is stopped it won't have its onTrimMemory callback invoked. Normally,
+      // this isn't a problem but because of a bug in some builds of Android 14 we must act as
+      // if the onTrimMemory callback has been called.
+      flutterEngine.getRenderer().onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND);
+    }
   }
 
   /**
@@ -776,6 +789,100 @@ import java.util.List;
       flutterEngine.getNavigationChannel().popRoute();
     } else {
       Log.w(TAG, "Invoked onBackPressed() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackStarted(BackEvent)}.
+   *
+   * <p>This method should be called when the back gesture is initiated. It should be invoked as
+   * part of the implementation of {@link OnBackAnimationCallback}.
+   *
+   * <p>This method delegates the handling of the start of a back gesture to the Flutter framework,
+   * which is responsible for the appropriate response, such as initiating animations or preparing
+   * the UI for the back navigation process.
+   *
+   * @param backEvent The BackEvent object containing information about the touch.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void startBackGesture(@NonNull BackEvent backEvent) {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding startBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().startBackGesture(backEvent);
+    } else {
+      Log.w(TAG, "Invoked startBackGesture() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackProgressed(BackEvent)}.
+   *
+   * <p>This method should be called in response to progress in a back gesture, as part of the
+   * implementation of {@link OnBackAnimationCallback}.
+   *
+   * <p>This method delegates to the Flutter framework to update UI elements or animations based on
+   * the progression of the back gesture.
+   *
+   * @param backEvent An BackEvent object describing the progress event.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void updateBackGestureProgress(@NonNull BackEvent backEvent) {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding updateBackGestureProgress() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().updateBackGestureProgress(backEvent);
+    } else {
+      Log.w(
+          TAG,
+          "Invoked updateBackGestureProgress() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackInvoked()}.
+   *
+   * <p>This method is called to signify the completion of a back gesture and commits the navigation
+   * action initiated by the gesture. It should be invoked as the final step in handling a back
+   * gesture.
+   *
+   * <p>This method indicates to the Flutter framework that it should proceed with the back
+   * navigation, including finalizing animations and updating the UI to reflect the navigation
+   * outcome.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void commitBackGesture() {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding commitBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().commitBackGesture();
+    } else {
+      Log.w(TAG, "Invoked commitBackGesture() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackCancelled()}.
+   *
+   * <p>This method should be called when a back gesture is cancelled or the back button is pressed.
+   * It informs the Flutter framework about the cancellation.
+   *
+   * <p>This method enables the Flutter framework to rollback any UI changes or animations initiated
+   * in response to the back gesture. This includes resetting UI elements to their state prior to
+   * the gesture's start.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void cancelBackGesture() {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding cancelBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().cancelBackGesture();
+    } else {
+      Log.w(TAG, "Invoked cancelBackGesture() before FlutterFragment was attached to an Activity.");
     }
   }
 
@@ -921,6 +1028,7 @@ import java.util.List;
         flutterEngine.getSystemChannel().sendMemoryPressureWarning();
       }
       flutterEngine.getRenderer().onTrimMemory(level);
+      flutterEngine.getPlatformViewsController().onTrimMemory(level);
     }
   }
 

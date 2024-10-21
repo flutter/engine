@@ -11,17 +11,18 @@
 
 namespace flutter {
 
-PointerDataPacketConverter::PointerDataPacketConverter() : pointer_(0) {}
+PointerDataPacketConverter::PointerDataPacketConverter(const Delegate& delegate)
+    : delegate_(delegate) {}
 
 PointerDataPacketConverter::~PointerDataPacketConverter() = default;
 
 std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
-    std::unique_ptr<PointerDataPacket> packet) {
+    const PointerDataPacket& packet) {
   std::vector<PointerData> converted_pointers;
   // Converts each pointer data in the buffer and stores it in the
   // converted_pointers.
-  for (size_t i = 0; i < packet->GetLength(); i++) {
-    PointerData pointer_data = packet->GetPointerData(i);
+  for (size_t i = 0; i < packet.GetLength(); i++) {
+    PointerData pointer_data = packet.GetPointerData(i);
     ConvertPointerData(pointer_data, converted_pointers);
   }
 
@@ -39,6 +40,10 @@ std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
 void PointerDataPacketConverter::ConvertPointerData(
     PointerData pointer_data,
     std::vector<PointerData>& converted_pointers) {
+  // Ignores pointer events with an invalid view ID.
+  if (!delegate_.ViewExists(pointer_data.view_id)) {
+    return;
+  }
   if (pointer_data.signal_kind == PointerData::SignalKind::kNone) {
     switch (pointer_data.change) {
       case PointerData::Change::kCancel: {
@@ -69,7 +74,45 @@ void PointerDataPacketConverter::ConvertPointerData(
         break;
       }
       case PointerData::Change::kAdd: {
-        FML_DCHECK(states_.find(pointer_data.device) == states_.end());
+        auto iter = states_.find(pointer_data.device);
+        if (iter != states_.end()) {
+          // Synthesizes a remove event if the pointer was not previously
+          // removed.
+          PointerState state = iter->second;
+          PointerData synthesized_data = pointer_data;
+          synthesized_data.physical_x = state.physical_x;
+          synthesized_data.physical_y = state.physical_y;
+          synthesized_data.pan_x = state.pan_x;
+          synthesized_data.pan_y = state.pan_y;
+          synthesized_data.scale = state.scale;
+          synthesized_data.rotation = state.rotation;
+          synthesized_data.buttons = state.buttons;
+          synthesized_data.synthesized = 1;
+
+          // The framework expects an add event to always follow a remove event,
+          // and remove events with invalid views are ignored.
+          // To meet the framework's expectations, the view ID of the add event
+          // is used for the remove event if the old view has been destroyed.
+          if (delegate_.ViewExists(state.view_id)) {
+            synthesized_data.view_id = state.view_id;
+
+            if (state.is_down) {
+              // Synthesizes cancel event if the pointer is down.
+              PointerData synthesized_cancel_event = synthesized_data;
+              synthesized_cancel_event.change = PointerData::Change::kCancel;
+              UpdatePointerIdentifier(synthesized_cancel_event, state, false);
+
+              state.is_down = false;
+              converted_pointers.push_back(synthesized_cancel_event);
+            }
+          }
+
+          PointerData synthesized_remove_event = synthesized_data;
+          synthesized_remove_event.change = PointerData::Change::kRemove;
+
+          converted_pointers.push_back(synthesized_remove_event);
+        }
+
         EnsurePointerState(pointer_data);
         converted_pointers.push_back(pointer_data);
         break;
@@ -79,6 +122,11 @@ void PointerDataPacketConverter::ConvertPointerData(
         auto iter = states_.find(pointer_data.device);
         FML_DCHECK(iter != states_.end());
         PointerState state = iter->second;
+        if (state.view_id != pointer_data.view_id) {
+          // Ignores remove event if the pointer was previously added to a
+          // different view.
+          break;
+        }
 
         if (state.is_down) {
           // Synthesizes cancel event if the pointer is down.
@@ -357,6 +405,7 @@ PointerState PointerDataPacketConverter::EnsurePointerState(
   state.physical_y = pointer_data.physical_y;
   state.pan_x = 0;
   state.pan_y = 0;
+  state.view_id = pointer_data.view_id;
   states_[pointer_data.device] = state;
   return state;
 }

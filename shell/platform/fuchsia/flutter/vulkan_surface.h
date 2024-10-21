@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_H_
 
+#include <fuchsia/sysmem2/cpp/fidl.h>
 #include <lib/async/cpp/wait.h>
 #include <lib/zx/event.h>
 #include <lib/zx/vmo.h>
@@ -43,7 +45,7 @@ struct VulkanImage {
 class VulkanSurface final : public SurfaceProducerSurface {
  public:
   VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
-                fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
+                fuchsia::sysmem2::AllocatorSyncPtr& sysmem_allocator,
                 fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
                 sk_sp<GrDirectContext> context,
                 const SkISize& size);
@@ -134,7 +136,7 @@ class VulkanSurface final : public SurfaceProducerSurface {
                      const zx_packet_signal_t* signal);
 
   bool AllocateDeviceMemory(
-      fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
+      fuchsia::sysmem2::AllocatorSyncPtr& sysmem_allocator,
       fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
       sk_sp<GrDirectContext> context,
       const SkISize& size);
@@ -181,3 +183,5 @@ class VulkanSurface final : public SurfaceProducerSurface {
 };
 
 }  // namespace flutter_runner
+
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VULKAN_SURFACE_H_

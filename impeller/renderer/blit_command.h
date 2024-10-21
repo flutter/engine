@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BLIT_COMMAND_H_
+#define FLUTTER_IMPELLER_RENDERER_BLIT_COMMAND_H_
 
+#include <cstdint>
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
@@ -21,6 +23,11 @@ struct BlitCopyTextureToTextureCommand : public BlitCommand {
   IPoint destination_origin;
 };
 
+struct BlitResizeTextureCommand : public BlitCommand {
+  std::shared_ptr<Texture> source;
+  std::shared_ptr<Texture> destination;
+};
+
 struct BlitCopyTextureToBufferCommand : public BlitCommand {
   std::shared_ptr<Texture> source;
   std::shared_ptr<DeviceBuffer> destination;
@@ -31,7 +38,9 @@ struct BlitCopyTextureToBufferCommand : public BlitCommand {
 struct BlitCopyBufferToTextureCommand : public BlitCommand {
   BufferView source;
   std::shared_ptr<Texture> destination;
-  IPoint destination_origin;
+  IRect destination_region;
+  uint32_t mip_level = 0;
+  uint32_t slice = 0;
 };
 
 struct BlitGenerateMipmapCommand : public BlitCommand {
@@ -39,3 +48,5 @@ struct BlitGenerateMipmapCommand : public BlitCommand {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BLIT_COMMAND_H_

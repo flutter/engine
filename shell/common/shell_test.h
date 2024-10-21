@@ -15,7 +15,6 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
-#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
@@ -28,6 +27,38 @@
 
 namespace flutter {
 namespace testing {
+
+// The signature of ViewContent::builder.
+using LayerTreeBuilder =
+    std::function<void(std::shared_ptr<ContainerLayer> root)>;
+struct ViewContent;
+// Defines the content to be rendered to all views of a frame in PumpOneFrame.
+using FrameContent = std::map<int64_t, ViewContent>;
+// Defines the content to be rendered to a view in PumpOneFrame.
+struct ViewContent {
+  flutter::ViewportMetrics viewport_metrics;
+  // Given the root layer, this callback builds the layer tree to be rasterized
+  // in PumpOneFrame.
+  LayerTreeBuilder builder;
+
+  // Build a frame with no views. This is useful when PumpOneFrame is used just
+  // to schedule the frame while the frame content is defined by other means.
+  static FrameContent NoViews();
+
+  // Build a frame with a single implicit view with the specific size and no
+  // content.
+  static FrameContent DummyView(double width = 1, double height = 1);
+
+  // Build a frame with a single implicit view with the specific viewport
+  // metrics and no content.
+  static FrameContent DummyView(flutter::ViewportMetrics viewport_metrics);
+
+  // Build a frame with a single implicit view with the specific size and
+  // content.
+  static FrameContent ImplicitView(double width,
+                                   double height,
+                                   LayerTreeBuilder builder);
+};
 
 class ShellTest : public FixtureTest {
  public:
@@ -70,25 +101,17 @@ class ShellTest : public FixtureTest {
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
   /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
-  /// the `will_draw_new_frame` to true.
-  static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
-
-  /// Given the root layer, this callback builds the layer tree to be rasterized
-  /// in PumpOneFrame.
-  using LayerTreeBuilder =
-      std::function<void(std::shared_ptr<ContainerLayer> root)>;
+  /// the content of `will_draw_new_frame` to true if it's not nullptr.
+  static void VSyncFlush(Shell* shell, bool* will_draw_new_frame = nullptr);
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
   static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
 
-  static void PumpOneFrame(Shell* shell,
-                           double width = 1,
-                           double height = 1,
-                           LayerTreeBuilder = {});
-  static void PumpOneFrame(Shell* shell,
-                           const flutter::ViewportMetrics& viewport_metrics,
-                           LayerTreeBuilder = {});
-  static void DispatchFakePointerData(Shell* shell);
+  static void PumpOneFrame(Shell* shell);
+  static void PumpOneFrame(Shell* shell, FrameContent frame_content);
+  // Dispatch a PointerHoverEvent with the specified `x` as the pointer
+  // position.
+  static void DispatchFakePointerData(Shell* shell, double x);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and
@@ -112,7 +135,6 @@ class ShellTest : public FixtureTest {
     kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
-    kRenderFrameWithRasterStats,
   };
 
   // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
@@ -131,9 +153,6 @@ class ShellTest : public FixtureTest {
   // Otherwise those tests will be flaky as the clearing of unreported timings
   // is unpredictive.
   static int UnreportedTimingsCount(Shell* shell);
-
-  static size_t GetLiveTrackedPathCount(
-      const std::shared_ptr<VolatilePathTracker>& tracker);
 
   static void TurnOffGPU(Shell* shell, bool value);
 

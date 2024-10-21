@@ -6,7 +6,6 @@
 
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -14,11 +13,11 @@ ColorSourceContents::ColorSourceContents() = default;
 
 ColorSourceContents::~ColorSourceContents() = default;
 
-void ColorSourceContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void ColorSourceContents::SetGeometry(const Geometry* geometry) {
+  geometry_ = geometry;
 }
 
-const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
+const Geometry* ColorSourceContents::GetGeometry() const {
   return geometry_;
 }
 
@@ -44,15 +43,16 @@ bool ColorSourceContents::IsSolidColor() const {
 
 std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry_->GetCoverage(entity.GetTransform());
 };
-
-bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
 
 void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
+}
+
+bool ColorSourceContents::AppliesAlphaForStrokeCoverage(
+    const Matrix& transform) const {
+  return GetGeometry() && GetGeometry()->ComputeAlphaCoverage(transform) < 1.0;
 }
 
 }  // namespace impeller

@@ -10,10 +10,11 @@
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 #include "vulkan/vulkan_core.h"
 
 namespace flutter {
@@ -50,7 +51,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        frame_size);
+        [](const SurfaceFrame& surface_frame) { return true; }, frame_size);
   }
 
   FlutterVulkanImage image = delegate_->AcquireImage(frame_size);
@@ -67,10 +68,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     return nullptr;
   }
 
-  SurfaceFrame::SubmitCallback callback = [image = image, delegate = delegate_](
-                                              const SurfaceFrame&,
-                                              DlCanvas* canvas) -> bool {
-    TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
+  SurfaceFrame::EncodeCallback encode_callback =
+      [image = image, delegate = delegate_](const SurfaceFrame&,
+                                            DlCanvas* canvas) -> bool {
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
@@ -82,10 +82,18 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
                                   static_cast<VkFormat>(image.format));
   };
 
+  SurfaceFrame::SubmitCallback submit_callback =
+      [image = image, delegate = delegate_](const SurfaceFrame&) -> bool {
+    TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
+    return delegate->PresentImage(reinterpret_cast<VkImage>(image.image),
+                                  static_cast<VkFormat>(image.format));
+  };
+
   SurfaceFrame::FramebufferInfo framebuffer_info{.supports_readback = true};
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
-                                        std::move(callback), frame_size);
+                                        std::move(encode_callback),
+                                        std::move(submit_callback), frame_size);
 }
 
 SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {

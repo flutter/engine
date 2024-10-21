@@ -22,10 +22,43 @@ namespace testing {
 
 constexpr int64_t kImplicitViewId = 0;
 
+FrameContent ViewContent::NoViews() {
+  return std::map<int64_t, ViewContent>();
+}
+
+FrameContent ViewContent::DummyView(double width, double height) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = {1.0, width, height, 22, 0},
+      .builder = {},
+  };
+  return result;
+}
+
+FrameContent ViewContent::DummyView(flutter::ViewportMetrics viewport_metrics) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = std::move(viewport_metrics),
+      .builder = {},
+  };
+  return result;
+}
+
+FrameContent ViewContent::ImplicitView(double width,
+                                       double height,
+                                       LayerTreeBuilder builder) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = {1.0, width, height, 22, 0},
+      .builder = std::move(builder),
+  };
+  return result;
+}
+
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
-                   ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                       ThreadHost::Type::UI | ThreadHost::Type::RASTER) {}
+                   ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                       ThreadHost::Type::kUi | ThreadHost::Type::kRaster) {}
 
 void ShellTest::SendPlatformMessage(Shell* shell,
                                     std::unique_ptr<PlatformMessage> message) {
@@ -92,16 +125,18 @@ void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
   ASSERT_TRUE(restarted.get_future().get());
 }
 
-void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
+void ShellTest::VSyncFlush(Shell* shell, bool* will_draw_new_frame) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [shell, &will_draw_new_frame, &latch] {
+      [shell, will_draw_new_frame, &latch] {
         // The following UI task ensures that all previous UI tasks are flushed.
         fml::AutoResetWaitableEvent ui_latch;
         shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-            [&ui_latch, &will_draw_new_frame]() {
-              will_draw_new_frame = true;
+            [&ui_latch, will_draw_new_frame]() {
+              if (will_draw_new_frame != nullptr) {
+                *will_draw_new_frame = true;
+              }
               ui_latch.Signal();
             });
 
@@ -154,6 +189,7 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
               std::make_unique<FrameTimingsRecorder>();
           recorder->RecordVsync(frame_begin_time, frame_end_time);
           engine->animator_->BeginFrame(std::move(recorder));
+          engine->animator_->EndFrame();
         }
         latch.Signal();
       });
@@ -172,23 +208,22 @@ void ShellTest::NotifyIdle(Shell* shell, fml::TimeDelta deadline) {
   latch.Wait();
 }
 
-void ShellTest::PumpOneFrame(Shell* shell,
-                             double width,
-                             double height,
-                             LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
+void ShellTest::PumpOneFrame(Shell* shell) {
+  PumpOneFrame(shell, ViewContent::DummyView());
 }
 
-void ShellTest::PumpOneFrame(Shell* shell,
-                             const flutter::ViewportMetrics& viewport_metrics,
-                             LayerTreeBuilder builder) {
+void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
-        engine->SetViewportMetrics(kImplicitViewId, viewport_metrics);
+      [&latch, engine = shell->weak_engine_, &frame_content,
+       runtime_delegate]() {
+        for (auto& [view_id, view_content] : frame_content) {
+          engine->SetViewportMetrics(view_id, view_content.viewport_metrics);
+        }
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
@@ -196,35 +231,39 @@ void ShellTest::PumpOneFrame(Shell* shell,
             std::make_unique<FrameTimingsRecorder>();
         recorder->RecordVsync(frame_begin_time, frame_end_time);
         engine->animator_->BeginFrame(std::move(recorder));
-        latch.Signal();
-      });
-  latch.Wait();
 
-  latch.Reset();
-  // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
-  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        SkMatrix identity;
-        identity.setIdentity();
-        auto root_layer = std::make_shared<TransformLayer>(identity);
-        auto layer_tree = std::make_unique<LayerTree>(
-            LayerTree::Config{.root_layer = root_layer},
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height));
-        float device_pixel_ratio =
-            static_cast<float>(viewport_metrics.device_pixel_ratio);
-        if (builder) {
-          builder(root_layer);
+        // The BeginFrame phase and the EndFrame phase must be performed in a
+        // single task, otherwise a normal vsync might be inserted in between,
+        // causing flaky assertion errors.
+
+        for (auto& [view_id, view_content] : frame_content) {
+          SkMatrix identity;
+          identity.setIdentity();
+          auto root_layer = std::make_shared<TransformLayer>(identity);
+          auto layer_tree = std::make_unique<LayerTree>(
+              root_layer,
+              SkISize::Make(view_content.viewport_metrics.physical_width,
+                            view_content.viewport_metrics.physical_height));
+          float device_pixel_ratio = static_cast<float>(
+              view_content.viewport_metrics.device_pixel_ratio);
+          if (view_content.builder) {
+            view_content.builder(root_layer);
+          }
+          runtime_delegate->Render(view_id, std::move(layer_tree),
+                                   device_pixel_ratio);
         }
-        runtime_delegate->Render(std::move(layer_tree), device_pixel_ratio);
+        engine->animator_->EndFrame();
         latch.Signal();
       });
   latch.Wait();
 }
 
-void ShellTest::DispatchFakePointerData(Shell* shell) {
+void ShellTest::DispatchFakePointerData(Shell* shell, double x) {
   auto packet = std::make_unique<PointerDataPacket>(1);
+  packet->SetPointerData(0, PointerData{
+                                .change = PointerData::Change::kHover,
+                                .physical_x = x,
+                            });
   DispatchPointerData(shell, std::move(packet));
 }
 
@@ -265,27 +304,24 @@ void ShellTest::OnServiceProtocol(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document* response) {
   std::promise<bool> finished;
-  fml::TaskRunner::RunNowOrPostTask(task_runner, [shell, some_protocol, params,
-                                                  response, &finished]() {
-    switch (some_protocol) {
-      case ServiceProtocolEnum::kGetSkSLs:
-        shell->OnServiceProtocolGetSkSLs(params, response);
-        break;
-      case ServiceProtocolEnum::kEstimateRasterCacheMemory:
-        shell->OnServiceProtocolEstimateRasterCacheMemory(params, response);
-        break;
-      case ServiceProtocolEnum::kSetAssetBundlePath:
-        shell->OnServiceProtocolSetAssetBundlePath(params, response);
-        break;
-      case ServiceProtocolEnum::kRunInView:
-        shell->OnServiceProtocolRunInView(params, response);
-        break;
-      case ServiceProtocolEnum::kRenderFrameWithRasterStats:
-        shell->OnServiceProtocolRenderFrameWithRasterStats(params, response);
-        break;
-    }
-    finished.set_value(true);
-  });
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner, [shell, some_protocol, params, response, &finished]() {
+        switch (some_protocol) {
+          case ServiceProtocolEnum::kGetSkSLs:
+            shell->OnServiceProtocolGetSkSLs(params, response);
+            break;
+          case ServiceProtocolEnum::kEstimateRasterCacheMemory:
+            shell->OnServiceProtocolEstimateRasterCacheMemory(params, response);
+            break;
+          case ServiceProtocolEnum::kSetAssetBundlePath:
+            shell->OnServiceProtocolSetAssetBundlePath(params, response);
+            break;
+          case ServiceProtocolEnum::kRunInView:
+            shell->OnServiceProtocolRunInView(params, response);
+            break;
+        }
+        finished.set_value(true);
+      });
   finished.get_future().wait();
 }
 
@@ -371,15 +407,6 @@ void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
                                       latch.Signal();
                                     });
   latch.Wait();
-}
-
-size_t ShellTest::GetLiveTrackedPathCount(
-    const std::shared_ptr<VolatilePathTracker>& tracker) {
-  return std::count_if(
-      tracker->paths_.begin(), tracker->paths_.end(),
-      [](const std::weak_ptr<VolatilePathTracker::TrackedPath>& path) {
-        return path.lock();
-      });
 }
 
 void ShellTest::TurnOffGPU(Shell* shell, bool value) {

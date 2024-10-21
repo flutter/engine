@@ -17,12 +17,10 @@ TEST(CapabilitiesGLES, CanInitializeWithDefaults) {
 
   EXPECT_FALSE(capabilities->SupportsOffscreenMSAA());
   EXPECT_FALSE(capabilities->SupportsSSBO());
-  EXPECT_FALSE(capabilities->SupportsBufferToTextureBlits());
   EXPECT_FALSE(capabilities->SupportsTextureToTextureBlits());
   EXPECT_FALSE(capabilities->SupportsFramebufferFetch());
   EXPECT_FALSE(capabilities->SupportsCompute());
   EXPECT_FALSE(capabilities->SupportsComputeSubgroups());
-  EXPECT_FALSE(capabilities->SupportsReadFromOnscreenTexture());
   EXPECT_FALSE(capabilities->SupportsReadFromResolve());
   EXPECT_FALSE(capabilities->SupportsDecalSamplerAddressMode());
   EXPECT_FALSE(capabilities->SupportsDeviceTransientTextures());
@@ -42,6 +40,16 @@ TEST(CapabilitiesGLES, SupportsDecalSamplerAddressMode) {
   auto mock_gles = MockGLES::Init(extensions);
   auto capabilities = mock_gles->GetProcTable().GetCapabilities();
   EXPECT_TRUE(capabilities->SupportsDecalSamplerAddressMode());
+}
+
+TEST(CapabilitiesGLES, SupportsDecalSamplerAddressModeNotOES) {
+  auto const extensions = std::vector<const unsigned char*>{
+      reinterpret_cast<const unsigned char*>("GL_KHR_debug"),                 //
+      reinterpret_cast<const unsigned char*>("GL_OES_texture_border_clamp"),  //
+  };
+  auto mock_gles = MockGLES::Init(extensions);
+  auto capabilities = mock_gles->GetProcTable().GetCapabilities();
+  EXPECT_FALSE(capabilities->SupportsDecalSamplerAddressMode());
 }
 
 TEST(CapabilitiesGLES, SupportsFramebufferFetch) {

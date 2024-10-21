@@ -6,10 +6,21 @@
 
 #include <utility>
 
+#include <EGL/egl.h>
+
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "impeller/entity/gles/entity_shaders_gles.h"
 
 namespace flutter {
 namespace testing {
+
+static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
+  return {
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_entity_shaders_gles_data,
+          impeller_entity_shaders_gles_length),
+  };
+}
 
 ShellTestPlatformViewGL::ShellTestPlatformViewGL(
     PlatformView::Delegate& delegate,
@@ -23,7 +34,23 @@ ShellTestPlatformViewGL::ShellTestPlatformViewGL(
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {}
+          std::move(shell_test_external_view_embedder)) {
+  if (GetSettings().enable_impeller) {
+    auto resolver = [](const char* name) -> void* {
+      return reinterpret_cast<void*>(::eglGetProcAddress(name));
+    };
+    // ANGLE needs this to initialize version strings checked by
+    // impeller::ProcTableGLES.
+    gl_surface_.MakeCurrent();
+    auto gl = std::make_unique<impeller::ProcTableGLES>(resolver);
+    if (!gl->IsValid()) {
+      FML_LOG(ERROR) << "Proc table when a shell unittests invalid.";
+      return;
+    }
+    impeller_context_ = impeller::ContextGLES::Create(
+        std::move(gl), ShaderLibraryMappings(), true);
+  }
+}
 
 ShellTestPlatformViewGL::~ShellTestPlatformViewGL() = default;
 

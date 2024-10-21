@@ -26,6 +26,7 @@
 #include "flutter/fml/thread.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
@@ -72,6 +73,27 @@ TEST_F(EmbedderTest,
   builder.GetCompositor().create_backing_store_callback = nullptr;
   builder.GetCompositor().collect_backing_store_callback = nullptr;
   builder.GetCompositor().present_layers_callback = nullptr;
+  builder.GetCompositor().present_view_callback = nullptr;
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
+//------------------------------------------------------------------------------
+/// Either present_layers_callback or present_view_callback must be provided,
+/// but not both, otherwise the engine must fail to launch instead of failing to
+/// render a frame at a later point in time.
+///
+TEST_F(EmbedderTest, LaunchFailsWhenMultiplePresentCallbacks) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
+  builder.SetCompositor();
+  builder.GetCompositor().present_layers_callback =
+      [](const FlutterLayer** layers, size_t layers_count, void* user_data) {
+        return true;
+      };
+  builder.GetCompositor().present_view_callback =
+      [](const FlutterPresentViewInfo* info) { return true; };
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
 }
@@ -93,7 +115,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -214,7 +237,8 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   fml::CountDownLatch verify(1);
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -346,7 +370,8 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   fml::CountDownLatch verify(1);
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 1u);
 
         {
@@ -429,7 +454,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -549,7 +575,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -672,7 +699,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 5u);
 
         // Layer Root
@@ -897,7 +925,8 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         {
@@ -1053,7 +1082,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 1u);
 
         // Layer Root
@@ -1134,7 +1164,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer Root
@@ -1268,7 +1299,8 @@ TEST_F(EmbedderTest,
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 5u);
 
         // Layer Root
@@ -1658,7 +1690,8 @@ TEST_P(EmbedderTestMultiBackend,
   builder.SetRenderTargetType(GetRenderTargetFromBackend(backend, true));
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         // Layer Root
@@ -1798,7 +1831,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         // Layer Root
@@ -1953,7 +1987,8 @@ TEST_F(EmbedderTest, VerifyB141980393) {
   fml::AutoResetWaitableEvent latch;
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 1u);
 
         // Layer Root
@@ -2170,7 +2205,8 @@ TEST_P(EmbedderTestMultiBackend,
   auto rendered_scene = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         // Layer 0 (Root)
@@ -2292,7 +2328,8 @@ TEST_F(
   fml::CountDownLatch latch(1);
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
 
         // Layer 0 (Root)
@@ -2490,7 +2527,8 @@ TEST_P(EmbedderTestMultiBackend, PlatformViewMutatorsAreValid) {
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer 0 (Root)
@@ -2599,7 +2637,8 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer 0 (Root)
@@ -2715,7 +2754,8 @@ TEST_F(EmbedderTest,
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer 0 (Root)
@@ -2920,7 +2960,8 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
 
   fml::AutoResetWaitableEvent latch;
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         {
@@ -2999,7 +3040,8 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
 
   fml::AutoResetWaitableEvent latch;
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         {
@@ -3278,7 +3320,8 @@ TEST_F(EmbedderTest, CompositorCanPostZeroLayersForPresentation) {
   fml::AutoResetWaitableEvent latch;
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 0u);
         latch.Signal();
       });
@@ -3311,7 +3354,8 @@ TEST_F(EmbedderTest, CompositorCanPostOnlyPlatformViews) {
   fml::AutoResetWaitableEvent latch;
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer 0
@@ -3379,7 +3423,8 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
                             }));
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 20u);
         latch.CountDown();
       });
@@ -3426,7 +3471,8 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   size_t frame_count = 0;
   std::vector<void*> first_frame_backing_store_user_data;
   context.GetCompositor().SetPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 20u);
 
         if (first_frame_backing_store_user_data.empty()) {
@@ -4235,7 +4281,8 @@ TEST_F(EmbedderTest, CompositorRenderTargetsNotRecycledWhenAvoidsCacheSet) {
                             }));
 
   context.GetCompositor().SetPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 20u);
         latch.CountDown();
       },
@@ -4345,7 +4392,7 @@ TEST_F(EmbedderTest, ObjectsPostedViaPortsServicedOnSecondaryTaskHeap) {
     trampoline = [&](Dart_Handle handle) {
       ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
       auto task_grade = fml::MessageLoopTaskQueues::GetCurrentTaskSourceGrade();
-      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartMicroTasks);
+      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartEventLoop);
       event.Signal();
     };
     ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
@@ -4458,6 +4505,65 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLFramebuffer) {
             [](void* user_data) {
               reinterpret_cast<TestCollectOnce*>(user_data)->Collect();
             };
+        return true;
+      };
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLSurface) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLSurface);
+  builder.SetDartEntrypoint("invalid_backingstore");
+
+  fml::AutoResetWaitableEvent latch;
+
+  builder.GetCompositor().create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,  //
+         FlutterBackingStore* backing_store_out,   //
+         void* user_data                           //
+      ) {
+        backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+        backing_store_out->user_data = user_data;
+        backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeSurface;
+        backing_store_out->open_gl.surface.user_data = user_data;
+        // Deliberately set this to an invalid format
+        backing_store_out->open_gl.surface.format = 0;
+        backing_store_out->open_gl.surface.make_current_callback = [](void*,
+                                                                      bool*) {
+          ADD_FAILURE() << "make_current_callback method should not be called";
+          return true;
+        };
+        backing_store_out->open_gl.surface.clear_current_callback = [](void*,
+                                                                       bool*) {
+          ADD_FAILURE() << "clear_current_callback method should not be called";
+          return true;
+        };
+        backing_store_out->open_gl.surface.destruction_callback =
+            [](void* user_data) {
+              FAIL() << "destruction_callback method should not be called";
+            };
+
         return true;
       };
 
@@ -4697,6 +4803,392 @@ TEST_F(EmbedderTest,
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   latch.Wait();
+}
+
+TEST_F(EmbedderTest, CanRenderWithImpellerOpenGL) {
+  EmbedderTestContextGL& context = static_cast<EmbedderTestContextGL&>(
+      GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));
+  EmbedderConfigBuilder builder(context);
+
+  bool present_called = false;
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [&present_called](FlutterPresentInfo present_info) {
+        present_called = true;
+      });
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_impeller_test");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Bind to an arbitrary FBO in order to verify that Impeller binds to the
+  // provided FBO during rendering.
+  typedef void (*glGenFramebuffersProc)(GLsizei n, GLuint* ids);
+  typedef void (*glBindFramebufferProc)(GLenum target, GLuint framebuffer);
+  auto glGenFramebuffers = reinterpret_cast<glGenFramebuffersProc>(
+      context.GLGetProcAddress("glGenFramebuffers"));
+  auto glBindFramebuffer = reinterpret_cast<glBindFramebufferProc>(
+      context.GLGetProcAddress("glBindFramebuffer"));
+  const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  fml::AutoResetWaitableEvent raster_event;
+  shell.GetTaskRunners().GetRasterTaskRunner()->PostTask([&] {
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    raster_event.Signal();
+  });
+  raster_event.Wait();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(EmbedderTestContextType::kOpenGLContext,
+                            "impeller_test.png"),
+      rendered_scene));
+
+  // The scene will be rendered by the compositor, and the surface present
+  // callback should not be invoked.
+  ASSERT_FALSE(present_called);
+}
+
+TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLSurface) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("can_composite_platform_views");
+
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLSurface);
+
+  fml::CountDownLatch latch(3);
+  context.GetCompositor().SetNextPresentCallback(
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
+        ASSERT_EQ(layers_count, 3u);
+
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.struct_size = sizeof(backing_store);
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeSurface;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 42;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(123.0, 456.0);
+          layer.offset = FlutterPointMake(1.0, 2.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        {
+          FlutterBackingStore backing_store = *layers[2]->backing_store;
+          backing_store.struct_size = sizeof(backing_store);
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeSurface;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
+
+          ASSERT_EQ(*layers[2], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneToOpenGLSurfaces) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("can_composite_platform_views_with_known_scene");
+
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLSurface);
+
+  fml::CountDownLatch latch(5);
+
+  auto scene_image = context.GetNextSceneImage();
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
+        ASSERT_EQ(layers_count, 5u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeSurface;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        // Layer 1
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 1;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(20.0, 20.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        // Layer 2
+        {
+          FlutterBackingStore backing_store = *layers[2]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeSurface;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(30, 30, 80, 180),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
+
+          ASSERT_EQ(*layers[2], layer);
+        }
+
+        // Layer 3
+        {
+          FlutterPlatformView platform_view = *layers[3]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 2;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(40.0, 40.0);
+
+          ASSERT_EQ(*layers[3], layer);
+        }
+
+        // Layer 4
+        {
+          FlutterBackingStore backing_store = *layers[4]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeSurface;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(50, 50, 100, 200),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
+
+          ASSERT_EQ(*layers[4], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetPlatformViewRendererCallback(
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
+        auto surface = CreateRenderSurface(layer, context);
+        auto canvas = surface->getCanvas();
+        FML_CHECK(canvas != nullptr);
+
+        switch (layer.platform_view->identifier) {
+          case 1: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorGREEN);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          case 2: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorMAGENTA);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          default:
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
+        }
+
+        return surface->makeImageSnapshot();
+      });
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  ASSERT_TRUE(ImageMatchesFixture("compositor.png", scene_image));
+
+  // There should no present calls on the root surface.
+  ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
 }
 
 INSTANTIATE_TEST_SUITE_P(

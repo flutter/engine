@@ -145,6 +145,7 @@ external void _validateVertices(Vertices vertices);
 @pragma('vm:entry-point')
 void sendSemanticsUpdate() {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  final String identifier = "identifier";
   final String label = "label";
   final List<StringAttribute> labelAttributes = <StringAttribute> [
     SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
@@ -171,6 +172,8 @@ void sendSemanticsUpdate() {
       locale: Locale('en', 'MX'), range: TextRange(start: 0, end: 1),
     ),
   ];
+
+  String tooltip = "tooltip";
 
   final Float64List transform = Float64List(16);
   final Int32List childrenInTraversalOrder = Int32List(0);
@@ -212,6 +215,7 @@ void sendSemanticsUpdate() {
     rect: Rect.fromLTRB(0, 0, 10, 10),
     elevation: 0,
     thickness: 0,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     value: value,
@@ -222,11 +226,15 @@ void sendSemanticsUpdate() {
     decreasedValueAttributes: decreasedValueAttributes,
     hint: hint,
     hintAttributes: hintAttributes,
+    tooltip: tooltip,
     textDirection: TextDirection.ltr,
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
-    additionalActions: additionalActions);
+    additionalActions: additionalActions,
+    headingLevel: 0,
+    linkUrl: '',
+  );
   _semanticsUpdate(builder.build());
 }
 
@@ -273,9 +281,16 @@ void platformMessagePortResponseTest() async {
 @pragma('vm:entry-point')
 void platformMessageResponseTest() {
   _callPlatformMessageResponseDart((ByteData? result) {
-    if (result is UnmodifiableByteDataView &&
-        result.lengthInBytes == 100) {
-      _finishCallResponse(true);
+    if (result is ByteData && result.lengthInBytes == 100) {
+      int value = result.getInt8(0);
+      bool didThrowOnModify = false;
+      try {
+        result.setInt8(0, value);
+      } catch (e) {
+        didThrowOnModify = true;
+      }
+      // This should be a read only buffer.
+      _finishCallResponse(didThrowOnModify);
     } else {
       _finishCallResponse(false);
     }
@@ -380,6 +395,101 @@ Future<void> toByteDataRetries() async {
 }
 
 @pragma('vm:entry-point')
+Future<void> toByteDataRetryOverflows() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  List<Image> images = [];
+  // This number must be bigger than impeller::Context::kMaxTasksAwaitingGPU.
+  int numJobs = 100;
+  for (int i = 0; i < numJobs; ++i) {
+    images.add(await picture.toImage(100, 100));
+  }
+  List<Future<ByteData?>> dataFutures = [];
+  _turnOffGPU(true);
+  for (Image image in images) {
+    dataFutures.add(image.toByteData());
+  }
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+
+  ByteData? result;
+  for (Future<ByteData?> future in dataFutures) {
+    try {
+      ByteData? byteData = await future;
+      if (byteData != null) {
+        result = byteData;
+      }
+    } catch (_) {
+      // Ignore errors from unavailable gpu.
+    }
+  }
+  _validateNotNull(result);
+}
+
+@pragma('vm:entry-point')
+Future<void> toImageRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    final Image image = await picture.toImage(100, 100);
+    _validateNotNull(image);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toImageRetryOverflows() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  _turnOffGPU(true);
+  List<Future<Image>> imageFutures = [];
+  // This number must be bigger than impeller::Context::kMaxTasksAwaitingGPU.
+  int numJobs = 100;
+  for (int i = 0; i < numJobs; i++) {
+    imageFutures.add(picture.toImage(100, 100));
+  }
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  late Image result;
+  bool didSeeImage = false;
+  for (Future<Image> future in imageFutures) {
+    try {
+      Image image = await future;
+      result = image;
+      didSeeImage = true;
+    } catch (_) {
+      // Ignore gpu not available errors.
+    }
+  }
+  _validateNotNull(didSeeImage ? result : null);
+}
+
+@pragma('vm:entry-point')
 Future<void> pumpImage() async {
   const int width = 60;
   const int height = 60;
@@ -454,6 +564,16 @@ void convertPaintToDlPaint() {
 }
 @pragma('vm:external-name',  'ConvertPaintToDlPaint')
 external void _convertPaintToDlPaint(Paint paint);
+
+/// Hooks for platform_configuration_unittests.cc
+@pragma('vm:entry-point')
+void _beginFrameHijack(int microseconds, int frameNumber) {
+  nativeBeginFrame(microseconds, frameNumber);
+}
+
+@pragma('vm:entry-point')
+@pragma('vm:external-name', 'BeginFrame')
+external nativeBeginFrame(int microseconds, int frameNumber);
 
 @pragma('vm:entry-point')
 void hooksTests() async {

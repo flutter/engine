@@ -7,21 +7,6 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
-#include "flutter/shell/platform/linux/fl_gl_area.h"
-
-/**
- * fl_view_set_textures:
- * @view: an #FlView.
- * @context: a #GdkGLContext, for #FlGLArea to render.
- * @textures: (transfer none) (element-type FlBackingStoreProvider): a list of
- * #FlBackingStoreProvider.
- *
- * Set the textures for this view to render.
- */
-void fl_view_set_textures(FlView* view,
-                          GdkGLContext* context,
-                          GPtrArray* textures);
-
 /**
  * fl_view_get_keyboard_state:
  * @view: an #FlView.

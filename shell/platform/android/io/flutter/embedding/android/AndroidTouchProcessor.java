@@ -1,5 +1,7 @@
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
@@ -19,7 +21,7 @@ import java.util.Map;
 
 /** Sends touch information from Android to Flutter in a format that Flutter understands. */
 public class AndroidTouchProcessor {
-
+  private static final String TAG = "AndroidTouchProcessor";
   // Must match the PointerChange enum in pointer.dart.
   @IntDef({
     PointerChange.CANCEL,
@@ -80,8 +82,9 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 4;
   }
 
-  // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 35;
+  // This value must match kPointerDataFieldCount in pointer_data.cc. (The
+  // pointer_data.cc also lists other locations that must be kept consistent.)
+  @VisibleForTesting static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
   // Default if context is null, chosen to ensure reasonable speed scrolling.
@@ -91,6 +94,9 @@ public class AndroidTouchProcessor {
   // This value must match the value in framework's platform_view.dart.
   // This flag indicates whether the original Android pointer events were batched together.
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
+
+  // The view ID for the only view in a single-view Flutter app.
+  private static final int IMPLICIT_VIEW_ID = 0;
 
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final MotionEventTracker motionEventTracker;
@@ -132,13 +138,6 @@ public class AndroidTouchProcessor {
    * @return True if the event was handled.
    */
   public boolean onTouchEvent(@NonNull MotionEvent event, @NonNull Matrix transformMatrix) {
-    int pointerCount = event.getPointerCount();
-
-    // Prepare a data packet of the appropriate size and order.
-    ByteBuffer packet =
-        ByteBuffer.allocateDirect(pointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
-    packet.order(ByteOrder.LITTLE_ENDIAN);
-
     int maskedAction = event.getActionMasked();
     int pointerChange = getPointerChangeForAction(event.getActionMasked());
     boolean updateForSinglePointer =
@@ -147,6 +146,22 @@ public class AndroidTouchProcessor {
         !updateForSinglePointer
             && (maskedAction == MotionEvent.ACTION_UP
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
+
+    int deviceType = getPointerDeviceTypeForToolType(event.getToolType(event.getActionIndex()));
+    boolean shouldRemovePointer =
+        updateForMultiplePointers && (deviceType == PointerDeviceKind.TOUCH);
+    int originalPointerCount = event.getPointerCount();
+
+    // The following packing code must match the struct in pointer_data.h.
+
+    // Prepare a data packet of the appropriate size and order.
+    // Allocate space for an additional pointer if this is an ACTION_UP or ACTION_POINTER_UP
+    // event taken with device type touch, to handle the synthesized PointerChange.REMOVE event.
+    int totalPointerCount = originalPointerCount + (shouldRemovePointer ? 1 : 0);
+    ByteBuffer packet =
+        ByteBuffer.allocateDirect(totalPointerCount * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD);
+    packet.order(ByteOrder.LITTLE_ENDIAN);
+
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
@@ -155,7 +170,7 @@ public class AndroidTouchProcessor {
       // We are converting these updates to move events here in order to preserve this data.
       // We also mark these events with a flag in order to help the framework reassemble
       // the original Android event later, should it need to forward it to a PlatformView.
-      for (int p = 0; p < pointerCount; p++) {
+      for (int p = 0; p < originalPointerCount; p++) {
         if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
           addPointerForIndex(
               event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, transformMatrix, packet);
@@ -164,11 +179,24 @@ public class AndroidTouchProcessor {
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+
+      if (shouldRemovePointer) {
+        // Synthesizes remove events immediately after the UP event so that the touches
+        // are divided into distinct segments, each beginning with a DOWN event and ending with an
+        // UP event.
+        // This approach makes sense since each segment can be considered a separate pointer,
+        // and it prevents Flutter from generating hover events between these segments, which are
+        // not applicable to touch screens, as hovering is not possible.
+        // (Flutter will automatically synthesize an add event before the pointer makes its next
+        // contact.)
+        addPointerForIndex(
+            event, event.getActionIndex(), PointerChange.REMOVE, 0, transformMatrix, packet);
+      }
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
       // ignore 0-deltas if desired.
-      for (int p = 0; p < pointerCount; p++) {
+      for (int p = 0; p < originalPointerCount; p++) {
         addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet);
       }
     }
@@ -198,9 +226,7 @@ public class AndroidTouchProcessor {
   public boolean onGenericMotionEvent(@NonNull MotionEvent event, @NonNull Context context) {
     // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
     // Mouse hover support is not implemented for API < 18.
-    boolean isPointerEvent =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
-            && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
+    boolean isPointerEvent = event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
     boolean isMovementEvent =
         (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
             || event.getActionMasked() == MotionEvent.ACTION_SCROLL);
@@ -253,6 +279,10 @@ public class AndroidTouchProcessor {
     if (pointerChange == -1) {
       return;
     }
+    // TODO(dkwingsmt): Use the correct source view ID once Android supports
+    // multiple views.
+    // https://github.com/flutter/flutter/issues/134405
+    final int viewId = IMPLICIT_VIEW_ID;
     final int pointerId = event.getPointerId(pointerIndex);
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
@@ -411,6 +441,7 @@ public class AndroidTouchProcessor {
     packet.putDouble(0.0); // pan_delta_y
     packet.putDouble(1.0); // scale
     packet.putDouble(0.0); // rotation
+    packet.putLong(viewId); // view_id
 
     if (isTrackpadPan && (panZoomType == PointerChange.PAN_ZOOM_END)) {
       ongoingPans.remove(pointerId);
@@ -418,7 +449,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getHorizontalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
     } else {
       // Vertical scroll factor is not a typo. This is what View.java does in android.
@@ -427,14 +458,14 @@ public class AndroidTouchProcessor {
   }
 
   private float getVerticalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return getVerticalScrollFactorAbove26(context);
     } else {
       return getVerticalScrollFactorPre26(context);
     }
   }
 
-  @TargetApi(26)
+  @TargetApi(API_LEVELS.API_26)
   private float getVerticalScrollFactorAbove26(@NonNull Context context) {
     return ViewConfiguration.get(context).getScaledVerticalScrollFactor();
   }

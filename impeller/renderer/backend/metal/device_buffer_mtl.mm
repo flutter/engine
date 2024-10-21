@@ -29,30 +29,6 @@ uint8_t* DeviceBufferMTL::OnGetContents() const {
   return reinterpret_cast<uint8_t*>(buffer_.contents);
 }
 
-std::shared_ptr<Texture> DeviceBufferMTL::AsTexture(
-    Allocator& allocator,
-    const TextureDescriptor& descriptor,
-    uint16_t row_bytes) const {
-  auto mtl_texture_desc = ToMTLTextureDescriptor(descriptor);
-
-  if (!mtl_texture_desc) {
-    VALIDATION_LOG << "Texture descriptor was invalid.";
-    return nullptr;
-  }
-
-  if (@available(iOS 13.0, macos 10.15, *)) {
-    mtl_texture_desc.resourceOptions = buffer_.resourceOptions;
-  }
-
-  auto texture = [buffer_ newTextureWithDescriptor:mtl_texture_desc
-                                            offset:0
-                                       bytesPerRow:row_bytes];
-  if (!texture) {
-    return nullptr;
-  }
-  return std::make_shared<TextureMTL>(descriptor, texture);
-}
-
 [[nodiscard]] bool DeviceBufferMTL::OnCopyHostBuffer(const uint8_t* source,
                                                      Range source_range,
                                                      size_t offset) {
@@ -78,20 +54,34 @@ std::shared_ptr<Texture> DeviceBufferMTL::AsTexture(
   return true;
 }
 
-bool DeviceBufferMTL::SetLabel(const std::string& label) {
+void DeviceBufferMTL::Flush(std::optional<Range> range) const {
+#if !FML_OS_IOS
+  auto flush_range = range.value_or(Range{0, GetDeviceBufferDescriptor().size});
+  if (storage_mode_ == MTLStorageModeManaged) {
+    [buffer_
+        didModifyRange:NSMakeRange(flush_range.offset, flush_range.length)];
+  }
+#endif
+}
+
+bool DeviceBufferMTL::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return false;
   }
-  [buffer_ setLabel:@(label.c_str())];
+  [buffer_ setLabel:@(label.data())];
+#endif  // IMPELLER_DEBUG
   return true;
 }
 
-bool DeviceBufferMTL::SetLabel(const std::string& label, Range range) {
+bool DeviceBufferMTL::SetLabel(std::string_view label, Range range) {
+#ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return false;
   }
-  [buffer_ addDebugMarker:@(label.c_str())
+  [buffer_ addDebugMarker:@(label.data())
                     range:NSMakeRange(range.offset, range.length)];
+#endif  // IMPELLER_DEBUG
   return true;
 }
 

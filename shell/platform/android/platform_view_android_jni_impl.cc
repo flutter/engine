@@ -12,7 +12,7 @@
 #include <sstream>
 #include <utility>
 
-#include "flutter/shell/platform/android/ndk_helpers.h"
+#include "impeller/toolkit/android/shadow_realm.h"
 #include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
 
@@ -24,7 +24,6 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
-#include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/shell/common/run_configuration.h"
@@ -34,7 +33,6 @@
 #include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
-#include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -51,8 +49,8 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_weak_reference_class =
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
-static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_texture_entry_class =
-    nullptr;
+static fml::jni::ScopedJavaGlobalRef<jclass>*
+    g_image_consumer_texture_registry_interface = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_class = nullptr;
 
@@ -110,6 +108,8 @@ static jmethodID g_on_end_frame_method = nullptr;
 static jmethodID g_java_weak_reference_get_method = nullptr;
 
 static jmethodID g_attach_to_gl_context_method = nullptr;
+
+static jmethodID g_surface_texture_wrapper_should_update = nullptr;
 
 static jmethodID g_update_tex_image_method = nullptr;
 
@@ -483,11 +483,6 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return FlutterMain::Get().GetSettings().enable_software_rendering;
 }
 
-static jboolean GetDisableImageReaderPlatformViews(JNIEnv* env,
-                                                   jobject jcaller) {
-  return FlutterMain::Get().GetSettings().disable_image_reader_platform_views;
-}
-
 static void RegisterTexture(JNIEnv* env,
                             jobject jcaller,
                             jlong shell_holder,
@@ -526,6 +521,10 @@ static void MarkTextureFrameAvailable(JNIEnv* env,
       static_cast<int64_t>(texture_id));
 }
 
+static void ScheduleFrame(JNIEnv* env, jobject jcaller, jlong shell_holder) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->ScheduleFrame();
+}
+
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jobject jcaller,
                                                   jlong shell_holder,
@@ -553,13 +552,6 @@ static void NotifyLowMemoryWarning(JNIEnv* env,
                                    jobject obj,
                                    jlong shell_holder) {
   ANDROID_SHELL_HOLDER->NotifyLowMemoryWarning();
-}
-
-static void SetIsRenderingToImageView(JNIEnv* env,
-                                      jobject jcaller,
-                                      jlong shell_holder,
-                                      bool value) {
-  ANDROID_SHELL_HOLDER->SetIsRenderingToImageView(value);
 }
 
 static jboolean FlutterTextUtilsIsEmoji(JNIEnv* env,
@@ -721,11 +713,6 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
       },
-      {
-          .name = "nativeSetIsRenderingToImageView",
-          .signature = "(JZ)V",
-          .fnPtr = reinterpret_cast<void*>(&SetIsRenderingToImageView),
-      },
 
       // Start of methods from FlutterView
       {
@@ -784,11 +771,6 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&GetIsSoftwareRendering),
       },
       {
-          .name = "nativeGetDisableImageReaderPlatformViews",
-          .signature = "()Z",
-          .fnPtr = reinterpret_cast<void*>(&GetDisableImageReaderPlatformViews),
-      },
-      {
           .name = "nativeRegisterTexture",
           .signature = "(JJLjava/lang/ref/"
                        "WeakReference;)V",
@@ -806,11 +788,15 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&MarkTextureFrameAvailable),
       },
       {
+          .name = "nativeScheduleFrame",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&ScheduleFrame),
+      },
+      {
           .name = "nativeUnregisterTexture",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
       },
-
       // Methods for Dart callback functionality.
       {
           .name = "nativeLookupCallbackInformation",
@@ -868,10 +854,15 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&UpdateDisplayMetrics),
       },
-  };
+      {
+          .name = "nativeShouldDisableAHB",
+          .signature = "()Z",
+          .fnPtr = reinterpret_cast<void*>(
+              &impeller::android::ShadowRealm::ShouldDisableAHB),
+      }};
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,
-                           fml::size(flutter_jni_methods)) != 0) {
+                           std::size(flutter_jni_methods)) != 0) {
     FML_LOG(ERROR) << "Failed to RegisterNatives with FlutterJNI";
     return false;
   }
@@ -1169,6 +1160,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_surface_texture_wrapper_should_update =
+      env->GetMethodID(g_texture_wrapper_class->obj(), "shouldUpdate", "()Z");
+
+  if (g_surface_texture_wrapper_should_update == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate SurfaceTextureWrapper.shouldUpdate method";
+    return false;
+  }
+
   g_update_tex_image_method =
       env->GetMethodID(g_texture_wrapper_class->obj(), "updateTexImage", "()V");
 
@@ -1192,25 +1192,26 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate detachFromGlContext method";
     return false;
   }
-  g_image_texture_entry_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("io/flutter/view/TextureRegistry$ImageTextureEntry"));
-  if (g_image_texture_entry_class->is_null()) {
-    FML_LOG(ERROR) << "Could not locate ImageTextureEntry class";
+  g_image_consumer_texture_registry_interface =
+      new fml::jni::ScopedJavaGlobalRef<jclass>(
+          env, env->FindClass("io/flutter/view/TextureRegistry$ImageConsumer"));
+  if (g_image_consumer_texture_registry_interface->is_null()) {
+    FML_LOG(ERROR) << "Could not locate TextureRegistry.ImageConsumer class";
     return false;
   }
 
   g_acquire_latest_image_method =
-      env->GetMethodID(g_image_texture_entry_class->obj(), "acquireLatestImage",
-                       "()Landroid/media/Image;");
+      env->GetMethodID(g_image_consumer_texture_registry_interface->obj(),
+                       "acquireLatestImage", "()Landroid/media/Image;");
   if (g_acquire_latest_image_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate acquireLatestImage on "
-                      "ImageTextureEntry class";
+                      "TextureRegistry.ImageConsumer class";
     return false;
   }
 
   g_image_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/media/Image"));
-  if (g_image_texture_entry_class->is_null()) {
+  if (g_image_class->is_null()) {
     FML_LOG(ERROR) << "Could not locate Image class";
     return false;
   }
@@ -1462,6 +1463,29 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
+bool PlatformViewAndroidJNIImpl::SurfaceTextureShouldUpdate(
+    JavaLocalRef surface_texture) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  if (surface_texture.is_null()) {
+    return false;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref(
+      env, env->CallObjectMethod(surface_texture.obj(),
+                                 g_java_weak_reference_get_method));
+  if (surface_texture_local_ref.is_null()) {
+    return false;
+  }
+
+  jboolean shouldUpdate = env->CallBooleanMethod(
+      surface_texture_local_ref.obj(), g_surface_texture_wrapper_should_update);
+
+  FML_CHECK(fml::jni::CheckException(env));
+
+  return shouldUpdate;
+}
+
 void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
     JavaLocalRef surface_texture) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -1483,20 +1507,19 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
-    JavaLocalRef surface_texture,
-    SkMatrix& transform) {
+SkM44 PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
+    JavaLocalRef surface_texture) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   if (surface_texture.is_null()) {
-    return;
+    return {};
   }
 
   fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref(
       env, env->CallObjectMethod(surface_texture.obj(),
                                  g_java_weak_reference_get_method));
   if (surface_texture_local_ref.is_null()) {
-    return;
+    return {};
   }
 
   fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
@@ -1508,36 +1531,12 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
 
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
 
-  // SurfaceTexture 4x4 Column Major -> Skia 3x3 Row Major
+  static_assert(sizeof(SkScalar) == sizeof(float));
+  const auto transform = SkM44::ColMajor(m);
 
-  // SurfaceTexture 4x4 (Column Major):
-  // | m[0] m[4] m[ 8] m[12] |
-  // | m[1] m[5] m[ 9] m[13] |
-  // | m[2] m[6] m[10] m[14] |
-  // | m[3] m[7] m[11] m[15] |
-
-  // According to Android documentation, the 4x4 matrix returned should be used
-  // with texture coordinates in the form (s, t, 0, 1). Since the z component is
-  // always 0.0, we are free to ignore any element that multiplies with the z
-  // component. Converting this to a 3x3 matrix is easy:
-
-  // SurfaceTexture 3x3 (Column Major):
-  // | m[0] m[4] m[12] |
-  // | m[1] m[5] m[13] |
-  // | m[3] m[7] m[15] |
-
-  // Skia (Row Major):
-  // | m[0] m[1] m[2] |
-  // | m[3] m[4] m[5] |
-  // | m[6] m[7] m[8] |
-
-  SkScalar matrix3[] = {
-      m[0], m[4], m[12],  //
-      m[1], m[5], m[13],  //
-      m[3], m[7], m[15],  //
-  };
   env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
-  transform.set9(matrix3);
+
+  return transform;
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
@@ -1561,28 +1560,29 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-JavaLocalRef PlatformViewAndroidJNIImpl::ImageTextureEntryAcquireLatestImage(
-    JavaLocalRef image_texture_entry) {
+JavaLocalRef
+PlatformViewAndroidJNIImpl::ImageProducerTextureEntryAcquireLatestImage(
+    JavaLocalRef image_producer_texture_entry) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
-  if (image_texture_entry.is_null()) {
+  if (image_producer_texture_entry.is_null()) {
     // Return null.
     return JavaLocalRef();
   }
 
   // Convert the weak reference to ImageTextureEntry into a strong local
   // reference.
-  fml::jni::ScopedJavaLocalRef<jobject> image_texture_entry_local_ref(
-      env, env->CallObjectMethod(image_texture_entry.obj(),
+  fml::jni::ScopedJavaLocalRef<jobject> image_producer_texture_entry_local_ref(
+      env, env->CallObjectMethod(image_producer_texture_entry.obj(),
                                  g_java_weak_reference_get_method));
 
-  if (image_texture_entry_local_ref.is_null()) {
+  if (image_producer_texture_entry_local_ref.is_null()) {
     // Return null.
     return JavaLocalRef();
   }
 
   JavaLocalRef r = JavaLocalRef(
-      env, env->CallObjectMethod(image_texture_entry_local_ref.obj(),
+      env, env->CallObjectMethod(image_producer_texture_entry_local_ref.obj(),
                                  g_acquire_latest_image_method));
   FML_CHECK(fml::jni::CheckException(env));
   return r;

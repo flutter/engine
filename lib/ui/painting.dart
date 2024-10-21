@@ -48,8 +48,8 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+Color _scaleAlpha(Color x, double factor) {
+  return x.withValues(alpha: clampDouble(x.a * factor, 0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -78,12 +78,19 @@ Color _scaleAlpha(Color a, double factor) {
 /// Color c2 = const Color(0xFFFFFFFF); // fully opaque white (visible)
 /// ```
 ///
+/// [Color]'s color components are stored as floating-point values. Care should
+/// be taken if one does not want the literal equality provided by `operator==`.
+/// To test equality inside of Flutter tests consider using `package:test`'s
+/// `isSameColorAs`.
+///
 /// See also:
 ///
-///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
-///    defines the colors found in the Material Design specification.
+///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html),
+///    which defines the colors found in the Material Design specification.
+///  * [`isSameColorAs`](https://api.flutter.dev/flutter/flutter_test/isSameColorAs.html),
+///    a Matcher to handle floating-point deltas when checking [Color] equality.
 class Color {
-  /// Construct a color from the lower 32 bits of an [int].
+  /// Construct an sRGB color from the lower 32 bits of an [int].
   ///
   /// The bits are interpreted as follows:
   ///
@@ -99,9 +106,27 @@ class Color {
   /// For example, to get a fully opaque orange, you would use `const
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
-  const Color(int value) : value = value & 0xFFFFFFFF;
+  const Color(int value)
+      : this._fromARGBC(
+            value >> 24, value >> 16, value >> 8, value, ColorSpace.sRGB);
 
-  /// Construct a color from the lower 8 bits of four integers.
+  /// Construct a color with normalized color components.
+  ///
+  /// Normalized color components allows arbitrary bit depths for color
+  /// components to be be supported. The values will be normalized relative to
+  /// the [ColorSpace] argument.
+  const Color.from(
+      {required double alpha,
+      required double red,
+      required double green,
+      required double blue,
+      this.colorSpace = ColorSpace.sRGB})
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
+
+  /// Construct an sRGB color from the lower 8 bits of four integers.
   ///
   /// * `a` is the alpha value, with 0 being transparent and 255 being fully
   ///   opaque.
@@ -113,13 +138,16 @@ class Color {
   ///
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
-  const Color.fromARGB(int a, int r, int g, int b) :
-    value = (((a & 0xff) << 24) |
-             ((r & 0xff) << 16) |
-             ((g & 0xff) << 8)  |
-             ((b & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromARGB(int a, int r, int g, int b)
+      : this._fromARGBC(a, r, g, b, ColorSpace.sRGB);
 
-  /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
+  const Color._fromARGBC(
+      int alpha, int red, int green, int blue, ColorSpace colorSpace)
+      : this._fromRGBOC(
+            red, green, blue, (alpha & 0xff) / 255, colorSpace);
+
+  /// Create an sRGB color from red, green, blue, and opacity, similar to
+  /// `rgba()` in CSS.
   ///
   /// * `r` is [red], from 0 to 255.
   /// * `g` is [green], from 0 to 255.
@@ -130,11 +158,36 @@ class Color {
   /// Out of range values are brought into range using modulo 255.
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
-  const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-              ((r                    & 0xff) << 16) |
-              ((g                    & 0xff) << 8)  |
-              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromRGBO(int r, int g, int b, double opacity)
+      : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
+
+  const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
+
+  /// The alpha channel of this color.
+  ///
+  /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
+  /// this color is fully opaque.
+  final double a;
+
+  /// The red channel of this color.
+  final double r;
+
+  /// The green channel of this color.
+  final double g;
+
+  /// The blue channel of this color.
+  final double b;
+
+  /// The color space of this color.
+  final ColorSpace colorSpace;
+
+  static int _floatToInt8(double x) {
+    return (x * 255.0).round() & 0xff;
+  }
 
   /// A 32 bit value representing this color.
   ///
@@ -144,28 +197,68 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
-  final int value;
+  @Deprecated('Use component accessors like .r or .g.')
+  int get value {
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
+  }
 
   /// The alpha channel of this color in an 8 bit value.
   ///
   /// A value of 0 means this color is fully transparent. A value of 255 means
   /// this color is fully opaque.
+  @Deprecated('Use .a.')
   int get alpha => (0xff000000 & value) >> 24;
 
   /// The alpha channel of this color as a double.
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
+  @Deprecated('Use .a.')
   double get opacity => alpha / 0xFF;
 
   /// The red channel of this color in an 8 bit value.
+  @Deprecated('Use .r.')
   int get red => (0x00ff0000 & value) >> 16;
 
   /// The green channel of this color in an 8 bit value.
+  @Deprecated('Use .g.')
   int get green => (0x0000ff00 & value) >> 8;
 
   /// The blue channel of this color in an 8 bit value.
+  @Deprecated('Use .b.')
   int get blue => (0x000000ff & value) >> 0;
+
+  /// Returns a new color that matches this color with the passed in components
+  /// changed.
+  ///
+  /// Changes to color components will be applied before applying changes to the
+  /// color space.
+  Color withValues(
+      {double? alpha,
+      double? red,
+      double? green,
+      double? blue,
+      ColorSpace? colorSpace}) {
+    Color? updatedComponents;
+    if (alpha != null || red != null || green != null || blue != null) {
+      updatedComponents = Color.from(
+          alpha: alpha ?? a,
+          red: red ?? r,
+          green: green ?? g,
+          blue: blue ?? b,
+          colorSpace: this.colorSpace);
+    }
+    if (colorSpace != null && colorSpace != this.colorSpace) {
+      final _ColorTransform transform =
+          _getColorTransform(this.colorSpace, colorSpace);
+      return transform.transform(updatedComponents ?? this, colorSpace);
+    } else {
+      return updatedComponents ?? this;
+    }
+  }
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
@@ -179,6 +272,7 @@ class Color {
   /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
   ///
   /// Out of range values will have unexpected effects.
+  @Deprecated('Use .withValues() to avoid precision loss.')
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
     return withAlpha((255.0 * opacity).round());
@@ -223,10 +317,11 @@ class Color {
   ///
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
+    assert(colorSpace != ColorSpace.extendedSRGB);
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -252,22 +347,26 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color? lerp(Color? a, Color? b, double t) {
-    if (b == null) {
-      if (a == null) {
+  static Color? lerp(Color? x, Color? y, double t) {
+    assert(x?.colorSpace != ColorSpace.extendedSRGB);
+    assert(y?.colorSpace != ColorSpace.extendedSRGB);
+    if (y == null) {
+      if (x == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleAlpha(x, 1.0 - t);
       }
     } else {
-      if (a == null) {
-        return _scaleAlpha(b, t);
+      if (x == null) {
+        return _scaleAlpha(y, t);
       } else {
-        return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        assert(x.colorSpace == y.colorSpace);
+        return Color.from(
+          alpha: clampDouble(_lerpDouble(x.a, y.a, t), 0, 1),
+          red: clampDouble(_lerpDouble(x.r, y.r, t), 0, 1),
+          green: clampDouble(_lerpDouble(x.g, y.g, t), 0, 1),
+          blue: clampDouble(_lerpDouble(x.b, y.b, t), 0, 1),
+          colorSpace: x.colorSpace,
         );
       }
     }
@@ -282,28 +381,32 @@ class Color {
   /// operations for two things that are solid colors with the same shape, but
   /// overlay each other: instead, just paint one with the combined color.
   static Color alphaBlend(Color foreground, Color background) {
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) { // Foreground completely transparent.
+    assert(foreground.colorSpace == background.colorSpace);
+    assert(foreground.colorSpace != ColorSpace.extendedSRGB);
+    final double alpha = foreground.a;
+    if (alpha == 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
-    if (backAlpha == 0xff) { // Opaque background case
-      return Color.fromARGB(
-        0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+    final double invAlpha = 1 - alpha;
+    double backAlpha = background.a;
+    if (backAlpha == 1) { // Opaque background case
+      return Color.from(
+        alpha: 1,
+        red: alpha * foreground.r + invAlpha * background.r,
+        green: alpha * foreground.g + invAlpha * background.g,
+        blue: alpha * foreground.b + invAlpha * background.b,
+        colorSpace: foreground.colorSpace,
       );
     } else { // General case
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color.fromARGB(
-        outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0);
+      return Color.from(
+        alpha: outAlpha,
+        red: (foreground.r * alpha + background.r * backAlpha) / outAlpha,
+        green: (foreground.g * alpha + background.g * backAlpha) / outAlpha,
+        blue: (foreground.b * alpha + background.b * backAlpha) / outAlpha,
+        colorSpace: foreground.colorSpace,
       );
     }
   }
@@ -323,15 +426,20 @@ class Color {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is Color
-        && other.value == value;
+    return other is Color &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
+        other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => value.hashCode;
+  int get hashCode => Object.hash(a, r, g, b, colorSpace);
 
   @override
-  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
+  String toString() =>
+      'Color(alpha: ${a.toStringAsFixed(4)}, red: ${r.toStringAsFixed(4)}, green: ${g.toStringAsFixed(4)}, blue: ${b.toStringAsFixed(4)}, colorSpace: $colorSpace)';
 }
 
 /// Algorithms to use when painting on the canvas.
@@ -766,7 +874,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_saturation.png)
   ///
   /// See also:
   ///
@@ -1087,12 +1195,25 @@ enum Clip {
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
-class Paint {
+final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint() {
-    // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-    _enableDithering();
+  Paint();
+
+  /// Constructs a new [Paint] object with the same fields as [other].
+  ///
+  /// Any changes made to the object returned will not affect [other], and
+  /// changes to [other] will not affect the object returned.
+  ///
+  /// Backends (for example web versus native) may have different performance
+  /// characteristics. If the code is performance-sensitive, consider profiling
+  /// and falling back to reusing a single [Paint] object if necessary.
+  Paint.from(Paint other) {
+    // Every field on Paint is deeply immutable, so to create a copy of a Paint
+    // object, we copy the underlying data buffer and the list of objects (which
+    // are also deeply immutable).
+    _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
+    _objects = other._objects?.toList();
   }
 
   // Paint objects are encoded in two buffers:
@@ -1113,23 +1234,31 @@ class Paint {
   @pragma('vm:entry-point')
   final ByteData _data = ByteData(_kDataByteCount);
 
+  // Must match //lib/ui/painting/paint.cc.
   static const int _kIsAntiAliasIndex = 0;
-  static const int _kColorIndex = 1;
-  static const int _kBlendModeIndex = 2;
-  static const int _kStyleIndex = 3;
-  static const int _kStrokeWidthIndex = 4;
-  static const int _kStrokeCapIndex = 5;
-  static const int _kStrokeJoinIndex = 6;
-  static const int _kStrokeMiterLimitIndex = 7;
-  static const int _kFilterQualityIndex = 8;
-  static const int _kMaskFilterIndex = 9;
-  static const int _kMaskFilterBlurStyleIndex = 10;
-  static const int _kMaskFilterSigmaIndex = 11;
-  static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
+  static const int _kColorRedIndex = 1;
+  static const int _kColorGreenIndex = 2;
+  static const int _kColorBlueIndex = 3;
+  static const int _kColorAlphaIndex = 4;
+  static const int _kColorSpaceIndex = 5;
+  static const int _kBlendModeIndex = 6;
+  static const int _kStyleIndex = 7;
+  static const int _kStrokeWidthIndex = 8;
+  static const int _kStrokeCapIndex = 9;
+  static const int _kStrokeJoinIndex = 10;
+  static const int _kStrokeMiterLimitIndex = 11;
+  static const int _kFilterQualityIndex = 12;
+  static const int _kMaskFilterIndex = 13;
+  static const int _kMaskFilterBlurStyleIndex = 14;
+  static const int _kMaskFilterSigmaIndex = 15;
+  static const int _kInvertColorIndex = 16;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorOffset = _kColorIndex << 2;
+  static const int _kColorRedOffset = _kColorRedIndex << 2;
+  static const int _kColorGreenOffset = _kColorGreenIndex << 2;
+  static const int _kColorBlueOffset = _kColorBlueIndex << 2;
+  static const int _kColorAlphaOffset = _kColorAlphaIndex << 2;
+  static const int _kColorSpaceOffset = _kColorSpaceIndex << 2;
   static const int _kBlendModeOffset = _kBlendModeIndex << 2;
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
@@ -1141,9 +1270,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
+
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 68; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1189,12 +1318,28 @@ class Paint {
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
   Color get color {
-    final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    final double red = _data.getFloat32(_kColorRedOffset, _kFakeHostEndian);
+    final double green = _data.getFloat32(_kColorGreenOffset, _kFakeHostEndian);
+    final double blue = _data.getFloat32(_kColorBlueOffset, _kFakeHostEndian);
+    final double alpha =
+        1.0 - _data.getFloat32(_kColorAlphaOffset, _kFakeHostEndian);
+    final ColorSpace colorSpace = _indexToColorSpace(
+        _data.getInt32(_kColorSpaceOffset, _kFakeHostEndian));
+    return Color.from(
+        alpha: alpha,
+        red: red,
+        green: green,
+        blue: blue,
+        colorSpace: colorSpace);
   }
+
   set color(Color value) {
-    final int encoded = value.value ^ _kColorDefault;
-    _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+    _data.setFloat32(_kColorRedOffset, value.r, _kFakeHostEndian);
+    _data.setFloat32(_kColorGreenOffset, value.g, _kFakeHostEndian);
+    _data.setFloat32(_kColorBlueOffset, value.b, _kFakeHostEndian);
+    _data.setFloat32(_kColorAlphaOffset, 1.0 - value.a, _kFakeHostEndian);
+    _data.setInt32(_kColorSpaceOffset, _colorSpaceToIndex(value.colorSpace),
+        _kFakeHostEndian);
   }
 
   // Must be kept in sync with the default in paint.cc.
@@ -1478,11 +1623,6 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-  void _enableDithering() {
-    _data.setInt32(_kDitherOffset, 1, _kFakeHostEndian);
-  }
-
   @override
   String toString() {
     if (const bool.fromEnvironment('dart.vm.product')) {
@@ -1510,7 +1650,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -1573,6 +1713,38 @@ enum ColorSpace {
   /// see the extended values an [ImageByteFormat] like
   /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
+  /// The Display P3 color space.
+  ///
+  /// This is a wide gamut color space that has broad hardware support. It's
+  /// supported in cases like using Impeller on iOS. When used on a platform
+  /// that doesn't support Display P3, the colors will be clamped to sRGB.
+  ///
+  /// See also: https://en.wikipedia.org/wiki/DCI-P3
+  displayP3,
+}
+
+int _colorSpaceToIndex(ColorSpace colorSpace) {
+  switch (colorSpace) {
+    case ColorSpace.sRGB:
+      return 0;
+    case ColorSpace.extendedSRGB:
+      return 1;
+    case ColorSpace.displayP3:
+      return 2;
+  }
+}
+
+ColorSpace _indexToColorSpace(int index) {
+  switch(index) {
+    case 0:
+      return ColorSpace.sRGB;
+    case 1:
+      return ColorSpace.extendedSRGB;
+    case 2:
+      return ColorSpace.displayP3;
+    default:
+      throw ArgumentError('Unknown color space: $index');
+  }
 }
 
 /// The format in which image bytes should be returned when using
@@ -1979,6 +2151,11 @@ base class _Image extends NativeFieldWrapperClass1 {
   String toString() => '[$width\u00D7$height]';
 }
 
+@pragma('vm:entry-point')
+Image _wrapImage(_Image image) {
+  return Image._(image, image.width, image.height);
+}
+
 /// Callback signature for [decodeImageFromList].
 typedef ImageDecoderCallback = void Function(Image result);
 
@@ -2135,6 +2312,9 @@ base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Codec::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'Codec(${_cachedFrameCount == null ? "" : "$_cachedFrameCount frames"})';
 }
 
 /// Instantiates an image [Codec].
@@ -2583,6 +2763,8 @@ base class _NativeEngineLayer extends NativeFieldWrapperClass1 implements Engine
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
 abstract class Path {
+  // TODO(matanlurey): have original authors document; see https://github.com/flutter/flutter/issues/151917.
+  // ignore: public_member_api_docs
   factory Path() = _NativePath;
 
   /// Creates a copy of another [Path].
@@ -3114,6 +3296,9 @@ base class _NativePath extends NativeFieldWrapperClass1 implements Path {
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return PathMetrics._(this, forceClosed);
   }
+
+  @override
+  String toString() => 'Path';
 }
 
 /// The geometric description of a tangent: the angle at a point.
@@ -3444,6 +3629,121 @@ class MaskFilter {
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
 
+abstract class _ColorTransform {
+  Color transform(Color color, ColorSpace resultColorSpace);
+}
+
+class _IdentityColorTransform implements _ColorTransform {
+  const _IdentityColorTransform();
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) => color;
+}
+
+class _ClampTransform implements _ColorTransform {
+  const _ClampTransform(this.child);
+  final _ColorTransform child;
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+      alpha: clampDouble(color.a, 0, 1),
+      red: clampDouble(color.r, 0, 1),
+      green: clampDouble(color.g, 0, 1),
+      blue: clampDouble(color.b, 0, 1),
+      colorSpace: resultColorSpace);
+  }
+}
+
+class _MatrixColorTransform implements _ColorTransform {
+  /// Row-major.
+  const _MatrixColorTransform(this.values);
+
+  final List<double> values;
+
+  @override
+  Color transform(Color color, ColorSpace resultColorSpace) {
+    return Color.from(
+        alpha: color.a,
+        red: values[0] * color.r +
+            values[1] * color.g +
+            values[2] * color.b +
+            values[3],
+        green: values[4] * color.r +
+            values[5] * color.g +
+            values[6] * color.b +
+            values[7],
+        blue: values[8] * color.r +
+            values[9] * color.g +
+            values[10] * color.b +
+            values[11],
+        colorSpace: resultColorSpace);
+  }
+}
+
+_ColorTransform _getColorTransform(ColorSpace source, ColorSpace destination) {
+  // The transforms were calculated with the following octave script from known
+  // conversions. These transforms have a white point that matches Apple's.
+  //
+  // p3Colors = [
+  //   1, 0, 0, 0.25;
+  //   0, 1, 0, 0.5;
+  //   0, 0, 1, 0.75;
+  //   1, 1, 1, 1;
+  // ];
+  // srgbColors = [
+  //   1.0930908918380737,  -0.5116420984268188, -0.0003518527664709836, 0.12397786229848862;
+  //   -0.22684034705162048, 1.0182716846466064,  0.00027732315356843174,  0.5073589086532593;
+  //   -0.15007957816123962, -0.31062406301498413, 1.0420056581497192,  0.771118700504303;
+  //   1,       1,       1,       1;
+  // ];
+  //
+  // format long
+  // p3ToSrgb = srgbColors * inv(p3Colors)
+  // srgbToP3 = inv(p3ToSrgb)
+  const _MatrixColorTransform srgbToP3 = _MatrixColorTransform(<double>[
+    0.808052267214446, 0.220292047628890, -0.139648846160100,
+    0.145738111193222, //
+    0.096480880462996, 0.916386732581291, -0.086093928394828,
+    0.089490172325882, //
+    -0.127099563510240, -0.068983484963878, 0.735426667591299, 0.233655661600230
+  ]);
+  const _ColorTransform p3ToSrgb = _MatrixColorTransform(<double>[
+    1.306671048092539, -0.298061942172353, 0.213228303487995,
+    -0.213580156254466, //
+    -0.117390025596251, 1.127722006101976, 0.109727644608938,
+    -0.109450321455370, //
+    0.214813187718391, 0.054268702864647, 1.406898424029350, -0.364892765879631
+  ]);
+  switch (source) {
+    case ColorSpace.sRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return srgbToP3;
+      }
+    case ColorSpace.extendedSRGB:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(_IdentityColorTransform());
+        case ColorSpace.extendedSRGB:
+          return const _IdentityColorTransform();
+        case ColorSpace.displayP3:
+          return const _ClampTransform(srgbToP3);
+      }
+    case ColorSpace.displayP3:
+      switch (destination) {
+        case ColorSpace.sRGB:
+          return const _ClampTransform(p3ToSrgb);
+        case ColorSpace.extendedSRGB:
+          return p3ToSrgb;
+        case ColorSpace.displayP3:
+          return const _IdentityColorTransform();
+      }
+  }
+}
+
 /// A description of a color filter to apply when drawing a shape or compositing
 /// a layer with a particular [Paint]. A color filter is a function that takes
 /// two colors, and outputs one color. When applied during compositing, it is
@@ -3722,7 +4022,7 @@ abstract class ImageFilter {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   factory ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality = FilterQuality.low }) {
+                     { FilterQuality filterQuality = FilterQuality.medium }) {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
@@ -4029,7 +4329,7 @@ base class Shader extends NativeFieldWrapperClass1 {
   /// Classes that override this method must call `super.dispose()`.
   void dispose() {
     assert(() {
-      assert(!_debugDisposed);
+      assert(!_debugDisposed, 'A Shader cannot be disposed more than once.');
       _debugDisposed = true;
       return true;
     }());
@@ -4126,10 +4426,25 @@ enum TileMode {
   decal,
 }
 
+Float32List _encodeWideColorList(List<Color> colors) {
+  final int colorCount = colors.length;
+  final Float32List result = Float32List(colorCount * 4);
+  for (int i = 0; i < colorCount; i++) {
+    final Color colorXr =
+        colors[i].withValues(colorSpace: ColorSpace.extendedSRGB);
+    result[i*4+0] = colorXr.a;
+    result[i*4+1] = colorXr.r;
+    result[i*4+2] = colorXr.g;
+    result[i*4+3] = colorXr.b;
+  }
+  return result;
+}
+
+
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i) {
+  for (int i = 0; i < colorCount; i++) {
     result[i] = colors[i].value;
   }
   return result;
@@ -4138,7 +4453,7 @@ Int32List _encodeColorList(List<Color> colors) {
 Float32List _encodePointList(List<Offset> points) {
   final int pointCount = points.length;
   final Float32List result = Float32List(pointCount * 2);
-  for (int i = 0; i < pointCount; ++i) {
+  for (int i = 0; i < pointCount; i++) {
     final int xIndex = i * 2;
     final int yIndex = xIndex + 1;
     final Offset point = points[i];
@@ -4209,7 +4524,7 @@ base class Gradient extends Shader {
        super._() {
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
@@ -4262,8 +4577,8 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
 
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
@@ -4321,7 +4636,7 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeWideColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
@@ -4331,14 +4646,14 @@ base class Gradient extends Shader {
   external void _constructor();
 
   @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initLinear')
-  external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
+  external void _initLinear(Float32List endPoints, Float32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initRadial')
   external void _initRadial(
       double centerX,
       double centerY,
       double radius,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       Float64List? matrix4);
@@ -4351,7 +4666,7 @@ base class Gradient extends Shader {
       double endX,
       double endY,
       double endRadius,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       Float64List? matrix4);
@@ -4360,7 +4675,7 @@ base class Gradient extends Shader {
   external void _initSweep(
       double centerX,
       double centerY,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       double startAngle,
@@ -4469,35 +4784,31 @@ base class FragmentProgram extends NativeFieldWrapperClass1 {
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
     final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
-    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    final FragmentProgram? program = _shaderRegistry[encodedKey];
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
       final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
-      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      _shaderRegistry[encodedKey] = program;
       return program;
     });
   }
 
   // This is a cache of shaders that have been loaded by
-  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
-  // so that the case where an in-use program is requested again can be fast,
-  // but programs that are no longer referenced are not retained because of the
-  // cache.
-  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
-      <String, WeakReference<FragmentProgram>>{};
+  // FragmentProgram.fromAsset. It holds a strong reference to theFragmentPrograms
+  // The native engine will retain the resources associated with this shader
+  // program (PSO variants) until shutdown, so maintaining a strong reference
+  // here ensures we do not perform extra work if the dart object is continually
+  // re-initialized.
+  static final Map<String, FragmentProgram> _shaderRegistry =
+      <String, FragmentProgram>{};
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
-    if (programRef == null) {
-      return;
-    }
-
-    final FragmentProgram? program = programRef.target;
+    final FragmentProgram? program = _shaderRegistry[assetKey];
     if (program == null) {
       return;
     }
@@ -4748,17 +5059,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
@@ -4835,17 +5149,20 @@ base class Vertices extends NativeFieldWrapperClass1 {
     if (textureCoordinates != null && textureCoordinates.length != positions.length) {
       throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     }
-    if (indices != null) {
-      for (int index = 0; index < indices.length; index += 1) {
-        if (indices[index] * 2 >= positions.length) {
-          throw ArgumentError(
-            '"indices" values must be valid indices in the positions list '
-            '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
-            'but indices[$index] is ${indices[index]}, which is too big.',
-          );
+    assert(() {
+      if (indices != null) {
+        for (int index = 0; index < indices.length; index += 1) {
+          if (indices[index] * 2 >= positions.length) {
+            throw ArgumentError(
+              '"indices" values must be valid indices in the positions list '
+              '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
+              'but indices[$index] is ${indices[index]}, which is too big.',
+            );
+          }
         }
       }
-    }
+      return true;
+    }());
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
@@ -4950,6 +5267,18 @@ enum ClipOp {
 ///
 /// The current transform and clip can be saved and restored using the stack
 /// managed by the [save], [saveLayer], and [restore] methods.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [Canvas] objects ([RendererBinding.createCanvas]) that allows tests to hook
+/// into the scene creation logic. When creating a [Canvas] that will be used
+/// with a [PictureLayer] as part of the [Scene] in the context of the Flutter
+/// framework, consider calling [RendererBinding.createCanvas] instead of
+/// calling the [Canvas.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class Canvas {
   /// Creates a canvas for recording graphical operations into the
   /// given picture recorder.
@@ -5778,6 +6107,18 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
 
+  static Rect _sorted(Rect rect) {
+    if (rect.isEmpty) {
+      rect = Rect.fromLTRB(
+        math.min(rect.left, rect.right),
+        math.min(rect.top, rect.bottom),
+        math.max(rect.left, rect.right),
+        math.max(rect.top, rect.bottom),
+      );
+    }
+    return rect;
+  }
+
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     if (bounds == null) {
@@ -5848,6 +6189,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
+    rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5920,7 +6265,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5948,7 +6296,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
@@ -6141,7 +6492,7 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
 
-    for (int i = 0; i < rectCount; ++i) {
+    for (int i = 0; i < rectCount; i++) {
       final int index0 = i * 4;
       final int index1 = index0 + 1;
       final int index2 = index0 + 2;
@@ -6224,6 +6575,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+
+  @override
+  String toString() => 'Canvas(recording: ${_recorder != null})';
 }
 
 /// Signature for [Picture] lifecycle events.
@@ -6367,12 +6721,28 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   @override
   @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Picture::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
+
+  @override
+  String toString() => 'Picture';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
 ///
 /// To begin recording, construct a [Canvas] to record the commands.
 /// To end recording, use the [PictureRecorder.endRecording] method.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [PictureRecorder] objects ([RendererBinding.createPictureRecorder]) that
+/// allows tests to hook into the scene creation logic. When creating a
+/// [PictureRecorder] and [Canvas] that will be used with a [PictureLayer] as
+/// part of the [Scene] in the context of the Flutter framework, consider
+/// calling [RendererBinding.createPictureRecorder] instead of calling the
+/// [PictureRecorder.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class PictureRecorder {
   /// Creates a new idle PictureRecorder. To associate it with a
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
@@ -6424,6 +6794,9 @@ base class _NativePictureRecorder extends NativeFieldWrapperClass1 implements Pi
   external void _endRecording(_NativePicture outPicture);
 
   _NativeCanvas? _canvas;
+
+  @override
+  String toString() => 'PictureRecorder(recording: $isRecording)';
 }
 
 /// A single shadow.
@@ -6868,9 +7241,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);
@@ -6883,6 +7254,9 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
 
   @Native<Void Function(Pointer<Void>, Handle, Int32, Int32)>(symbol: 'ImageDescriptor::instantiateCodec')
   external void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight);
+
+  @override
+  String toString() => 'ImageDescriptor(width: ${_width ?? '?'}, height: ${_height ?? '?'}, bytes per pixel: ${_bytesPerPixel ?? '?'})';
 }
 
 /// Generic callback signature, used by [_futurize].

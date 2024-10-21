@@ -12,7 +12,25 @@ impeller_component("tessellator") {
 
   public_deps = [ "../geometry" ]
 
-  deps = [ "//third_party/libtess2" ]
+  deps = [
+    "../core",
+    "//flutter/fml",
+  ]
+}
+
+impeller_component("tessellator_libtess") {
+  sources = [
+    "tessellator_libtess.cc",
+    "tessellator_libtess.h",
+  ]
+
+  public_deps = [ "../geometry" ]
+
+  deps = [
+    "../core",
+    "//flutter/fml",
+    "//third_party/libtess2",
+  ]
 }
 
 impeller_component("tessellator_shared") {
@@ -26,12 +44,13 @@ impeller_component("tessellator_shared") {
   sources = [
     "c/tessellator.cc",
     "c/tessellator.h",
-    "tessellator.cc",
-    "tessellator.h",
   ]
 
   deps = [
+    ":tessellator_libtess",
+    "../core",
     "../geometry",
+    "//flutter/fml",
     "//third_party/libtess2",
   ]
 
@@ -44,7 +63,8 @@ impeller_component("tessellator_unittests") {
   testonly = true
   sources = [ "tessellator_unittests.cc" ]
   deps = [
-    ":tessellator",
+    ":tessellator_libtess",
+    "../geometry:geometry_asserts",
     "//flutter/testing",
   ]
 }

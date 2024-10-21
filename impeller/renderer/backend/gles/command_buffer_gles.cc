@@ -19,7 +19,7 @@ CommandBufferGLES::CommandBufferGLES(std::weak_ptr<const Context> context,
 CommandBufferGLES::~CommandBufferGLES() = default;
 
 // |CommandBuffer|
-void CommandBufferGLES::SetLabel(const std::string& label) const {
+void CommandBufferGLES::SetLabel(std::string_view label) const {
   // Cannot support.
 }
 
@@ -49,8 +49,12 @@ std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
   if (!IsValid()) {
     return nullptr;
   }
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
   auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(context_, target, reactor_));
+      new RenderPassGLES(context, target, reactor_));
   if (!pass->IsValid()) {
     return nullptr;
   }

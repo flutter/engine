@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
+#ifndef FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_
+#define FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_
 
 #include <memory>
 #include <optional>
 #include <string>
 
+#include "flutter/display_list/geometry/dl_geometry_types.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -108,6 +110,12 @@ class DlImage : public SkRefCnt {
   SkIRect bounds() const;
 
   //----------------------------------------------------------------------------
+  /// @return     The bounds of the pixel grid with 0, 0 as origin. A
+  ///             convenience method that calls |DlImage::dimensions|.
+  ///
+  DlIRect GetBounds() const { return ToDlIRect(bounds()); }
+
+  //----------------------------------------------------------------------------
   /// @return     Specifies which context was used to create this image. The
   ///             image must be collected on the same task runner as its
   ///             context.
@@ -117,6 +125,10 @@ class DlImage : public SkRefCnt {
   /// @return     An error, if any, that occurred when trying to create the
   ///             image.
   virtual std::optional<std::string> get_error() const;
+
+#if FML_OS_IOS_SIMULATOR
+  virtual bool IsFakeImage() const { return false; }
+#endif  // FML_OS_IOS_SIMULATOR
 
   bool Equals(const DlImage* other) const {
     if (!other) {
@@ -141,4 +153,4 @@ class DlImage : public SkRefCnt {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
+#endif  // FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_

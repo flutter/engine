@@ -13,7 +13,6 @@
 ###   --unoptimized: Disables C++ compiler optimizations.
 ###   --count: Number of times to run the test. By default runs 1 time.
 ###            See `ffx test run --count`.
-###   --goma: Speeds up builds for Googlers. sorry. :(
 
 set -e  # Fail on any error.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/lib/vars.sh || exit $?
@@ -26,8 +25,6 @@ ensure_ninja
 runtime_mode="debug"
 compilation_mode="jit"
 fuchsia_cpu="x64"
-goma=0
-goma_flags=""
 ninja_cmd="ninja"
 package_filter="*tests-0.far"
 test_filter_flags=""
@@ -46,12 +43,6 @@ while [[ $# -gt 0 ]]; do
       count_flags="--count $1"
       shift # past value
       ;;
-    --goma)
-      goma=1
-      goma_flags="--goma"
-      ninja_cmd="autoninja"
-      shift # past argument
-      ;;
     --unopt|--unoptimized)
       unoptimized_flags="--unoptimized"
       unoptimized_suffix="_unopt"
@@ -69,7 +60,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-all_gn_args="--fuchsia --no-lto --fuchsia-cpu="${fuchsia_cpu}" --runtime-mode="${runtime_mode}" ${goma_flags} ${unoptimized_flags}"
+all_gn_args="--fuchsia --no-lto --fuchsia-cpu="${fuchsia_cpu}" --runtime-mode="${runtime_mode}" ${unoptimized_flags}"
 engine-info "GN args: ${all_gn_args}"
 
 "${ENGINE_DIR}"/flutter/tools/gn ${all_gn_args}
@@ -92,7 +83,13 @@ test_names=()
 for test_package in $test_packages
 do
   engine-info "... publishing ${test_package} ..."
-  ${FUCHSIA_DIR}/.jiri_root/bin/ffx repository publish $FUCHSIA_DIR/$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files --package-archive "${test_package}"
+  (
+    # ffx can not be called outside of FUCHSIA_DIR.
+    cd ${FUCHSIA_DIR}
+    ${FUCHSIA_DIR}/.jiri_root/bin/ffx repository publish \
+        $FUCHSIA_DIR/$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files \
+        --package-archive "${test_package}"
+  )
   test_names+=("$(basename ${test_package} | sed -e "s/-0.far//")")
 done
 

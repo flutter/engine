@@ -2,11 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 source_set("ui") {
   cflags = [
@@ -123,22 +126,20 @@ source_set("ui") {
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
-    "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
-    "volatile_path_tracker.cc",
-    "volatile_path_tracker.h",
     "window/key_data.cc",
     "window/key_data.h",
     "window/key_data_packet.cc",
     "window/key_data_packet.h",
     "window/platform_configuration.cc",
     "window/platform_configuration.h",
+    "window/platform_isolate.cc",
+    "window/platform_isolate.h",
     "window/platform_message.cc",
     "window/platform_message.h",
     "window/platform_message_response.cc",
@@ -163,10 +164,12 @@ source_set("ui") {
     "//flutter/flow",
     "//flutter/shell/common:display",
     "//flutter/shell/common:platform_message_handler",
+    "//flutter/skia/modules/skparagraph",
     "//flutter/third_party/txt",
   ]
 
   deps = [
+    "$dart_src/runtime/bin:dart_io_api",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/common/graphics",
@@ -175,10 +178,9 @@ source_set("ui") {
     "//flutter/impeller/runtime_stage",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
+    "//flutter/skia",
+    "//flutter/third_party/rapidjson",
     "//flutter/third_party/tonic",
-    "//third_party/dart/runtime/bin:dart_io_api",
-    "//third_party/rapidjson",
-    "//third_party/skia",
     "//third_party/zlib:zlib",
   ]
 
@@ -205,17 +207,6 @@ source_set("ui") {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
   }
-  if (impeller_enable_3d) {
-    defines += [ "IMPELLER_ENABLE_3D" ]
-    sources += [
-      "painting/scene/scene_node.cc",
-      "painting/scene/scene_node.h",
-      "painting/scene/scene_shader.cc",
-      "painting/scene/scene_shader.h",
-    ]
-
-    deps += [ "//flutter/impeller/scene" ]
-  }
 }
 
 if (enable_unittests) {
@@ -233,6 +224,7 @@ if (enable_unittests) {
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
+      "fixtures/unmultiplied_alpha.png",
       "fixtures/WideGamutIndexed.png",
       "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
@@ -282,6 +274,7 @@ if (enable_unittests) {
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
+      "$dart_src/runtime/bin:elf_loader",
       "//flutter/common",
       "//flutter/impeller",
       "//flutter/lib/snapshot",
@@ -289,8 +282,8 @@ if (enable_unittests) {
       "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:fixture_test",
+      "//flutter/third_party/libpng",
       "//flutter/third_party/tonic",
-      "//third_party/dart/runtime/bin:elf_loader",
     ]
 
     # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.

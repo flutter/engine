@@ -40,7 +40,7 @@ void main(List<String> arguments) {
     outPath = p.join(engineCheckoutPath, outPath);
   }
   final String buildToolsPath = arguments.length == 1
-      ? p.join(p.dirname(outPath), 'buildtools')
+      ? p.join(p.dirname(outPath), 'flutter', 'buildtools')
       : arguments[1];
 
   String platform;
@@ -140,7 +140,9 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
     };
     final Map<String, String> badSymbols = <String, String>{};
     for (final String key in entryMap.keys) {
-      if (entryMap[key] != expectedSymbols[key]) {
+      final bool isValidFlutterGpuSymbol =
+          key.startsWith('InternalFlutterGpu') && entryMap[key] == 'T';
+      if (!isValidFlutterGpuSymbol && entryMap[key] != expectedSymbols[key]) {
         badSymbols[key] = entryMap[key]!;
       }
     }
@@ -194,16 +196,15 @@ int _checkLinux(String outPath, String nmPath, Iterable<String> builds) {
 }
 
 class NmEntry {
-  NmEntry._(this.address, this.type, this.name);
+  NmEntry._(this.type, this.name);
 
-  final String address;
   final String type;
   final String name;
 
   static Iterable<NmEntry> parse(String stdout) {
     return LineSplitter.split(stdout).map((String line) {
       final List<String> parts = line.split(' ');
-      return NmEntry._(parts[0], parts[1], parts.last);
+      return NmEntry._(parts[1], parts.last);
     });
   }
 

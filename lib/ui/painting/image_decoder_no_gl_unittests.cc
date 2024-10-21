@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/painting/image_decoder_no_gl_unittests.h"
 
 #include "flutter/fml/endianness.h"
+#include "include/core/SkColorType.h"
 
 namespace flutter {
 namespace testing {
@@ -73,41 +74,11 @@ float DecodeBGR10(uint32_t x) {
   return (x * slope) + intercept;
 }
 
-sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
-  auto fixtures_directory =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  if (!fixtures_directory.is_valid()) {
-    return nullptr;
-  }
-
-  auto fixture_mapping =
-      fml::FileMapping::CreateReadOnly(fixtures_directory, name);
-
-  if (!fixture_mapping) {
-    return nullptr;
-  }
-
-  SkData::ReleaseProc on_release = [](const void* ptr, void* context) -> void {
-    delete reinterpret_cast<fml::FileMapping*>(context);
-  };
-
-  auto data = SkData::MakeWithProc(fixture_mapping->GetMapping(),
-                                   fixture_mapping->GetSize(), on_release,
-                                   fixture_mapping.get());
-
-  if (!data) {
-    return nullptr;
-  }
-  // The data is now owned by Skia.
-  fixture_mapping.release();
-  return data;
-}
-
 TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
 #endif
-  auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
+  auto data = flutter::testing::OpenFixtureAsSkData("DisplayP3Logo.png");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
@@ -164,7 +135,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
 #endif
-  auto data = OpenFixtureAsSkData("WideGamutIndexed.png");
+  auto data = flutter::testing::OpenFixtureAsSkData("WideGamutIndexed.png");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
@@ -213,6 +184,42 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
 
   ASSERT_TRUE(narrow_result.has_value());
   ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
+#endif  // IMPELLER_SUPPORTS_RENDERING
+}
+
+TEST(ImageDecoderNoGLTest, ImepllerUnmultipliedAlphaPng) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
+#endif
+  auto data = flutter::testing::OpenFixtureAsSkData("unmultiplied_alpha.png");
+  auto image = SkImages::DeferredFromEncodedData(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(11, 11), image->dimensions());
+
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> generator =
+      registry.CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                                         std::move(generator));
+
+#if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Allocator> allocator =
+      std::make_shared<impeller::TestImpellerAllocator>();
+  std::optional<DecompressResult> result =
+      ImageDecoderImpeller::DecompressTexture(
+          descriptor.get(), SkISize::Make(11, 11), {11, 11},
+          /*supports_wide_gamut=*/true, allocator);
+  ASSERT_EQ(result->image_info.colorType(), kRGBA_8888_SkColorType);
+
+  const SkPixmap& pixmap = result->sk_bitmap->pixmap();
+  const uint32_t* pixel_ptr = static_cast<const uint32_t*>(pixmap.addr());
+  // Test the upper left pixel is premultiplied and not solid red.
+  ASSERT_EQ(*pixel_ptr, (uint32_t)0x1000001);
+  // Test a pixel in the green box is still green.
+  ASSERT_EQ(*(pixel_ptr + 11 * 4 + 4), (uint32_t)0xFF00FF00);
+
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 

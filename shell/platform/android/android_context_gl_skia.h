@@ -27,10 +27,8 @@ class AndroidEGLSurface;
 ///
 class AndroidContextGLSkia : public AndroidContext {
  public:
-  AndroidContextGLSkia(AndroidRenderingAPI rendering_api,
-                       fml::RefPtr<AndroidEnvironmentGL> environment,
-                       const TaskRunners& taskRunners,
-                       uint8_t msaa_samples);
+  AndroidContextGLSkia(fml::RefPtr<AndroidEnvironmentGL> environment,
+                       const TaskRunners& taskRunners);
 
   ~AndroidContextGLSkia();
 

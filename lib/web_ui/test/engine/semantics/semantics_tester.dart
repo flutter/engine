@@ -7,27 +7,11 @@ import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/embedder.dart';
 import 'package:ui/src/engine/semantics.dart';
-import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../common/matchers.dart';
-
-/// Gets the DOM host where the Flutter app is being rendered.
-///
-/// This function returns the correct host for the flutter app under testing,
-/// so we don't have to hardcode domDocument across the test. The semantics
-/// tree has moved outside of the shadowDOM as a workaround for a password
-/// autofill bug on Chrome.
-/// Ref: https://github.com/flutter/flutter/issues/87735
-DomElement get appHostNode => flutterViewEmbedder.flutterViewElement;
-
-/// CSS style applied to the root of the semantics tree.
-// TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
-//                No need for every test to inject it.
-const String rootSemanticStyle = 'filter: opacity(0%); color: rgba(0, 0, 0, 0)';
 
 /// A convenience wrapper of the semantics API for building and inspecting the
 /// semantics tree in unit tests.
@@ -91,6 +75,7 @@ class SemanticsTester {
     bool? hasPaste,
     bool? hasDidGainAccessibilityFocus,
     bool? hasDidLoseAccessibilityFocus,
+    bool? hasFocus,
     bool? hasCustomAction,
     bool? hasDismiss,
     bool? hasMoveCursorForwardByWord,
@@ -111,6 +96,7 @@ class SemanticsTester {
     double? elevation,
     double? thickness,
     ui.Rect? rect,
+    String? identifier,
     String? label,
     List<ui.StringAttribute>? labelAttributes,
     String? hint,
@@ -126,6 +112,8 @@ class SemanticsTester {
     Float64List? transform,
     Int32List? additionalActions,
     List<SemanticsNodeUpdate>? children,
+    int? headingLevel,
+    String? linkUrl,
   }) {
     // Flags
     if (hasCheckedState ?? false) {
@@ -256,6 +244,9 @@ class SemanticsTester {
     if (hasDidLoseAccessibilityFocus ?? false) {
       actions |= ui.SemanticsAction.didLoseAccessibilityFocus.index;
     }
+    if (hasFocus ?? false) {
+      actions |= ui.SemanticsAction.focus.index;
+    }
     if (hasCustomAction ?? false) {
       actions |= ui.SemanticsAction.customAction.index;
     }
@@ -308,6 +299,7 @@ class SemanticsTester {
       scrollExtentMax: scrollExtentMax ?? 0,
       scrollExtentMin: scrollExtentMin ?? 0,
       rect: effectiveRect,
+      identifier: identifier ?? '',
       label: label ?? '',
       labelAttributes: labelAttributes ?? const <ui.StringAttribute>[],
       hint: hint ?? '',
@@ -325,6 +317,8 @@ class SemanticsTester {
       childrenInTraversalOrder: childIds,
       childrenInHitTestOrder: childIds,
       additionalActions: additionalActions ?? Int32List(0),
+      headingLevel: headingLevel ?? 0,
+      linkUrl: linkUrl,
     );
     _nodeUpdates.add(update);
     return update;
@@ -344,24 +338,27 @@ class SemanticsTester {
     return owner.debugSemanticsTree![id]!;
   }
 
-  /// Locates the [TextField] role manager of the semantics object with the give [id].
-  TextField getTextField(int id) {
-    return getSemanticsObject(id).primaryRole! as TextField;
+  /// Locates the [SemanticTextField] role of the semantics object with the give [id].
+  SemanticTextField getTextField(int id) {
+    return getSemanticsObject(id).semanticRole! as SemanticTextField;
+  }
+
+  void expectSemantics(String semanticsHtml) {
+    expectSemanticsTree(owner, semanticsHtml);
   }
 }
 
 /// Verifies the HTML structure of the current semantics tree.
-void expectSemanticsTree(String semanticsHtml) {
-  const List<String> ignoredAttributes = <String>['pointer-events'];
+void expectSemanticsTree(EngineSemanticsOwner owner, String semanticsHtml) {
   expect(
-    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHTML!, ignoredAttributes: ignoredAttributes),
-    canonicalizeHtml(semanticsHtml),
+    owner.semanticsHost.children.single,
+    hasHtml(semanticsHtml),
   );
 }
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
-DomElement? findScrollable() {
-  return appHostNode.querySelectorAll('flt-semantics').firstWhereOrNull(
+DomElement findScrollable(EngineSemanticsOwner owner) {
+  return owner.semanticsHost.querySelectorAll('flt-semantics').singleWhere(
     (DomElement? element) {
       return element!.style.overflow == 'hidden' ||
         element.style.overflowY == 'scroll' ||
@@ -370,7 +367,7 @@ DomElement? findScrollable() {
   );
 }
 
-/// Logs semantics actions dispatched to [ui.window].
+/// Logs semantics actions dispatched to [ui.PlatformDispatcher].
 class SemanticsActionLogger {
   SemanticsActionLogger() {
     _idLogController = StreamController<int>();
@@ -400,7 +397,12 @@ class SemanticsActionLogger {
   Stream<int> get idLog => _idLog;
   late Stream<int> _idLog;
 
-  /// The actions that were dispatched to [ui.window].
+  /// The actions that were dispatched to [ui.PlatformDispatcher].
   Stream<ui.SemanticsAction> get actionLog => _actionLog;
   late Stream<ui.SemanticsAction> _actionLog;
+}
+
+extension SemanticRoleExtension on SemanticRole {
+  /// Types of semantics behaviors used by this role.
+  List<Type> get debugSemanticBehaviorTypes => behaviors?.map((behavior) => behavior.runtimeType).toList() ?? const <Type>[];
 }

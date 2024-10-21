@@ -5,40 +5,25 @@
 #include "impeller/runtime_stage/runtime_stage.h"
 
 #include <array>
+#include <memory>
 
+#include "fml/mapping.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/runtime_types.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/runtime_stage/runtime_stage_flatbuffers.h"
+#include "runtime_stage_types_flatbuffers.h"
 
 namespace impeller {
 
 static RuntimeUniformType ToType(fb::UniformDataType type) {
   switch (type) {
-    case fb::UniformDataType::kBoolean:
-      return RuntimeUniformType::kBoolean;
-    case fb::UniformDataType::kSignedByte:
-      return RuntimeUniformType::kSignedByte;
-    case fb::UniformDataType::kUnsignedByte:
-      return RuntimeUniformType::kUnsignedByte;
-    case fb::UniformDataType::kSignedShort:
-      return RuntimeUniformType::kSignedShort;
-    case fb::UniformDataType::kUnsignedShort:
-      return RuntimeUniformType::kUnsignedShort;
-    case fb::UniformDataType::kSignedInt:
-      return RuntimeUniformType::kSignedInt;
-    case fb::UniformDataType::kUnsignedInt:
-      return RuntimeUniformType::kUnsignedInt;
-    case fb::UniformDataType::kSignedInt64:
-      return RuntimeUniformType::kSignedInt64;
-    case fb::UniformDataType::kUnsignedInt64:
-      return RuntimeUniformType::kUnsignedInt64;
-    case fb::UniformDataType::kHalfFloat:
-      return RuntimeUniformType::kHalfFloat;
     case fb::UniformDataType::kFloat:
       return RuntimeUniformType::kFloat;
-    case fb::UniformDataType::kDouble:
-      return RuntimeUniformType::kDouble;
     case fb::UniformDataType::kSampledImage:
       return RuntimeUniformType::kSampledImage;
+    case fb::UniformDataType::kStruct:
+      return RuntimeUniformType::kStruct;
   }
   FML_UNREACHABLE();
 }
@@ -51,42 +36,87 @@ static RuntimeShaderStage ToShaderStage(fb::Stage stage) {
       return RuntimeShaderStage::kFragment;
     case fb::Stage::kCompute:
       return RuntimeShaderStage::kCompute;
-    case fb::Stage::kTessellationControl:
-      return RuntimeShaderStage::kTessellationControl;
-    case fb::Stage::kTessellationEvaluation:
-      return RuntimeShaderStage::kTessellationEvaluation;
   }
   FML_UNREACHABLE();
 }
 
-RuntimeStage::RuntimeStage(std::shared_ptr<fml::Mapping> payload)
-    : payload_(std::move(payload)) {
-  if (payload_ == nullptr || !payload_->GetMapping()) {
-    return;
-  }
-  if (!fb::RuntimeStageBufferHasIdentifier(payload_->GetMapping())) {
-    return;
-  }
-  auto runtime_stage = fb::GetRuntimeStage(payload_->GetMapping());
+/// The generated name from GLSLang/shaderc for the UBO containing non-opaque
+/// uniforms specified in the user-written runtime effect shader.
+///
+/// Vulkan does not allow non-opaque uniforms outside of a UBO.
+const char* RuntimeStage::kVulkanUBOName =
+    "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock";
+
+std::unique_ptr<RuntimeStage> RuntimeStage::RuntimeStageIfPresent(
+    const fb::RuntimeStage* runtime_stage,
+    const std::shared_ptr<fml::Mapping>& payload) {
   if (!runtime_stage) {
-    return;
+    return nullptr;
   }
+
+  return std::unique_ptr<RuntimeStage>(
+      new RuntimeStage(runtime_stage, payload));
+}
+
+RuntimeStage::Map RuntimeStage::DecodeRuntimeStages(
+    const std::shared_ptr<fml::Mapping>& payload) {
+  if (payload == nullptr || !payload->GetMapping()) {
+    return {};
+  }
+  if (!fb::RuntimeStagesBufferHasIdentifier(payload->GetMapping())) {
+    return {};
+  }
+
+  auto raw_stages = fb::GetRuntimeStages(payload->GetMapping());
+  return {
+      {RuntimeStageBackend::kSkSL,
+       RuntimeStageIfPresent(raw_stages->sksl(), payload)},
+      {RuntimeStageBackend::kMetal,
+       RuntimeStageIfPresent(raw_stages->metal(), payload)},
+      {RuntimeStageBackend::kOpenGLES,
+       RuntimeStageIfPresent(raw_stages->opengles(), payload)},
+      {RuntimeStageBackend::kVulkan,
+       RuntimeStageIfPresent(raw_stages->vulkan(), payload)},
+  };
+}
+
+RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
+                           const std::shared_ptr<fml::Mapping>& payload)
+    : payload_(payload) {
+  FML_DCHECK(runtime_stage);
 
   stage_ = ToShaderStage(runtime_stage->stage());
   entrypoint_ = runtime_stage->entrypoint()->str();
 
   auto* uniforms = runtime_stage->uniforms();
+
+  // Note: image bindings are screwy and will always have the same offset.
+  // track the binding of the UBO to determine where the image bindings go.
+  // This is only guaranteed to give us the correct bindings if there is a
+  // single sampler2D.
+  std::optional<size_t> ubo_id;
   if (uniforms) {
     for (auto i = uniforms->begin(), end = uniforms->end(); i != end; i++) {
       RuntimeUniformDescription desc;
       desc.name = i->name()->str();
       desc.location = i->location();
+      desc.binding = i->binding();
       desc.type = ToType(i->type());
+      if (desc.type == kStruct) {
+        ubo_id = desc.location;
+        desc.binding = desc.location;
+      }
       desc.dimensions = RuntimeUniformDimensions{
           static_cast<size_t>(i->rows()), static_cast<size_t>(i->columns())};
       desc.bit_width = i->bit_width();
       desc.array_elements = i->array_elements();
-      uniforms_.emplace_back(std::move(desc));
+      if (i->struct_layout()) {
+        for (const auto& byte_type : *i->struct_layout()) {
+          desc.struct_layout.push_back(static_cast<uint8_t>(byte_type));
+        }
+      }
+      desc.struct_float_count = i->struct_float_count();
+      uniforms_.push_back(std::move(desc));
     }
   }
 
@@ -96,12 +126,35 @@ RuntimeStage::RuntimeStage(std::shared_ptr<fml::Mapping> payload)
       [payload = payload_](auto, auto) {}  //
   );
 
-  sksl_mapping_ = std::make_shared<fml::NonOwnedMapping>(
-      runtime_stage->sksl()->data(),       //
-      runtime_stage->sksl()->size(),       //
-      [payload = payload_](auto, auto) {}  //
-  );
+  size_t binding = 64;
+  if (ubo_id.has_value() && ubo_id.value() == binding) {
+    binding++;
+  }
+  for (auto& uniform : uniforms_) {
+    if (uniform.type == kSampledImage) {
+      uniform.binding = binding;
+      binding++;
+      if (ubo_id.has_value() && ubo_id.value() == binding) {
+        binding++;
+      }
+    }
+  }
 
+  for (const auto& uniform : GetUniforms()) {
+    if (uniform.type == kStruct) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          static_cast<uint32_t>(uniform.location),
+          DescriptorType::kUniformBuffer,
+          ShaderStage::kFragment,
+      });
+    } else if (uniform.type == kSampledImage) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          static_cast<uint32_t>(uniform.binding),
+          DescriptorType::kSampledImage,
+          ShaderStage::kFragment,
+      });
+    }
+  }
   is_valid_ = true;
 }
 
@@ -115,10 +168,6 @@ bool RuntimeStage::IsValid() const {
 
 const std::shared_ptr<fml::Mapping>& RuntimeStage::GetCodeMapping() const {
   return code_mapping_;
-}
-
-const std::shared_ptr<fml::Mapping>& RuntimeStage::GetSkSLMapping() const {
-  return sksl_mapping_;
 }
 
 const std::vector<RuntimeUniformDescription>& RuntimeStage::GetUniforms()
@@ -150,6 +199,11 @@ bool RuntimeStage::IsDirty() const {
 
 void RuntimeStage::SetClean() {
   is_dirty_ = false;
+}
+
+const std::vector<DescriptorSetLayout>& RuntimeStage::GetDescriptorSetLayouts()
+    const {
+  return descriptor_set_layouts_;
 }
 
 }  // namespace impeller

@@ -7,40 +7,67 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
-const engine.MethodCodec codec = engine.JSONMethodCodec();
+import '../common/test_initialization.dart';
 
-void emptyCallback(ByteData date) {}
+const MethodCodec codec = JSONMethodCodec();
+
+EngineFlutterWindow get implicitView =>
+    EnginePlatformDispatcher.instance.implicitView!;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  engine.TestUrlStrategy? strategy;
+  group('without implicit view', () {
+    test('Handles navigation gracefully when no implicit view exists', () async {
+      expect(EnginePlatformDispatcher.instance.implicitView, isNull);
 
-  setUp(() async {
-    strategy = engine.TestUrlStrategy();
-    await engine.window.debugInitializeHistory(strategy, useSingle: true);
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/navigation',
+        codec.encodeMethodCall(const MethodCall(
+          'routeUpdated',
+          <String, dynamic>{'routeName': '/foo'},
+        )),
+        (ByteData? response) => completer.complete(response),
+      );
+      final ByteData? response = await completer.future;
+      expect(response, isNull);
+    });
   });
 
-  tearDown(() async {
-    strategy = null;
-    await engine.window.resetHistory();
-  });
+  group('with implicit view', () {
+    late TestUrlStrategy strategy;
 
-  test('Tracks pushed, replaced and popped routes', () async {
-    final Completer<void> completer = Completer<void>();
-    engine.window.sendPlatformMessage(
-      'flutter/navigation',
-      codec.encodeMethodCall(const engine.MethodCall(
-        'routeUpdated',
-        <String, dynamic>{'routeName': '/foo'},
-      )),
-      (_) => completer.complete(),
-    );
-    await completer.future;
-    expect(strategy!.getPath(), '/foo');
+    setUpAll(() async {
+      await bootstrapAndRunApp(withImplicitView: true);
+    });
+
+    setUp(() async {
+      strategy = TestUrlStrategy();
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
+    });
+
+    tearDown(() async {
+      await implicitView.resetHistory();
+    });
+
+    test('Tracks pushed, replaced and popped routes', () async {
+      final Completer<void> completer = Completer<void>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/navigation',
+        codec.encodeMethodCall(const MethodCall(
+          'routeUpdated',
+          <String, dynamic>{'routeName': '/foo'},
+        )),
+        (_) => completer.complete(),
+      );
+      await completer.future;
+      expect(strategy.getPath(), '/foo');
+    });
   });
 }

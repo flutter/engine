@@ -7,8 +7,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
+import 'package:test/test.dart';
 
 void main() {
   test('basic image descriptor - encoded - greyscale', () async {
@@ -97,7 +97,8 @@ File _getSkiaResource(String fileName) {
   // assuming the curent working directory is engine/src.
   // This is fragile and should be changed once the Platform.script issue is
   // resolved.
-  final String assetPath =
-    path.join('third_party', 'skia', 'resources', 'images', fileName);
+  final String assetPath = path.join(
+    'flutter', 'third_party', 'skia', 'resources', 'images', fileName,
+  );
   return File(assetPath);
 }

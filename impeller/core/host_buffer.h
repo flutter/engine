@@ -2,31 +2,35 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
+#define FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
 
 #include <algorithm>
+#include <array>
+#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
-#include "impeller/base/allocation.h"
-#include "impeller/core/buffer.h"
+#include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/platform.h"
 
 namespace impeller {
 
-class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
-                         public Allocation,
-                         public Buffer {
+/// Approximately the same size as the max frames in flight.
+static const constexpr size_t kHostBufferArenaSize = 4u;
+
+/// The host buffer class manages one more 1024 Kb blocks of device buffer
+/// allocations.
+///
+/// These are reset per-frame.
+class HostBuffer {
  public:
-  static std::shared_ptr<HostBuffer> Create();
+  static std::shared_ptr<HostBuffer> Create(
+      const std::shared_ptr<Allocator>& allocator);
 
-  // |Buffer|
-  virtual ~HostBuffer();
-
-  void SetLabel(std::string label);
+  ~HostBuffer();
 
   //----------------------------------------------------------------------------
   /// @brief      Emplace uniform data onto the host buffer. Ensure that backend
@@ -77,6 +81,7 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///             host buffer.
   ///
   /// @param[in]  buffer        The buffer data.
+  /// @param[in]  alignment     Minimum alignment of the data being emplaced.
   ///
   /// @tparam     BufferType    The type of the buffer data.
   ///
@@ -84,10 +89,11 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///
   template <class BufferType,
             class = std::enable_if_t<std::is_standard_layout_v<BufferType>>>
-  [[nodiscard]] BufferView Emplace(const BufferType& buffer) {
-    return Emplace(reinterpret_cast<const void*>(&buffer),  // buffer
-                   sizeof(BufferType),                      // size
-                   alignof(BufferType)                      // alignment
+  [[nodiscard]] BufferView Emplace(const BufferType& buffer,
+                                   size_t alignment = 0) {
+    return Emplace(reinterpret_cast<const void*>(&buffer),   // buffer
+                   sizeof(BufferType),                       // size
+                   std::max(alignment, alignof(BufferType))  // alignment
     );
   }
 
@@ -116,25 +122,52 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///        reused.
   void Reset();
 
-  //----------------------------------------------------------------------------
-  /// @brief Returns the size of the HostBuffer in memory in bytes.
-  size_t GetSize() const;
+  /// Test only internal state.
+  struct TestStateQuery {
+    size_t current_frame;
+    size_t current_buffer;
+    size_t total_buffer_count;
+  };
+
+  /// @brief Retrieve internal buffer state for test expectations.
+  TestStateQuery GetStateForTest();
 
  private:
-  mutable std::shared_ptr<DeviceBuffer> device_buffer_;
-  mutable size_t device_buffer_generation_ = 0u;
-  size_t generation_ = 1u;
-  std::string label_;
+  [[nodiscard]] std::tuple<Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(const void* buffer, size_t length);
 
-  // |Buffer|
-  std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
-      Allocator& allocator) const override;
+  std::tuple<Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(size_t length, size_t align, const EmplaceProc& cb);
+
+  std::tuple<Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(const void* buffer, size_t length, size_t align);
+
+  size_t GetLength() const { return offset_; }
+
+  /// Attempt to create a new internal buffer if the existing capacity is not
+  /// sufficient.
+  ///
+  /// A false return value indicates an unrecoverable allocation failure.
+  [[nodiscard]] bool MaybeCreateNewBuffer();
+
+  const std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() const;
 
   [[nodiscard]] BufferView Emplace(const void* buffer, size_t length);
 
-  HostBuffer();
+  explicit HostBuffer(const std::shared_ptr<Allocator>& allocator);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(HostBuffer);
+  HostBuffer(const HostBuffer&) = delete;
+
+  HostBuffer& operator=(const HostBuffer&) = delete;
+
+  std::shared_ptr<Allocator> allocator_;
+  std::array<std::vector<std::shared_ptr<DeviceBuffer>>, kHostBufferArenaSize>
+      device_buffers_;
+  size_t current_buffer_ = 0u;
+  size_t offset_ = 0u;
+  size_t frame_index_ = 0u;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_

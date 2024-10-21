@@ -31,12 +31,13 @@ static fml::scoped_nsprotocol<id<MTLTexture>> CreateOffscreenTexture(id<MTLDevic
 // non-Objective-C TUs.
 class DarwinContextMetal {
  public:
-  explicit DarwinContextMetal(bool impeller,
-                              std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
+  explicit DarwinContextMetal(
+      bool impeller,
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
-        impeller_context_(impeller ? [[FlutterDarwinContextMetalImpeller alloc]
-                                         init:std::move(is_gpu_disabled_sync_switch)]
-                                   : nil),
+        impeller_context_(
+            impeller ? [[FlutterDarwinContextMetalImpeller alloc] init:is_gpu_disabled_sync_switch]
+                     : nil),
         offscreen_texture_(CreateOffscreenTexture(
             impeller ? [impeller_context_ context]->GetMTLDevice() : [context_ device])) {}
 
@@ -112,11 +113,11 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewMetal::CreateRenderingSurface() {
   if (GetSettings().enable_impeller) {
-    return std::make_unique<GPUSurfaceMetalImpeller>(this,
-                                                     [metal_context_->impeller_context() context]);
+    auto context = [metal_context_->impeller_context() context];
+    return std::make_unique<GPUSurfaceMetalImpeller>(
+        this, std::make_shared<impeller::AiksContext>(context, nullptr));
   }
-  return std::make_unique<GPUSurfaceMetalSkia>(this, [metal_context_->context() mainContext],
-                                               MsaaSampleCount::kNone);
+  return std::make_unique<GPUSurfaceMetalSkia>(this, [metal_context_->context() mainContext]);
 }
 
 // |PlatformView|

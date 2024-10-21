@@ -15,7 +15,6 @@
 #include "flutter/fml/delayed_task.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
-#include "flutter/fml/synchronization/shared_mutex.h"
 #include "flutter/fml/task_queue_id.h"
 #include "flutter/fml/task_source.h"
 #include "flutter/fml/wakeable.h"
@@ -155,7 +154,7 @@ class MessageLoopTaskQueues {
   mutable std::mutex queue_mutex_;
   std::map<TaskQueueId, std::unique_ptr<TaskQueueEntry>> queue_entries_;
 
-  size_t task_queue_id_counter_;
+  size_t task_queue_id_counter_ = 0;
 
   std::atomic_int order_;
 

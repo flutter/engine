@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_
-#define SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_FLUTTERDARWINCONTEXTMETALIMPELLER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_FLUTTERDARWINCONTEXTMETALIMPELLER_H_
 
 #import <CoreVideo/CVMetalTextureCache.h>
 #import <Foundation/Foundation.h>
@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initializes a FlutterDarwinContextMetalImpeller.
  */
-- (instancetype)init:(std::shared_ptr<const fml::SyncSwitch>)is_gpu_disabled_sync_switch;
+- (instancetype)init:(const std::shared_ptr<const fml::SyncSwitch>&)is_gpu_disabled_sync_switch;
 
 /**
  * Creates an external texture with the specified ID and contents.
@@ -48,4 +48,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 NS_ASSUME_NONNULL_END
 
-#endif  // SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_IMPELLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_FLUTTERDARWINCONTEXTMETALIMPELLER_H_

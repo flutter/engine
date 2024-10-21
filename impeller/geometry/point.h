@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_POINT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_POINT_H_
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -15,6 +17,11 @@
 #include "impeller/geometry/type_traits.h"
 
 namespace impeller {
+
+#define ONLY_ON_FLOAT_M(Modifiers, Return) \
+  template <typename U = T>                \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Return>
+#define ONLY_ON_FLOAT(Return) DL_ONLY_ON_FLOAT_M(, Return)
 
 template <class T>
 struct TPoint {
@@ -216,6 +223,12 @@ struct TPoint {
     return *this - axis * this->Dot(axis) * 2;
   }
 
+  constexpr TPoint Rotate(const Radians& angle) const {
+    const auto cos_a = std::cosf(angle.radians);
+    const auto sin_a = std::sinf(angle.radians);
+    return {x * cos_a - y * sin_a, x * sin_a + y * cos_a};
+  }
+
   constexpr Radians AngleTo(const TPoint& p) const {
     return Radians{std::atan2(this->Cross(p), this->Dot(p))};
   }
@@ -225,6 +238,9 @@ struct TPoint {
   }
 
   constexpr bool IsZero() const { return x == 0 && y == 0; }
+
+  ONLY_ON_FLOAT_M(constexpr, bool)
+  IsFinite() const { return std::isfinite(x) && std::isfinite(y); }
 };
 
 // Specializations for mixed (float & integer) algebraic operations.
@@ -303,11 +319,20 @@ constexpr TPoint<T> operator/(const TSize<U>& s, const TPoint<T>& p) {
   return {static_cast<T>(s.width) / p.x, static_cast<T>(s.height) / p.y};
 }
 
+template <class T>
+constexpr TPoint<T> operator-(const TPoint<T>& p, T v) {
+  return {p.x - v, p.y - v};
+}
+
 using Point = TPoint<Scalar>;
 using IPoint = TPoint<int64_t>;
 using IPoint32 = TPoint<int32_t>;
 using UintPoint32 = TPoint<uint32_t>;
 using Vector2 = Point;
+using Quad = std::array<Point, 4>;
+
+#undef ONLY_ON_FLOAT
+#undef ONLY_ON_FLOAT_M
 
 }  // namespace impeller
 
@@ -321,3 +346,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_POINT_H_

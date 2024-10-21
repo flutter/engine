@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_
+#define FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -12,16 +13,15 @@
 #include <webgl/webgl1.h>
 #include <cassert>
 #include "export.h"
-#include "skwasm_support.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLInterface.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #include "wrappers.h"
 
 namespace Skwasm {
@@ -35,16 +35,10 @@ enum class ImageByteFormat {
 
 class TextureSourceWrapper {
  public:
-  TextureSourceWrapper(unsigned long threadId, SkwasmObject textureSource)
-      : _rasterThreadId(threadId) {
-    skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, textureSource);
-  }
+  TextureSourceWrapper(unsigned long threadId, SkwasmObject textureSource);
+  ~TextureSourceWrapper();
 
-  ~TextureSourceWrapper() {
-    skwasm_disposeAssociatedObjectOnThread(_rasterThreadId, this);
-  }
-
-  SkwasmObject getTextureSource() { return skwasm_getAssociatedObject(this); }
+  SkwasmObject getTextureSource();
 
  private:
   unsigned long _rasterThreadId;
@@ -61,26 +55,30 @@ class Surface {
 
   // Main thread only
   void dispose();
-  uint32_t renderPicture(SkPicture* picture);
+  uint32_t renderPictures(SkPicture** picture, int count);
   uint32_t rasterizeImage(SkImage* image, ImageByteFormat format);
   void setCallbackHandler(CallbackHandler* callbackHandler);
   void onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
+  void onRasterizeComplete(uint32_t callbackId, SkData* data);
 
   // Any thread
   std::unique_ptr<TextureSourceWrapper> createTextureSourceWrapper(
       SkwasmObject textureSource);
 
+  // Worker thread
+  void renderPicturesOnWorker(sk_sp<SkPicture>* picture,
+                              int pictureCount,
+                              uint32_t callbackId,
+                              double rasterStart);
+  void rasterizeImageOnWorker(SkImage* image,
+                              ImageByteFormat format,
+                              uint32_t callbackId);
+
  private:
   void _runWorker();
   void _init();
-  void _dispose();
   void _resizeCanvasToFit(int width, int height);
   void _recreateSurface();
-  void _renderPicture(const SkPicture* picture, uint32_t callbackId);
-  void _rasterizeImage(SkImage* image,
-                       ImageByteFormat format,
-                       uint32_t callbackId);
-  void _onRasterizeComplete(SkData* data, uint32_t callbackId);
 
   std::string _canvasID;
   CallbackHandler* _callbackHandler = nullptr;
@@ -97,20 +95,7 @@ class Surface {
   GrGLint _stencil;
 
   pthread_t _thread;
-
-  static void fDispose(Surface* surface);
-  static void fRenderPicture(Surface* surface,
-                             SkPicture* picture,
-                             uint32_t callbackId);
-  static void fOnRenderComplete(Surface* surface,
-                                uint32_t callbackId,
-                                SkwasmObject imageBitmap);
-  static void fRasterizeImage(Surface* surface,
-                              SkImage* image,
-                              ImageByteFormat format,
-                              uint32_t callbackId);
-  static void fOnRasterizeComplete(Surface* surface,
-                                   SkData* imageData,
-                                   uint32_t callbackId);
 };
 }  // namespace Skwasm
+
+#endif  // FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_

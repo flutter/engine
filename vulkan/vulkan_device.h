@@ -7,7 +7,6 @@
 
 #include <vector>
 
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "flutter/vulkan/procs/vulkan_handle.h"
 
@@ -55,9 +54,6 @@ class VulkanDevice {
   [[nodiscard]] bool GetPhysicalDeviceFeatures(
       VkPhysicalDeviceFeatures* features) const;
 
-  [[nodiscard]] bool GetPhysicalDeviceFeaturesSkia(
-      uint32_t* /* mask of GrVkFeatureFlags */ features) const;
-
   [[nodiscard]] int ChooseSurfaceFormat(
       const VulkanSurface& surface,
       const std::vector<VkFormat>& desired_formats,
@@ -76,7 +72,7 @@ class VulkanDevice {
   [[nodiscard]] bool WaitIdle() const;
 
  private:
-  VulkanProcTable& vk;
+  VulkanProcTable& vk_;
   VulkanHandle<VkPhysicalDevice> physical_device_;
   VulkanHandle<VkDevice> device_;
   VulkanHandle<VkQueue> queue_;

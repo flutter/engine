@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:image/image.dart';
-import 'package:test_api/src/backend/runtime.dart';
+import 'package:test_api/backend.dart';
 
 /// Provides the environment for a specific web browser.
 abstract class BrowserEnvironment {
@@ -74,6 +74,12 @@ abstract class Browser {
   /// If there's a problem starting or running the browser, this will complete
   /// with an error.
   Future<void> get onExit;
+
+  /// A future that completes if the browser is notified about an uncaught
+  /// exception.
+  ///
+  /// Returns `null` if the browser does not support this.
+  Future<String>? get onUncaughtException => null;
 
   /// Closes the browser
   ///

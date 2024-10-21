@@ -20,9 +20,12 @@ class WindowBindingHandlerDelegate {
   using KeyEventCallback = std::function<void(bool)>;
 
   // Notifies delegate that backing window size has changed.
-  // Typically called by currently configured WindowBindingHandler, this is
-  // called on the platform thread.
-  virtual void OnWindowSizeChanged(size_t width, size_t height) = 0;
+  //
+  // Called by |FlutterWindow| on the platform thread.
+  //
+  // Returns true if the delegate completed the window resize synchronously.
+  // The return value is exposed for unit testing.
+  virtual bool OnWindowSizeChanged(size_t width, size_t height) = 0;
 
   // Notifies delegate that backing window needs to be repainted.
   // Typically called by currently configured WindowBindingHandler.
@@ -98,15 +101,16 @@ class WindowBindingHandlerDelegate {
 
   // Notifies the delegate that IME composing region have been committed.
   //
-  // Triggered when the user commits the current composing text while using a
-  // multi-step input method such as in CJK text input. Composing continues with
-  // the next keypress.
+  // Triggered when the user triggers a commit of the current composing text
+  // while using a multi-step input method such as in CJK text input. Composing
+  // continues with the next keypress.
   virtual void OnComposeCommit() = 0;
 
   // Notifies the delegate that IME composing mode has ended.
   //
-  // Triggered when the user commits the composing text while using a multi-step
-  // input method such as in CJK text input.
+  // Triggered when the composing ends, for example when the user presses
+  // ESC or when the user triggers a commit of the composing text while using a
+  // multi-step input method such as in CJK text input.
   virtual void OnComposeEnd() = 0;
 
   // Notifies the delegate that IME composing region contents have changed.
@@ -136,8 +140,8 @@ class WindowBindingHandlerDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
-  // Update the status of the high contrast feature
-  virtual void UpdateHighContrastEnabled(bool enabled) = 0;
+  // Update the status of the high contrast feature.
+  virtual void OnHighContrastChanged() = 0;
 
   // Obtain a pointer to the fragment root delegate.
   // This is required by UIA in order to obtain the fragment root that

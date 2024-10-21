@@ -41,10 +41,13 @@ class ParagraphBuilderSkia : public ParagraphBuilder {
   virtual void Pop() override;
   virtual const TextStyle& PeekStyle() override;
   virtual void AddText(const std::u16string& text) override;
+  virtual void AddText(const uint8_t* utf8_data, size_t byte_length) override;
   virtual void AddPlaceholder(PlaceholderRun& span) override;
   virtual std::unique_ptr<Paragraph> Build() override;
 
  private:
+  friend class SkiaParagraphBuilderTests_ParagraphStrutStyle_Test;
+
   skia::textlayout::ParagraphPainter::PaintID CreatePaintID(
       const flutter::DlPaint& dl_paint);
   skia::textlayout::ParagraphStyle TxtToSkia(const ParagraphStyle& txt);

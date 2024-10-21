@@ -2,22 +2,34 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
+#define FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
 
 #include <initializer_list>
-#include <map>
+#include <memory>
+#include <type_traits>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/vertex_buffer.h"
-#include "impeller/geometry/vector.h"
 
 namespace impeller {
+
+/// @brief Create an index-less vertex buffer from a fixed size array.
+template <class VertexType, size_t size>
+VertexBuffer CreateVertexBuffer(std::array<VertexType, size> input,
+                                HostBuffer& host_buffer) {
+  return VertexBuffer{
+      .vertex_buffer = host_buffer.Emplace(
+          input.data(), sizeof(VertexType) * size, alignof(VertexType)),  //
+      .vertex_count = size,                                               //
+      .index_type = IndexType::kNone,                                     //
+  };
+}
 
 template <class VertexType_, class IndexType_ = uint16_t>
 class VertexBufferBuilder {
@@ -42,7 +54,7 @@ class VertexBufferBuilder {
     return impeller::IndexType::kUnknown;
   }
 
-  void SetLabel(std::string label) { label_ = std::move(label); }
+  void SetLabel(const std::string& label) { label_ = label; }
 
   void Reserve(size_t count) { return vertices_.reserve(count); }
 
@@ -54,6 +66,11 @@ class VertexBufferBuilder {
 
   size_t GetIndexCount() const {
     return indices_.size() > 0 ? indices_.size() : vertices_.size();
+  }
+
+  const VertexType& Last() const {
+    FML_DCHECK(!vertices_.empty());
+    return vertices_.back();
   }
 
   VertexBufferBuilder& AppendVertex(VertexType_ vertex) {
@@ -121,7 +138,7 @@ class VertexBufferBuilder {
     if (!label_.empty()) {
       buffer->SetLabel(SPrintF("%s Vertices", label_.c_str()));
     }
-    return buffer->AsBufferView();
+    return DeviceBuffer::AsBufferView(buffer);
   }
 
   std::vector<IndexType> CreateIndexBuffer() const { return indices_; }
@@ -150,8 +167,10 @@ class VertexBufferBuilder {
     if (!label_.empty()) {
       buffer->SetLabel(SPrintF("%s Indices", label_.c_str()));
     }
-    return buffer->AsBufferView();
+    return DeviceBuffer::AsBufferView(buffer);
   }
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_

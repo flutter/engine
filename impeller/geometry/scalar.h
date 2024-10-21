@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_SCALAR_H_
+#define FLUTTER_IMPELLER_GEOMETRY_SCALAR_H_
 
 #include <cfloat>
 #include <type_traits>
@@ -12,11 +13,18 @@
 
 namespace impeller {
 
+// NOLINTBEGIN(google-explicit-constructor)
+
 using Scalar = float;
 
 template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
 constexpr T Absolute(const T& val) {
   return val >= T{} ? val : -val;
+}
+
+template <>
+constexpr Scalar Absolute<Scalar>(const float& val) {
+  return fabsf(val);
 }
 
 constexpr inline bool ScalarNearlyZero(Scalar x,
@@ -52,4 +60,8 @@ struct Degrees {
   };
 };
 
+// NOLINTEND(google-explicit-constructor)
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_SCALAR_H_

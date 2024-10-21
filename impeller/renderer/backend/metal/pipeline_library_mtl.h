@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_PIPELINE_LIBRARY_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_PIPELINE_LIBRARY_MTL_H_
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
@@ -27,24 +27,32 @@ class PipelineLibraryMTL final : public PipelineLibrary {
   PipelineMap pipelines_;
   ComputePipelineMap compute_pipelines_;
 
-  PipelineLibraryMTL(id<MTLDevice> device);
+  explicit PipelineLibraryMTL(id<MTLDevice> device);
 
   // |PipelineLibrary|
   bool IsValid() const override;
 
   // |PipelineLibrary|
-  PipelineFuture<PipelineDescriptor> GetPipeline(
-      PipelineDescriptor descriptor) override;
+  PipelineFuture<PipelineDescriptor> GetPipeline(PipelineDescriptor descriptor,
+                                                 bool async) override;
 
   // |PipelineLibrary|
   PipelineFuture<ComputePipelineDescriptor> GetPipeline(
-      ComputePipelineDescriptor descriptor) override;
+      ComputePipelineDescriptor descriptor,
+      bool async) override;
+
+  // |PipelineLibrary|
+  bool HasPipeline(const PipelineDescriptor& descriptor) override;
 
   // |PipelineLibrary|
   void RemovePipelinesWithEntryPoint(
       std::shared_ptr<const ShaderFunction> function) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryMTL);
+  PipelineLibraryMTL(const PipelineLibraryMTL&) = delete;
+
+  PipelineLibraryMTL& operator=(const PipelineLibraryMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_PIPELINE_LIBRARY_MTL_H_
