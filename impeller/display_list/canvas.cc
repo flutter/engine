@@ -1161,7 +1161,7 @@ void Canvas::SaveLayer(const Paint& paint,
       } else {
         // Render the backdrop entity.
         Entity backdrop_entity;
-        backdrop_entity.SetBlendMode(paint.blend_mode);
+        backdrop_entity.SetBlendMode(BlendMode::kSource);
         backdrop_entity.SetContents(std::move(backdrop_filter_contents));
         backdrop_entity.SetTransform(
             Matrix::MakeTranslation(Vector3(GetGlobalPassPosition())));
@@ -1173,7 +1173,7 @@ void Canvas::SaveLayer(const Paint& paint,
     } else {
       // Render the backdrop entity.
       Entity backdrop_entity;
-      backdrop_entity.SetBlendMode(paint.blend_mode);
+      backdrop_entity.SetBlendMode(BlendMode::kSource);
       backdrop_entity.SetContents(std::move(backdrop_filter_contents));
       backdrop_entity.SetTransform(
           Matrix::MakeTranslation(Vector3(GetGlobalPassPosition())));
