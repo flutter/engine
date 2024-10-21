@@ -55,6 +55,8 @@ import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -650,6 +652,49 @@ public class FlutterViewTest {
   }
 
   @SuppressWarnings("deprecation")
+  @Test
+  @Config(sdk = 28)
+  public void onApplyWindowInsetsSetsDisplayCutouts() {
+    FlutterView flutterView = spy(new FlutterView(ctx));
+    assertEquals(0, flutterView.getSystemUiVisibility());
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
+    when(flutterView.getContext()).thenReturn(ctx);
+
+    FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets,
+    // the viewport metrics default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
+
+    List<Rect> boundingRects =
+        Arrays.asList(new Rect(0, 200, 300, 400), new Rect(150, 0, 300, 150));
+    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
+
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+
+    List<FlutterRenderer.DisplayFeature> features =
+        viewportMetricsCaptor.getValue().displayFeatures;
+    assertEquals(2, features.size());
+    for (int i = 0; i < 2; i++) {
+      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i).type);
+      assertEquals(boundingRects.get(i), features.get(i).bounds);
+    }
+  }
+
+  @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
   // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   // getDefaultDisplay
@@ -699,23 +744,24 @@ public class FlutterViewTest {
     when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
     when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
 
-    WindowLayoutInfo testWindowLayout = new WindowLayoutInfo(Arrays.asList(displayFeature));
+    WindowLayoutInfo testWindowLayout =
+        new WindowLayoutInfo(Collections.singletonList(displayFeature));
 
     // When FlutterView is attached to the engine and window, and a hinge display feature exists
     flutterView.attachToFlutterEngine(flutterEngine);
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(Arrays.asList(), viewportMetricsCaptor.getValue().displayFeatures);
+    assertEquals(Collections.emptyList(), viewportMetricsCaptor.getValue().displayFeatures);
     flutterView.onAttachedToWindow();
     ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
-        ArgumentCaptor.forClass((Class) Consumer.class);
+        ArgumentCaptor.forClass(Consumer.class);
     verify(windowInfoRepo).addWindowLayoutInfoListener(any(), any(), wmConsumerCaptor.capture());
     Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
     wmConsumer.accept(testWindowLayout);
 
     // Then the Renderer receives the display feature
-    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(
         FlutterRenderer.DisplayFeatureType.HINGE,
         viewportMetricsCaptor.getValue().displayFeatures.get(0).type);

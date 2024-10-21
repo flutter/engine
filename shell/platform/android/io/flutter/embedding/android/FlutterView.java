@@ -146,6 +146,8 @@ public class FlutterView extends FrameLayout
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
+  private List<FlutterRenderer.DisplayFeature> displayFeatures = new ArrayList<>();
+  private final List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
 
   private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener =
       new AccessibilityBridge.OnAccessibilityChangeListener() {
@@ -196,13 +198,7 @@ public class FlutterView extends FrameLayout
         }
       };
 
-  private final Consumer<WindowLayoutInfo> windowInfoListener =
-      new Consumer<WindowLayoutInfo>() {
-        @Override
-        public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowInfoListenerDisplayFeatures(layoutInfo);
-        }
-      };
+  private Consumer<WindowLayoutInfo> windowInfoListener;
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes.
@@ -514,6 +510,10 @@ public class FlutterView extends FrameLayout
     this.windowInfoRepo = createWindowInfoRepo();
     Activity activity = ViewUtils.getActivity(getContext());
     if (windowInfoRepo != null && activity != null) {
+      // Creating windowInfoListener on-demand instead of at initialization is necessary in order to
+      // prevent it from capturing the wrong instance of `this` when spying for testing.
+      // See https://github.com/mockito/mockito/issues/3479
+      windowInfoListener = this::setWindowInfoListenerDisplayFeatures;
       windowInfoRepo.addWindowLayoutInfoListener(
           activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
@@ -526,9 +526,10 @@ public class FlutterView extends FrameLayout
    */
   @Override
   protected void onDetachedFromWindow() {
-    if (windowInfoRepo != null) {
+    if (windowInfoRepo != null && windowInfoListener != null) {
       windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
     }
+    windowInfoListener = null;
     this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }
@@ -540,7 +541,7 @@ public class FlutterView extends FrameLayout
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
-    List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
+    this.displayFeatures.clear();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
@@ -567,31 +568,16 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
+        this.displayFeatures.add(
+            new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        result.add(
+        this.displayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
                 DisplayFeatureState.UNKNOWN));
       }
     }
-
-    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
-    // populated here. DisplayCutout was introduced in API 28.
-    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
-      WindowInsets insets = getRootWindowInsets();
-      if (insets != null) {
-        DisplayCutout cutout = insets.getDisplayCutout();
-        if (cutout != null) {
-          for (Rect bounds : cutout.getBoundingRects()) {
-            Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-            result.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
-          }
-        }
-      }
-    }
-    viewportMetrics.displayFeatures = result;
     sendViewportMetricsToFlutter();
   }
 
@@ -782,6 +768,19 @@ public class FlutterView extends FrameLayout
       viewportMetrics.viewInsetRight = 0;
       viewportMetrics.viewInsetBottom = guessBottomKeyboardInset(insets);
       viewportMetrics.viewInsetLeft = 0;
+    }
+
+    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
+    // populated here. DisplayCutout was introduced in API 28.
+    displayCutouts.clear();
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        for (Rect bounds : cutout.getBoundingRects()) {
+          Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
+          displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
+        }
+      }
     }
 
     // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
@@ -1492,6 +1491,10 @@ public class FlutterView extends FrameLayout
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+    viewportMetrics.displayFeatures.clear();
+    viewportMetrics.displayFeatures.addAll(displayFeatures);
+    viewportMetrics.displayFeatures.addAll(displayCutouts);
 
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
