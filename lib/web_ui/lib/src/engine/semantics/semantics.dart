@@ -21,7 +21,6 @@ import '../window.dart';
 import 'accessibility.dart';
 import 'checkable.dart';
 import 'focusable.dart';
-import 'header.dart';
 import 'heading.dart';
 import 'image.dart';
 import 'incrementable.dart';
@@ -397,17 +396,14 @@ enum SemanticRoleKind {
   /// The node's role is to host a platform view.
   platformView,
 
-  /// Contains a link.
-  link,
-
-  /// Denotes a header.
-  header,
-
   /// A role used when a more specific role cannot be assigend to
   /// a [SemanticsObject].
   ///
   /// Provides a label or a value.
   generic,
+
+  /// Contains a link.
+  link,
 }
 
 /// Responsible for setting the `role` ARIA attribute, for attaching
@@ -424,6 +420,7 @@ abstract class SemanticRole {
     addLiveRegion();
     addRouteName();
     addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
+    addSelectableBehavior();
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -569,6 +566,16 @@ abstract class SemanticRole {
     addSemanticBehavior(Tappable(semanticsObject, this));
   }
 
+  /// Adds the [Selectable] behavior, if the node is selectable but not checkable.
+  void addSelectableBehavior() {
+    // Do not use the [Selectable] behavior on checkables. Checkables use
+    // special ARIA roles and `aria-checked`. Adding `aria-selected` in addition
+    // to `aria-checked` would be confusing.
+    if (semanticsObject.isSelectable && !semanticsObject.isCheckable) {
+      addSemanticBehavior(Selectable(semanticsObject, this));
+    }
+  }
+
   /// Adds a semantic behavior to this role.
   ///
   /// This method should be called by concrete implementations of
@@ -681,11 +688,13 @@ final class GenericRole extends SemanticRole {
       return;
     }
 
-    // Assign one of two roles to the element: group or text.
+    // Assign one of three roles to the element: group, heading, text.
     //
     // - "group" is used when the node has children, irrespective of whether the
     //   node is marked as a header or not. This is because marking a group
     //   as a "heading" will prevent the AT from reaching its children.
+    // - "heading" is used when the framework explicitly marks the node as a
+    //   heading and the node does not have children.
     // - If a node has a label and no children, assume is a paragraph of text.
     //   In HTML text has no ARIA role. It's just a DOM node with text inside
     //   it. Previously, role="text" was used, but it was only supported by
@@ -693,6 +702,9 @@ final class GenericRole extends SemanticRole {
     if (semanticsObject.hasChildren) {
       labelAndValue!.preferredRepresentation = LabelRepresentation.ariaLabel;
       setAriaRole('group');
+    } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
+      labelAndValue!.preferredRepresentation = LabelRepresentation.domText;
+      setAriaRole('heading');
     } else {
       labelAndValue!.preferredRepresentation = LabelRepresentation.sizedSpan;
       removeAttribute('role');
@@ -1260,23 +1272,10 @@ class SemanticsObject {
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
   /// Whether this object represents a heading element.
-  ///
-  /// Typically, a heading is a prominent piece of text that describes what the
-  /// rest of the screen or page is about.
-  ///
-  /// Not to be confused with [isHeader].
   bool get isHeading => headingLevel != 0;
 
-  /// Whether this object represents an interactive link.
+    /// Whether this object represents an editable text field.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
-
-  /// Whether this object represents a header.
-  ///
-  /// A header is a group of widgets that introduce the content of the screen
-  /// or a page.
-  ///
-  /// Not to be confused with [isHeading].
-  bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// Whether this object needs screen readers attention right away.
   bool get isLiveRegion =>
@@ -1691,8 +1690,6 @@ class SemanticsObject {
       return SemanticRoleKind.route;
     } else if (isLink) {
       return SemanticRoleKind.link;
-    } else if (isHeader) {
-      return SemanticRoleKind.header;
     } else {
       return SemanticRoleKind.generic;
     }
@@ -1710,7 +1707,6 @@ class SemanticsObject {
       SemanticRoleKind.platformView => SemanticPlatformView(this),
       SemanticRoleKind.link => SemanticLink(this),
       SemanticRoleKind.heading => SemanticHeading(this),
-      SemanticRoleKind.header => SemanticHeader(this),
       SemanticRoleKind.generic => GenericRole(this),
     };
   }
@@ -1778,9 +1774,34 @@ class SemanticsObject {
   /// "hamburger" menu, etc.
   bool get isTappable => hasAction(ui.SemanticsAction.tap);
 
+  /// If true, this node represents something that can be in a "checked" or
+  /// "toggled" state, such as checkboxes, radios, and switches.
+  ///
+  /// Because such widgets require the use of specific ARIA roles and HTML
+  /// elements, they are managed by the [SemanticCheckable] role, and they do
+  /// not use the [Selectable] behavior.
   bool get isCheckable =>
       hasFlag(ui.SemanticsFlag.hasCheckedState) ||
       hasFlag(ui.SemanticsFlag.hasToggledState);
+
+  /// If true, this node represents something that can be annotated as
+  /// "selected", such as a tab, or an item in a list.
+  ///
+  /// Selectability is managed by `aria-selected` and is compatible with
+  /// multiple ARIA roles (tabs, gridcells, options, rows, etc). It is therefore
+  /// mapped onto the [Selectable] behavior.
+  ///
+  /// [Selectable] and [SemanticCheckable] are not used together on the same
+  /// node. [SemanticCheckable] has precendence over [Selectable].
+  ///
+  /// See also:
+  ///
+  ///   * [isSelected], which indicates whether the node is currently selected.
+  bool get isSelectable => hasFlag(ui.SemanticsFlag.hasSelectedState);
+
+  /// If [isSelectable] is true, indicates whether the node is currently
+  /// selected.
+  bool get isSelected => hasFlag(ui.SemanticsFlag.isSelected);
 
   /// Role-specific adjustment of the vertical position of the child container.
   ///
