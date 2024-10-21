@@ -677,17 +677,16 @@ public class FlutterViewTest {
     DisplayCutout displayCutout = mock(DisplayCutout.class);
     when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
 
-    List<Rect> boundingRects = Arrays.asList(
-            new Rect(0, 200, 300, 400),
-            new Rect(150, 0, 300, 150)
-    );
+    List<Rect> boundingRects =
+        Arrays.asList(new Rect(0, 200, 300, 400), new Rect(150, 0, 300, 150));
     when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
 
-    List<FlutterRenderer.DisplayFeature> features = viewportMetricsCaptor.getValue().displayFeatures;
+    List<FlutterRenderer.DisplayFeature> features =
+        viewportMetricsCaptor.getValue().displayFeatures;
     assertEquals(2, features.size());
     for (int i = 0; i < 2; i++) {
       assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i).type);
@@ -745,7 +744,8 @@ public class FlutterViewTest {
     when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
     when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
 
-    WindowLayoutInfo testWindowLayout = new WindowLayoutInfo(Collections.singletonList(displayFeature));
+    WindowLayoutInfo testWindowLayout =
+        new WindowLayoutInfo(Collections.singletonList(displayFeature));
 
     // When FlutterView is attached to the engine and window, and a hinge display feature exists
     flutterView.attachToFlutterEngine(flutterEngine);

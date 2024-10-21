@@ -566,7 +566,8 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        this.displayFeatures.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
+        this.displayFeatures.add(
+            new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
         this.displayFeatures.add(
             new FlutterRenderer.DisplayFeature(
@@ -771,13 +772,13 @@ public class FlutterView extends FrameLayout
     // populated here. DisplayCutout was introduced in API 28.
     displayCutouts.clear();
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
-        DisplayCutout cutout = insets.getDisplayCutout();
-        if (cutout != null) {
-          for (Rect bounds : cutout.getBoundingRects()) {
-            Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-            displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
-          }
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        for (Rect bounds : cutout.getBoundingRects()) {
+          Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
+          displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
         }
+      }
     }
 
     // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
