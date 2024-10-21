@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: use_raw_strings, prefer_interpolation_to_compose_strings
+// ignore_for_file: use_raw_strings, prefer_interpolation_to_compose_strings, unnecessary_parenthesis
 
 import 'dart:core' hide RegExp;
 
