@@ -14,8 +14,7 @@ struct _FlTouchManager {
   GWeakRef view_delegate;
 
   // Generates touch point IDs for touch events.
-  flutter::SequentialIdGenerator touch_id_generator{kMinTouchDeviceId,
-                                                   kMaxTouchDeviceId};
+  flutter::SequentialIdGenerator* touch_id_generator;
 };
 
 G_DEFINE_TYPE(FlTouchManager, fl_touch_manager, G_TYPE_OBJECT);
@@ -43,6 +42,8 @@ FlTouchManager* fl_touch_manager_new(
 
   g_weak_ref_init(&self->view_delegate, view_delegate);
 
+  self->touch_id_generator = new flutter::SequentialIdGenerator(kMinTouchDeviceId, kMaxTouchDeviceId);
+
   return self;
 }
 
@@ -62,8 +63,8 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
   // cast pointer to int to get unique id
   uint32_t id = reinterpret_cast<long>(seq);
   // generate touch id from unique id
-  auto touch_id = self->touch_id_generator.GetGeneratedId(id);
-
+  auto touch_id = self->touch_id_generator->GetGeneratedId(id);
+  
   gdouble event_x = 0.0, event_y = 0.0;
   gdk_event_get_coords(reinterpret_cast<GdkEvent*>(event), &event_x, &event_y);
 
@@ -98,7 +99,7 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
       event_data.phase = FlutterPointerPhase::kRemove;
       event_data.buttons = 0;
       fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
-      self->touch_id_generator.ReleaseNumber(id);
+      self->touch_id_generator->ReleaseNumber(id);
       break;
     default:
       break;
