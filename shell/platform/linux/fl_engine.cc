@@ -507,8 +507,7 @@ static void fl_engine_init(FlEngine* self) {
 
   self->texture_registrar = fl_texture_registrar_new(self);
 
-  self->pointer_states = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
-                                               g_object_unref);
+  self->pointer_states = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
 }
 
 FlEngine* fl_engine_new_with_renderer(FlDartProject* project,
@@ -967,6 +966,12 @@ void SetEventPhaseFromCursorButtonState(FlEngine* self,
 void fl_engine_send_pointer_event(FlEngine* self,
                               FlutterViewId view_id,
                               const FlutterPointerEvent& event_data){
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+  
   // Copy the event data to avoid modifying the caller's data.
   auto event_data_copy = event_data;
 
