@@ -187,6 +187,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     String? error;
     for (final (index, color) in renderTarget.colorAttachments.indexed) {
       error = _setColorAttachment(
+          gpuContext,
           index,
           color.loadAction.index,
           color.storeAction.index,
@@ -347,6 +348,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   @Native<
       Handle Function(
           Pointer<Void>,
+          Pointer<Void>,
           Int,
           Int,
           Int,
@@ -357,6 +359,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
           Pointer<Void>,
           Handle)>(symbol: 'InternalFlutterGpu_RenderPass_SetColorAttachment')
   external String? _setColorAttachment(
+      GpuContext context,
       int colorAttachmentIndex,
       int loadAction,
       int storeAction,
@@ -491,7 +494,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       symbol: 'InternalFlutterGpu_RenderPass_SetPrimitiveType')
   external void _setPrimitiveType(int primitiveType);
 
-    @Native<Void Function(Pointer<Void>, Int)>(
+  @Native<Void Function(Pointer<Void>, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetWindingOrder')
   external void _setWindingOrder(int windingOrder);
 

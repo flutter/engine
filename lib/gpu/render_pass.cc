@@ -223,6 +223,7 @@ void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper) {
 
 Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::Context* context,
     int color_attachment_index,
     int load_action,
     int store_action,
@@ -246,7 +247,7 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
 
     // If the backend doesn't support normal MSAA, gracefully fallback to
     // rendering without MSAA.
-    if (!flutter::gpu::SupportsNormalOffscreenMSAA(*wrapper->GetContext())) {
+    if (!flutter::gpu::SupportsNormalOffscreenMSAA(*context->GetContext())) {
       desc.texture = desc.resolve_texture;
       desc.resolve_texture = nullptr;
       desc.store_action = impeller::StoreAction::kStore;
