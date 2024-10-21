@@ -13,8 +13,15 @@ Dart_Handle DartInvokeField(Dart_Handle target,
                             const char* name,
                             std::initializer_list<Dart_Handle> args) {
   Dart_Handle field = Dart_NewStringFromCString(name);
-  return Dart_Invoke(target, field, args.size(),
-                     const_cast<Dart_Handle*>(args.begin()));
+  if (Dart_IsError(field)) {
+    return field;
+  }
+  Dart_Handle closure = Dart_GetField(target, field);
+  if (Dart_IsError(closure)) {
+    return closure;
+  }
+  return Dart_InvokeClosure(closure, args.size(),
+                            const_cast<Dart_Handle*>(args.begin()));
 }
 
 Dart_Handle DartInvoke(Dart_Handle closure,
