@@ -442,7 +442,8 @@ void main() async {
     state.commandBuffer.submit();
 
     final ui.Image image = state.renderTexture.asImage();
-    await comparer.addGoldenImage(image, 'flutter_gpu_test_triangle_polygon_mode.png');
+    await comparer.addGoldenImage(
+        image, 'flutter_gpu_test_triangle_polygon_mode.png');
   }, skip: !impellerEnabled);
 
   // Renders a green triangle pointing downwards, with 4xMSAA.
@@ -469,7 +470,7 @@ void main() async {
           contains(
               'The backend does not support multisample anti-aliasing for offscreen color and stencil attachments'));
     }
-  }, skip: gpu.gpuContext.doesSupportOffscreenMSAA);
+  }, skip: !(impellerEnabled && gpu.gpuContext.doesSupportOffscreenMSAA));
 
   // Renders a hollow green triangle pointing downwards.
   test('Can render hollowed out triangle using stencil ops', () async {
@@ -608,13 +609,20 @@ void main() async {
 
     final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
     final gpu.BufferView vertices = transients.emplace(float32(<double>[
-     1.0,  0.0,
-     0.5,  0.8,
-    -0.5,  0.8,
-    -1.0,  0.0,
-    -0.5, -0.8,
-     0.5, -0.8,
-     1.0,  0.0
+      1.0,
+      0.0,
+      0.5,
+      0.8,
+      -0.5,
+      0.8,
+      -1.0,
+      0.0,
+      -0.5,
+      -0.8,
+      0.5,
+      -0.8,
+      1.0,
+      0.0
     ]));
     final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
       1, 0, 0, 0, // mvp
@@ -633,6 +641,7 @@ void main() async {
     state.commandBuffer.submit();
 
     final ui.Image image = state.renderTexture.asImage();
-    await comparer.addGoldenImage(image, 'flutter_gpu_test_hexgon_line_strip.png');
+    await comparer.addGoldenImage(
+        image, 'flutter_gpu_test_hexgon_line_strip.png');
   }, skip: !impellerEnabled);
 }
