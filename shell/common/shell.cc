@@ -316,7 +316,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<std::unique_ptr<Engine>> engine_promise;
   auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
+      shell->startup_ui_thread_->GetTaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
@@ -361,6 +361,11 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   ) {
     return nullptr;
   }
+
+  // Join the temporary startup ui thread into the platform thread
+  // after the platform thread has finished other work.
+  shell->task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
+      [thread = std::move(shell->startup_ui_thread_)]() { thread->Join(); }));
 
   return shell;
 }
@@ -440,6 +445,7 @@ Shell::Shell(DartVMRef vm,
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
       weak_factory_gpu_(nullptr),
+      startup_ui_thread_(std::make_unique<fml::Thread>("Startup Thread")),
       weak_factory_(this) {
   FML_CHECK(!settings.enable_software_rendering || !settings.enable_impeller)
       << "Software rendering is incompatible with Impeller.";
@@ -758,7 +764,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
-    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+    fml::TaskRunner::RunNowOrPostTask(startup_ui_thread_->GetTaskRunner(),
                                       [engine = weak_engine_] {
                                         if (engine) {
                                           engine->SetupDefaultFontManager();
