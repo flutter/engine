@@ -290,21 +290,19 @@ class Canvas {
   ///         thenrestart it with the backdrop cleared to the previous contents.
   ///
   /// The returned texture is used as the input for backdrop filters and
-  /// emulated advanced blends.
-  ///
-  /// Returns the previous render pass stored as a texture, or nullptr if there
-  /// was a validation failure.
+  /// emulated advanced blends. Returns nullptr if there was a validation
+  /// failure.
   ///
   /// [should_remove_texture] defaults to false. If true, the render target
   /// texture is removed from the entity pass target. This allows the texture to
   /// be cached by the canvas dispatcher for usage in the backdrop filter reuse
   /// mechanism.
   ///
-  /// If [should_use_onscreen] is true, then the results are flipped to the
-  /// onscreen render target. This will set requires_readback_ to false. This
-  /// action is only safe to perform when there are no more backdrop filters or
-  /// advanced blends, or no more backdrop filters and the device supports
-  /// framebuffer fetch.
+  /// [should_use_onscreen] defaults to false. If true, the results are flipped
+  /// to the onscreen render target. This will set requires_readback_ to false.
+  /// This action is only safe to perform when there are no more backdrop
+  /// filters or advanced blends, or no more backdrop filters and the device
+  /// supports framebuffer fetch.
   std::shared_ptr<Texture> FlipBackdrop(Point global_pass_position,
                                         bool should_remove_texture = false,
                                         bool should_use_onscreen = false);
