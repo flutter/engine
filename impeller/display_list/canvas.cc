@@ -991,12 +991,18 @@ void Canvas::SaveLayer(const Paint& paint,
     if (!will_cache_backdrop_texture ||
         (will_cache_backdrop_texture && !backdrop_data->texture_slot)) {
       backdrop_count_ -= backdrop_count;
+
+      // The onscreen texture can be flipped to if:
+      // 1. The device supports framebuffer fetch
+      // 2. There are no more backdrop filters
+      // 3. The current render pass is for the onscreen pass.
+      const bool should_use_onscreen =
+          renderer_.GetDeviceCapabilities().SupportsFramebufferFetch() &&
+          backdrop_count_ == 0 && render_passes_.size() == 1u;
       input_texture = FlipBackdrop(
           GetGlobalPassPosition(),                                //
           /*should_remove_texture=*/will_cache_backdrop_texture,  //
-          /*should_use_onscreen=*/
-          renderer_.GetDeviceCapabilities().SupportsFramebufferFetch() &&
-              backdrop_count_ == 0  //
+          /*should_use_onscreen=*/should_use_onscreen             //
       );
       if (!input_texture) {
         // Validation failures are logged in FlipBackdrop.
