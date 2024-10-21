@@ -28,6 +28,10 @@ bool ReactorGLES::IsValid() const {
   return is_valid_;
 }
 
+bool ReactorGLES::CanSetDebugLabels() const {
+  return can_set_debug_labels_;
+}
+
 ReactorGLES::WorkerID ReactorGLES::AddWorker(std::weak_ptr<Worker> worker) {
   Lock lock(workers_mutex_);
   auto id = WorkerID{};
@@ -275,7 +279,8 @@ void ReactorGLES::SetupDebugGroups() {
   }
 }
 
-void ReactorGLES::SetDebugLabel(const HandleGLES& handle, std::string label) {
+void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
+                                std::string_view label) {
   if (!can_set_debug_labels_) {
     return;
   }
@@ -284,7 +289,7 @@ void ReactorGLES::SetDebugLabel(const HandleGLES& handle, std::string label) {
   }
   WriterLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_debug_label = std::move(label);
+    found->second.pending_debug_label = label;
   }
 }
 

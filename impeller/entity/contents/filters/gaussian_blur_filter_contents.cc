@@ -239,7 +239,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //     .Contains(coverage_hint.value()))
 
   std::optional<Rect> snapshot_coverage = input_snapshot.GetCoverage();
-  if (input_snapshot.transform.IsIdentity() &&
+  if (input_snapshot.transform.Equals(snapshot_entity.GetTransform()) &&
       source_expanded_coverage_hint.has_value() &&
       snapshot_coverage.has_value() &&
       snapshot_coverage->Contains(source_expanded_coverage_hint.value())) {
@@ -817,11 +817,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{command_buffer_1, command_buffer_2,
-                                 command_buffer_3})
-           .ok()) {
+  if (!(renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_1)) &&
+        renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_2)) &&
+        renderer.GetContext()->EnqueueCommandBuffer(
+            std::move(command_buffer_3)))) {
     return std::nullopt;
   }
 

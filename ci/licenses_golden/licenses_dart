@@ -1,4 +1,4 @@
-Signature: 991c0e3446a2339187c83faec7e40d21
+Signature: 08e7e8bc94ce8cdff314783a0aa3acbe
 
 ====================================================================================================
 LIBRARY: dart
@@ -3897,7 +3897,6 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/boxed_int_to_string.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/int_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_buffer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart + ../../../flutter/third_party/dart/LICENSE
@@ -3960,7 +3959,6 @@ FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.da
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/boxed_int_to_string.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/int_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_buffer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart
@@ -4803,7 +4801,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/7fce3544047c41018b8c00b4453c0262f463dd74
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/c8659684d34d242338cd1f3cb9a592b55fc63156
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
