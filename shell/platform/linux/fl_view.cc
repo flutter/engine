@@ -20,6 +20,8 @@
 #include "flutter/shell/platform/linux/fl_pointer_manager.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
+#include "flutter/shell/platform/linux/fl_touch_manager.h"
+#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
@@ -27,7 +29,6 @@
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-#include "flutter/shell/platform/linux/sequential_id_generator.h"
 
 struct _FlView {
   GtkBox parent_instance;
@@ -62,6 +63,9 @@ struct _FlView {
   // Manages pointer events.
   FlPointerManager* pointer_manager;
 
+  // Manages touch events.
+  FlTouchManager* touch_manager;
+
   // Manages keyboard events.
   FlKeyboardManager* keyboard_manager;
 
@@ -92,6 +96,9 @@ static void fl_view_keyboard_delegate_iface_init(
 
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface);
+  
+static void fl_view_touch_delegate_iface_init(
+    FlTouchViewDelegateInterface* iface);
 
 G_DEFINE_TYPE_WITH_CODE(
     FlView,
@@ -103,7 +110,9 @@ G_DEFINE_TYPE_WITH_CODE(
             G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
                                   fl_view_keyboard_delegate_iface_init)
                 G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init))
+                                      fl_view_text_input_delegate_iface_init)
+                    G_IMPLEMENT_INTERFACE(fl_touch_view_delegate_get_type(),
+                                          fl_view_touch_delegate_iface_init))
 
 // Emit the first frame signal in the main thread.
 static gboolean first_frame_idle_cb(gpointer user_data) {
@@ -146,6 +155,12 @@ static void init_scrolling(FlView* self) {
   g_clear_object(&self->scrolling_manager);
   self->scrolling_manager =
       fl_scrolling_manager_new(self->engine, self->view_id);
+}
+
+static void init_touch(FlView* self) {
+  g_clear_object(&self->touch_manager);
+  self->touch_manager =
+      fl_touch_manager_new(FL_TOUCH_VIEW_DELEGATE(self));
 }
 
 static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
@@ -267,6 +282,7 @@ static void update_semantics_cb(FlEngine* engine,
 static void on_pre_engine_restart_cb(FlView* self) {
   init_keyboard(self);
   init_scrolling(self);
+  init_touch(self);
 }
 
 // Implements FlRenderable::redraw
@@ -318,6 +334,19 @@ static void fl_view_keyboard_delegate_iface_init(
     return fl_text_input_handler_filter_keypress(self->text_input_handler,
                                                  event);
   };
+}
+
+static void fl_view_touch_delegate_iface_init(
+    FlTouchViewDelegateInterface* iface) {
+  iface->send_pointer_event = [](FlTouchViewDelegate* view_delegate,
+                                  const FlutterPointerEvent& event_data,
+                                  PointerState* state) {
+      FlView* self = FL_VIEW(view_delegate);
+      if (self->engine != nullptr) {
+        fl_engine_send_pointer_event(self->engine, self->view_id, event_data,
+                                    state);
+      }
+    };
 }
 
 static void fl_view_text_input_delegate_iface_init(
@@ -409,50 +438,7 @@ static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
 }
 
 static gboolean touch_event_cb(FlView* self, GdkEventTouch* event) {
-  if (self->engine == nullptr) {
-    return FALSE;
-  }
-  // get sequence id from GdkEvent
-  GdkEventSequence* seq =
-      gdk_event_get_event_sequence(reinterpret_cast<GdkEvent*>(event));
-  // cast pointer to int to get unique id
-  uint32_t id = reinterpret_cast<long>(seq);
-  // generate touch id from unique id
-  auto touch_id = touch_id_generator_.GetGeneratedId(id);
-
-  gdouble event_x = 0.0, event_y = 0.0;
-  gdk_event_get_coords(reinterpret_cast<GdkEvent*>(event), &event_x, &event_y);
-  check_pointer_inside(self, reinterpret_cast<GdkEvent*>(event));
-  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
-
-  double x = event_x * scale_factor;
-  double y = event_y * scale_factor;
-
-  GdkEventType touch_event_type =
-      gdk_event_get_event_type(reinterpret_cast<GdkEvent*>(event));
-  switch (touch_event_type) {
-    case GDK_TOUCH_BEGIN:
-      OnPointerDown(
-          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
-          touch_id,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-      break;
-    case GDK_TOUCH_UPDATE:
-      OnPointerMove(self->engine, self->view_id, x, y,
-                    kFlutterPointerDeviceKindTouch, touch_id, 0);
-      break;
-    case GDK_TOUCH_END:
-      OnPointerUp(
-          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
-          touch_id,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-      OnPointerLeave(self->engine, self->view_id, x, y,
-                     kFlutterPointerDeviceKindTouch, touch_id);
-      touch_id_generator_.ReleaseNumber(id);
-      break;
-    default:
-      return FALSE;
-  }
+  fl_touch_manager_handle_touch_event(self->touch_manager, event, gtk_widget_get_scale_factor(GTK_WIDGET(self)));
   return TRUE;
 }
 
@@ -537,6 +523,7 @@ static GdkGLContext* create_context_cb(FlView* self) {
                              gtk_widget_get_parent_window(GTK_WIDGET(self)));
 
   init_scrolling(self);
+  init_touch(self);
 
   g_autoptr(GError) error = nullptr;
   if (!fl_renderer_gdk_create_contexts(self->renderer, &error)) {
@@ -672,6 +659,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->pointer_manager);
+  g_clear_object(&self->touch_manager);
   g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->keyboard_handler);
   g_clear_object(&self->view_accessible);
