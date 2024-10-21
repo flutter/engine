@@ -80,7 +80,8 @@ final class ToolCommandRunner extends CommandRunner<int> {
   /// The description of the tool reported in the tool's usage and help
   /// messages.
   static const String toolDescription = 'A command line tool for working on '
-      'the Flutter Engine.';
+      'the Flutter Engine.\n\nThis is a community supported project, file '
+      'a bug or feature request: https://flutter.dev/to/engine-tool-bug.';
 
   /// The host system environment.
   final Environment environment;
@@ -102,5 +103,10 @@ final class ToolCommandRunner extends CommandRunner<int> {
       environment.logger.error(e);
       return 1;
     }
+  }
+
+  @override
+  void printUsage() {
+    environment.logger.status(usage);
   }
 }

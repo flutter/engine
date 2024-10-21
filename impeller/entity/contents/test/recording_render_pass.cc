@@ -74,7 +74,7 @@ void RecordingRenderPass::SetInstanceCount(size_t count) {
 
 // |RenderPass|
 bool RecordingRenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  pending_.vertex_buffer = buffer;
+  pending_.BindVertices(buffer);
   if (delegate_) {
     return delegate_->SetVertexBuffer(buffer);
   }
@@ -92,7 +92,7 @@ fml::Status RecordingRenderPass::Draw() {
 }
 
 // |RenderPass|
-void RecordingRenderPass::OnSetLabel(std::string label) {
+void RecordingRenderPass::OnSetLabel(std::string_view label) {
   return;
 }
 

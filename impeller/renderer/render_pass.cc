@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/render_pass.h"
 #include "fml/status.h"
+#include "impeller/base/validation.h"
+#include "impeller/core/vertex_buffer.h"
 
 namespace impeller {
 
@@ -48,11 +50,11 @@ const Matrix& RenderPass::GetOrthographicTransform() const {
   return orthographic_;
 }
 
-void RenderPass::SetLabel(std::string label) {
+void RenderPass::SetLabel(std::string_view label) {
   if (label.empty()) {
     return;
   }
-  OnSetLabel(std::move(label));
+  OnSetLabel(label);
 }
 
 bool RenderPass::AddCommand(Command&& command) {
@@ -70,8 +72,7 @@ bool RenderPass::AddCommand(Command&& command) {
     }
   }
 
-  if (command.vertex_buffer.vertex_count == 0u ||
-      command.instance_count == 0u) {
+  if (command.element_count == 0u || command.instance_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
     return true;
@@ -116,12 +117,89 @@ void RenderPass::SetScissor(IRect scissor) {
   pending_.scissor = scissor;
 }
 
+void RenderPass::SetElementCount(size_t count) {
+  pending_.element_count = count;
+}
+
 void RenderPass::SetInstanceCount(size_t count) {
   pending_.instance_count = count;
 }
 
 bool RenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  return pending_.BindVertices(std::move(buffer));
+  if (!SetVertexBuffer(&buffer.vertex_buffer, 1u)) {
+    return false;
+  }
+  if (!SetIndexBuffer(buffer.index_buffer, buffer.index_type)) {
+    return false;
+  }
+  SetElementCount(buffer.vertex_count);
+
+  return true;
+}
+
+bool RenderPass::SetVertexBuffer(BufferView vertex_buffer) {
+  return SetVertexBuffer(&vertex_buffer, 1);
+}
+
+bool RenderPass::SetVertexBuffer(std::vector<BufferView> vertex_buffers) {
+  return SetVertexBuffer(vertex_buffers.data(), vertex_buffers.size());
+}
+
+bool RenderPass::SetVertexBuffer(BufferView vertex_buffers[],
+                                 size_t vertex_buffer_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
+    return false;
+  }
+
+  pending_.vertex_buffer_count = vertex_buffer_count;
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    pending_.vertex_buffers[i] = std::move(vertex_buffers[i]);
+  }
+  return true;
+}
+
+bool RenderPass::SetIndexBuffer(BufferView index_buffer, IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
+    return false;
+  }
+
+  pending_.index_buffer = std::move(index_buffer);
+  pending_.index_type = index_type;
+  return true;
+}
+
+bool RenderPass::ValidateVertexBuffers(const BufferView vertex_buffers[],
+                                       size_t vertex_buffer_count) {
+  if (vertex_buffer_count > kMaxVertexBuffers) {
+    VALIDATION_LOG << "Attempted to bind " << vertex_buffer_count
+                   << " vertex buffers, but the maximum is "
+                   << kMaxVertexBuffers << ".";
+    return false;
+  }
+
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    if (!vertex_buffers[i]) {
+      VALIDATION_LOG << "Attempted to bind an invalid vertex buffer.";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool RenderPass::ValidateIndexBuffer(const BufferView& index_buffer,
+                                     IndexType index_type) {
+  if (index_type == IndexType::kUnknown) {
+    VALIDATION_LOG << "Cannot bind an index buffer with an unknown index type.";
+    return false;
+  }
+
+  if (index_type != IndexType::kNone && !index_buffer) {
+    VALIDATION_LOG << "Attempted to bind an invalid index buffer.";
+    return false;
+  }
+
+  return true;
 }
 
 fml::Status RenderPass::Draw() {

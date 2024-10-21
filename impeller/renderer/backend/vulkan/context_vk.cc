@@ -27,7 +27,6 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
@@ -446,6 +445,7 @@ void ContextVK::Setup(Settings settings) {
   device_name_ = std::string(physical_device_properties.deviceName);
   command_queue_vk_ = std::make_shared<CommandQueueVK>(weak_from_this());
   should_disable_surface_control_ = settings.disable_surface_control;
+  should_batch_cmd_buffers_ = driver_info_->CanBatchSubmitCommandBuffers();
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
@@ -491,10 +491,37 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  return std::shared_ptr<CommandBufferVK>(
-      new CommandBufferVK(shared_from_this(),                     //
-                          CreateGraphicsCommandEncoderFactory())  //
-  );
+  const auto& recycler = GetCommandPoolRecycler();
+  auto tls_pool = recycler->Get();
+  if (!tls_pool) {
+    return nullptr;
+  }
+
+  auto tracked_objects = std::make_shared<TrackedObjectsVK>(
+      weak_from_this(), std::move(tls_pool), GetGPUTracer()->CreateGPUProbe());
+  auto queue = GetGraphicsQueue();
+
+  if (!tracked_objects || !tracked_objects->IsValid() || !queue) {
+    return nullptr;
+  }
+
+  vk::CommandBufferBeginInfo begin_info;
+  begin_info.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+  if (tracked_objects->GetCommandBuffer().begin(begin_info) !=
+      vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not begin command buffer.";
+    return nullptr;
+  }
+
+  tracked_objects->GetGPUProbe().RecordCmdBufferStart(
+      tracked_objects->GetCommandBuffer());
+
+  return std::shared_ptr<CommandBufferVK>(new CommandBufferVK(
+      shared_from_this(),          //
+      GetDeviceHolder(),           //
+      std::move(tracked_objects),  //
+      GetFenceWaiter()             //
+      ));
 }
 
 vk::Instance ContextVK::GetInstance() const {
@@ -551,11 +578,6 @@ std::shared_ptr<CommandPoolRecyclerVK> ContextVK::GetCommandPoolRecycler()
   return command_pool_recycler_;
 }
 
-std::unique_ptr<CommandEncoderFactoryVK>
-ContextVK::CreateGraphicsCommandEncoderFactory() const {
-  return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
-}
-
 std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
 }
@@ -567,6 +589,26 @@ std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
 
 std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
   return command_queue_vk_;
+}
+
+bool ContextVK::EnqueueCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) {
+  if (should_batch_cmd_buffers_) {
+    pending_command_buffers_.push_back(std::move(command_buffer));
+    return true;
+  } else {
+    return GetCommandQueue()->Submit({command_buffer}).ok();
+  }
+}
+
+bool ContextVK::FlushCommandBuffers() {
+  if (should_batch_cmd_buffers_) {
+    bool result = GetCommandQueue()->Submit(pending_command_buffers_).ok();
+    pending_command_buffers_.clear();
+    return result;
+  } else {
+    return true;
+  }
 }
 
 // Creating a render pass is observed to take an additional 6ms on a Pixel 7

@@ -1,6 +1,10 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:process_runner/process_runner.dart';
 
 import 'environment.dart';
 import 'label.dart';
@@ -19,13 +23,15 @@ interface class Gn {
 
   final Environment _environment;
 
-  String get _gnPath => p.join(
-        _environment.engine.srcDir.path,
-        'flutter',
-        'third_party',
-        'gn',
-        _environment.platform.isWindows ? 'gn.exe' : 'gn',
-      );
+  String get _gnPath {
+    return p.join(
+      _environment.engine.srcDir.path,
+      'flutter',
+      'third_party',
+      'gn',
+      _environment.platform.isWindows ? 'gn.exe' : 'gn',
+    );
+  }
 
   /// Returns a list of build targets that match the given [pattern].
   ///
@@ -41,15 +47,14 @@ interface class Gn {
     String outDir,
     TargetPattern pattern,
   ) async {
-    final List<String> command = <String>[
+    final command = [
       _gnPath,
       'desc',
       '--format=json',
       outDir,
       pattern.toGnPattern(),
     ];
-    final ProcessRunnerResult process =
-        await _environment.processRunner.runProcess(
+    final process = await _environment.processRunner.runProcess(
       command,
       workingDirectory: _environment.engine.srcDir,
       failOk: true,
@@ -72,7 +77,7 @@ interface class Gn {
             'No targets matched the pattern `${pattern.toGnPattern()}`',
           );
         }
-        return <BuildTarget>[];
+        return [];
       }
 
       _environment.logger.fatal(
@@ -95,17 +100,20 @@ interface class Gn {
     return result
         .asMap()
         .entries
-        .map((MapEntry<String, Object?> entry) {
-          final String label = entry.key;
-          final Object? properties = entry.value;
+        .map((entry) {
+          final label = entry.key;
+          final properties = entry.value;
           if (properties is! Map<String, Object?>) {
             return null;
           }
-          final BuildTarget? target = BuildTarget._fromJson(
+          final target = BuildTarget._fromJson(
             label,
             JsonObject(properties),
           );
           if (target == null) {
+            _environment.logger.warning(
+              'Unknown target type for $label: type=${properties['type']}',
+            );
             return null;
           }
           return target;
@@ -123,6 +131,36 @@ sealed class BuildTarget {
     required this.testOnly,
   });
 
+  factory BuildTarget._parseFromAction(
+    String label, {
+    required bool testOnly,
+    required JsonObject json,
+  }) {
+    final metadata = json.objectOrNull('metadata');
+    if (metadata != null) {
+      final actionTypes = metadata.stringListOrNull('action_type');
+      if (actionTypes != null && actionTypes.contains('dart_test')) {
+        final String executable;
+        final outputs = json.stringListOrNull('outputs');
+        if (outputs == null || outputs.isEmpty) {
+          throw StateError('Expected at least one output for $label');
+        }
+
+        // Remove the leading // from the path.
+        executable = outputs.first.substring(2);
+        return ExecutableBuildTarget(
+          label: Label.parseGn(label),
+          testOnly: testOnly,
+          executable: executable,
+        );
+      }
+    }
+    return ActionBuildTarget(
+      label: Label.parseGn(label),
+      testOnly: testOnly,
+    );
+  }
+
   /// Returns a build target from JSON originating from `gn desc --format=json`.
   ///
   /// If the JSON is not a supported build target, returns `null`.
@@ -130,7 +168,7 @@ sealed class BuildTarget {
     final (
       String type,
       bool testOnly,
-    ) = json.map((JsonObject json) => (
+    ) = json.map((json) => (
           json.string('type'),
           json.boolean('testonly'),
         ));
@@ -145,8 +183,16 @@ sealed class BuildTarget {
           label: Label.parseGn(label),
           testOnly: testOnly,
         ),
-      'action' =>
-        ActionBuildTarget(label: Label.parseGn(label), testOnly: testOnly),
+      'action' => BuildTarget._parseFromAction(
+          label,
+          testOnly: testOnly,
+          json: json,
+        ),
+      'group' => GroupBuildTarget(
+          label: Label.parseGn(label),
+          testOnly: testOnly,
+          deps: json.stringList('deps').map(Label.parseGn).toList(),
+        ),
       _ => null,
     };
   }
@@ -247,4 +293,37 @@ final class ExecutableBuildTarget extends BuildTarget {
   @override
   String toString() =>
       'ExecutableBuildTarget($label, testOnly=$testOnly, executable=$executable)';
+}
+
+/// A build target that [group]s a meta-target of other build targets.
+///
+/// [group]: https://gn.googlesource.com/gn/+/main/docs/reference.md#func_group
+final class GroupBuildTarget extends BuildTarget {
+  /// Construct a group build target.
+  const GroupBuildTarget({
+    required super.label,
+    required super.testOnly,
+    required this.deps,
+  });
+
+  /// The list of dependencies for this group target.
+  final List<Label> deps;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! GroupBuildTarget) {
+      return false;
+    }
+    if (label != other.label || testOnly != other.testOnly) {
+      return false;
+    }
+    return const ListEquality<Object>().equals(deps, other.deps);
+  }
+
+  @override
+  int get hashCode => Object.hash(label, testOnly, Object.hashAll(deps));
+
+  @override
+  String toString() =>
+      'GroupBuildTarget($label, testOnly=$testOnly, deps=$deps)';
 }

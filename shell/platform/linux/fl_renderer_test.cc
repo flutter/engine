@@ -4,9 +4,9 @@
 
 #include "gtest/gtest.h"
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/linux/fl_framebuffer.h"
-#include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 #include "flutter/shell/platform/linux/testing/mock_epoxy.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
@@ -22,8 +22,12 @@ TEST(FlRendererTest, BackgroundColor) {
           ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
   EXPECT_CALL(epoxy, glClearColor(0.2, 0.3, 0.4, 0.5));
 
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -36,10 +40,12 @@ TEST(FlRendererTest, BackgroundColor) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers, 1);
   GdkRGBA background_color = {
       .red = 0.2, .green = 0.3, .blue = 0.4, .alpha = 0.5};
-  fl_renderer_render(FL_RENDERER(renderer), 0, 1024, 1024, &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, RestoresGLState) {
@@ -48,14 +54,14 @@ TEST(FlRendererTest, RestoresGLState) {
   constexpr int kWidth = 100;
   constexpr int kHeight = 100;
 
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlView) view = fl_view_new(project);
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   g_autoptr(FlFramebuffer) framebuffer =
       fl_framebuffer_new(GL_RGB, kWidth, kHeight);
 
-  fl_renderer_add_view(FL_RENDERER(renderer), 0, view);
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), kWidth, kHeight);
 
   FlutterBackingStore backing_store;
@@ -73,19 +79,18 @@ TEST(FlRendererTest, RestoresGLState) {
   constexpr GLuint kFakeTextureName = 123;
   glBindTexture(GL_TEXTURE_2D, kFakeTextureName);
 
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers.data(),
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers.data(),
                              layers.size());
   GdkRGBA background_color = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  fl_renderer_render(FL_RENDERER(renderer), 0, kWidth, kHeight,
-                     &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     kWidth, kHeight, &background_color);
 
   GLuint texture_2d_binding;
   glGetIntegerv(GL_TEXTURE_BINDING_2D,
                 reinterpret_cast<GLint*>(&texture_2d_binding));
   EXPECT_EQ(texture_2d_binding, kFakeTextureName);
-
-  g_object_ref_sink(view);
 }
 
 static constexpr double kExpectedRefreshRate = 120.0;
@@ -94,8 +99,6 @@ static gdouble renderer_get_refresh_rate(FlRenderer* renderer) {
 }
 
 TEST(FlRendererTest, RefreshRate) {
-  flutter::testing::fl_ensure_gtk_init();
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlMockRenderer) renderer =
       fl_mock_renderer_new(&renderer_get_refresh_rate);
 
@@ -116,8 +119,12 @@ TEST(FlRendererTest, BlitFramebuffer) {
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -130,10 +137,12 @@ TEST(FlRendererTest, BlitFramebuffer) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers, 1);
   GdkRGBA background_color = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  fl_renderer_render(FL_RENDERER(renderer), 0, 1024, 1024, &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, BlitFramebufferExtension) {
@@ -153,8 +162,12 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
 
   EXPECT_CALL(epoxy, glBlitFramebuffer);
 
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -167,10 +180,12 @@ TEST(FlRendererTest, BlitFramebufferExtension) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers, 1);
   GdkRGBA background_color = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  fl_renderer_render(FL_RENDERER(renderer), 0, 1024, 1024, &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, NoBlitFramebuffer) {
@@ -183,8 +198,12 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(20));
 
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -197,10 +216,12 @@ TEST(FlRendererTest, NoBlitFramebuffer) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers, 1);
   GdkRGBA background_color = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  fl_renderer_render(FL_RENDERER(renderer), 0, 1024, 1024, &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     1024, 1024, &background_color);
 }
 
 TEST(FlRendererTest, BlitFramebufferNvidia) {
@@ -214,8 +235,12 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
   ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
   EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
 
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
   fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
   fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
   FlutterBackingStoreConfig config = {
       .struct_size = sizeof(FlutterBackingStoreConfig),
@@ -228,8 +253,56 @@ TEST(FlRendererTest, BlitFramebufferNvidia) {
                                .backing_store = &backing_store,
                                .size = {.width = 1024, .height = 1024}};
   const FlutterLayer* layers[] = {&layer0};
-  fl_renderer_present_layers(FL_RENDERER(renderer), 0, layers, 1);
+  fl_renderer_present_layers(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId, layers, 1);
   GdkRGBA background_color = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  fl_renderer_render(FL_RENDERER(renderer), 0, 1024, 1024, &background_color);
+  fl_renderer_render(FL_RENDERER(renderer), flutter::kFlutterImplicitViewId,
+                     1024, 1024, &background_color);
+}
+
+TEST(FlRendererTest, MultiView) {
+  ::testing::NiceMock<flutter::testing::MockEpoxy> epoxy;
+
+  // OpenGL 3.0
+  ON_CALL(epoxy, glGetString(GL_VENDOR))
+      .WillByDefault(
+          ::testing::Return(reinterpret_cast<const GLubyte*>("Intel")));
+  ON_CALL(epoxy, epoxy_is_desktop_gl).WillByDefault(::testing::Return(true));
+  EXPECT_CALL(epoxy, epoxy_gl_version).WillRepeatedly(::testing::Return(30));
+
+  g_autoptr(FlMockRenderable) renderable = fl_mock_renderable_new();
+  g_autoptr(FlMockRenderable) secondary_renderable = fl_mock_renderable_new();
+
+  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
+  fl_renderer_setup(FL_RENDERER(renderer));
+  fl_renderer_add_renderable(FL_RENDERER(renderer),
+                             flutter::kFlutterImplicitViewId,
+                             FL_RENDERABLE(renderable));
+  fl_renderer_add_renderable(FL_RENDERER(renderer), 1,
+                             FL_RENDERABLE(secondary_renderable));
+  fl_renderer_wait_for_frame(FL_RENDERER(renderer), 1024, 1024);
+
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(renderable),
+            static_cast<size_t>(0));
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(secondary_renderable),
+            static_cast<size_t>(0));
+
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = {.width = 1024, .height = 1024}};
+  FlutterBackingStore backing_store;
+  fl_renderer_create_backing_store(FL_RENDERER(renderer), &config,
+                                   &backing_store);
+  const FlutterLayer layer0 = {.struct_size = sizeof(FlutterLayer),
+                               .type = kFlutterLayerContentTypeBackingStore,
+                               .backing_store = &backing_store,
+                               .size = {.width = 1024, .height = 1024}};
+  const FlutterLayer* layers[] = {&layer0};
+  fl_renderer_present_layers(FL_RENDERER(renderer), 1, layers, 1);
+
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(renderable),
+            static_cast<size_t>(0));
+  EXPECT_EQ(fl_mock_renderable_get_redraw_count(secondary_renderable),
+            static_cast<size_t>(1));
 }
