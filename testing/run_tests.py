@@ -502,19 +502,13 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       xvfb.stop_virtual_x(build_name)
 
   if is_mac():
-    # flutter_desktop_darwin_unittests uses global state that isn't handled
-    # correctly by gtest-parallel.
-    # https://github.com/flutter/flutter/issues/104789
-    if not os.path.basename(build_dir).startswith('host_debug'):
-      # Test is disabled for flaking in debug runs:
-      # https://github.com/flutter/flutter/issues/127441
-      run_engine_executable(
-          build_dir,
-          'flutter_desktop_darwin_unittests',
-          executable_filter,
-          shuffle_flags,
-          coverage=coverage
-      )
+    run_engine_executable(
+        build_dir,
+        'flutter_desktop_darwin_unittests',
+        executable_filter,
+        shuffle_flags,
+        coverage=coverage
+    )
     extra_env = metal_validation_env()
     extra_env.update(vulkan_validation_env(build_dir))
     mac_impeller_unittests_flags = repeat_flags + [
