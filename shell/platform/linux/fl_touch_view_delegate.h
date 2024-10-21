@@ -35,15 +35,13 @@ struct _FlTouchViewDelegateInterface {
   GTypeInterface g_iface;
 
   void (*send_pointer_event)(FlTouchViewDelegate* delegate,
-                             const FlutterPointerEvent& event_data,
-                              PointerState* state);
+                             const FlutterPointerEvent& event_data);
 
 };
 
 void fl_touch_view_delegate_send_pointer_event(
     FlTouchViewDelegate* delegate,
-    const FlutterPointerEvent& event_data,
-    PointerState* state);
+    const FlutterPointerEvent& event_data);
 
 
 G_END_DECLS
