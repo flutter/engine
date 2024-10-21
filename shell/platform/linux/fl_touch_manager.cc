@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/linux/fl_touch_manager.h"
 
-static constexpr int kMicrosecondsPerMillisecond = 1000;
 static const int kMinTouchDeviceId = 0;
 static const int kMaxTouchDeviceId = 128;
 
@@ -73,24 +72,32 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
 
   GdkEventType touch_event_type =
       gdk_event_get_event_type(reinterpret_cast<GdkEvent*>(event));
+      
+  FlutterPointerEvent event_data = {};
+  event_data.x = x;
+  event_data.y = y;
+  event_data.device_kind = kFlutterPointerDeviceKindTouch;
+  event_data.device = touch_id;
+  event_data.struct_size = sizeof(event_data);
+
   switch (touch_event_type) {
     case GDK_TOUCH_BEGIN:
-      OnPointerDown(
-          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
-          touch_id,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+      event_data.buttons = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+      event_data.phase = FlutterPointerPhase::kDown;
+      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
       break;
     case GDK_TOUCH_UPDATE:
-      OnPointerMove(self->engine, self->view_id, x, y,
-                    kFlutterPointerDeviceKindTouch, touch_id, 0);
+      event_data.phase = FlutterPointerPhase::kMove;
+     fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
       break;
     case GDK_TOUCH_END:
-      OnPointerUp(
-          self->engine, self->view_id, x, y, kFlutterPointerDeviceKindTouch,
-          touch_id,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-      OnPointerLeave(self->engine, self->view_id, x, y,
-                     kFlutterPointerDeviceKindTouch, touch_id);
+      event_data.phase = FlutterPointerPhase::kUp;
+      event_data.buttons = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+     fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
+      
+      event_data.phase = FlutterPointerPhase::kRemove;
+      event_data.buttons = 0;
+      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
       self->touch_id_generator.ReleaseNumber(id);
       break;
     default:

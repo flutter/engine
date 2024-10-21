@@ -339,12 +339,10 @@ static void fl_view_keyboard_delegate_iface_init(
 static void fl_view_touch_delegate_iface_init(
     FlTouchViewDelegateInterface* iface) {
   iface->send_pointer_event = [](FlTouchViewDelegate* view_delegate,
-                                  const FlutterPointerEvent& event_data,
-                                  PointerState* state) {
+                                  const FlutterPointerEvent& event_data){
       FlView* self = FL_VIEW(view_delegate);
       if (self->engine != nullptr) {
-        fl_engine_send_pointer_event(self->engine, self->view_id, event_data,
-                                    state);
+        fl_engine_send_pointer_event(self->engine, self->view_id, event_data);
       }
     };
 }
