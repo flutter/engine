@@ -15,7 +15,10 @@
 
 namespace flutter {
 
-#define DL_BUILDER_PAGE 4096
+#define DL_BUILDER_PAGE 16384
+
+// 1.31 MB
+#define DL_BUILDER_MAX_GROWTH 1310720u
 
 // CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
 static void CopyV(void* dst) {}
@@ -39,6 +42,22 @@ static constexpr inline bool is_power_of_two(int value) {
   return (value & (value - 1)) == 0;
 }
 
+static constexpr uint32_t NextPowerOfTwoSize(uint32_t x) {
+  if (x == 0) {
+    return 1;
+  }
+
+  --x;
+
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+
+  return x + 1;
+}
+
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
@@ -46,8 +65,9 @@ void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   if (used_ + size > allocated_) {
     static_assert(is_power_of_two(DL_BUILDER_PAGE),
                   "This math needs updating for non-pow2.");
-    // Next greater multiple of DL_BUILDER_PAGE.
-    allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
+    // Next power of two, up to a limit of DL_BUILDER_MAX_GROWTH.
+    allocated_ += std::min(NextPowerOfTwoSize(size + DL_BUILDER_PAGE),
+                           DL_BUILDER_MAX_GROWTH);
     storage_.realloc(allocated_);
     FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
