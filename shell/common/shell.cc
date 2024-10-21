@@ -362,6 +362,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     return nullptr;
   }
 
+  // Join the temporary startup ui thread into the platform thread
+  // after both have finished their tasks.
+  fml::RefPtr<fml::TaskRunner> startup_task_runner =
+      shell->startup_ui_thread_->GetTaskRunner();
+  auto join_task = fml::MakeCopyable(
+      [thread = std::move(shell->startup_ui_thread_)] { thread->Join(); });
+  startup_task_runner->PostTask(
+      [platform_task_runner = shell->task_runners_.GetPlatformTaskRunner(),
+       join_task] {
+        platform_task_runner->PostTask([join_task]() { join_task(); });
+      });
+
   return shell;
 }
 
@@ -766,8 +778,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
                                         }
                                       });
   }
-  // Figure out how to do this later.
-  startup_ui_thread_->Join();
 
   is_set_up_ = true;
 
