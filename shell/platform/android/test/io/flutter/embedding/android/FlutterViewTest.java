@@ -672,22 +672,11 @@ public class FlutterViewTest {
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
-    //Insets insets = Insets.of(100, 100, 100, 100);
-    //Insets systemGestureInsets = Insets.of(110, 110, 110, 110);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     DisplayCutout displayCutout = mock(DisplayCutout.class);
-    //mockSystemWindowInsets(windowInsets, -1, -1, -1, -1);
-    //when(windowInsets.getInsets(anyInt())).thenReturn(insets);
-    //when(windowInsets.getSystemGestureInsets()).thenReturn(systemGestureInsets);
     when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
 
-    //Insets waterfallInsets = Insets.of(200, 0, 200, 0);
-    //when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
-    //when(displayCutout.getSafeInsetTop()).thenReturn(150);
-    //when(displayCutout.getSafeInsetBottom()).thenReturn(150);
-    //when(displayCutout.getSafeInsetLeft()).thenReturn(150);
-    //when(displayCutout.getSafeInsetRight()).thenReturn(150);
     List<Rect> boundingRects = Arrays.asList(
             new Rect(0, 200, 300, 400),
             new Rect(150, 0, 300, 150)
@@ -697,9 +686,7 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    //validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
 
-    //assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
     List<FlutterRenderer.DisplayFeature> features = viewportMetricsCaptor.getValue().displayFeatures;
     assertEquals(2, features.size());
     for (int i = 0; i < 2; i++) {
