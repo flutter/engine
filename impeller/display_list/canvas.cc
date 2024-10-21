@@ -1115,24 +1115,54 @@ void Canvas::SaveLayer(const Paint& paint,
       input_texture = backdrop_data->texture_slot;
     }
 
-    backdrop_filter_contents = backdrop_filter_proc(
-        FilterInput::Make(std::move(input_texture)),
-        transform_stack_.back().transform.Basis(),
-        // When the subpass has a translation that means the math with
-        // the snapshot has to be different.
-        transform_stack_.back().transform.HasTranslation()
-            ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
-            : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
-
     if (will_cache_backdrop_texture) {
       FML_DCHECK(backdrop_data);
       // If all filters on the shared backdrop layer are equal, process the
       // layer once.
       if (backdrop_data->all_filters_equal &&
           !backdrop_data->shared_filter_snapshot.has_value()) {
+        std::vector<std::shared_ptr<FilterContents>> filter_contents;
+        filter_contents.reserve(backdrop_data->backdrops.size());
+        std::transform(
+            backdrop_data->backdrops.begin(), backdrop_data->backdrops.end(),
+            filter_contents.begin(),
+            [&](std::shared_ptr<flutter::DlImageFilter> filter) {
+              return backdrop_filter_proc(
+                  FilterInput::Make(input_texture),
+                  transform_stack_.back().transform.Basis(),
+                  // When the subpass has a translation that means the math with
+                  // the snapshot has to be different.
+                  transform_stack_.back().transform.HasTranslation()
+                      ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
+                      : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
+            });
+        Entity snapshot_entity;
+        std::optional<Rect> coverage_limit;
+        for (const std::shared_ptr<FilterContents>& contents :
+             filter_contents) {
+          std::optional<Rect> coverage = contents->GetCoverage(snapshot_entity);
+          if (coverage.has_value()) {
+            if (coverage_limit.has_value()) {
+              coverage_limit = coverage_limit->Union(coverage.value());
+            } else {
+              coverage_limit = coverage;
+            }
+          }
+        }
+        backdrop_filter_contents = *filter_contents.begin();
         // TODO(157110): compute minimum input hint.
         backdrop_data->shared_filter_snapshot =
-            backdrop_filter_contents->RenderToSnapshot(renderer_, {});
+            backdrop_filter_contents->RenderToSnapshot(
+                renderer_, snapshot_entity, coverage_limit);
+      } else {
+        backdrop_filter_contents = backdrop_filter_proc(
+            FilterInput::Make(std::move(input_texture)),
+            transform_stack_.back().transform.Basis(),
+            // When the subpass has a translation that means the math with
+            // the snapshot has to be different.
+            transform_stack_.back().transform.HasTranslation()
+                ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
+                : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
       }
 
       std::optional<Snapshot> maybe_snapshot =

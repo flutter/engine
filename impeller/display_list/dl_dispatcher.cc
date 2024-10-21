@@ -1013,13 +1013,13 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
         backdrop_data_.find(backdrop_id.value());
     if (existing == backdrop_data_.end()) {
       backdrop_data_[backdrop_id.value()] =
-          BackdropData{.backdrop_count = 1, .last_backdrop = shared_backdrop};
+          BackdropData{.backdrop_count = 1, .backdrops = {shared_backdrop}};
     } else {
       BackdropData& data = existing->second;
       data.backdrop_count++;
+      data.backdrops.push_back(shared_backdrop);
       if (data.all_filters_equal) {
-        data.all_filters_equal = (*data.last_backdrop == *shared_backdrop);
-        data.last_backdrop = shared_backdrop;
+        data.all_filters_equal = (*data.backdrops.front() == *shared_backdrop);
       }
     }
   }
