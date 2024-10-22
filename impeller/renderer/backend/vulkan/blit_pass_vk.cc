@@ -49,12 +49,7 @@ BlitPassVK::BlitPassVK(std::shared_ptr<CommandBufferVK> command_buffer)
 
 BlitPassVK::~BlitPassVK() = default;
 
-void BlitPassVK::OnSetLabel(std::string label) {
-  if (label.empty()) {
-    return;
-  }
-  label_ = std::move(label);
-}
+void BlitPassVK::OnSetLabel(std::string_view label) {}
 
 // |BlitPass|
 bool BlitPassVK::IsValid() const {
@@ -73,7 +68,7 @@ bool BlitPassVK::OnCopyTextureToTextureCommand(
     std::shared_ptr<Texture> destination,
     IRect source_region,
     IPoint destination_origin,
-    std::string label) {
+    std::string_view label) {
   const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   const auto& src = TextureVK::Cast(*source);
@@ -156,7 +151,7 @@ bool BlitPassVK::OnCopyTextureToBufferCommand(
     std::shared_ptr<DeviceBuffer> destination,
     IRect source_region,
     size_t destination_offset,
-    std::string label) {
+    std::string_view label) {
   const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
 
   // cast source and destination to TextureVK
@@ -245,7 +240,8 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
     BufferView source,
     std::shared_ptr<Texture> destination,
     IRect destination_region,
-    std::string label,
+    std::string_view label,
+    uint32_t mip_level,
     uint32_t slice,
     bool convert_to_read) {
   const auto& cmd_buffer = command_buffer_->GetCommandBuffer();
@@ -273,8 +269,8 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
   image_copy.setBufferOffset(source.range.offset);
   image_copy.setBufferRowLength(0);
   image_copy.setBufferImageHeight(0);
-  image_copy.setImageSubresource(
-      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setImageSubresource(vk::ImageSubresourceLayers(
+      vk::ImageAspectFlagBits::eColor, mip_level, slice, 1));
   image_copy.imageOffset.x = destination_region.GetX();
   image_copy.imageOffset.y = destination_region.GetY();
   image_copy.imageOffset.z = 0u;
@@ -400,7 +396,7 @@ bool BlitPassVK::ResizeTexture(const std::shared_ptr<Texture>& source,
 
 // |BlitPass|
 bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
-                                         std::string label) {
+                                         std::string_view label) {
   auto& src = TextureVK::Cast(*texture);
 
   const auto size = src.GetTextureDescriptor().size;

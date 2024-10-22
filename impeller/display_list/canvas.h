@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "display_list/effects/dl_image_filter.h"
@@ -23,10 +24,22 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/round_rect.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
+
+struct BackdropData {
+  size_t backdrop_count = 0;
+  bool all_filters_equal = true;
+  std::shared_ptr<Texture> texture_slot;
+  // A single snapshot of the backdrop filter that is used when there are
+  // multiple backdrops that share an identical filter.
+  std::optional<Snapshot> shared_filter_snapshot;
+  std::shared_ptr<flutter::DlImageFilter> last_backdrop;
+};
 
 struct CanvasStackEntry {
   Matrix transform;
@@ -88,7 +101,7 @@ struct LazyRenderingConfig {
                       std::unique_ptr<EntityPassTarget> p_entity_pass_target)
       : entity_pass_target(std::move(p_entity_pass_target)) {
     inline_pass_context =
-        std::make_unique<InlinePassContext>(renderer, *entity_pass_target, 0);
+        std::make_unique<InlinePassContext>(renderer, *entity_pass_target);
   }
 
   LazyRenderingConfig(ContentContext& renderer,
@@ -123,6 +136,10 @@ class Canvas {
 
   ~Canvas() = default;
 
+  /// @brief Update the backdrop data used to group together backdrop filters
+  ///        within the same layer.
+  void SetBackdropData(std::unordered_map<int64_t, BackdropData> backdrop_data);
+
   /// @brief Return the culling bounds of the current render target, or nullopt
   ///        if there is no coverage.
   std::optional<Rect> GetLocalCoverageLimit() const;
@@ -135,7 +152,8 @@ class Canvas {
       const flutter::DlImageFilter* backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
       uint32_t total_content_depth = kMaxDepth,
-      bool can_distribute_opacity = false);
+      bool can_distribute_opacity = false,
+      std::optional<int64_t> backdrop_id = std::nullopt);
 
   bool Restore();
 
@@ -173,9 +191,7 @@ class Canvas {
 
   void DrawOval(const Rect& rect, const Paint& paint);
 
-  void DrawRRect(const Rect& rect,
-                 const Size& corner_radii,
-                 const Paint& paint);
+  void DrawRoundRect(const RoundRect& rect, const Paint& paint);
 
   void DrawCircle(const Point& center, Scalar radius, const Paint& paint);
 
@@ -232,6 +248,7 @@ class Canvas {
   std::optional<Rect> initial_cull_rect_;
   std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
+  std::unordered_map<int64_t, BackdropData> backdrop_data_;
 
   // All geometry objects created for regular draws can be stack allocated,
   // but clip geometries must be cached for record/replay for backdrop filters
@@ -276,6 +293,8 @@ class Canvas {
   bool AttemptDrawBlurredRRect(const Rect& rect,
                                Size corner_radii,
                                const Paint& paint);
+
+  RenderPass& GetCurrentRenderPass() const;
 
   Canvas(const Canvas&) = delete;
 

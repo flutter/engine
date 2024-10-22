@@ -557,6 +557,10 @@ public class FlutterRenderer implements TextureRegistry {
         return imageQueue.isEmpty() && lastReaderDequeuedFrom != this;
       }
 
+      boolean imageQueueIsEmpty() {
+        return imageQueue.isEmpty();
+      }
+
       void close() {
         closed = true;
         if (VERBOSE_LOGS) {
@@ -634,6 +638,7 @@ public class FlutterRenderer implements TextureRegistry {
 
     PerImage dequeueImage() {
       PerImage r = null;
+      boolean hasPendingImages = false;
       synchronized (lock) {
         for (PerImageReader reader : imageReaderQueue) {
           r = reader.dequeueImage();
@@ -683,6 +688,21 @@ public class FlutterRenderer implements TextureRegistry {
           break;
         }
         pruneImageReaderQueue();
+        for (PerImageReader reader : imageReaderQueue) {
+          if (!reader.imageQueueIsEmpty()) {
+            hasPendingImages = true;
+            break;
+          }
+        }
+      }
+      if (hasPendingImages) {
+        // Request another frame to ensure that images are consumed until the queue is empty.
+        handler.post(
+            () -> {
+              if (!released) {
+                scheduleEngineFrame();
+              }
+            });
       }
       return r;
     }
@@ -1249,7 +1269,8 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.registerImageTexture(textureId, imageTexture);
   }
 
-  private void scheduleEngineFrame() {
+  @VisibleForTesting
+  /* package */ void scheduleEngineFrame() {
     flutterJNI.scheduleFrame();
   }
 
