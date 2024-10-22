@@ -942,9 +942,9 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
 
 // Sets |event_data|'s phase to either kMove or kHover depending on the current
 // primary mouse button state.
-void SetEventPhaseFromCursorButtonState(FlEngine* self,
-                                        FlutterPointerEvent* event_data,
-                                        const PointerState* state) {
+void set_event_phase_from_cursor_button_state(FlEngine* self,
+                                              FlutterPointerEvent* event_data,
+                                              const PointerState* state) {
   // For details about this logic, see FlutterPointerPhase in the embedder.h
   // file.
   if (state->buttons == 0) {
@@ -1003,7 +1003,7 @@ void fl_engine_send_pointer_event(FlEngine* self,
   // Get the real phase based on the current button state.
   if (event_data_copy.phase != FlutterPointerPhase::kRemove &&
       event_data_copy.phase != FlutterPointerPhase::kAdd) {
-    SetEventPhaseFromCursorButtonState(self, &event_data_copy, state);
+    set_event_phase_from_cursor_button_state(self, &event_data_copy, state);
   }
 
   // If sending anything other than an add, and the pointer isn't already added,
