@@ -10,9 +10,11 @@
 
 #include "fml/status.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -23,6 +25,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -78,16 +81,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
     const SharedHandleVK<vk::RenderPass>& recycled_renderpass,
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
-  BarrierVK barrier;
-  barrier.new_layout = vk::ImageLayout::eGeneral;
-  barrier.cmd_buffer = command_buffer->GetCommandBuffer();
-  barrier.src_access = vk::AccessFlagBits::eShaderRead;
-  barrier.src_stage = vk::PipelineStageFlagBits::eFragmentShader;
-  barrier.dst_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                       vk::AccessFlagBits::eTransferWrite;
-  barrier.dst_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                      vk::PipelineStageFlagBits::eTransfer;
-
   RenderPassBuilderVK builder;
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
@@ -98,9 +91,11 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         color.load_action,                                   //
         color.store_action                                   //
     );
-    TextureVK::Cast(*color.texture).SetLayout(barrier);
+    TextureVK::Cast(*color.texture)
+        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
     if (color.resolve_texture) {
-      TextureVK::Cast(*color.resolve_texture).SetLayout(barrier);
+      TextureVK::Cast(*color.resolve_texture)
+          .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
     }
   }
 
@@ -235,10 +230,9 @@ bool RenderPassVK::IsValid() const {
   return is_valid_;
 }
 
-void RenderPassVK::OnSetLabel(std::string label) {
+void RenderPassVK::OnSetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
-  ContextVK::Cast(*context_).SetDebugName(render_pass_->Get(),
-                                          std::string(label).c_str());
+  ContextVK::Cast(*context_).SetDebugName(render_pass_->Get(), label.data());
 #endif  // IMPELLER_DEBUG
 }
 
@@ -363,34 +357,48 @@ void RenderPassVK::SetScissor(IRect scissor) {
 }
 
 // |RenderPass|
+void RenderPassVK::SetElementCount(size_t count) {
+  element_count_ = count;
+}
+
+// |RenderPass|
 void RenderPassVK::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
 // |RenderPass|
-bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
-  vertex_count_ = buffer.vertex_count;
-  if (buffer.index_type == IndexType::kUnknown || !buffer.vertex_buffer) {
+bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
+                                   size_t vertex_buffer_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
 
-  if (!command_buffer_->Track(buffer.vertex_buffer.buffer)) {
-    return false;
+  vk::Buffer buffers[kMaxVertexBuffers];
+  vk::DeviceSize vertex_buffer_offsets[kMaxVertexBuffers];
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
+    vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
+    command_buffer_->Track(vertex_buffers[i].buffer);
   }
 
-  // Bind the vertex buffer.
-  vk::Buffer vertex_buffer_handle =
-      DeviceBufferVK::Cast(*buffer.vertex_buffer.buffer).GetBuffer();
-  vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
-  vk::DeviceSize vertex_buffer_offsets[] = {buffer.vertex_buffer.range.offset};
-
-  command_buffer_vk_.bindVertexBuffers(0u, 1u, vertex_buffers,
+  // Bind the vertex buffers.
+  command_buffer_vk_.bindVertexBuffers(0u, vertex_buffer_count, buffers,
                                        vertex_buffer_offsets);
 
-  // Bind the index buffer.
-  if (buffer.index_type != IndexType::kNone) {
+  return true;
+}
+
+// |RenderPass|
+bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
+                                  IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
+    return false;
+  }
+
+  if (index_type != IndexType::kNone) {
     has_index_buffer_ = true;
-    const BufferView& index_buffer_view = buffer.index_buffer;
+
+    const BufferView& index_buffer_view = index_buffer;
     if (!index_buffer_view) {
       return false;
     }
@@ -411,10 +419,11 @@ bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
         DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
                                        index_buffer_view.range.offset,
-                                       ToVKIndexType(buffer.index_type));
+                                       ToVKIndexType(index_type));
   } else {
     has_index_buffer_ = false;
   }
+
   return true;
 }
 
@@ -491,14 +500,14 @@ fml::Status RenderPassVK::Draw() {
   }
 
   if (has_index_buffer_) {
-    command_buffer_vk_.drawIndexed(vertex_count_,    // index count
+    command_buffer_vk_.drawIndexed(element_count_,   // index count
                                    instance_count_,  // instance count
                                    0u,               // first index
                                    base_vertex_,     // vertex offset
                                    0u                // first instance
     );
   } else {
-    command_buffer_vk_.draw(vertex_count_,    // vertex count
+    command_buffer_vk_.draw(element_count_,   // vertex count
                             instance_count_,  // instance count
                             base_vertex_,     // vertex offset
                             0u                // first instance
@@ -517,7 +526,7 @@ fml::Status RenderPassVK::Draw() {
   descriptor_write_offset_ = 0u;
   instance_count_ = 1u;
   base_vertex_ = 0u;
-  vertex_count_ = 0u;
+  element_count_ = 0u;
   pipeline_ = nullptr;
   pipeline_uses_input_attachments_ = false;
   immutable_sampler_ = nullptr;

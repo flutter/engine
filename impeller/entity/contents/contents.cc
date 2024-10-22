@@ -110,10 +110,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
@@ -136,10 +133,6 @@ void Contents::SetInheritedOpacity(Scalar opacity) {
 std::optional<Color> Contents::AsBackgroundColor(const Entity& entity,
                                                  ISize target_size) const {
   return {};
-}
-
-const FilterContents* Contents::AsFilter() const {
-  return nullptr;
 }
 
 bool Contents::ApplyColorFilter(

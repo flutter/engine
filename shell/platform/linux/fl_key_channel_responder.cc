@@ -42,9 +42,9 @@ struct _FlKeyChannelUserData {
   GObject parent_instance;
 
   // The current responder.
-  FlKeyChannelResponder* responder;
+  GWeakRef responder;
   // The callback provided by the caller #FlKeyboardHandler.
-  FlKeyResponderAsyncCallback callback;
+  FlKeyChannelResponderAsyncCallback callback;
   // The user_data provided by the caller #FlKeyboardHandler.
   gpointer user_data;
 };
@@ -56,12 +56,10 @@ G_DEFINE_TYPE(FlKeyChannelUserData, fl_key_channel_user_data, G_TYPE_OBJECT)
 static void fl_key_channel_user_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_CHANNEL_USER_DATA(object));
   FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
-  if (self->responder != nullptr) {
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->responder),
-        reinterpret_cast<gpointer*>(&(self->responder)));
-    self->responder = nullptr;
-  }
+
+  g_weak_ref_clear(&self->responder);
+
+  G_OBJECT_CLASS(fl_key_channel_user_data_parent_class)->dispose(object);
 }
 
 // Class initialization method for FlKeyChannelUserData private class.
@@ -78,16 +76,12 @@ static void fl_key_channel_user_data_init(FlKeyChannelUserData* self) {}
 // The callback and the user_data might be nullptr.
 static FlKeyChannelUserData* fl_key_channel_user_data_new(
     FlKeyChannelResponder* responder,
-    FlKeyResponderAsyncCallback callback,
+    FlKeyChannelResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(
       g_object_new(fl_key_channel_user_data_get_type(), nullptr));
 
-  self->responder = responder;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(responder),
-                            reinterpret_cast<gpointer*>(&(self->responder)));
+  g_weak_ref_init(&self->responder, responder);
   self->callback = callback;
   self->user_data = user_data;
   return self;
@@ -104,28 +98,7 @@ struct _FlKeyChannelResponder {
   FlKeyChannelResponderMock* mock;
 };
 
-static void fl_key_channel_responder_iface_init(FlKeyResponderInterface* iface);
-
-G_DEFINE_TYPE_WITH_CODE(
-    FlKeyChannelResponder,
-    fl_key_channel_responder,
-    G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
-                          fl_key_channel_responder_iface_init))
-
-static void fl_key_channel_responder_handle_event(
-    FlKeyResponder* responder,
-    FlKeyEvent* event,
-    uint64_t specified_logical_key,
-    FlKeyResponderAsyncCallback callback,
-    gpointer user_data);
-
-static void fl_key_channel_responder_iface_init(
-    FlKeyResponderInterface* iface) {
-  iface->handle_event = fl_key_channel_responder_handle_event;
-}
-
-/* Implement FlKeyChannelResponder */
+G_DEFINE_TYPE(FlKeyChannelResponder, fl_key_channel_responder, G_TYPE_OBJECT)
 
 // Handles a response from the method channel to a key event sent to the
 // framework earlier.
@@ -134,12 +107,11 @@ static void handle_response(GObject* object,
                             gpointer user_data) {
   g_autoptr(FlKeyChannelUserData) data = FL_KEY_CHANNEL_USER_DATA(user_data);
 
-  // This is true if the weak pointer has been destroyed.
-  if (data->responder == nullptr) {
+  g_autoptr(FlKeyChannelResponder) self =
+      FL_KEY_CHANNEL_RESPONDER(g_weak_ref_get(&data->responder));
+  if (self == nullptr) {
     return;
   }
-
-  FlKeyChannelResponder* self = data->responder;
 
   g_autoptr(GError) error = nullptr;
   FlBasicMessageChannel* messageChannel = FL_BASIC_MESSAGE_CHANNEL(object);
@@ -201,14 +173,12 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
   return self;
 }
 
-// Sends a key event to the framework.
-static void fl_key_channel_responder_handle_event(
-    FlKeyResponder* responder,
+void fl_key_channel_responder_handle_event(
+    FlKeyChannelResponder* self,
     FlKeyEvent* event,
     uint64_t specified_logical_key,
-    FlKeyResponderAsyncCallback callback,
+    FlKeyChannelResponderAsyncCallback callback,
     gpointer user_data) {
-  FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(responder);
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
 
