@@ -790,7 +790,6 @@ public class FlutterView extends SurfaceView
     releaseAccessibilityNodeProvider();
   }
 
-
   private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
     setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
   }
