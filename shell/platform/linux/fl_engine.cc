@@ -7,9 +7,6 @@
 #include <gmodule.h>
 
 #include <cstring>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "flutter/common/constants.h"
 #include "flutter/shell/platform/common/engine_switches.h"
@@ -507,7 +504,8 @@ static void fl_engine_init(FlEngine* self) {
 
   self->texture_registrar = fl_texture_registrar_new(self);
 
-  self->pointer_states = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
+  self->pointer_states =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
 }
 
 FlEngine* fl_engine_new_with_renderer(FlDartProject* project,
@@ -942,7 +940,6 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
-
 // Set's |event_data|'s phase to either kMove or kHover depending on the current
 // primary mouse button state.
 void SetEventPhaseFromCursorButtonState(FlEngine* self,
@@ -961,59 +958,60 @@ void SetEventPhaseFromCursorButtonState(FlEngine* self,
   }
 }
 
-
-
 void fl_engine_send_pointer_event(FlEngine* self,
-                              FlutterViewId view_id,
-                              const FlutterPointerEvent& event_data){
+                                  FlutterViewId view_id,
+                                  const FlutterPointerEvent& event_data) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
   if (self->engine == nullptr) {
     return;
   }
-  
-  // Copy the event data to avoid modifying the caller's data.
-  auto event_data_copy = event_data;
 
-// Create a virtual pointer ID that is unique across all device types
+  // Copy the event data to avoid modifying the caller's data.
+  FlutterPointerEvent event_data_copy = event_data;
+
+  // Create a virtual pointer ID that is unique across all device types
   // to prevent pointers from clashing in the engine's converter
   // (lib/ui/window/pointer_data_packet_converter.cc)
-  int32_t pointer_id = (static_cast<int32_t>(event_data_copy.device_kind) << 28) | event_data_copy.device;
+  int32_t pointer_id =
+      (static_cast<int32_t>(event_data_copy.device_kind) << 28) |
+      event_data_copy.device;
 
   // Add the pointer state if it doesn't exist.
-  auto state = g_new(PointerState, 1);
-  state->device_kind = event_data_copy.device_kind;
-  state->pointer_id = pointer_id;
-
-  bool added = g_hash_table_insert(self->pointer_states, GINT_TO_POINTER(pointer_id), state);
-  if (!added) {
-    g_free(state);
-    state = static_cast<PointerState*>(g_hash_table_lookup(self->pointer_states, GINT_TO_POINTER(pointer_id)));
-  }
-
-  // Modify the phase based on the cursor button state.
-  if (event_data_copy.phase != FlutterPointerPhase::kRemove) {
-    SetEventPhaseFromCursorButtonState(self, &event_data_copy, state);
-  }
-
-  // Modify the state based on the event.
-  if (event_data_copy.phase == FlutterPointerPhase::kDown) {
-    state->buttons |= event_data_copy.buttons;
-    state->flutter_state_is_down = true;
-  } else if (event_data_copy.phase == FlutterPointerPhase::kUp) {
-    state->buttons &= ~event_data_copy.buttons;
+  PointerState* state = static_cast<PointerState*>(
+      g_hash_table_lookup(self->pointer_states, GINT_TO_POINTER(pointer_id)));
+  if (state == nullptr) {
+    state = g_new(PointerState, 1);
+    state->device_kind = event_data_copy.device_kind;
+    state->pointer_id = pointer_id;
+    state->buttons = 0;
     state->flutter_state_is_down = false;
+    state->flutter_state_is_added = false;
+    g_hash_table_insert(self->pointer_states, GINT_TO_POINTER(pointer_id),
+                        state);
+  }
+
+  // Modify the button state based on the event's phase.
+  if (event_data_copy.phase == FlutterPointerPhase::kDown) {
+    state->buttons |=
+        FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  } else if (event_data_copy.phase == FlutterPointerPhase::kUp) {
+    state->buttons &=
+        ~FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  }
+
+  // Get the real phase based on the current button state.
+  if (event_data_copy.phase != FlutterPointerPhase::kRemove &&
+      event_data_copy.phase != FlutterPointerPhase::kAdd) {
+    SetEventPhaseFromCursorButtonState(self, &event_data_copy, state);
   }
 
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
   if (!state->flutter_state_is_added &&
       event_data_copy.phase != FlutterPointerPhase::kAdd) {
-    FlutterPointerEvent event = {};
+    FlutterPointerEvent event = event_data_copy;
     event.phase = FlutterPointerPhase::kAdd;
-    event.x = event_data_copy.x;
-    event.y = event_data_copy.y;
-    event.buttons = 0;
     fl_engine_send_pointer_event(self, view_id, event);
   }
 
@@ -1039,10 +1037,15 @@ void fl_engine_send_pointer_event(FlEngine* self,
 
   self->embedder_api.SendPointerEvent(self->engine, &event, 1);
 
-  if (event_data_copy.phase == FlutterPointerPhase::kAdd) {
+  if (event.phase == FlutterPointerPhase::kAdd) {
     state->flutter_state_is_added = true;
-  } else if (event_data_copy.phase == FlutterPointerPhase::kRemove) {
-    g_hash_table_remove(self->pointer_states, GINT_TO_POINTER(state->pointer_id));
+  } else if (event.phase == FlutterPointerPhase::kDown) {
+    state->flutter_state_is_down = true;
+  } else if (event.phase == FlutterPointerPhase::kUp) {
+    state->flutter_state_is_down = false;
+  } else if (event.phase == FlutterPointerPhase::kRemove) {
+    g_hash_table_remove(self->pointer_states,
+                        GINT_TO_POINTER(state->pointer_id));
   }
 }
 

@@ -14,7 +14,6 @@
 
 G_BEGIN_DECLS
 
-
 /**
  * FlRendererError:
  * Errors for #FlRenderer objects to set on failures.

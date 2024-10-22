@@ -27,8 +27,7 @@ G_DECLARE_FINAL_TYPE(FlTouchManager,
  *
  * Returns: a new #FlTouchManager.
  */
-FlTouchManager* fl_touch_manager_new(
-    FlTouchViewDelegate* view_delegate);
+FlTouchManager* fl_touch_manager_new(FlTouchViewDelegate* view_delegate);
 
 /**
  * fl_touch_manager_handle_touch_event:
@@ -39,7 +38,6 @@ FlTouchManager* fl_touch_manager_new(
 void fl_touch_manager_handle_touch_event(FlTouchManager* manager,
                                          GdkEventTouch* event,
                                          gint scale_factor);
-
 
 G_END_DECLS
 
