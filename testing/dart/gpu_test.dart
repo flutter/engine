@@ -395,6 +395,43 @@ void main() async {
     await comparer.addGoldenImage(image, 'flutter_gpu_test_clear_color.png');
   }, skip: !impellerEnabled);
 
+  // Regression test for https://github.com/flutter/flutter/issues/157324
+  test('Can bind uniforms in range', () async {
+    final state = createSimpleRenderPass();
+
+    final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+    final gpu.UniformSlot vertInfo =
+        pipeline.vertexShader.getUniformSlot('VertInfo');
+
+    final ByteData vertInfoData = float32(<double>[
+      1, 0, 0, 0, // mvp
+      0, 1, 0, 0, // mvp
+      0, 0, 1, 0, // mvp
+      0, 0, 0, 1, // mvp
+      0, 1, 0, 1, // color
+    ]);
+    final uniformBuffer =
+        gpu.gpuContext.createDeviceBufferWithCopy(vertInfoData)!;
+    final gooduniformBufferView = gpu.BufferView(
+      uniformBuffer,
+      offsetInBytes: 0,
+      lengthInBytes: uniformBuffer.sizeInBytes,
+    );
+    state.renderPass.bindUniform(vertInfo, gooduniformBufferView);
+
+    final badUniformBufferView = gpu.BufferView(
+      uniformBuffer,
+      offsetInBytes: 0,
+      lengthInBytes: uniformBuffer.sizeInBytes + 1,
+    );
+    try {
+      state.renderPass.bindUniform(vertInfo, badUniformBufferView);
+      fail('Exception not thrown for bad buffer view range.');
+    } catch (e) {
+      expect(e.toString(), contains('Failed to bind uniform'));
+    }
+  }, skip: !impellerEnabled);
+
   // Renders a green triangle pointing downwards.
   test('Can render triangle', () async {
     final state = createSimpleRenderPass();
