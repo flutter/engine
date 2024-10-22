@@ -171,7 +171,7 @@ void main() async {
 
     final gpu.BufferView view1 = hostBuffer
         .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
-    expect(view1.offsetInBytes >= 4, true);
+    expect(view1.offsetInBytes, greaterThanOrEqualTo(4));
     expect(view1.lengthInBytes, 4);
   }, skip: !impellerEnabled);
 
