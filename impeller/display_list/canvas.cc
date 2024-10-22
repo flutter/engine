@@ -976,6 +976,9 @@ void Canvas::SaveLayer(const Paint& paint,
     // the current entity pass flip.
     bool will_cache_backdrop_texture = false;
     BackdropData* backdrop_data = nullptr;
+    // If we've reached this point, there is at least one backdrop filter. But
+    // potentially more if there is a backdrop id. We may conditionally set this
+    // to a higher value in the if block below.
     size_t backdrop_count = 1;
     if (backdrop_id.has_value()) {
       std::unordered_map<int64_t, BackdropData>::iterator backdrop_data_it =
@@ -988,8 +991,7 @@ void Canvas::SaveLayer(const Paint& paint,
       }
     }
 
-    if (!will_cache_backdrop_texture ||
-        (will_cache_backdrop_texture && !backdrop_data->texture_slot)) {
+    if (!will_cache_backdrop_texture || !backdrop_data->texture_slot) {
       backdrop_count_ -= backdrop_count;
 
       // The onscreen texture can be flipped to if:

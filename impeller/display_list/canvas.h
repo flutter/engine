@@ -253,6 +253,12 @@ class Canvas {
   std::optional<Rect> initial_cull_rect_;
   std::vector<LazyRenderingConfig> render_passes_;
   std::vector<SaveLayerState> save_layer_state_;
+
+  /// Backdrop layers identified by an optional backdrop id.
+  ///
+  /// This is not the same as the [backdrop_count_] below as not
+  /// all backdrop filters will have an identified backdrop id. The
+  /// backdrop_count_ is also mutated during rendering.
   std::unordered_map<int64_t, BackdropData> backdrop_data_;
 
   /// The remaining number of backdrop filters.
