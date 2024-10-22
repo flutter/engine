@@ -233,12 +233,6 @@ bool FlutterMain::Register(JNIEnv* env) {
 // static
 AndroidRenderingAPI FlutterMain::SelectedRenderingAPI(
     const flutter::Settings& settings) {
-  if (settings.enable_software_rendering) {
-    FML_CHECK(!settings.enable_impeller)
-        << "Impeller does not support software rendering. Either disable "
-           "software rendering or disable impeller.";
-    return AndroidRenderingAPI::kSoftware;
-  }
   constexpr AndroidRenderingAPI kVulkanUnsupportedFallback =
       AndroidRenderingAPI::kSkiaOpenGLES;
 

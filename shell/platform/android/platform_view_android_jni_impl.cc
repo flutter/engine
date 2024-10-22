@@ -479,10 +479,6 @@ static void SetAccessibilityFeatures(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()->SetAccessibilityFeatures(flags);
 }
 
-static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
-  return FlutterMain::Get().GetSettings().enable_software_rendering;
-}
-
 static void RegisterTexture(JNIEnv* env,
                             jobject jcaller,
                             jlong shell_holder,
@@ -764,11 +760,6 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeSetAccessibilityFeatures",
           .signature = "(JI)V",
           .fnPtr = reinterpret_cast<void*>(&SetAccessibilityFeatures),
-      },
-      {
-          .name = "nativeGetIsSoftwareRenderingEnabled",
-          .signature = "()Z",
-          .fnPtr = reinterpret_cast<void*>(&GetIsSoftwareRendering),
       },
       {
           .name = "nativeRegisterTexture",

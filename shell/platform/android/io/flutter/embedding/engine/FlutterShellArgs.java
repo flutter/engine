@@ -32,8 +32,6 @@ public class FlutterShellArgs {
   public static final String ARG_USE_TEST_FONTS = "--use-test-fonts";
   public static final String ARG_KEY_ENABLE_DART_PROFILING = "enable-dart-profiling";
   public static final String ARG_ENABLE_DART_PROFILING = "--enable-dart-profiling";
-  public static final String ARG_KEY_ENABLE_SOFTWARE_RENDERING = "enable-software-rendering";
-  public static final String ARG_ENABLE_SOFTWARE_RENDERING = "--enable-software-rendering";
   public static final String ARG_KEY_SKIA_DETERMINISTIC_RENDERING = "skia-deterministic-rendering";
   public static final String ARG_SKIA_DETERMINISTIC_RENDERING = "--skia-deterministic-rendering";
   public static final String ARG_KEY_TRACE_SKIA = "trace-skia";
@@ -102,9 +100,6 @@ public class FlutterShellArgs {
     }
     if (intent.getBooleanExtra(ARG_KEY_ENABLE_DART_PROFILING, false)) {
       args.add(ARG_ENABLE_DART_PROFILING);
-    }
-    if (intent.getBooleanExtra(ARG_KEY_ENABLE_SOFTWARE_RENDERING, false)) {
-      args.add(ARG_ENABLE_SOFTWARE_RENDERING);
     }
     if (intent.getBooleanExtra(ARG_KEY_SKIA_DETERMINISTIC_RENDERING, false)) {
       args.add(ARG_SKIA_DETERMINISTIC_RENDERING);

@@ -45,8 +45,7 @@ class PlatformViewAndroid final : public PlatformView {
 
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       const flutter::TaskRunners& task_runners,
-                      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-                      bool use_software_rendering);
+                      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new PlatformViewAndroid but using an existing

@@ -299,9 +299,6 @@ public final class FlutterActivityDelegate
     if (intent.getBooleanExtra("enable-dart-profiling", false)) {
       args.add("--enable-dart-profiling");
     }
-    if (intent.getBooleanExtra("enable-software-rendering", false)) {
-      args.add("--enable-software-rendering");
-    }
     if (intent.getBooleanExtra("skia-deterministic-rendering", false)) {
       args.add("--skia-deterministic-rendering");
     }

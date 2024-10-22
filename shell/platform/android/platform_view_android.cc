@@ -17,7 +17,6 @@
 #include "flutter/shell/platform/android/android_context_vk_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
-#include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/image_external_texture_gl_impeller.h"
 #include "flutter/shell/platform/android/image_external_texture_gl_skia.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl_impeller.h"
@@ -74,14 +73,11 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 }
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
-    bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
     AndroidRenderingAPI android_rendering_api,
     bool enable_opengl_gpu_tracing,
     const AndroidContext::ContextSettings& settings) {
   switch (android_rendering_api) {
-    case AndroidRenderingAPI::kSoftware:
-      return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
     case AndroidRenderingAPI::kImpellerOpenGLES:
       return std::make_unique<AndroidContextGLImpeller>(
           std::make_unique<impeller::egl::Display>(),
@@ -100,14 +96,12 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-    bool use_software_rendering)
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
     : PlatformViewAndroid(
           delegate,
           task_runners,
           jni_facade,
           CreateAndroidContext(
-              use_software_rendering,
               task_runners,
               delegate.OnPlatformViewGetSettings().android_rendering_api,
               delegate.OnPlatformViewGetSettings().enable_opengl_gpu_tracing,
