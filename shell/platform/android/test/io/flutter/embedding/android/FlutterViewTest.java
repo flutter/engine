@@ -636,17 +636,17 @@ public class FlutterViewTest {
     when(windowInsets.getSystemGestureInsets()).thenReturn(systemGestureInsets);
     when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
 
-    Insets waterfallInsets = Insets.of(200, 0, 200, 0);
+    Insets waterfallInsets = Insets.of(200, 0, 250, 0);
     when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
-    when(displayCutout.getSafeInsetTop()).thenReturn(150);
-    when(displayCutout.getSafeInsetBottom()).thenReturn(150);
-    when(displayCutout.getSafeInsetLeft()).thenReturn(150);
-    when(displayCutout.getSafeInsetRight()).thenReturn(150);
+    when(displayCutout.getSafeInsetLeft()).thenReturn(110);
+    when(displayCutout.getSafeInsetTop()).thenReturn(120);
+    when(displayCutout.getSafeInsetRight()).thenReturn(130);
+    when(displayCutout.getSafeInsetBottom()).thenReturn(140);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
+    validateViewportMetricPadding(viewportMetricsCaptor, 200, 120, 250, 140);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
   }
