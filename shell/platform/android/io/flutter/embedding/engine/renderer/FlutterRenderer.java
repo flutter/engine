@@ -1276,11 +1276,6 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
-  public boolean isSoftwareRenderingEnabled() {
-    return flutterJNI.getIsSoftwareRenderingEnabled();
-  }
-
-  // TODO(mattcarroll): describe the native behavior that this invokes
   public void setAccessibilityFeatures(int flags) {
     flutterJNI.setAccessibilityFeatures(flags);
   }

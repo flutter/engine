@@ -14,6 +14,7 @@ import("//flutter/shell/version/version.gni")
 import("//flutter/vulkan/config.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
+  enable_software = true
   enable_gl = true
   enable_vulkan = true
   enable_metal = false

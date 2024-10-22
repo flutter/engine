@@ -181,7 +181,6 @@ public class FlutterView extends SurfaceView
 
     dartExecutor = mNativeView.getDartExecutor();
     flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
-    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
     mMetrics.physicalTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
@@ -791,14 +790,9 @@ public class FlutterView extends SurfaceView
     releaseAccessibilityNodeProvider();
   }
 
-  // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise
-  // add comments.
+
   private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
-    if (!mIsSoftwareRenderingEnabled) {
-      setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
-    } else {
-      setWillNotDraw(false);
-    }
+    setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
   }
 
   @Override

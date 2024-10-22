@@ -98,7 +98,6 @@ void FlutterMain::Init(JNIEnv* env,
 
   settings.android_rendering_api = SelectedRenderingAPI(settings);
   switch (settings.android_rendering_api) {
-    case AndroidRenderingAPI::kSoftware:
     case AndroidRenderingAPI::kSkiaOpenGLES:
       settings.enable_impeller = false;
       break;

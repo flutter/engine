@@ -57,8 +57,6 @@ AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
 std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
   switch (android_context_->RenderingApi()) {
-    case AndroidRenderingAPI::kSoftware:
-      return std::make_unique<AndroidSurfaceSoftware>();
     case AndroidRenderingAPI::kImpellerOpenGLES:
       return std::make_unique<AndroidSurfaceGLImpeller>(
           std::static_pointer_cast<AndroidContextGLImpeller>(android_context_));
@@ -295,9 +293,6 @@ void PlatformViewAndroid::RegisterExternalTexture(
           jni_facade_       //
           ));
       break;
-    case AndroidRenderingAPI::kSoftware:
-      FML_LOG(INFO) << "Software rendering does not support external textures.";
-      break;
     case AndroidRenderingAPI::kImpellerVulkan:
       FML_LOG(IMPORTANT)
           << "Flutter recommends migrating plugins that create and "
@@ -336,9 +331,6 @@ void PlatformViewAndroid::RegisterImageTexture(
           std::static_pointer_cast<impeller::ContextVK>(
               android_context_->GetImpellerContext()),
           texture_id, image_texture_entry, jni_facade_));
-      break;
-    case AndroidRenderingAPI::kSoftware:
-      FML_LOG(INFO) << "Software rendering does not support external textures.";
       break;
   }
 }
