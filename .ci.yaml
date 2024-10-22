@@ -523,7 +523,6 @@ targets:
 
   - name: Mac mac_unopt
     recipe: engine_v2/builder
-    bringup: true
     properties:
       config_name: mac_unopt_debug_no_rbe
       cpu: x86
