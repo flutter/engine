@@ -1275,6 +1275,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
     context.GetContentContext().GetTransientsBuffer().Reset();
   }
   context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+  context.GetContext()->DisposeThreadLocalCachedResources();
 
   return target.GetRenderTargetTexture();
 }
