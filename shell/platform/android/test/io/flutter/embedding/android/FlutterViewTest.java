@@ -701,9 +701,9 @@ public class FlutterViewTest {
     when(displayCutout.getSafeInsetBottom()).thenReturn(100);
     when(displayCutout.getSafeInsetRight()).thenReturn(100);
 
+    clearInvocations(flutterRenderer);
     flutterView.onApplyWindowInsets(windowInsets);
-
-    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
     List<FlutterRenderer.DisplayFeature> features =
         viewportMetricsCaptor.getValue().displayFeatures;
@@ -778,10 +778,11 @@ public class FlutterViewTest {
         ArgumentCaptor.forClass(Consumer.class);
     verify(windowInfoRepo).addWindowLayoutInfoListener(any(), any(), wmConsumerCaptor.capture());
     Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
+    clearInvocations(flutterRenderer);
     wmConsumer.accept(testWindowLayout);
 
     // Then the Renderer receives the display feature
-    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(
         FlutterRenderer.DisplayFeatureType.HINGE,
         viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
