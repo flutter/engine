@@ -1351,7 +1351,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     if ',' in java_filter or '*' in java_filter:
       logger.warning(
           'Can only filter JUnit4 tests by single entire class name, '
-          'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
+          'eg "io.flutter.SmokeTest". Ignoring filter=%s', java_filter
       )
       java_filter = None
     run_java_tests(java_filter, args.android_variant)
