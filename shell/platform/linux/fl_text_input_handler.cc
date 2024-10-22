@@ -82,7 +82,7 @@ struct FlTextInputHandlerPrivate {
   // Input method.
   GtkIMContext* im_context;
 
-  FlTextInputViewDelegate* view_delegate;
+  GWeakRef view_delegate;
 
   flutter::TextInputModel* text_model;
 
@@ -485,6 +485,12 @@ static void update_im_cursor_position(FlTextInputHandler* self) {
   FlTextInputHandlerPrivate* priv = static_cast<FlTextInputHandlerPrivate*>(
       fl_text_input_handler_get_instance_private(self));
 
+  g_autoptr(FlTextInputViewDelegate) view_delegate =
+      FL_TEXT_INPUT_VIEW_DELEGATE(g_weak_ref_get(&priv->view_delegate));
+  if (view_delegate == nullptr) {
+    return;
+  }
+
   // Skip update if not composing to avoid setting to position 0.
   if (!priv->text_model->composing()) {
     return;
@@ -502,7 +508,7 @@ static void update_im_cursor_position(FlTextInputHandler* self) {
   // Transform from Flutter view coordinates to GTK window coordinates.
   GdkRectangle preedit_rect = {};
   fl_text_input_view_delegate_translate_coordinates(
-      priv->view_delegate, x, y, &preedit_rect.x, &preedit_rect.y);
+      view_delegate, x, y, &preedit_rect.x, &preedit_rect.y);
 
   // Set the cursor location in window coordinates so that GTK can position any
   // system input method windows.
@@ -603,12 +609,7 @@ static void fl_text_input_handler_dispose(GObject* object) {
     delete priv->text_model;
     priv->text_model = nullptr;
   }
-  if (priv->view_delegate != nullptr) {
-    g_object_remove_weak_pointer(
-        G_OBJECT(priv->view_delegate),
-        reinterpret_cast<gpointer*>(&(priv->view_delegate)));
-    priv->view_delegate = nullptr;
-  }
+  g_weak_ref_clear(&priv->view_delegate);
 
   G_OBJECT_CLASS(fl_text_input_handler_parent_class)->dispose(object);
 }
@@ -627,7 +628,8 @@ static gboolean fl_text_input_handler_filter_keypress_default(
   }
 
   if (gtk_im_context_filter_keypress(
-          priv->im_context, reinterpret_cast<GdkEventKey*>(event->origin))) {
+          priv->im_context,
+          reinterpret_cast<GdkEventKey*>(fl_key_event_get_origin(event)))) {
     return TRUE;
   }
 
@@ -639,11 +641,11 @@ static gboolean fl_text_input_handler_filter_keypress_default(
   gboolean do_action = FALSE;
   // Handle navigation keys.
   gboolean changed = FALSE;
-  if (event->is_press) {
-    switch (event->keyval) {
+  if (fl_key_event_get_is_press(event)) {
+    switch (fl_key_event_get_keyval(event)) {
       case GDK_KEY_End:
       case GDK_KEY_KP_End:
-        if (event->state & GDK_SHIFT_MASK) {
+        if (fl_key_event_get_state(event) & GDK_SHIFT_MASK) {
           changed = priv->text_model->SelectToEnd();
         } else {
           changed = priv->text_model->MoveCursorToEnd();
@@ -662,7 +664,7 @@ static gboolean fl_text_input_handler_filter_keypress_default(
         break;
       case GDK_KEY_Home:
       case GDK_KEY_KP_Home:
-        if (event->state & GDK_SHIFT_MASK) {
+        if (fl_key_event_get_state(event) & GDK_SHIFT_MASK) {
           changed = priv->text_model->SelectToBeginning();
         } else {
           changed = priv->text_model->MoveCursorToBeginning();
@@ -764,10 +766,7 @@ FlTextInputHandler* fl_text_input_handler_new(
 
   init_im_context(self, im_context);
 
-  priv->view_delegate = view_delegate;
-  g_object_add_weak_pointer(
-      G_OBJECT(view_delegate),
-      reinterpret_cast<gpointer*>(&(priv->view_delegate)));
+  g_weak_ref_init(&priv->view_delegate, view_delegate);
 
   return self;
 }

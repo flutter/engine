@@ -11,6 +11,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
+#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -140,28 +141,41 @@ HandleType ToHandleType(TextureGLES::Type type) {
 }
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
+    : TextureGLES(std::move(reactor), desc, false, std::nullopt, std::nullopt) {
+}
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
                          enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
+    : TextureGLES(std::move(reactor), desc, true, std::nullopt, std::nullopt) {}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+                         TextureDescriptor desc,
+                         HandleGLES external_handle)
+    : TextureGLES(std::move(reactor),
+                  desc,
+                  true,
+                  std::nullopt,
+                  external_handle) {}
 
 std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
                                                   TextureDescriptor desc,
                                                   GLuint fbo) {
   return std::shared_ptr<TextureGLES>(
-      new TextureGLES(std::move(reactor), desc, true, fbo));
+      new TextureGLES(std::move(reactor), desc, true, fbo, std::nullopt));
 }
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          TextureDescriptor desc,
                          bool is_wrapped,
-                         std::optional<GLuint> fbo)
+                         std::optional<GLuint> fbo,
+                         std::optional<HandleGLES> external_handle)
     : Texture(desc),
       reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
-      handle_(reactor_->CreateHandle(ToHandleType(type_))),
+      handle_(external_handle.has_value()
+                  ? external_handle.value()
+                  : reactor_->CreateHandle(ToHandleType(type_))),
       is_wrapped_(is_wrapped),
       wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
@@ -194,7 +208,19 @@ bool TextureGLES::IsValid() const {
 
 // |Texture|
 void TextureGLES::SetLabel(std::string_view label) {
-  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
+#ifdef IMPELLER_DEBUG
+  reactor_->SetDebugLabel(handle_, label);
+#endif  // IMPELLER_DEBUG
+}
+
+// |Texture|
+void TextureGLES::SetLabel(std::string_view label, std::string_view trailing) {
+#ifdef IMPELLER_DEBUG
+  if (reactor_->CanSetDebugLabels()) {
+    reactor_->SetDebugLabel(handle_,
+                            SPrintF("%s %s", label.data(), trailing.data()));
+  }
+#endif  // IMPELLER_DEBUG
 }
 
 // |Texture|
@@ -565,6 +591,14 @@ Scalar TextureGLES::GetYCoordScale() const {
       return -1.0;
   }
   FML_UNREACHABLE();
+}
+
+bool TextureGLES::IsWrapped() const {
+  return is_wrapped_;
+}
+
+std::optional<GLuint> TextureGLES::GetFBO() const {
+  return wrapped_fbo_;
 }
 
 }  // namespace impeller

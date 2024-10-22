@@ -58,5 +58,11 @@ template("gen_executable_call") {
     script = "//flutter/build/dart/internal/gen_executable_call.py"
     outputs = [ output ]
     args = call_args
+    forward_variables_from(invoker,
+                           [
+                             "metadata",
+                             "testonly",
+                             "visibility",
+                           ])
   }
 }

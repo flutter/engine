@@ -28,8 +28,6 @@ impeller_component("display_list") {
     "canvas.h",
     "color_filter.cc",
     "color_filter.h",
-    "color_source.cc",
-    "color_source.h",
     "dl_atlas_geometry.cc",
     "dl_atlas_geometry.h",
     "dl_dispatcher.cc",
@@ -104,7 +102,6 @@ template("display_list_unittests_component") {
       ":display_list",
       "../playground:playground_test",
       "//flutter/impeller/golden_tests:screenshot",
-      "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
       "//flutter/third_party/txt",
     ]
     if (defined(invoker.public_configs)) {
@@ -180,7 +177,6 @@ template("aiks_unittests_component") {
       "//flutter/impeller/geometry:geometry_asserts",
       "//flutter/impeller/golden_tests:golden_playground_test",
       "//flutter/impeller/playground:playground_test",
-      "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
       "//flutter/testing:testing_lib",
       "//flutter/third_party/txt",
     ]
