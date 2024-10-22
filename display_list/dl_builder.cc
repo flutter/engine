@@ -15,8 +15,7 @@
 
 namespace flutter {
 
-// 1.048576 MB
-static const constexpr uint64_t kDLBuilderMaxGrowth = 1048576;
+static const constexpr size_t kDLPageSize = 16384u;
 
 /// @brief Return the next power of 2.
 ///
@@ -65,15 +64,11 @@ void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
   FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
-    static_assert(is_power_of_two(kDLBuilderMaxGrowth),
+    static_assert(is_power_of_two(kDLPageSize),
                   "This math needs updating for non-pow2.");
-    // Next power of two, up to a limit of DL_BUILDER_MAX_GROWTH. This
-    // assumes that the requested size to allocate is always less than
-    // kDLBuilderMaxGrowth, which given is over a MB is a reasonable
-    // assumption.
-    uint64_t next_size = NextPowerOfTwo(used_ + size);
-    uint64_t growth_in_bytes = (next_size - allocated_);
-    allocated_ += std::min(growth_in_bytes, kDLBuilderMaxGrowth);
+    // Round up the allocated size + used size to the next power of 2, with a
+    // minimum increment of kDLPageSize.
+    allocated_ = NextPowerOfTwo(used_ + std::max(size, kDLPageSize));
     storage_.realloc(allocated_);
     FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
