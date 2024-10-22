@@ -25,34 +25,6 @@ typedef enum {
   FL_ENGINE_ERROR_FAILED,
 } FlEngineError;
 
-// Struct holding the state of an individual pointer. The engine doesn't keep
-// track of which buttons have been pressed, so it's the embedding's
-// responsibility.
-struct PointerState {
-  // The device kind.
-  FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindMouse;
-
-  // A virtual pointer ID that is unique across all device kinds.
-  int32_t pointer_id = 0;
-
-  // True if the last event sent to Flutter had at least one button pressed.
-  bool flutter_state_is_down = false;
-
-  // True if kAdd has been sent to Flutter. Used to determine whether
-  // to send a kAdd event before sending an incoming pointer event, since
-  // Flutter expects pointers to be added before events are sent for them.
-  bool flutter_state_is_added = false;
-
-  // The currently pressed buttons, as represented in FlutterPointerEvent.
-  uint64_t buttons = 0;
-
-  // The x position where the last pan/zoom started.
-  double pan_zoom_start_x = 0;
-
-  // The y position where the last pan/zoom started.
-  double pan_zoom_start_y = 0;
-};
-
 GQuark fl_engine_error_quark(void) G_GNUC_CONST;
 
 /**
