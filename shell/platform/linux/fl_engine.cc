@@ -940,7 +940,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
-// Set's |event_data|'s phase to either kMove or kHover depending on the current
+// Sets |event_data|'s phase to either kMove or kHover depending on the current
 // primary mouse button state.
 void SetEventPhaseFromCursorButtonState(FlEngine* self,
                                         FlutterPointerEvent* event_data,
