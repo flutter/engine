@@ -470,7 +470,7 @@ void main() async {
           contains(
               'The backend does not support multisample anti-aliasing for offscreen color and stencil attachments'));
     }
-  }, skip: !(impellerEnabled && gpu.gpuContext.doesSupportOffscreenMSAA));
+  }, skip: !(impellerEnabled && !gpu.gpuContext.doesSupportOffscreenMSAA));
 
   // Renders a hollow green triangle pointing downwards.
   test('Can render hollowed out triangle using stencil ops', () async {
