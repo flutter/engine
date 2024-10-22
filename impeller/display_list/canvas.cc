@@ -1147,15 +1147,6 @@ void Canvas::SaveLayer(const Paint& paint,
         backdrop_data->shared_filter_snapshot =
             backdrop_filter_contents->RenderToSnapshot(
                 renderer_, snapshot_entity, coverage_limit);
-      } else {
-        backdrop_filter_contents = backdrop_filter_proc(
-            backdrop_filter, FilterInput::Make(std::move(input_texture)),
-            transform_stack_.back().transform.Basis(),
-            // When the subpass has a translation that means the math with
-            // the snapshot has to be different.
-            transform_stack_.back().transform.HasTranslation()
-                ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
-                : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
       }
 
       std::optional<Snapshot> maybe_snapshot =
@@ -1181,6 +1172,17 @@ void Canvas::SaveLayer(const Paint& paint,
         Save(0);
         return;
       }
+    }
+
+    if (!backdrop_filter_contents) {
+      backdrop_filter_contents = backdrop_filter_proc(
+          backdrop_filter, FilterInput::Make(std::move(input_texture)),
+          transform_stack_.back().transform.Basis(),
+          // When the subpass has a translation that means the math with
+          // the snapshot has to be different.
+          transform_stack_.back().transform.HasTranslation()
+              ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
+              : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
     }
   }
 
