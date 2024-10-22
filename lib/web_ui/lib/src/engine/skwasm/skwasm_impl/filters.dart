@@ -60,7 +60,7 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
   ///
   /// The handle is deleted immediately after [borrow] returns. The [borrow]
   /// function must not store the handle to avoid dangling pointer bugs.
-  void withRawImageFilter(ImageFilterHandleBorrow borrow);
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp});
 
   @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
@@ -80,8 +80,8 @@ class SkwasmBlurFilter extends SkwasmImageFilter {
   final ui.TileMode? tileMode;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
-    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, tileMode?.index ?? 0);
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
+    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, (tileMode ?? defaultMode).index);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
   }
@@ -97,7 +97,7 @@ class SkwasmDilateFilter extends SkwasmImageFilter {
   final double radiusY;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final rawImageFilter = imageFilterCreateDilate(radiusX, radiusY);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
@@ -114,7 +114,7 @@ class SkwasmErodeFilter extends SkwasmImageFilter {
   final double radiusY;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     final rawImageFilter = imageFilterCreateErode(radiusX, radiusY);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
@@ -131,7 +131,7 @@ class SkwasmMatrixFilter extends SkwasmImageFilter {
   final ui.FilterQuality filterQuality;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     withStackScope((scope) {
       final rawImageFilter = imageFilterCreateMatrix(
         scope.convertMatrix4toSkMatrix(matrix4),
@@ -152,7 +152,7 @@ class SkwasmColorImageFilter extends SkwasmImageFilter {
   final SkwasmColorFilter filter;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     filter.withRawColorFilter((colroFilterHandle) {
       final rawImageFilter = imageFilterCreateFromColorFilter(colroFilterHandle);
       borrow(rawImageFilter);
@@ -171,14 +171,14 @@ class SkwasmComposedImageFilter extends SkwasmImageFilter {
   final SkwasmImageFilter inner;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
     outer.withRawImageFilter((outerHandle) {
       inner.withRawImageFilter((innerHandle) {
         final rawImageFilter = imageFilterCompose(outerHandle, innerHandle);
         borrow(rawImageFilter);
         imageFilterDispose(rawImageFilter);
-      });
-    });
+      }, defaultMode: defaultMode);
+    }, defaultMode: defaultMode);
   }
 
   @override
