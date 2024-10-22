@@ -126,7 +126,8 @@ template("_dartdevc") {
         ext = ".exe"
       }
       dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
-      dartaot = rebase_path("$host_prebuilt_dart_sdk/bin/dartaotruntime$ext", root_out_dir)
+      dartaot = rebase_path("$host_prebuilt_dart_sdk/bin/dartaotruntime$ext",
+                            root_out_dir)
       dartdevc = rebase_path(
               "$host_prebuilt_dart_sdk/bin/snapshots/dartdevc_aot.dart.snapshot")
       args = [
