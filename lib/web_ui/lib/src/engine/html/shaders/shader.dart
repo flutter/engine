@@ -732,7 +732,7 @@ abstract class EngineImageFilter implements ui.ImageFilter {
 }
 
 class _BlurEngineImageFilter extends EngineImageFilter {
-  _BlurEngineImageFilter({ this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode = null }) : super._();
+  _BlurEngineImageFilter({ this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode }) : super._();
 
   final double sigmaX;
   final double sigmaY;

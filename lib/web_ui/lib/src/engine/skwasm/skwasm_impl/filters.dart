@@ -16,7 +16,7 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
-    ui.TileMode? tileMode = null,
+    ui.TileMode? tileMode,
   }) => SkwasmBlurFilter(sigmaX, sigmaY, tileMode);
 
   factory SkwasmImageFilter.dilate({
