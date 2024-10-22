@@ -675,9 +675,11 @@ public class FlutterViewTest {
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Capture flutterView.setWindowInfoListenerDisplayFeatures.
-    WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo = mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
+    WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
-    ArgumentCaptor<Consumer<WindowLayoutInfo>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
+    ArgumentCaptor<Consumer<WindowLayoutInfo>> consumerCaptor =
+        ArgumentCaptor.forClass(Consumer.class);
     flutterView.onAttachedToWindow();
     verify(windowInfoRepo).addWindowLayoutInfoListener(any(), any(), consumerCaptor.capture());
     Consumer<WindowLayoutInfo> consumer = consumerCaptor.getValue();
@@ -702,40 +704,15 @@ public class FlutterViewTest {
     assertEquals(featureBounds, features.get(0).bounds);
 
     // Then we simulate the system applying a window inset.
-    WindowInsets windowInsets = mock(WindowInsets.class);
-    DisplayCutout displayCutout = mock(DisplayCutout.class);
-    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
-
     List<Rect> boundingRects =
         Arrays.asList(new Rect(0, 200, 300, 400), new Rect(150, 0, 300, 150));
-    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
-
-    // The following mocked methods are necessary to avoid a NullPointerException when calling
-    // onApplyWindowInsets, but are irrelevant to the behavior this test concerns.
-    Insets unusedInsets = Insets.of(100, 100, 100, 100);
-    // WindowInsets::getSystemGestureInsets was added in API 29, deprecated in API 30.
-    if (Build.VERSION.SDK_INT == 29) {
-      when(windowInsets.getSystemGestureInsets()).thenReturn(unusedInsets);
-    }
-    // WindowInsets::getInsets was added in API 30.
-    if (Build.VERSION.SDK_INT >= 30) {
-      when(windowInsets.getInsets(anyInt())).thenReturn(unusedInsets);
-    }
-    // DisplayCutout::getWaterfallInsets was added in API 30.
-    if (Build.VERSION.SDK_INT >= 30) {
-      when(displayCutout.getWaterfallInsets()).thenReturn(unusedInsets);
-    }
-    when(displayCutout.getSafeInsetTop()).thenReturn(100);
-    when(displayCutout.getSafeInsetLeft()).thenReturn(100);
-    when(displayCutout.getSafeInsetBottom()).thenReturn(100);
-    when(displayCutout.getSafeInsetRight()).thenReturn(100);
+    WindowInsets windowInsets = setupMockDisplayCutout(boundingRects);
 
     clearInvocations(flutterRenderer);
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
-    features =
-        viewportMetricsCaptor.getValue().displayFeatures;
+    features = viewportMetricsCaptor.getValue().displayFeatures;
 
     // Assert the old display feature is still present.
     assertEquals(FlutterRenderer.DisplayFeatureType.HINGE, features.get(0).type);
@@ -804,36 +781,16 @@ public class FlutterViewTest {
     clearInvocations(flutterRenderer);
 
     // Test that display features do not override cutouts.
-    WindowInsets windowInsets = mock(WindowInsets.class);
-    DisplayCutout displayCutout = mock(DisplayCutout.class);
-    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
-    List<Rect> boundingRects =
-        Arrays.asList(new Rect(0, 200, 300, 400));
-    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
-    // The following mocked methods are necessary to avoid a NullPointerException when calling
-    // onApplyWindowInsets, but are irrelevant to the behavior this test concerns.
-    Insets unusedInsets = Insets.of(100, 100, 100, 100);
-    // WindowInsets::getSystemGestureInsets was added in API 29, deprecated in API 30.
-    if (Build.VERSION.SDK_INT == 29) {
-      when(windowInsets.getSystemGestureInsets()).thenReturn(unusedInsets);
-    }
-    // WindowInsets::getInsets was added in API 30.
-    if (Build.VERSION.SDK_INT >= 30) {
-      when(windowInsets.getInsets(anyInt())).thenReturn(unusedInsets);
-    }
-    // DisplayCutout::getWaterfallInsets was added in API 30.
-    if (Build.VERSION.SDK_INT >= 30) {
-      when(displayCutout.getWaterfallInsets()).thenReturn(unusedInsets);
-    }
-    when(displayCutout.getSafeInsetTop()).thenReturn(100);
-    when(displayCutout.getSafeInsetLeft()).thenReturn(100);
-    when(displayCutout.getSafeInsetBottom()).thenReturn(100);
-    when(displayCutout.getSafeInsetRight()).thenReturn(100);
+    List<Rect> boundingRects = Arrays.asList(new Rect(0, 200, 300, 400));
+    WindowInsets windowInsets = setupMockDisplayCutout(boundingRects);
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(1, viewportMetricsCaptor.getValue().displayFeatures.size());
-    assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
-    assertEquals(boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
+    assertEquals(
+        FlutterRenderer.DisplayFeatureType.CUTOUT,
+        viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
+    assertEquals(
+        boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
     clearInvocations(flutterRenderer);
 
     FoldingFeature displayFeature = mock(FoldingFeature.class);
@@ -866,8 +823,11 @@ public class FlutterViewTest {
         new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
 
     // Assert the display cutout is unaffected.
-    assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, viewportMetricsCaptor.getValue().displayFeatures.get(1).type);
-    assertEquals(boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(1).bounds);
+    assertEquals(
+        FlutterRenderer.DisplayFeatureType.CUTOUT,
+        viewportMetricsCaptor.getValue().displayFeatures.get(1).type);
+    assertEquals(
+        boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(1).bounds);
   }
 
   @Test
@@ -1315,6 +1275,34 @@ public class FlutterViewTest {
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       when(windowInsets.getSystemGestureInsets()).thenReturn(Insets.NONE);
     }
+  }
+
+  @SuppressWarnings("deprecation")
+  private WindowInsets setupMockDisplayCutout(List<Rect> boundingRects) {
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
+    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
+    // The following mocked methods are necessary to avoid a NullPointerException when calling
+    // onApplyWindowInsets, but are irrelevant to the behavior this test concerns.
+    Insets unusedInsets = Insets.of(100, 100, 100, 100);
+    // WindowInsets::getSystemGestureInsets was added in API 29, deprecated in API 30.
+    if (Build.VERSION.SDK_INT == 29) {
+      when(windowInsets.getSystemGestureInsets()).thenReturn(unusedInsets);
+    }
+    // WindowInsets::getInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(windowInsets.getInsets(anyInt())).thenReturn(unusedInsets);
+    }
+    // DisplayCutout::getWaterfallInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(displayCutout.getWaterfallInsets()).thenReturn(unusedInsets);
+    }
+    when(displayCutout.getSafeInsetTop()).thenReturn(100);
+    when(displayCutout.getSafeInsetLeft()).thenReturn(100);
+    when(displayCutout.getSafeInsetBottom()).thenReturn(100);
+    when(displayCutout.getSafeInsetRight()).thenReturn(100);
+    return windowInsets;
   }
 
   /*
