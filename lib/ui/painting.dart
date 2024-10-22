@@ -1154,8 +1154,9 @@ enum Clip {
 
   /// Clip with anti-aliasing.
   ///
-  /// This mode has anti-aliased clipping edges, which reduces jagged edges in
-  /// curves and rectangles that aren't axis-aligned.
+  /// This mode has anti-aliased clipping edges, which reduces jagged edges when
+  /// the clip shape itself has edges that are diagonal, curved, or otherwise
+  /// not axis-aligned.
   ///
   /// This is much faster than [antiAliasWithSaveLayer], but slower than [hardEdge].
   ///
