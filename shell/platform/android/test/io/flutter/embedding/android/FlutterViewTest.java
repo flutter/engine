@@ -655,10 +655,12 @@ public class FlutterViewTest {
   @Test
   @Config(minSdk = 28)
   public void onApplyWindowInsetsSetsDisplayCutouts() {
-    FlutterView flutterView = spy(new FlutterView(ctx));
+    // Use an Activity context so that FlutterView.onAttachedToWindow completes.
+    Context context = Robolectric.setupActivity(Activity.class);
+    FlutterView flutterView = spy(new FlutterView(context));
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
-    when(flutterView.getContext()).thenReturn(ctx);
+    when(flutterView.getContext()).thenReturn(context);
 
     FlutterEngine flutterEngine = spy(new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -671,6 +673,33 @@ public class FlutterViewTest {
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+
+    // Capture flutterView.setWindowInfoListenerDisplayFeatures.
+    WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo = mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
+    doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
+    ArgumentCaptor<Consumer<WindowLayoutInfo>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
+    flutterView.onAttachedToWindow();
+    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), any(), consumerCaptor.capture());
+    Consumer<WindowLayoutInfo> consumer = consumerCaptor.getValue();
+
+    // Set display features in flutterView to ensure they are not overridden by display cutouts.
+    FoldingFeature displayFeature = mock(FoldingFeature.class);
+    Rect featureBounds = new Rect(10, 20, 30, 40);
+    when(displayFeature.getBounds()).thenReturn(featureBounds);
+    when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
+    when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
+    WindowLayoutInfo windowLayout = new WindowLayoutInfo(Collections.singletonList(displayFeature));
+    clearInvocations(flutterRenderer);
+    consumer.accept(windowLayout);
+
+    // Assert the display feature is set.
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    List<FlutterRenderer.DisplayFeature> features =
+        viewportMetricsCaptor.getValue().displayFeatures;
+    assertEquals(1, features.size());
+    assertEquals(FlutterRenderer.DisplayFeatureType.HINGE, features.get(0).type);
+    assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
+    assertEquals(featureBounds, features.get(0).bounds);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -705,12 +734,19 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
-    List<FlutterRenderer.DisplayFeature> features =
+    features =
         viewportMetricsCaptor.getValue().displayFeatures;
-    assertEquals(2, features.size());
+
+    // Assert the old display feature is still present.
+    assertEquals(FlutterRenderer.DisplayFeatureType.HINGE, features.get(0).type);
+    assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
+    assertEquals(featureBounds, features.get(0).bounds);
+
+    // Asserts for display cutouts.
+    assertEquals(3, features.size());
     for (int i = 0; i < 2; i++) {
-      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i).type);
-      assertEquals(boundingRects.get(i), features.get(i).bounds);
+      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i + 1).type);
+      assertEquals(boundingRects.get(i), features.get(i + 1).bounds);
     }
   }
 
