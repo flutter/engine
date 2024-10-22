@@ -795,6 +795,47 @@ public class FlutterViewTest {
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
 
+    // Display features should be empty on attaching to engine.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(Collections.emptyList(), viewportMetricsCaptor.getValue().displayFeatures);
+    clearInvocations(flutterRenderer);
+
+    // Test that display features do not override cutouts.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
+    List<Rect> boundingRects =
+        Arrays.asList(new Rect(0, 200, 300, 400));
+    when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
+    // The following mocked methods are necessary to avoid a NullPointerException when calling
+    // onApplyWindowInsets, but are irrelevant to the behavior this test concerns.
+    Insets unusedInsets = Insets.of(100, 100, 100, 100);
+    // WindowInsets::getSystemGestureInsets was added in API 29, deprecated in API 30.
+    if (Build.VERSION.SDK_INT == 29) {
+      when(windowInsets.getSystemGestureInsets()).thenReturn(unusedInsets);
+    }
+    // WindowInsets::getInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(windowInsets.getInsets(anyInt())).thenReturn(unusedInsets);
+    }
+    // DisplayCutout::getWaterfallInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(displayCutout.getWaterfallInsets()).thenReturn(unusedInsets);
+    }
+    when(displayCutout.getSafeInsetTop()).thenReturn(100);
+    when(displayCutout.getSafeInsetLeft()).thenReturn(100);
+    when(displayCutout.getSafeInsetBottom()).thenReturn(100);
+    when(displayCutout.getSafeInsetRight()).thenReturn(100);
+    flutterView.onApplyWindowInsets(windowInsets);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(1, viewportMetricsCaptor.getValue().displayFeatures.size());
+    assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
+    assertEquals(boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
+    clearInvocations(flutterRenderer);
+
     FoldingFeature displayFeature = mock(FoldingFeature.class);
     when(displayFeature.getBounds()).thenReturn(new Rect(0, 0, 100, 100));
     when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
@@ -804,11 +845,6 @@ public class FlutterViewTest {
         new WindowLayoutInfo(Collections.singletonList(displayFeature));
 
     // When FlutterView is attached to the engine and window, and a hinge display feature exists
-    flutterView.attachToFlutterEngine(flutterEngine);
-    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
-        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
-    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(Collections.emptyList(), viewportMetricsCaptor.getValue().displayFeatures);
     flutterView.onAttachedToWindow();
     ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
         ArgumentCaptor.forClass(Consumer.class);
@@ -819,6 +855,7 @@ public class FlutterViewTest {
 
     // Then the Renderer receives the display feature
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(2, viewportMetricsCaptor.getValue().displayFeatures.size());
     assertEquals(
         FlutterRenderer.DisplayFeatureType.HINGE,
         viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
@@ -827,6 +864,10 @@ public class FlutterViewTest {
         viewportMetricsCaptor.getValue().displayFeatures.get(0).state);
     assertEquals(
         new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
+
+    // Assert the display cutout is unaffected.
+    assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, viewportMetricsCaptor.getValue().displayFeatures.get(1).type);
+    assertEquals(boundingRects.get(0), viewportMetricsCaptor.getValue().displayFeatures.get(1).bounds);
   }
 
   @Test
