@@ -653,7 +653,7 @@ public class FlutterViewTest {
 
   @SuppressWarnings("deprecation")
   @Test
-  @Config(sdk = 28)
+  @Config(minSdk = 28)
   public void onApplyWindowInsetsSetsDisplayCutouts() {
     FlutterView flutterView = spy(new FlutterView(ctx));
     assertEquals(0, flutterView.getSystemUiVisibility());
@@ -680,6 +680,26 @@ public class FlutterViewTest {
     List<Rect> boundingRects =
         Arrays.asList(new Rect(0, 200, 300, 400), new Rect(150, 0, 300, 150));
     when(displayCutout.getBoundingRects()).thenReturn(boundingRects);
+
+    // The following mocked methods are necessary to avoid a NullPointerException when calling
+    // onApplyWindowInsets, but are irrelevant to the behavior this test concerns.
+    Insets unusedInsets = Insets.of(100, 100, 100, 100);
+    // WindowInsets::getSystemGestureInsets was added in API 29, deprecated in API 30.
+    if (Build.VERSION.SDK_INT == 29) {
+      when(windowInsets.getSystemGestureInsets()).thenReturn(unusedInsets);
+    }
+    // WindowInsets::getInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(windowInsets.getInsets(anyInt())).thenReturn(unusedInsets);
+    }
+    // DisplayCutout::getWaterfallInsets was added in API 30.
+    if (Build.VERSION.SDK_INT >= 30) {
+      when(displayCutout.getWaterfallInsets()).thenReturn(unusedInsets);
+    }
+    when(displayCutout.getSafeInsetTop()).thenReturn(100);
+    when(displayCutout.getSafeInsetLeft()).thenReturn(100);
+    when(displayCutout.getSafeInsetBottom()).thenReturn(100);
+    when(displayCutout.getSafeInsetRight()).thenReturn(100);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
