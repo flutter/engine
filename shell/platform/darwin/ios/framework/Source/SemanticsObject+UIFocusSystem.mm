@@ -78,8 +78,8 @@ FLUTTER_ASSERT_ARC
 #pragma mark - UIFocusItemContainer Conformance
 
 - (NSArray<id<UIFocusItem>>*)focusItemsInRect:(CGRect)rect {
-  // It seems the iOS focus system rely heavily on this method (instead of
-  // preferredFocusEnvironments) for directional navigation.
+  // It seems the iOS focus system relies heavily on focusItemsInRect
+  // (instead of preferredFocusEnvironments) for directional navigation.
   // Whether the item order in the returned array matters is unknown.
   //
   // Additionally, this method is only supposed to return items within the given
