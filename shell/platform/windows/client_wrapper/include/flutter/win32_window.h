@@ -41,16 +41,19 @@ class Win32Window {
   // Returns the current window archetype.
   auto GetArchetype() const -> WindowArchetype;
 
+  // Returns the child windows.
+  auto GetChildren() const -> std::set<Win32Window*> const&;
+
  protected:
   // Creates a native Win32 window. |title| is the window title string.
   // |client_size| specifies the requested size of the client rectangle (i.e.,
   // the size of the view). The window style is determined by |archetype|. For
-  // |FlutterWindowArchetype::popup|, both |parent| and |positioner| must be
-  // provided; |positioner| is used only for this archetype. For
-  // |FlutterWindowArchetype::dialog|, a modal dialog is created if |parent| is
-  // specified; otherwise, the dialog is modeless. After successful creation,
-  // |OnCreate| is called, and its result is returned. Otherwise, the return
-  // value is false.
+  // |FlutterWindowArchetype::satellite| and |FlutterWindowArchetype::popup|,
+  // both |parent| and |positioner| must be provided; |positioner| is used only
+  // for these archetypes. For |FlutterWindowArchetype::dialog|, a modal dialog
+  // is created if |parent| is specified; otherwise, the dialog is modeless.
+  // After successful creation, |OnCreate| is called, and its result is
+  // returned. Otherwise, the return value is false.
   auto Create(std::wstring const& title,
               WindowSize const& client_size,
               WindowArchetype archetype,
@@ -112,6 +115,9 @@ class Win32Window {
 
   // Handle for hosted child content window.
   HWND child_content_{nullptr};
+
+  // Offset between this window's position and its owner's position.
+  POINT offset_from_owner_{0, 0};
 
   // Controls whether the non-client area can be redrawn as inactive.
   // Enabled by default, but temporarily disabled during child popup destruction

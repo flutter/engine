@@ -58,6 +58,19 @@ class FlutterWindowController {
                           MethodCall<> const& call,
                           MethodResult<>& result);
   void HandleDestroyWindow(MethodCall<> const& call, MethodResult<>& result);
+  // Hides all satellite windows in the application, except those that are
+  // descendants of |opt_out_hwnd| or have a dialog as a child. By default,
+  // |opt_out_hwnd| is null, so no window is excluded.
+  void HideWindowsSatellites(HWND opt_out_hwnd = nullptr);
+  // Shows the satellite windows of |hwnd| and of its ancestors.
+  void ShowWindowAndAncestorsSatellites(HWND hwnd);
+
+  // Controls whether satellites are hidden when their top-level window
+  // and all its children become inactive. If null, satellite hiding
+  // is enabled. If not null, it contains the handle of the window that
+  // disabled the hiding, and it will be reset when the window if fully
+  // destroyed.
+  HWND disable_satellite_hiding_{nullptr};
 
   mutable std::mutex mutex_;
   std::shared_ptr<Win32Wrapper> win32_;
