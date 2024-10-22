@@ -526,7 +526,7 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   // This is an arbitrary offset that is not CGPointZero.
   scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
-  [self.view addSubview:self.scrollView];
+  [self.view addSubview:scrollView];
   self.scrollView = scrollView;
 }
 
