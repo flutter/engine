@@ -80,11 +80,20 @@ FLUTTER_ASSERT_ARC
 - (NSArray<id<UIFocusItem>>*)focusItemsInRect:(CGRect)rect {
   // It seems the iOS focus system relies heavily on focusItemsInRect
   // (instead of preferredFocusEnvironments) for directional navigation.
-  // Whether the item order in the returned array matters is unknown.
   //
-  // Additionally, this method is only supposed to return items within the given
+  // The order of the items seems to be important, menus and dialogs become
+  // unreachable via FKA if the returned children are organized
+  // in hit-test order.
+  //
+  // This method is only supposed to return items within the given
   // rect but returning everything in the subtree seems to work fine.
-  return self.childrenInHitTestOrder;
+  NSMutableArray<SemanticsObject*>* reversedItems =
+      [[NSMutableArray alloc] initWithCapacity:self.childrenInHitTestOrder.count];
+  for (NSUInteger i = 0; i < self.childrenInHitTestOrder.count; ++i) {
+    [reversedItems
+        addObject:self.childrenInHitTestOrder[self.childrenInHitTestOrder.count - 1 - i]];
+  }
+  return reversedItems;
 }
 
 - (id<UICoordinateSpace>)coordinateSpace {
