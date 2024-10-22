@@ -218,6 +218,8 @@ void FlutterWindowController::MethodCallHandler(MethodCall<> const& call,
                                                 MethodResult<>& result) {
   if (call.method_name() == "createWindow") {
     HandleCreateWindow(WindowArchetype::regular, call, result);
+  } else if (call.method_name() == "createDialog") {
+    HandleCreateWindow(WindowArchetype::dialog, call, result);
   } else if (call.method_name() == "createPopup") {
     HandleCreateWindow(WindowArchetype::popup, call, result);
   } else if (call.method_name() == "destroyWindow") {
@@ -437,13 +439,16 @@ void FlutterWindowController::HandleCreateWindow(WindowArchetype archetype,
   }
 
   std::optional<FlutterViewId> parent_view_id;
-  if (archetype == WindowArchetype::popup) {
+  if (archetype == WindowArchetype::dialog ||
+      archetype == WindowArchetype::popup) {
     if (auto const parent_it{map->find(EncodableValue("parent"))};
         parent_it != map->end()) {
       if (parent_it->second.IsNull()) {
-        result.Error(kErrorCodeInvalidValue,
-                     "Value for 'parent' key must not be null.");
-        return;
+        if (archetype != WindowArchetype::dialog) {
+          result.Error(kErrorCodeInvalidValue,
+                       "Value for 'parent' key must not be null.");
+          return;
+        }
       } else {
         if (auto const* const parent{std::get_if<int>(&parent_it->second)}) {
           parent_view_id = *parent >= 0 ? std::optional<FlutterViewId>(*parent)

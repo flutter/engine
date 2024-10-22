@@ -308,7 +308,22 @@ auto Win32Window::Create(std::wstring const& title,
       // TODO
       break;
     case WindowArchetype::dialog:
-      // TODO
+      window_style |= WS_OVERLAPPED | WS_CAPTION;
+      extended_window_style |= WS_EX_DLGMODALFRAME;
+      if (!parent) {
+        // If the dialog has no parent, add a minimize box and a system menu
+        // (which includes a close button)
+        window_style |= WS_MINIMIZEBOX | WS_SYSMENU;
+      } else {
+        // If the parent window has the WS_EX_TOOLWINDOW style, apply the same
+        // style to the dialog
+        if (GetWindowLongPtr(parent.value(), GWL_EXSTYLE) & WS_EX_TOOLWINDOW) {
+          extended_window_style |= WS_EX_TOOLWINDOW;
+        }
+        if (auto* const parent_window{GetThisFromHandle(parent.value())}) {
+          parent_window->children_.insert(this);
+        }
+      }
       break;
     case WindowArchetype::satellite:
       // TODO
@@ -335,81 +350,98 @@ auto Win32Window::Create(std::wstring const& title,
 
   // Window rectangle in physical coordinates.
   // Default positioning values (CW_USEDEFAULT) are used
-  // if the window has no parent or positioner.
+  // if the window has no parent or positioner. Parented dialogs will be
+  // centered in the parent's frame.
   auto const window_rect{[&]() -> WindowRectangle {
     auto const window_size{GetWindowSizeForClientSize(
         client_size, window_style, extended_window_style,
         parent.value_or(nullptr))};
-    if (parent && positioner) {
-      auto const frame_size{GetFrameSizeForWindowSize(
-          window_size, window_style, extended_window_style, parent.value())};
+    if (parent) {
+      if (positioner) {
+        auto const frame_size{GetFrameSizeForWindowSize(
+            window_size, window_style, extended_window_style, parent.value())};
 
-      // The rectangle of the parent's client area, in physical coordinates
-      auto const parent_rect{[](HWND parent_window) -> WindowRectangle {
-        RECT client_rect;
-        GetClientRect(parent_window, &client_rect);
-        POINT top_left{client_rect.left, client_rect.top};
-        ClientToScreen(parent_window, &top_left);
-        POINT bottom_right{client_rect.right, client_rect.bottom};
-        ClientToScreen(parent_window, &bottom_right);
-        return {{top_left.x, top_left.y},
-                {bottom_right.x - top_left.x, bottom_right.y - top_left.y}};
-      }(parent.value())};
+        // The rectangle of the parent's client area, in physical coordinates
+        auto const parent_rect{[](HWND parent_window) -> WindowRectangle {
+          RECT client_rect;
+          GetClientRect(parent_window, &client_rect);
+          POINT top_left{client_rect.left, client_rect.top};
+          ClientToScreen(parent_window, &top_left);
+          POINT bottom_right{client_rect.right, client_rect.bottom};
+          ClientToScreen(parent_window, &bottom_right);
+          return {{top_left.x, top_left.y},
+                  {bottom_right.x - top_left.x, bottom_right.y - top_left.y}};
+        }(parent.value())};
 
-      // The anchor rectangle, in physical coordinates
-      auto const anchor_rect{[](WindowPositioner const& positioner,
-                                HWND parent_window,
-                                WindowRectangle const& parent_rect)
-                                 -> WindowRectangle {
-        if (positioner.anchor_rect) {
-          auto const dpr{FlutterDesktopGetDpiForHWND(parent_window) /
-                         static_cast<double>(USER_DEFAULT_SCREEN_DPI)};
-          return {
-              {parent_rect.top_left.x +
-                   static_cast<int>(positioner.anchor_rect->top_left.x * dpr),
-               parent_rect.top_left.y +
-                   static_cast<int>(positioner.anchor_rect->top_left.y * dpr)},
-              {static_cast<int>(positioner.anchor_rect->size.width * dpr),
-               static_cast<int>(positioner.anchor_rect->size.height * dpr)}};
-        } else {
-          // If the anchor rect specified in the positioner is std::nullopt,
-          // return an anchor rect that is equal to the window frame area
-          RECT frame_rect;
-          DwmGetWindowAttribute(parent_window, DWMWA_EXTENDED_FRAME_BOUNDS,
-                                &frame_rect, sizeof(frame_rect));
-          return {{frame_rect.left, frame_rect.top},
-                  {frame_rect.right - frame_rect.left,
-                   frame_rect.bottom - frame_rect.top}};
-        }
-      }(positioner.value(), parent.value(), parent_rect)};
+        // The anchor rectangle, in physical coordinates
+        auto const anchor_rect{[](WindowPositioner const& positioner,
+                                  HWND parent_window,
+                                  WindowRectangle const& parent_rect)
+                                   -> WindowRectangle {
+          if (positioner.anchor_rect) {
+            auto const dpr{FlutterDesktopGetDpiForHWND(parent_window) /
+                           static_cast<double>(USER_DEFAULT_SCREEN_DPI)};
+            return {
+                {parent_rect.top_left.x +
+                     static_cast<int>(positioner.anchor_rect->top_left.x * dpr),
+                 parent_rect.top_left.y +
+                     static_cast<int>(positioner.anchor_rect->top_left.y *
+                                      dpr)},
+                {static_cast<int>(positioner.anchor_rect->size.width * dpr),
+                 static_cast<int>(positioner.anchor_rect->size.height * dpr)}};
+          } else {
+            // If the anchor rect specified in the positioner is std::nullopt,
+            // return an anchor rect that is equal to the window frame area
+            RECT frame_rect;
+            DwmGetWindowAttribute(parent_window, DWMWA_EXTENDED_FRAME_BOUNDS,
+                                  &frame_rect, sizeof(frame_rect));
+            return {{frame_rect.left, frame_rect.top},
+                    {frame_rect.right - frame_rect.left,
+                     frame_rect.bottom - frame_rect.top}};
+          }
+        }(positioner.value(), parent.value(), parent_rect)};
 
-      // Rectangle of the monitor that has the largest area of intersection
-      // with the anchor rectangle, in physical coordinates
-      auto const output_rect{
-          [](RECT anchor_rect)
-              -> WindowRectangle {
-            auto* monitor{
-                MonitorFromRect(&anchor_rect, MONITOR_DEFAULTTONEAREST)};
-            MONITORINFO mi;
-            mi.cbSize = sizeof(MONITORINFO);
-            auto const bounds{GetMonitorInfo(monitor, &mi) ? mi.rcWork
-                                                           : RECT{0, 0, 0, 0}};
-            return {{bounds.left, bounds.top},
-                    {bounds.right - bounds.left, bounds.bottom - bounds.top}};
-          }({.left = static_cast<LONG>(anchor_rect.top_left.x),
-              .top = static_cast<LONG>(anchor_rect.top_left.y),
-              .right = static_cast<LONG>(anchor_rect.top_left.x +
-                                         anchor_rect.size.width),
-              .bottom = static_cast<LONG>(anchor_rect.top_left.y +
-                                          anchor_rect.size.height)})};
+        // Rectangle of the monitor that has the largest area of intersection
+        // with the anchor rectangle, in physical coordinates
+        auto const output_rect{
+            [](RECT anchor_rect)
+                -> WindowRectangle {
+              auto* monitor{
+                  MonitorFromRect(&anchor_rect, MONITOR_DEFAULTTONEAREST)};
+              MONITORINFO mi;
+              mi.cbSize = sizeof(MONITORINFO);
+              auto const bounds{
+                  GetMonitorInfo(monitor, &mi) ? mi.rcWork : RECT{0, 0, 0, 0}};
+              return {{bounds.left, bounds.top},
+                      {bounds.right - bounds.left, bounds.bottom - bounds.top}};
+            }({.left = static_cast<LONG>(anchor_rect.top_left.x),
+                .top = static_cast<LONG>(anchor_rect.top_left.y),
+                .right = static_cast<LONG>(anchor_rect.top_left.x +
+                                           anchor_rect.size.width),
+                .bottom = static_cast<LONG>(anchor_rect.top_left.y +
+                                            anchor_rect.size.height)})};
 
-      auto const rect{internal::PlaceWindow(
-          positioner.value(), frame_size, anchor_rect,
-          positioner->anchor_rect ? parent_rect : anchor_rect, output_rect)};
+        auto const rect{internal::PlaceWindow(
+            positioner.value(), frame_size, anchor_rect,
+            positioner->anchor_rect ? parent_rect : anchor_rect, output_rect)};
 
-      return {rect.top_left,
-              {rect.size.width + window_size.width - frame_size.width,
-               rect.size.height + window_size.height - frame_size.height}};
+        return {rect.top_left,
+                {rect.size.width + window_size.width - frame_size.width,
+                 rect.size.height + window_size.height - frame_size.height}};
+      } else if (archetype == WindowArchetype::dialog) {
+        // Center parented dialog in the parent frame
+        RECT parent_frame;
+        DwmGetWindowAttribute(parent.value(), DWMWA_EXTENDED_FRAME_BOUNDS,
+                              &parent_frame, sizeof(parent_frame));
+        WindowPoint const top_left{
+            static_cast<int>(
+                (parent_frame.left + parent_frame.right - window_size.width) *
+                0.5),
+            static_cast<int>(
+                (parent_frame.top + parent_frame.bottom - window_size.height) *
+                0.5)};
+        return {top_left, window_size};
+      }
     }
     return {{CW_USEDEFAULT, CW_USEDEFAULT}, window_size};
   }()};
@@ -463,6 +495,10 @@ auto Win32Window::Create(std::wstring const& title,
                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 
   UpdateTheme(window_handle_);
+
+  if (archetype == WindowArchetype::dialog && parent) {
+    UpdateModalState();
+  }
 
   gActiveWindowCount++;
 
@@ -567,6 +603,14 @@ void Win32Window::OnDestroy() {
     case WindowArchetype::floating_regular:
       break;
     case WindowArchetype::dialog:
+      if (auto* const owner_window_handle{
+              GetWindow(window_handle_, GW_OWNER)}) {
+        if (auto* const owner_window{GetThisFromHandle(owner_window_handle)}) {
+          owner_window->children_.erase(this);
+        }
+        UpdateModalState();
+        SetFocus(owner_window_handle);
+      }
       break;
     case WindowArchetype::satellite:
       break;
@@ -657,6 +701,48 @@ auto Win32Window::CloseChildPopups() -> std::size_t {
   }
 
   return previous_num_child_popups - num_child_popups_;
+}
+
+void Win32Window::EnableWindowAndDescendants(bool enable) {
+  EnableWindow(window_handle_, enable);
+  for (auto* const child : children_) {
+    child->EnableWindowAndDescendants(enable);
+  }
+}
+
+void Win32Window::UpdateModalState() {
+  auto const find_deepest_dialog{
+      [](Win32Window* window, auto&& self) -> Win32Window* {
+        Win32Window* deepest_dialog{nullptr};
+        if (window->archetype_ == WindowArchetype::dialog) {
+          deepest_dialog = window;
+        }
+        for (auto* const child : window->children_) {
+          if (auto* const child_deepest_dialog{self(child, self)}) {
+            deepest_dialog = child_deepest_dialog;
+          }
+        }
+        return deepest_dialog;
+      }};
+
+  auto const get_parent_or_owner{[](HWND window) -> HWND {
+    auto const parent{GetParent(window)};
+    return parent ? parent : GetWindow(window, GW_OWNER);
+  }};
+
+  auto* root_ancestor_handle{window_handle_};
+  while (auto* next{get_parent_or_owner(root_ancestor_handle)}) {
+    root_ancestor_handle = next;
+  }
+  if (auto* const root_ancestor{GetThisFromHandle(root_ancestor_handle)}) {
+    if (auto* const deepest_dialog{
+            find_deepest_dialog(root_ancestor, find_deepest_dialog)}) {
+      root_ancestor->EnableWindowAndDescendants(false);
+      deepest_dialog->EnableWindowAndDescendants(true);
+    } else {
+      root_ancestor->EnableWindowAndDescendants(true);
+    }
+  }
 }
 
 }  // namespace flutter

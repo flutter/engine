@@ -46,9 +46,11 @@ class Win32Window {
   // |client_size| specifies the requested size of the client rectangle (i.e.,
   // the size of the view). The window style is determined by |archetype|. For
   // |FlutterWindowArchetype::popup|, both |parent| and |positioner| must be
-  // provided; |positioner| is used only for this archetype. After successful
-  // creation, |OnCreate| is called, and its result is returned. Otherwise, the
-  // return value is false.
+  // provided; |positioner| is used only for this archetype. For
+  // |FlutterWindowArchetype::dialog|, a modal dialog is created if |parent| is
+  // specified; otherwise, the dialog is modeless. After successful creation,
+  // |OnCreate| is called, and its result is returned. Otherwise, the return
+  // value is false.
   auto Create(std::wstring const& title,
               WindowSize const& client_size,
               WindowArchetype archetype,
@@ -118,6 +120,16 @@ class Win32Window {
 
   // Closes the popups of this window and returns the number of popups closed.
   auto CloseChildPopups() -> std::size_t;
+
+  // Enables or disables this window and all its descendants.
+  void EnableWindowAndDescendants(bool enable);
+
+  // Enforces modal behavior by enabling the deepest dialog in the subtree
+  // rooted at the top-level window, along with its descendants, while
+  // disabling all other windows in the subtree. This ensures that the dialog
+  // and its children remain active and interactive. If no dialog is found,
+  // all windows in the subtree are enabled.
+  void UpdateModalState();
 };
 
 }  // namespace flutter
