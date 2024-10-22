@@ -63,7 +63,7 @@ bool FlutterEngine::Run(const char* entry_point) {
 }
 
 void FlutterEngine::ShutDown() {
-  if (engine_ && owns_engine_) {
+  if (engine_) {
     FlutterDesktopEngineDestroy(engine_);
   }
   engine_ = nullptr;
@@ -113,8 +113,7 @@ std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
-FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
-  owns_engine_ = false;
+FlutterDesktopEngineRef FlutterEngine::engine() const {
   return engine_;
 }
 

@@ -98,20 +98,14 @@ class FlutterEngine : public PluginRegistry {
   // For access to the engine handle.
   friend class FlutterViewController;
 
-  // Gives up ownership of |engine_|, but keeps a weak reference to it.
-  //
-  // This is intended to be used by FlutterViewController, since the underlying
-  // C API for view controllers takes over engine ownership.
-  FlutterDesktopEngineRef RelinquishEngine();
+  // Get the handle for interacting with the C API's engine reference.
+  FlutterDesktopEngineRef engine() const;
 
   // Handle for interacting with the C API's engine reference.
   FlutterDesktopEngineRef engine_ = nullptr;
 
   // Messenger for communicating with the engine.
   std::unique_ptr<BinaryMessenger> messenger_;
-
-  // Whether or not this wrapper owns |engine_|.
-  bool owns_engine_ = true;
 
   // Whether |Run| has been called successfully.
   //
