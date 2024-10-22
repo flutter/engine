@@ -582,7 +582,7 @@ void Canvas::ClipGeometry(const Geometry& geometry,
 
   ClipContents clip_contents(
       clip_coverage.value(),
-      geometry.IsAxisAlignedRect() &&
+      /*is_axis_aligned_rect=*/geometry.IsAxisAlignedRect() &&
           GetCurrentTransform().IsTranslationScaleOnly());
   clip_contents.SetClipOperation(clip_op);
 
@@ -1625,11 +1625,11 @@ std::shared_ptr<Texture> Canvas::FlipBackdrop(Point global_pass_position,
 
   // Restore any clips that were recorded before the backdrop filter was
   // applied.
-  auto& replay_entities = clip_coverage_stack.GetReplayEntities();
+  auto& replay_entities = clip_coverage_stack_.GetReplayEntities();
   for (const auto& replay : replay_entities) {
     SetClipScissor(replay.clip_coverage, current_render_pass,
                    global_pass_position);
-    if (!replay.clip_contents.Render(renderer, current_render_pass,
+    if (!replay.clip_contents.Render(renderer_, current_render_pass,
                                      replay.clip_depth)) {
       VALIDATION_LOG << "Failed to render entity for clip restore.";
     }
