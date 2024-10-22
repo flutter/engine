@@ -493,6 +493,10 @@ void ImpellerTextureRetain(ImpellerTexture IMPELLER_NULLABLE texture);
 IMPELLER_EXPORT
 void ImpellerTextureRelease(ImpellerTexture IMPELLER_NULLABLE texture);
 
+IMPELLER_EXPORT
+uint64_t ImpellerTextureGetOpenGLHandle(
+    ImpellerTexture IMPELLER_NONNULL texture);
+
 //------------------------------------------------------------------------------
 // Color Sources
 //------------------------------------------------------------------------------
@@ -546,6 +550,14 @@ ImpellerColorSourceCreateSweepGradientNew(
     const ImpellerColor* IMPELLER_NONNULL colors,
     const float* IMPELLER_NONNULL stops,
     ImpellerTileMode tile_mode,
+    const ImpellerMatrix* IMPELLER_NULLABLE transformation);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerColorSource IMPELLER_NULLABLE
+ImpellerColorSourceCreateImageNew(
+    ImpellerTexture IMPELLER_NONNULL image,
+    ImpellerTileMode horizontal_tile_mode,
+    ImpellerTileMode vertical_tile_mode,
+    ImpellerTextureSampling sampling,
     const ImpellerMatrix* IMPELLER_NULLABLE transformation);
 
 //------------------------------------------------------------------------------
@@ -838,6 +850,13 @@ void ImpellerTypographyContextRetain(
 IMPELLER_EXPORT
 void ImpellerTypographyContextRelease(
     ImpellerTypographyContext IMPELLER_NULLABLE context);
+
+IMPELLER_EXPORT
+bool ImpellerTypographyContextRegisterFont(
+    ImpellerTypographyContext IMPELLER_NONNULL context,
+    const ImpellerMapping* IMPELLER_NONNULL contents,
+    void* IMPELLER_NULLABLE contents_on_release_user_data,
+    const char* IMPELLER_NULLABLE family_name_alias);
 
 //------------------------------------------------------------------------------
 // Paragraph Style

@@ -94,7 +94,7 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
 namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
-                    std::string label) {
+                    std::string_view label) {
   auto buffer = context->CreateCommandBuffer();
   if (!buffer) {
     return false;
@@ -103,7 +103,7 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   if (!pass) {
     return false;
   }
-  pass->GenerateMipmap(std::move(texture), std::move(label));
+  pass->GenerateMipmap(std::move(texture), label);
 
   pass->EncodeCommands(context->GetResourceAllocator());
   return context->GetCommandQueue()->Submit({buffer}).ok();
@@ -329,7 +329,7 @@ TEST_P(AiksTest, CanSaveLayerStandalone) {
 
   builder.SaveLayer(nullptr, &alpha);
 
-  builder.DrawCircle({125, 125}, 125, red);
+  builder.DrawCircle(SkPoint{125, 125}, 125, red);
 
   builder.Restore();
 
@@ -365,7 +365,7 @@ TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
 
   builder.Save();
   builder.Translate(100, 400);
-  builder.DrawCircle({100, 100}, 100, paint);
+  builder.DrawCircle(SkPoint{100, 100}, 100, paint);
   builder.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -430,7 +430,7 @@ TEST_P(AiksTest, FilledCirclesRenderCorrectly) {
   int radius = 600;
   while (radius > 0) {
     paint.setColor(colors[(c_index++) % color_count]);
-    builder.DrawCircle({10, 10}, radius, paint);
+    builder.DrawCircle(SkPoint{10, 10}, radius, paint);
     if (radius > 30) {
       radius -= 10;
     } else {
@@ -462,14 +462,14 @@ TEST_P(AiksTest, FilledCirclesRenderCorrectly) {
 
   paint.setColorSource(DlColorSource::MakeRadial(
       {500, 600}, 75, 7, gradient_colors, stops, DlTileMode::kMirror));
-  builder.DrawCircle({500, 600}, 100, paint);
+  builder.DrawCircle(SkPoint{500, 600}, 100, paint);
 
   SkMatrix local_matrix = SkMatrix::Translate(700, 200);
   DlImageColorSource image_source(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
       DlImageSampling::kNearestNeighbor, &local_matrix);
   paint.setColorSource(&image_source);
-  builder.DrawCircle({800, 300}, 100, paint);
+  builder.DrawCircle(SkPoint{800, 300}, 100, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -744,7 +744,7 @@ TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurCorrectly) {
   for (int i = 0; i < 5; i++) {
     Scalar x = (i + 1) * 100;
     Scalar radius = x / 10.0f;
-    builder.DrawCircle({x + 25, y + 25}, radius, paint);
+    builder.DrawCircle(SkPoint{x + 25, y + 25}, radius, paint);
   }
 
   paint.setColor(DlColor::kGreen());
@@ -875,7 +875,7 @@ TEST_P(AiksTest, CanDrawPerspectiveTransformWithClips) {
       // 4. Draw a semi-translucent blue circle atop all previous draws.
       DlPaint paint;
       paint.setColor(DlColor::kBlue().modulateOpacity(0.4));
-      builder.DrawCircle({}, 230, paint);
+      builder.DrawCircle(SkPoint{}, 230, paint);
     }
     builder.Restore();  // Restore translation.
 
@@ -983,7 +983,7 @@ TEST_P(AiksTest, MatrixImageFilterDoesntCullWhenTranslatedFromOffscreen) {
 
   DlPaint circle_paint;
   circle_paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({-300, 0}, 100, circle_paint);
+  builder.DrawCircle(SkPoint{-300, 0}, 100, circle_paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1006,7 +1006,7 @@ TEST_P(AiksTest,
 
   DlPaint circle_paint;
   circle_paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({-150, 0}, 50, circle_paint);
+  builder.DrawCircle(SkPoint{-150, 0}, 50, circle_paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1058,7 +1058,7 @@ TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
   DisplayListBuilder builder;
   builder.Scale(GetContentScale().x, GetContentScale().y);
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {10, 10}, {});
+  builder.DrawImage(image, SkPoint{10, 10}, {});
   builder.ClipRect(SkRect::MakeXYWH(100, 100, 200, 200));
 
   DlPaint paint;
@@ -1443,7 +1443,7 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   auto texture = DlImageImpeller::Make(CreateTextureForFixture("boston.jpg"));
   auto draw_image_layer = [&builder, &texture](const DlPaint& paint) {
     builder.SaveLayer(nullptr, &paint);
-    builder.DrawImage(texture, {}, DlImageSampling::kLinear);
+    builder.DrawImage(texture, SkPoint{}, DlImageSampling::kLinear);
     builder.Restore();
   };
 
@@ -1532,6 +1532,51 @@ TEST_P(AiksTest, MassiveScalingMatrixImageFilter) {
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, NoDimplesInRRectPath) {
+  Scalar width = 200.f;
+  Scalar height = 60.f;
+  Scalar corner = 1.f;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("width", &width, 0, 200);
+      ImGui::SliderFloat("height", &height, 0, 200);
+      ImGui::SliderFloat("corner", &corner, 0, 1);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    DlPaint background_paint;
+    background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
+    builder.DrawPaint(background_paint);
+
+    std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+
+    DlPaint paint;
+    auto gradient = DlColorSource::MakeLinear(
+        {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
+    paint.setColorSource(gradient);
+    paint.setColor(DlColor::kWhite());
+    paint.setDrawStyle(DlDrawStyle::kStroke);
+    paint.setStrokeWidth(20);
+
+    builder.Save();
+    builder.Translate(100, 100);
+
+    Scalar corner_x = ((1 - corner) * 50) + 50;
+    Scalar corner_y = corner * 50 + 50;
+    SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, width, height),
+                                        corner_x, corner_y);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

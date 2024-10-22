@@ -248,8 +248,9 @@ void ImpellerPathBuilderCubicCurveTo(ImpellerPathBuilder builder,
   );
 }
 
-IMPELLER_EXTERN_C void ImpellerPathBuilderAddRect(ImpellerPathBuilder builder,
-                                                  const ImpellerRect* rect) {
+IMPELLER_EXTERN_C
+void ImpellerPathBuilderAddRect(ImpellerPathBuilder builder,
+                                const ImpellerRect* rect) {
   GetPeer(builder)->AddRect(ToImpellerType(*rect));
 }
 
@@ -290,9 +291,9 @@ ImpellerPath ImpellerPathBuilderCopyPathNew(ImpellerPathBuilder builder,
   return GetPeer(builder)->CopyPath(ToImpellerType(fill)).Leak();
 }
 
-IMPELLER_EXTERN_C ImpellerPath ImpellerPathBuilderTakePathNew(
-    ImpellerPathBuilder builder,
-    ImpellerFillType fill) {
+IMPELLER_EXTERN_C
+ImpellerPath ImpellerPathBuilderTakePathNew(ImpellerPathBuilder builder,
+                                            ImpellerFillType fill) {
   return GetPeer(builder)->TakePath(ToImpellerType(fill)).Leak();
 }
 
@@ -544,7 +545,9 @@ ImpellerTexture ImpellerTextureCreateWithOpenGLTextureHandleNew(
     return nullptr;
   }
   texture->SetCoordinateSystem(TextureCoordinateSystem::kUploadFromHost);
-  return Create<Texture>(std::move(texture)).Leak();
+  return Create<Texture>(impeller::Context::BackendType::kOpenGLES,
+                         std::move(texture))
+      .Leak();
 }
 
 IMPELLER_EXTERN_C
@@ -555,6 +558,19 @@ void ImpellerTextureRetain(ImpellerTexture texture) {
 IMPELLER_EXTERN_C
 void ImpellerTextureRelease(ImpellerTexture texture) {
   ObjectBase::SafeRelease(texture);
+}
+
+IMPELLER_EXTERN_C
+uint64_t ImpellerTextureGetOpenGLHandle(ImpellerTexture texture) {
+  auto interop_texture = GetPeer(texture);
+  if (interop_texture->GetBackendType() !=
+      impeller::Context::BackendType::kOpenGLES) {
+    VALIDATION_LOG << "Can only fetch the texture handle of an OpenGL texture.";
+    return 0u;
+  }
+  return TextureGLES::Cast(*interop_texture->GetTexture())
+      .GetGLHandle()
+      .value_or(0u);
 }
 
 IMPELLER_EXTERN_C
@@ -764,6 +780,24 @@ ImpellerColorSource ImpellerColorSourceCreateSweepGradientNew(
 }
 
 IMPELLER_EXTERN_C
+ImpellerColorSource ImpellerColorSourceCreateImageNew(
+    ImpellerTexture image,
+    ImpellerTileMode horizontal_tile_mode,
+    ImpellerTileMode vertical_tile_mode,
+    ImpellerTextureSampling sampling,
+    const ImpellerMatrix* transformation) {
+  return ColorSource::MakeImage(
+             *GetPeer(image),                          //
+             ToDisplayListType(horizontal_tile_mode),  //
+             ToDisplayListType(vertical_tile_mode),    //
+             ToDisplayListType(sampling),              //
+             transformation == nullptr ? Matrix{}
+                                       : ToImpellerType(*transformation)  //
+             )
+      .Leak();
+}
+
+IMPELLER_EXTERN_C
 void ImpellerColorFilterRetain(ImpellerColorFilter color_filter) {
   ObjectBase::SafeRetain(color_filter);
 }
@@ -851,27 +885,32 @@ ImpellerImageFilter ImpellerImageFilterCreateComposeNew(
   return ImageFilter::MakeCompose(*GetPeer(outer), *GetPeer(inner)).Leak();
 }
 
+IMPELLER_EXTERN_C
 void ImpellerPaintSetColorFilter(ImpellerPaint paint,
                                  ImpellerColorFilter color_filter) {
   GetPeer(paint)->SetColorFilter(*GetPeer(color_filter));
 }
 
+IMPELLER_EXTERN_C
 void ImpellerPaintSetColorSource(ImpellerPaint paint,
                                  ImpellerColorSource color_source) {
   GetPeer(paint)->SetColorSource(*GetPeer(color_source));
 }
 
+IMPELLER_EXTERN_C
 void ImpellerPaintSetImageFilter(ImpellerPaint paint,
                                  ImpellerImageFilter image_filter) {
   GetPeer(paint)->SetImageFilter(*GetPeer(image_filter));
 }
 
+IMPELLER_EXTERN_C
 void ImpellerPaintSetMaskFilter(ImpellerPaint paint,
                                 ImpellerMaskFilter mask_filter) {
   GetPeer(paint)->SetMaskFilter(*GetPeer(mask_filter));
 }
 
-IMPELLER_EXTERN_C ImpellerParagraphStyle ImpellerParagraphStyleNew() {
+IMPELLER_EXTERN_C
+ImpellerParagraphStyle ImpellerParagraphStyleNew() {
   return Create<ParagraphStyle>().Leak();
 }
 
@@ -891,9 +930,9 @@ void ImpellerParagraphStyleSetForeground(ImpellerParagraphStyle paragraph_style,
   GetPeer(paragraph_style)->SetForeground(Ref(GetPeer(paint)));
 }
 
-IMPELLER_EXTERN_C void ImpellerParagraphStyleSetBackground(
-    ImpellerParagraphStyle paragraph_style,
-    ImpellerPaint paint) {
+IMPELLER_EXTERN_C
+void ImpellerParagraphStyleSetBackground(ImpellerParagraphStyle paragraph_style,
+                                         ImpellerPaint paint) {
   GetPeer(paragraph_style)->SetBackground(Ref(GetPeer(paint)));
 }
 
@@ -967,9 +1006,11 @@ void ImpellerDisplayListBuilderDrawParagraph(ImpellerDisplayListBuilder builder,
   GetPeer(builder)->DrawParagraph(*GetPeer(paragraph), ToImpellerType(*point));
 }
 
-IMPELLER_EXTERN_C ImpellerParagraphBuilder ImpellerParagraphBuilderNew(
+IMPELLER_EXTERN_C
+ImpellerParagraphBuilder ImpellerParagraphBuilderNew(
     ImpellerTypographyContext context) {
-  auto builder = Create<ParagraphBuilder>(*GetPeer(context));
+  auto builder =
+      Create<ParagraphBuilder>(Ref<TypographyContext>(GetPeer(context)));
   if (!builder->IsValid()) {
     VALIDATION_LOG << "Could not create valid paragraph builder.";
     return nullptr;
@@ -1015,7 +1056,8 @@ void ImpellerParagraphBuilderAddText(ImpellerParagraphBuilder paragraph_builder,
   GetPeer(paragraph_builder)->AddText(data, length);
 }
 
-IMPELLER_EXTERN_C ImpellerParagraph ImpellerParagraphBuilderBuildParagraphNew(
+IMPELLER_EXTERN_C
+ImpellerParagraph ImpellerParagraphBuilderBuildParagraphNew(
     ImpellerParagraphBuilder paragraph_builder,
     float width) {
   return GetPeer(paragraph_builder)->Build(width).Leak();
@@ -1071,7 +1113,8 @@ uint32_t ImpellerParagraphGetLineCount(ImpellerParagraph paragraph) {
   return GetPeer(paragraph)->GetLineCount();
 }
 
-IMPELLER_EXTERN_C ImpellerTypographyContext ImpellerTypographyContextNew() {
+IMPELLER_EXTERN_C
+ImpellerTypographyContext ImpellerTypographyContextNew() {
   auto context = Create<TypographyContext>();
   if (!context->IsValid()) {
     VALIDATION_LOG << "Could not create typography context.";
@@ -1088,6 +1131,22 @@ void ImpellerTypographyContextRetain(ImpellerTypographyContext context) {
 IMPELLER_EXTERN_C
 void ImpellerTypographyContextRelease(ImpellerTypographyContext context) {
   ObjectBase::SafeRelease(context);
+}
+
+IMPELLER_EXTERN_C
+bool ImpellerTypographyContextRegisterFont(ImpellerTypographyContext context,
+                                           const ImpellerMapping* contents,
+                                           void* contents_on_release_user_data,
+                                           const char* family_name_alias) {
+  auto wrapped_contents = std::make_unique<fml::NonOwnedMapping>(
+      contents->data,    // data ptr
+      contents->length,  // data length
+      [contents, contents_on_release_user_data](auto, auto) {
+        contents->on_release(contents_on_release_user_data);
+      }  // release callback
+  );
+  return GetPeer(context)->RegisterFont(std::move(wrapped_contents),
+                                        family_name_alias);
 }
 
 }  // namespace impeller::interop
