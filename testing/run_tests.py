@@ -1349,7 +1349,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     assert not is_windows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
-      logger.wraning(
+      logger.warning(
           'Can only filter JUnit4 tests by single entire class name, '
           'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
       )
