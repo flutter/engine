@@ -4,14 +4,10 @@
 
 package io.flutter.embedding.engine.mutatorsstack;
 
-import static android.view.View.OnFocusChangeListener;
-
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
@@ -20,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
-import io.flutter.util.ViewUtils;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
@@ -65,32 +60,33 @@ public class FlutterMutatorView extends FrameLayout {
    *
    * @param userFocusListener A user provided focus listener.
    */
-  public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
-    unsetOnDescendantFocusChangeListener();
+  // public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener
+  // userFocusListener) {
+  //   unsetOnDescendantFocusChangeListener();
 
-    final View mutatorView = this;
-    final ViewTreeObserver observer = getViewTreeObserver();
-    if (observer.isAlive() && activeFocusListener == null) {
-      activeFocusListener =
-          new ViewTreeObserver.OnGlobalFocusChangeListener() {
-            @Override
-            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
-              userFocusListener.onFocusChange(mutatorView, ViewUtils.childHasFocus(mutatorView));
-            }
-          };
-      observer.addOnGlobalFocusChangeListener(activeFocusListener);
-    }
-  }
+  //   final View mutatorView = this;
+  //   final ViewTreeObserver observer = getViewTreeObserver();
+  //   if (observer.isAlive() && activeFocusListener == null) {
+  //     activeFocusListener =
+  //         new ViewTreeObserver.OnGlobalFocusChangeListener() {
+  //           @Override
+  //           public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+  //             userFocusListener.onFocusChange(mutatorView, ViewUtils.childHasFocus(mutatorView));
+  //           }
+  //         };
+  //     observer.addOnGlobalFocusChangeListener(activeFocusListener);
+  //   }
+  // }
 
-  /** Unsets any active focus listener. */
-  public void unsetOnDescendantFocusChangeListener() {
-    final ViewTreeObserver observer = getViewTreeObserver();
-    if (observer.isAlive() && activeFocusListener != null) {
-      final ViewTreeObserver.OnGlobalFocusChangeListener currFocusListener = activeFocusListener;
-      activeFocusListener = null;
-      observer.removeOnGlobalFocusChangeListener(currFocusListener);
-    }
-  }
+  // /** Unsets any active focus listener. */
+  // public void unsetOnDescendantFocusChangeListener() {
+  //   final ViewTreeObserver observer = getViewTreeObserver();
+  //   if (observer.isAlive() && activeFocusListener != null) {
+  //     final ViewTreeObserver.OnGlobalFocusChangeListener currFocusListener = activeFocusListener;
+  //     activeFocusListener = null;
+  //     observer.removeOnGlobalFocusChangeListener(currFocusListener);
+  //   }
+  // }
 
   /**
    * Pass the necessary parameters to the view so it can apply correct mutations to its children.
@@ -160,10 +156,10 @@ public class FlutterMutatorView extends FrameLayout {
   }
 
   /** Intercept the events here and do not propagate them to the child platform views. */
-  @Override
-  public boolean onInterceptTouchEvent(MotionEvent event) {
-    return true;
-  }
+  // @Override
+  // public boolean onInterceptTouchEvent(MotionEvent event) {
+  //   return true;
+  // }
 
   @Override
   public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
@@ -179,33 +175,33 @@ public class FlutterMutatorView extends FrameLayout {
     return super.requestSendAccessibilityEvent(child, event);
   }
 
-  @Override
-  @SuppressLint("ClickableViewAccessibility")
-  public boolean onTouchEvent(MotionEvent event) {
-    if (androidTouchProcessor == null) {
-      return super.onTouchEvent(event);
-    }
+  // @Override
+  // @SuppressLint("ClickableViewAccessibility")
+  // public boolean onTouchEvent(MotionEvent event) {
+  //   if (androidTouchProcessor == null) {
+  //     return super.onTouchEvent(event);
+  //   }
 
-    final Matrix screenMatrix = new Matrix();
+  //   final Matrix screenMatrix = new Matrix();
 
-    switch (event.getAction()) {
-      case MotionEvent.ACTION_DOWN:
-        prevLeft = left;
-        prevTop = top;
-        screenMatrix.postTranslate(left, top);
-        break;
-      case MotionEvent.ACTION_MOVE:
-        // While the view is dragged, use the left and top positions as
-        // they were at the moment the touch event fired.
-        screenMatrix.postTranslate(prevLeft, prevTop);
-        prevLeft = left;
-        prevTop = top;
-        break;
-      case MotionEvent.ACTION_UP:
-      default:
-        screenMatrix.postTranslate(left, top);
-        break;
-    }
-    return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-  }
+  //   switch (event.getAction()) {
+  //     case MotionEvent.ACTION_DOWN:
+  //       prevLeft = left;
+  //       prevTop = top;
+  //       screenMatrix.postTranslate(left, top);
+  //       break;
+  //     case MotionEvent.ACTION_MOVE:
+  //       // While the view is dragged, use the left and top positions as
+  //       // they were at the moment the touch event fired.
+  //       screenMatrix.postTranslate(prevLeft, prevTop);
+  //       prevLeft = left;
+  //       prevTop = top;
+  //       break;
+  //     case MotionEvent.ACTION_UP:
+  //     default:
+  //       screenMatrix.postTranslate(left, top);
+  //       break;
+  //   }
+  //   return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+  // }
 }

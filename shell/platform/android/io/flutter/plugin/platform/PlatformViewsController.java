@@ -6,12 +6,10 @@ package io.flutter.plugin.platform;
 
 import static io.flutter.Build.API_LEVELS;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
-import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
@@ -28,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
+import android.window.InputTransferToken;
 import android.window.SurfaceSyncGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -67,14 +66,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   public class FlutterPlatformHostView extends FrameLayout {
     private final AndroidTouchProcessor androidTouchProcessor;
     private float screenDensity;
+    private WindowManager windowManager;
+    private InputTransferToken hostToken;
+    private InputTransferToken destToken;
 
     public FlutterPlatformHostView(
         @NonNull Context context,
         AndroidTouchProcessor androidTouchProcessor,
-        float screenDensity) {
+        float screenDensity,
+        WindowManager windowManager,
+        InputTransferToken hostToken,
+        InputTransferToken destToken) {
       super(context, null);
       this.androidTouchProcessor = androidTouchProcessor;
       this.screenDensity = screenDensity;
+      this.windowManager = windowManager;
+      this.hostToken = hostToken;
+      this.destToken = destToken;
     }
 
     /**
@@ -91,7 +99,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     /** Intercept the events here and do not propagate them to the child platform views. */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-      return true;
+      return false;
     }
 
     @Override
@@ -108,16 +116,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return super.requestSendAccessibilityEvent(child, event);
     }
 
-    @Override
-    @SuppressLint("ClickableViewAccessibility")
-    public boolean onTouchEvent(MotionEvent event) {
-      if (androidTouchProcessor == null) {
-        return super.onTouchEvent(event);
-      }
+    // @Override
+    // @SuppressLint("ClickableViewAccessibility")
+    // public boolean onTouchEvent(MotionEvent event) {
+    // Log.e("FlutterPlatformHostView", "onTouchEvent");
+    // if (!windowManager.transferTouchGesture(destToken, hostToken)) {
+    //   Log.e("FlutterPlatformHostView", "Failed to transfer gesture");
+    //   return false;
+    // }
+    // return true;
+    // if (androidTouchProcessor == null) {
+    //   return super.onTouchEvent(event);
+    // }
 
-      final Matrix screenMatrix = new Matrix();
-      return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-    }
+    // final Matrix screenMatrix = new Matrix();
+    // return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+    // }
   }
 
   // These view types allow out-of-band drawing commands that don't notify the
@@ -379,7 +393,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final FlutterMutatorView parentView = platformViewParent.get(viewId);
           if (parentView != null) {
             parentView.removeAllViews();
-            parentView.unsetOnDescendantFocusChangeListener();
+            // parentView.unsetOnDescendantFocusChangeListener();
             platformViewParent.remove(viewId);
           }
         }
@@ -1226,15 +1240,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   @VisibleForTesting
   boolean initializePlatformViewIfNeeded(int viewId) {
     if (platformViewHost == null) {
-      platformViewHost =
-          new FlutterPlatformHostView(
-              context, androidTouchProcessor, context.getResources().getDisplayMetrics().density);
+      WindowManager windowManager =
+          (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+
+      InputTransferToken inputTransferToken = flutterView.getInputTransferToken();
 
       DisplayManager displayManager =
           (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
       Display[] displays = displayManager.getDisplays();
 
-      scvh = new SurfaceControlViewHost(context, displays[0], flutterView.GetBinder());
+      scvh = new SurfaceControlViewHost(context, displays[0], inputTransferToken);
+
+      platformViewHost =
+          new FlutterPlatformHostView(
+              context,
+              androidTouchProcessor,
+              context.getResources().getDisplayMetrics().density,
+              windowManager,
+              inputTransferToken,
+              scvh.getSurfacePackage().getInputTransferToken());
+
       scvh.setView(platformViewHost, flutterView.getWidth(), flutterView.getHeight());
       platformViewHost.readyToDisplay(flutterView.getWidth(), flutterView.getHeight());
       surfacePackage = scvh.getSurfacePackage();
@@ -1262,14 +1287,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
 
-    parentView.setOnDescendantFocusChangeListener(
-        (view, hasFocus) -> {
-          if (hasFocus) {
-            platformViewsChannel.invokeViewFocused(viewId);
-          } else if (textInputPlugin != null) {
-            textInputPlugin.clearPlatformViewClient(viewId);
-          }
-        });
+    // parentView.setOnDescendantFocusChangeListener(
+    //     (view, hasFocus) -> {
+    //       if (hasFocus) {
+    //         platformViewsChannel.invokeViewFocused(viewId);
+    //       } else if (textInputPlugin != null) {
+    //         textInputPlugin.clearPlatformViewClient(viewId);
+    //       }
+    //     });
 
     platformViewParent.put(viewId, parentView);
 

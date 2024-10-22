@@ -102,6 +102,8 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void, swapTransaction, (), (override));
 
+  MOCK_METHOD(void, applyPendingTransactions, (), (override));
+
   MOCK_METHOD(void, FlutterViewEndFrame, (), (override));
 
   MOCK_METHOD(std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>,

@@ -44,6 +44,7 @@ import android.view.inputmethod.InputConnection;
 import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.TextServicesManager;
 import android.widget.FrameLayout;
+import android.window.InputTransferToken;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -1302,6 +1303,10 @@ public class FlutterView extends FrameLayout
       return flutterSurfaceView.getSurfaceControl();
     }
     return null;
+  }
+
+  public InputTransferToken getInputTransferToken() {
+    return flutterSurfaceView.getRootSurfaceControl().getInputTransferToken();
   }
 
   public void addPlatformView(SurfaceControlViewHost.SurfacePackage surfacePackage) {
