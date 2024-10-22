@@ -143,6 +143,24 @@ struct WindowMetadata {
   std::optional<FlutterViewId> parent_id;
 };
 
+namespace internal {
+
+// Computes the screen-space rectangle for a child window placed according to
+// the given |positioner|. |child_size| is the frame size of the child window.
+// |anchor_rect| is the rectangle relative to which the child window is placed.
+// |parent_rect| is the parent window's rectangle. |output_rect| is the output
+// display area where the child window will be placed. All sizes and rectangles
+// are in physical coordinates. Note: WindowPositioner::anchor_rect is not used
+// in this function; use |anchor_rect| to set the anchor rectangle for the
+// child.
+auto PlaceWindow(WindowPositioner const& positioner,
+                 WindowSize child_size,
+                 WindowRectangle const& anchor_rect,
+                 WindowRectangle const& parent_rect,
+                 WindowRectangle const& output_rect) -> WindowRectangle;
+
+}  // namespace internal
+
 }  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_COMMON_CLIENT_WRAPPER_INCLUDE_FLUTTER_WINDOWING_H_

@@ -47,6 +47,7 @@ core_cpp_client_wrapper_sources = get_path_info([
                                                   "core_implementations.cc",
                                                   "plugin_registrar.cc",
                                                   "standard_codec.cc",
+                                                  "windowing.cc",
                                                 ],
                                                 "abspath")
 

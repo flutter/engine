@@ -128,6 +128,8 @@ TEST_F(FlutterWindowControllerTest, CreateRegularWindow) {
   auto const title{L"window"};
   WindowSize const size{800, 600};
   auto const archetype{WindowArchetype::regular};
+  std::optional<WindowPositioner> const positioner;
+  std::optional<FlutterViewId> const parent_view_id;
 
   EXPECT_CALL(*mock_win32_,
               CreateWindowEx(0, _, StrEq(title), WS_OVERLAPPEDWINDOW,
@@ -135,8 +137,8 @@ TEST_F(FlutterWindowControllerTest, CreateRegularWindow) {
                              Gt(size.height), IsNull(), _, _, _))
       .Times(1);
 
-  auto const result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, positioner, parent_view_id)};
 
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->view_id, 1);
@@ -153,8 +155,8 @@ TEST_F(FlutterWindowControllerTest, DestroyWindow) {
   WindowSize const size{800, 600};
   auto const archetype{WindowArchetype::regular};
 
-  auto const create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 
   ASSERT_TRUE(create_result.has_value());
 
@@ -172,8 +174,8 @@ TEST_F(FlutterWindowControllerTest, DestroyWindowWithInvalidView) {
   WindowSize const size{800, 600};
   auto const archetype{WindowArchetype::regular};
 
-  auto const create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 
   ASSERT_TRUE(create_result.has_value());
 
@@ -196,8 +198,8 @@ TEST_F(FlutterWindowControllerTest, SendOnWindowCreated) {
   EXPECT_CALL(*mock_controller_, SendOnWindowCreated(1, Eq(std::nullopt)))
       .Times(1);
 
-  auto const create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 }
 
 TEST_F(FlutterWindowControllerTest, SendOnWindowDestroyed) {
@@ -209,8 +211,8 @@ TEST_F(FlutterWindowControllerTest, SendOnWindowDestroyed) {
   WindowSize const size{800, 600};
   auto const archetype{WindowArchetype::regular};
 
-  auto const create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 
   ASSERT_TRUE(create_result.has_value());
 
@@ -228,8 +230,8 @@ TEST_F(FlutterWindowControllerTest, SendOnWindowChangedWhenWindowIsResized) {
   WindowSize const size{800, 600};
   auto const archetype{WindowArchetype::regular};
 
-  auto const create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto const create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 
   EXPECT_CALL(*mock_controller_, SendOnWindowChanged(1)).Times(1);
 
@@ -271,8 +273,8 @@ TEST_F(FlutterWindowControllerTest, DestroyWindowUsingMethodCall) {
   auto const title{L"window"};
   WindowSize size{800, 600};
   auto const archetype{WindowArchetype::regular};
-  auto create_result{
-      mock_controller_->CreateFlutterWindow(title, size, archetype)};
+  auto create_result{mock_controller_->CreateFlutterWindow(
+      title, size, archetype, std::nullopt, std::nullopt)};
 
   ASSERT_TRUE(create_result.has_value());
 

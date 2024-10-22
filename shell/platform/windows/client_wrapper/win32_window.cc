@@ -53,6 +53,38 @@ auto GetLastErrorAsString() -> std::string {
   return oss.str();
 }
 
+// Estimates the size of the window frame, in physical coordinates, based on
+// the given |window_size| (in physical coordinates) and the specified
+// |window_style|, |extended_window_style|, and parent window |parent_hwnd|.
+auto GetFrameSizeForWindowSize(flutter::WindowSize const& window_size,
+                               DWORD window_style,
+                               DWORD extended_window_style,
+                               HWND parent_hwnd) -> flutter::WindowSize {
+  RECT frame_rect{0, 0, static_cast<LONG>(window_size.width),
+                  static_cast<LONG>(window_size.height)};
+
+  WNDCLASS window_class{0};
+  window_class.lpfnWndProc = DefWindowProc;
+  window_class.hInstance = GetModuleHandle(nullptr);
+  window_class.lpszClassName = L"FLUTTER_WIN32_WINDOW_TEMPORARY";
+  RegisterClass(&window_class);
+
+  window_style &= ~WS_VISIBLE;
+  if (auto const window{CreateWindowEx(
+          extended_window_style, window_class.lpszClassName, L"", window_style,
+          CW_USEDEFAULT, CW_USEDEFAULT, window_size.width, window_size.height,
+          parent_hwnd, nullptr, GetModuleHandle(nullptr), nullptr)}) {
+    DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS, &frame_rect,
+                          sizeof(frame_rect));
+    DestroyWindow(window);
+  }
+
+  UnregisterClass(window_class.lpszClassName, nullptr);
+
+  return {static_cast<int>(frame_rect.right - frame_rect.left),
+          static_cast<int>(frame_rect.bottom - frame_rect.top)};
+}
+
 // Calculates the required window size, in physical coordinates, to
 // accommodate the given |client_size| (in logical coordinates) for a window
 // with the specified |window_style| and |extended_window_style|. The result
@@ -258,7 +290,9 @@ auto Win32Window::GetArchetype() const -> WindowArchetype {
 
 auto Win32Window::Create(std::wstring const& title,
                          WindowSize const& client_size,
-                         WindowArchetype archetype) -> bool {
+                         WindowArchetype archetype,
+                         std::optional<HWND> parent,
+                         std::optional<WindowPositioner> positioner) -> bool {
   std::lock_guard lock(gActiveWindowMutex);
 
   archetype_ = archetype;
@@ -280,7 +314,15 @@ auto Win32Window::Create(std::wstring const& title,
       // TODO
       break;
     case WindowArchetype::popup:
-      // TODO
+      window_style |= WS_POPUP;
+      if (auto* const parent_window{
+              GetThisFromHandle(parent.value_or(nullptr))}) {
+        if (parent_window->child_content_ != nullptr) {
+          SetFocus(parent_window->child_content_);
+        }
+        parent_window->children_.insert(this);
+        ++parent_window->num_child_popups_;
+      }
       break;
     case WindowArchetype::tip:
       // TODO
@@ -292,10 +334,83 @@ auto Win32Window::Create(std::wstring const& title,
   }
 
   // Window rectangle in physical coordinates.
-  // Default positioning values (CW_USEDEFAULT) are used.
+  // Default positioning values (CW_USEDEFAULT) are used
+  // if the window has no parent or positioner.
   auto const window_rect{[&]() -> WindowRectangle {
     auto const window_size{GetWindowSizeForClientSize(
-        client_size, window_style, extended_window_style, nullptr)};
+        client_size, window_style, extended_window_style,
+        parent.value_or(nullptr))};
+    if (parent && positioner) {
+      auto const frame_size{GetFrameSizeForWindowSize(
+          window_size, window_style, extended_window_style, parent.value())};
+
+      // The rectangle of the parent's client area, in physical coordinates
+      auto const parent_rect{[](HWND parent_window) -> WindowRectangle {
+        RECT client_rect;
+        GetClientRect(parent_window, &client_rect);
+        POINT top_left{client_rect.left, client_rect.top};
+        ClientToScreen(parent_window, &top_left);
+        POINT bottom_right{client_rect.right, client_rect.bottom};
+        ClientToScreen(parent_window, &bottom_right);
+        return {{top_left.x, top_left.y},
+                {bottom_right.x - top_left.x, bottom_right.y - top_left.y}};
+      }(parent.value())};
+
+      // The anchor rectangle, in physical coordinates
+      auto const anchor_rect{[](WindowPositioner const& positioner,
+                                HWND parent_window,
+                                WindowRectangle const& parent_rect)
+                                 -> WindowRectangle {
+        if (positioner.anchor_rect) {
+          auto const dpr{FlutterDesktopGetDpiForHWND(parent_window) /
+                         static_cast<double>(USER_DEFAULT_SCREEN_DPI)};
+          return {
+              {parent_rect.top_left.x +
+                   static_cast<int>(positioner.anchor_rect->top_left.x * dpr),
+               parent_rect.top_left.y +
+                   static_cast<int>(positioner.anchor_rect->top_left.y * dpr)},
+              {static_cast<int>(positioner.anchor_rect->size.width * dpr),
+               static_cast<int>(positioner.anchor_rect->size.height * dpr)}};
+        } else {
+          // If the anchor rect specified in the positioner is std::nullopt,
+          // return an anchor rect that is equal to the window frame area
+          RECT frame_rect;
+          DwmGetWindowAttribute(parent_window, DWMWA_EXTENDED_FRAME_BOUNDS,
+                                &frame_rect, sizeof(frame_rect));
+          return {{frame_rect.left, frame_rect.top},
+                  {frame_rect.right - frame_rect.left,
+                   frame_rect.bottom - frame_rect.top}};
+        }
+      }(positioner.value(), parent.value(), parent_rect)};
+
+      // Rectangle of the monitor that has the largest area of intersection
+      // with the anchor rectangle, in physical coordinates
+      auto const output_rect{
+          [](RECT anchor_rect)
+              -> WindowRectangle {
+            auto* monitor{
+                MonitorFromRect(&anchor_rect, MONITOR_DEFAULTTONEAREST)};
+            MONITORINFO mi;
+            mi.cbSize = sizeof(MONITORINFO);
+            auto const bounds{GetMonitorInfo(monitor, &mi) ? mi.rcWork
+                                                           : RECT{0, 0, 0, 0}};
+            return {{bounds.left, bounds.top},
+                    {bounds.right - bounds.left, bounds.bottom - bounds.top}};
+          }({.left = static_cast<LONG>(anchor_rect.top_left.x),
+              .top = static_cast<LONG>(anchor_rect.top_left.y),
+              .right = static_cast<LONG>(anchor_rect.top_left.x +
+                                         anchor_rect.size.width),
+              .bottom = static_cast<LONG>(anchor_rect.top_left.y +
+                                          anchor_rect.size.height)})};
+
+      auto const rect{internal::PlaceWindow(
+          positioner.value(), frame_size, anchor_rect,
+          positioner->anchor_rect ? parent_rect : anchor_rect, output_rect)};
+
+      return {rect.top_left,
+              {rect.size.width + window_size.width - frame_size.width,
+               rect.size.height + window_size.height - frame_size.height}};
+    }
     return {{CW_USEDEFAULT, CW_USEDEFAULT}, window_size};
   }()};
 
@@ -322,8 +437,8 @@ auto Win32Window::Create(std::wstring const& title,
   window_handle_ = win32_->CreateWindowEx(
       extended_window_style, kWindowClassName, title.c_str(), window_style,
       window_rect.top_left.x, window_rect.top_left.y, window_rect.size.width,
-      window_rect.size.height, nullptr, nullptr, GetModuleHandle(nullptr),
-      this);
+      window_rect.size.height, parent.value_or(nullptr), nullptr,
+      GetModuleHandle(nullptr), this);
 
   if (!window_handle_) {
     auto const error_message{GetLastErrorAsString()};
@@ -412,6 +527,17 @@ auto Win32Window::MessageHandler(HWND hwnd,
       }
       return 0;
 
+    case WM_NCACTIVATE:
+      if (wparam == FALSE && archetype_ != WindowArchetype::popup) {
+        if (!enable_redraw_non_client_as_inactive_ || num_child_popups_ > 0) {
+          // If an inactive title bar is to be drawn, and this is a top-level
+          // window with popups, force the title bar to be drawn in its active
+          // colors
+          return TRUE;
+        }
+      }
+      break;
+
     case WM_MOUSEACTIVATE:
       if (child_content_ != nullptr) {
         SetFocus(child_content_);
@@ -434,7 +560,35 @@ auto Win32Window::OnCreate() -> bool {
   return true;
 }
 
-void Win32Window::OnDestroy() {}
+void Win32Window::OnDestroy() {
+  switch (archetype_) {
+    case WindowArchetype::regular:
+      break;
+    case WindowArchetype::floating_regular:
+      break;
+    case WindowArchetype::dialog:
+      break;
+    case WindowArchetype::satellite:
+      break;
+    case WindowArchetype::popup:
+      if (auto* const parent_window_handle{GetParent(window_handle_)}) {
+        if (auto* const parent_window{
+                GetThisFromHandle(parent_window_handle)}) {
+          parent_window->children_.erase(this);
+          assert(parent_window->num_child_popups_ > 0);
+          --parent_window->num_child_popups_;
+        }
+      }
+      break;
+    case WindowArchetype::tip:
+      break;
+    default:
+      std::cerr << "Unhandled window archetype encountered in "
+                   "Win32Window::OnDestroy: "
+                << static_cast<int>(archetype_) << "\n";
+      std::abort();
+  }
+}
 
 // static
 auto CALLBACK Win32Window::WndProc(HWND hwnd,
@@ -457,6 +611,52 @@ auto CALLBACK Win32Window::WndProc(HWND hwnd,
   }
 
   return DefWindowProc(hwnd, message, wparam, lparam);
+}
+
+auto Win32Window::CloseChildPopups() -> std::size_t {
+  if (num_child_popups_ == 0) {
+    return 0;
+  }
+
+  std::set<Win32Window*> popups;
+  for (auto* const child : children_) {
+    if (child->archetype_ == WindowArchetype::popup) {
+      popups.insert(child);
+    }
+  }
+
+  for (auto it{children_.begin()}; it != children_.end();) {
+    if ((*it)->archetype_ == WindowArchetype::popup) {
+      it = children_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  auto const previous_num_child_popups{num_child_popups_};
+
+  for (auto* popup : popups) {
+    auto const parent_handle{GetParent(popup->window_handle_)};
+    if (auto* const parent{GetThisFromHandle(parent_handle)}) {
+      // Popups' parents are drawn with active colors even though they are
+      // actually inactive. When a popup is destroyed, the parent might be
+      // redrawn as inactive (reflecting its true state) before being redrawn as
+      // active. To prevent flickering during this transition, disable
+      // redrawing the non-client area as inactive.
+      parent->enable_redraw_non_client_as_inactive_ = false;
+      DestroyWindow(popup->GetHandle());
+      parent->enable_redraw_non_client_as_inactive_ = true;
+
+      // Repaint parent window to make sure its title bar is painted with the
+      // color based on its actual activation state
+      if (parent->num_child_popups_ == 0) {
+        SetWindowPos(parent_handle, nullptr, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+      }
+    }
+  }
+
+  return previous_num_child_popups - num_child_popups_;
 }
 
 }  // namespace flutter

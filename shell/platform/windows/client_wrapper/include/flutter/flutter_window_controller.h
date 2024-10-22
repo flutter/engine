@@ -22,7 +22,9 @@ class FlutterWindowController {
   void SetEngine(std::shared_ptr<FlutterEngine> engine);
   auto CreateFlutterWindow(std::wstring const& title,
                            WindowSize const& size,
-                           WindowArchetype archetype)
+                           WindowArchetype archetype,
+                           std::optional<WindowPositioner> positioner,
+                           std::optional<FlutterViewId> parent_view_id)
       -> std::optional<WindowMetadata>;
   auto DestroyFlutterWindow(FlutterViewId view_id) -> bool;
 

@@ -143,9 +143,12 @@ void FlutterWindowController::SetEngine(std::shared_ptr<FlutterEngine> engine) {
       });
 }
 
-auto FlutterWindowController::CreateFlutterWindow(std::wstring const& title,
-                                                  WindowSize const& size,
-                                                  WindowArchetype archetype)
+auto FlutterWindowController::CreateFlutterWindow(
+    std::wstring const& title,
+    WindowSize const& size,
+    WindowArchetype archetype,
+    std::optional<WindowPositioner> positioner,
+    std::optional<FlutterViewId> parent_view_id)
     -> std::optional<WindowMetadata> {
   std::unique_lock lock(mutex_);
   if (!engine_) {
@@ -155,9 +158,15 @@ auto FlutterWindowController::CreateFlutterWindow(std::wstring const& title,
 
   auto window{std::make_unique<FlutterWin32Window>(engine_, win32_)};
 
+  std::optional<HWND> const parent_hwnd{
+      parent_view_id.has_value() &&
+              windows_.find(parent_view_id.value()) != windows_.end()
+          ? std::optional<HWND>{windows_[parent_view_id.value()]->GetHandle()}
+          : std::nullopt};
+
   lock.unlock();
 
-  if (!window->Create(title, size, archetype)) {
+  if (!window->Create(title, size, archetype, parent_hwnd, positioner)) {
     return std::nullopt;
   }
 
@@ -171,12 +180,12 @@ auto FlutterWindowController::CreateFlutterWindow(std::wstring const& title,
   auto const view_id{window->GetFlutterViewId()};
   windows_[view_id] = std::move(window);
 
-  SendOnWindowCreated(view_id, std::nullopt);
+  SendOnWindowCreated(view_id, parent_view_id);
 
   WindowMetadata result{.view_id = view_id,
                         .archetype = archetype,
                         .size = GetWindowSize(view_id),
-                        .parent_id = std::nullopt};
+                        .parent_id = parent_view_id};
 
   return result;
 }
@@ -209,6 +218,8 @@ void FlutterWindowController::MethodCallHandler(MethodCall<> const& call,
                                                 MethodResult<>& result) {
   if (call.method_name() == "createWindow") {
     HandleCreateWindow(WindowArchetype::regular, call, result);
+  } else if (call.method_name() == "createPopup") {
+    HandleCreateWindow(WindowArchetype::popup, call, result);
   } else if (call.method_name() == "destroyWindow") {
     HandleDestroyWindow(call, result);
   } else {
@@ -248,6 +259,39 @@ auto FlutterWindowController::MessageHandler(HWND hwnd,
       }
     }
       return 0;
+    case WM_ACTIVATE:
+      if (wparam != WA_INACTIVE) {
+        if (auto* const window{Win32Window::GetThisFromHandle(hwnd)}) {
+          if (window->GetArchetype() != WindowArchetype::popup) {
+            // If a non-popup window is activated, close popups for all windows
+            std::unique_lock lock(mutex_);
+            auto it{windows_.begin()};
+            while (it != windows_.end()) {
+              lock.unlock();
+              auto const num_popups_closed{it->second->CloseChildPopups()};
+              lock.lock();
+              if (num_popups_closed > 0) {
+                it = windows_.begin();
+              } else {
+                ++it;
+              }
+            }
+          } else {
+            // If a popup window is activated, close its child popups
+            window->CloseChildPopups();
+          }
+        }
+      }
+      break;
+    case WM_ACTIVATEAPP:
+      if (wparam == FALSE) {
+        if (auto* const window{Win32Window::GetThisFromHandle(hwnd)}) {
+          // Close child popups from all windows if a window
+          // belonging to a different application is being activated
+          window->CloseChildPopups();
+        }
+      }
+      break;
     case WM_SIZE: {
       std::lock_guard lock{mutex_};
       auto const it{std::find_if(windows_.begin(), windows_.end(),
@@ -334,9 +378,100 @@ void FlutterWindowController::HandleCreateWindow(WindowArchetype archetype,
     return;
   }
 
+  std::optional<WindowPositioner> positioner;
+  std::optional<WindowRectangle> anchor_rect;
+
+  if (archetype == WindowArchetype::popup) {
+    if (auto const anchor_rect_it{map->find(EncodableValue("anchorRect"))};
+        anchor_rect_it != map->end()) {
+      if (!anchor_rect_it->second.IsNull()) {
+        auto const anchor_rect_list{
+            GetListValuesForKeyOrSendError<int, 4>("anchorRect", map, result)};
+        if (!anchor_rect_list) {
+          return;
+        }
+        anchor_rect =
+            WindowRectangle{{anchor_rect_list->at(0), anchor_rect_list->at(1)},
+                            {anchor_rect_list->at(2), anchor_rect_list->at(3)}};
+      }
+    } else {
+      result.Error(kErrorCodeInvalidValue,
+                   "Map does not contain required 'anchorRect' key.");
+      return;
+    }
+
+    auto const positioner_parent_anchor{GetSingleValueForKeyOrSendError<int>(
+        "positionerParentAnchor", map, result)};
+    if (!positioner_parent_anchor) {
+      return;
+    }
+    auto const positioner_child_anchor{GetSingleValueForKeyOrSendError<int>(
+        "positionerChildAnchor", map, result)};
+    if (!positioner_child_anchor) {
+      return;
+    }
+    auto const child_anchor{
+        static_cast<WindowPositioner::Anchor>(positioner_child_anchor.value())};
+
+    auto const positioner_offset_list{GetListValuesForKeyOrSendError<int, 2>(
+        "positionerOffset", map, result)};
+    if (!positioner_offset_list) {
+      return;
+    }
+    auto const positioner_constraint_adjustment{
+        GetSingleValueForKeyOrSendError<int>("positionerConstraintAdjustment",
+                                             map, result)};
+    if (!positioner_constraint_adjustment) {
+      return;
+    }
+    positioner = WindowPositioner{
+        .anchor_rect = anchor_rect,
+        .parent_anchor = static_cast<WindowPositioner::Anchor>(
+            positioner_parent_anchor.value()),
+        .child_anchor = child_anchor,
+        .offset = {positioner_offset_list->at(0),
+                   positioner_offset_list->at(1)},
+        .constraint_adjustment =
+            static_cast<WindowPositioner::ConstraintAdjustment>(
+                positioner_constraint_adjustment.value())};
+  }
+
+  std::optional<FlutterViewId> parent_view_id;
+  if (archetype == WindowArchetype::popup) {
+    if (auto const parent_it{map->find(EncodableValue("parent"))};
+        parent_it != map->end()) {
+      if (parent_it->second.IsNull()) {
+        result.Error(kErrorCodeInvalidValue,
+                     "Value for 'parent' key must not be null.");
+        return;
+      } else {
+        if (auto const* const parent{std::get_if<int>(&parent_it->second)}) {
+          parent_view_id = *parent >= 0 ? std::optional<FlutterViewId>(*parent)
+                                        : std::nullopt;
+          if (!parent_view_id.has_value() &&
+              archetype == WindowArchetype::popup) {
+            result.Error(kErrorCodeInvalidValue,
+                         "Value for 'parent' key (" +
+                             std::to_string(parent_view_id.value()) +
+                             ") must be nonnegative.");
+            return;
+          }
+        } else {
+          result.Error(kErrorCodeInvalidValue,
+                       "Value for 'parent' key must be of type int.");
+          return;
+        }
+      }
+    } else {
+      result.Error(kErrorCodeInvalidValue,
+                   "Map does not contain required 'parent' key.");
+      return;
+    }
+  }
+
   if (auto const data_opt{CreateFlutterWindow(
           title, {.width = size_list->at(0), .height = size_list->at(1)},
-          archetype)}) {
+          archetype, positioner, parent_view_id)}) {
     auto const& data{data_opt.value()};
     result.Success(EncodableValue(EncodableMap{
         {EncodableValue("viewId"), EncodableValue(data.view_id)},

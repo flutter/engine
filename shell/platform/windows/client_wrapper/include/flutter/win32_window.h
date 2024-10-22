@@ -44,12 +44,16 @@ class Win32Window {
  protected:
   // Creates a native Win32 window. |title| is the window title string.
   // |client_size| specifies the requested size of the client rectangle (i.e.,
-  // the size of the view). The window style is determined by |archetype|.
-  // After successful creation, |OnCreate| is called, and its result is
-  // returned. Otherwise, the return value is false.
+  // the size of the view). The window style is determined by |archetype|. For
+  // |FlutterWindowArchetype::popup|, both |parent| and |positioner| must be
+  // provided; |positioner| is used only for this archetype. After successful
+  // creation, |OnCreate| is called, and its result is returned. Otherwise, the
+  // return value is false.
   auto Create(std::wstring const& title,
               WindowSize const& client_size,
-              WindowArchetype archetype) -> bool;
+              WindowArchetype archetype,
+              std::optional<HWND> parent,
+              std::optional<WindowPositioner> positioner) -> bool;
 
   // Release OS resources associated with window.
   void Destroy();
@@ -91,6 +95,13 @@ class Win32Window {
   // The window's archetype (e.g., regular, dialog, popup).
   WindowArchetype archetype_{WindowArchetype::regular};
 
+  // Windows that have this window as their parent or owner.
+  std::set<Win32Window*> children_;
+
+  // The number of popups in |children_|, used to quickly check whether this
+  // window has any popups.
+  size_t num_child_popups_{0};
+
   // Indicates whether closing this window will quit the application.
   bool quit_on_close_{false};
 
@@ -99,6 +110,14 @@ class Win32Window {
 
   // Handle for hosted child content window.
   HWND child_content_{nullptr};
+
+  // Controls whether the non-client area can be redrawn as inactive.
+  // Enabled by default, but temporarily disabled during child popup destruction
+  // to prevent flickering.
+  bool enable_redraw_non_client_as_inactive_{true};
+
+  // Closes the popups of this window and returns the number of popups closed.
+  auto CloseChildPopups() -> std::size_t;
 };
 
 }  // namespace flutter

@@ -323,6 +323,7 @@
 ../../../flutter/shell/platform/common/client_wrapper/standard_method_codec_unittests.cc
 ../../../flutter/shell/platform/common/client_wrapper/testing
 ../../../flutter/shell/platform/common/client_wrapper/texture_registrar_unittests.cc
+../../../flutter/shell/platform/common/client_wrapper/windowing_unittests.cc
 ../../../flutter/shell/platform/common/engine_switches_unittests.cc
 ../../../flutter/shell/platform/common/flutter_platform_node_delegate_unittests.cc
 ../../../flutter/shell/platform/common/geometry_unittests.cc
