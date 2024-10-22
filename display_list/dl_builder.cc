@@ -68,7 +68,7 @@ void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
     static_assert(is_power_of_two(kDLBuilderMaxGrowth),
                   "This math needs updating for non-pow2.");
     // Next power of two, up to a limit of DL_BUILDER_MAX_GROWTH. This
-    // assumes that the requested size to allocate is alwaus less than
+    // assumes that the requested size to allocate is always less than
     // kDLBuilderMaxGrowth, which given is over a MB is a reasonable
     // assumption.
     uint64_t next_size = NextPowerOfTwo(used_ + size);
