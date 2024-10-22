@@ -976,8 +976,9 @@ void CanvasDlDispatcher::drawVertices(
 }
 
 void CanvasDlDispatcher::SetBackdropData(
-    std::unordered_map<int64_t, BackdropData> backdrop) {
-  GetCanvas().SetBackdropData(std::move(backdrop));
+    std::unordered_map<int64_t, BackdropData> backdrop,
+    size_t backdrop_count) {
+  GetCanvas().SetBackdropData(std::move(backdrop), backdrop_count);
 }
 
 //// Text Frame Dispatcher
@@ -1004,6 +1005,7 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     std::optional<int64_t> backdrop_id) {
   save();
 
+  backdrop_count_ += (backdrop == nullptr ? 0 : 1);
   if (backdrop != nullptr && backdrop_id.has_value()) {
     std::shared_ptr<flutter::DlImageFilter> shared_backdrop =
         backdrop->shared();
@@ -1218,11 +1220,11 @@ void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   }
 }
 
-std::unordered_map<int64_t, BackdropData>
+std::pair<std::unordered_map<int64_t, BackdropData>, size_t>
 TextFrameDispatcher::TakeBackdropData() {
   std::unordered_map<int64_t, BackdropData> temp;
   std::swap(temp, backdrop_data_);
-  return temp;
+  return std::make_pair(temp, backdrop_count_);
 }
 
 std::shared_ptr<Texture> DisplayListToTexture(
@@ -1272,7 +1274,8 @@ std::shared_ptr<Texture> DisplayListToTexture(
       display_list->max_root_blend_mode(),       //
       impeller::IRect::MakeSize(size)            //
   );
-  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   impeller_dispatcher.FinishRecording();
 
@@ -1301,7 +1304,8 @@ bool RenderToOnscreen(ContentContext& context,
       display_list->max_root_blend_mode(),       //
       IRect::RoundOut(ip_cull_rect)              //
   );
-  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, cull_rect);
   impeller_dispatcher.FinishRecording();
   if (reset_host_buffer) {
