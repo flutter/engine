@@ -44,6 +44,7 @@ struct _FlEngine {
   FlBinaryMessenger* binary_messenger;
   FlSettingsHandler* settings_handler;
   FlPlatformHandler* platform_handler;
+  FlMouseCursorHandler* mouse_cursor_handler;
   FlTextureRegistrar* texture_registrar;
   FlTaskRunner* task_runner;
   FlutterEngineAOTData aot_data;
@@ -429,6 +430,7 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_handler);
   g_clear_object(&self->platform_handler);
+  g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -608,6 +610,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   fl_settings_handler_start(self->settings_handler, settings);
 
   self->platform_handler = fl_platform_handler_new(self->binary_messenger);
+  self->mouse_cursor_handler =
+      fl_mouse_cursor_handler_new(self->binary_messenger);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
@@ -1039,4 +1043,9 @@ GPtrArray* fl_engine_get_switches(FlEngine* self) {
 void fl_engine_request_app_exit(FlEngine* self) {
   g_return_if_fail(FL_IS_ENGINE(self));
   fl_platform_handler_request_app_exit(self->platform_handler);
+}
+
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->mouse_cursor_handler;
 }

@@ -8,6 +8,7 @@
 #include <glib-object.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
@@ -433,6 +434,16 @@ GPtrArray* fl_engine_get_switches(FlEngine* engine);
  * Request the application exits.
  */
 void fl_engine_request_app_exit(FlEngine* engine);
+
+/**
+ * fl_engine_get_mouse_cursor_handler:
+ * @engine: an #FlEngine.
+ *
+ * Gets the mouse cursor handler used by this engine.
+ *
+ * Returns: a #FlMouseCursorHandler.
+ */
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* engine);
 
 G_END_DECLS
 
