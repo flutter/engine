@@ -4,9 +4,7 @@
 
 #include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 
-G_DEFINE_INTERFACE(FlTouchViewDelegate,
-                   fl_touch_view_delegate,
-                   G_TYPE_OBJECT)
+G_DEFINE_INTERFACE(FlTouchViewDelegate, fl_touch_view_delegate, G_TYPE_OBJECT)
 
 static void fl_touch_view_delegate_default_init(
     FlTouchViewDelegateInterface* iface) {}
@@ -18,6 +16,3 @@ void fl_touch_view_delegate_send_pointer_event(
 
   FL_TOUCH_VIEW_DELEGATE_GET_IFACE(self)->send_pointer_event(self, event_data);
 }
-
-
-

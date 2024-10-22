@@ -11,8 +11,8 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
 G_BEGIN_DECLS
 
@@ -36,13 +36,11 @@ struct _FlTouchViewDelegateInterface {
 
   void (*send_pointer_event)(FlTouchViewDelegate* delegate,
                              const FlutterPointerEvent& event_data);
-
 };
 
 void fl_touch_view_delegate_send_pointer_event(
     FlTouchViewDelegate* delegate,
     const FlutterPointerEvent& event_data);
-
 
 G_END_DECLS
 

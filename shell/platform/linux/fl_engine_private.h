@@ -280,9 +280,17 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
+/**
+ * fl_engine_send_pointer_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @event_data: pointer event data.
+ *
+ * Sends a pointer event to the engine.
+ */
 void fl_engine_send_pointer_event(FlEngine* engine,
-                              FlutterViewId view_id,
-                              const FlutterPointerEvent& event_data);
+                                  FlutterViewId view_id,
+                                  const FlutterPointerEvent& event_data);
 
 /**
  * fl_engine_send_pointer_pan_zoom_event:

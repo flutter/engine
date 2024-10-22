@@ -20,11 +20,11 @@
 #include "flutter/shell/platform/linux/fl_pointer_manager.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
-#include "flutter/shell/platform/linux/fl_touch_manager.h"
-#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
+#include "flutter/shell/platform/linux/fl_touch_manager.h"
+#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -96,7 +96,7 @@ static void fl_view_keyboard_delegate_iface_init(
 
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface);
-  
+
 static void fl_view_touch_delegate_iface_init(
     FlTouchViewDelegateInterface* iface);
 
@@ -159,8 +159,7 @@ static void init_scrolling(FlView* self) {
 
 static void init_touch(FlView* self) {
   g_clear_object(&self->touch_manager);
-  self->touch_manager =
-      fl_touch_manager_new(FL_TOUCH_VIEW_DELEGATE(self));
+  self->touch_manager = fl_touch_manager_new(FL_TOUCH_VIEW_DELEGATE(self));
 }
 
 static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
@@ -339,12 +338,12 @@ static void fl_view_keyboard_delegate_iface_init(
 static void fl_view_touch_delegate_iface_init(
     FlTouchViewDelegateInterface* iface) {
   iface->send_pointer_event = [](FlTouchViewDelegate* view_delegate,
-                                  const FlutterPointerEvent& event_data){
-      FlView* self = FL_VIEW(view_delegate);
-      if (self->engine != nullptr) {
-        fl_engine_send_pointer_event(self->engine, self->view_id, event_data);
-      }
-    };
+                                 const FlutterPointerEvent& event_data) {
+    FlView* self = FL_VIEW(view_delegate);
+    if (self->engine != nullptr) {
+      fl_engine_send_pointer_event(self->engine, self->view_id, event_data);
+    }
+  };
 }
 
 static void fl_view_text_input_delegate_iface_init(
@@ -436,7 +435,9 @@ static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
 }
 
 static gboolean touch_event_cb(FlView* self, GdkEventTouch* event) {
-  fl_touch_manager_handle_touch_event(self->touch_manager, event, gtk_widget_get_scale_factor(GTK_WIDGET(self)));
+  fl_touch_manager_handle_touch_event(
+      self->touch_manager, event,
+      gtk_widget_get_scale_factor(GTK_WIDGET(self)));
   return TRUE;
 }
 
