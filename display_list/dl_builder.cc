@@ -15,10 +15,28 @@
 
 namespace flutter {
 
-#define DL_BUILDER_PAGE 16384
-
 // 1.048576 MB
 static const constexpr uint64_t kDLBuilderMaxGrowth = 1048576;
+
+/// @brief Return the next power of 2.
+///
+/// If the provided value is a power of 2, returns as is.
+uint64_t NextPowerOfTwo(uint64_t x) {
+  if (x == 0) {
+    return 1;
+  }
+
+  x--;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  x |= x >> 32;
+  x++;
+
+  return x;
+}
 
 // CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
 static void CopyV(void* dst) {}
@@ -40,23 +58,6 @@ static void CopyV(void* dst, const S* src, int n, Rest&&... rest) {
 
 static constexpr inline bool is_power_of_two(int value) {
   return (value & (value - 1)) == 0;
-}
-
-static constexpr uint64_t NextPowerOfTwo(uint64_t x) {
-  if (x == 0) {
-    return 1;
-  }
-
-  x--;
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  x |= x >> 32;
-  x++;
-
-  return x;
 }
 
 template <typename T, typename... Args>

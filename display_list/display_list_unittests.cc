@@ -5894,5 +5894,41 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
   }
 }
 
+TEST_F(DisplayListTest, NextPowerOfTwo) {
+  EXPECT_EQ(NextPowerOfTwo(0), 1u);
+  EXPECT_EQ(NextPowerOfTwo(1), 1u);
+  EXPECT_EQ(NextPowerOfTwo(2), 2u);
+
+  EXPECT_EQ(NextPowerOfTwo(3), 4u);
+  EXPECT_EQ(NextPowerOfTwo(4), 4u);
+
+  EXPECT_EQ(NextPowerOfTwo(5), 8u);
+  EXPECT_EQ(NextPowerOfTwo(8), 8u);
+
+  EXPECT_EQ(NextPowerOfTwo(16), 16u);
+  EXPECT_EQ(NextPowerOfTwo(16), 16u);
+
+  EXPECT_EQ(NextPowerOfTwo(20), 32u);
+  EXPECT_EQ(NextPowerOfTwo(32), 32u);
+
+  EXPECT_EQ(NextPowerOfTwo(50), 64u);
+  EXPECT_EQ(NextPowerOfTwo(64), 64u);
+
+  EXPECT_EQ(NextPowerOfTwo(120), 128u);
+  EXPECT_EQ(NextPowerOfTwo(128), 128u);
+
+  EXPECT_EQ(NextPowerOfTwo(250), 256u);
+  EXPECT_EQ(NextPowerOfTwo(256), 256u);
+
+  EXPECT_EQ(NextPowerOfTwo(1000), 1024u);
+  EXPECT_EQ(NextPowerOfTwo(1024), 1024u);
+
+  EXPECT_EQ(NextPowerOfTwo(2000), 2048u);
+  EXPECT_EQ(NextPowerOfTwo(2048), 2048u);
+
+  EXPECT_EQ(NextPowerOfTwo(4000), 4096u);
+  EXPECT_EQ(NextPowerOfTwo(4096), 4096u);
+}
+
 }  // namespace testing
 }  // namespace flutter
