@@ -1466,8 +1466,8 @@ ImpellerImageFilterCreateMatrixNew(
     ImpellerTextureSampling sampling);
 
 //------------------------------------------------------------------------------
-/// @brief      Creates a combo filter that when applied is identical to
-///             subsequently applying the inner and then the outer filter.
+/// @brief      Creates a composed filter that when applied is identical to
+///             subsequently applying the inner and then the outer filters.
 ///
 ///             ```
 ///             destination = outer_filter(inner_filter(source))
@@ -1705,7 +1705,8 @@ void ImpellerDisplayListBuilderRestoreToCount(
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-/// @brief      Clip away the contents outside the specified shape.
+/// @brief      Reduces the clip region to the intersection of the current clip
+///             and the given rectangle taking into account the clip operation.
 ///
 /// @param[in]  builder  The builder.
 /// @param[in]  rect     The rectangle.
@@ -1718,7 +1719,8 @@ void ImpellerDisplayListBuilderClipRect(
     ImpellerClipOperation op);
 
 //------------------------------------------------------------------------------
-/// @brief      Clip away the contents outside the specified shape.
+/// @brief      Reduces the clip region to the intersection of the current clip
+///             and the given oval taking into account the clip operation.
 ///
 /// @param[in]  builder      The builder.
 /// @param[in]  oval_bounds  The oval bounds.
@@ -1731,7 +1733,9 @@ void ImpellerDisplayListBuilderClipOval(
     ImpellerClipOperation op);
 
 //------------------------------------------------------------------------------
-/// @brief      Clip away the contents outside the specified shape.
+/// @brief      Reduces the clip region to the intersection of the current clip
+///             and the given rounded rectangle taking into account the clip
+///             operation.
 ///
 /// @param[in]  builder  The builder.
 /// @param[in]  rect     The rectangle.
@@ -1746,7 +1750,8 @@ void ImpellerDisplayListBuilderClipRoundedRect(
     ImpellerClipOperation op);
 
 //------------------------------------------------------------------------------
-/// @brief      Clip away the contents outside the specified shape.
+/// @brief      Reduces the clip region to the intersection of the current clip
+///             and the given path taking into account the clip operation.
 ///
 /// @param[in]  builder  The builder.
 /// @param[in]  path     The path.
