@@ -538,12 +538,12 @@ public class FlutterView extends FrameLayout
    */
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
-    List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
-    this.displayFeatures.clear();
+    List<DisplayFeature> newDisplayFeatures = layoutInfo.getDisplayFeatures();
+    displayFeatures.clear();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
-    for (DisplayFeature displayFeature : displayFeatures) {
+    for (DisplayFeature displayFeature : newDisplayFeatures) {
       Log.v(
           TAG,
           "WindowInfoTracker Display Feature reported with bounds = "
@@ -566,10 +566,10 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        this.displayFeatures.add(
+        displayFeatures.add(
             new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        this.displayFeatures.add(
+        displayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
