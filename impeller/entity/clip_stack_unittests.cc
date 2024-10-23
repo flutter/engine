@@ -103,7 +103,7 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverageNonAA) {
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_height, 1u);
-  EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
+  EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Restore the clip.
   recorder.RecordRestore({0, 0}, 0);
@@ -299,7 +299,7 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpassesNonAA) {
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55.0, 55.0));
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_height, 1u);
-  EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
+  EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Begin a subpass.
   recorder.PushSubpass(Rect::MakeLTRB(50, 50, 55, 55), 1);
