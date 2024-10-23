@@ -99,7 +99,8 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
     Matrix transform,
     Point global_pass_position,
     uint32_t clip_depth,
-    size_t clip_height_floor) {
+    size_t clip_height_floor,
+    bool is_aa) {
   ClipStateResult result = {.should_render = false, .clip_did_change = false};
 
   std::optional<Rect> maybe_clip_coverage = CurrentClipCoverage();
@@ -120,7 +121,7 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
         clip_coverage.coverage->Shift(global_pass_position);
   }
 
-  auto& subpass_state = GetCurrentSubpassState();
+  SubpassState& subpass_state = GetCurrentSubpassState();
 
   // Compute the previous clip height.
   size_t previous_clip_height = 0;
@@ -143,6 +144,35 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::RecordClip(
     });
 
     return result;
+  }
+
+  // If the clip is an axis aligned rect and either is_aa is false or
+  // the clip is very nearly integral, then the depth write can be
+  // skipped for intersect clips. Since we use 4x MSAA, anything within
+  // about 0.2 of an integral value in either axis can be treated as
+  // approximately the same as an integral value.
+  if (!clip_coverage.is_difference_or_non_square &&
+      clip_coverage.coverage.has_value()) {
+    const Rect& coverage = clip_coverage.coverage.value();
+    constexpr Scalar threshold = 0.2;
+    if (!is_aa ||
+        (std::abs(std::round(coverage.GetLeft()) - coverage.GetLeft()) <=
+             threshold &&
+         std::abs(std::round(coverage.GetTop()) - coverage.GetTop()) <=
+             threshold &&
+         std::abs(std::round(coverage.GetRight()) - coverage.GetRight()) <=
+             threshold &&
+         std::abs(std::round(coverage.GetBottom()) - coverage.GetBottom()) <=
+             threshold)) {
+      subpass_state.clip_coverage.push_back(ClipCoverageLayer{
+          .coverage = Rect::Round(clip_coverage.coverage.value()),  //
+          .clip_height = previous_clip_height + 1                   //
+
+      });
+      result.clip_did_change = true;
+
+      return result;
+    }
   }
 
   subpass_state.clip_coverage.push_back(ClipCoverageLayer{

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "fml/logging.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/saturated_math.h"
