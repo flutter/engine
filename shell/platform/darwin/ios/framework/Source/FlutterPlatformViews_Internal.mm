@@ -589,8 +589,8 @@ static BOOL _preparedOnce = NO;
 
 - (void)forceResetForwardingGestureRecognizerState {
   // When iPad pencil is involved in a finger touch gesture, the gesture is not reset to "possible"
-  // state, which causes subsequent touches to be blocked. As a workaround, we force reset the state
-  // by recreating the forwarding gesture recognizer. See:
+  // state and is stuck on "failed" state, which causes subsequent touches to be blocked. As a
+  // workaround, we force reset the state by recreating the forwarding gesture recognizer. See:
   // https://github.com/flutter/flutter/issues/136244
   ForwardingGestureRecognizer* oldForwardingRecognizer =
       (ForwardingGestureRecognizer*)self.delayingRecognizer.forwardingRecognizer;
