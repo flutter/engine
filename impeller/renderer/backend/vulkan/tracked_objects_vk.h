@@ -14,8 +14,6 @@
 
 namespace impeller {
 
-class CommandPoolVK;
-
 /// @brief A per-frame object used to track resource lifetimes and allocate
 ///        command buffers and descriptor sets.
 class TrackedObjectsVK {

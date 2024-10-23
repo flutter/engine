@@ -15,7 +15,27 @@
 
 namespace flutter {
 
-#define DL_BUILDER_PAGE 4096
+static const constexpr size_t kDLPageSize = 16384u;
+
+/// @brief Return the next power of 2.
+///
+/// If the provided value is a power of 2, returns as is.
+uint64_t NextPowerOfTwo(uint64_t x) {
+  if (x == 0) {
+    return 1;
+  }
+
+  x--;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  x |= x >> 32;
+  x++;
+
+  return x;
+}
 
 // CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
 static void CopyV(void* dst) {}
@@ -42,12 +62,12 @@ static constexpr inline bool is_power_of_two(int value) {
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
-  FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
-    static_assert(is_power_of_two(DL_BUILDER_PAGE),
+    static_assert(is_power_of_two(kDLPageSize),
                   "This math needs updating for non-pow2.");
-    // Next greater multiple of DL_BUILDER_PAGE.
-    allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
+    // Round up the allocated size + used size to the next power of 2, with a
+    // minimum increment of kDLPageSize.
+    allocated_ = NextPowerOfTwo(used_ + std::max(size, kDLPageSize));
     storage_.realloc(allocated_);
     FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
@@ -995,15 +1015,15 @@ void DisplayListBuilder::ClipOval(const DlRect& bounds,
       break;
   }
 }
-void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
-                                   ClipOp clip_op,
-                                   bool is_aa) {
-  if (rrect.isRect()) {
-    ClipRect(ToDlRect(rrect.rect()), clip_op, is_aa);
+void DisplayListBuilder::ClipRoundRect(const DlRoundRect& rrect,
+                                       ClipOp clip_op,
+                                       bool is_aa) {
+  if (rrect.IsRect()) {
+    ClipRect(rrect.GetBounds(), clip_op, is_aa);
     return;
   }
-  if (rrect.isOval()) {
-    ClipOval(ToDlRect(rrect.rect()), clip_op, is_aa);
+  if (rrect.IsOval()) {
+    ClipOval(rrect.GetBounds(), clip_op, is_aa);
     return;
   }
   if (current_info().is_nop) {
@@ -1025,10 +1045,10 @@ void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
   checkForDeferredSave();
   switch (clip_op) {
     case ClipOp::kIntersect:
-      Push<ClipIntersectRRectOp>(0, rrect, is_aa);
+      Push<ClipIntersectRoundRectOp>(0, rrect, is_aa);
       break;
     case ClipOp::kDifference:
-      Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
+      Push<ClipDifferenceRoundRectOp>(0, rrect, is_aa);
       break;
   }
 }
@@ -1185,42 +1205,43 @@ void DisplayListBuilder::DrawCircle(const DlPoint& center,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawCircleFlags);
   drawCircle(center, radius);
 }
-void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
-  if (rrect.isRect()) {
-    drawRect(ToDlRect(rrect.rect()));
-  } else if (rrect.isOval()) {
-    drawOval(ToDlRect(rrect.rect()));
+void DisplayListBuilder::drawRoundRect(const DlRoundRect& rrect) {
+  if (rrect.IsRect()) {
+    drawRect(rrect.GetBounds());
+  } else if (rrect.IsOval()) {
+    drawOval(rrect.GetBounds());
   } else {
     DisplayListAttributeFlags flags = kDrawRRectFlags;
     OpResult result = PaintResult(current_, flags);
     if (result != OpResult::kNoEffect &&
-        AccumulateOpBounds(rrect.getBounds(), flags)) {
-      Push<DrawRRectOp>(0, rrect);
+        AccumulateOpBounds(ToSkRect(rrect.GetBounds()), flags)) {
+      Push<DrawRoundRectOp>(0, rrect);
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
     }
   }
 }
-void DisplayListBuilder::DrawRRect(const SkRRect& rrect, const DlPaint& paint) {
+void DisplayListBuilder::DrawRoundRect(const DlRoundRect& rrect,
+                                       const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawRRectFlags);
-  drawRRect(rrect);
+  drawRoundRect(rrect);
 }
-void DisplayListBuilder::drawDRRect(const SkRRect& outer,
-                                    const SkRRect& inner) {
+void DisplayListBuilder::drawDiffRoundRect(const DlRoundRect& outer,
+                                           const DlRoundRect& inner) {
   DisplayListAttributeFlags flags = kDrawDRRectFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(outer.getBounds(), flags)) {
-    Push<DrawDRRectOp>(0, outer, inner);
+      AccumulateOpBounds(ToSkRect(outer.GetBounds()), flags)) {
+    Push<DrawDiffRoundRectOp>(0, outer, inner);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
 }
-void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
-                                    const SkRRect& inner,
-                                    const DlPaint& paint) {
+void DisplayListBuilder::DrawDiffRoundRect(const DlRoundRect& outer,
+                                           const DlRoundRect& inner,
+                                           const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawDRRectFlags);
-  drawDRRect(outer, inner);
+  drawDiffRoundRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const DlPath& path) {
   DisplayListAttributeFlags flags = kDrawPathFlags;

@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_builder.h"
@@ -2947,7 +2948,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
   {
     builder1.Save();
     {
-      builder1.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+      builder1.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
       builder1.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
     }
@@ -2963,7 +2964,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
 
   DisplayListBuilder builder2;
   builder2.Save();
-  builder2.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+  builder2.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
   builder2.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
   builder2.Restore();
@@ -4538,7 +4539,7 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
 #define CLIP_EXPECTOR(name) ClipExpector name(__FILE__, __LINE__)
 
 struct ClipExpectation {
-  std::variant<DlRect, SkRRect, DlPath> shape;
+  std::variant<DlRect, DlRoundRect, DlPath> shape;
   bool is_oval;
   ClipOp clip_op;
   bool is_aa;
@@ -4548,7 +4549,7 @@ struct ClipExpectation {
       case 0:
         return is_oval ? "SkOval" : "SkRect";
       case 1:
-        return "SkRRect";
+        return "DlRoundRect";
       case 2:
         return "DlPath";
       default:
@@ -4567,7 +4568,7 @@ struct ClipExpectation {
       }
       break;
     case 1:
-      os << std::get<SkRRect>(expect.shape);
+      os << std::get<DlRoundRect>(expect.shape);
       break;
     case 2:
       os << std::get<DlPath>(expect.shape).GetSkPath();
@@ -4626,8 +4627,10 @@ class ClipExpector : public virtual DlOpReceiver,
   ClipExpector& addExpectation(const SkRRect& rrect,
                                ClipOp clip_op = ClipOp::kIntersect,
                                bool is_aa = false) {
+    auto dl_rrect = ToDlRoundRect(rrect);
+    EXPECT_EQ(ToSkRRect(dl_rrect), rrect);
     clip_expectations_.push_back({
-        .shape = rrect,
+        .shape = dl_rrect,
         .is_oval = false,
         .clip_op = clip_op,
         .is_aa = is_aa,
@@ -4663,9 +4666,9 @@ class ClipExpector : public virtual DlOpReceiver,
                 bool is_aa) override {
     check(bounds, clip_op, is_aa, true);
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     check(rrect, clip_op, is_aa);
   }
   void clipPath(const DlPath& path,
@@ -5890,6 +5893,74 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culled_dl, expected_dl));
   }
+}
+
+TEST_F(DisplayListTest, RecordManyLargeDisplayListOperations) {
+  DisplayListBuilder builder;
+
+  // 2050 points is sizeof(DlPoint) * 2050 = 16400 bytes, this is more
+  // than the page size of 16384 bytes.
+  std::vector<DlPoint> points(2050);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, RecordSingleLargeDisplayListOperation) {
+  DisplayListBuilder builder;
+
+  std::vector<DlPoint> points(40000);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, NextPowerOfTwo) {
+  EXPECT_EQ(NextPowerOfTwo(0), 1u);
+  EXPECT_EQ(NextPowerOfTwo(1), 1u);
+  EXPECT_EQ(NextPowerOfTwo(2), 2u);
+
+  EXPECT_EQ(NextPowerOfTwo(3), 4u);
+  EXPECT_EQ(NextPowerOfTwo(4), 4u);
+
+  EXPECT_EQ(NextPowerOfTwo(5), 8u);
+  EXPECT_EQ(NextPowerOfTwo(8), 8u);
+
+  EXPECT_EQ(NextPowerOfTwo(14), 16u);
+  EXPECT_EQ(NextPowerOfTwo(16), 16u);
+
+  EXPECT_EQ(NextPowerOfTwo(20), 32u);
+  EXPECT_EQ(NextPowerOfTwo(32), 32u);
+
+  EXPECT_EQ(NextPowerOfTwo(50), 64u);
+  EXPECT_EQ(NextPowerOfTwo(64), 64u);
+
+  EXPECT_EQ(NextPowerOfTwo(120), 128u);
+  EXPECT_EQ(NextPowerOfTwo(128), 128u);
+
+  EXPECT_EQ(NextPowerOfTwo(250), 256u);
+  EXPECT_EQ(NextPowerOfTwo(256), 256u);
+
+  EXPECT_EQ(NextPowerOfTwo(1000), 1024u);
+  EXPECT_EQ(NextPowerOfTwo(1024), 1024u);
+
+  EXPECT_EQ(NextPowerOfTwo(2000), 2048u);
+  EXPECT_EQ(NextPowerOfTwo(2048), 2048u);
+
+  EXPECT_EQ(NextPowerOfTwo(4000), 4096u);
+  EXPECT_EQ(NextPowerOfTwo(4096), 4096u);
 }
 
 }  // namespace testing

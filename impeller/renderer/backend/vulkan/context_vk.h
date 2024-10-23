@@ -13,6 +13,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
@@ -20,6 +21,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
@@ -37,6 +39,7 @@ class SurfaceContextVK;
 class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
 class CommandQueueVK;
+class DescriptorPoolVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -188,6 +191,13 @@ class ContextVK final : public Context,
   /// disabled, even if the device is capable of supporting it.
   bool GetShouldDisableSurfaceControlSwapchain() const;
 
+  // | Context |
+  bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) override;
+
+  // | Context |
+  bool FlushCommandBuffers() override;
+
  private:
   struct DeviceHolderImpl : public DeviceHolderVK {
     // |DeviceHolder|
@@ -214,13 +224,20 @@ class ContextVK final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<ResourceManagerVK> resource_manager_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
-  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
+
+  using DescriptorPoolMap =
+      std::unordered_map<std::thread::id, std::shared_ptr<DescriptorPoolVK>>;
+
+  mutable DescriptorPoolMap cached_descriptor_pool_;
   bool should_disable_surface_control_ = false;
+  bool should_batch_cmd_buffers_ = false;
+  std::vector<std::shared_ptr<CommandBuffer>> pending_command_buffers_;
 
   const uint64_t hash_;
 
