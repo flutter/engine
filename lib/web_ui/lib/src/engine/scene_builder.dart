@@ -172,6 +172,10 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   final List<SceneSlice> sceneSlices = <SceneSlice>[SceneSlice()];
 
+  // This represents the simplest case with no platform views, which is a fast path
+  // that allows us to avoid work tracking the pictures themselves.
+  bool _isSimple = true;
+
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
     // We don't plan to implement this on the web.
@@ -201,6 +205,11 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   // picture intersects with a platform view in the last slice, a new slice is added at
   // the end and the picture goes in there.
   int _placePicture(ui.Offset offset, ScenePicture picture, PlatformViewStyling styling) {
+    if (_isSimple) {
+      // This is the fast path where there are no platform views. The picture should
+      // just be placed on the bottom (and only) slice.
+      return 0;
+    }
     final ui.Rect cullRect = picture.cullRect.shift(offset);
     final ui.Rect mappedCullRect = styling.mapLocalToGlobal(cullRect);
     int sliceIndex = sceneSlices.length;
@@ -213,6 +222,11 @@ class EngineSceneBuilder implements ui.SceneBuilder {
       if (sliceBelow.pictureOcclusionMap.overlaps(mappedCullRect)) {
         break;
       }
+    }
+    if (sliceIndex == 0) {
+      // Don't bother to populate the lowest occlusion map with pictures, since
+      // we never hit test against pictures in the bottom slice.
+      return sliceIndex;
     }
     if (sliceIndex == sceneSlices.length) {
       // Insert a new slice.
@@ -249,6 +263,9 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     ui.Rect rect,
     PlatformViewStyling styling,
   ) {
+    // Once we add a platform view, we actually have to do proper occlusion tracking.
+    _isSimple = false;
+
     final ui.Rect globalPlatformViewRect = styling.mapLocalToGlobal(rect);
     int sliceIndex = sceneSlices.length - 1;
     while (sliceIndex > 0) {
@@ -273,6 +290,11 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   }
 
   PictureEngineLayer _placeRetainedLayer(PictureEngineLayer retainedLayer, PlatformViewStyling styling) {
+    if (_isSimple && retainedLayer.isSimple) {
+      // There are no platform views, so we don't need to do any occlusion tracking
+      // and can simply merge the layer.
+      return retainedLayer;
+    }
     bool needsRebuild = false;
     final List<LayerDrawCommand> revisedDrawCommands = [];
     final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(styling, retainedLayer.platformViewStyling);

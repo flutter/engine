@@ -581,6 +581,17 @@ mixin PictureEngineLayer implements ui.EngineLayer {
   String toString() {
     return 'PictureEngineLayer($operation)';
   }
+
+  bool get isSimple {
+    if (slices.length > 1) {
+      return false;
+    }
+    final LayerSlice? singleSlice = slices.firstOrNull;
+    if (singleSlice == null || singleSlice.platformViews.isEmpty) {
+      return true;
+    }
+    return false;
+  }
 }
 
 abstract class LayerOperation {
