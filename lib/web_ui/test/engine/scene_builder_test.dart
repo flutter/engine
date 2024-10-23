@@ -16,7 +16,7 @@ void main() {
 
 void testMain() {
   setUpAll(() {
-    LayerSliceBuilder.debugRecorderFactory = () {
+    LayerSliceBuilder.debugRecorderFactory = (ui.Rect rect) {
       final StubSceneCanvas canvas = StubSceneCanvas();
       final StubPictureRecorder recorder = StubPictureRecorder(canvas);
       return (recorder, canvas);
