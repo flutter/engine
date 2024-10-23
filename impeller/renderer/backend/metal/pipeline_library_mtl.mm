@@ -114,6 +114,7 @@ bool PipelineLibraryMTL::IsValid() const {
 PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
     PipelineDescriptor descriptor,
     bool async) {
+  FML_DCHECK([NSThread isMainThread]);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
     return found->second;
   }
@@ -171,12 +172,14 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       NSError* _Nullable error) {
     if (error) {
       FML_LOG(INFO) << "pipeline creation retry";
-      GetMTLRenderPipelineDescriptor(
-          descriptor, [device = device_, completion_handler](
-                          MTLRenderPipelineDescriptor* descriptor) {
-            [device newRenderPipelineStateWithDescriptor:descriptor
-                                       completionHandler:completion_handler];
-          });
+      dispatch_async(dispatch_get_main_queue(), ^{
+        GetMTLRenderPipelineDescriptor(
+            descriptor, [device = device_, completion_handler](
+                            MTLRenderPipelineDescriptor* descriptor) {
+              [device newRenderPipelineStateWithDescriptor:descriptor
+                                         completionHandler:completion_handler];
+            });
+      });
     } else {
       completion_handler(render_pipeline_state, error);
     }
