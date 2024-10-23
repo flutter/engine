@@ -16,6 +16,10 @@
 #include "impeller/renderer/backend/metal/shader_function_mtl.h"
 #include "impeller/renderer/backend/metal/vertex_descriptor_mtl.h"
 
+#if !__has_feature(objc_arc)
+#error ARC must be enabled !
+#endif
+
 namespace impeller {
 
 PipelineLibraryMTL::PipelineLibraryMTL(id<MTLDevice> device)
@@ -162,12 +166,27 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
         ));
     promise->set_value(new_pipeline);
   };
-  GetMTLRenderPipelineDescriptor(
-      descriptor, [device = device_, completion_handler](
-                      MTLRenderPipelineDescriptor* descriptor) {
-        [device newRenderPipelineStateWithDescriptor:descriptor
-                                   completionHandler:completion_handler];
-      });
+  auto retry_handler = ^(
+      id<MTLRenderPipelineState> _Nullable render_pipeline_state,
+      NSError* _Nullable error) {
+    if (error) {
+      GetMTLRenderPipelineDescriptor(
+          descriptor, [device = device_, completion_handler](
+                          MTLRenderPipelineDescriptor* descriptor) {
+            [device newRenderPipelineStateWithDescriptor:descriptor
+                                       completionHandler:completion_handler];
+          });
+    } else {
+      completion_handler(render_pipeline_state, error);
+    }
+  };
+  decltype(retry_handler) active_handler =
+#if defined(FML_ARCH_CPU_X86_64)
+      retry_handler;
+#else
+      completion_handler;
+  (void)retry_handler;
+#endif
   return pipeline_future;
 }
 
