@@ -170,6 +170,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       id<MTLRenderPipelineState> _Nullable render_pipeline_state,
       NSError* _Nullable error) {
     if (error) {
+      FML_LOG(INFO) << "pipeline creation retry";
       GetMTLRenderPipelineDescriptor(
           descriptor, [device = device_, completion_handler](
                           MTLRenderPipelineDescriptor* descriptor) {
