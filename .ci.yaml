@@ -405,7 +405,6 @@ targets:
 
   - name: Linux clangd
     recipe: engine_v2/builder
-    use_cas: false
     properties:
       config_name: linux_clangd
 
@@ -518,7 +517,6 @@ targets:
   - name: Mac clangd
     recipe: engine_v2/builder
     bringup: true
-    use_cas: false
     properties:
       config_name: mac_clangd
       cpu: x86

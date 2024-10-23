@@ -7,6 +7,7 @@
     "targets are specified, the build will fail, and if an empty list of ",
     "targets are specified, all targets are built (wasteful/slow)"
   ],
+  "cas_archive": false,
   "gn": [
     "--runtime-mode",
     "debug",
