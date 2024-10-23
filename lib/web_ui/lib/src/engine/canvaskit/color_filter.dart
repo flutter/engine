@@ -71,7 +71,9 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
   SkColorFilter _initRawColorFilter();
 
   @override
-  void withSkImageFilter(SkImageFilterBorrow borrow, {ui.TileMode defaultMode = ui.TileMode.clamp}) {
+  void withSkImageFilter(SkImageFilterBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     // Since ColorFilter has a const constructor it cannot store dynamically
     // created Skia objects. Therefore a new SkImageFilter is created every time
     // it's used. However, once used it's no longer needed, so it's deleted

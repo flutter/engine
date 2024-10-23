@@ -53,12 +53,12 @@ class SkwasmCanvas implements SceneCanvas {
       withStackScope((StackScope s) {
         nativeFilter.withRawImageFilter((nativeFilterHandle) {
           canvasSaveLayer(_handle, s.convertRectToNative(bounds), paintHandle, nativeFilterHandle);
-        }, defaultMode: ui.TileMode.mirror);
+        }, defaultBlurTileMode: ui.TileMode.mirror);
       });
     } else {
       nativeFilter.withRawImageFilter((nativeFilterHandle) {
         canvasSaveLayer(_handle, nullptr, paintHandle, nativeFilterHandle);
-      }, defaultMode: ui.TileMode.mirror);
+      }, defaultBlurTileMode: ui.TileMode.mirror);
     }
     paintDispose(paintHandle);
   }
@@ -217,7 +217,9 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) {
-    final paintHandle = (paint as SkwasmPaint).toRawPaint(defaultMode: ui.TileMode.clamp);
+    final paintHandle = (paint as SkwasmPaint).toRawPaint(
+      defaultBlurTileMode: ui.TileMode.clamp,
+    );
     canvasDrawImage(
       _handle,
       (image as SkwasmImage).handle,
@@ -239,7 +241,9 @@ class SkwasmCanvas implements SceneCanvas {
     withStackScope((StackScope scope) {
       final Pointer<Float> sourceRect = scope.convertRectToNative(src);
       final Pointer<Float> destRect = scope.convertRectToNative(dst);
-      final paintHandle = (paint as SkwasmPaint).toRawPaint(defaultMode: ui.TileMode.clamp);
+      final paintHandle = (paint as SkwasmPaint).toRawPaint(
+        defaultBlurTileMode: ui.TileMode.clamp,
+      );
       canvasDrawImageRect(
         _handle,
         (image as SkwasmImage).handle,
@@ -262,7 +266,9 @@ class SkwasmCanvas implements SceneCanvas {
     withStackScope((StackScope scope) {
       final Pointer<Int32> centerRect = scope.convertIRectToNative(center);
       final Pointer<Float> destRect = scope.convertRectToNative(dst);
-      final paintHandle = (paint as SkwasmPaint).toRawPaint(defaultMode: ui.TileMode.clamp);
+      final paintHandle = (paint as SkwasmPaint).toRawPaint(
+        defaultBlurTileMode: ui.TileMode.clamp,
+      );
       canvasDrawImageNine(
         _handle,
         (image as SkwasmImage).handle,
@@ -360,7 +366,9 @@ class SkwasmCanvas implements SceneCanvas {
     final RawRect rawCullRect = cullRect != null
       ? scope.convertRectToNative(cullRect)
       : nullptr;
-    final paintHandle = (paint as SkwasmPaint).toRawPaint(defaultMode: ui.TileMode.clamp);
+    final paintHandle = (paint as SkwasmPaint).toRawPaint(
+      defaultBlurTileMode: ui.TileMode.clamp,
+    );
     canvasDrawAtlas(
       _handle,
       (atlas as SkwasmImage).handle,
@@ -393,7 +401,9 @@ class SkwasmCanvas implements SceneCanvas {
     final RawRect rawCullRect = cullRect != null
       ? scope.convertRectToNative(cullRect)
       : nullptr;
-    final paintHandle = (paint as SkwasmPaint).toRawPaint(defaultMode: ui.TileMode.clamp);
+    final paintHandle = (paint as SkwasmPaint).toRawPaint(
+      defaultBlurTileMode: ui.TileMode.clamp,
+    );
     canvasDrawAtlas(
       _handle,
       (atlas as SkwasmImage).handle,
