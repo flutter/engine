@@ -78,6 +78,9 @@ void runSemanticsTests() {
   group('checkboxes, radio buttons and switches', () {
     _testCheckables();
   });
+  group('selectables', () {
+    _testSelectables();
+  });
   group('tappable', () {
     _testTappable();
   });
@@ -736,7 +739,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders a header with a label and uses a sized span for label', () {
+  test('renders heading role for headers', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -752,13 +755,19 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<header><span>Header of the page</span></header>
+<sem role="heading">Header of the page</sem>
 ''');
 
     semantics().semanticsEnabled = false;
   });
 
-  test('renders a header with children and uses aria-label', () {
+  // When a header has child elements, role="heading" prevents AT from reaching
+  // child elements. To fix that role="group" is used, even though that causes
+  // the heading to not be announced as a heading. If the app really needs the
+  // heading to be announced as a heading, the developer can restructure the UI
+  // such that the heading is not a parent node, but a side-note, e.g. preceding
+  // the child list.
+  test('uses group role for headers when children are present', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -782,7 +791,7 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<header aria-label="Header of the page"><sem-c><sem></sem></sem-c></header>
+<sem role="group" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -2280,6 +2289,114 @@ void _testCheckables() {
       ],
     );
     capturedActions.clear();
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+void _testSelectables() {
+  test('renders and updates non-selectable, selected, and unselected nodes', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          isSelectable: false,
+          rect: const ui.Rect.fromLTRB(0, 0, 100, 20),
+        ),
+        tester.updateNode(
+          id: 2,
+          isSelectable: true,
+          isSelected: false,
+          rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+        ),
+        tester.updateNode(
+          id: 3,
+          isSelectable: true,
+          isSelected: true,
+          rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="false"></sem>
+    <sem aria-selected="true"></sem>
+  </sem-c>
+</sem>
+''');
+
+    // Missing attributes cannot be expressed using HTML patterns, so check directly.
+    final nonSelectable = owner().debugSemanticsTree![1]!.element;
+    expect(nonSelectable.getAttribute('aria-selected'), isNull);
+
+    // Flip the values and check that that ARIA attribute is updated.
+    tester.updateNode(
+      id: 2,
+      isSelectable: true,
+      isSelected: true,
+      rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+    );
+    tester.updateNode(
+      id: 3,
+      isSelectable: true,
+      isSelected: false,
+      rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="true"></sem>
+    <sem aria-selected="false"></sem>
+  </sem-c>
+</sem>
+''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('Checkable takes precedence over selectable', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      isSelectable: true,
+      isSelected: true,
+      hasCheckedState: true,
+      isChecked: true,
+      hasTap: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(
+      owner(),
+      '<sem flt-tappable role="checkbox" aria-checked="true"></sem>',
+    );
+
+    final node = owner().debugSemanticsTree![0]!;
+    expect(node.semanticRole!.kind, SemanticRoleKind.checkable);
+    expect(
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Selectable)),
+    );
+    expect(node.element.getAttribute('aria-selected'), isNull);
 
     semantics().semanticsEnabled = false;
   });
