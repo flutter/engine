@@ -228,7 +228,7 @@ class Canvas {
 
   void ClipGeometry(const Geometry& geometry,
                     Entity::ClipOperation clip_op,
-                    bool is_aa = false);
+                    bool is_aa = true);
 
   void EndReplay();
 
