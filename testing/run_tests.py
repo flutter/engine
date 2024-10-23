@@ -505,8 +505,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     # flutter_desktop_darwin_unittests uses global state that isn't handled
     # correctly by gtest-parallel.
     # https://github.com/flutter/flutter/issues/104789
-    variant = os.path.basename(build_dir)
-    if not variant.startswith('host_debug') and 'arm64' not in variant:
+    if not os.path.basename(build_dir).startswith('host_debug'):
       # Test is disabled for flaking in debug runs:
       # https://github.com/flutter/flutter/issues/127441
       run_engine_executable(
