@@ -114,7 +114,6 @@ bool PipelineLibraryMTL::IsValid() const {
 PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
     PipelineDescriptor descriptor,
     bool async) {
-  FML_DCHECK([NSThread isMainThread]);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
     return found->second;
   }
@@ -131,6 +130,17 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
   pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
+
+  auto get_pipeline_descriptor =
+      [descriptor,
+       device = device_](MTLNewRenderPipelineStateCompletionHandler handler) {
+        GetMTLRenderPipelineDescriptor(
+            descriptor,
+            [device, handler](MTLRenderPipelineDescriptor* descriptor) {
+              [device newRenderPipelineStateWithDescriptor:descriptor
+                                         completionHandler:handler];
+            });
+      };
 
   // Extra info for https://github.com/flutter/flutter/issues/148320.
   std::optional<std::string> thread_name =
@@ -167,28 +177,22 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
         ));
     promise->set_value(new_pipeline);
   };
-  auto retry_handler = ^(
-      id<MTLRenderPipelineState> _Nullable render_pipeline_state,
-      NSError* _Nullable error) {
-    if (error) {
-      FML_LOG(INFO) << "pipeline creation retry";
-      dispatch_async(dispatch_get_main_queue(), ^{
-        GetMTLRenderPipelineDescriptor(
-            descriptor, [device = device_, completion_handler](
-                            MTLRenderPipelineDescriptor* descriptor) {
-              [device newRenderPipelineStateWithDescriptor:descriptor
-                                         completionHandler:completion_handler];
-            });
-      });
-    } else {
-      completion_handler(render_pipeline_state, error);
-    }
-  };
-  decltype(retry_handler) active_handler =
+  auto retry_handler =
+      ^(id<MTLRenderPipelineState> _Nullable render_pipeline_state,
+        NSError* _Nullable error) {
+        if (error) {
+          FML_LOG(INFO) << "pipeline creation retry";
+          dispatch_async(dispatch_get_main_queue(), ^{
+            get_pipeline_descriptor(completion_handler);
+          });
+        } else {
+          completion_handler(render_pipeline_state, error);
+        }
+      };
 #if defined(FML_ARCH_CPU_X86_64)
-      retry_handler;
+  get_pipeline_descriptor(retry_handler);
 #else
-      completion_handler;
+  get_pipeline_descriptor(completion_handler);
   (void)retry_handler;
 #endif
   return pipeline_future;
