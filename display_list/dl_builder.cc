@@ -62,6 +62,7 @@ static constexpr inline bool is_power_of_two(int value) {
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
+  FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
     static_assert(is_power_of_two(kDLPageSize),
                   "This math needs updating for non-pow2.");
