@@ -4,9 +4,27 @@
 
 #include "impeller/toolkit/interop/playground_test.h"
 
+#include <mutex>
+
+#include "flutter/fml/mapping.h"
+#include "impeller/toolkit/interop/impeller.hpp"
+
+namespace IMPELLER_HPP_NAMESPACE {
+ProcTable gGlobalProcTable;
+}
+
 namespace impeller::interop::testing {
 
-PlaygroundTest::PlaygroundTest() = default;
+PlaygroundTest::PlaygroundTest() {
+  static std::once_flag sOnceFlag;
+  std::call_once(sOnceFlag, []() {
+    static auto library = fml::NativeLibrary::CreateForCurrentProcess();
+    hpp::gGlobalProcTable.Initialize([&](auto name) {
+      return const_cast<void*>(
+          reinterpret_cast<const void*>(library->ResolveSymbol(name)));
+    });
+  });
+}
 
 PlaygroundTest::~PlaygroundTest() = default;
 
