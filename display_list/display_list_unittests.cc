@@ -5938,7 +5938,7 @@ TEST_F(DisplayListTest, NextPowerOfTwo) {
   EXPECT_EQ(NextPowerOfTwo(5), 8u);
   EXPECT_EQ(NextPowerOfTwo(8), 8u);
 
-  EXPECT_EQ(NextPowerOfTwo(16), 16u);
+  EXPECT_EQ(NextPowerOfTwo(14), 16u);
   EXPECT_EQ(NextPowerOfTwo(16), 16u);
 
   EXPECT_EQ(NextPowerOfTwo(20), 32u);
