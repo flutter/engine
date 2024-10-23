@@ -37,6 +37,9 @@ class NoopOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'NoopOperation()';
 }
 
 class BackdropFilterLayer
@@ -76,6 +79,9 @@ class BackdropFilterOperation implements LayerOperation {
   // no pictures, so we return true here.
   @override
   bool get shouldDrawIfEmpty => true;
+
+  @override
+  String toString() => 'BackdropFilterOperation(filter: $filter, mode: $mode)';
 }
 
 class ClipPathLayer
@@ -122,6 +128,9 @@ class ClipPathOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ClipPathOperation(path: $path, clip: $clip)';
 }
 
 class ClipRectLayer
@@ -168,6 +177,9 @@ class ClipRectOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ClipRectOperation(rect: $rect, clip: $clip)';
 }
 
 class ClipRRectLayer
@@ -214,6 +226,9 @@ class ClipRRectOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ClipRRectOperation(rrect: $rrect, clip: $clip)';
 }
 
 class ColorFilterLayer
@@ -250,6 +265,9 @@ class ColorFilterOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ColorFilterOperation(filter: $filter)';
 }
 
 class ImageFilterLayer
@@ -311,6 +329,9 @@ class ImageFilterOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ImageFilterOperation(filter: $filter)';
 }
 
 class OffsetLayer
@@ -351,6 +372,9 @@ class OffsetOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'OffsetOperation(dx: $dx, dy: $dy)';
 }
 
 class OpacityLayer
@@ -401,6 +425,9 @@ class OpacityOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'OpacityOperation(offset: $offset, alpha: $alpha)';
 }
 
 class TransformLayer
@@ -443,6 +470,9 @@ class TransformOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'TransformOperation(matrix: $matrix)';
 }
 
 class ShaderMaskLayer
@@ -493,6 +523,9 @@ class ShaderMaskOperation implements LayerOperation {
 
   @override
   bool get shouldDrawIfEmpty => false;
+
+  @override
+  String toString() => 'ShaderMaskOperation(shader: $shader, maskRect: $maskRect, blendMode: $blendMode)';
 }
 
 class PlatformView {
@@ -542,6 +575,11 @@ mixin PictureEngineLayer implements ui.EngineLayer {
     for (final LayerSlice? slice in slices) {
       slice?.dispose();
     }
+  }
+
+  @override
+  String toString() {
+    return 'PictureEngineLayer($operation)';
   }
 }
 
@@ -697,7 +735,7 @@ class PlatformViewStyling {
   final PlatformViewClip clip;
 
   ui.Rect mapLocalToGlobal(ui.Rect rect) {
-    return position.mapLocalToGlobal(rect).intersect(clip.outerRect);
+    return position.mapLocalToGlobal(rect.intersect(clip.outerRect));
   }
 
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
@@ -924,23 +962,42 @@ class PlatformViewPathClip implements PlatformViewClip {
 }
 
 class LayerSliceBuilder {
-  factory LayerSliceBuilder() {
-    final (recorder, canvas) = debugRecorderFactory != null ? debugRecorderFactory!() : defaultRecorderFactory();
-    return LayerSliceBuilder._(recorder, canvas);
-  }
-  LayerSliceBuilder._(this.recorder, this.canvas);
-
   @visibleForTesting
-  static (ui.PictureRecorder, SceneCanvas) Function()? debugRecorderFactory;
+  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)? debugRecorderFactory;
 
-  static (ui.PictureRecorder, SceneCanvas) defaultRecorderFactory() {
+  static (ui.PictureRecorder, SceneCanvas) defaultRecorderFactory(ui.Rect rect) {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final SceneCanvas canvas = ui.Canvas(recorder, ui.Rect.largest) as SceneCanvas;
+    final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
     return (recorder, canvas);
   }
 
-  final ui.PictureRecorder recorder;
-  final SceneCanvas canvas;
+  void addPicture(ui.Offset offset, ScenePicture picture) {
+    pictures.add((picture, offset));
+    final ui.Rect pictureRect = picture.cullRect.shift(offset);
+    cullRect = cullRect?.expandToInclude(pictureRect) ?? pictureRect;
+  }
+
+  LayerSlice buildWithOperation(LayerOperation operation) {
+    final ui.Rect recorderRect = operation.mapRect(cullRect ?? ui.Rect.zero);
+    final (recorder, canvas) = debugRecorderFactory != null ? debugRecorderFactory!(recorderRect) : defaultRecorderFactory(recorderRect);
+    operation.pre(canvas);
+    for (final (picture, offset) in pictures) {
+      if (offset != ui.Offset.zero) {
+        canvas.save();
+        canvas.translate(offset.dx, offset.dy);
+        canvas.drawPicture(picture);
+        canvas.restore();
+      } else {
+        canvas.drawPicture(picture);
+      }
+    }
+    operation.post(canvas);
+    final ui.Picture picture = recorder.endRecording();
+    return LayerSlice(picture as ScenePicture, platformViews);
+  }
+
+  final List<(ScenePicture, ui.Offset)> pictures = [];
+  ui.Rect? cullRect;
   final List<PlatformView> platformViews = <PlatformView>[];
 }
 
@@ -991,7 +1048,6 @@ class LayerBuilder {
       return existingSliceBuilder;
     }
     final LayerSliceBuilder newSliceBuilder = LayerSliceBuilder();
-    layer.operation.pre(newSliceBuilder.canvas);
     sliceBuilders[index] = newSliceBuilder;
     return newSliceBuilder;
   }
@@ -1002,16 +1058,8 @@ class LayerBuilder {
       required int sliceIndex,
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
-    final SceneCanvas canvas = sliceBuilder.canvas;
-    if (offset != ui.Offset.zero) {
-      canvas.save();
-      canvas.translate(offset.dx, offset.dy);
-      canvas.drawPicture(picture);
-      canvas.restore();
-    } else {
-      canvas.drawPicture(picture);
-    }
-    drawCommands.add(PictureDrawCommand(offset, picture as ScenePicture, sliceIndex));
+    sliceBuilder.addPicture(offset, picture as ScenePicture);
+    drawCommands.add(PictureDrawCommand(offset, picture, sliceIndex));
   }
 
   void addPlatformView(
@@ -1029,7 +1077,7 @@ class LayerBuilder {
       final LayerSlice? slice = layer.slices[i];
       if (slice != null) {
         final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(i);
-        sliceBuilder.canvas.drawPicture(slice.picture);
+        sliceBuilder.addPicture(ui.Offset.zero, slice.picture);
         sliceBuilder.platformViews.addAll(slice.platformViews.map((PlatformView view) {
           return PlatformView(view.viewId, view.bounds, PlatformViewStyling.combine(platformViewStyling, view.styling));
         }));
@@ -1039,14 +1087,9 @@ class LayerBuilder {
   }
 
   PictureEngineLayer sliceUp() {
-    final List<LayerSlice?> slices = sliceBuilders.map((LayerSliceBuilder? builder) {
-      if (builder == null) {
-        return null;
-      }
-      layer.operation.post(builder.canvas);
-      final ScenePicture picture = builder.recorder.endRecording() as ScenePicture;
-      return LayerSlice(picture, builder.platformViews);
-    }).toList();
+    final List<LayerSlice?> slices = sliceBuilders.map(
+      (LayerSliceBuilder? builder) => builder?.buildWithOperation(layer.operation)
+    ).toList();
     layer.slices = slices;
     return layer;
   }
