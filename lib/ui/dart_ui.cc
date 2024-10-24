@@ -135,6 +135,7 @@ typedef CanvasPath Path;
 //   If there is a mismatch between names or parameter count an @Native is
 //   trying to resolve, an exception will be thrown.
 #define FFI_METHOD_LIST(V)                      \
+  V(Canvas, getScratchSpace)                    \
   V(Canvas, clipPath)                           \
   V(Canvas, clipRect)                           \
   V(Canvas, clipRRect)                          \
