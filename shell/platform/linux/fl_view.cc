@@ -36,6 +36,9 @@ static constexpr int kMicrosecondsPerMillisecond = 1000;
 struct _FlView {
   GtkBox parent_instance;
 
+  // The widget rendering the Flutter view.
+  GtkGLArea* gl_area;
+
   // Engine this view is showing.
   FlEngine* engine;
 
@@ -45,7 +48,7 @@ struct _FlView {
   // ID for this view.
   FlutterViewId view_id;
 
-  // Rendering output.
+  // Object that performs the view rendering.
   FlRendererGdk* renderer;
 
   // Background color.
@@ -70,9 +73,7 @@ struct _FlView {
   FlMouseCursorHandler* mouse_cursor_handler;
   FlPlatformHandler* platform_handler;
 
-  GtkGLArea* gl_area;
-
-  // Tracks whether mouse pointer is inside the view.
+  // TRUE if the mouse pointer is inside the view.
   gboolean pointer_inside;
 
   // Accessible tree from Flutter, exposed as an AtkPlug.
