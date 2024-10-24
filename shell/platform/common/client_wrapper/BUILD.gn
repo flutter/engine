@@ -51,6 +51,7 @@ executable("client_wrapper_unittests") {
     "testing/test_codec_extensions.cc",
     "testing/test_codec_extensions.h",
     "texture_registrar_unittests.cc",
+    "windowing_unittests.cc",
   ]
 
   deps = [

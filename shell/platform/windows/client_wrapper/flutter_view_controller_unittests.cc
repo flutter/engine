@@ -17,10 +17,8 @@ namespace {
 class TestWindowsApi : public testing::StubFlutterWindowsApi {
  public:
   // |flutter::testing::StubFlutterWindowsApi|
-  FlutterDesktopViewControllerRef ViewControllerCreate(
-      int width,
-      int height,
-      FlutterDesktopEngineRef engine) override {
+  FlutterDesktopViewControllerRef EngineCreateViewController(
+      const FlutterDesktopViewControllerProperties* properties) override {
     return reinterpret_cast<FlutterDesktopViewControllerRef>(2);
   }
 
@@ -63,11 +61,13 @@ TEST(FlutterViewControllerTest, CreateDestroy) {
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestWindowsApi>());
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
+
+  // Create and destroy a view controller.
+  // This should also create and destroy an engine.
   { FlutterViewController controller(100, 100, project); }
+
   EXPECT_TRUE(test_api->view_controller_destroyed());
-  // Per the C API, once a view controller has taken ownership of an engine
-  // the engine destruction method should not be called.
-  EXPECT_FALSE(test_api->engine_destroyed());
+  EXPECT_TRUE(test_api->engine_destroyed());
 }
 
 TEST(FlutterViewControllerTest, GetViewId) {
