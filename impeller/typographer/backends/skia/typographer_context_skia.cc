@@ -14,6 +14,7 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 
+#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -530,7 +531,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
     fml::ScopedCleanupClosure closure([&]() {
       blit_pass->EncodeCommands(context.GetResourceAllocator());
-      context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+      if (!context.EnqueueCommandBuffer(std::move(cmd_buffer))) {
+        VALIDATION_LOG << "Failed to submit glyph atlas command buffer";
+      }
     });
 
     // ---------------------------------------------------------------------------
@@ -620,7 +623,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
-    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+    if (!context.EnqueueCommandBuffer(std::move(cmd_buffer))) {
+      VALIDATION_LOG << "Failed to submit glyph atlas command buffer";
+    }
   });
 
   // Now append all remaining glyphs. This should never have any missing data...

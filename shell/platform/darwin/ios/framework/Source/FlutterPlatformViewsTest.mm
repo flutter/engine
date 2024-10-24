@@ -2782,7 +2782,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   flutterPlatformViewsController->Reset();
 }
 
-- (void)testFlutterPlatformViewForwardingAndDelayingRecognizerFailureCondition {
+- (void)testFlutterPlatformViewTouchesEndedOrTouchesCancelledEventDoesNotFailTheGestureRecognizer {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
 
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -2826,31 +2826,63 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   XCTAssertNotNil(touchInteceptorView);
 
   // Find ForwardGestureRecognizer
-  UIGestureRecognizer* forwardingGestureRecognizer = nil;
-  UIGestureRecognizer* delayingGestureRecognizer = nil;
+  __block UIGestureRecognizer* forwardGestureRecognizer = nil;
   for (UIGestureRecognizer* gestureRecognizer in touchInteceptorView.gestureRecognizers) {
     if ([gestureRecognizer isKindOfClass:NSClassFromString(@"ForwardingGestureRecognizer")]) {
-      forwardingGestureRecognizer = gestureRecognizer;
-    }
-    if ([gestureRecognizer isKindOfClass:NSClassFromString(@"FlutterDelayingGestureRecognizer")]) {
-      delayingGestureRecognizer = gestureRecognizer;
+      forwardGestureRecognizer = gestureRecognizer;
+      break;
     }
   }
-  UIGestureRecognizer* otherGestureRecognizer = OCMClassMock([UIGestureRecognizer class]);
-
   id flutterViewContoller = OCMClassMock([FlutterViewController class]);
+
   flutterPlatformViewsController->SetFlutterViewController(flutterViewContoller);
 
-  XCTAssertFalse([delayingGestureRecognizer.delegate
-                              gestureRecognizer:delayingGestureRecognizer
-      shouldBeRequiredToFailByGestureRecognizer:forwardingGestureRecognizer]);
-  XCTAssertTrue([delayingGestureRecognizer.delegate gestureRecognizer:delayingGestureRecognizer
-                            shouldBeRequiredToFailByGestureRecognizer:otherGestureRecognizer]);
+  NSSet* touches1 = [NSSet setWithObject:@1];
+  id event1 = OCMClassMock([UIEvent class]);
+  XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStatePossible,
+            @"Forwarding gesture recognizer must start with possible state.");
+  [forwardGestureRecognizer touchesBegan:touches1 withEvent:event1];
+  [forwardGestureRecognizer touchesEnded:touches1 withEvent:event1];
+  XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStateFailed,
+            @"Forwarding gesture recognizer must end with failed state.");
 
-  XCTAssertTrue([delayingGestureRecognizer.delegate gestureRecognizer:delayingGestureRecognizer
-                              shouldRequireFailureOfGestureRecognizer:forwardingGestureRecognizer]);
-  XCTAssertFalse([delayingGestureRecognizer.delegate gestureRecognizer:delayingGestureRecognizer
-                               shouldRequireFailureOfGestureRecognizer:otherGestureRecognizer]);
+  XCTestExpectation* touchEndedExpectation =
+      [self expectationWithDescription:@"Wait for gesture recognizer's state change."];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    // Re-query forward gesture recognizer since it's recreated.
+    for (UIGestureRecognizer* gestureRecognizer in touchInteceptorView.gestureRecognizers) {
+      if ([gestureRecognizer isKindOfClass:NSClassFromString(@"ForwardingGestureRecognizer")]) {
+        forwardGestureRecognizer = gestureRecognizer;
+        break;
+      }
+    }
+    XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStatePossible,
+              @"Forwarding gesture recognizer must be reset to possible state.");
+    [touchEndedExpectation fulfill];
+  });
+  [self waitForExpectationsWithTimeout:30 handler:nil];
+
+  XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStatePossible,
+            @"Forwarding gesture recognizer must start with possible state.");
+  [forwardGestureRecognizer touchesBegan:touches1 withEvent:event1];
+  [forwardGestureRecognizer touchesCancelled:touches1 withEvent:event1];
+  XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStateFailed,
+            @"Forwarding gesture recognizer must end with failed state.");
+  XCTestExpectation* touchCancelledExpectation =
+      [self expectationWithDescription:@"Wait for gesture recognizer's state change."];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    // Re-query forward gesture recognizer since it's recreated.
+    for (UIGestureRecognizer* gestureRecognizer in touchInteceptorView.gestureRecognizers) {
+      if ([gestureRecognizer isKindOfClass:NSClassFromString(@"ForwardingGestureRecognizer")]) {
+        forwardGestureRecognizer = gestureRecognizer;
+        break;
+      }
+    }
+    XCTAssert(forwardGestureRecognizer.state == UIGestureRecognizerStatePossible,
+              @"Forwarding gesture recognizer must be reset to possible state.");
+    [touchCancelledExpectation fulfill];
+  });
+  [self waitForExpectationsWithTimeout:30 handler:nil];
 
   flutterPlatformViewsController->Reset();
 }

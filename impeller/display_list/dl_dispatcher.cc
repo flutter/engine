@@ -8,14 +8,14 @@
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 #include "display_list/effects/dl_color_source.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/aiks_context.h"
-#include "impeller/display_list/color_filter.h"
+#include "impeller/display_list/canvas.h"
 #include "impeller/display_list/dl_atlas_geometry.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
@@ -25,7 +25,11 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/ellipse_geometry.h"
+#include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
+#include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -302,7 +306,8 @@ void DlDispatcherBase::saveLayer(const DlRect& bounds,
                                  const flutter::SaveLayerOptions& options,
                                  uint32_t total_content_depth,
                                  flutter::DlBlendMode max_content_mode,
-                                 const flutter::DlImageFilter* backdrop) {
+                                 const flutter::DlImageFilter* backdrop,
+                                 std::optional<int64_t> backdrop_id) {
   AUTO_DEPTH_WATCHER(1u);
 
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
@@ -320,7 +325,9 @@ void DlDispatcherBase::saveLayer(const DlRect& bounds,
       paint, impeller_bounds, backdrop, promise, total_content_depth,
       // Unbounded content can still have user specified bounds that require a
       // saveLayer to be created to perform the clip.
-      options.can_distribute_opacity() && !options.content_is_unbounded());
+      options.can_distribute_opacity() && !options.content_is_unbounded(),
+      backdrop_id  //
+  );
 }
 
 // |flutter::DlOpReceiver|
@@ -431,7 +438,8 @@ void DlDispatcherBase::clipRect(const DlRect& rect,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeRect(rect), ToClipOperation(clip_op));
+  RectGeometry geom(rect);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op), /*is_aa=*/is_aa);
 }
 
 // |flutter::DlOpReceiver|
@@ -440,32 +448,29 @@ void DlDispatcherBase::clipOval(const DlRect& bounds,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeOval(bounds),
-                           ToClipOperation(clip_op));
+  EllipseGeometry geom(bounds);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::clipRRect(const SkRRect& rrect,
-                                 ClipOp sk_op,
-                                 bool is_aa) {
+void DlDispatcherBase::clipRoundRect(const DlRoundRect& rrect,
+                                     ClipOp sk_op,
+                                     bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
   auto clip_op = ToClipOperation(sk_op);
-  if (rrect.isRect()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeRect(skia_conversions::ToRect(rrect.rect())), clip_op);
-  } else if (rrect.isOval()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeOval(skia_conversions::ToRect(rrect.rect())), clip_op);
-  } else if (rrect.isSimple()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeRoundRect(
-            skia_conversions::ToRect(rrect.rect()),
-            skia_conversions::ToSize(rrect.getSimpleRadii())),
-        clip_op);
+  if (rrect.IsRect()) {
+    RectGeometry geom(rrect.GetBounds());
+    GetCanvas().ClipGeometry(geom, clip_op, /*is_aa=*/is_aa);
+  } else if (rrect.IsOval()) {
+    EllipseGeometry geom(rrect.GetBounds());
+    GetCanvas().ClipGeometry(geom, clip_op);
+  } else if (rrect.GetRadii().AreAllCornersSame()) {
+    RoundRectGeometry geom(rrect.GetBounds(), rrect.GetRadii().top_left);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeFillPath(skia_conversions::ToPath(rrect)), clip_op);
+    FillPathGeometry geom(PathBuilder{}.AddRoundRect(rrect).TakePath());
+    GetCanvas().ClipGeometry(geom, clip_op);
   }
 }
 
@@ -477,19 +482,20 @@ void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
 
   DlRect rect;
   if (path.IsRect(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeRect(rect), clip_op);
+    RectGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op, /*is_aa=*/is_aa);
   } else if (path.IsOval(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeOval(rect), clip_op);
+    EllipseGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
     SkRRect rrect;
     if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
-      GetCanvas().ClipGeometry(
-          Geometry::MakeRoundRect(
-              skia_conversions::ToRect(rrect.rect()),
-              skia_conversions::ToSize(rrect.getSimpleRadii())),
-          clip_op);
+      RoundRectGeometry geom(skia_conversions::ToRect(rrect.rect()),
+                             skia_conversions::ToSize(rrect.getSimpleRadii()));
+      GetCanvas().ClipGeometry(geom, clip_op);
     } else {
-      GetCanvas().ClipGeometry(Geometry::MakeFillPath(path.GetPath()), clip_op);
+      FillPathGeometry geom(path.GetPath());
+      GetCanvas().ClipGeometry(geom, clip_op);
     }
   }
 }
@@ -530,7 +536,8 @@ void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
   //   length is non-positive - drawLine will draw appropriate "dot"
   //   off_length is non-positive - no gaps, drawLine will draw it solid
   //   on_length is negative - invalid dashing
-  // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
+  // Note that a 0 length "on" dash will draw "dot"s every "off" distance
+  // apart
   if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
     Point delta = (p1 - p0) / length;  // length > 0 already tested
     PathBuilder builder;
@@ -582,25 +589,20 @@ void DlDispatcherBase::drawCircle(const DlPoint& center, DlScalar radius) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
+void DlDispatcherBase::drawRoundRect(const DlRoundRect& rrect) {
   AUTO_DEPTH_WATCHER(1u);
 
-  if (skia_conversions::IsNearlySimpleRRect(rrect)) {
-    GetCanvas().DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                          skia_conversions::ToSize(rrect.getSimpleRadii()),
-                          paint_);
-  } else {
-    GetCanvas().DrawPath(skia_conversions::ToPath(rrect), paint_);
-  }
+  GetCanvas().DrawRoundRect(rrect, paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
+void DlDispatcherBase::drawDiffRoundRect(const DlRoundRect& outer,
+                                         const DlRoundRect& inner) {
   AUTO_DEPTH_WATCHER(1u);
 
   PathBuilder builder;
-  builder.AddPath(skia_conversions::ToPath(outer));
-  builder.AddPath(skia_conversions::ToPath(inner));
+  builder.AddRoundRect(outer);
+  builder.AddRoundRect(inner);
   GetCanvas().DrawPath(builder.TakePath(FillType::kOdd), paint_);
 }
 
@@ -625,8 +627,7 @@ void DlDispatcherBase::SimplifyOrDrawPath(Canvas& canvas,
 
   SkRRect rrect;
   if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
-    canvas.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                     skia_conversions::ToSize(rrect.getSimpleRadii()), paint);
+    canvas.DrawRoundRect(flutter::ToDlRoundRect(rrect), paint);
     return;
   }
 
@@ -974,6 +975,12 @@ void CanvasDlDispatcher::drawVertices(
       skia_conversions::ToBlendMode(dl_mode), paint_);
 }
 
+void CanvasDlDispatcher::SetBackdropData(
+    std::unordered_map<int64_t, BackdropData> backdrop,
+    size_t backdrop_count) {
+  GetCanvas().SetBackdropData(std::move(backdrop), backdrop_count);
+}
+
 //// Text Frame Dispatcher
 
 TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
@@ -994,8 +1001,28 @@ void TextFrameDispatcher::save() {
 
 void TextFrameDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
-                                    const flutter::DlImageFilter* backdrop) {
+                                    const flutter::DlImageFilter* backdrop,
+                                    std::optional<int64_t> backdrop_id) {
   save();
+
+  backdrop_count_ += (backdrop == nullptr ? 0 : 1);
+  if (backdrop != nullptr && backdrop_id.has_value()) {
+    std::shared_ptr<flutter::DlImageFilter> shared_backdrop =
+        backdrop->shared();
+    std::unordered_map<int64_t, BackdropData>::iterator existing =
+        backdrop_data_.find(backdrop_id.value());
+    if (existing == backdrop_data_.end()) {
+      backdrop_data_[backdrop_id.value()] =
+          BackdropData{.backdrop_count = 1, .last_backdrop = shared_backdrop};
+    } else {
+      BackdropData& data = existing->second;
+      data.backdrop_count++;
+      if (data.all_filters_equal) {
+        data.all_filters_equal = (*data.last_backdrop == *shared_backdrop);
+        data.last_backdrop = shared_backdrop;
+      }
+    }
+  }
 
   // This dispatcher does not track enough state to accurately compute
   // cull rects with image filters.
@@ -1122,11 +1149,12 @@ void TextFrameDispatcher::drawDisplayList(
       display_list->Dispatch(*this);
     } else if (!local_cull_bounds.IsEmpty()) {
       IRect cull_rect = IRect::RoundOut(local_cull_bounds);
-      display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
-                                                      cull_rect.GetTop(),    //
-                                                      cull_rect.GetRight(),  //
-                                                      cull_rect.GetBottom()  //
-                                                      ));
+      display_list->Dispatch(*this,
+                             SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
+                                               cull_rect.GetTop(),    //
+                                               cull_rect.GetRight(),  //
+                                               cull_rect.GetBottom()  //
+                                               ));
     }
   }
 
@@ -1195,6 +1223,13 @@ void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   }
 }
 
+std::pair<std::unordered_map<int64_t, BackdropData>, size_t>
+TextFrameDispatcher::TakeBackdropData() {
+  std::unordered_map<int64_t, BackdropData> temp;
+  std::swap(temp, backdrop_data_);
+  return std::make_pair(temp, backdrop_count_);
+}
+
 std::shared_ptr<Texture> DisplayListToTexture(
     const sk_sp<flutter::DisplayList>& display_list,
     ISize size,
@@ -1242,6 +1277,8 @@ std::shared_ptr<Texture> DisplayListToTexture(
       display_list->max_root_blend_mode(),       //
       impeller::IRect::MakeSize(size)            //
   );
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   impeller_dispatcher.FinishRecording();
 
@@ -1249,6 +1286,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
     context.GetContentContext().GetTransientsBuffer().Reset();
   }
   context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+  context.GetContext()->DisposeThreadLocalCachedResources();
 
   return target.GetRenderTargetTexture();
 }
@@ -1270,6 +1308,8 @@ bool RenderToOnscreen(ContentContext& context,
       display_list->max_root_blend_mode(),       //
       IRect::RoundOut(ip_cull_rect)              //
   );
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, cull_rect);
   impeller_dispatcher.FinishRecording();
   if (reset_host_buffer) {

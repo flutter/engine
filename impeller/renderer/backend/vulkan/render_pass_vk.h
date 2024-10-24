@@ -46,7 +46,7 @@ class RenderPassVK final : public RenderPass {
   size_t descriptor_write_offset_ = 0u;
   size_t instance_count_ = 1u;
   size_t base_vertex_ = 0u;
-  size_t vertex_count_ = 0u;
+  size_t element_count_ = 0u;
   bool has_index_buffer_ = false;
   bool has_label_ = false;
   const Pipeline<PipelineDescriptor>* pipeline_;
@@ -77,10 +77,17 @@ class RenderPassVK final : public RenderPass {
   void SetScissor(IRect scissor) override;
 
   // |RenderPass|
+  void SetElementCount(size_t count) override;
+
+  // |RenderPass|
   void SetInstanceCount(size_t count) override;
 
   // |RenderPass|
-  bool SetVertexBuffer(VertexBuffer buffer) override;
+  bool SetVertexBuffer(BufferView vertex_buffers[],
+                       size_t vertex_buffer_count) override;
+
+  // |RenderPass|
+  bool SetIndexBuffer(BufferView index_buffer, IndexType index_type) override;
 
   // |RenderPass|
   fml::Status Draw() override;
@@ -118,7 +125,7 @@ class RenderPassVK final : public RenderPass {
   bool IsValid() const override;
 
   // |RenderPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;

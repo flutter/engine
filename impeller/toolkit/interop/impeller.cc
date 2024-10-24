@@ -168,6 +168,12 @@ void ImpellerDisplayListBuilderSetTransform(ImpellerDisplayListBuilder builder,
 }
 
 IMPELLER_EXTERN_C
+void ImpellerDisplayListBuilderTransform(ImpellerDisplayListBuilder builder,
+                                         const ImpellerMatrix* transform) {
+  GetPeer(builder)->Transform(ToImpellerType(*transform));
+}
+
+IMPELLER_EXTERN_C
 void ImpellerDisplayListBuilderGetTransform(ImpellerDisplayListBuilder builder,
                                             ImpellerMatrix* out_transform) {
   FromImpellerType(GetPeer(builder)->GetTransform(), *out_transform);
@@ -1009,7 +1015,8 @@ void ImpellerDisplayListBuilderDrawParagraph(ImpellerDisplayListBuilder builder,
 IMPELLER_EXTERN_C
 ImpellerParagraphBuilder ImpellerParagraphBuilderNew(
     ImpellerTypographyContext context) {
-  auto builder = Create<ParagraphBuilder>(*GetPeer(context));
+  auto builder =
+      Create<ParagraphBuilder>(Ref<TypographyContext>(GetPeer(context)));
   if (!builder->IsValid()) {
     VALIDATION_LOG << "Could not create valid paragraph builder.";
     return nullptr;
@@ -1130,6 +1137,22 @@ void ImpellerTypographyContextRetain(ImpellerTypographyContext context) {
 IMPELLER_EXTERN_C
 void ImpellerTypographyContextRelease(ImpellerTypographyContext context) {
   ObjectBase::SafeRelease(context);
+}
+
+IMPELLER_EXTERN_C
+bool ImpellerTypographyContextRegisterFont(ImpellerTypographyContext context,
+                                           const ImpellerMapping* contents,
+                                           void* contents_on_release_user_data,
+                                           const char* family_name_alias) {
+  auto wrapped_contents = std::make_unique<fml::NonOwnedMapping>(
+      contents->data,    // data ptr
+      contents->length,  // data length
+      [contents, contents_on_release_user_data](auto, auto) {
+        contents->on_release(contents_on_release_user_data);
+      }  // release callback
+  );
+  return GetPeer(context)->RegisterFont(std::move(wrapped_contents),
+                                        family_name_alias);
 }
 
 }  // namespace impeller::interop

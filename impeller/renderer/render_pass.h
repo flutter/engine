@@ -5,7 +5,7 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_RENDER_PASS_H_
 #define FLUTTER_IMPELLER_RENDERER_RENDER_PASS_H_
 
-#include <string>
+#include <cstddef>
 
 #include "fml/status.h"
 #include "impeller/core/formats.h"
@@ -44,7 +44,7 @@ class RenderPass : public ResourceBinder {
 
   virtual bool IsValid() const = 0;
 
-  void SetLabel(std::string label);
+  void SetLabel(std::string_view label);
 
   /// @brief Reserve [command_count] commands in the HAL command buffer.
   ///
@@ -89,6 +89,12 @@ class RenderPass : public ResourceBinder {
   virtual void SetScissor(IRect scissor);
 
   //----------------------------------------------------------------------------
+  /// The number of elements to draw. When only a vertex buffer is set, this is
+  /// the vertex count. When an index buffer is set, this is the index count.
+  ///
+  virtual void SetElementCount(size_t count);
+
+  //----------------------------------------------------------------------------
   /// The number of instances of the given set of vertices to render. Not all
   /// backends support rendering more than one instance at a time.
   ///
@@ -98,6 +104,8 @@ class RenderPass : public ResourceBinder {
   virtual void SetInstanceCount(size_t count);
 
   //----------------------------------------------------------------------------
+  /// @deprecated Use SetVertexBuffer(BufferView[], size_t, size_t) instead.
+  ///
   /// @brief      Specify the vertex and index buffer to use for this command.
   ///
   /// @param[in]  buffer  The vertex and index buffer definition. If possible,
@@ -106,6 +114,65 @@ class RenderPass : public ResourceBinder {
   /// @return     returns if the binding was updated.
   ///
   virtual bool SetVertexBuffer(VertexBuffer buffer);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Specify a vertex buffer to use for this command.
+  ///
+  /// @param[in]  vertex_buffer  The buffer view to use for sourcing vertices.
+  ///
+  /// @return     Returns false if the given buffer view is invalid.
+  ///
+  bool SetVertexBuffer(BufferView vertex_buffer);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Specify a set of vertex buffers to use for this command.
+  ///
+  /// @warning    This method takes ownership of each buffer view in the vector.
+  ///             Attempting to use the given buffer views after this call is
+  ///             invalid.
+  ///
+  /// @param[in]  vertex_buffers  The array of vertex buffer views to use.
+  ///                             The maximum number of vertex buffers is 16.
+  ///
+  /// @return     Returns false if any of the given buffer views are invalid.
+  ///
+  bool SetVertexBuffer(std::vector<BufferView> vertex_buffers);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Specify a set of vertex buffers to use for this command.
+  ///
+  /// @warning    This method takes ownership of each buffer view in the vector.
+  ///             Attempting to use the given buffer views after this call is
+  ///             invalid.
+  ///
+  /// @param[in]  vertex_buffers      Pointer to an array of vertex buffers to
+  ///                                 be copied. The maximum number of vertex
+  ///                                 buffers is 16.
+  ///
+  /// @param[in]  vertex_buffer_count The number of vertex buffers to copy from
+  ///                                 the array (max 16).
+  ///
+  /// @return     Returns false if any of the given buffer views are invalid.
+  ///
+  virtual bool SetVertexBuffer(BufferView vertex_buffers[],
+                               size_t vertex_buffer_count);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Specify an index buffer to use for this command.
+  ///             To unset the index buffer, pass IndexType::kNone to
+  ///             index_type.
+  ///
+  /// @param[in]  index_buffer  The buffer view to use for sourcing indices.
+  ///                           When an index buffer is bound, the
+  ///                           `vertex_count` set via `SetVertexBuffer` is used
+  ///                           as the number of indices to draw.
+  ///
+  /// @param[in]  index_type    The size of each index in the index buffer. Pass
+  ///                           IndexType::kNone to unset the index buffer.
+  ///
+  /// @return     Returns false if the index buffer view is invalid.
+  ///
+  virtual bool SetIndexBuffer(BufferView index_buffer, IndexType index_type);
 
   /// Record the currently pending command.
   virtual fml::Status Draw();
@@ -194,7 +261,13 @@ class RenderPass : public ResourceBinder {
   RenderPass(std::shared_ptr<const Context> context,
              const RenderTarget& target);
 
-  virtual void OnSetLabel(std::string label) = 0;
+  static bool ValidateVertexBuffers(const BufferView vertex_buffers[],
+                                    size_t vertex_buffer_count);
+
+  static bool ValidateIndexBuffer(const BufferView& index_buffer,
+                                  IndexType index_type);
+
+  virtual void OnSetLabel(std::string_view label) = 0;
 
   virtual bool OnEncodeCommands(const Context& context) const = 0;
 
