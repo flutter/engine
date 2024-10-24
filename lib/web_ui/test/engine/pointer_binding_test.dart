@@ -3686,7 +3686,6 @@ class _PointerEventContext extends _BasicEventContext
 
   // STYLUSES
 
-  @override
   DomEvent stylusTouchDown({
     double? clientX,
     double? clientY,
@@ -3703,7 +3702,6 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  @override
   DomEvent stylusTouchUp({
     double? clientX,
     double? clientY,
