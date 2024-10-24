@@ -9,3 +9,7 @@ using namespace Skwasm;
 Surface::Surface() : _thread(0) {
   _init();
 }
+
+SKWASM_EXPORT bool skwasm_isMultiThreaded() {
+  return false;
+}

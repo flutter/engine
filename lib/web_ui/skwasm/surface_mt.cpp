@@ -25,3 +25,7 @@ Surface::Surface() {
   // Listen to messages from the worker
   skwasm_connectThread(_thread);
 }
+
+SKWASM_EXPORT bool skwasm_isMultiThreaded() {
+  return true;
+}

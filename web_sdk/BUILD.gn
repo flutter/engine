@@ -527,7 +527,6 @@ if (!is_fuchsia) {
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.js",
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.js.symbols",
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.wasm",
-        "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.worker.js",
       ]
     }
 

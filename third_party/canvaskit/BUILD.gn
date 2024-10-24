@@ -123,7 +123,6 @@ copy("skwasm_group") {
     "$root_out_dir/skwasm/skwasm.js",
     "$root_out_dir/skwasm/skwasm.js.symbols",
     "$root_out_dir/skwasm/skwasm.wasm",
-    "$root_out_dir/skwasm/skwasm.worker.js",
   ]
   if (is_debug) {
     if (!wasm_use_dwarf) {
