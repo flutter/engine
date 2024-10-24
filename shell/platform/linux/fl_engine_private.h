@@ -26,6 +26,34 @@ typedef enum {
   // NOLINTEND(readability-identifier-naming)
 } FlEngineError;
 
+// Struct holding the state of an individual pointer. The engine doesn't keep
+// track of which buttons have been pressed, so it's the embedding's
+// responsibility.
+struct PointerState {
+  // The device kind.
+  FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindMouse;
+
+  // A virtual pointer ID that is unique across all device kinds.
+  int32_t pointer_id = 0;
+
+  // True if the last event sent to Flutter had at least one button pressed.
+  bool flutter_state_is_down = false;
+
+  // True if kAdd has been sent to Flutter. Used to determine whether
+  // to send a kAdd event before sending an incoming pointer event, since
+  // Flutter expects pointers to be added before events are sent for them.
+  bool flutter_state_is_added = false;
+
+  // The currently pressed buttons, as represented in FlutterPointerEvent.
+  uint64_t buttons = 0;
+
+  // The x position where the last pan/zoom started.
+  double pan_zoom_start_x = 0;
+
+  // The y position where the last pan/zoom started.
+  double pan_zoom_start_y = 0;
+};
+
 GQuark fl_engine_error_quark(void) G_GNUC_CONST;
 
 /**
@@ -252,6 +280,18 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_x,
                                         double scroll_delta_y,
                                         int64_t buttons);
+
+/**
+ * fl_engine_send_pointer_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @event_data: pointer event data.
+ *
+ * Sends a pointer event to the engine.
+ */
+void fl_engine_send_pointer_event(FlEngine* engine,
+                                  FlutterViewId view_id,
+                                  const FlutterPointerEvent& event_data);
 
 /**
  * fl_engine_send_pointer_pan_zoom_event:

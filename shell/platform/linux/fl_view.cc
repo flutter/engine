@@ -26,6 +26,8 @@
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
+#include "flutter/shell/platform/linux/fl_touch_manager.h"
+#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -61,6 +63,8 @@ struct _FlView {
   FlWindowStateMonitor* window_state_monitor;
 
   FlScrollingManager* scrolling_manager;
+
+  FlTouchManager* touch_manager;
 
   FlKeyboardManager* keyboard_manager;
 
@@ -100,6 +104,9 @@ static void fl_view_scrolling_delegate_iface_init(
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface);
 
+static void fl_view_touch_delegate_iface_init(
+    FlTouchViewDelegateInterface* iface);
+
 G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
@@ -113,7 +120,10 @@ G_DEFINE_TYPE_WITH_CODE(
                                       fl_view_scrolling_delegate_iface_init)
                     G_IMPLEMENT_INTERFACE(
                         fl_text_input_view_delegate_get_type(),
-                        fl_view_text_input_delegate_iface_init))
+                        fl_view_text_input_delegate_iface_init)
+                        G_IMPLEMENT_INTERFACE(
+                            fl_touch_view_delegate_get_type(),
+                            fl_view_touch_delegate_iface_init))
 
 // Emit the first frame signal in the main thread.
 static gboolean first_frame_idle_cb(gpointer user_data) {
@@ -156,6 +166,11 @@ static void init_scrolling(FlView* self) {
   g_clear_object(&self->scrolling_manager);
   self->scrolling_manager =
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
+}
+
+static void init_touch(FlView* self) {
+  g_clear_object(&self->touch_manager);
+  self->touch_manager = fl_touch_manager_new(FL_TOUCH_VIEW_DELEGATE(self));
 }
 
 static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
@@ -317,6 +332,7 @@ static void update_semantics_cb(FlEngine* engine,
 static void on_pre_engine_restart_cb(FlView* self) {
   init_keyboard(self);
   init_scrolling(self);
+  init_touch(self);
 }
 
 // Implements FlRenderable::redraw
@@ -397,6 +413,17 @@ static void fl_view_scrolling_delegate_iface_init(
       };
 }
 
+static void fl_view_touch_delegate_iface_init(
+    FlTouchViewDelegateInterface* iface) {
+  iface->send_pointer_event = [](FlTouchViewDelegate* view_delegate,
+                                 const FlutterPointerEvent& event_data) {
+    FlView* self = FL_VIEW(view_delegate);
+    if (self->engine != nullptr) {
+      fl_engine_send_pointer_event(self->engine, self->view_id, event_data);
+    }
+  };
+}
+
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface) {
   iface->translate_coordinates = [](FlTextInputViewDelegate* delegate,
@@ -444,12 +471,26 @@ static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
   return TRUE;
 }
 
+static gboolean touch_event_cb(FlView* self, GdkEventTouch* event) {
+  fl_touch_manager_handle_touch_event(
+      self->touch_manager, event,
+      gtk_widget_get_scale_factor(GTK_WIDGET(self)));
+  return TRUE;
+}
+
 // Signal handler for GtkWidget::motion-notify-event
 static gboolean motion_notify_event_cb(FlView* self,
                                        GdkEventMotion* motion_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(motion_event);
 
   if (self->engine == nullptr) {
+    return FALSE;
+  }
+
+  // return if touch event
+  auto event_type = gdk_event_get_event_type(event);
+  if (event_type == GDK_TOUCH_BEGIN || event_type == GDK_TOUCH_UPDATE ||
+      event_type == GDK_TOUCH_END || event_type == GDK_TOUCH_CANCEL) {
     return FALSE;
   }
 
@@ -555,6 +596,7 @@ static GdkGLContext* create_context_cb(FlView* self) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   init_scrolling(self);
+  init_touch(self);
   self->mouse_cursor_handler = fl_mouse_cursor_handler_new(messenger, self);
   self->platform_handler = fl_platform_handler_new(messenger);
 
@@ -682,6 +724,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_pointer(&self->background_color, gdk_rgba_free);
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
+  g_clear_object(&self->touch_manager);
   g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->keyboard_handler);
   g_clear_object(&self->mouse_cursor_handler);
@@ -757,7 +800,7 @@ static void fl_view_init(FlView* self) {
   gtk_widget_add_events(self->event_box,
                         GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
                             GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
-                            GDK_SMOOTH_SCROLL_MASK);
+                            GDK_SMOOTH_SCROLL_MASK | GDK_TOUCH_MASK);
 
   g_signal_connect_swapped(self->event_box, "button-press-event",
                            G_CALLBACK(button_press_event_cb), self);
@@ -784,6 +827,9 @@ static void fl_view_init(FlView* self) {
                            G_CALLBACK(gesture_rotation_update_cb), self);
   g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
                            self);
+
+  g_signal_connect_swapped(self->event_box, "touch-event",
+                           G_CALLBACK(touch_event_cb), self);
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
