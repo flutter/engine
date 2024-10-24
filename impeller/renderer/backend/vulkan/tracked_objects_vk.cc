@@ -25,6 +25,11 @@ TrackedObjectsVK::TrackedObjectsVK(
   pool_ = pool;
   buffer_ = std::move(buffer);
   is_valid_ = true;
+  // Starting values were selected by looking at values from
+  // AiksTest.CanRenderMultipleBackdropBlurWithSingleBackdropId.
+  tracked_objects_.reserve(5);
+  tracked_buffers_.reserve(10);
+  tracked_textures_.reserve(10);
 }
 
 TrackedObjectsVK::~TrackedObjectsVK() {
