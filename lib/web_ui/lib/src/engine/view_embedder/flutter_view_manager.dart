@@ -108,37 +108,72 @@ class FlutterViewManager {
     const String viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
     final DomElement? viewRoot = element?.closest(viewRootSelector);
-    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
-    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
-    return viewId == null ? null : _viewData[viewId];
-  }
-
-  /// Safely manages focus when blurring and optionally removing a DOM element.
-  ///
-  /// This function ensures the blur operation doesn't disrupt the framework's view focus management.
-  ///
-  /// * [removeElement] controls whether the element is removed from the DOM after being blurred.
-  /// * [delayed] controls whether the engine will be given the opportunity to focus on another element first.
-  void safelyBlurElement(DomElement element, {bool removeElement = false, bool delayed = true}) {
-    final EngineFlutterView? view = findViewForElement(element);
-
-    void blur() {
-      // If by the time the timer fired the focused element is no longer the
-      // editing element whose editing session was disabled, there's no need to
-      // move the focus, as it is likely that another widget already took the
-      // focus.
-      if (element == domDocument.activeElement) {
-        view?.dom.rootElement.focusWithoutScroll();
-      }
-      if (removeElement) {
-        element.remove();
-      }
+    if (viewRoot == null) {
+      // `element` is not inside any flutter view.
+      return null;
     }
 
+    final String? viewIdAttribute = viewRoot.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+    assert(viewIdAttribute != null, 'Located Flutter view is missing its id attribute.');
+
+    final int? viewId = int.tryParse(viewIdAttribute!);
+    assert(viewId != null, 'Flutter view id must be a valid int.');
+
+    return _viewData[viewId];
+  }
+
+  /// Attempts to transfer focus (blur) from [element] to its
+  /// [EngineFlutterView] DOM's `rootElement`.
+  ///
+  /// This focus "transfer" achieves two things:
+  ///
+  /// * Ensures the focus is preserved within the Flutter View when blurring
+  ///   elements that are part of the internal DOM structure of the Flutter
+  ///   app. This...
+  /// * Prevents the Flutter engine from reporting bogus "blur" events from the
+  ///   Flutter View because, by default, calling "blur" on an element moves the
+  ///   document.currentElement to the `body` of the page.
+  ///
+  /// See: https://jsfiddle.net/ditman/1e2swpno for a JS-only demonstration.
+  ///
+  /// When [removeElement] is true, `element` will be removed from the DOM after
+  /// its focus is transferred to the root of the view. This can be used to
+  /// safely remove (potentially focused) element, by preserving focus within
+  /// the Flutter view.
+  ///
+  /// When [delayed] is true, the blur operation is executed asynchronously as
+  /// soon as possible (see [Timer.run]). Else it runs immediately.
+  void safelyBlurElement(
+    DomElement element, {
+    bool removeElement = false,
+    bool delayed = true
+  }) {
     if (delayed) {
-      Timer(Duration.zero, blur);
-    } else {
-      blur();
+      Timer.run(() {
+        _transferFocusToViewRoot(element, removeElement: removeElement);
+      });
+      return;
+    }
+    _transferFocusToViewRoot(element, removeElement: removeElement);
+  }
+
+  // The actual implementation of [safelyBlurElement].
+  void _transferFocusToViewRoot(
+    DomElement element, {
+    required bool removeElement
+  }) {
+    // If by the time this method is called the focused element is no longer
+    // `element`, there's no need to move the focus.
+    //
+    // This can happen when another element grabs focus when this method runs
+    // "delayed".
+    if (element == domDocument.activeElement) {
+      final EngineFlutterView? view = findViewForElement(element);
+      // Transfer the browser focus to the root element of `view`
+      view?.dom.rootElement.focusWithoutScroll();
+    }
+    if (removeElement) {
+      element.remove();
     }
   }
 
