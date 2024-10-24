@@ -63,8 +63,10 @@ struct _FlView {
   // Monitor to track window state.
   FlWindowStateMonitor* window_state_monitor;
 
+  // Manages scrolling events.
   FlScrollingManager* scrolling_manager;
 
+  // Manages keyboard events.
   FlKeyboardManager* keyboard_manager;
 
   // Flutter system channel handlers.
