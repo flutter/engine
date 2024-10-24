@@ -459,15 +459,15 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   DlOpReceiver& receiver = ToReceiver(builder);
 
   receiver.setAntiAlias(true);
-  FML_LOG(ERROR) << *builder.Build();
+  builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setInvertColors(true);
-  FML_LOG(ERROR) << *builder.Build();
+  builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setColor(DlColor::kRed());
-  FML_LOG(ERROR) << *builder.Build();
+  builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setBlendMode(DlBlendMode::kColorBurn);
