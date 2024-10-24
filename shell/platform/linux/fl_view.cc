@@ -70,7 +70,6 @@ struct _FlView {
   FlMouseCursorHandler* mouse_cursor_handler;
   FlPlatformHandler* platform_handler;
 
-  GtkWidget* event_box;
   GtkGLArea* gl_area;
 
   // Tracks whether mouse pointer is inside the view.
@@ -749,35 +748,35 @@ static void fl_view_init(FlView* self) {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
   self->background_color = gdk_rgba_copy(&default_background);
 
-  self->event_box = gtk_event_box_new();
-  gtk_widget_set_hexpand(self->event_box, TRUE);
-  gtk_widget_set_vexpand(self->event_box, TRUE);
-  gtk_container_add(GTK_CONTAINER(self), self->event_box);
-  gtk_widget_show(self->event_box);
-  gtk_widget_add_events(self->event_box,
+  GtkWidget* event_box = gtk_event_box_new();
+  gtk_widget_set_hexpand(event_box, TRUE);
+  gtk_widget_set_vexpand(event_box, TRUE);
+  gtk_container_add(GTK_CONTAINER(self), event_box);
+  gtk_widget_show(event_box);
+  gtk_widget_add_events(event_box,
                         GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
                             GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
                             GDK_SMOOTH_SCROLL_MASK);
 
-  g_signal_connect_swapped(self->event_box, "button-press-event",
+  g_signal_connect_swapped(event_box, "button-press-event",
                            G_CALLBACK(button_press_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "button-release-event",
+  g_signal_connect_swapped(event_box, "button-release-event",
                            G_CALLBACK(button_release_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "scroll-event",
+  g_signal_connect_swapped(event_box, "scroll-event",
                            G_CALLBACK(scroll_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "motion-notify-event",
+  g_signal_connect_swapped(event_box, "motion-notify-event",
                            G_CALLBACK(motion_notify_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "enter-notify-event",
+  g_signal_connect_swapped(event_box, "enter-notify-event",
                            G_CALLBACK(enter_notify_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "leave-notify-event",
+  g_signal_connect_swapped(event_box, "leave-notify-event",
                            G_CALLBACK(leave_notify_event_cb), self);
-  GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
+  GtkGesture* zoom = gtk_gesture_zoom_new(event_box);
   g_signal_connect_swapped(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb),
                            self);
   g_signal_connect_swapped(zoom, "scale-changed",
                            G_CALLBACK(gesture_zoom_update_cb), self);
   g_signal_connect_swapped(zoom, "end", G_CALLBACK(gesture_zoom_end_cb), self);
-  GtkGesture* rotate = gtk_gesture_rotate_new(self->event_box);
+  GtkGesture* rotate = gtk_gesture_rotate_new(event_box);
   g_signal_connect_swapped(rotate, "begin",
                            G_CALLBACK(gesture_rotation_begin_cb), self);
   g_signal_connect_swapped(rotate, "angle-changed",
@@ -788,7 +787,7 @@ static void fl_view_init(FlView* self) {
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
   gtk_widget_show(GTK_WIDGET(self->gl_area));
-  gtk_container_add(GTK_CONTAINER(self->event_box), GTK_WIDGET(self->gl_area));
+  gtk_container_add(GTK_CONTAINER(event_box), GTK_WIDGET(self->gl_area));
   g_signal_connect_swapped(self->gl_area, "render", G_CALLBACK(render_cb),
                            self);
 
