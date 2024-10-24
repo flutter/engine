@@ -182,6 +182,9 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
         NSError* _Nullable error) {
         if (error) {
           FML_LOG(INFO) << "pipeline creation retry";
+          // The dispatch here is just to minimize the number of threads calling
+          // this and to inject a bit of latency after the error. It may not
+          // be necessary.
           dispatch_async(dispatch_get_main_queue(), ^{
             get_pipeline_descriptor(completion_handler);
           });
