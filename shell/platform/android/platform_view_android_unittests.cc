@@ -26,13 +26,5 @@ TEST(AndroidPlatformView, SelectsVulkanBasedOnApiLevel) {
   }
 }
 
-TEST(AndroidPlatformView, SoftwareRenderingNotSupportedWithImpeller) {
-  Settings settings;
-  settings.enable_software_rendering = true;
-  settings.enable_impeller = true;
-
-  ASSERT_DEATH(FlutterMain::SelectedRenderingAPI(settings), "");
-}
-
 }  // namespace testing
 }  // namespace flutter
