@@ -60,7 +60,7 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
       root_is_unbounded_(root_is_unbounded),
       max_root_blend_mode_(max_root_blend_mode),
       rtree_(std::move(rtree)) {
-  FML_DCHECK(offsets_.capacity() == offsets_.size());
+  FML_DCHECK(storage_.capacity() == storage_.size());
 }
 
 DisplayList::~DisplayList() {

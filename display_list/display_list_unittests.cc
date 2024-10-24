@@ -253,6 +253,25 @@ TEST_F(DisplayListTest, EmptyRebuild) {
   ASSERT_TRUE(dl2->Equals(dl3));
 }
 
+TEST_F(DisplayListTest, NopReusedBuildIsReallyEmpty) {
+  DisplayListBuilder builder;
+  builder.DrawRect(DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f), DlPaint());
+
+  {
+    auto dl1 = builder.Build();
+    EXPECT_EQ(dl1->op_count(), 1u);
+    EXPECT_GT(dl1->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl1->GetBounds(), DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f));
+  }
+
+  {
+    auto dl2 = builder.Build();
+    EXPECT_EQ(dl2->op_count(), 0u);
+    EXPECT_EQ(dl2->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl2->GetBounds(), DlRect());
+  }
+}
+
 TEST_F(DisplayListTest, GeneralReceiverInitialValues) {
   DisplayListGeneralReceiver receiver;
 

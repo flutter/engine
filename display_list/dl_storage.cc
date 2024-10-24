@@ -44,4 +44,19 @@ DisplayListStorage::DisplayListStorage(DisplayListStorage&& source) {
   source.allocated_ = 0u;
 }
 
+void DisplayListStorage::reset() {
+  ptr_.reset();
+  used_ = 0u;
+  allocated_ = 0u;
+}
+
+DisplayListStorage& DisplayListStorage::operator=(DisplayListStorage&& source) {
+  ptr_ = std::move(source.ptr_);
+  used_ = source.used_;
+  allocated_ = source.allocated_;
+  source.used_ = 0u;
+  source.allocated_ = 0u;
+  return *this;
+}
+
 }  // namespace flutter

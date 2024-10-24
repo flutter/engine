@@ -103,12 +103,16 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   Init(rtree != nullptr);
 
   storage_.trim();
-  offsets_.shrink_to_fit();
+  DisplayListStorage storage;
+  std::vector<size_t> offsets;
+  std::swap(offsets, offsets_);
+  std::swap(storage, storage_);
+
   return sk_sp<DisplayList>(new DisplayList(
-      std::move(storage_), std::move(offsets_), count, nested_bytes,
-      nested_count, total_depth, bounds, opacity_compatible, is_safe,
-      affects_transparency, max_root_blend_mode, root_has_backdrop_filter,
-      root_is_unbounded, std::move(rtree)));
+      std::move(storage), std::move(offsets), count, nested_bytes, nested_count,
+      total_depth, bounds, opacity_compatible, is_safe, affects_transparency,
+      max_root_blend_mode, root_has_backdrop_filter, root_is_unbounded,
+      std::move(rtree)));
 }
 
 static constexpr DlRect kEmpty = DlRect();

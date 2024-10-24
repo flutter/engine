@@ -23,10 +23,6 @@ class DisplayListStorage {
   uint8_t* base() { return ptr_.get(); }
   const uint8_t* base() const { return ptr_.get(); }
 
-  /// Trims the storage to the currently allocated size and invalidates
-  /// any outstanding pointers into the storage.
-  void trim() { realloc(used_); }
-
   /// Returns the currently allocated size
   size_t size() const { return used_; }
 
@@ -38,6 +34,15 @@ class DisplayListStorage {
   /// any other outstanding pointers into the storage.
   uint8_t* allocate(size_t needed);
 
+  /// Trims the storage to the currently allocated size and invalidates
+  /// any outstanding pointers into the storage.
+  void trim() { realloc(used_); }
+
+  /// Resets the storage and allocation of the object to an empty state
+  void reset();
+
+  DisplayListStorage& operator=(DisplayListStorage&& other);
+
  private:
   void realloc(size_t count);
 
@@ -45,6 +50,7 @@ class DisplayListStorage {
     void operator()(uint8_t* p) { std::free(p); }
   };
   std::unique_ptr<uint8_t, FreeDeleter> ptr_;
+
   size_t used_ = 0u;
   size_t allocated_ = 0u;
 };
