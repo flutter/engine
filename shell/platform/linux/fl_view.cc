@@ -42,8 +42,8 @@ struct _FlView {
   // Engine this view is showing.
   FlEngine* engine;
 
-  // Handler for engine restart signal.
-  guint on_pre_engine_restart_handler;
+  // Signal subscription for engine restarts.
+  guint on_pre_engine_restart_cb_id;
 
   // ID for this view.
   FlutterViewId view_id;
@@ -671,10 +671,10 @@ static void fl_view_dispose(GObject* object) {
                           nullptr);
   }
 
-  if (self->on_pre_engine_restart_handler != 0) {
+  if (self->on_pre_engine_restart_cb_id != 0) {
     g_signal_handler_disconnect(self->engine,
-                                self->on_pre_engine_restart_handler);
-    self->on_pre_engine_restart_handler = 0;
+                                self->on_pre_engine_restart_cb_id);
+    self->on_pre_engine_restart_cb_id = 0;
   }
 
   g_clear_object(&self->engine);
@@ -808,7 +808,7 @@ G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
 
   fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
                                          self, nullptr);
-  self->on_pre_engine_restart_handler =
+  self->on_pre_engine_restart_cb_id =
       g_signal_connect_swapped(engine, "on-pre-engine-restart",
                                G_CALLBACK(on_pre_engine_restart_cb), self);
 
@@ -830,7 +830,7 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
   g_assert(FL_IS_RENDERER_GDK(renderer));
   self->renderer = FL_RENDERER_GDK(g_object_ref(renderer));
 
-  self->on_pre_engine_restart_handler =
+  self->on_pre_engine_restart_cb_id =
       g_signal_connect_swapped(engine, "on-pre-engine-restart",
                                G_CALLBACK(on_pre_engine_restart_cb), self);
 
