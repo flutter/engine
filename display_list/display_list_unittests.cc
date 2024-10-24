@@ -459,15 +459,15 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   DlOpReceiver& receiver = ToReceiver(builder);
 
   receiver.setAntiAlias(true);
-  builder.Build();
+  FML_LOG(ERROR) << *builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setInvertColors(true);
-  builder.Build();
+  FML_LOG(ERROR) << *builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setColor(DlColor::kRed());
-  builder.Build();
+  FML_LOG(ERROR) << *builder.Build();
   check_defaults(builder, cull_rect);
 
   receiver.setBlendMode(DlBlendMode::kColorBurn);
@@ -5892,6 +5892,38 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culled_dl, expected_dl));
   }
+}
+
+TEST_F(DisplayListTest, RecordManyLargeDisplayListOperations) {
+  DisplayListBuilder builder;
+
+  // 2050 points is sizeof(DlPoint) * 2050 = 16400 bytes, this is more
+  // than the page size of 16384 bytes.
+  std::vector<DlPoint> points(2050);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, RecordSingleLargeDisplayListOperation) {
+  DisplayListBuilder builder;
+
+  std::vector<DlPoint> points(40000);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
 }
 
 }  // namespace testing
