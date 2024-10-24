@@ -42,37 +42,21 @@ void TrackedObjectsVK::Track(std::shared_ptr<SharedObjectVK> object) {
   if (!object) {
     return;
   }
-  tracked_objects_.insert(std::move(object));
+  tracked_objects_.emplace_back(std::move(object));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
   if (!buffer) {
     return;
   }
-  tracked_buffers_.insert(std::move(buffer));
-}
-
-bool TrackedObjectsVK::IsTracking(
-    const std::shared_ptr<const DeviceBuffer>& buffer) const {
-  if (!buffer) {
-    return false;
-  }
-  return tracked_buffers_.find(buffer) != tracked_buffers_.end();
+  tracked_buffers_.emplace_back(std::move(buffer));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
   if (!texture) {
     return;
   }
-  tracked_textures_.insert(std::move(texture));
-}
-
-bool TrackedObjectsVK::IsTracking(
-    const std::shared_ptr<const TextureSourceVK>& texture) const {
-  if (!texture) {
-    return false;
-  }
-  return tracked_textures_.find(texture) != tracked_textures_.end();
+  tracked_textures_.emplace_back(std::move(texture));
 }
 
 vk::CommandBuffer TrackedObjectsVK::GetCommandBuffer() const {
