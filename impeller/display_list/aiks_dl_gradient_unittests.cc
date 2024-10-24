@@ -8,7 +8,7 @@
 #include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
@@ -362,7 +362,7 @@ TEST_P(AiksTest, CanRenderLinearGradientMaskBlur) {
       DlTileMode::kClamp));
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
 
-  builder.DrawCircle({300, 300}, 200, paint);
+  builder.DrawCircle(SkPoint{300, 300}, 200, paint);
   builder.DrawRect(SkRect::MakeLTRB(100, 300, 500, 600), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));

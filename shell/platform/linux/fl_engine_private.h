@@ -61,16 +61,6 @@ typedef void (*FlEngineUpdateSemanticsHandler)(
     gpointer user_data);
 
 /**
- * FlEngineOnPreEngineRestartHandler:
- * @engine: an #FlEngine.
- * @user_data: (closure): data provided when registering this handler.
- *
- * Function called right before the engine is restarted.
- */
-typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
-                                                  gpointer user_data);
-
-/**
  * fl_engine_new_with_renderer:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
@@ -125,15 +115,18 @@ FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
  * added.
  * @user_data: (closure): user data to pass to @callback.
  *
- * Asynchronously add a new view.
+ * Asynchronously add a new view. The returned view ID should not be used until
+ * this function completes.
+ *
+ * Returns: the ID for the view.
  */
-void fl_engine_add_view(FlEngine* engine,
-                        size_t width,
-                        size_t height,
-                        double pixel_ratio,
-                        GCancellable* cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer user_data);
+FlutterViewId fl_engine_add_view(FlEngine* engine,
+                                 size_t width,
+                                 size_t height,
+                                 double pixel_ratio,
+                                 GCancellable* cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data);
 
 /**
  * fl_engine_add_view_finish:
@@ -144,11 +137,11 @@ void fl_engine_add_view(FlEngine* engine,
  *
  * Completes request started with fl_engine_add_view().
  *
- * Returns: the newly added view ID or 0 on error.
+ * Returns: %TRUE on success.
  */
-FlutterViewId fl_engine_add_view_finish(FlEngine* engine,
-                                        GAsyncResult* result,
-                                        GError** error);
+gboolean fl_engine_add_view_finish(FlEngine* engine,
+                                   GAsyncResult* result,
+                                   GError** error);
 
 /**
  * fl_engine_remove_view:
@@ -176,7 +169,7 @@ void fl_engine_remove_view(FlEngine* engine,
  *
  * Completes request started with fl_engine_remove_view().
  *
- * Returns: TRUE on succcess.
+ * Returns: %TRUE on succcess.
  */
 gboolean fl_engine_remove_view_finish(FlEngine* engine,
                                       GAsyncResult* result,
@@ -215,22 +208,6 @@ void fl_engine_set_platform_message_handler(
 void fl_engine_set_update_semantics_handler(
     FlEngine* engine,
     FlEngineUpdateSemanticsHandler handler,
-    gpointer user_data,
-    GDestroyNotify destroy_notify);
-
-/**
- * fl_engine_set_on_pre_engine_restart_handler:
- * @engine: an #FlEngine.
- * @handler: function to call when the engine is restarted.
- * @user_data: (closure): user data to pass to @handler.
- * @destroy_notify: (allow-none): a function which gets called to free
- * @user_data, or %NULL.
- *
- * Registers the function called right before the engine is restarted.
- */
-void fl_engine_set_on_pre_engine_restart_handler(
-    FlEngine* engine,
-    FlEngineOnPreEngineRestartHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
 

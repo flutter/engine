@@ -263,7 +263,7 @@ bool Playground::OpenPlaygroundHere(
     ImGui_ImplGlfw_NewFrame();
 
     auto surface = impl_->AcquireSurfaceFrame(context_);
-    RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = surface->GetRenderTarget();
 
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
@@ -484,7 +484,7 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
     auto device_buffer = context_->GetResourceAllocator()->CreateBufferWithCopy(
         *images[i].GetAllocation());
     blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), texture, {},
-                       "", /*slice=*/i);
+                       "", /*mip_level=*/0, /*slice=*/i);
   }
 
   if (!blit_pass->EncodeCommands(context_->GetResourceAllocator()) ||
@@ -511,6 +511,11 @@ fml::Status Playground::SetCapabilities(
 
 bool Playground::WillRenderSomething() const {
   return switches_.enable_playground;
+}
+
+Playground::GLProcAddressResolver Playground::CreateGLProcAddressResolver()
+    const {
+  return impl_->CreateGLProcAddressResolver();
 }
 
 }  // namespace impeller

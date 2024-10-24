@@ -10,10 +10,10 @@ import 'package:test/test.dart';
 
 void main() {
   final engine = Engine.findWithin();
-  final manualBuildDir = io.Platform.environment['ENGINE_BUILD_DIR'];
+  final manualBuildDir = io.Platform.environment['FLUTTER_BUILD_DIRECTORY'];
   final buildDir = manualBuildDir ?? engine.latestOutput()?.path.path;
   if (buildDir == null) {
-    fail('No build directory found. Set ENGINE_BUILD_DIR');
+    fail('No build directory found. Set FLUTTER_BUILD_DIRECTORY');
   }
   final frontendServer = path.join(
     buildDir,
@@ -60,7 +60,8 @@ void main() {
     ]));
     final runResult = io.Process.runSync(dart, <String>[regularDill]);
     checkProcessResult(runResult);
-    var paintString = '"Paint.toString":"Paint(Color(0xffffffff))"';
+    var paintString =
+      '"Paint.toString":"Paint(Color(alpha: 1.0000, red: 1.0000, green: 1.0000, blue: 1.0000, colorSpace: ColorSpace.sRGB))"';
     if (buildDir.contains('release')) {
       paintString = '"Paint.toString":"Instance of \'Paint\'"';
     }

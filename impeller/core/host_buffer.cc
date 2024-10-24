@@ -29,15 +29,13 @@ HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator)
   desc.size = kAllocatorBlockSize;
   desc.storage_mode = StorageMode::kHostVisible;
   for (auto i = 0u; i < kHostBufferArenaSize; i++) {
-    device_buffers_[i].push_back(allocator->CreateBuffer(desc));
+    std::shared_ptr<DeviceBuffer> device_buffer = allocator->CreateBuffer(desc);
+    FML_CHECK(device_buffer) << "Failed to allocate device buffer.";
+    device_buffers_[i].push_back(device_buffer);
   }
 }
 
 HostBuffer::~HostBuffer() = default;
-
-void HostBuffer::SetLabel(std::string label) {
-  label_ = std::move(label);
-}
 
 BufferView HostBuffer::Emplace(const void* buffer,
                                size_t length,

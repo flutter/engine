@@ -81,14 +81,6 @@ states of completion:
   framework. The render-pass optimization and pass-rewriting framework also
   resides there. This allows authoring composable 2D rendering optimizations
   (like collapsing passes, or, eliding them completely).
-* **`//impeller/aiks`**: Aiks wraps `//impeller/entity` into an API that
-  resembles Skia. This makes it easy to mechanically replace Skia calls with
-  their Impeller counterparts even though the `//impeller/entity` framework API
-  is different from Skia. This presence of this sub-framework is probably
-  short-lived as integration of Impeller into Flutter should likely happen via a
-  custom Display List implementation in `//impeller/display_list`. The
-  roadblocks to this today are graphics package agnosticism in the Display List
-  interface.
 * **`//impeller/display_list`**: The replacement for `//impeller/aiks` to serve
   in the integration of Impeller in `//flutter/flow`. This is pending graphics
   package agnosticism in the Impeller interface. This sub-framework primarily
@@ -124,9 +116,6 @@ states of completion:
   pre-compiled shaders themselves. Unlike Metal, backends like OpenGL ES and
   Vulkan don't have such a concept. For these backends, `//impeller/blobcat` is
   used to create a single shader library to be packaged with the engine.
-* **`//impeller/scene`**: Contains an experimental 3D model renderer. This is
-  currently only exposed via [a special build of the Flutter
-  Engine](https://github.com/flutter/flutter/wiki/Impeller-Scene).
 
 ## The Offline Shader Compilation Pipeline
 

@@ -79,6 +79,7 @@ extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DisplayListOpType& type);
 extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DisplayListOpCategory& category);
+extern std::ostream& operator<<(std::ostream& os, const flutter::DlPath& path);
 
 }  // namespace std
 
@@ -109,7 +110,8 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void save() override;
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
   void restore() override;
 
   void translate(DlScalar tx, DlScalar ty) override;
@@ -129,8 +131,10 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 
   void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override;
   void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override;
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void clipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override;
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawPaint() override;
@@ -142,9 +146,10 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawRect(const DlRect& rect) override;
   void drawOval(const DlRect& bounds) override;
   void drawCircle(const DlPoint& center, DlScalar radius) override;
-  void drawRRect(const SkRRect& rrect) override;
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
-  void drawPath(const SkPath& path) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
+  void drawPath(const DlPath& path) override;
   void drawArc(const DlRect& oval_bounds,
                DlScalar start_degrees,
                DlScalar sweep_degrees,
@@ -186,7 +191,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
                      DlScalar x,
                      DlScalar y) override;
-  void drawShadow(const SkPath& path,
+  void drawShadow(const DlPath& path,
                   const DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,
@@ -263,11 +268,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlColorSourceType::kSweepGradient:
           RecordByType(DisplayListOpType::kSetPodColorSource);
           break;
-#ifdef IMPELLER_ENABLE_3D
-        case DlColorSourceType::kScene:
-          RecordByType(DisplayListOpType::kSetSceneColorSource);
-          break;
-#endif  // IMPELLER_ENABLE_3D
       }
     } else {
       RecordByType(DisplayListOpType::kClearColorSource);
@@ -373,19 +373,19 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         break;
     }
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     switch (clip_op) {
       case DlCanvas::ClipOp::kIntersect:
-        RecordByType(DisplayListOpType::kClipIntersectRRect);
+        RecordByType(DisplayListOpType::kClipIntersectRoundRect);
         break;
       case DlCanvas::ClipOp::kDifference:
-        RecordByType(DisplayListOpType::kClipDifferenceRRect);
+        RecordByType(DisplayListOpType::kClipDifferenceRoundRect);
         break;
     }
   }
-  void clipPath(const SkPath& path,
+  void clipPath(const DlPath& path,
                 DlCanvas::ClipOp clip_op,
                 bool is_aa) override {
     switch (clip_op) {
@@ -401,7 +401,8 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   void save() override { RecordByType(DisplayListOpType::kSave); }
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     if (backdrop) {
       RecordByType(DisplayListOpType::kSaveLayerBackdrop);
     } else {
@@ -432,13 +433,14 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   void drawCircle(const DlPoint& center, DlScalar radius) override {
     RecordByType(DisplayListOpType::kDrawCircle);
   }
-  void drawRRect(const SkRRect& rrect) override {
-    RecordByType(DisplayListOpType::kDrawRRect);
+  void drawRoundRect(const DlRoundRect& rrect) override {
+    RecordByType(DisplayListOpType::kDrawRoundRect);
   }
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {
-    RecordByType(DisplayListOpType::kDrawDRRect);
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override {
+    RecordByType(DisplayListOpType::kDrawDiffRoundRect);
   }
-  void drawPath(const SkPath& path) override {
+  void drawPath(const DlPath& path) override {
     RecordByType(DisplayListOpType::kDrawPath);
   }
   void drawArc(const DlRect& oval_bounds,
@@ -524,7 +526,7 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
                      DlScalar y) override {
     RecordByType(DisplayListOpType::kDrawTextFrame);
   }
-  void drawShadow(const SkPath& path,
+  void drawShadow(const DlPath& path,
                   const DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,

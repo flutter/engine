@@ -39,7 +39,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_y,
     Entity::TileMode tile_mode,
     FilterContents::BlurStyle mask_blur_style,
-    const std::shared_ptr<Geometry>& mask_geometry) {
+    const Geometry* mask_geometry) {
   auto blur = std::make_shared<GaussianBlurFilterContents>(
       sigma_x.sigma, sigma_y.sigma, tile_mode, mask_blur_style, mask_geometry);
   blur->SetInputs({input});
@@ -166,14 +166,6 @@ std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
   return GetLocalCoverage(entity_with_local_transform);
 }
 
-void FilterContents::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) {
-  for (auto& input : inputs_) {
-    input->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
-  }
-}
-
 std::optional<Rect> FilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
     const Entity& entity,
@@ -265,43 +257,12 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
   return std::nullopt;
 }
 
-const FilterContents* FilterContents::AsFilter() const {
-  return this;
-}
-
 Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
   return Matrix();
 }
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
-}
-bool FilterContents::IsTranslationOnly() const {
-  for (auto& input : inputs_) {
-    if (!input->IsTranslationOnly()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool FilterContents::IsLeaf() const {
-  for (auto& input : inputs_) {
-    if (!input->IsLeaf()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-void FilterContents::SetLeafInputs(const FilterInput::Vector& inputs) {
-  if (IsLeaf()) {
-    inputs_ = inputs;
-    return;
-  }
-  for (auto& input : inputs_) {
-    input->SetLeafInputs(inputs);
-  }
 }
 
 void FilterContents::SetRenderingMode(Entity::RenderingMode rendering_mode) {

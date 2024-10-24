@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
-#include "flutter/shell/platform/linux/fl_view_private.h"
-
 #include <atk/atk.h>
 #include <gtk/gtk-a11y.h>
 
@@ -17,6 +15,7 @@
 #include "flutter/shell/platform/linux/fl_framebuffer.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/fl_keyboard_handler.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_platform_handler.h"
@@ -40,6 +39,9 @@ struct _FlView {
   // Engine this view is showing.
   FlEngine* engine;
 
+  // Handler for engine restart signal.
+  guint on_pre_engine_restart_handler;
+
   // ID for this view.
   FlutterViewId view_id;
 
@@ -49,6 +51,9 @@ struct _FlView {
   // Background color.
   GdkRGBA* background_color;
 
+  // TRUE if have got the first frame to render.
+  gboolean have_first_frame;
+
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
 
@@ -56,6 +61,8 @@ struct _FlView {
   FlWindowStateMonitor* window_state_monitor;
 
   FlScrollingManager* scrolling_manager;
+
+  FlKeyboardManager* keyboard_manager;
 
   // Flutter system channel handlers.
   FlKeyboardHandler* keyboard_handler;
@@ -69,17 +76,17 @@ struct _FlView {
   // Tracks whether mouse pointer is inside the view.
   gboolean pointer_inside;
 
-  /* FlKeyboardViewDelegate related properties */
-  KeyboardLayoutNotifier keyboard_layout_notifier;
-  GdkKeymap* keymap;
-  gulong keymap_keys_changed_cb_id;  // Signal connection ID for
-                                     // keymap-keys-changed
-
   // Accessible tree from Flutter, exposed as an AtkPlug.
   FlViewAccessible* view_accessible;
+
+  GCancellable* cancellable;
 };
 
-enum { kPropFlutterProject = 1, kPropLast };
+enum { kSignalFirstFrame, kSignalLastSignal };
+
+static guint fl_view_signals[kSignalLastSignal];
+
+static void fl_renderable_iface_init(FlRenderableInterface* iface);
 
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
@@ -97,14 +104,25 @@ G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
     GTK_TYPE_BOX,
-    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
-                          fl_view_plugin_registry_iface_init)
-        G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
-                              fl_view_keyboard_delegate_iface_init)
-            G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
-                                  fl_view_scrolling_delegate_iface_init)
-                G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init))
+    G_IMPLEMENT_INTERFACE(fl_renderable_get_type(), fl_renderable_iface_init)
+        G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                              fl_view_plugin_registry_iface_init)
+            G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
+                                  fl_view_keyboard_delegate_iface_init)
+                G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
+                                      fl_view_scrolling_delegate_iface_init)
+                    G_IMPLEMENT_INTERFACE(
+                        fl_text_input_view_delegate_get_type(),
+                        fl_view_text_input_delegate_iface_init))
+
+// Emit the first frame signal in the main thread.
+static gboolean first_frame_idle_cb(gpointer user_data) {
+  FlView* self = FL_VIEW(user_data);
+
+  g_signal_emit(self, fl_view_signals[kSignalFirstFrame], 0);
+
+  return FALSE;
+}
 
 // Signal handler for GtkWidget::delete-event
 static gboolean window_delete_event_cb(FlView* self) {
@@ -126,9 +144,12 @@ static void init_keyboard(FlView* self) {
   g_clear_object(&self->text_input_handler);
   self->text_input_handler = fl_text_input_handler_new(
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
+  g_clear_object(&self->keyboard_manager);
+  self->keyboard_manager =
+      fl_keyboard_manager_new(self->engine, FL_KEYBOARD_VIEW_DELEGATE(self));
   g_clear_object(&self->keyboard_handler);
   self->keyboard_handler =
-      fl_keyboard_handler_new(messenger, FL_KEYBOARD_VIEW_DELEGATE(self));
+      fl_keyboard_handler_new(messenger, self->keyboard_manager);
 }
 
 static void init_scrolling(FlView* self) {
@@ -208,7 +229,7 @@ static gboolean send_pointer_button_event(FlView* self, GdkEvent* event) {
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_scrolling_manager_set_last_mouse_position(
       self->scrolling_manager, event_x * scale_factor, event_y * scale_factor);
-  fl_keyboard_handler_sync_modifier_if_needed(self->keyboard_handler,
+  fl_keyboard_manager_sync_modifier_if_needed(self->keyboard_manager,
                                               event_state, event_time);
   fl_engine_send_mouse_pointer_event(
       self->engine, self->view_id, phase,
@@ -260,6 +281,25 @@ static void handle_geometry_changed(FlView* self) {
   }
 }
 
+static void view_added_cb(GObject* object,
+                          GAsyncResult* result,
+                          gpointer user_data) {
+  FlView* self = FL_VIEW(user_data);
+
+  g_autoptr(GError) error = nullptr;
+  if (!fl_engine_add_view_finish(FL_ENGINE(object), result, &error)) {
+    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+      return;
+    }
+
+    g_warning("Failed to add view: %s", error->message);
+    // FIXME: Show on the GLArea
+    return;
+  }
+
+  handle_geometry_changed(self);
+}
+
 // Called when the engine updates accessibility.
 static void update_semantics_cb(FlEngine* engine,
                                 const FlutterSemanticsUpdate2* update,
@@ -274,11 +314,29 @@ static void update_semantics_cb(FlEngine* engine,
 // This method should reset states to be as if the engine had just been started,
 // which usually indicates the user has requested a hot restart (Shift-R in the
 // Flutter CLI.)
-static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
-  FlView* self = FL_VIEW(user_data);
-
+static void on_pre_engine_restart_cb(FlView* self) {
   init_keyboard(self);
   init_scrolling(self);
+}
+
+// Implements FlRenderable::redraw
+static void fl_view_redraw(FlRenderable* renderable) {
+  FlView* self = FL_VIEW(renderable);
+
+  gtk_widget_queue_draw(GTK_WIDGET(self->gl_area));
+
+  if (!self->have_first_frame) {
+    self->have_first_frame = TRUE;
+    // This is not the main thread, so the signal needs to be done via an idle
+    // callback.
+    g_idle_add(first_frame_idle_cb, self);
+  }
+}
+
+// Implements FlRenderable::make_current
+static void fl_view_make_current(FlRenderable* renderable) {
+  FlView* self = FL_VIEW(renderable);
+  gtk_gl_area_make_current(self->gl_area);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -292,6 +350,11 @@ static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
                                  fl_engine_get_texture_registrar(self->engine));
 }
 
+static void fl_renderable_iface_init(FlRenderableInterface* iface) {
+  iface->redraw = fl_view_redraw;
+  iface->make_current = fl_view_make_current;
+}
+
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface) {
   iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
@@ -299,54 +362,11 @@ static void fl_view_plugin_registry_iface_init(
 
 static void fl_view_keyboard_delegate_iface_init(
     FlKeyboardViewDelegateInterface* iface) {
-  iface->send_key_event =
-      [](FlKeyboardViewDelegate* view_delegate, const FlutterKeyEvent* event,
-         FlutterKeyEventCallback callback, void* user_data) {
-        FlView* self = FL_VIEW(view_delegate);
-        if (self->engine != nullptr) {
-          fl_engine_send_key_event(self->engine, event, callback, user_data);
-        };
-      };
-
   iface->text_filter_key_press = [](FlKeyboardViewDelegate* view_delegate,
                                     FlKeyEvent* event) {
     FlView* self = FL_VIEW(view_delegate);
     return fl_text_input_handler_filter_keypress(self->text_input_handler,
                                                  event);
-  };
-
-  iface->get_messenger = [](FlKeyboardViewDelegate* view_delegate) {
-    FlView* self = FL_VIEW(view_delegate);
-    return fl_engine_get_binary_messenger(self->engine);
-  };
-
-  iface->redispatch_event = [](FlKeyboardViewDelegate* view_delegate,
-                               std::unique_ptr<FlKeyEvent> in_event) {
-    FlKeyEvent* event = in_event.release();
-    GdkEventType event_type = gdk_event_get_event_type(event->origin);
-    g_return_if_fail(event_type == GDK_KEY_PRESS ||
-                     event_type == GDK_KEY_RELEASE);
-    gdk_event_put(event->origin);
-    fl_key_event_dispose(event);
-  };
-
-  iface->subscribe_to_layout_change = [](FlKeyboardViewDelegate* view_delegate,
-                                         KeyboardLayoutNotifier notifier) {
-    FlView* self = FL_VIEW(view_delegate);
-    self->keyboard_layout_notifier = std::move(notifier);
-  };
-
-  iface->lookup_key = [](FlKeyboardViewDelegate* view_delegate,
-                         const GdkKeymapKey* key) -> guint {
-    FlView* self = FL_VIEW(view_delegate);
-    g_return_val_if_fail(self->keymap != nullptr, 0);
-    return gdk_keymap_lookup_key(self->keymap, key);
-  };
-
-  iface->get_keyboard_state =
-      [](FlKeyboardViewDelegate* view_delegate) -> GHashTable* {
-    FlView* self = FL_VIEW(view_delegate);
-    return fl_view_get_keyboard_state(self);
   };
 }
 
@@ -443,7 +463,7 @@ static gboolean motion_notify_event_cb(FlView* self,
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
 
-  fl_keyboard_handler_sync_modifier_if_needed(self->keyboard_handler,
+  fl_keyboard_manager_sync_modifier_if_needed(self->keyboard_manager,
                                               event_state, event_time);
   fl_engine_send_mouse_pointer_event(
       self->engine, self->view_id, self->button_state != 0 ? kMove : kHover,
@@ -501,14 +521,6 @@ static gboolean leave_notify_event_cb(FlView* self,
   return TRUE;
 }
 
-static void keymap_keys_changed_cb(FlView* self) {
-  if (self->keyboard_layout_notifier == nullptr) {
-    return;
-  }
-
-  self->keyboard_layout_notifier();
-}
-
 static void gesture_rotation_begin_cb(FlView* self) {
   fl_scrolling_manager_handle_rotation_begin(self->scrolling_manager);
 }
@@ -539,11 +551,6 @@ static void gesture_zoom_end_cb(FlView* self) {
 static GdkGLContext* create_context_cb(FlView* self) {
   fl_renderer_gdk_set_window(self->renderer,
                              gtk_widget_get_parent_window(GTK_WIDGET(self)));
-
-  // Must initialize the keymap before the keyboard.
-  self->keymap = gdk_keymap_get_for_display(gdk_display_get_default());
-  self->keymap_keys_changed_cb_id = g_signal_connect_swapped(
-      self->keymap, "keys-changed", G_CALLBACK(keymap_keys_changed_cb), self);
 
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
@@ -586,7 +593,8 @@ static void realize_cb(FlView* self) {
 
   init_keyboard(self);
 
-  fl_renderer_add_view(FL_RENDERER(self->renderer), self->view_id, self);
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   if (!fl_engine_start(self->engine, &error)) {
     g_warning("Failed to start Flutter engine: %s", error->message);
@@ -649,11 +657,24 @@ static void fl_view_notify(GObject* object, GParamSpec* pspec) {
 static void fl_view_dispose(GObject* object) {
   FlView* self = FL_VIEW(object);
 
+  g_cancellable_cancel(self->cancellable);
+
   if (self->engine != nullptr) {
     fl_engine_set_update_semantics_handler(self->engine, nullptr, nullptr,
                                            nullptr);
-    fl_engine_set_on_pre_engine_restart_handler(self->engine, nullptr, nullptr,
-                                                nullptr);
+
+    // Stop rendering.
+    fl_renderer_remove_view(FL_RENDERER(self->renderer), self->view_id);
+
+    // Release the view ID from the engine.
+    fl_engine_remove_view(self->engine, self->view_id, nullptr, nullptr,
+                          nullptr);
+  }
+
+  if (self->on_pre_engine_restart_handler != 0) {
+    g_signal_handler_disconnect(self->engine,
+                                self->on_pre_engine_restart_handler);
+    self->on_pre_engine_restart_handler = 0;
   }
 
   g_clear_object(&self->engine);
@@ -661,24 +682,32 @@ static void fl_view_dispose(GObject* object) {
   g_clear_pointer(&self->background_color, gdk_rgba_free);
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
+  g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->keyboard_handler);
-  if (self->keymap_keys_changed_cb_id != 0) {
-    g_signal_handler_disconnect(self->keymap, self->keymap_keys_changed_cb_id);
-    self->keymap_keys_changed_cb_id = 0;
-  }
   g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->platform_handler);
   g_clear_object(&self->view_accessible);
+  g_clear_object(&self->cancellable);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
+}
+
+// Implements GtkWidget::realize.
+static void fl_view_realize(GtkWidget* widget) {
+  FlView* self = FL_VIEW(widget);
+
+  GTK_WIDGET_CLASS(fl_view_parent_class)->realize(widget);
+
+  // Realize the child widgets.
+  gtk_widget_realize(GTK_WIDGET(self->gl_area));
 }
 
 // Implements GtkWidget::key_press_event.
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_keyboard_handler_handle_event(
-      self->keyboard_handler, fl_key_event_new_from_gdk_event(gdk_event_copy(
+  return fl_keyboard_manager_handle_event(
+      self->keyboard_manager, fl_key_event_new_from_gdk_event(gdk_event_copy(
                                   reinterpret_cast<GdkEvent*>(event))));
 }
 
@@ -686,8 +715,8 @@ static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
 static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
-  return fl_keyboard_handler_handle_event(
-      self->keyboard_handler, fl_key_event_new_from_gdk_event(gdk_event_copy(
+  return fl_keyboard_manager_handle_event(
+      self->keyboard_manager, fl_key_event_new_from_gdk_event(gdk_event_copy(
                                   reinterpret_cast<GdkEvent*>(event))));
 }
 
@@ -697,19 +726,24 @@ static void fl_view_class_init(FlViewClass* klass) {
   object_class->dispose = fl_view_dispose;
 
   GtkWidgetClass* widget_class = GTK_WIDGET_CLASS(klass);
+  widget_class->realize = fl_view_realize;
   widget_class->key_press_event = fl_view_key_press_event;
   widget_class->key_release_event = fl_view_key_release_event;
+
+  fl_view_signals[kSignalFirstFrame] =
+      g_signal_new("first-frame", fl_view_get_type(), G_SIGNAL_RUN_LAST, 0,
+                   NULL, NULL, NULL, G_TYPE_NONE, 0);
 
   gtk_widget_class_set_accessible_type(GTK_WIDGET_CLASS(klass),
                                        fl_socket_accessible_get_type());
 }
 
 static void fl_view_init(FlView* self) {
+  self->cancellable = g_cancellable_new();
+
   gtk_widget_set_can_focus(GTK_WIDGET(self), TRUE);
 
-  // When we support multiple views this will become variable.
-  // https://github.com/flutter/flutter/issues/138178
-  self->view_id = flutter::kFlutterImplicitViewId;
+  self->view_id = -1;
 
   GdkRGBA default_background = {
       .red = 0.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
@@ -755,14 +789,7 @@ static void fl_view_init(FlView* self) {
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
   gtk_widget_show(GTK_WIDGET(self->gl_area));
   gtk_container_add(GTK_CONTAINER(self->event_box), GTK_WIDGET(self->gl_area));
-
-  g_signal_connect_swapped(self->gl_area, "create-context",
-                           G_CALLBACK(create_context_cb), self);
-  g_signal_connect_swapped(self->gl_area, "realize", G_CALLBACK(realize_cb),
-                           self);
   g_signal_connect_swapped(self->gl_area, "render", G_CALLBACK(render_cb),
-                           self);
-  g_signal_connect_swapped(self->gl_area, "unrealize", G_CALLBACK(unrealize_cb),
                            self);
 
   g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),
@@ -771,7 +798,28 @@ static void fl_view_init(FlView* self) {
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
   g_autoptr(FlEngine) engine = fl_engine_new(project);
-  return fl_view_new_for_engine(engine);
+  FlView* self = FL_VIEW(g_object_new(fl_view_get_type(), nullptr));
+
+  self->view_id = flutter::kFlutterImplicitViewId;
+  self->engine = FL_ENGINE(g_object_ref(engine));
+  FlRenderer* renderer = fl_engine_get_renderer(engine);
+  g_assert(FL_IS_RENDERER_GDK(renderer));
+  self->renderer = FL_RENDERER_GDK(g_object_ref(renderer));
+
+  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
+                                         self, nullptr);
+  self->on_pre_engine_restart_handler =
+      g_signal_connect_swapped(engine, "on-pre-engine-restart",
+                               G_CALLBACK(on_pre_engine_restart_cb), self);
+
+  g_signal_connect_swapped(self->gl_area, "create-context",
+                           G_CALLBACK(create_context_cb), self);
+  g_signal_connect_swapped(self->gl_area, "realize", G_CALLBACK(realize_cb),
+                           self);
+  g_signal_connect_swapped(self->gl_area, "unrealize", G_CALLBACK(unrealize_cb),
+                           self);
+
+  return self;
 }
 
 G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
@@ -782,10 +830,14 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
   g_assert(FL_IS_RENDERER_GDK(renderer));
   self->renderer = FL_RENDERER_GDK(g_object_ref(renderer));
 
-  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
-                                         self, nullptr);
-  fl_engine_set_on_pre_engine_restart_handler(
-      self->engine, on_pre_engine_restart_cb, self, nullptr);
+  self->on_pre_engine_restart_handler =
+      g_signal_connect_swapped(engine, "on-pre-engine-restart",
+                               G_CALLBACK(on_pre_engine_restart_cb), self);
+
+  self->view_id = fl_engine_add_view(self->engine, 1, 1, 1.0, self->cancellable,
+                                     view_added_cb, self);
+  fl_renderer_add_renderable(FL_RENDERER(self->renderer), self->view_id,
+                             FL_RENDERABLE(self));
 
   return self;
 }
@@ -795,19 +847,15 @@ G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* self) {
   return self->engine;
 }
 
+G_MODULE_EXPORT
+int64_t fl_view_get_id(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), -1);
+  return self->view_id;
+}
+
 G_MODULE_EXPORT void fl_view_set_background_color(FlView* self,
                                                   const GdkRGBA* color) {
   g_return_if_fail(FL_IS_VIEW(self));
   gdk_rgba_free(self->background_color);
   self->background_color = gdk_rgba_copy(color);
-}
-
-void fl_view_redraw(FlView* self) {
-  g_return_if_fail(FL_IS_VIEW(self));
-  gtk_widget_queue_draw(GTK_WIDGET(self->gl_area));
-}
-
-GHashTable* fl_view_get_keyboard_state(FlView* self) {
-  g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
-  return fl_keyboard_handler_get_pressed_state(self->keyboard_handler);
 }

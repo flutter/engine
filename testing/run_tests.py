@@ -430,7 +430,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
-      make_test('testing_unittests'),
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
@@ -589,8 +588,6 @@ def run_engine_benchmarks(build_dir, executable_filter):
   run_engine_executable(build_dir, 'display_list_builder_benchmarks', executable_filter, icu_flags)
 
   run_engine_executable(build_dir, 'geometry_benchmarks', executable_filter, icu_flags)
-
-  run_engine_executable(build_dir, 'canvas_benchmarks', executable_filter, icu_flags)
 
   if is_linux():
     run_engine_executable(build_dir, 'txt_benchmarks', executable_filter, icu_flags)
@@ -915,17 +912,8 @@ def gather_dart_smoke_test(build_dir, test_filter):
     )
 
 
-def gather_dart_package_tests(build_dir, package_path, extra_opts):
+def gather_dart_package_tests(build_dir, package_path):
   if uses_package_test_runner(package_path):
-    # Assert that extra_opts is either None, or is an empty list, or is a dictionary.
-    assert len(extra_opts) == 0 or isinstance(
-        extra_opts, dict
-    ), '%s uses package:test and expects a dictionary, but passed a %s' % (
-        package_path, type(extra_opts)
-    )
-    extra_env = {}
-    if isinstance(extra_opts, dict):
-      extra_env = extra_opts
     opts = ['test', '--reporter=expanded']
     yield EngineExecutableTask(
         build_dir,
@@ -933,14 +921,13 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
         None,
         flags=opts,
         cwd=package_path,
-        extra_env=extra_env
     )
   else:
     dart_tests = glob.glob('%s/test/*_test.dart' % package_path)
     if not dart_tests:
       raise Exception('No tests found for Dart package at %s' % package_path)
     for dart_test_file in dart_tests:
-      opts = [dart_test_file] + extra_opts
+      opts = [dart_test_file]
       yield EngineExecutableTask(
           build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
       )
@@ -977,37 +964,24 @@ def uses_package_test_runner(package):
 # arguments to pass to each of the packages tests.
 def build_dart_host_test_list(build_dir):
   dart_host_tests = [
-      (os.path.join('flutter', 'ci'), []),
-      (os.path.join('flutter', 'flutter_frontend_server'), {'ENGINE_BUILD_DIR': build_dir}),
-      (os.path.join('flutter', 'testing', 'litetest'), []),
-      (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
-      (os.path.join('flutter', 'testing', 'scenario_app'), []),
-      (
-          os.path.join('flutter', 'tools', 'api_check'),
-          [],
-      ),
-      (os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'), []),
-      (os.path.join('flutter', 'tools', 'clang_tidy'), []),
-      (
-          os.path.join('flutter', 'tools', 'const_finder'),
-          [
-              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
-              os.path.join(build_dir, 'flutter_patched_sdk'),
-              os.path.join(build_dir, 'dart-sdk', 'lib', 'libraries.json'),
-          ],
-      ),
-      (os.path.join('flutter', 'tools', 'dir_contents_diff'), []),
-      (os.path.join('flutter', 'tools', 'engine_tool'), []),
-      (os.path.join('flutter', 'tools', 'githooks'), []),
-      (os.path.join('flutter', 'tools', 'header_guard_check'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'), []),
-      (os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'), []),
+      os.path.join('flutter', 'ci'),
+      os.path.join('flutter', 'flutter_frontend_server'),
+      os.path.join('flutter', 'testing', 'skia_gold_client'),
+      os.path.join('flutter', 'testing', 'scenario_app'),
+      os.path.join('flutter', 'tools', 'api_check'),
+      os.path.join('flutter', 'tools', 'build_bucket_golden_scraper'),
+      os.path.join('flutter', 'tools', 'clang_tidy'),
+      os.path.join('flutter', 'tools', 'const_finder'),
+      os.path.join('flutter', 'tools', 'dir_contents_diff'),
+      os.path.join('flutter', 'tools', 'engine_tool'),
+      os.path.join('flutter', 'tools', 'githooks'),
+      os.path.join('flutter', 'tools', 'header_guard_check'),
+      os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'),
+      os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'),
+      os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'),
   ]
   if not is_asan(build_dir):
-    dart_host_tests += [
-        (os.path.join('flutter', 'tools', 'path_ops', 'dart'), []),
-    ]
+    dart_host_tests += [os.path.join('flutter', 'tools', 'path_ops', 'dart')]
 
   return dart_host_tests
 
@@ -1305,6 +1279,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
   else:
     types = args.type.split(',')
 
+  if 'android' in args.variant:
+    print('Warning: using "android" in variant. Did you mean to use --android-variant?')
+
   build_dir = os.path.join(OUT_DIR, args.variant)
   if args.type != 'java' and args.type != 'android':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
@@ -1341,8 +1318,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           engine_filter,
           repeat_flags,
           coverage=args.coverage,
+          gtest=True,
           extra_env=extra_env,
-          gtest=True
       )
     finally:
       xvfb.stop_virtual_x(build_name)
@@ -1357,13 +1334,12 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     dart_filter = args.dart_host_filter.split(',') if args.dart_host_filter else None
     dart_host_packages = build_dart_host_test_list(build_dir)
     tasks = []
-    for dart_host_package, extra_opts in dart_host_packages:
+    for dart_host_package in dart_host_packages:
       if dart_filter is None or dart_host_package in dart_filter:
         tasks += list(
             gather_dart_package_tests(
                 build_dir,
                 os.path.join(BUILDROOT_DIR, dart_host_package),
-                extra_opts,
             )
         )
 
@@ -1373,9 +1349,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     assert not is_windows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
-      logger.wraning(
+      logger.warning(
           'Can only filter JUnit4 tests by single entire class name, '
-          'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
+          'eg "io.flutter.SmokeTest". Ignoring filter=%s', java_filter
       )
       java_filter = None
     run_java_tests(java_filter, args.android_variant)

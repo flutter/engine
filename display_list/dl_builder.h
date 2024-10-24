@@ -38,10 +38,13 @@ class DisplayListBuilder final : public virtual DlCanvas,
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
                               bool prepare_rtree = false);
 
+  DisplayListBuilder(DlScalar width, DlScalar height)
+      : DisplayListBuilder(SkRect::MakeWH(width, height)) {}
+
   ~DisplayListBuilder();
 
   // |DlCanvas|
-  SkISize GetBaseLayerSize() const override;
+  DlISize GetBaseLayerDimensions() const override;
   // |DlCanvas|
   SkImageInfo GetImageInfo() const override;
 
@@ -49,9 +52,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void Save() override;
 
   // |DlCanvas|
-  void SaveLayer(const SkRect* bounds,
+  void SaveLayer(std::optional<const DlRect>& bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr) override;
+                 const DlImageFilter* backdrop = nullptr,
+                 std::optional<int64_t> backdrop_id = std::nullopt) override;
   // |DlCanvas|
   void Restore() override;
   // |DlCanvas|
@@ -84,48 +88,33 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlCanvas|
   void TransformReset() override;
   // |DlCanvas|
-  void Transform(const SkMatrix* matrix) override;
+  void Transform(const DlMatrix& matrix) override;
   // |DlCanvas|
-  void Transform(const SkM44* matrix44) override;
-  // |DlCanvas|
-  void SetTransform(const SkMatrix* matrix) override {
+  void SetTransform(const DlMatrix& matrix) override {
     TransformReset();
     Transform(matrix);
   }
-  // |DlCanvas|
-  void SetTransform(const SkM44* matrix44) override {
-    TransformReset();
-    Transform(matrix44);
-  }
-  using DlCanvas::Transform;
 
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
   // |DlCanvas|
-  SkM44 GetTransformFullPerspective() const override {
-    return global_state().matrix_4x4();
-  }
-  /// Returns the 3x3 partial perspective transform representing all transform
-  /// operations executed so far in this DisplayList within the enclosing
-  /// save stack.
-  // |DlCanvas|
-  SkMatrix GetTransform() const override { return global_state().matrix_3x3(); }
+  DlMatrix GetMatrix() const override { return global_state().matrix(); }
 
   // |DlCanvas|
-  void ClipRect(const SkRect& rect,
+  void ClipRect(const DlRect& rect,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
-  void ClipOval(const SkRect& bounds,
+  void ClipOval(const DlRect& bounds,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
-  void ClipRRect(const SkRRect& rrect,
-                 ClipOp clip_op = ClipOp::kIntersect,
-                 bool is_aa = false) override;
+  void ClipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op = ClipOp::kIntersect,
+                     bool is_aa = false) override;
   // |DlCanvas|
-  void ClipPath(const SkPath& path,
+  void ClipPath(const DlPath& path,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
 
@@ -133,30 +122,30 @@ class DisplayListBuilder final : public virtual DlCanvas,
   /// measured in the coordinate space within which this DisplayList will
   /// be rendered.
   // |DlCanvas|
-  SkRect GetDestinationClipBounds() const override {
-    return global_state().device_cull_rect();
+  DlRect GetDestinationClipCoverage() const override {
+    return global_state().GetDeviceCullCoverage();
   }
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// transformed into the local coordinate space in which currently
   /// recorded rendering operations are interpreted.
   // |DlCanvas|
-  SkRect GetLocalClipBounds() const override {
-    return global_state().local_cull_rect();
+  DlRect GetLocalClipCoverage() const override {
+    return global_state().GetLocalCullCoverage();
   }
 
   /// Return true iff the supplied bounds are easily shown to be outside
   /// of the current clip bounds. This method may conservatively return
   /// false if it cannot make the determination.
   // |DlCanvas|
-  bool QuickReject(const SkRect& bounds) const override;
+  bool QuickReject(const DlRect& bounds) const override;
 
   // |DlCanvas|
   void DrawPaint(const DlPaint& paint) override;
   // |DlCanvas|
   void DrawColor(DlColor color, DlBlendMode mode) override;
   // |DlCanvas|
-  void DrawLine(const SkPoint& p0,
-                const SkPoint& p1,
+  void DrawLine(const DlPoint& p0,
+                const DlPoint& p1,
                 const DlPaint& paint) override;
   // |DlCanvas|
   void DrawDashedLine(const DlPoint& p0,
@@ -165,23 +154,23 @@ class DisplayListBuilder final : public virtual DlCanvas,
                       DlScalar off_length,
                       const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawRect(const SkRect& rect, const DlPaint& paint) override;
+  void DrawRect(const DlRect& rect, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
+  void DrawOval(const DlRect& bounds, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawCircle(const SkPoint& center,
+  void DrawCircle(const DlPoint& center,
                   DlScalar radius,
                   const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawRRect(const SkRRect& rrect, const DlPaint& paint) override;
+  void DrawRoundRect(const DlRoundRect& rrect, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawDRRect(const SkRRect& outer,
-                  const SkRRect& inner,
-                  const DlPaint& paint) override;
+  void DrawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner,
+                         const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawPath(const SkPath& path, const DlPaint& paint) override;
+  void DrawPath(const DlPath& path, const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawArc(const SkRect& bounds,
+  void DrawArc(const DlRect& bounds,
                DlScalar start,
                DlScalar sweep,
                bool useCenter,
@@ -189,7 +178,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlCanvas|
   void DrawPoints(PointMode mode,
                   uint32_t count,
-                  const SkPoint pts[],
+                  const DlPoint pts[],
                   const DlPaint& paint) override;
   // |DlCanvas|
   void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
@@ -197,33 +186,32 @@ class DisplayListBuilder final : public virtual DlCanvas,
                     const DlPaint& paint) override;
   // |DlCanvas|
   void DrawImage(const sk_sp<DlImage>& image,
-                 const SkPoint& point,
+                 const DlPoint& point,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawImageRect(
       const sk_sp<DlImage>& image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlRect& src,
+      const DlRect& dst,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
-  using DlCanvas::DrawImageRect;
   // |DlCanvas|
   void DrawImageNine(const sk_sp<DlImage>& image,
-                     const SkIRect& center,
-                     const SkRect& dst,
+                     const DlIRect& center,
+                     const DlRect& dst,
                      DlFilterMode filter,
                      const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawAtlas(const sk_sp<DlImage>& atlas,
                  const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cullRect,
+                 const DlRect* cullRect,
                  const DlPaint* paint = nullptr) override;
   // |DlCanvas|
   void DrawDisplayList(const sk_sp<DisplayList> display_list,
@@ -244,7 +232,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
                      const DlPaint& paint) override;
 
   // |DlCanvas|
-  void DrawShadow(const SkPath& path,
+  void DrawShadow(const DlPath& path,
                   const DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,
@@ -254,6 +242,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void Flush() override {}
 
   sk_sp<DisplayList> Build();
+
+  ENABLE_DL_CANVAS_BACKWARDS_COMPATIBILITY
 
  private:
   void Init(bool prepare_rtree);
@@ -365,7 +355,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
   // |DlOpReceiver|
   void restore() override { Restore(); }
 
@@ -401,18 +392,20 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // |DlOpReceiver|
   void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override {
-    ClipRect(ToSkRect(rect), clip_op, is_aa);
+    ClipRect(rect, clip_op, is_aa);
   }
   // |DlOpReceiver|
   void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override {
-    ClipOval(ToSkRect(bounds), clip_op, is_aa);
+    ClipOval(bounds, clip_op, is_aa);
   }
   // |DlOpReceiver|
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override {
-    ClipRRect(rrect, clip_op, is_aa);
+  void clipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override {
+    ClipRoundRect(rrect, clip_op, is_aa);
   }
   // |DlOpReceiver|
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override {
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override {
     ClipPath(path, clip_op, is_aa);
   }
 
@@ -436,11 +429,12 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void drawCircle(const DlPoint& center, DlScalar radius) override;
   // |DlOpReceiver|
-  void drawRRect(const SkRRect& rrect) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
   // |DlOpReceiver|
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
   // |DlOpReceiver|
-  void drawPath(const SkPath& path) override;
+  void drawPath(const DlPath& path) override;
   // |DlOpReceiver|
   void drawArc(const DlRect& bounds,
                DlScalar start,
@@ -492,7 +486,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
                     DlScalar x,
                     DlScalar y) override;
   // |DlOpReceiver|
-  void drawShadow(const SkPath& path,
+  void drawShadow(const DlPath& path,
                   const DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,

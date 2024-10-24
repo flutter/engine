@@ -327,7 +327,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -337,7 +337,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
@@ -347,7 +347,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -357,7 +357,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
@@ -484,51 +484,51 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
        }},
       {"ClipRRect",
        {
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, true);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect.makeOffset(1, 1),
-                          DlCanvas::ClipOp::kIntersect, true);
+              r.clipRoundRect(kTestRRect.Shift(1, 1),
+                              DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, false);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kIntersect, false);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, true);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kDifference, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, false);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kDifference, false);
             }},
        }},
       {"ClipPath",
        {
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath2, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath3, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, false);
             }},
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, true);
             }},
-           {1, 40, 0,
+           {1, 24, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, false);
             }},
@@ -543,7 +543,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
               r.clipPath(kTestPathOval, DlCanvas::ClipOp::kIntersect, true);
             }},
            // clipPath(rrect) becomes clipRRect
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPathRRect, DlCanvas::ClipOp::kIntersect, true);
             }},
@@ -681,29 +681,31 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawRRect",
        {
-           {1, 56, 1, [](DlOpReceiver& r) { r.drawRRect(kTestRRect); }},
+           {1, 56, 1, [](DlOpReceiver& r) { r.drawRoundRect(kTestRRect); }},
            {1, 56, 1,
-            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.makeOffset(5, 5)); }},
+            [](DlOpReceiver& r) { r.drawRoundRect(kTestRRect.Shift(5, 5)); }},
        }},
       {"DrawDRRect",
        {
-           {1, 112, 1,
-            [](DlOpReceiver& r) { r.drawDRRect(kTestRRect, kTestInnerRRect); }},
-           {1, 112, 1,
+           {1, 104, 1,
             [](DlOpReceiver& r) {
-              r.drawDRRect(kTestRRect.makeOffset(5, 5),
-                           kTestInnerRRect.makeOffset(4, 4));
+              r.drawDiffRoundRect(kTestRRect, kTestInnerRRect);
+            }},
+           {1, 104, 1,
+            [](DlOpReceiver& r) {
+              r.drawDiffRoundRect(kTestRRect.Shift(5, 5),
+                                  kTestInnerRRect.Shift(4, 4));
             }},
        }},
       {"DrawPath",
        {
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath1); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath2); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath3); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath1); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath2); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath3); }},
            // oval, rect and rrect paths are left as drawPath
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRRect); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRRect); }},
        }},
       {"DrawArc",
        {
@@ -1029,27 +1031,27 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawShadow",
        {
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath2, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorBLUE), 1.0, false, 1.0);
             }},
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 2.0, false, 1.0);
             }},
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, true, 1.0);
             }},
-           {1, 64, 1,
+           {1, 48, 1,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 2.5);
             }},

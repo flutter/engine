@@ -31,7 +31,8 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void restore() override;
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
 
   void translate(DlScalar tx, DlScalar ty) override;
   void scale(DlScalar sx, DlScalar sy) override;
@@ -52,8 +53,10 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
 
   void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override;
   void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override;
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void clipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override;
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   void drawPaint() override;
   void drawColor(DlColor color, DlBlendMode mode) override;
@@ -65,9 +68,10 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void drawRect(const DlRect& rect) override;
   void drawOval(const DlRect& bounds) override;
   void drawCircle(const DlPoint& center, DlScalar radius) override;
-  void drawRRect(const SkRRect& rrect) override;
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
-  void drawPath(const SkPath& path) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
+  void drawPath(const DlPath& path) override;
   void drawArc(const DlRect& bounds,
                DlScalar start,
                DlScalar sweep,
@@ -107,7 +111,7 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
                      DlScalar x,
                      DlScalar y) override;
-  void drawShadow(const SkPath& path,
+  void drawShadow(const DlPath& path,
                   const DlColor color,
                   const DlScalar elevation,
                   bool transparent_occluder,

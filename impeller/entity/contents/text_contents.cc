@@ -37,16 +37,6 @@ Color TextContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * inherited_opacity_);
 }
 
-bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  // Computing whether or not opacity can be inherited requires determining if
-  // any glyphs can overlap exactly. While this was previously implemented
-  // via TextFrame::MaybeHasOverlapping, this code relied on scaling up text
-  // bounds for a size specified at 1.0 DPR, which was not accurate at
-  // higher or lower DPRs. Rather than re-implement the checks to compute exact
-  // glyph bounds, for now this optimization has been disabled for Text.
-  return false;
-}
-
 void TextContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
 }
@@ -61,13 +51,6 @@ void TextContents::SetForceTextColor(bool value) {
 
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   return frame_->GetBounds().TransformBounds(entity.GetTransform());
-}
-
-void TextContents::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_, properties_);
-  scale_ = scale;
 }
 
 void TextContents::SetTextProperties(Color color,
@@ -222,8 +205,11 @@ bool TextContents::Render(const ContentContext& renderer,
             Point subpixel = TextFrame::ComputeSubpixelPosition(
                 glyph_position, font.GetAxisAlignment(), offset_, scale_);
             std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
-                font_atlas->FindGlyphBounds(
-                    SubpixelGlyph{glyph_position.glyph, subpixel, properties_});
+                font_atlas->FindGlyphBounds(SubpixelGlyph{
+                    glyph_position.glyph, subpixel,
+                    (properties_.stroke || frame_->HasColor())
+                        ? std::optional<GlyphProperties>(properties_)
+                        : std::nullopt});
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
@@ -270,12 +256,9 @@ bool TextContents::Render(const ContentContext& renderer,
         }
       });
 
-  pass.SetVertexBuffer({
-      .vertex_buffer = std::move(buffer_view),
-      .index_buffer = {},
-      .vertex_count = vertex_count,
-      .index_type = IndexType::kNone,
-  });
+  pass.SetVertexBuffer(std::move(buffer_view));
+  pass.SetIndexBuffer({}, IndexType::kNone);
+  pass.SetElementCount(vertex_count);
 
   return pass.Draw().ok();
 }

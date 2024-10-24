@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_GPU_RENDER_PASS_H_
 #define FLUTTER_LIB_GPU_RENDER_PASS_H_
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include "flutter/lib/gpu/command_buffer.h"
@@ -12,7 +13,6 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -35,9 +35,6 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   const std::shared_ptr<const impeller::Context>& GetContext() const;
 
-  impeller::Command& GetCommand();
-  const impeller::Command& GetCommand() const;
-
   impeller::RenderTarget& GetRenderTarget();
   const impeller::RenderTarget& GetRenderTarget() const;
 
@@ -46,39 +43,62 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   impeller::DepthAttachmentDescriptor& GetDepthAttachmentDescriptor();
 
-  impeller::VertexBuffer& GetVertexBuffer();
+  impeller::StencilAttachmentDescriptor& GetStencilFrontAttachmentDescriptor();
+
+  impeller::StencilAttachmentDescriptor& GetStencilBackAttachmentDescriptor();
+
+  impeller::PipelineDescriptor& GetPipelineDescriptor();
 
   bool Begin(flutter::gpu::CommandBuffer& command_buffer);
 
   void SetPipeline(fml::RefPtr<RenderPipeline> pipeline);
 
+  void ClearBindings();
+
+  bool Draw();
+
+  using BufferUniformMap =
+      std::unordered_map<const flutter::gpu::Shader::UniformBinding*,
+                         impeller::BufferAndUniformSlot>;
+  using TextureUniformMap =
+      std::unordered_map<const flutter::gpu::Shader::TextureBinding*,
+                         impeller::TextureAndSampler>;
+
+  BufferUniformMap vertex_uniform_bindings;
+  TextureUniformMap vertex_texture_bindings;
+  BufferUniformMap fragment_uniform_bindings;
+  TextureUniformMap fragment_texture_bindings;
+
+  impeller::BufferView vertex_buffer;
+  impeller::BufferView index_buffer;
+  impeller::IndexType index_buffer_type = impeller::IndexType::kNone;
+  size_t element_count = 0;
+
+  uint32_t stencil_reference = 0;
+
+  // Helper flag to determine whether the vertex_count should override the
+  // element count. The index count takes precedent.
+  bool has_index_buffer = false;
+
+ private:
   /// Lookup an Impeller pipeline by building a descriptor based on the current
   /// command state.
   std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
   GetOrCreatePipeline();
 
-  impeller::Command ProvisionRasterCommand();
-
-  bool Draw();
-
- private:
   impeller::RenderTarget render_target_;
   std::shared_ptr<impeller::RenderPass> render_pass_;
 
   // Command encoding state.
-  impeller::Command command_;
   fml::RefPtr<RenderPipeline> render_pipeline_;
   impeller::PipelineDescriptor pipeline_descriptor_;
 
-  // Pipeline descriptor layout state. We always keep track of this state, but
-  // we'll only apply it as necessary to match the RenderTarget.
+  // Pipeline descriptor layout state. We always keep track of this state,
+  // but we'll only apply it as necessary to match the RenderTarget.
   std::map<size_t, impeller::ColorAttachmentDescriptor> color_descriptors_;
   impeller::StencilAttachmentDescriptor stencil_front_desc_;
   impeller::StencilAttachmentDescriptor stencil_back_desc_;
   impeller::DepthAttachmentDescriptor depth_desc_;
-
-  // Command state.
-  impeller::VertexBuffer vertex_buffer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPass);
 };
@@ -98,10 +118,14 @@ extern void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper);
 FLUTTER_GPU_EXPORT
 extern Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::Context* context,
     int color_attachment_index,
     int load_action,
     int store_action,
-    int clear_color,
+    float clear_color_r,
+    float clear_color_g,
+    float clear_color_b,
+    float clear_color_a,
     flutter::gpu::Texture* texture,
     Dart_Handle resolve_texture_wrapper);
 
@@ -220,6 +244,42 @@ FLUTTER_GPU_EXPORT
 extern void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
     flutter::gpu::RenderPass* wrapper,
     int compare_operation);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetStencilReference(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_reference);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetStencilConfig(
+    flutter::gpu::RenderPass* wrapper,
+    int stencil_compare_operation,
+    int stencil_fail_operation,
+    int depth_fail_operation,
+    int depth_stencil_pass_operation,
+    int read_mask,
+    int write_mask,
+    int target);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetCullMode(
+    flutter::gpu::RenderPass* wrapper,
+    int cull_mode);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetPrimitiveType(
+    flutter::gpu::RenderPass* wrapper,
+    int primitive_type);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetWindingOrder(
+    flutter::gpu::RenderPass* wrapper,
+    int winding_order);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetPolygonMode(
+    flutter::gpu::RenderPass* wrapper,
+    int polygon_mode);
 
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_Draw(

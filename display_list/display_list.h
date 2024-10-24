@@ -100,11 +100,11 @@ namespace flutter {
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectOval)              \
-  V(ClipIntersectRRect)             \
+  V(ClipIntersectRoundRect)         \
   V(ClipIntersectPath)              \
   V(ClipDifferenceRect)             \
   V(ClipDifferenceOval)             \
-  V(ClipDifferenceRRect)            \
+  V(ClipDifferenceRoundRect)        \
   V(ClipDifferencePath)             \
                                     \
   V(DrawPaint)                      \
@@ -115,8 +115,8 @@ namespace flutter {
   V(DrawRect)                       \
   V(DrawOval)                       \
   V(DrawCircle)                     \
-  V(DrawRRect)                      \
-  V(DrawDRRect)                     \
+  V(DrawRoundRect)                  \
+  V(DrawDiffRoundRect)              \
   V(DrawArc)                        \
   V(DrawPath)                       \
                                     \
@@ -143,10 +143,6 @@ namespace flutter {
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType {
   FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE)
-
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_TO_ENUM_VALUE(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
 
   // empty comment to make formatter happy
   kInvalidOp,
