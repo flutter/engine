@@ -88,8 +88,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         bind_point,                                          //
         color.texture->GetTextureDescriptor().format,        //
         color.texture->GetTextureDescriptor().sample_count,  //
-        color.load_action,                                   //
-        color.store_action                                   //
+        LoadAction::kDontCare,                               //
+        StoreAction::kDontCare                               //
     );
     TextureVK::Cast(*color.texture)
         .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
