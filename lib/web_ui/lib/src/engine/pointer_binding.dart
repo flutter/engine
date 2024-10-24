@@ -37,10 +37,11 @@ typedef _PointerDataCallback = void Function(DomEvent event, List<ui.PointerData
 // here, we use an already very large number (30 bits).
 const int _kButtonsMask = 0x3FFFFFFF;
 
-// Assumes the device supports at most one mouse and one trackpad, therefore
-// these pointer events are assigned fixed device IDs.
+// Assumes the device supports at most one mouse, one touch screen, and one
+// trackpad, therefore these pointer events are assigned fixed device IDs.
 const int _mouseDeviceId = -1;
 const int _trackpadDeviceId = -2;
+const int _touchDeviceId = -3;
 // For now only one stylus is supported.
 //
 // Device may support multiple styluses, but `PointerEvent` does not
@@ -48,7 +49,7 @@ const int _trackpadDeviceId = -2;
 // touches from the same stylus will be assigned different `pointerId`s each
 // time. Since it's really hard to handle, support for multiple styluses is
 // left for when demanded.
-const int _stylusDeviceId = -3;
+const int _stylusDeviceId = -4;
 
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
@@ -1155,8 +1156,15 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // and wheel PointerEvents don't contain pointerIds.
     return switch(_pointerTypeToDeviceKind(event.pointerType!)) {
       ui.PointerDeviceKind.mouse => _mouseDeviceId,
-      ui.PointerDeviceKind.stylus => _stylusDeviceId,
-      _ => event.pointerId!.toInt(),
+
+      ui.PointerDeviceKind.stylus ||
+      ui.PointerDeviceKind.invertedStylus => _stylusDeviceId,
+
+      // Trackpad processing doesn't call this function.
+      ui.PointerDeviceKind.trackpad => throw Exception('Unreachable'),
+
+      ui.PointerDeviceKind.touch ||
+      ui.PointerDeviceKind.unknown => event.pointerId!.toInt(),
     };
   }
 
