@@ -183,8 +183,8 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
         if (error) {
           FML_LOG(INFO) << "pipeline creation retry";
           // The dispatch here is just to minimize the number of threads calling
-          // this and to inject a bit of latency after the error. It may not
-          // be necessary.
+          // this. Executing on the platform thread matches the ContentContext
+          // path. It also serializes the retries. It may not be necessary.
           dispatch_async(dispatch_get_main_queue(), ^{
             get_pipeline_descriptor(completion_handler);
           });
