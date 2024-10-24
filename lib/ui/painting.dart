@@ -1219,19 +1219,67 @@ final class Paint {
     // Every field on Paint is deeply immutable, so to create a copy of a Paint
     // object, we copy the underlying data buffer and the list of objects (which
     // are also deeply immutable).
-    // _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
-    isAntiAlias = other.isAntiAlias;
-    color = other.color;
-    blendMode = other.blendMode;
-    style = other.style;
-    strokeJoin = other.strokeJoin;
-    strokeCap = other.strokeCap;
-    strokeMiterLimit = other.strokeMiterLimit;
-    strokeWidth = other.strokeWidth;
-    filterQuality = other.filterQuality;
-    invertColors = other.invertColors;
+    _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
     _objects = other._objects?.toList();
   }
+
+  // Paint objects are encoded in two buffers:
+  //
+  // * _data is binary data in four-byte fields, each of which is either a
+  //   uint32_t or a float. The default value for each field is encoded as
+  //   zero to make initialization trivial. Most values already have a default
+  //   value of zero, but some, such as color, have a non-zero default value.
+  //   To encode or decode these values, XOR the value with the default value.
+  //
+  // * _objects is a list of unencodable objects, typically wrappers for native
+  //   objects. The objects are simply stored in the list without any additional
+  //   encoding.
+  //
+  // The binary format must match the deserialization code in paint.cc.
+
+  // C++ unit tests access this.
+  @pragma('vm:entry-point')
+  final ByteData _data = ByteData(_kDataByteCount);
+
+  // Must match //lib/ui/painting/paint.cc.
+  static const int _kIsAntiAliasIndex = 0;
+  static const int _kColorRedIndex = 1;
+  static const int _kColorGreenIndex = 2;
+  static const int _kColorBlueIndex = 3;
+  static const int _kColorAlphaIndex = 4;
+  static const int _kColorSpaceIndex = 5;
+  static const int _kBlendModeIndex = 6;
+  static const int _kStyleIndex = 7;
+  static const int _kStrokeWidthIndex = 8;
+  static const int _kStrokeCapIndex = 9;
+  static const int _kStrokeJoinIndex = 10;
+  static const int _kStrokeMiterLimitIndex = 11;
+  static const int _kFilterQualityIndex = 12;
+  static const int _kMaskFilterIndex = 13;
+  static const int _kMaskFilterBlurStyleIndex = 14;
+  static const int _kMaskFilterSigmaIndex = 15;
+  static const int _kInvertColorIndex = 16;
+
+  static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
+  static const int _kColorRedOffset = _kColorRedIndex << 2;
+  static const int _kColorGreenOffset = _kColorGreenIndex << 2;
+  static const int _kColorBlueOffset = _kColorBlueIndex << 2;
+  static const int _kColorAlphaOffset = _kColorAlphaIndex << 2;
+  static const int _kColorSpaceOffset = _kColorSpaceIndex << 2;
+  static const int _kBlendModeOffset = _kBlendModeIndex << 2;
+  static const int _kStyleOffset = _kStyleIndex << 2;
+  static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
+  static const int _kStrokeCapOffset = _kStrokeCapIndex << 2;
+  static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
+  static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
+  static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
+  static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
+  static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
+  static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
+  static const int _kInvertColorOffset = _kInvertColorIndex << 2;
+
+  // If you add more fields, remember to update _kDataByteCount.
+  static const int _kDataByteCount = 68; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1251,7 +1299,15 @@ final class Paint {
   /// canvas.
   ///
   /// Defaults to true.
-  bool isAntiAlias = true;
+  bool get isAntiAlias {
+    return _data.getInt32(_kIsAntiAliasOffset, _kFakeHostEndian) == 0;
+  }
+  set isAntiAlias(bool value) {
+    // We encode true as zero and false as one because the default value, which
+    // we always encode as zero, is true.
+    final int encoded = value ? 0 : 1;
+    _data.setInt32(_kIsAntiAliasOffset, encoded, _kFakeHostEndian);
+  }
 
   // Must be kept in sync with the default in paint.cc.
   static const int _kColorDefault = 0xFF000000;
@@ -1268,10 +1324,33 @@ final class Paint {
   ///
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
-  Color color = const Color(_kColorDefault);
+  Color get color {
+    final double red = _data.getFloat32(_kColorRedOffset, _kFakeHostEndian);
+    final double green = _data.getFloat32(_kColorGreenOffset, _kFakeHostEndian);
+    final double blue = _data.getFloat32(_kColorBlueOffset, _kFakeHostEndian);
+    final double alpha =
+        1.0 - _data.getFloat32(_kColorAlphaOffset, _kFakeHostEndian);
+    final ColorSpace colorSpace = _indexToColorSpace(
+        _data.getInt32(_kColorSpaceOffset, _kFakeHostEndian));
+    return Color.from(
+        alpha: alpha,
+        red: red,
+        green: green,
+        blue: blue,
+        colorSpace: colorSpace);
+  }
+
+  set color(Color value) {
+    _data.setFloat32(_kColorRedOffset, value.r, _kFakeHostEndian);
+    _data.setFloat32(_kColorGreenOffset, value.g, _kFakeHostEndian);
+    _data.setFloat32(_kColorBlueOffset, value.b, _kFakeHostEndian);
+    _data.setFloat32(_kColorAlphaOffset, 1.0 - value.a, _kFakeHostEndian);
+    _data.setInt32(_kColorSpaceOffset, _colorSpaceToIndex(value.colorSpace),
+        _kFakeHostEndian);
+  }
 
   // Must be kept in sync with the default in paint.cc.
-  static const BlendMode _kBlendModeDefault = BlendMode.srcOver;
+  static final int _kBlendModeDefault = BlendMode.srcOver.index;
 
   /// A blend mode to apply when a shape is drawn or a layer is composited.
   ///
@@ -1291,25 +1370,50 @@ final class Paint {
   ///    the layer when [Canvas.restore] is called.
   ///  * [BlendMode], which discusses the user of [Canvas.saveLayer] with
   ///    [blendMode].
-  BlendMode blendMode = _kBlendModeDefault;
+  BlendMode get blendMode {
+    final int encoded = _data.getInt32(_kBlendModeOffset, _kFakeHostEndian);
+    return BlendMode.values[encoded ^ _kBlendModeDefault];
+  }
+  set blendMode(BlendMode value) {
+    final int encoded = value.index ^ _kBlendModeDefault;
+    _data.setInt32(_kBlendModeOffset, encoded, _kFakeHostEndian);
+  }
 
   /// Whether to paint inside shapes, the edges of shapes, or both.
   ///
   /// Defaults to [PaintingStyle.fill].
-  PaintingStyle style = PaintingStyle.fill;
+  PaintingStyle get style {
+    return PaintingStyle.values[_data.getInt32(_kStyleOffset, _kFakeHostEndian)];
+  }
+  set style(PaintingStyle value) {
+    final int encoded = value.index;
+    _data.setInt32(_kStyleOffset, encoded, _kFakeHostEndian);
+  }
 
   /// How wide to make edges drawn when [style] is set to
   /// [PaintingStyle.stroke]. The width is given in logical pixels measured in
   /// the direction orthogonal to the direction of the path.
   ///
   /// Defaults to 0.0, which correspond to a hairline width.
-  double strokeWidth = 0.0;
+  double get strokeWidth {
+    return _data.getFloat32(_kStrokeWidthOffset, _kFakeHostEndian);
+  }
+  set strokeWidth(double value) {
+    final double encoded = value;
+    _data.setFloat32(_kStrokeWidthOffset, encoded, _kFakeHostEndian);
+  }
 
   /// The kind of finish to place on the end of lines drawn when
   /// [style] is set to [PaintingStyle.stroke].
   ///
   /// Defaults to [StrokeCap.butt], i.e. no caps.
-  StrokeCap strokeCap = StrokeCap.butt;
+  StrokeCap get strokeCap {
+    return StrokeCap.values[_data.getInt32(_kStrokeCapOffset, _kFakeHostEndian)];
+  }
+  set strokeCap(StrokeCap value) {
+    final int encoded = value.index;
+    _data.setInt32(_kStrokeCapOffset, encoded, _kFakeHostEndian);
+  }
 
   /// The kind of finish to place on the joins between segments.
   ///
@@ -1336,7 +1440,13 @@ final class Paint {
   ///    this is set to [StrokeJoin.miter].
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   ///  * [StrokeJoin] for the definitive list of stroke joins.
-  StrokeJoin strokeJoin = StrokeJoin.miter;
+  StrokeJoin get strokeJoin {
+    return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
+  }
+  set strokeJoin(StrokeJoin value) {
+    final int encoded = value.index;
+    _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
+  }
 
   // Must be kept in sync with the default in paint.cc.
   static const double _kStrokeMiterLimitDefault = 4.0;
@@ -1367,13 +1477,43 @@ final class Paint {
   ///  * [strokeJoin] to control the kind of finish to place on the joins
   ///    between segments.
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
-  double strokeMiterLimit = _kStrokeMiterLimitDefault;
+  double get strokeMiterLimit {
+    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
+  }
+  set strokeMiterLimit(double value) {
+    final double encoded = value - _kStrokeMiterLimitDefault;
+    _data.setFloat32(_kStrokeMiterLimitOffset, encoded, _kFakeHostEndian);
+  }
 
   /// A mask filter (for example, a blur) to apply to a shape after it has been
   /// drawn but before it has been composited into the image.
   ///
   /// See [MaskFilter] for details.
-  MaskFilter? maskFilter;
+  MaskFilter? get maskFilter {
+    switch (_data.getInt32(_kMaskFilterOffset, _kFakeHostEndian)) {
+      case MaskFilter._TypeNone:
+        return null;
+      case MaskFilter._TypeBlur:
+        return MaskFilter.blur(
+          BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
+          _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
+        );
+    }
+    return null;
+  }
+  set maskFilter(MaskFilter? value) {
+    if (value == null) {
+      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
+      _data.setInt32(_kMaskFilterBlurStyleOffset, 0, _kFakeHostEndian);
+      _data.setFloat32(_kMaskFilterSigmaOffset, 0.0, _kFakeHostEndian);
+    } else {
+      // For now we only support one kind of MaskFilter, so we don't need to
+      // check what the type is if it's not null.
+      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
+      _data.setInt32(_kMaskFilterBlurStyleOffset, value._style.index, _kFakeHostEndian);
+      _data.setFloat32(_kMaskFilterSigmaOffset, value._sigma, _kFakeHostEndian);
+    }
+  }
 
   /// Controls the performance vs quality trade-off to use when sampling bitmaps,
   /// as with an [ImageShader], or when drawing images, as with [Canvas.drawImage],
@@ -1381,7 +1521,13 @@ final class Paint {
   ///
   /// Defaults to [FilterQuality.none].
   // TODO(ianh): verify that the image drawing methods actually respect this
-  FilterQuality filterQuality = FilterQuality.none;
+  FilterQuality get filterQuality {
+    return FilterQuality.values[_data.getInt32(_kFilterQualityOffset, _kFakeHostEndian)];
+  }
+  set filterQuality(FilterQuality value) {
+    final int encoded = value.index;
+    _data.setInt32(_kFilterQualityOffset, encoded, _kFakeHostEndian);
+  }
 
   /// The shader to use when stroking or filling a shape.
   ///
@@ -1477,94 +1623,12 @@ final class Paint {
   /// Inverting the colors of an image applies a new color filter that will
   /// be composed with any user provided color filters. This is primarily
   /// used for implementing smart invert on iOS.
-  bool invertColors = false;
-
-
- // Paint objects are encoded in two buffers:
-  //
-  // * _data is binary data in four-byte fields, each of which is either a
-  //   uint32_t or a float. The default value for each field is encoded as
-  //   zero to make initialization trivial. Most values already have a default
-  //   value of zero, but some, such as color, have a non-zero default value.
-  //   To encode or decode these values, XOR the value with the default value.
-  //
-  // * _objects is a list of unencodable objects, typically wrappers for native
-  //   objects. The objects are simply stored in the list without any additional
-  //   encoding.
-  //
-  // The binary format must match the deserialization code in paint.cc.
-
-  // Must match //lib/ui/painting/paint.cc.
-  static const int _kIsAntiAliasIndex = 0;
-  static const int _kColorRedIndex = 1;
-  static const int _kColorGreenIndex = 2;
-  static const int _kColorBlueIndex = 3;
-  static const int _kColorAlphaIndex = 4;
-  static const int _kColorSpaceIndex = 5;
-  static const int _kBlendModeIndex = 6;
-  static const int _kStyleIndex = 7;
-  static const int _kStrokeWidthIndex = 8;
-  static const int _kStrokeCapIndex = 9;
-  static const int _kStrokeJoinIndex = 10;
-  static const int _kStrokeMiterLimitIndex = 11;
-  static const int _kFilterQualityIndex = 12;
-  static const int _kMaskFilterIndex = 13;
-  static const int _kMaskFilterBlurStyleIndex = 14;
-  static const int _kMaskFilterSigmaIndex = 15;
-  static const int _kInvertColorIndex = 16;
-
-  static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorRedOffset = _kColorRedIndex << 2;
-  static const int _kColorGreenOffset = _kColorGreenIndex << 2;
-  static const int _kColorBlueOffset = _kColorBlueIndex << 2;
-  static const int _kColorAlphaOffset = _kColorAlphaIndex << 2;
-  static const int _kColorSpaceOffset = _kColorSpaceIndex << 2;
-  static const int _kBlendModeOffset = _kBlendModeIndex << 2;
-  static const int _kStyleOffset = _kStyleIndex << 2;
-  static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
-  static const int _kStrokeCapOffset = _kStrokeCapIndex << 2;
-  static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
-  static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
-  static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
-  static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
-  static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
-  static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
-  static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-
-  static const int _kDataByteCount = 68;
-
-  // Write the paint state into the scratch space buffer.
-  static void _updatePaintState(Paint paint, ByteData data) {
-    data.setInt32(_kIsAntiAliasOffset, paint.isAntiAlias ? 1 : 0, _kFakeHostEndian);
-    data.setFloat32(_kColorRedOffset, paint.color.r, _kFakeHostEndian);
-    data.setFloat32(_kColorGreenOffset, paint.color.g, _kFakeHostEndian);
-    data.setFloat32(_kColorBlueOffset, paint.color.b, _kFakeHostEndian);
-    data.setFloat32(_kColorAlphaOffset, 1.0 - paint.color.a, _kFakeHostEndian);
-    data.setInt32(_kColorSpaceOffset, _colorSpaceToIndex(paint.color.colorSpace),
-        _kFakeHostEndian);
-
-    data.setInt32(_kBlendModeOffset, paint.blendMode.index, _kFakeHostEndian);
-    data.setInt32(_kStyleOffset, paint.style.index, _kFakeHostEndian);
-    data.setFloat32(_kStrokeWidthOffset, paint.strokeWidth, _kFakeHostEndian);
-    data.setInt32(_kStrokeCapOffset, paint.strokeCap.index, _kFakeHostEndian);
-    data.setInt32(_kStrokeJoinOffset, paint.strokeJoin.index, _kFakeHostEndian);
-    data.setFloat32(_kStrokeMiterLimitOffset, paint.strokeMiterLimit, _kFakeHostEndian);
-
-    if (paint.maskFilter == null) {
-      data.setInt32(_kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
-      data.setInt32(_kMaskFilterBlurStyleOffset, 0, _kFakeHostEndian);
-      data.setFloat32(_kMaskFilterSigmaOffset, 0.0, _kFakeHostEndian);
-    } else {
-      // For now we only support one kind of MaskFilter, so we don't need to
-      // check what the type is if it's not null.
-      data.setInt32(_kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
-      data.setInt32(_kMaskFilterBlurStyleOffset, paint.maskFilter!._style.index, _kFakeHostEndian);
-      data.setFloat32(_kMaskFilterSigmaOffset, paint.maskFilter!._sigma, _kFakeHostEndian);
-    }
-    data.setInt32(_kFilterQualityOffset, paint.filterQuality.index, _kFakeHostEndian);
-    data.setInt32(_kInvertColorOffset, paint.invertColors ? 1 : 0, _kFakeHostEndian);
+  bool get invertColors {
+    return _data.getInt32(_kInvertColorOffset, _kFakeHostEndian) == 1;
   }
-
+  set invertColors(bool value) {
+    _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
+  }
 
   @override
   String toString() {
@@ -1601,7 +1665,7 @@ final class Paint {
       result.write('$semicolon$color');
       semicolon = '; ';
     }
-    if (blendMode != _kBlendModeDefault) {
+    if (blendMode.index != _kBlendModeDefault) {
       result.write('$semicolon$blendMode');
       semicolon = '; ';
     }
@@ -1630,6 +1694,11 @@ final class Paint {
     }
     result.write(')');
     return result.toString();
+  }
+
+  static void _updatePaintState(Paint paint, Uint8List dest) {
+    final Uint8List src = paint._data.buffer.asUint8List();
+    dest.setRange(0, src.length, src);
   }
 }
 
@@ -6036,8 +6105,14 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
     _recorder!._canvas = this;
     cullRect ??= Rect.largest;
     _constructor(_recorder!, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
-    _scratchSpace = getScratchSpace().buffer.asByteData();
+    _scratchSpace = getScratchSpace();
   }
+
+  Uint8List _scratchSpace = Uint8List(0);
+
+  /// Return the scatch space used to encode paint state.
+  @Native<Handle Function(Pointer<Void>)>(symbol: 'Canvas::getScratchSpace')
+  external Uint8List getScratchSpace();
 
   @Native<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>(symbol: 'Canvas::Create')
   external void _constructor(_NativePictureRecorder recorder, double left, double top, double right, double bottom);
@@ -6046,12 +6121,6 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
   // garbage collected until PictureRecorder.endRecording is called.
   _NativePictureRecorder? _recorder;
-
-  ByteData _scratchSpace = ByteData(0);
-
-  /// Return the scatch space used to encode paint state.
-  @Native<Handle Function(Pointer<Void>)>(symbol: 'Canvas::getScratchSpace')
-  external Uint8List getScratchSpace();
 
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
@@ -6405,7 +6474,6 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @override
   void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
-    Paint._updatePaintState(paint, _scratchSpace);
     _drawPoints(paint._objects, pointMode.index, _encodePointList(points));
   }
 

@@ -3572,17 +3572,6 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       }
     }
 
-    ByteData? foreground;
-    ByteData? background;
-    if (style._foreground != null) {
-      foreground = ByteData(Paint._kDataByteCount);
-      Paint._updatePaintState(style._foreground, foreground);
-    }
-    if (style._background != null) {
-      background = ByteData(Paint._kDataByteCount);
-      Paint._updatePaintState(style._background, background);
-    }
-
     _pushStyle(
       encoded,
       fullFontFamilies,
@@ -3593,9 +3582,9 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       style._decorationThickness ?? 0,
       _encodeLocale(style._locale),
       style._background?._objects,
-      background,
+      style._background?._data,
       style._foreground?._objects,
-      foreground,
+      style._foreground?._data,
       Shadow._encodeShadows(style._shadows),
       encodedFontFeatures,
       encodedFontVariations,

@@ -10,6 +10,8 @@
 #include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
 
@@ -42,13 +44,21 @@ constexpr int kColorFilterIndex = 1;
 constexpr int kImageFilterIndex = 2;
 constexpr int kObjectCount = 3;  // One larger than largest object index.
 
+// Must be kept in sync with the default in painting.dart.
+constexpr uint32_t kBlendModeDefault =
+    static_cast<uint32_t>(SkBlendMode::kSrcOver);
+
+// Must be kept in sync with the default in painting.dart, and also with the
+// default SkPaintDefaults_MiterLimit in Skia (which is not in a public header).
+constexpr float kStrokeMiterLimitDefault = 4.0f;
+
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
 enum MaskFilterType { kNull, kBlur };
 
 namespace {
-DlColor ReadColor(const void* byte_data) {
-  const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data);
-  const float* float_data = static_cast<const float*>(byte_data);
+DlColor ReadColor(void* paint_data) {
+  const uint32_t* uint_data = static_cast<const uint32_t*>(paint_data);
+  const float* float_data = static_cast<const float*>(paint_data);
 
   float red = float_data[kColorRedIndex];
   float green = float_data[kColorGreenIndex];
@@ -72,7 +82,6 @@ const DlPaint* Paint::paint(DlPaint& paint,
   if (isNull()) {
     return nullptr;
   }
-
   const uint32_t* uint_data = static_cast<const uint32_t*>(paint_data_);
   const float* float_data = static_cast<const float*>(paint_data_);
 
@@ -137,7 +146,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
   }
 
   if (flags.applies_anti_alias()) {
-    paint.setAntiAlias(uint_data[kIsAntiAliasIndex] != 0);
+    paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
   }
 
   if (flags.applies_alpha_or_color()) {
@@ -145,18 +154,28 @@ const DlPaint* Paint::paint(DlPaint& paint,
   }
 
   if (flags.applies_blend()) {
-    paint.setBlendMode(static_cast<DlBlendMode>(uint_data[kBlendModeIndex]));
+    uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
+    uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
+    paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
   }
 
   if (flags.applies_style()) {
-    paint.setDrawStyle(static_cast<DlDrawStyle>(uint_data[kStyleIndex]));
+    uint32_t style = uint_data[kStyleIndex];
+    paint.setDrawStyle(static_cast<DlDrawStyle>(style));
   }
 
   if (flags.is_stroked(paint.getDrawStyle())) {
-    paint.setStrokeWidth(float_data[kStrokeWidthIndex]);
-    paint.setStrokeMiter(float_data[kStrokeMiterLimitIndex]);
-    paint.setStrokeCap(static_cast<DlStrokeCap>(uint_data[kStrokeCapIndex]));
-    paint.setStrokeJoin(static_cast<DlStrokeJoin>(uint_data[kStrokeJoinIndex]));
+    float stroke_width = float_data[kStrokeWidthIndex];
+    paint.setStrokeWidth(stroke_width);
+
+    float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
+    paint.setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
+
+    uint32_t stroke_cap = uint_data[kStrokeCapIndex];
+    paint.setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
+
+    uint32_t stroke_join = uint_data[kStrokeJoinIndex];
+    paint.setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
   }
 
   if (flags.applies_color_filter()) {
@@ -226,14 +245,28 @@ void Paint::toDlPaint(DlPaint& paint) const {
     }
   }
 
-  paint.setAntiAlias(uint_data[kIsAntiAliasIndex] != 0);
+  paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
   paint.setColor(ReadColor(paint_data_));
-  paint.setBlendMode(static_cast<DlBlendMode>(uint_data[kBlendModeIndex]));
-  paint.setDrawStyle(static_cast<DlDrawStyle>(uint_data[kStyleIndex]));
-  paint.setStrokeWidth(float_data[kStrokeWidthIndex]);
-  paint.setStrokeMiter(float_data[kStrokeMiterLimitIndex]);
-  paint.setStrokeCap(static_cast<DlStrokeCap>(uint_data[kStrokeCapIndex]));
-  paint.setStrokeJoin(static_cast<DlStrokeJoin>(uint_data[kStrokeJoinIndex]));
+
+  uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
+  uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
+  paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
+
+  uint32_t style = uint_data[kStyleIndex];
+  paint.setDrawStyle(static_cast<DlDrawStyle>(style));
+
+  float stroke_width = float_data[kStrokeWidthIndex];
+  paint.setStrokeWidth(stroke_width);
+
+  float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
+  paint.setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
+
+  uint32_t stroke_cap = uint_data[kStrokeCapIndex];
+  paint.setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
+
+  uint32_t stroke_join = uint_data[kStrokeJoinIndex];
+  paint.setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
+
   paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
 
   switch (uint_data[kMaskFilterIndex]) {
