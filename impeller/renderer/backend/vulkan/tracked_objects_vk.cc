@@ -28,8 +28,8 @@ TrackedObjectsVK::TrackedObjectsVK(
   // Starting values were selected by looking at values from
   // AiksTest.CanRenderMultipleBackdropBlurWithSingleBackdropId.
   tracked_objects_.reserve(5);
-  tracked_buffers_.reserve(10);
-  tracked_textures_.reserve(10);
+  tracked_buffers_.reserve(5);
+  tracked_textures_.reserve(5);
 }
 
 TrackedObjectsVK::~TrackedObjectsVK() {
@@ -44,21 +44,24 @@ bool TrackedObjectsVK::IsValid() const {
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<SharedObjectVK> object) {
-  if (!object) {
+  if (!object || (!tracked_objects_.empty() &&
+                  object.get() == tracked_objects_.back().get())) {
     return;
   }
   tracked_objects_.emplace_back(std::move(object));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
-  if (!buffer) {
+  if (!buffer || (!tracked_buffers_.empty() &&
+                  buffer.get() == tracked_buffers_.back().get())) {
     return;
   }
   tracked_buffers_.emplace_back(std::move(buffer));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
-  if (!texture) {
+  if (!texture || (!tracked_textures_.empty() &&
+                   texture.get() == tracked_textures_.back().get())) {
     return;
   }
   tracked_textures_.emplace_back(std::move(texture));
