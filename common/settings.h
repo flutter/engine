@@ -24,7 +24,6 @@ namespace flutter {
 
 // The combination of targeted graphics API and Impeller support.
 enum class AndroidRenderingAPI {
-  kSoftware,
   kImpellerOpenGLES,
   kImpellerVulkan,
   kSkiaOpenGLES
