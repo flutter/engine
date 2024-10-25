@@ -114,7 +114,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     }
     subscriptions.clear();
     lastEditingState = null;
-    EnginePlatformDispatcher.instance.viewManager.safelyBlurElement(activeDomElement);
+    EnginePlatformDispatcher.instance.viewManager.safeBlur(activeDomElement);
     domElement = null;
     activeTextField = null;
     _queuedStyle = null;

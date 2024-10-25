@@ -1988,11 +1988,7 @@ class SemanticsObject {
     assert(!_isDisposed);
     _isDisposed = true;
 
-    EnginePlatformDispatcher.instance.viewManager.safelyBlurElement(
-      element,
-      delayed: false,
-      removeElement: true,
-    );
+    EnginePlatformDispatcher.instance.viewManager.safeRemoveSync(element);
 
     _parent = null;
     semanticRole?.dispose();

@@ -1411,9 +1411,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
-      EnginePlatformDispatcher.instance.viewManager.safelyBlurElement(activeDomElement);
+      EnginePlatformDispatcher.instance.viewManager.safeBlur(activeDomElement);
     } else {
-      EnginePlatformDispatcher.instance.viewManager.safelyBlurElement(activeDomElement, removeElement: true);
+      EnginePlatformDispatcher.instance.viewManager.safeRemove(activeDomElement);
 		}
     domElement = null;
   }

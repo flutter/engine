@@ -122,6 +122,38 @@ class FlutterViewManager {
     return _viewData[viewId];
   }
 
+  /// Blurs [element] by transferring its focus to its [EngineFlutterView]
+  /// `rootElement`.
+  ///
+  /// This operation is asynchronous, but happens as soon as possible
+  /// (see [Timer.run]).
+  Future<void> safeBlur(DomElement element) {
+    return Future<void>(() {
+      _transferFocusToViewRoot(element);
+    });
+  }
+
+  /// Removes [element] after transferring its focus to its [EngineFlutterView]
+  /// `rootElement`.
+  ///
+  /// This operation is asynchronous, but happens as soon as possible
+  /// (see [Timer.run]).
+  ///
+  /// There's a synchronous version of this method: [safeRemoveSync].
+  Future<void> safeRemove(DomElement element) {
+    return Future<void>(() {
+      _transferFocusToViewRoot(element, removeElement: true);
+    });
+  }
+
+  /// Synchronously removes [element] after transferring its focus to its
+  /// [EngineFlutterView] `rootElement`.
+  ///
+  /// This is the synchronous version of [safeRemove].
+  void safeRemoveSync(DomElement element) {
+    _transferFocusToViewRoot(element, removeElement: true);
+  }
+
   /// Attempts to transfer focus (blur) from [element] to its
   /// [EngineFlutterView] DOM's `rootElement`.
   ///
@@ -143,33 +175,18 @@ class FlutterViewManager {
   ///
   /// When [delayed] is true, the blur operation is executed asynchronously as
   /// soon as possible (see [Timer.run]). Else it runs immediately.
-  void safelyBlurElement(
-    DomElement element, {
-    bool removeElement = false,
-    bool delayed = true
-  }) {
-    if (delayed) {
-      Timer.run(() {
-        _transferFocusToViewRoot(element, removeElement: removeElement);
-      });
-      return;
-    }
-    _transferFocusToViewRoot(element, removeElement: removeElement);
-  }
-
-  // The actual implementation of [safelyBlurElement].
   void _transferFocusToViewRoot(
     DomElement element, {
-    required bool removeElement
+    bool removeElement = false,
   }) {
-    // If by the time this method is called the focused element is no longer
-    // `element`, there's no need to move the focus.
-    //
-    // This can happen when another element grabs focus when this method runs
-    // "delayed".
-    if (element == domDocument.activeElement) {
-      final EngineFlutterView? view = findViewForElement(element);
+    final DomElement? activeElement = domDocument.activeElement;
+    // If the element we're operating on is not active anymore (it can happen
+    // when this method is called asynchronously),
+    // OR...
+    // If the element that we want to remove *contains* the `activeElement`...
+    if (element == activeElement || removeElement && element.contains(activeElement)) {
       // Transfer the browser focus to the root element of `view`
+      final EngineFlutterView? view = findViewForElement(element);
       view?.dom.rootElement.focusWithoutScroll();
     }
     if (removeElement) {
