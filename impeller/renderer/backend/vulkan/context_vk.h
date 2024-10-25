@@ -231,12 +231,6 @@ class ContextVK final : public Context,
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
 
-  using DescriptorPoolMap =
-      std::unordered_map<std::thread::id, std::shared_ptr<DescriptorPoolVK>>;
-
-  mutable Mutex desc_pool_mutex_;
-  mutable DescriptorPoolMap IPLR_GUARDED_BY(desc_pool_mutex_)
-      cached_descriptor_pool_;
   bool should_disable_surface_control_ = false;
   bool should_batch_cmd_buffers_ = false;
   std::vector<std::shared_ptr<CommandBuffer>> pending_command_buffers_;
