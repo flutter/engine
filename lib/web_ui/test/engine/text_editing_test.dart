@@ -3068,6 +3068,8 @@ Future<void> testMain() async {
     const String testHint = 'streetAddressLine2';
     const String testId = 'EditableText-659836579';
     const String testPasswordHint = 'password';
+    const String testEmailHint = 'email';
+    const String testUsernameHint = 'username';
 
     test('autofill has correct value', () {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
@@ -3136,6 +3138,42 @@ Future<void> testMain() async {
       expect(testInputElement.type, 'password');
       expect(testInputElement.getAttribute('autocomplete'),
           BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
+    });
+
+    test('email autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testEmailHint, testId));
+
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testEmailHint));
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testEmailHint));
+      expect(testInputElement.type, 'email');
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testEmailHint));
+    });
+
+    test('username autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testUsernameHint, testId));
+
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testUsernameHint));
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testUsernameHint));
+      expect(testInputElement.type, 'text');
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testUsernameHint));
     });
 
     test('autofill with no hints', () {
