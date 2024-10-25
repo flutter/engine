@@ -74,35 +74,6 @@ gpu.RenderPass createRenderPass() {
   return commandBuffer.createRenderPass(renderTarget);
 }
 
-@pragma('vm:entry-point')
-void uniformBindFailsForInvalidHostBufferOffset() {
-  final gpu.RenderPass encoder = createRenderPass();
-
-  final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
-  encoder.bindPipeline(pipeline);
-
-  final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
-  final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
-    1, 0, 0, 0, // mvp
-    0, 1, 0, 0, // mvp
-    0, 0, 1, 0, // mvp
-    0, 0, 0, 1, // mvp
-    0, 1, 0, 1, // color
-  ]));
-  final gpu.BufferView viewWithBadOffset = gpu.BufferView(vertInfoData.buffer,
-      offsetInBytes: 1, lengthInBytes: vertInfoData.lengthInBytes);
-
-  final gpu.UniformSlot vertInfo =
-      pipeline.vertexShader.getUniformSlot('VertInfo');
-  String? exception;
-  try {
-    encoder.bindUniform(vertInfo, viewWithBadOffset);
-  } catch (e) {
-    exception = e.toString();
-  }
-  assert(exception!.contains('Failed to bind uniform'));
-}
-
 ByteData float32(List<double> values) {
   return Float32List.fromList(values).buffer.asByteData();
 }

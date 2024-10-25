@@ -88,7 +88,7 @@ base class GpuContext extends NativeFieldWrapperClass1 {
   }
 
   /// Creates a bump allocator that managed a [DeviceBuffer] block list.
-  /// 
+  ///
   /// See also [HostBuffer].
   HostBuffer createHostBuffer(
       {int blockLengthInBytes = HostBuffer.kDefaultBlockLengthInBytes}) {
