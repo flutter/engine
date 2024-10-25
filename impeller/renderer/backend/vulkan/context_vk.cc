@@ -574,7 +574,9 @@ void ContextVK::Shutdown() {
   // tl;dr: Without it, we get thread::join failures on shutdown.
   fence_waiter_.reset();
   resource_manager_.reset();
-  tls_descriptor_pool_map->erase(GetHash());
+  if (tls_descriptor_pool_map.get()) {
+    tls_descriptor_pool_map->erase(GetHash());
+  }
 
   raster_message_loop_->Terminate();
 }
@@ -681,7 +683,9 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
 }
 
 void ContextVK::DisposeThreadLocalCachedResources() {
-  tls_descriptor_pool_map->erase(GetHash());
+  if (tls_descriptor_pool_map.get()) {
+    tls_descriptor_pool_map->erase(GetHash());
+  }
   command_pool_recycler_->Dispose();
 }
 
