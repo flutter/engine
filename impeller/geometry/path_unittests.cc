@@ -9,6 +9,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/round_rect.h"
 
 namespace impeller {
 namespace testing {
@@ -72,17 +73,9 @@ TEST(PathTest, PathSingleContour) {
 
   {
     Path path = PathBuilder{}
-                    .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10)
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
                     .TakePath();
-
-    EXPECT_TRUE(path.IsSingleContour());
-  }
-
-  {
-    Path path =
-        PathBuilder{}
-            .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20))
-            .TakePath();
 
     EXPECT_TRUE(path.IsSingleContour());
   }
@@ -143,19 +136,22 @@ TEST(PathTest, PathSingleContourDoubleShapes) {
 
   {
     Path path = PathBuilder{}
-                    .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10)
-                    .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10)
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
                     .TakePath();
 
     EXPECT_FALSE(path.IsSingleContour());
   }
 
   {
-    Path path =
-        PathBuilder{}
-            .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20))
-            .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20))
-            .TakePath();
+    Path path = PathBuilder{}
+                    .AddRoundRect(RoundRect::MakeRectXY(
+                        Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20)))
+                    .AddRoundRect(RoundRect::MakeRectXY(
+                        Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20)))
+                    .TakePath();
 
     EXPECT_FALSE(path.IsSingleContour());
   }

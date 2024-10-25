@@ -1541,7 +1541,7 @@ TEST_P(AiksTest, HorizontalHairlinesPixelRegistration) {
         SkRect::MakeLTRB(x0 - cap_pad, y0 - 0.5f, x1 + cap_pad, y1 + 0.5f);
     SkPath expected_path = SkPath::Line({x0, y0}, {x1, y1});
 
-    canvas.DrawLine({x0, y0}, {x1, y1}, stroke_paint);
+    canvas.DrawLine(DlPoint{x0, y0}, DlPoint{x1, y1}, stroke_paint);
     if (stroke_paint.getStrokeCap() == DlStrokeCap::kRound) {
       SkRRect expected_rrect =
           SkRRect::MakeRectXY(expected_rect, cap_pad, cap_pad);
@@ -1628,7 +1628,7 @@ TEST_P(AiksTest, VerticalHairlinesPixelRegistration) {
         SkRect::MakeLTRB(x0 - 0.5f, y0 - cap_pad, x1 + 0.5f, y1 + cap_pad);
     SkPath expected_path = SkPath::Line({x0, y0}, {x1, y1});
 
-    canvas.DrawLine({x0, y0}, {x1, y1}, stroke_paint);
+    canvas.DrawLine(DlPoint{x0, y0}, DlPoint{x1, y1}, stroke_paint);
     if (stroke_paint.getStrokeCap() == DlStrokeCap::kRound) {
       SkRRect expected_rrect =
           SkRRect::MakeRectXY(expected_rect, cap_pad, cap_pad);
