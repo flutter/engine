@@ -570,9 +570,16 @@ ui.Scene backdropBlurWithTileMode(ui.TileMode? tileMode,
                             clipBehavior: ui.Clip.antiAliasWithSaveLayer);
   sceneBuilder.addPicture(ui.Offset.zero, blueGreenGridPicture);
   sceneBuilder.pushBackdropFilter(ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20, tileMode: tileMode));
+  // The following picture prevents the saveLayer in the backdrop filter from
+  // being completely ignored on the skwasm backend due to an interaction with
+  // SkPictureRecorder eliminating saveLayer entries with no content even if
+  // they have a backdrop filter. It draws nothing because the pixels below
+  // it are opaque and dstOver is a NOP in that case, but it is unlikely that
+  // a recording process would be able to figure that out without extensive
+  // analysis between the pictures and layers.
   sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
     canvas.drawRect(ui.Rect.fromLTWH(imgSize * 0.5 - 10, imgSize * 0.5 - 10, 20, 20),
-                    ui.Paint()..color = purple);
+                    ui.Paint()..color = purple..blendMode = ui.BlendMode.dstOver);
   }));
   sceneBuilder.pop();
   sceneBuilder.pop();
