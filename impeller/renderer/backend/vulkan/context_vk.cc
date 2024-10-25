@@ -47,12 +47,6 @@ namespace impeller {
 
 static bool gHasValidationLayers = false;
 
-// Associates a resource with a thread and context.
-using DescriptorPoolMap =
-    std::unordered_map<uint64_t, std::shared_ptr<DescriptorPoolVK>>;
-
-static thread_local std::unique_ptr<DescriptorPoolMap> tls_descriptor_pool_map;
-
 bool HasValidationLayers() {
   return gHasValidationLayers;
 }
@@ -511,18 +505,15 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   // if it exists, otherwise create a new pool.
   std::shared_ptr<DescriptorPoolVK> descriptor_pool;
   {
-    if (!tls_descriptor_pool_map.get()) {
-      tls_descriptor_pool_map.reset(new DescriptorPoolMap());
-    }
-
-    DescriptorPoolMap& desc_pool_map = *tls_descriptor_pool_map.get();
-    const uint64_t hash = GetHash();
-    DescriptorPoolMap::iterator it = desc_pool_map.find(hash);
-    if (it == desc_pool_map.end()) {
-      descriptor_pool = desc_pool_map[hash] =
-          std::make_shared<DescriptorPoolVK>(weak_from_this());
+    Lock lock(desc_pool_mutex_);
+    DescriptorPoolMap::iterator current_pool =
+        cached_descriptor_pool_.find(std::this_thread::get_id());
+    if (current_pool == cached_descriptor_pool_.end()) {
+      descriptor_pool =
+          (cached_descriptor_pool_[std::this_thread::get_id()] =
+               std::make_shared<DescriptorPoolVK>(weak_from_this()));
     } else {
-      descriptor_pool = it->second;
+      descriptor_pool = current_pool->second;
     }
   }
 
@@ -574,7 +565,6 @@ void ContextVK::Shutdown() {
   // tl;dr: Without it, we get thread::join failures on shutdown.
   fence_waiter_.reset();
   resource_manager_.reset();
-  tls_descriptor_pool_map->erase(GetHash());
 
   raster_message_loop_->Terminate();
 }
@@ -681,7 +671,8 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
 }
 
 void ContextVK::DisposeThreadLocalCachedResources() {
-  tls_descriptor_pool_map->erase(GetHash());
+  Lock lock(desc_pool_mutex_);
+  cached_descriptor_pool_.erase(std::this_thread::get_id());
   command_pool_recycler_->Dispose();
 }
 
