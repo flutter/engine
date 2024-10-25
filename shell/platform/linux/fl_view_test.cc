@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/fl_view_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 
@@ -50,7 +49,7 @@ TEST(FlViewTest, FirstFrameSignal) {
 
   EXPECT_FALSE(first_frame_emitted);
 
-  fl_view_redraw(view);
+  fl_renderable_redraw(FL_RENDERABLE(view));
 
   // Signal is emitted in idle, clear the main loop.
   while (g_main_context_iteration(g_main_context_default(), FALSE)) {

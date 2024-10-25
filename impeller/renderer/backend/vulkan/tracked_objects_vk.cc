@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
 
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 
 namespace impeller {
@@ -11,8 +12,9 @@ namespace impeller {
 TrackedObjectsVK::TrackedObjectsVK(
     const std::weak_ptr<const ContextVK>& context,
     const std::shared_ptr<CommandPoolVK>& pool,
+    std::shared_ptr<DescriptorPoolVK> descriptor_pool,
     std::unique_ptr<GPUProbe> probe)
-    : desc_pool_(context), probe_(std::move(probe)) {
+    : desc_pool_(std::move(descriptor_pool)), probe_(std::move(probe)) {
   if (!pool) {
     return;
   }
@@ -23,6 +25,11 @@ TrackedObjectsVK::TrackedObjectsVK(
   pool_ = pool;
   buffer_ = std::move(buffer);
   is_valid_ = true;
+  // Starting values were selected by looking at values from
+  // AiksTest.CanRenderMultipleBackdropBlurWithSingleBackdropId.
+  tracked_objects_.reserve(5);
+  tracked_buffers_.reserve(5);
+  tracked_textures_.reserve(5);
 }
 
 TrackedObjectsVK::~TrackedObjectsVK() {
@@ -37,40 +44,27 @@ bool TrackedObjectsVK::IsValid() const {
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<SharedObjectVK> object) {
-  if (!object) {
+  if (!object || (!tracked_objects_.empty() &&
+                  object.get() == tracked_objects_.back().get())) {
     return;
   }
-  tracked_objects_.insert(std::move(object));
+  tracked_objects_.emplace_back(std::move(object));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
-  if (!buffer) {
+  if (!buffer || (!tracked_buffers_.empty() &&
+                  buffer.get() == tracked_buffers_.back().get())) {
     return;
   }
-  tracked_buffers_.insert(std::move(buffer));
-}
-
-bool TrackedObjectsVK::IsTracking(
-    const std::shared_ptr<const DeviceBuffer>& buffer) const {
-  if (!buffer) {
-    return false;
-  }
-  return tracked_buffers_.find(buffer) != tracked_buffers_.end();
+  tracked_buffers_.emplace_back(std::move(buffer));
 }
 
 void TrackedObjectsVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
-  if (!texture) {
+  if (!texture || (!tracked_textures_.empty() &&
+                   texture.get() == tracked_textures_.back().get())) {
     return;
   }
-  tracked_textures_.insert(std::move(texture));
-}
-
-bool TrackedObjectsVK::IsTracking(
-    const std::shared_ptr<const TextureSourceVK>& texture) const {
-  if (!texture) {
-    return false;
-  }
-  return tracked_textures_.find(texture) != tracked_textures_.end();
+  tracked_textures_.emplace_back(std::move(texture));
 }
 
 vk::CommandBuffer TrackedObjectsVK::GetCommandBuffer() const {
@@ -78,7 +72,7 @@ vk::CommandBuffer TrackedObjectsVK::GetCommandBuffer() const {
 }
 
 DescriptorPoolVK& TrackedObjectsVK::GetDescriptorPool() {
-  return desc_pool_;
+  return *desc_pool_;
 }
 
 GPUProbe& TrackedObjectsVK::GetGPUProbe() const {

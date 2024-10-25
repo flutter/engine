@@ -257,7 +257,7 @@ ContentContext::ContentContext(
 
   {
     TextureDescriptor desc;
-    desc.storage_mode = StorageMode::kHostVisible;
+    desc.storage_mode = StorageMode::kDevicePrivate;
     desc.format = PixelFormat::kR8G8B8A8UNormInt;
     desc.size = ISize{1, 1};
     empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
@@ -493,12 +493,12 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = GetRenderTargetCache()->CreateOffscreenMSAA(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
     subpass_target = GetRenderTargetCache()->CreateOffscreen(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
   return MakeSubpass(label, subpass_target, command_buffer, subpass_callback);
@@ -520,7 +520,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (!sub_renderpass) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
-  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.data()));
+  sub_renderpass->SetLabel(label);
 
   if (!subpass_callback(*this, *sub_renderpass)) {
     return fml::Status(fml::StatusCode::kUnknown, "");

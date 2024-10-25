@@ -244,10 +244,7 @@ static std::optional<Entity> AdvancedBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
@@ -656,11 +653,7 @@ static std::optional<Entity> PipelineBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
@@ -896,11 +889,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(cmd_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(cmd_buffer))) {
     return std::nullopt;
   }
 

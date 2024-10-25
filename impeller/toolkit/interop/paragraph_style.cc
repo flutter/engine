@@ -28,6 +28,7 @@ void ParagraphStyle::SetFontSize(double size) {
 
 void ParagraphStyle::SetHeight(double height) {
   style_.height = height;
+  style_.has_height_override = (height != 0.0);
 }
 
 void ParagraphStyle::SetTextAlignment(txt::TextAlign alignment) {
@@ -51,18 +52,23 @@ void ParagraphStyle::SetForeground(ScopedObject<Paint> paint) {
 }
 
 void ParagraphStyle::SetBackground(ScopedObject<Paint> paint) {
-  backgrond_ = std::move(paint);
+  background_ = std::move(paint);
 }
 
 txt::TextStyle ParagraphStyle::CreateTextStyle() const {
   auto style = style_.GetTextStyle();
+
   if (foreground_) {
     style.foreground = foreground_->GetPaint();
   }
-  if (backgrond_) {
-    style.background = backgrond_->GetPaint();
+  if (background_) {
+    style.background = background_->GetPaint();
   }
   return style;
+}
+
+const txt::ParagraphStyle& ParagraphStyle::GetParagraphStyle() const {
+  return style_;
 }
 
 }  // namespace impeller::interop
