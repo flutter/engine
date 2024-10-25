@@ -1209,7 +1209,8 @@ public class FlutterRenderer implements TextureRegistry {
             + "Display Features: "
             + viewportMetrics.displayFeatures.size());
 
-    int totalFeaturesAndCutouts = viewportMetrics.displayFeatures.size() + viewportMetrics.displayCutouts.size();
+    int totalFeaturesAndCutouts =
+        viewportMetrics.displayFeatures.size() + viewportMetrics.displayCutouts.size();
     int[] displayFeaturesBounds = new int[totalFeaturesAndCutouts * 4];
     int[] displayFeaturesType = new int[totalFeaturesAndCutouts];
     int[] displayFeaturesState = new int[totalFeaturesAndCutouts];
@@ -1230,8 +1231,10 @@ public class FlutterRenderer implements TextureRegistry {
       displayFeaturesBounds[cutoutOffset + 4 * i + 2] = displayCutout.bounds.right;
       displayFeaturesBounds[cutoutOffset + 4 * i + 3] = displayCutout.bounds.bottom;
       // Display cutouts always have type CUTOUT and state UNKNOWN.
-      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] = DisplayFeatureType.CUTOUT.encodedValue;
-      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] = DisplayFeatureState.UNKNOWN.encodedValue;
+      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
+          DisplayFeatureType.CUTOUT.encodedValue;
+      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] =
+          DisplayFeatureState.UNKNOWN.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
