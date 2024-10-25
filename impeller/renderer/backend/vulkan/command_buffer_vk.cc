@@ -22,12 +22,10 @@ namespace impeller {
 CommandBufferVK::CommandBufferVK(
     std::weak_ptr<const Context> context,
     std::weak_ptr<const DeviceHolderVK> device_holder,
-    std::shared_ptr<TrackedObjectsVK> tracked_objects,
-    std::shared_ptr<FenceWaiterVK> fence_waiter)
+    std::shared_ptr<TrackedObjectsVK> tracked_objects)
     : CommandBuffer(std::move(context)),
       device_holder_(std::move(device_holder)),
-      tracked_objects_(std::move(tracked_objects)),
-      fence_waiter_(std::move(fence_waiter)) {}
+      tracked_objects_(std::move(tracked_objects)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
@@ -134,14 +132,6 @@ bool CommandBufferVK::Track(const std::shared_ptr<const DeviceBuffer>& buffer) {
   return true;
 }
 
-bool CommandBufferVK::IsTracking(
-    const std::shared_ptr<const DeviceBuffer>& buffer) const {
-  if (!IsValid()) {
-    return false;
-  }
-  return tracked_objects_->IsTracking(buffer);
-}
-
 bool CommandBufferVK::Track(std::shared_ptr<const TextureSourceVK> texture) {
   if (!IsValid()) {
     return false;
@@ -158,16 +148,6 @@ bool CommandBufferVK::Track(const std::shared_ptr<const Texture>& texture) {
     return true;
   }
   return Track(TextureVK::Cast(*texture).GetTextureSource());
-}
-
-bool CommandBufferVK::IsTracking(
-    const std::shared_ptr<const Texture>& texture) const {
-  if (!IsValid()) {
-    return false;
-  }
-  std::shared_ptr<const TextureSourceVK> source =
-      TextureVK::Cast(*texture).GetTextureSource();
-  return tracked_objects_->IsTracking(source);
 }
 
 fml::StatusOr<vk::DescriptorSet> CommandBufferVK::AllocateDescriptorSets(
@@ -210,6 +190,10 @@ void CommandBufferVK::InsertDebugMarker(std::string_view label) const {
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.insertDebugUtilsLabelEXT(label_info);
   }
+}
+
+DescriptorPoolVK& CommandBufferVK::GetDescriptorPool() const {
+  return tracked_objects_->GetDescriptorPool();
 }
 
 }  // namespace impeller
