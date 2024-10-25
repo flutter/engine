@@ -328,12 +328,15 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil
                                             entrypointArgs:
                                                 (nullable NSArray<NSString*>*)entrypointArgs {
+  NSLog(@"## FlutterDartProject runConfigurationForEntrypoint:libraryOrNil:entrypointArgs:");
   auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
+    NSLog(@"## ... dartLibraryOrNil && entrypointOrNil");
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
                                    std::string([dartLibraryOrNil UTF8String]));
 
   } else if (entrypointOrNil) {
+    NSLog(@"## ... else entrypointOrNil");
     config.SetEntrypoint(std::string([entrypointOrNil UTF8String]));
   }
 

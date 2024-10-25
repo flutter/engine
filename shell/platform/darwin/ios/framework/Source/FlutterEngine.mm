@@ -429,6 +429,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)attachView {
+  NSLog(@"### Calling attachView");
   self.iosPlatformView->attachView();
 }
 
@@ -517,6 +518,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
 - (void)setUpChannels {
+  NSLog(@"########################## setUpChannels");
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
   __weak FlutterEngine* weakSelf = self;
@@ -539,9 +541,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                            codec:[FlutterJSONMethodCodec sharedInstance]];
 
   if ([_initialRoute length] > 0) {
+    NSLog(@"########################## setUpChannels -- invokeMethod:setInitialRoute");
+
     // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
     [self.navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
     _initialRoute = nil;
+    NSLog(@"########################## setUpChannels -- invoked!!!");
   }
 
   self.restorationChannel =
@@ -679,6 +684,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)launchEngine:(NSString*)entrypoint
           libraryURI:(NSString*)libraryOrNil
       entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
+  NSLog(@"## FlutterEngine launchEngine:libraryURI:entrypointArgs: -- calling RunEngine");
   // Launch the Dart application with the inferred run configuration.
   self.shell.RunEngine([self.dartProject runConfigurationForEntrypoint:entrypoint
                                                           libraryOrNil:libraryOrNil
@@ -764,11 +770,13 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute {
+  NSLog(@"###################### Engine: createShell:libraryURI:initialRoute");
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return NO;
   }
 
+  // TODO(cbracken): delete this... it does nothing.
   self.initialRoute = initialRoute;
 
   auto settings = [self.dartProject settings];
@@ -1186,6 +1194,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
+  NSLog(@"### FlutterEngine sendOnChannel:message:binaryReply for channel %@", channel);
   NSParameterAssert(channel);
   NSAssert(_shell && _shell->IsSetup(),
            @"Sending a message before the FlutterEngine has been run.");
@@ -1193,7 +1202,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       (callback == nil) ? nullptr
                         : fml::MakeRefCounted<flutter::PlatformMessageResponseDarwin>(
                               ^(NSData* reply) {
+                                NSLog(@"### Invoking the message callback");
                                 callback(reply);
+                                NSLog(@"### Invoked the message callback");
                               },
                               _shell->GetTaskRunners().GetPlatformTaskRunner());
   std::unique_ptr<flutter::PlatformMessage> platformMessage =

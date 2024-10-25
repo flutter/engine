@@ -47,11 +47,13 @@ FLUTTER_ASSERT_ARC
   FlutterBinaryMessengerConnection waitingForStatusConnection = [binaryMessenger
       setMessageHandlerOnChannel:@"waiting_for_status"
             binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+              NSLog(@"################### waiting_for_status block. Invoking set_scenario");
               FlutterMethodChannel* channel = [FlutterMethodChannel
                   methodChannelWithName:@"driver"
                         binaryMessenger:weakBinaryMessenger
                                   codec:[FlutterJSONMethodCodec sharedInstance]];
               [channel invokeMethod:@"set_scenario" arguments:@{@"name" : @"initial_route_reply"}];
+              NSLog(@"################### waiting_on_status block. Invoked set_scenario");
             }];
 
   XCTestExpectation* customInitialRouteSet =
@@ -59,10 +61,12 @@ FLUTTER_ASSERT_ARC
   FlutterBinaryMessengerConnection initialRoutTestChannelConnection =
       [binaryMessenger setMessageHandlerOnChannel:@"initial_route_test_channel"
                              binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                               NSLog(@"################### initial_route_test_channel block");
                                NSDictionary* dict = [NSJSONSerialization JSONObjectWithData:message
                                                                                     options:0
                                                                                       error:nil];
                                NSString* initialRoute = dict[@"method"];
+                               NSLog(@"################### got route %@", initialRoute);
                                if ([initialRoute isEqualToString:@"myCustomInitialRoute"]) {
                                  [customInitialRouteSet fulfill];
                                } else {
@@ -72,12 +76,15 @@ FLUTTER_ASSERT_ARC
                                }
                              }];
 
+  NSLog(@"################### setting up app delegate");
   AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
   UIViewController* rootVC = appDelegate.window.rootViewController;
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
+  NSLog(@"################### called presentViewController. Waiting.");
 
   [self waitForExpectationsWithTimeout:30.0 handler:nil];
 
+  NSLog(@"################### cleaning up.");
   [binaryMessenger cleanUpConnection:waitingForStatusConnection];
   [binaryMessenger cleanUpConnection:initialRoutTestChannelConnection];
 }

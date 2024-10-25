@@ -42,6 +42,7 @@ PlatformMessageHandlerIos::PlatformMessageHandlerIos(
     : platform_task_runner_(std::move(platform_task_runner)) {}
 
 void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
+  FML_LOG(ERROR) << "## PlatformMessageHandlerIos::HandlePlatformMessage";
   // This can be called from any isolate's thread.
   @autoreleasepool {
     fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
@@ -67,7 +68,9 @@ void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMe
       TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler", platform_message_id,
                                "channel", message->channel().c_str());
       dispatch_block_t run_handler = ^{
+        FML_LOG(ERROR) << "## PlatformMessageHandlerIos::HandlePlatformMessage run_handler block";
         handler(data, ^(NSData* reply) {
+          FML_LOG(ERROR) << "## PlatformMessageHandlerIos::HandlePlatformMessage in handler";
           TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleHandler", platform_message_id);
           // Called from any thread.
           if (completer) {

@@ -314,6 +314,7 @@ void Engine::SetViewportMetrics(int64_t view_id,
 }
 
 void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
+  FML_LOG(ERROR) << "## Engine::DispatchPlatformMessage";
   std::string channel = message->channel();
   if (channel == kLifecycleChannel) {
     if (HandleLifecyclePlatformMessage(message.get())) {
@@ -328,8 +329,10 @@ void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
     return;
   } else if (!runtime_controller_->IsRootIsolateRunning() &&
              channel == kNavigationChannel) {
+    FML_LOG(ERROR) << "## ... navigation channel! handling.";
     // If there's no runtime_, we may still need to set the initial route.
     HandleNavigationPlatformMessage(std::move(message));
+    FML_LOG(ERROR) << "## ... navigation channel! handled.";
     return;
   }
 
@@ -360,19 +363,23 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
 
 bool Engine::HandleNavigationPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
+  FML_LOG(ERROR) << "### Engine::HandleNavigationPlatformMessage";
   const auto& data = message->data();
 
   rapidjson::Document document;
   document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
                  data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
+    FML_LOG(ERROR) << "### ... parse error!";
     return false;
   }
+  FML_LOG(ERROR) << "### ... no parse error!";
   auto root = document.GetObject();
   auto method = root.FindMember("method");
   if (method->value != "setInitialRoute") {
     return false;
   }
+  FML_LOG(ERROR) << "### ... it's setInitialRoute! setting initial_route_";
   auto route = root.FindMember("args");
   initial_route_ = route->value.GetString();
   return true;

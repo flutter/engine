@@ -111,6 +111,7 @@ void PlatformViewIOS::SetOwnerViewController(
 }
 
 void PlatformViewIOS::attachView() {
+  FML_LOG(ERROR) << "PlatformViewIOS::attachView";
   FML_DCHECK(owner_controller_);
   FML_DCHECK(owner_controller_.get().isViewLoaded)
       << "FlutterViewController's view should be loaded "

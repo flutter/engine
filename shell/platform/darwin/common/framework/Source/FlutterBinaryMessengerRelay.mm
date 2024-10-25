@@ -20,7 +20,9 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
+  NSLog(@"############## FlutterBinaryMessageRelay sendOnChannel:message: start");
   if (self.parent) {
+    NSLog(@"############## FlutterBinaryMessageRelay sending on parent");
     [self.parent sendOnChannel:channel message:message binaryReply:nil];
   } else {
     FML_LOG(WARNING) << "Communicating on a dead channel.";

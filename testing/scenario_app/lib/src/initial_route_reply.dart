@@ -13,10 +13,12 @@ class InitialRouteReply extends Scenario {
 
   @override
   void onBeginFrame(Duration duration) {
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Dart onBeginFrame');
     sendJsonMethodCall(
       dispatcher: view.platformDispatcher,
       channel: 'initial_route_test_channel',
       method: view.platformDispatcher.defaultRouteName,
     );
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sendJsonMethodCall done');
   }
 }
