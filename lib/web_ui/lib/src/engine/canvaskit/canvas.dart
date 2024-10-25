@@ -315,13 +315,14 @@ class CkCanvas {
       toSkRect(bounds),
       null,
       null,
+      canvasKit.TileMode.Clamp,
     );
     skPaint?.delete();
   }
 
   void saveLayerWithoutBounds(CkPaint? paint) {
     final skPaint = paint?.toSkPaint();
-    skCanvas.saveLayer(skPaint, null, null, null);
+    skCanvas.saveLayer(skPaint, null, null, null, canvasKit.TileMode.Clamp);
     skPaint?.delete();
   }
 
@@ -333,18 +334,23 @@ class CkCanvas {
     } else {
       convertible = filter as CkManagedSkImageFilterConvertible;
     }
-    // There are 2 ImageFilter objects applied here. The one in the paint
+    // There are 2 ImageFilter objects applied here. The filter in the paint
     // object is applied to the contents and its default tile mode is decal
     // (automatically applied by toSkPaint).
-    // The on supplied as an argument to this function [convertible] will
-    // be applied to the backdrop and its default tile mode is mirror.
+    // The filter supplied as an argument to this function [convertible] will
+    // be applied to the backdrop and its default tile mode will be mirror.
+    // We also pass in the blur tile mode as an argument to saveLayer because
+    // that operation will not adopt the tile mode from the backdrop filter
+    // and instead needs it supplied to the saveLayer call itself as a
+    // separate argument.
     convertible.withSkImageFilter((SkImageFilter filter) {
-      final skPaint = paint?.toSkPaint();
+      final skPaint = paint?.toSkPaint(/*ui.TileMode.decal*/);
       skCanvas.saveLayer(
         skPaint,
         toSkRect(bounds),
         filter,
         0,
+        toSkTileMode(convertible.backdropTileMode ?? ui.TileMode.mirror),
       );
       skPaint?.delete();
     }, defaultBlurTileMode: ui.TileMode.mirror);

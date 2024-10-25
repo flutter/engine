@@ -67,6 +67,8 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
     ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
   });
 
+  ui.TileMode? get backdropTileMode => ui.TileMode.clamp;
+
   @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
     final RawIRect rawRect = scope.convertIRectToNative(inputBounds);
@@ -83,6 +85,9 @@ class SkwasmBlurFilter extends SkwasmImageFilter {
   final double sigmaX;
   final double sigmaY;
   final ui.TileMode? tileMode;
+
+  @override
+  ui.TileMode? get backdropTileMode => tileMode;
 
   @override
   void withRawImageFilter(ImageFilterHandleBorrow borrow, {

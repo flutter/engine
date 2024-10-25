@@ -33,6 +33,8 @@ abstract class CkManagedSkImageFilterConvertible implements ui.ImageFilter {
     ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
   });
 
+  ui.TileMode? get backdropTileMode;
+
   Matrix4 get transform;
 }
 
@@ -59,6 +61,13 @@ abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
       required CkImageFilter inner}) = _CkComposeImageFilter;
 
   CkImageFilter._();
+
+  // The blur ImageFilter will override this and return the necessary
+  // value to hand to the saveLayer call. It is the only filter type that
+  // needs to pass along a tile mode so we just return a default value of
+  // clamp for all other image filters.
+  @override
+  ui.TileMode? get backdropTileMode => ui.TileMode.clamp;
 
   @override
   Matrix4 get transform => Matrix4.identity();
@@ -102,6 +111,9 @@ class _CkBlurImageFilter extends CkImageFilter {
   final double sigmaX;
   final double sigmaY;
   final ui.TileMode? tileMode;
+
+  @override
+  ui.TileMode? get backdropTileMode => tileMode;
 
   @override
   void withSkImageFilter(SkImageFilterBorrow borrow, {

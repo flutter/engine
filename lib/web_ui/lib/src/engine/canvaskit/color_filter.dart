@@ -83,6 +83,13 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
     skImageFilter.delete();
   }
 
+  /// The blur ImageFilter will override this and return the necessary
+  /// value to hand to the saveLayer call. It is the only filter type that
+  /// needs to pass along a tile mode so we just return a default value of
+  /// clamp for color filters.
+  @override
+  ui.TileMode? get backdropTileMode => ui.TileMode.clamp;
+
   @override
   Matrix4 get transform => Matrix4.identity();
 }

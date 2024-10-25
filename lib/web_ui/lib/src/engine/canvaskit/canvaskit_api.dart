@@ -2579,13 +2579,15 @@ extension SkCanvasExtension on SkCanvas {
     JSFloat32Array? bounds,
     SkImageFilter? backdrop,
     JSNumber? flags,
+    SkTileMode backdropTileMode,
   );
   void saveLayer(
     SkPaint? paint,
     Float32List? bounds,
     SkImageFilter? backdrop,
     int? flags,
-  ) => _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS);
+    SkTileMode backdropTileMode,
+  ) => _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS, backdropTileMode);
 
   external JSVoid restore();
 
