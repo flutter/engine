@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_flags.h"
-#include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -15,21 +14,21 @@ namespace flutter {
 class Paint {
  public:
   Paint() = default;
-  Paint(Dart_Handle paint_objects, Dart_Handle paint_data);
+  Paint(Dart_Handle paint_objects, void* paint_data);
 
   const DlPaint* paint(DlPaint& paint,
                        const DisplayListAttributeFlags& flags) const;
 
   void toDlPaint(DlPaint& paint) const;
 
-  bool isNull() const { return Dart_IsNull(paint_data_); }
-  bool isNotNull() const { return !Dart_IsNull(paint_data_); }
+  bool isNull() const { return paint_data_ == nullptr; }
+  bool isNotNull() const { return paint_data_ != nullptr; }
 
  private:
   friend struct tonic::DartConverter<Paint>;
 
   Dart_Handle paint_objects_;
-  Dart_Handle paint_data_;
+  void* paint_data_ = nullptr;
 };
 
 // The PaintData argument is a placeholder to receive encoded data for Paint
