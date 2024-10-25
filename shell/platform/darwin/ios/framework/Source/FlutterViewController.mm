@@ -156,6 +156,7 @@ typedef struct MouseState {
   // TODO(cbracken): https://github.com/flutter/flutter/issues/137801
   // Eliminate once we can use weak pointers in platform_view_ios.h.
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
+  FlutterEngine* _engine;
 
   flutter::ViewportMetrics _viewportMetrics;
   MouseState _mouseState;
@@ -305,6 +306,10 @@ typedef struct MouseState {
   // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
   // Eliminate method calls in initializers and dealloc.
   [self setUpNotificationCenterObservers];
+}
+
+- (FlutterEngine*)engine {
+  return _engine;
 }
 
 - (fml::WeakNSObject<FlutterViewController>)getWeakNSObject {
