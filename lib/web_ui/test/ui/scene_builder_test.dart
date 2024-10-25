@@ -474,7 +474,7 @@ Future<void> testMain() async {
 
       await matchGoldenFile(
           'scene_builder_backdrop_filter_blur_default_tile_mode.png',
-          region: ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
     },
          // HTML renderer doesn't have tile modes
          skip: isHtml);
@@ -485,7 +485,7 @@ Future<void> testMain() async {
 
       await matchGoldenFile(
           'scene_builder_backdrop_filter_blur_clamp_tile_mode.png',
-          region: ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
     },
          // HTML renderer doesn't have tile modes
          skip: isHtml);
@@ -496,7 +496,7 @@ Future<void> testMain() async {
 
       await matchGoldenFile(
           'scene_builder_backdrop_filter_blur_mirror_tile_mode.png',
-          region: ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
     },
          // HTML renderer doesn't have tile modes
          skip: isHtml);
@@ -507,7 +507,7 @@ Future<void> testMain() async {
 
       await matchGoldenFile(
           'scene_builder_backdrop_filter_blur_repeated_tile_mode.png',
-          region: ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
     },
          // HTML renderer doesn't have tile modes
          skip: isHtml);
@@ -518,7 +518,7 @@ Future<void> testMain() async {
 
       await matchGoldenFile(
           'scene_builder_backdrop_filter_blur_decal_tile_mode.png',
-          region: ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
     },
          // HTML renderer doesn't have tile modes
          skip: isHtml);
