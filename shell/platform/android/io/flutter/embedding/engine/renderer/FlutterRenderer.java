@@ -1224,7 +1224,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
     int cutoutOffset = viewportMetrics.displayFeatures.size() * 4;
     for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
-      DisplayFeature displayCutout = viewportMetrics.displayCutouts.get(i);
+      DisplayCutout displayCutout = viewportMetrics.displayCutouts.get(i);
       displayFeaturesBounds[cutoutOffset + 4 * i] = displayCutout.bounds.left;
       displayFeaturesBounds[cutoutOffset + 4 * i + 1] = displayCutout.bounds.top;
       displayFeaturesBounds[cutoutOffset + 4 * i + 2] = displayCutout.bounds.right;
@@ -1351,7 +1351,7 @@ public class FlutterRenderer implements TextureRegistry {
     public List<DisplayFeature> displayFeatures = new ArrayList<>();
 
     // Specifically display cutouts.
-    public List<DisplayFeature> displayCutouts = new ArrayList<>();
+    public List<DisplayCutout> displayCutouts = new ArrayList<>();
   }
 
   /**
@@ -1374,11 +1374,18 @@ public class FlutterRenderer implements TextureRegistry {
       this.type = type;
       this.state = state;
     }
+  }
 
-    public DisplayFeature(Rect bounds, DisplayFeatureType type) {
+  /**
+   * Description of a cutout on the physical display.
+   *
+   * <p>A simplified analog to {@link DisplayFeature} that specifically handles display cutouts.
+   */
+  public static final class DisplayCutout {
+    public final Rect bounds;
+
+    public DisplayCutout(Rect bounds) {
       this.bounds = bounds;
-      this.type = type;
-      this.state = DisplayFeatureState.UNKNOWN;
     }
   }
 

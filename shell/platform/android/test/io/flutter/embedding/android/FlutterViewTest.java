@@ -704,9 +704,9 @@ public class FlutterViewTest {
     assertEquals(featureBounds, features.get(0).bounds);
 
     // Then we simulate the system applying a window inset.
-    List<Rect> boundingRects =
+    List<Rect> cutoutBoundingRects =
         Arrays.asList(new Rect(0, 200, 300, 400), new Rect(150, 0, 300, 150));
-    WindowInsets windowInsets = setupMockDisplayCutout(boundingRects);
+    WindowInsets windowInsets = setupMockDisplayCutout(cutoutBoundingRects);
 
     clearInvocations(flutterRenderer);
     flutterView.onApplyWindowInsets(windowInsets);
@@ -720,13 +720,11 @@ public class FlutterViewTest {
     assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
     assertEquals(featureBounds, features.get(0).bounds);
 
-    features = viewportMetricsCaptor.getValue().displayCutouts;
+    List<FlutterRenderer.DisplayCutout> cutouts = viewportMetricsCaptor.getValue().displayCutouts;
     // Asserts for display cutouts.
-    assertEquals(2, features.size());
+    assertEquals(2, cutouts.size());
     for (int i = 0; i < 2; i++) {
-      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, features.get(i).type);
-      assertEquals(FlutterRenderer.DisplayFeatureState.UNKNOWN, features.get(i).state);
-      assertEquals(boundingRects.get(i), features.get(i).bounds);
+      assertEquals(cutoutBoundingRects.get(i), cutouts.get(i).bounds);
     }
   }
 
@@ -784,23 +782,18 @@ public class FlutterViewTest {
     clearInvocations(flutterRenderer);
 
     // Test that display features do not override cutouts.
-    List<Rect> boundingRects = Arrays.asList(new Rect(0, 200, 300, 400));
-    WindowInsets windowInsets = setupMockDisplayCutout(boundingRects);
+    List<Rect> cutoutBoundingRects = Collections.singletonList(new Rect(0, 200, 300, 400));
+    WindowInsets windowInsets = setupMockDisplayCutout(cutoutBoundingRects);
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(1, viewportMetricsCaptor.getValue().displayCutouts.size());
     assertEquals(
-        FlutterRenderer.DisplayFeatureType.CUTOUT,
-        viewportMetricsCaptor.getValue().displayCutouts.get(0).type);
-    assertEquals(
-        FlutterRenderer.DisplayFeatureState.UNKNOWN,
-        viewportMetricsCaptor.getValue().displayCutouts.get(0).state);
-    assertEquals(
-        boundingRects.get(0), viewportMetricsCaptor.getValue().displayCutouts.get(0).bounds);
+        cutoutBoundingRects.get(0), viewportMetricsCaptor.getValue().displayCutouts.get(0).bounds);
     clearInvocations(flutterRenderer);
 
     FoldingFeature displayFeature = mock(FoldingFeature.class);
-    when(displayFeature.getBounds()).thenReturn(new Rect(0, 0, 100, 100));
+    Rect featureRect = new Rect(0, 0, 100, 100);
+    when(displayFeature.getBounds()).thenReturn(featureRect);
     when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
     when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
 
@@ -819,25 +812,21 @@ public class FlutterViewTest {
     // Then the Renderer receives the display feature
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(1, viewportMetricsCaptor.getValue().displayFeatures.size());
+    FlutterRenderer.DisplayFeature feature = viewportMetricsCaptor.getValue().displayFeatures.get(0);
     assertEquals(
         FlutterRenderer.DisplayFeatureType.HINGE,
-        viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
+        feature.type);
     assertEquals(
         FlutterRenderer.DisplayFeatureState.POSTURE_FLAT,
-        viewportMetricsCaptor.getValue().displayFeatures.get(0).state);
+        feature.state);
     assertEquals(
-        new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
+        featureRect, feature.bounds);
 
     // Assert the display cutout is unaffected.
     assertEquals(1, viewportMetricsCaptor.getValue().displayCutouts.size());
+    FlutterRenderer.DisplayCutout cutout = viewportMetricsCaptor.getValue().displayCutouts.get(0);
     assertEquals(
-        FlutterRenderer.DisplayFeatureType.CUTOUT,
-        viewportMetricsCaptor.getValue().displayCutouts.get(0).type);
-    assertEquals(
-        FlutterRenderer.DisplayFeatureState.UNKNOWN,
-        viewportMetricsCaptor.getValue().displayCutouts.get(0).state);
-    assertEquals(
-        boundingRects.get(0), viewportMetricsCaptor.getValue().displayCutouts.get(0).bounds);
+        cutoutBoundingRects.get(0), cutout.bounds);
   }
 
   @Test

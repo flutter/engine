@@ -294,8 +294,8 @@ public class FlutterRendererTest {
             FlutterRenderer.DisplayFeatureType.FOLD,
             FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
     metrics.displayCutouts.add(
-        new FlutterRenderer.DisplayFeature(
-            new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
+        new FlutterRenderer.DisplayCutout(
+            new Rect(50, 60, 70, 80)));
 
     // Execute the behavior under test.
     flutterRenderer.setViewportMetrics(metrics);
