@@ -671,8 +671,10 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
 }
 
 void ContextVK::DisposeThreadLocalCachedResources() {
-  Lock lock(desc_pool_mutex_);
-  cached_descriptor_pool_.erase(std::this_thread::get_id());
+  {
+    Lock lock(desc_pool_mutex_);
+    cached_descriptor_pool_.erase(std::this_thread::get_id());
+  }
   command_pool_recycler_->Dispose();
 }
 
