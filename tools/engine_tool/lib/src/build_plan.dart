@@ -11,6 +11,8 @@ import 'build_utils.dart';
 import 'environment.dart';
 import 'logger.dart';
 
+const _flagBuildDart = 'build-dart';
+const _flagBuildDartFull = 'build-dart-full';
 const _flagConfig = 'config';
 const _flagConcurrency = 'concurrency';
 const _flagStrategy = 'build-strategy';
@@ -65,6 +67,15 @@ final class BuildPlan {
         }
         return !build.gn.contains('--no-lto');
       }(),
+      buildDart: () {
+        if (args.flag(_flagBuildDartFull)) {
+          return BuildDart.buildFull;
+        }
+        if (args.flag(_flagBuildDart)) {
+          return BuildDart.build;
+        }
+        return BuildDart.prebuilt;
+      }(),
       concurrency: () {
         final value = args.option(_flagConcurrency);
         if (value == null) {
@@ -84,6 +95,7 @@ final class BuildPlan {
     required this.useRbe,
     required this.useLto,
     required this.concurrency,
+    required this.buildDart,
   }) {
     if (!useRbe && strategy == BuildStrategy.remote) {
       throw FatalError(
@@ -156,6 +168,16 @@ final class BuildPlan {
       }(),
     );
 
+    /// Adds the --build-dart and --build-dart-full flags.
+    parser.addFlag(
+      _flagBuildDart,
+      help: 'Build Dart from source.',
+    );
+    parser.addFlag(
+      _flagBuildDartFull,
+      help: 'Build the full Dart SDK from source.',
+    );
+
     // Add --build-strategy.
     parser.addOption(
       _flagStrategy,
@@ -201,6 +223,9 @@ final class BuildPlan {
   /// Whether to build with LTO (link-time optimization).
   final bool useLto;
 
+  /// Whether to build Dart from source or not.
+  final BuildDart buildDart;
+
   @override
   bool operator ==(Object other) {
     return other is BuildPlan &&
@@ -208,12 +233,20 @@ final class BuildPlan {
         strategy == other.strategy &&
         useRbe == other.useRbe &&
         useLto == other.useLto &&
-        concurrency == other.concurrency;
+        concurrency == other.concurrency &&
+        buildDart == other.buildDart;
   }
 
   @override
   int get hashCode {
-    return Object.hash(build.name, strategy, useRbe, useLto, concurrency);
+    return Object.hash(
+      build.name,
+      strategy,
+      useRbe,
+      useLto,
+      concurrency,
+      buildDart,
+    );
   }
 
   /// Converts this build plan to its equivalent [RbeConfig].
@@ -236,6 +269,12 @@ final class BuildPlan {
     return [
       if (!useRbe) '--no-rbe',
       if (useLto) '--lto' else '--no-lto',
+      if (buildDart == BuildDart.build)
+        '--no-prebuilt-dart-sdk'
+      else if (buildDart == BuildDart.buildFull) ...[
+        '--no-prebuilt-dart-sdk',
+        '--full-dart-sdk',
+      ],
     ];
   }
 
@@ -246,6 +285,7 @@ final class BuildPlan {
     buffer.writeln('  build: ${build.name}');
     buffer.writeln('  useLto: $useLto');
     buffer.writeln('  useRbe: $useRbe');
+    buffer.writeln('  build dart: ${buildDart.name}');
     buffer.writeln('  strategy: $strategy');
     buffer.writeln('  concurrency: $concurrency');
     buffer.write('>');
@@ -276,4 +316,16 @@ enum BuildStrategy {
 
   const BuildStrategy(this._help);
   final String _help;
+}
+
+/// Whether to build Dart from source or not.
+enum BuildDart {
+  /// Use the prebuilt Dart.
+  prebuilt,
+
+  /// Build Dart from source.
+  build,
+
+  /// Build the full Dart SDK from source.
+  buildFull,
 }
