@@ -108,9 +108,90 @@ class FlutterViewManager {
     const String viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
     final DomElement? viewRoot = element?.closest(viewRootSelector);
-    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
-    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
-    return viewId == null ? null : _viewData[viewId];
+    if (viewRoot == null) {
+      // `element` is not inside any flutter view.
+      return null;
+    }
+
+    final String? viewIdAttribute = viewRoot.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+    assert(viewIdAttribute != null, 'Located Flutter view is missing its id attribute.');
+
+    final int? viewId = int.tryParse(viewIdAttribute!);
+    assert(viewId != null, 'Flutter view id must be a valid int.');
+
+    return _viewData[viewId];
+  }
+
+  /// Blurs [element] by transferring its focus to its [EngineFlutterView]
+  /// `rootElement`.
+  ///
+  /// This operation is asynchronous, but happens as soon as possible
+  /// (see [Timer.run]).
+  Future<void> safeBlur(DomElement element) {
+    return Future<void>(() {
+      _transferFocusToViewRoot(element);
+    });
+  }
+
+  /// Removes [element] after transferring its focus to its [EngineFlutterView]
+  /// `rootElement`.
+  ///
+  /// This operation is asynchronous, but happens as soon as possible
+  /// (see [Timer.run]).
+  ///
+  /// There's a synchronous version of this method: [safeRemoveSync].
+  Future<void> safeRemove(DomElement element) {
+    return Future<void>(() {
+      _transferFocusToViewRoot(element, removeElement: true);
+    });
+  }
+
+  /// Synchronously removes [element] after transferring its focus to its
+  /// [EngineFlutterView] `rootElement`.
+  ///
+  /// This is the synchronous version of [safeRemove].
+  void safeRemoveSync(DomElement element) {
+    _transferFocusToViewRoot(element, removeElement: true);
+  }
+
+  /// Attempts to transfer focus (blur) from [element] to its
+  /// [EngineFlutterView] DOM's `rootElement`.
+  ///
+  /// This focus "transfer" achieves two things:
+  ///
+  /// * Ensures the focus is preserved within the Flutter View when blurring
+  ///   elements that are part of the internal DOM structure of the Flutter
+  ///   app. This...
+  /// * Prevents the Flutter engine from reporting bogus "blur" events from the
+  ///   Flutter View because, by default, calling "blur" on an element moves the
+  ///   document.currentElement to the `body` of the page.
+  ///
+  /// See: https://jsfiddle.net/ditman/1e2swpno for a JS-only demonstration.
+  ///
+  /// When [removeElement] is true, `element` will be removed from the DOM after
+  /// its focus is transferred to the root of the view. This can be used to
+  /// safely remove (potentially focused) element, by preserving focus within
+  /// the Flutter view.
+  ///
+  /// When [delayed] is true, the blur operation is executed asynchronously as
+  /// soon as possible (see [Timer.run]). Else it runs immediately.
+  void _transferFocusToViewRoot(
+    DomElement element, {
+    bool removeElement = false,
+  }) {
+    final DomElement? activeElement = domDocument.activeElement;
+    // If the element we're operating on is not active anymore (it can happen
+    // when this method is called asynchronously),
+    // OR...
+    // If the element that we want to remove *contains* the `activeElement`...
+    if (element == activeElement || removeElement && element.contains(activeElement)) {
+      // Transfer the browser focus to the root element of `view`
+      final EngineFlutterView? view = findViewForElement(element);
+      view?.dom.rootElement.focusWithoutScroll();
+    }
+    if (removeElement) {
+      element.remove();
+    }
   }
 
   void dispose() {
