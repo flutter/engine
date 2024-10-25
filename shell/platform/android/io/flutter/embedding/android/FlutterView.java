@@ -541,7 +541,7 @@ public class FlutterView extends FrameLayout
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> newDisplayFeatures = layoutInfo.getDisplayFeatures();
-    displayFeatures.clear();
+    viewportMetrics.displayFeatures.clear();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
@@ -568,10 +568,10 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        displayFeatures.add(
+        viewportMetrics.displayFeatures.add(
             new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        displayFeatures.add(
+        viewportMetrics.displayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
@@ -772,13 +772,13 @@ public class FlutterView extends FrameLayout
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
     // populated here. DisplayCutout was introduced in API 28.
-    displayCutouts.clear();
+    viewportMetrics.displayCutouts.clear();
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       DisplayCutout cutout = insets.getDisplayCutout();
       if (cutout != null) {
         for (Rect bounds : cutout.getBoundingRects()) {
           Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-          displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
+          viewportMetrics.displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
         }
       }
     }
@@ -1492,9 +1492,9 @@ public class FlutterView extends FrameLayout
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 
-    viewportMetrics.displayFeatures.clear();
-    viewportMetrics.displayFeatures.addAll(displayFeatures);
-    viewportMetrics.displayFeatures.addAll(displayCutouts);
+    //viewportMetrics.displayFeatures.clear();
+    //viewportMetrics.displayFeatures.addAll(displayFeatures);
+    //viewportMetrics.displayFeatures.addAll(displayCutouts);
 
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }

@@ -1209,9 +1209,10 @@ public class FlutterRenderer implements TextureRegistry {
             + "Display Features: "
             + viewportMetrics.displayFeatures.size());
 
-    int[] displayFeaturesBounds = new int[viewportMetrics.displayFeatures.size() * 4];
-    int[] displayFeaturesType = new int[viewportMetrics.displayFeatures.size()];
-    int[] displayFeaturesState = new int[viewportMetrics.displayFeatures.size()];
+    int totalFeaturesAndCutouts = viewportMetrics.displayFeatures.size() + viewportMetrics.displayCutouts.size();
+    int[] displayFeaturesBounds = new int[totalFeaturesAndCutouts * 4];
+    int[] displayFeaturesType = new int[totalFeaturesAndCutouts];
+    int[] displayFeaturesState = new int[totalFeaturesAndCutouts];
     for (int i = 0; i < viewportMetrics.displayFeatures.size(); i++) {
       DisplayFeature displayFeature = viewportMetrics.displayFeatures.get(i);
       displayFeaturesBounds[4 * i] = displayFeature.bounds.left;
@@ -1220,6 +1221,17 @@ public class FlutterRenderer implements TextureRegistry {
       displayFeaturesBounds[4 * i + 3] = displayFeature.bounds.bottom;
       displayFeaturesType[i] = displayFeature.type.encodedValue;
       displayFeaturesState[i] = displayFeature.state.encodedValue;
+    }
+    int cutoutOffset = viewportMetrics.displayFeatures.size() * 4;
+    for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
+      DisplayFeature displayCutout = viewportMetrics.displayCutouts.get(i);
+      displayFeaturesBounds[cutoutOffset + 4 * i] = displayCutout.bounds.left;
+      displayFeaturesBounds[cutoutOffset + 4 * i + 1] = displayCutout.bounds.top;
+      displayFeaturesBounds[cutoutOffset + 4 * i + 2] = displayCutout.bounds.right;
+      displayFeaturesBounds[cutoutOffset + 4 * i + 3] = displayCutout.bounds.bottom;
+      // Display cutouts always have type CUTOUT and state UNKNOWN.
+      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] = DisplayFeatureType.CUTOUT.encodedValue;
+      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] = DisplayFeatureState.UNKNOWN.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -1335,7 +1347,11 @@ public class FlutterRenderer implements TextureRegistry {
       return width > 0 && height > 0 && devicePixelRatio > 0;
     }
 
+    // Features
     public List<DisplayFeature> displayFeatures = new ArrayList<>();
+
+    // Specifically display cutouts.
+    public List<DisplayFeature> displayCutouts = new ArrayList<>();
   }
 
   /**
