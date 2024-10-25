@@ -1492,10 +1492,6 @@ public class FlutterView extends FrameLayout
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 
-    // viewportMetrics.displayFeatures.clear();
-    // viewportMetrics.displayFeatures.addAll(displayFeatures);
-    // viewportMetrics.displayFeatures.addAll(displayCutouts);
-
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 
