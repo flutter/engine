@@ -988,9 +988,12 @@ class LayerSliceBuilder {
     cullRect = cullRect?.expandToInclude(pictureRect) ?? pictureRect;
   }
 
+  (ui.PictureRecorder, SceneCanvas) createRecorder(ui.Rect rect) =>
+    debugRecorderFactory != null ? debugRecorderFactory!(rect) : defaultRecorderFactory(rect);
+
   LayerSlice buildWithOperation(LayerOperation operation) {
     final ui.Rect recorderRect = operation.mapRect(cullRect ?? ui.Rect.zero);
-    final (recorder, canvas) = debugRecorderFactory != null ? debugRecorderFactory!(recorderRect) : defaultRecorderFactory(recorderRect);
+    final (recorder, canvas) = createRecorder(recorderRect);
     operation.pre(canvas);
     for (final (picture, offset) in pictures) {
       if (offset != ui.Offset.zero) {

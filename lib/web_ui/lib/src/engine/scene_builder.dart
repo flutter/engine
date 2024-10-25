@@ -279,7 +279,6 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     sliceIndex = 0;
     final SceneSlice slice = sceneSlices[sliceIndex];
     slice.platformViewOcclusionMap.addRect(globalPlatformViewRect);
-    print('placed platform view. localRect: $rect globalRect: $globalPlatformViewRect sliceIndex: $sliceIndex');
     return sliceIndex;
   }
 
