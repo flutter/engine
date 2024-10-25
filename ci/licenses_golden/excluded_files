@@ -34,6 +34,7 @@
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
 ../../../flutter/display_list/dl_paint_unittests.cc
+../../../flutter/display_list/dl_storage_unittests.cc
 ../../../flutter/display_list/dl_vertices_unittests.cc
 ../../../flutter/display_list/effects/dl_color_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_color_source_unittests.cc
@@ -435,6 +436,7 @@
 ../../../flutter/sky/packages/sky_engine/README.md
 ../../../flutter/sky/packages/sky_engine/lib/_embedder.yaml
 ../../../flutter/sky/packages/sky_engine/pubspec.yaml
+../../../flutter/sky/tools/cp.py
 ../../../flutter/sky/tools/create_embedder_framework.py
 ../../../flutter/sky/tools/create_ios_framework.py
 ../../../flutter/sky/tools/create_macos_binary.py
@@ -2583,7 +2585,6 @@
 ../../../flutter/third_party/pkg/node_preamble/example
 ../../../flutter/third_party/pkg/node_preamble/package.json
 ../../../flutter/third_party/pkg/node_preamble/pubspec.yaml
-../../../flutter/third_party/pkg/platform
 ../../../flutter/third_party/pkg/process
 ../../../flutter/third_party/pkg/process_runner
 ../../../flutter/third_party/pkg/vector_math
