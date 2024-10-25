@@ -59,7 +59,7 @@ FLUTTER_ASSERT_ARC
   };
 
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ invokeExpectation ]];
   [mockApplication stopMocking];
 }
 
@@ -90,7 +90,7 @@ FLUTTER_ASSERT_ARC
   };
 
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ invokeExpectation ]];
   [mockApplication stopMocking];
 }
 
@@ -119,7 +119,7 @@ FLUTTER_ASSERT_ARC
     [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectations:@[ presentExpectation ]];
 }
 
 - (void)testShareScreenInvoked {
@@ -151,7 +151,7 @@ FLUTTER_ASSERT_ARC
     [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ presentExpectation ]];
 }
 
 - (void)testShareScreenInvokedOnIPad {
@@ -186,7 +186,7 @@ FLUTTER_ASSERT_ARC
     [presentExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ presentExpectation ]];
 }
 
 - (void)testClipboardHasCorrectStrings {
@@ -202,7 +202,7 @@ FLUTTER_ASSERT_ARC
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : @"some string"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ setStringExpectation ]];
 
   XCTestExpectation* hasStringsExpectation = [self expectationWithDescription:@"hasStrings"];
   FlutterResult result = ^(id result) {
@@ -212,7 +212,7 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [plugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ hasStringsExpectation ]];
 
   XCTestExpectation* getDataExpectation = [self expectationWithDescription:@"getData"];
   FlutterResult getDataResult = ^(id result) {
@@ -222,7 +222,7 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* methodCallGetData =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData" arguments:@"text/plain"];
   [plugin handleMethodCall:methodCallGetData result:getDataResult];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ getDataExpectation ]];
 }
 
 - (void)testClipboardSetDataToNullDoNotCrash {
@@ -247,7 +247,7 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Clipboard.getData"
                                                                     arguments:@"text/plain"];
   [plugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ setStringExpectation, getDataExpectation ]];
 }
 
 - (void)testPopSystemNavigator {
@@ -271,7 +271,7 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"SystemNavigator.pop" arguments:@(YES)];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ navigationPopCalled ]];
   OCMVerify([navigationControllerMock popViewControllerAnimated:YES]);
 
   [flutterViewController deregisterNotifications];
@@ -291,7 +291,7 @@ FLUTTER_ASSERT_ARC
     [invokeExpectation fulfill];
   };
   [mockPlugin handleMethodCall:methodCall result:result];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ invokeExpectation ]];
 }
 
 - (void)testViewControllerBasedStatusBarHiddenUpdate {
@@ -318,7 +318,7 @@ FLUTTER_ASSERT_ARC
         [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
                                           arguments:@[ @"SystemUiOverlay.bottom" ]];
     [plugin handleMethodCall:methodCallSet result:resultSet];
-    [self waitForExpectationsWithTimeout:1 handler:nil];
+    [self waitForExpectations:@[ enableSystemUIOverlaysCalled ]];
     XCTAssertTrue(flutterViewController.prefersStatusBarHidden);
 
     // Update to shown.
@@ -331,7 +331,7 @@ FLUTTER_ASSERT_ARC
         [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
                                           arguments:@[ @"SystemUiOverlay.top" ]];
     [plugin handleMethodCall:methodCallSet2 result:resultSet2];
-    [self waitForExpectationsWithTimeout:1 handler:nil];
+    [self waitForExpectations:@[ enableSystemUIOverlaysCalled2 ]];
     XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
 
     [flutterViewController deregisterNotifications];
@@ -356,7 +356,7 @@ FLUTTER_ASSERT_ARC
         [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIMode"
                                           arguments:@"SystemUiMode.immersive"];
     [plugin handleMethodCall:methodCallSet result:resultSet];
-    [self waitForExpectationsWithTimeout:1 handler:nil];
+    [self waitForExpectations:@[ enableSystemUIModeCalled ]];
     XCTAssertTrue(flutterViewController.prefersStatusBarHidden);
 
     // Update to shown.
@@ -369,7 +369,7 @@ FLUTTER_ASSERT_ARC
         [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIMode"
                                           arguments:@"SystemUiMode.edgeToEdge"];
     [plugin handleMethodCall:methodCallSet2 result:resultSet2];
-    [self waitForExpectationsWithTimeout:1 handler:nil];
+    [self waitForExpectations:@[ enableSystemUIModeCalled2 ]];
     XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
 
     [flutterViewController deregisterNotifications];
@@ -402,7 +402,7 @@ FLUTTER_ASSERT_ARC
       [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
                                         arguments:@[ @"SystemUiOverlay.bottom" ]];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ enableSystemUIOverlaysCalled ]];
 #if not APPLICATION_EXTENSION_API_ONLY
   OCMVerify([mockApplication setStatusBarHidden:YES]);
 #endif
@@ -417,7 +417,7 @@ FLUTTER_ASSERT_ARC
       [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
                                         arguments:@[ @"SystemUiOverlay.top" ]];
   [plugin handleMethodCall:methodCallSet2 result:resultSet2];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ enableSystemUIOverlaysCalled2 ]];
 #if not APPLICATION_EXTENSION_API_ONLY
   OCMVerify([mockApplication setStatusBarHidden:NO]);
 #endif
@@ -451,7 +451,7 @@ FLUTTER_ASSERT_ARC
       [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setSystemUIOverlayStyle"
                                         arguments:@{@"statusBarBrightness" : @"Brightness.dark"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ enableSystemUIModeCalled ]];
 
 #if not APPLICATION_EXTENSION_API_ONLY
   OCMVerify([mockApplication setStatusBarStyle:UIStatusBarStyleLightContent]);
