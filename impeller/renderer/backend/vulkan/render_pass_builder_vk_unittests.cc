@@ -31,7 +31,6 @@ TEST(RenderPassBuilder, RenderPassWithLoadOpUsesCurrentLayout) {
   RenderPassBuilderVK builder = RenderPassBuilderVK();
   auto const context = MockVulkanContextBuilder().Build();
 
-  // Create a single color attachment with a transient depth stencil.
   builder.SetColorAttachment(0, PixelFormat::kR8G8B8A8UNormInt,
                              SampleCount::kCount1, LoadAction::kLoad,
                              StoreAction::kStore,
