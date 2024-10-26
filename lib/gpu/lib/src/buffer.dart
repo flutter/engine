@@ -163,12 +163,18 @@ base class HostBuffer {
   /// The length to use for each [DeviceBuffer] block.
   final int blockLengthInBytes;
 
-  /// The maximum number of frames
-  static const int _kArenaFrames = 4;
+  static const int _kFrameCount = 4;
+
+  /// The number of frames to cycle through before reusing device buffers.
+  /// Cycling to the next frame happens when [reset] is called.
+  int get frameCount {
+    return _kFrameCount;
+  }
 
   final GpuContext _gpuContext;
 
-  /// The current frame. Rotates through [_kArenaFrames] when [reset] is called.
+  /// The current frame. Rotates through [frameCount] frames when [reset] is
+  /// called.
   int _frameCursor = 0;
 
   /// The buffer within the current frame to be used for the next emplacement.
@@ -182,7 +188,7 @@ base class HostBuffer {
   /// Creates a new HostBuffer.
   HostBuffer._initialize(this._gpuContext,
       {this.blockLengthInBytes = HostBuffer.kDefaultBlockLengthInBytes}) {
-    for (int i = 0; i < _kArenaFrames; i++) {
+    for (int i = 0; i < frameCount; i++) {
       List<DeviceBuffer> frame = [];
       _buffers.add(frame);
       _buffers[i].add(_allocateNewBlock(blockLengthInBytes));
@@ -249,7 +255,7 @@ base class HostBuffer {
   /// Resets the bump allocator to the beginning of the first [DeviceBuffer]
   /// block.
   void reset() {
-    _frameCursor = (_frameCursor + 1) % _kArenaFrames;
+    _frameCursor = (_frameCursor + 1) % frameCount;
     _bufferCursor = 0;
     _offsetCursor = 0;
   }
