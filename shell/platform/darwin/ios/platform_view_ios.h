@@ -57,7 +57,7 @@ class PlatformViewIOS final : public PlatformView {
    * Returns the `FlutterViewController` currently attached to the `FlutterEngine` owning
    * this PlatformViewIOS.
    */
-  FlutterViewController* GetOwnerViewController() const;
+  FlutterViewController* GetOwnerViewController() const __attribute__((cf_audited_transfer));
 
   /**
    * Updates the `FlutterViewController` currently attached to the `FlutterEngine` owning
