@@ -61,19 +61,6 @@ gpu.RenderPipeline createUnlitRenderPipeline() {
   return gpu.gpuContext.createRenderPipeline(vertex!, fragment!);
 }
 
-gpu.RenderPass createRenderPass() {
-  final gpu.Texture? renderTexture =
-      gpu.gpuContext.createTexture(gpu.StorageMode.devicePrivate, 100, 100);
-  assert(renderTexture != null);
-
-  final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
-
-  final gpu.RenderTarget renderTarget = gpu.RenderTarget.singleColor(
-    gpu.ColorAttachment(texture: renderTexture!),
-  );
-  return commandBuffer.createRenderPass(renderTarget);
-}
-
 ByteData float32(List<double> values) {
   return Float32List.fromList(values).buffer.asByteData();
 }
