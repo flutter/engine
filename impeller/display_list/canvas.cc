@@ -292,9 +292,9 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
     FillPathGeometry geom(path);
     AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
   } else {
-    StrokePathGeometry geom(path, paint.stroke_width, paint.stroke_miter,
-                            paint.stroke_cap, paint.stroke_join);
-    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+    // StrokePathGeometry geom(path, paint.stroke_width, paint.stroke_miter,
+    //                         paint.stroke_cap, paint.stroke_join);
+    // AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
   }
 }
 
@@ -623,9 +623,14 @@ void Canvas::ClipGeometry(const Geometry& geometry,
       entity,                                                      //
       *render_passes_.back().inline_pass_context->GetRenderPass()  //
   );
-  clip_contents.SetGeometry(geometry_result);
-  clip_coverage_stack_.GetLastReplayResult().clip_contents.SetGeometry(
-      geometry_result);
+  if (backdrop_count_ == 0 &&
+      renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    clip_contents.SetGeometry(std::move(geometry_result));
+  } else {
+    clip_contents.SetGeometry(geometry_result);
+    clip_coverage_stack_.GetLastReplayResult().clip_contents.SetGeometry(
+        std::move(geometry_result));
+  }
 
   clip_contents.Render(
       renderer_, *render_passes_.back().inline_pass_context->GetRenderPass(),

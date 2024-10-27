@@ -19,14 +19,49 @@ namespace impeller {
 ///        strip.
 class VertexWriter {
  public:
-  explicit VertexWriter(std::vector<Point>& points,
-                        std::vector<uint16_t>& indices);
+  virtual void EndContour() = 0;
 
-  ~VertexWriter() = default;
+  virtual void Write(Point point) = 0;
+};
 
-  void EndContour();
+class DirectVertexWriter : public VertexWriter {
+ public:
+  explicit DirectVertexWriter(Point* point_buffer, uint16_t* index_buffer)
+      : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
 
-  void Write(Point point);
+  ~DirectVertexWriter() = default;
+
+  size_t GetIndexCount() const { return index_count_; }
+
+  void EndContour() override {
+    if (count_ == 0) {
+      return;
+    }
+    index_buffer_[index_count_++] = 0xFFFF;
+  }
+
+  void Write(Point point) override {
+    index_buffer_[index_count_++] = count_;
+    point_buffer_[count_++] = point;
+  }
+
+ private:
+  size_t count_ = 0;
+  size_t index_count_ = 0;
+  Point* point_buffer_;
+  uint16_t* index_buffer_;
+};
+
+class GLESVertexWriter : public VertexWriter {
+ public:
+  explicit GLESVertexWriter(std::vector<Point>& points,
+                            std::vector<uint16_t>& indices);
+
+  ~GLESVertexWriter() = default;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
 
  private:
   bool previous_contour_odd_points_ = false;
@@ -85,6 +120,8 @@ struct QuadraticPathComponent {
 
   void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
 
+  size_t CountLinearPathComponents(Scalar scale) const;
+
   std::vector<Point> Extrema() const;
 
   bool operator==(const QuadraticPathComponent& other) const {
@@ -131,6 +168,8 @@ struct CubicPathComponent {
   void ToLinearPathComponents(Scalar scale, const PointProc& proc) const;
 
   void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
+
+  size_t CountLinearPathComponents(Scalar scale) const;
 
   CubicPathComponent Subsegment(Scalar t0, Scalar t1) const;
 
