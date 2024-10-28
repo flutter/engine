@@ -45,6 +45,17 @@ class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
  public:
+  /// Embedder Stuff
+  struct EmbedderData {
+    VkInstance instance;
+    VkPhysicalDevice physical_device;
+    VkDevice device;
+    uint32_t queue_family_index;
+    VkQueue queue;
+    std::vector<std::string> instance_extensions;
+    std::vector<std::string> device_extensions;
+  };
+
   struct Settings {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
@@ -54,6 +65,8 @@ class ContextVK final : public Context,
     bool disable_surface_control = false;
     /// If validations are requested but cannot be enabled, log a fatal error.
     bool fatal_missing_validations = false;
+
+    std::optional<EmbedderData> embedder_data;
 
     Settings() = default;
 
@@ -207,9 +220,17 @@ class ContextVK final : public Context,
       return physical_device;
     }
 
+    ~DeviceHolderImpl() {
+      if (!owned) {
+        instance.release();
+        device.release();
+      }
+    }
+
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;
     vk::UniqueDevice device;
+    bool owned = true;
   };
 
   std::shared_ptr<DeviceHolderImpl> device_holder_;
@@ -234,7 +255,9 @@ class ContextVK final : public Context,
   using DescriptorPoolMap =
       std::unordered_map<std::thread::id, std::shared_ptr<DescriptorPoolVK>>;
 
-  mutable DescriptorPoolMap cached_descriptor_pool_;
+  mutable Mutex desc_pool_mutex_;
+  mutable DescriptorPoolMap IPLR_GUARDED_BY(desc_pool_mutex_)
+      cached_descriptor_pool_;
   bool should_disable_surface_control_ = false;
   bool should_batch_cmd_buffers_ = false;
   std::vector<std::shared_ptr<CommandBuffer>> pending_command_buffers_;

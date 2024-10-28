@@ -1644,6 +1644,18 @@ void ImpellerDisplayListBuilderTranslate(
     float y_translation);
 
 //------------------------------------------------------------------------------
+/// @brief      Appends the the provided transformation to the transformation
+///             already on the save stack.
+///
+/// @param[in]  builder    The builder.
+/// @param[in]  transform  The transform to append.
+///
+IMPELLER_EXPORT
+void ImpellerDisplayListBuilderTransform(
+    ImpellerDisplayListBuilder IMPELLER_NONNULL builder,
+    const ImpellerMatrix* IMPELLER_NONNULL transform);
+
+//------------------------------------------------------------------------------
 /// @brief      Clear the transformation on top of the save stack and replace it
 ///             with a new value.
 ///
@@ -2131,7 +2143,12 @@ void ImpellerParagraphStyleSetFontSize(
     float size);
 
 //------------------------------------------------------------------------------
-/// @brief      Set the paragraph height.
+/// @brief      The height of the text as a multiple of text size.
+///
+///             When height is 0.0, the line height will be determined by the
+///             font's metrics directly, which may differ from the font size.
+///             Otherwise the line height of the text will be a multiple of font
+///             size, and be exactly fontSize * height logical pixels tall.
 ///
 /// @param[in]  paragraph_style  The paragraph style.
 /// @param[in]  height           The height.
