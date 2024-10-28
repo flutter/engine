@@ -192,12 +192,17 @@ class RunSuiteStep implements PipelineStep {
       workDirectory.deleteSync(recursive: true);
     }
     final bool isWasm = suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
+    final bool singleThreaded = suite.runConfig.forceSingleThreadedSkwasm || !suite.runConfig.crossOriginIsolated;
+    final String rendererName = switch (renderer) {
+      Renderer.skwasm => singleThreaded ? 'skwasm_st' : 'skwasm',
+      _ => renderer.name,
+    };
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       workDirectory,
       dimensions: <String, String> {
         'Browser': suite.runConfig.browser.name,
         if (isWasm) 'Wasm': 'true',
-        'Renderer': renderer.name,
+        'Renderer': rendererName,
         if (variant != null) 'CanvasKitVariant': variant.name,
       },
     );

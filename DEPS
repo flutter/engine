@@ -775,7 +775,7 @@ deps = {
   },
 
   'src/flutter/prebuilts/emsdk': {
-   'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + 'a72a42afc3700174023ade6bf83aa79892bb783c',
+   'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + '2514ec738de72cebbba7f4fdba0cf2fabcb779a5',
    'condition': 'download_emsdk',
   },
 
