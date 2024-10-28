@@ -12,6 +12,7 @@
 #include <sstream>
 #include <utility>
 
+#include "impeller/toolkit/android/shadow_realm.h"
 #include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
 
@@ -853,7 +854,12 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&UpdateDisplayMetrics),
       },
-  };
+      {
+          .name = "nativeShouldDisableAHB",
+          .signature = "()Z",
+          .fnPtr = reinterpret_cast<void*>(
+              &impeller::android::ShadowRealm::ShouldDisableAHB),
+      }};
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,
                            std::size(flutter_jni_methods)) != 0) {
@@ -1578,8 +1584,11 @@ PlatformViewAndroidJNIImpl::ImageProducerTextureEntryAcquireLatestImage(
   JavaLocalRef r = JavaLocalRef(
       env, env->CallObjectMethod(image_producer_texture_entry_local_ref.obj(),
                                  g_acquire_latest_image_method));
-  FML_CHECK(fml::jni::CheckException(env));
-  return r;
+  if (fml::jni::CheckException(env)) {
+    return r;
+  }
+  // Return null.
+  return JavaLocalRef();
 }
 
 JavaLocalRef PlatformViewAndroidJNIImpl::ImageGetHardwareBuffer(

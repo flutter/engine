@@ -80,11 +80,20 @@ class SurfaceContextVK : public Context,
   ///        recreated on the next frame.
   void UpdateSurfaceSize(const ISize& size) const;
 
+  // |Context|
   void InitializeCommonlyUsedShadersIfNeeded() const override;
+
+  // |Context|
+  void DisposeThreadLocalCachedResources() override;
 
   const vk::Device& GetDevice() const;
 
   const std::shared_ptr<ContextVK>& GetParent() const;
+
+  bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) override;
+
+  bool FlushCommandBuffers() override;
 
  private:
   std::shared_ptr<ContextVK> parent_;

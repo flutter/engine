@@ -78,6 +78,9 @@ void runSemanticsTests() {
   group('checkboxes, radio buttons and switches', () {
     _testCheckables();
   });
+  group('selectables', () {
+    _testSelectables();
+  });
   group('tappable', () {
     _testTappable();
   });
@@ -1298,6 +1301,67 @@ void _testContainer() {
     semantics().semanticsEnabled = false;
   });
 
+  test('containers can be opaque if tappable', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      actions: 0 | ui.SemanticsAction.tap.index,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'all');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('container can be opaque if it is a text field', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      flags: 0 | ui.SemanticsFlag.isTextField.index,
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+    );
+    updateNode(builder, id: 1);
+    updateNode(builder, id: 2);
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem>
+  <input>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    expect(root.style.pointerEvents, 'all');
+
+    semantics().semanticsEnabled = false;
+  });
+
   test('descendant nodes are removed from the node map, unless reparented', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -2230,6 +2294,114 @@ void _testCheckables() {
   });
 }
 
+void _testSelectables() {
+  test('renders and updates non-selectable, selected, and unselected nodes', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          isSelectable: false,
+          rect: const ui.Rect.fromLTRB(0, 0, 100, 20),
+        ),
+        tester.updateNode(
+          id: 2,
+          isSelectable: true,
+          isSelected: false,
+          rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+        ),
+        tester.updateNode(
+          id: 3,
+          isSelectable: true,
+          isSelected: true,
+          rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="false"></sem>
+    <sem aria-selected="true"></sem>
+  </sem-c>
+</sem>
+''');
+
+    // Missing attributes cannot be expressed using HTML patterns, so check directly.
+    final nonSelectable = owner().debugSemanticsTree![1]!.element;
+    expect(nonSelectable.getAttribute('aria-selected'), isNull);
+
+    // Flip the values and check that that ARIA attribute is updated.
+    tester.updateNode(
+      id: 2,
+      isSelectable: true,
+      isSelected: true,
+      rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+    );
+    tester.updateNode(
+      id: 3,
+      isSelectable: true,
+      isSelected: false,
+      rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="true"></sem>
+    <sem aria-selected="false"></sem>
+  </sem-c>
+</sem>
+''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('Checkable takes precedence over selectable', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      isSelectable: true,
+      isSelected: true,
+      hasCheckedState: true,
+      isChecked: true,
+      hasTap: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(
+      owner(),
+      '<sem flt-tappable role="checkbox" aria-checked="true"></sem>',
+    );
+
+    final node = owner().debugSemanticsTree![0]!;
+    expect(node.semanticRole!.kind, SemanticRoleKind.checkable);
+    expect(
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Selectable)),
+    );
+    expect(node.element.getAttribute('aria-selected'), isNull);
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
 void _testTappable() {
   test('renders an enabled tappable widget', () async {
     semantics()
@@ -3110,10 +3282,7 @@ void _testRoute() {
     semantics().semanticsEnabled = false;
   });
 
-  test('scopesRoute alone sets the SemanticRoute role with no label', () {
-    final List<String> warnings = <String>[];
-    printWarning = warnings.add;
-
+  test('scopesRoute alone sets the SemanticRoute role and "dialog" ARIA role with no label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3127,7 +3296,7 @@ void _testRoute() {
     tester.apply();
 
     expectSemanticsTree(owner(), '''
-      <sem></sem>
+      <sem role="dialog"></sem>
     ''');
 
     expect(

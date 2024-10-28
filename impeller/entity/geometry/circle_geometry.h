@@ -19,13 +19,16 @@ class CircleGeometry final : public Geometry {
                           Scalar radius,
                           Scalar stroke_width);
 
-  ~CircleGeometry() = default;
+  ~CircleGeometry() override;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
 
   // |Geometry|
   bool IsAxisAlignedRect() const override;
+
+  // |Geometry|
+  Scalar ComputeAlphaCoverage(const Matrix& transform) const override;
 
  private:
   // |Geometry|

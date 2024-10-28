@@ -169,6 +169,10 @@ void vkGetPhysicalDeviceFormatProperties(
   g_format_properties_callback(physicalDevice, format, pFormatProperties);
 }
 
+static thread_local std::function<void(VkPhysicalDevice physicalDevice,
+                                       VkPhysicalDeviceProperties* pProperties)>
+    g_physical_device_properties_callback;
+
 void vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                    VkPhysicalDeviceProperties* pProperties) {
   pProperties->limits.framebufferColorSampleCounts =
@@ -176,6 +180,9 @@ void vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                       VK_SAMPLE_COUNT_4_BIT);
   pProperties->limits.maxImageDimension2D = 4096;
   pProperties->limits.timestampPeriod = 1;
+  if (g_physical_device_properties_callback) {
+    g_physical_device_properties_callback(physicalDevice, pProperties);
+  }
 }
 
 void vkGetPhysicalDeviceQueueFamilyProperties(
@@ -487,6 +494,7 @@ VkResult vkCreateFence(VkDevice device,
                        const VkAllocationCallbacks* pAllocator,
                        VkFence* pFence) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkCreateFence");
   *pFence = reinterpret_cast<VkFence>(new MockFence());
   return VK_SUCCESS;
 }
@@ -919,6 +927,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
   g_format_properties_callback = format_properties_callback_;
+  g_physical_device_properties_callback = physical_properties_callback_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
   return result;
 }

@@ -7,10 +7,9 @@
 
 #include <memory>
 
-#include "impeller/aiks/canvas.h"
-#include "impeller/aiks/image.h"
-#include "impeller/aiks/paint.h"
 #include "impeller/core/sampler_descriptor.h"
+#include "impeller/display_list/canvas.h"
+#include "impeller/display_list/paint.h"
 
 namespace impeller {
 
@@ -21,7 +20,7 @@ class NinePatchConverter {
 
   ~NinePatchConverter();
 
-  void DrawNinePatch(const std::shared_ptr<Image>& image,
+  void DrawNinePatch(const std::shared_ptr<Texture>& image,
                      Rect center,
                      Rect dst,
                      const SamplerDescriptor& sampler,

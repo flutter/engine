@@ -8,7 +8,6 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
@@ -19,11 +18,6 @@
 namespace impeller {
 
 static constexpr size_t kMaxFramesInFlight = 3u;
-
-// Number of frames to poll for orientation changes. For example `1u` means
-// that the orientation will be polled every frame, while `2u` means that the
-// orientation will be polled every other frame.
-static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct KHRFrameSynchronizerVK {
   vk::UniqueFence acquire;
@@ -334,11 +328,15 @@ KHRSwapchainImplVK::AcquireResult KHRSwapchainImplVK::AcquireNextDrawable() {
   //----------------------------------------------------------------------------
   /// Get the next image index.
   ///
+  /// @bug  Non-infinite timeouts are not supported on some older Android
+  ///       devices and the only indication we get is log spam which serves to
+  ///       add confusion. Just use an infinite timeout instead of being
+  ///       defensive.
   auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
-      *swapchain_,          // swapchain
-      1'000'000'000,        // timeout (ns) 1000ms
-      *sync->render_ready,  // signal semaphore
-      nullptr               // fence
+      *swapchain_,                           // swapchain
+      std::numeric_limits<uint64_t>::max(),  // timeout (ns)
+      *sync->render_ready,                   // signal semaphore
+      nullptr                                // fence
   );
 
   switch (acq_result) {
@@ -400,9 +398,8 @@ bool KHRSwapchainImplVK::Present(
     return false;
   }
 
-  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                                 .GetEncoder()
-                                 ->GetCommandBuffer();
+  auto vk_final_cmd_buffer =
+      CommandBufferVK::Cast(*sync->final_cmd_buffer).GetCommandBuffer();
   {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;

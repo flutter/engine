@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/blit_pass_mtl.h"
+
 #include <Metal/Metal.h>
+#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -25,7 +28,8 @@
 
 namespace impeller {
 
-BlitPassMTL::BlitPassMTL(id<MTLCommandBuffer> buffer) : buffer_(buffer) {
+BlitPassMTL::BlitPassMTL(id<MTLCommandBuffer> buffer, id<MTLDevice> device)
+    : buffer_(buffer), device_(device) {
   if (!buffer_) {
     return;
   }
@@ -47,11 +51,11 @@ bool BlitPassMTL::IsValid() const {
   return is_valid_;
 }
 
-void BlitPassMTL::OnSetLabel(std::string label) {
+void BlitPassMTL::OnSetLabel(std::string_view label) {
   if (label.empty()) {
     return;
   }
-  [encoder_ setLabel:@(label.c_str())];
+  [encoder_ setLabel:@(label.data())];
 }
 
 bool BlitPassMTL::EncodeCommands(
@@ -67,7 +71,7 @@ bool BlitPassMTL::OnCopyTextureToTextureCommand(
     std::shared_ptr<Texture> destination,
     IRect source_region,
     IPoint destination_origin,
-    std::string label) {
+    std::string_view label) {
   auto source_mtl = TextureMTL::Cast(*source).GetMTLTexture();
   if (!source_mtl) {
     return false;
@@ -87,7 +91,7 @@ bool BlitPassMTL::OnCopyTextureToTextureCommand(
 
 #ifdef IMPELLER_DEBUG
   if (is_metal_trace_active_) {
-    [encoder_ pushDebugGroup:@(label.c_str())];
+    [encoder_ pushDebugGroup:@(label.data())];
   }
 #endif  // IMPELLER_DEBUG
   [encoder_ copyFromTexture:source_mtl
@@ -105,7 +109,28 @@ bool BlitPassMTL::OnCopyTextureToTextureCommand(
     [encoder_ popDebugGroup];
   }
 #endif  // IMPELLER_DEBUG
+  return true;
+}
 
+// |BlitPass|
+bool BlitPassMTL::ResizeTexture(const std::shared_ptr<Texture>& source,
+                                const std::shared_ptr<Texture>& destination) {
+  auto source_mtl = TextureMTL::Cast(*source).GetMTLTexture();
+  if (!source_mtl) {
+    return false;
+  }
+
+  auto destination_mtl = TextureMTL::Cast(*destination).GetMTLTexture();
+  if (!destination_mtl) {
+    return false;
+  }
+
+  [encoder_ endEncoding];
+  auto filter = [[MPSImageBilinearScale alloc] initWithDevice:device_];
+  [filter encodeToCommandBuffer:buffer_
+                  sourceTexture:source_mtl
+             destinationTexture:destination_mtl];
+  encoder_ = [buffer_ blitCommandEncoder];
   return true;
 }
 
@@ -115,7 +140,7 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
     std::shared_ptr<DeviceBuffer> destination,
     IRect source_region,
     size_t destination_offset,
-    std::string label) {
+    std::string_view label) {
   auto source_mtl = TextureMTL::Cast(*source).GetMTLTexture();
   if (!source_mtl) {
     return false;
@@ -140,7 +165,7 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
 
 #ifdef IMPELLER_DEBUG
   if (is_metal_trace_active_) {
-    [encoder_ pushDebugGroup:@(label.c_str())];
+    [encoder_ pushDebugGroup:@(label.data())];
   }
 #endif  // IMPELLER_DEBUG
   [encoder_ copyFromTexture:source_mtl
@@ -165,7 +190,8 @@ bool BlitPassMTL::OnCopyBufferToTextureCommand(
     BufferView source,
     std::shared_ptr<Texture> destination,
     IRect destination_region,
-    std::string label,
+    std::string_view label,
+    uint32_t mip_level,
     uint32_t slice,
     bool convert_to_read) {
   auto source_mtl = DeviceBufferMTL::Cast(*source.buffer).GetMTLBuffer();
@@ -190,7 +216,7 @@ bool BlitPassMTL::OnCopyBufferToTextureCommand(
 
 #ifdef IMPELLER_DEBUG
   if (is_metal_trace_active_) {
-    [encoder_ pushDebugGroup:@(label.c_str())];
+    [encoder_ pushDebugGroup:@(label.data())];
   }
 #endif  // IMPELLER_DEBUG
   [encoder_
@@ -203,7 +229,7 @@ bool BlitPassMTL::OnCopyBufferToTextureCommand(
                sourceSize:source_size_mtl
                 toTexture:destination_mtl
          destinationSlice:slice
-         destinationLevel:0
+         destinationLevel:mip_level
         destinationOrigin:destination_origin_mtl];
 
 #ifdef IMPELLER_DEBUG
@@ -216,10 +242,10 @@ bool BlitPassMTL::OnCopyBufferToTextureCommand(
 
 // |BlitPass|
 bool BlitPassMTL::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
-                                          std::string label) {
+                                          std::string_view label) {
 #ifdef IMPELLER_DEBUG
   if (is_metal_trace_active_) {
-    [encoder_ pushDebugGroup:@(label.c_str())];
+    [encoder_ pushDebugGroup:@(label.data())];
   }
 #endif  // IMPELLER_DEBUG
   auto result = TextureMTL::Cast(*texture).GenerateMipmap(encoder_);

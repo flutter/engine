@@ -181,6 +181,10 @@ bool CapabilitiesGLES::SupportsDeviceTransientTextures() const {
   return false;
 }
 
+bool CapabilitiesGLES::SupportsTriangleFan() const {
+  return true;
+}
+
 PixelFormat CapabilitiesGLES::GetDefaultColorFormat() const {
   return PixelFormat::kR8G8B8A8UNormInt;
 }
@@ -199,6 +203,10 @@ bool CapabilitiesGLES::IsANGLE() const {
 
 PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {
   return default_glyph_atlas_format_;
+}
+
+ISize CapabilitiesGLES::GetMaximumRenderPassAttachmentSize() const {
+  return max_texture_size;
 }
 
 }  // namespace impeller

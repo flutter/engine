@@ -14,9 +14,6 @@ class FilterContentsFilterInput final : public FilterInput {
   ~FilterContentsFilterInput() override;
 
   // |FilterInput|
-  Variant GetInput() const override;
-
-  // |FilterInput|
   std::optional<Snapshot> GetSnapshot(const std::string& label,
                                       const ContentContext& renderer,
                                       const Entity& entity,
@@ -36,20 +33,6 @@ class FilterContentsFilterInput final : public FilterInput {
 
   // |FilterInput|
   Matrix GetTransform(const Entity& entity) const override;
-
-  // |FilterInput|
-  void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) override;
-
-  // |FilterInput|
-  bool IsTranslationOnly() const override;
-
-  // |FilterInput|
-  bool IsLeaf() const override;
-
-  // |FilterInput|
-  void SetLeafInputs(const FilterInput::Vector& inputs) override;
 
   // |FilterInput|
   virtual void SetEffectTransform(const Matrix& matrix) override;

@@ -25,9 +25,9 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #if IMPELLER_SUPPORTS_RENDERING
-#include "impeller/aiks/aiks_context.h"  // nogncheck
-#include "impeller/core/formats.h"       // nogncheck
-#include "impeller/renderer/context.h"   // nogncheck
+#include "impeller/core/formats.h"               // nogncheck
+#include "impeller/display_list/aiks_context.h"  // nogncheck
+#include "impeller/renderer/context.h"           // nogncheck
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"  // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -38,7 +38,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
 #if !IMPELLER_SUPPORTS_RENDERING
 namespace impeller {

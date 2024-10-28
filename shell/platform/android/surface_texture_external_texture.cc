@@ -13,11 +13,11 @@
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 
 namespace flutter {
 
@@ -84,7 +84,8 @@ void SurfaceTextureExternalTexture::DrawFrame(
   transform = inverted;
 
   if (transform.isIdentity()) {
-    context.canvas->DrawImage(dl_image_, {0, 0}, sampling, context.paint);
+    context.canvas->DrawImage(dl_image_, SkPoint{0, 0}, sampling,
+                              context.paint);
     return;
   }
 

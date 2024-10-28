@@ -50,7 +50,7 @@ class DlOpRecorder final : public virtual DlOpReceiver,
   int blobCount() const { return blobs_.size(); }
 
  private:
-  void drawLine(const SkPoint& p0, const SkPoint& p1) override {
+  void drawLine(const DlPoint& p0, const DlPoint& p1) override {
     lines_.emplace_back(p0, p1);
   }
 
@@ -73,16 +73,16 @@ class DlOpRecorder final : public virtual DlOpReceiver,
     blobs_.push_back(blob);
   }
 
-  void drawRect(const SkRect& rect) override { rects_.push_back(rect); }
+  void drawRect(const DlRect& rect) override { rects_.push_back(rect); }
 
-  void drawPath(const SkPath& path) override { paths_.push_back(path); }
+  void drawPath(const DlPath& path) override { paths_.push_back(path); }
 
   std::vector<std::shared_ptr<impeller::TextFrame>> text_frames_;
   std::vector<sk_sp<SkTextBlob>> blobs_;
-  std::vector<std::pair<SkPoint, SkPoint>> lines_;
+  std::vector<std::pair<DlPoint, DlPoint>> lines_;
   std::vector<std::tuple<DlPoint, DlPoint, DlPoint>> dashed_lines_;
-  std::vector<SkRect> rects_;
-  std::vector<SkPath> paths_;
+  std::vector<DlRect> rects_;
+  std::vector<DlPath> paths_;
 };
 
 template <typename T>
@@ -257,6 +257,23 @@ TEST_F(PainterTest, DrawStrokedTextImpeller) {
   EXPECT_EQ(recorder.textFrameCount(), 1);
   EXPECT_EQ(recorder.blobCount(), 0);
   EXPECT_EQ(recorder.pathCount(), 0);
+}
+
+TEST_F(PainterTest, DrawStrokedTextWithLargeWidthImpeller) {
+  PretendImpellerIsEnabled(true);
+
+  auto style = makeStyle();
+  DlPaint foreground;
+  foreground.setDrawStyle(DlDrawStyle::kStroke);
+  foreground.setStrokeWidth(10);
+  style.foreground = foreground;
+
+  auto recorder = DlOpRecorder();
+  draw(style)->Dispatch(recorder);
+
+  EXPECT_EQ(recorder.textFrameCount(), 0);
+  EXPECT_EQ(recorder.blobCount(), 0);
+  EXPECT_EQ(recorder.pathCount(), 1);
 }
 
 TEST_F(PainterTest, DrawTextWithGradientImpeller) {

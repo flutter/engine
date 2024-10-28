@@ -61,7 +61,7 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 struct TextureAndSampler {
   SampledImageSlot slot;
   TextureResource texture;
-  const std::unique_ptr<const Sampler>& sampler;
+  const std::unique_ptr<const Sampler>* sampler;
 };
 
 /// @brief combines the buffer resource and its uniform slot information.
@@ -147,8 +147,27 @@ struct Command : public ResourceBinder {
   size_t instance_count = 1u;
 
   //----------------------------------------------------------------------------
-  /// The bound per-vertex data and optional index buffer.
-  VertexBuffer vertex_buffer;
+  /// The vertex buffers used by the vertex shader stage.
+  std::array<BufferView, kMaxVertexBuffers> vertex_buffers;
+
+  //----------------------------------------------------------------------------
+  /// The number of vertex buffers in the vertex_buffers array. Must not exceed
+  /// kMaxVertexBuffers.
+  size_t vertex_buffer_count = 0u;
+
+  //----------------------------------------------------------------------------
+  /// The index buffer binding used by the vertex shader stage.
+  BufferView index_buffer;
+
+  //----------------------------------------------------------------------------
+  /// The number of elements to draw. When only a vertex buffer is set, this is
+  /// the vertex count. When an index buffer is set, this is the index count.
+  size_t element_count = 0u;
+
+  //----------------------------------------------------------------------------
+  /// The type of indices in the index buffer. The indices must be tightly
+  /// packed in the index buffer.
+  IndexType index_type = IndexType::kUnknown;
 
   //----------------------------------------------------------------------------
   /// @brief      Specify the vertex and index buffer to use for this command.
@@ -158,7 +177,7 @@ struct Command : public ResourceBinder {
   ///
   /// @return     returns if the binding was updated.
   ///
-  bool BindVertices(VertexBuffer buffer);
+  bool BindVertices(const VertexBuffer& buffer);
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,

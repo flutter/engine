@@ -16,6 +16,13 @@ FLUTTER_ASSERT_ARC
 
 const float kFloatCompareEpsilon = 0.001;
 
+@interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
+@end
+
+@interface TextInputSemanticsObject (Test)
+- (UIView<UITextInput>*)textInputSurrogate;
+@end
+
 @interface SemanticsObjectTest : XCTestCase
 @end
 
@@ -1069,4 +1076,134 @@ const float kFloatCompareEpsilon = 0.001;
   XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
 }
 
+- (void)testTextInputSemanticsObject_canPerformAction {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsTextField) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsReadOnly);
+  TextInputSemanticsObject* object = [[TextInputSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  [object accessibilityBridgeDidFinishUpdate];
+
+  id textInputSurrogate = OCMClassMock([UIResponder class]);
+  id partialSemanticsObject = OCMPartialMock(object);
+  OCMStub([partialSemanticsObject textInputSurrogate]).andReturn(textInputSurrogate);
+
+  OCMExpect([textInputSurrogate canPerformAction:[OCMArg anySelector] withSender:OCMOCK_ANY])
+      .andReturn(YES);
+  XCTAssertTrue([partialSemanticsObject canPerformAction:@selector(copy:) withSender:nil]);
+
+  OCMExpect([textInputSurrogate canPerformAction:[OCMArg anySelector] withSender:OCMOCK_ANY])
+      .andReturn(NO);
+  XCTAssertFalse([partialSemanticsObject canPerformAction:@selector(copy:) withSender:nil]);
+}
+
+- (void)testTextInputSemanticsObject_editActions {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsTextField) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsReadOnly);
+  TextInputSemanticsObject* object = [[TextInputSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  [object accessibilityBridgeDidFinishUpdate];
+
+  id textInputSurrogate = OCMClassMock([UIResponder class]);
+  id partialSemanticsObject = OCMPartialMock(object);
+  OCMStub([partialSemanticsObject textInputSurrogate]).andReturn(textInputSurrogate);
+
+  XCTestExpectation* copyExpectation =
+      [self expectationWithDescription:@"Surrogate's copy method is called."];
+  XCTestExpectation* cutExpectation =
+      [self expectationWithDescription:@"Surrogate's cut method is called."];
+  XCTestExpectation* pasteExpectation =
+      [self expectationWithDescription:@"Surrogate's paste method is called."];
+  XCTestExpectation* selectAllExpectation =
+      [self expectationWithDescription:@"Surrogate's selectAll method is called."];
+  XCTestExpectation* deleteExpectation =
+      [self expectationWithDescription:@"Surrogate's delete method is called."];
+
+  OCMStub([textInputSurrogate copy:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    [copyExpectation fulfill];
+  });
+  OCMStub([textInputSurrogate cut:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    [cutExpectation fulfill];
+  });
+  OCMStub([textInputSurrogate paste:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    [pasteExpectation fulfill];
+  });
+  OCMStub([textInputSurrogate selectAll:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    [selectAllExpectation fulfill];
+  });
+  OCMStub([textInputSurrogate delete:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    [deleteExpectation fulfill];
+  });
+
+  [partialSemanticsObject copy:nil];
+  [partialSemanticsObject cut:nil];
+  [partialSemanticsObject paste:nil];
+  [partialSemanticsObject selectAll:nil];
+  [partialSemanticsObject delete:nil];
+
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (void)testUIFocusItemConformance {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  SemanticsObject* parent = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* child = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  parent.children = @[ child ];
+
+  // parentFocusEnvironment
+  XCTAssertTrue([parent.parentFocusEnvironment isKindOfClass:[UIView class]]);
+  XCTAssertEqual(child.parentFocusEnvironment, child.parent);
+
+  // canBecomeFocused
+  flutter::SemanticsNode childNode;
+  childNode.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden);
+  childNode.actions = static_cast<int32_t>(flutter::SemanticsAction::kTap);
+  [child setSemanticsNode:&childNode];
+  XCTAssertFalse(child.canBecomeFocused);
+  childNode.flags = 0;
+  [child setSemanticsNode:&childNode];
+  XCTAssertTrue(child.canBecomeFocused);
+  childNode.actions = 0;
+  [child setSemanticsNode:&childNode];
+  XCTAssertFalse(child.canBecomeFocused);
+
+  CGFloat scale = ((bridge->view().window.screen ?: UIScreen.mainScreen)).scale;
+
+  childNode.rect = SkRect::MakeXYWH(0, 0, 100 * scale, 100 * scale);
+  [child setSemanticsNode:&childNode];
+  flutter::SemanticsNode parentNode;
+  parentNode.rect = SkRect::MakeXYWH(0, 0, 200, 200);
+  [parent setSemanticsNode:&parentNode];
+
+  XCTAssertTrue(CGRectEqualToRect(child.frame, CGRectMake(0, 0, 100, 100)));
+}
+
+- (void)testUIFocusItemContainerConformance {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  SemanticsObject* parent = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* child1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  SemanticsObject* child2 = [[SemanticsObject alloc] initWithBridge:bridge uid:2];
+  parent.childrenInHitTestOrder = @[ child1, child2 ];
+
+  // focusItemsInRect
+  NSArray<id<UIFocusItem>>* itemsInRect = [parent focusItemsInRect:CGRectMake(0, 0, 100, 100)];
+  XCTAssertEqual(itemsInRect.count, (unsigned long)2);
+  XCTAssertTrue([itemsInRect containsObject:child1]);
+  XCTAssertTrue([itemsInRect containsObject:child2]);
+}
 @end

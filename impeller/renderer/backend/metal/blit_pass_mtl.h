@@ -21,6 +21,7 @@ class BlitPassMTL final : public BlitPass {
 
   id<MTLBlitCommandEncoder> encoder_ = nil;
   id<MTLCommandBuffer> buffer_ = nil;
+  id<MTLDevice> device_ = nil;
   bool is_valid_ = false;
   bool is_metal_trace_active_ = false;
   // Many parts of the codebase will start writing to a render pass but
@@ -28,42 +29,47 @@ class BlitPassMTL final : public BlitPass {
   // so that in the dtor we can always ensure the render pass is finished.
   mutable bool did_finish_encoding_ = false;
 
-  explicit BlitPassMTL(id<MTLCommandBuffer> buffer);
+  explicit BlitPassMTL(id<MTLCommandBuffer> buffer, id<MTLDevice> device);
 
   // |BlitPass|
   bool IsValid() const override;
 
   // |BlitPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |BlitPass|
   bool EncodeCommands(
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   // |BlitPass|
+  bool ResizeTexture(const std::shared_ptr<Texture>& source,
+                     const std::shared_ptr<Texture>& destination) override;
+
+  // |BlitPass|
   bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
                                      std::shared_ptr<Texture> destination,
                                      IRect source_region,
                                      IPoint destination_origin,
-                                     std::string label) override;
+                                     std::string_view label) override;
 
   // |BlitPass|
   bool OnCopyTextureToBufferCommand(std::shared_ptr<Texture> source,
                                     std::shared_ptr<DeviceBuffer> destination,
                                     IRect source_region,
                                     size_t destination_offset,
-                                    std::string label) override;
+                                    std::string_view label) override;
   // |BlitPass|
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
                                     IRect destination_region,
-                                    std::string label,
+                                    std::string_view label,
+                                    uint32_t mip_level,
                                     uint32_t slice,
                                     bool convert_to_read) override;
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
-                               std::string label) override;
+                               std::string_view label) override;
 
   BlitPassMTL(const BlitPassMTL&) = delete;
 

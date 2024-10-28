@@ -66,7 +66,7 @@ Optionally, if you are working with a fork of the engine, add that as a Git remo
 git -C src/flutter remote add origin <your_git_fork_location>
 ```
 
-The "Engine Tool" called `et` is useful when working with the engine. It is located in the `flutter/bin` directory in the source checkout. Add this to your `$PATH` in your `.rc`.
+The "Engine Tool" called `et` is useful when working with the engine. It is located in the `flutter/bin` directory in the engine source checkout. Add this to your `$PATH` in your `.rc`.
 
 ### Additional Steps for Web Engine
 
@@ -91,8 +91,8 @@ gclient sync
 ## Next steps:
 
  * [Compiling the engine](Compiling-the-engine.md) explains how to actually get builds, now that you have the code.
- * [The flutter tool](../../tool/README.md) has a section explaining how to use custom engine builds.
- * [Signing commits](../../contributing/Signing-commits.md), to configure your environment to securely sign your commits.
+ * [The flutter tool](https://github.com/flutter/flutter/blob/master/docs/tool/README.md) has a section explaining how to use custom engine builds.
+ * [Signing commits](https://github.com/flutter/flutter/blob/master/docs/contributing/Signing-commits.md), to configure your environment to securely sign your commits.
 
 ## Editor autocomplete support
 

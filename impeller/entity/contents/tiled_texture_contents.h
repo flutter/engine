@@ -7,13 +7,11 @@
 
 #include <functional>
 #include <memory>
-#include <vector>
 
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path.h"
 #include "impeller/renderer/capabilities.h"
 
 namespace impeller {
@@ -28,7 +26,7 @@ class TiledTextureContents final : public ColorSourceContents {
       std::function<std::shared_ptr<ColorFilterContents>(FilterInput::Ref)>;
 
   // |Contents|
-  bool IsOpaque() const override;
+  bool IsOpaque(const Matrix& transform) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,

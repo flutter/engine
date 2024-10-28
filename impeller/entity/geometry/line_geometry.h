@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 #define FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 
-#include <type_traits>
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
@@ -14,15 +13,19 @@ class LineGeometry final : public Geometry {
  public:
   explicit LineGeometry(Point p0, Point p1, Scalar width, Cap cap);
 
-  ~LineGeometry() = default;
+  ~LineGeometry() override;
 
-  static Scalar ComputePixelHalfWidth(const Matrix& transform, Scalar width);
+  static Scalar ComputePixelHalfWidth(const Matrix& transform,
+                                      Scalar width,
+                                      bool msaa);
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
 
   // |Geometry|
   bool IsAxisAlignedRect() const override;
+
+  Scalar ComputeAlphaCoverage(const Matrix& transform) const override;
 
  private:
   // Computes the 4 corners of a rectangle that defines the line and
@@ -41,10 +44,12 @@ class LineGeometry final : public Geometry {
   // @return true if the transform and width were not degenerate
   bool ComputeCorners(Point corners[4],
                       const Matrix& transform,
-                      bool extend_endpoints) const;
+                      bool extend_endpoints,
+                      bool msaa) const;
 
   Vector2 ComputeAlongVector(const Matrix& transform,
-                             bool allow_zero_length) const;
+                             bool allow_zero_length,
+                             bool msaa) const;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -63,8 +68,6 @@ class LineGeometry final : public Geometry {
 
   LineGeometry& operator=(const LineGeometry&) = delete;
 };
-
-static_assert(std::is_trivially_destructible<LineGeometry>::value);
 
 }  // namespace impeller
 

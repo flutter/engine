@@ -13,10 +13,13 @@
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
+#include "gmock/gmock.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/testing/mocks.h"
 #include "include/core/SkRRect.h"
 #include "include/core/SkRect.h"
 #include "third_party/imgui/imgui.h"
@@ -31,13 +34,129 @@ namespace testing {
 
 using namespace flutter;
 
+// The shapes of these ovals should appear equal. They are demonstrating the
+// difference between the fast pass and not.
+TEST_P(AiksTest, SolidColorOvalsMaskBlurTinySigma) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  std::vector<float> sigmas = {0.0, 0.01, 1.0};
+  std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
+                                 DlColor::kRed()};
+  for (uint32_t i = 0; i < sigmas.size(); ++i) {
+    DlPaint paint;
+    paint.setColor(colors[i]);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
+
+    builder.Save();
+    builder.Translate(100 + (i * 100), 100);
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 60.0f, 160.0f), 50, 100);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+sk_sp<flutter::DisplayList> DoGradientOvalStrokeMaskBlur(Vector2 content_Scale,
+                                                         Scalar sigma,
+                                                         DlBlurStyle style) {
+  DisplayListBuilder builder;
+  builder.Scale(content_Scale.x, content_Scale.y);
+
+  DlPaint background_paint;
+  background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
+  builder.DrawPaint(background_paint);
+
+  std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  DlPaint paint;
+  paint.setMaskFilter(DlBlurMaskFilter::Make(style, sigma));
+  auto gradient = DlColorSource::MakeLinear(
+      {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
+  paint.setColorSource(gradient);
+  paint.setColor(DlColor::kWhite());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(20);
+
+  builder.Save();
+  builder.Translate(100, 100);
+
+  {
+    DlPaint line_paint;
+    line_paint.setColor(DlColor::kWhite());
+    builder.DrawLine(SkPoint{100, 0}, SkPoint{100, 60}, line_paint);
+    builder.DrawLine(SkPoint{0, 30}, SkPoint{200, 30}, line_paint);
+  }
+
+  SkRRect rrect =
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200.0f, 60.0f), 50, 100);
+  builder.DrawRRect(rrect, paint);
+  builder.Restore();
+
+  return builder.Build();
+}
+
+// https://github.com/flutter/flutter/issues/155930
+TEST_P(AiksTest, GradientOvalStrokeMaskBlur) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kNormal)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSigmaZero) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/0, DlBlurStyle::kNormal)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurOuter) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kOuter)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurInner) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kInner)));
+}
+
+TEST_P(AiksTest, GradientOvalStrokeMaskBlurSolid) {
+  ASSERT_TRUE(OpenPlaygroundHere(DoGradientOvalStrokeMaskBlur(
+      GetContentScale(), /*sigma=*/10, DlBlurStyle::kSolid)));
+}
+
+TEST_P(AiksTest, SolidColorCircleMaskBlurTinySigma) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  std::vector<float> sigmas = {0.0, 0.01, 1.0};
+  std::vector<DlColor> colors = {DlColor::kGreen(), DlColor::kYellow(),
+                                 DlColor::kRed()};
+  for (uint32_t i = 0; i < sigmas.size(); ++i) {
+    DlPaint paint;
+    paint.setColor(colors[i]);
+    paint.setMaskFilter(
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigmas[i]));
+
+    builder.Save();
+    builder.Translate(100 + (i * 100), 100);
+    SkRRect rrect =
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 100.0f, 100.0f), 100, 100);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, CanRenderMaskBlurHugeSigma) {
   DisplayListBuilder builder;
 
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 99999));
-  builder.DrawCircle({400, 400}, 300, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 300, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -57,7 +176,7 @@ TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
       DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kSrc));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -77,7 +196,7 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
       DlBlurMaskFilter::Make(DlBlurStyle::kNormal, sigma.sigma));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kColor));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -92,16 +211,16 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     DisplayListBuilder builder;
     DlPaint paint;
     paint.setColor(DlColor::kCornflowerBlue());
-    builder.DrawCircle({100, 100}, 50, paint);
+    builder.DrawCircle(SkPoint{100, 100}, 50, paint);
 
     paint.setColor(DlColor::kGreenYellow());
-    builder.DrawCircle({300, 200}, 100, paint);
+    builder.DrawCircle(SkPoint{300, 200}, 100, paint);
 
     paint.setColor(DlColor::kDarkMagenta());
-    builder.DrawCircle({140, 170}, 75, paint);
+    builder.DrawCircle(SkPoint{140, 170}, 75, paint);
 
     paint.setColor(DlColor::kOrangeRed());
-    builder.DrawCircle({180, 120}, 100, paint);
+    builder.DrawCircle(SkPoint{180, 120}, 100, paint);
 
     SkRRect rrect =
         SkRRect::MakeRectXY(SkRect::MakeLTRB(a.x, a.y, b.x, b.y), 20, 20);
@@ -125,16 +244,16 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
 
   DlPaint paint;
   paint.setColor(DlColor::kCornflowerBlue());
-  builder.DrawCircle({100, 100}, 50, paint);
+  builder.DrawCircle(SkPoint{100, 100}, 50, paint);
 
   paint.setColor(DlColor::kGreenYellow());
-  builder.DrawCircle({300, 200}, 100, paint);
+  builder.DrawCircle(SkPoint{300, 200}, 100, paint);
 
   paint.setColor(DlColor::kDarkMagenta());
-  builder.DrawCircle({140, 170}, 75, paint);
+  builder.DrawCircle(SkPoint{140, 170}, 75, paint);
 
   paint.setColor(DlColor::kOrangeRed());
-  builder.DrawCircle({180, 120}, 100, paint);
+  builder.DrawCircle(SkPoint{180, 120}, 100, paint);
 
   SkRRect rrect =
       SkRRect::MakeRectXY(SkRect::MakeLTRB(75, 50, 375, 275), 20, 20);
@@ -149,12 +268,93 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, CanRenderBackdropBlurWithSingleBackdropId) {
+  auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
+
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  builder.DrawImage(image, SkPoint::Make(50.0, 50.0),
+                    DlImageSampling::kNearestNeighbor, &paint);
+
+  SkRRect rrect =
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(50, 250, 100, 100), 20, 20);
+  builder.Save();
+  builder.ClipRRect(rrect);
+
+  DlPaint save_paint;
+  save_paint.setBlendMode(DlBlendMode::kSrc);
+  auto backdrop_filter = DlBlurImageFilter::Make(30, 30, DlTileMode::kClamp);
+  builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get(),
+                    /*backdrop_id=*/1);
+  builder.Restore();
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, CanRenderMultipleBackdropBlurWithSingleBackdropId) {
+  auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
+
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  builder.DrawImage(image, SkPoint::Make(50.0, 50.0),
+                    DlImageSampling::kNearestNeighbor, &paint);
+
+  for (int i = 0; i < 6; i++) {
+    SkRRect rrect = SkRRect::MakeRectXY(
+        SkRect::MakeXYWH(50 + (i * 100), 250, 100, 100), 20, 20);
+    builder.Save();
+    builder.ClipRRect(rrect);
+
+    DlPaint save_paint;
+    save_paint.setBlendMode(DlBlendMode::kSrc);
+    auto backdrop_filter = DlBlurImageFilter::Make(30, 30, DlTileMode::kClamp);
+    builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get(),
+                      /*backdrop_id=*/1);
+    builder.Restore();
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest,
+       CanRenderMultipleBackdropBlurWithSingleBackdropIdAndDistinctFilters) {
+  auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
+
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  builder.DrawImage(image, SkPoint::Make(50.0, 50.0),
+                    DlImageSampling::kNearestNeighbor, &paint);
+
+  for (int i = 0; i < 6; i++) {
+    SkRRect rrect = SkRRect::MakeRectXY(
+        SkRect::MakeXYWH(50 + (i * 100), 250, 100, 100), 20, 20);
+    builder.Save();
+    builder.ClipRRect(rrect);
+
+    DlPaint save_paint;
+    save_paint.setBlendMode(DlBlendMode::kSrc);
+    auto backdrop_filter =
+        DlBlurImageFilter::Make(30 + i, 30, DlTileMode::kClamp);
+    builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get(),
+                      /*backdrop_id=*/1);
+    builder.Restore();
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
   DisplayListBuilder builder;
 
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({400, 400}, 300, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 300, paint);
 
   DlPaint save_paint;
   save_paint.setBlendMode(DlBlendMode::kSrc);
@@ -174,7 +374,7 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
   DlPaint paint;
   paint.setColor(DlColor::kGreen());
   paint.setImageFilter(DlBlurImageFilter::Make(20, 20, DlTileMode::kDecal));
-  builder.DrawCircle({400, 400}, 200, paint);
+  builder.DrawCircle(SkPoint{400, 400}, 200, paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -231,7 +431,7 @@ TEST_P(AiksTest, ClearBlendWithBlur) {
   clear.setBlendMode(DlBlendMode::kClear);
   clear.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
 
-  builder.DrawCircle({300.0, 300.0}, 200.0, clear);
+  builder.DrawCircle(SkPoint{300.0, 300.0}, 200.0, clear);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -266,7 +466,7 @@ TEST_P(AiksTest, MaskBlurWithZeroSigmaIsSkipped) {
   paint.setColor(DlColor::kBlue());
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 0));
 
-  builder.DrawCircle({300, 300}, 200, paint);
+  builder.DrawCircle(SkPoint{300, 300}, 200, paint);
   builder.DrawRect(SkRect::MakeLTRB(100, 300, 500, 600), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -288,6 +488,7 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
   builder.Scale(test_context.GetContentScale().x,
                 test_context.GetContentScale().y);
   builder.Scale(0.8f, 0.8f);
+  builder.Translate(50.f, 50.f);
 
   DlPaint draw_paint;
   draw_paint.setColor(
@@ -314,7 +515,7 @@ static sk_sp<DisplayList> MaskBlurVariantTest(
 
   y += y_spacing;
   paint.setColor(DlColor::kBlue().withAlpha(alpha));
-  builder.DrawCircle({x + 25, y + 25}, radius, paint);
+  builder.DrawCircle(SkPoint{x + 25, y + 25}, radius, paint);
 
   y += y_spacing;
   paint.setColor(DlColor::kGreen().withAlpha(alpha));
@@ -523,7 +724,7 @@ TEST_P(AiksTest, MaskBlurTexture) {
 
     builder.DrawImage(
         DlImageImpeller::Make(CreateTextureForFixture("boston.jpg")),
-        {200, 200}, DlImageSampling::kNearestNeighbor, &paint);
+        SkPoint{200, 200}, DlImageSampling::kNearestNeighbor, &paint);
 
     DlPaint red;
     red.setColor(DlColor::kRed());
@@ -880,7 +1081,7 @@ TEST_P(AiksTest, GaussianBlurOneDimension) {
   builder.Scale(0.5, 0.5);
 
   std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
-  builder.DrawImage(DlImageImpeller::Make(boston), {100, 100}, {});
+  builder.DrawImage(DlImageImpeller::Make(boston), SkPoint{100, 100}, {});
 
   DlPaint paint;
   paint.setBlendMode(DlBlendMode::kSrc);
@@ -971,6 +1172,207 @@ TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, BlurredRectangleWithShader) {
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+
+  auto paint_lines = [&builder](Scalar dx, Scalar dy, DlPaint paint) {
+    auto draw_line = [&builder, &paint](SkPoint a, SkPoint b) {
+      SkPath line = SkPath::Line(a, b);
+      builder.DrawPath(line, paint);
+    };
+    paint.setStrokeWidth(5);
+    paint.setDrawStyle(DlDrawStyle::kStroke);
+    draw_line(SkPoint::Make(dx + 100, dy + 100),
+              SkPoint::Make(dx + 200, dy + 200));
+    draw_line(SkPoint::Make(dx + 100, dy + 200),
+              SkPoint::Make(dx + 200, dy + 100));
+    draw_line(SkPoint::Make(dx + 150, dy + 100),
+              SkPoint::Make(dx + 200, dy + 150));
+    draw_line(SkPoint::Make(dx + 100, dy + 150),
+              SkPoint::Make(dx + 150, dy + 200));
+  };
+
+  AiksContext renderer(GetContext(), nullptr);
+  DisplayListBuilder recorder_builder;
+  for (int x = 0; x < 5; ++x) {
+    for (int y = 0; y < 5; ++y) {
+      SkRect rect = SkRect::MakeXYWH(x * 20, y * 20, 20, 20);
+      DlPaint paint;
+      paint.setColor(((x + y) & 1) == 0 ? DlColor::kYellow()
+                                        : DlColor::kBlue());
+
+      recorder_builder.DrawRect(rect, paint);
+    }
+  }
+  auto texture =
+      DisplayListToTexture(recorder_builder.Build(), {100, 100}, renderer);
+
+  auto image_source = std::make_shared<DlImageColorSource>(
+      DlImageImpeller::Make(texture), DlTileMode::kRepeat, DlTileMode::kRepeat);
+  auto blur_filter = DlBlurImageFilter::Make(5, 5, DlTileMode::kDecal);
+
+  DlPaint paint;
+  paint.setColor(DlColor::kDarkGreen());
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 300, 600), paint);
+
+  paint.setColorSource(image_source);
+  builder.DrawRect(SkRect::MakeLTRB(100, 100, 200, 200), paint);
+
+  paint.setColorSource(nullptr);
+  paint.setColor(DlColor::kRed());
+  builder.DrawRect(SkRect::MakeLTRB(300, 0, 600, 600), paint);
+
+  paint.setColorSource(image_source);
+  paint.setImageFilter(blur_filter);
+  builder.DrawRect(SkRect::MakeLTRB(400, 100, 500, 200), paint);
+
+  paint.setImageFilter(nullptr);
+  paint_lines(0, 300, paint);
+
+  paint.setImageFilter(blur_filter);
+  paint_lines(300, 300, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP()
+        << "This backend doesn't yet support setting device capabilities.";
+  }
+  if (!WillRenderSomething()) {
+    // Sometimes these tests are run without playgrounds enabled which is
+    // pointless for this test since we are asserting that
+    // `SupportsDecalSamplerAddressMode` is called.
+    GTEST_SKIP() << "This test requires playgrounds.";
+  }
+
+  std::shared_ptr<const Capabilities> old_capabilities =
+      GetContext()->GetCapabilities();
+  auto mock_capabilities = std::make_shared<MockCapabilities>();
+  EXPECT_CALL(*mock_capabilities, SupportsDecalSamplerAddressMode())
+      .Times(::testing::AtLeast(1))
+      .WillRepeatedly(::testing::Return(false));
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              GetDefaultDepthStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsImplicitResolvingMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsReadFromResolve);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsFramebufferFetch);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsSSBO);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsCompute);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsTextureToTextureBlits);
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultGlyphAtlasFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
+  ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
+
+  auto texture = DlImageImpeller::Make(CreateTextureForFixture("boston.jpg"));
+
+  DisplayListBuilder builder;
+  builder.Scale(GetContentScale().x * 0.5, GetContentScale().y * 0.5);
+
+  DlPaint paint;
+  paint.setColor(DlColor::kBlack());
+  builder.DrawPaint(paint);
+
+  auto blur_filter = DlBlurImageFilter::Make(20, 20, DlTileMode::kDecal);
+  paint.setImageFilter(blur_filter);
+  builder.DrawImage(texture, SkPoint::Make(200, 200), {}, &paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
+TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
+  AiksContext renderer(GetContext(), nullptr);
+
+  for (int32_t i = 1; i < 5; ++i) {
+    DisplayListBuilder builder;
+    Scalar fi = i;
+    SkPath path;
+    path.moveTo(100, 100);
+    path.lineTo(100 + fi, 100 + fi);
+
+    DlPaint paint;
+    paint.setColor(DlColor::kChartreuse());
+    auto blur_filter = DlBlurImageFilter::Make(0.1, 0.1, DlTileMode::kClamp);
+    paint.setImageFilter(blur_filter);
+
+    builder.DrawPath(path, paint);
+
+    auto image = DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
+    EXPECT_TRUE(image) << " length " << i;
+  }
+}
+
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
+TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
+  AiksContext renderer(GetContext(), nullptr);
+  for (int32_t i = 1; i < 5; ++i) {
+    DisplayListBuilder builder;
+
+    ISize clip_size = ISize(i, i);
+    builder.Save();
+    builder.ClipRect(
+        SkRect::MakeXYWH(400, 400, clip_size.width, clip_size.height));
+
+    DlPaint paint;
+    paint.setColor(DlColor::kGreen());
+    auto blur_filter = DlBlurImageFilter::Make(0.1, 0.1, DlTileMode::kDecal);
+    paint.setImageFilter(blur_filter);
+
+    builder.DrawCircle(SkPoint{400, 400}, 200, paint);
+    builder.Restore();
+
+    auto image = DisplayListToTexture(builder.Build(), {1024, 768}, renderer);
+    EXPECT_TRUE(image) << " length " << i;
+  }
+}
+
+TEST_P(AiksTest,
+       CanRenderMultipleBackdropBlurWithSingleBackdropIdDifferentLayers) {
+  auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
+
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  builder.DrawImage(image, SkPoint::Make(50.0, 50.0),
+                    DlImageSampling::kNearestNeighbor, &paint);
+
+  for (int i = 0; i < 6; i++) {
+    if (i != 0) {
+      DlPaint paint;
+      paint.setColor(DlColor::kWhite().withAlphaF(0.95));
+      builder.SaveLayer(nullptr, &paint);
+    }
+    SkRRect rrect = SkRRect::MakeRectXY(
+        SkRect::MakeXYWH(50 + (i * 100), 250, 100, 100), 20, 20);
+    builder.Save();
+    builder.ClipRRect(rrect);
+
+    DlPaint save_paint;
+    save_paint.setBlendMode(DlBlendMode::kSrc);
+    auto backdrop_filter = DlBlurImageFilter::Make(30, 30, DlTileMode::kClamp);
+    builder.SaveLayer(nullptr, &save_paint, backdrop_filter.get(),
+                      /*backdrop_id=*/1);
+    builder.Restore();
+    builder.Restore();
+    if (i != 0) {
+      builder.Restore();
+    }
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 }  // namespace testing

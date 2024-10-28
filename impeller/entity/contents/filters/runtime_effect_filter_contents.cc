@@ -10,7 +10,6 @@
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/size.h"
 
 namespace impeller {
@@ -80,11 +79,11 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
        input_coverage](const ContentContext& renderer, const Entity& entity,
                        RenderPass& pass) -> bool {
     RuntimeEffectContents contents;
+    RectGeometry geom(Rect::MakeSize(input_coverage.GetSize()));
     contents.SetRuntimeStage(runtime_stage);
     contents.SetUniformData(uniforms);
     contents.SetTextureInputs(texture_inputs);
-    contents.SetGeometry(
-        Geometry::MakeRect(Rect::MakeSize(input_coverage.GetSize())));
+    contents.SetGeometry(&geom);
     return contents.Render(renderer, entity, pass);
   };
 

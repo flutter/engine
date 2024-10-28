@@ -243,6 +243,9 @@ typedef enum {
   kFlutterSemanticsFlagHasExpandedState = 1 << 26,
   /// Whether a semantic node that hasExpandedState is currently expanded.
   kFlutterSemanticsFlagIsExpanded = 1 << 27,
+  /// The semantics node has the quality of either being "selected" or
+  /// "not selected".
+  kFlutterSemanticsFlagHasSelectedState = 1 << 28,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -458,6 +461,13 @@ typedef struct {
   ///
   /// @attention required. (non-null)
   VoidCallback destruction_callback;
+
+  /// The surface format.
+  ///
+  /// Allowed values:
+  ///   - GL_RGBA8
+  ///   - GL_BGRA8_EXT
+  uint32_t format;
 } FlutterOpenGLSurface;
 
 typedef bool (*BoolCallback)(void* /* user data */);

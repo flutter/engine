@@ -14,7 +14,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -71,6 +72,7 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/ci/host_debug/zip_archives/darwin-x64/artifacts.zip",
+                        "out/ci/host_debug/zip_archives/darwin-x64/impeller_sdk.zip",
                         "out/ci/host_debug/zip_archives/dart-sdk-darwin-x64.zip"
                     ],
                     "name": "ci/host_debug",
@@ -79,7 +81,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -106,7 +109,8 @@
                 "config": "ci/host_debug",
                 "targets": [
                     "flutter/build/archives:artifacts",
-                    "flutter/build/archives:dart_sdk_archive"
+                    "flutter/build/archives:dart_sdk_archive",
+                    "flutter/impeller/toolkit/interop:sdk"
                 ]
             },
             "postsubmit_overrides": {
@@ -133,7 +137,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -197,7 +202,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -247,7 +253,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -297,7 +304,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -359,7 +367,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -412,7 +421,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -464,7 +474,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -520,6 +531,7 @@
                     "type": "gcs",
                     "include_paths": [
                         "out/ci/mac_debug_arm64/zip_archives/darwin-arm64/artifacts.zip",
+                        "out/ci/mac_debug_arm64/zip_archives/darwin-arm64/impeller_sdk.zip",
                         "out/ci/mac_debug_arm64/zip_archives/dart-sdk-darwin-arm64.zip"
                     ],
                     "name": "ci/mac_debug_arm64",
@@ -528,7 +540,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -555,7 +568,8 @@
                 "config": "ci/mac_debug_arm64",
                 "targets": [
                     "flutter/build/archives:artifacts",
-                    "flutter/build/archives:dart_sdk_archive"
+                    "flutter/build/archives:dart_sdk_archive",
+                    "flutter/impeller/toolkit/interop:sdk"
                 ]
             },
             "postsubmit_overrides": {
@@ -583,7 +597,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -638,7 +653,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -703,7 +719,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -757,7 +774,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -811,7 +829,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -877,7 +896,8 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -934,7 +954,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -990,7 +1011,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14"
+                "os=Mac-13|Mac-14",
+                "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false,
@@ -1154,11 +1176,6 @@
         {
             "source": "out/debug/framework/FlutterEmbedder.framework.zip",
             "destination": "darwin-x64/FlutterEmbedder.framework.zip",
-            "realm": "production"
-        },
-        {
-            "source": "out/release/framework/FlutterMacOS.dSYM.zip",
-            "destination": "darwin-x64-release/FlutterMacOS.dSYM.zip",
             "realm": "production"
         },
         {

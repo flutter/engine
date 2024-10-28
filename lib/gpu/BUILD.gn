@@ -40,8 +40,6 @@ source_set("gpu") {
       "device_buffer.h",
       "export.cc",
       "export.h",
-      "fixtures.cc",
-      "fixtures.h",
       "formats.cc",
       "formats.h",
       "host_buffer.cc",
@@ -54,8 +52,6 @@ source_set("gpu") {
       "shader.h",
       "shader_library.cc",
       "shader_library.h",
-      "smoketest.cc",
-      "smoketest.h",
       "texture.cc",
       "texture.h",
     ]

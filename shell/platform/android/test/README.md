@@ -21,6 +21,10 @@ integration tests in other repos.
 4. Write your test.
 5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
 
+Example: from engine/src/flutter on a Mac
+`et build -c android_debug_unopt_arm64`
+`testing/run_tests.py --android-variant=android_debug_unopt_arm64 --type=java --java-filter=io.flutter.embedding.android.FlutterViewTest`
+
 Note that `testing/run_tests.py` does not build the engine binaries; instead they
 should be built prior to running this command and also when the source files
 change. See [Compiling the engine](https://github.com/flutter/flutter/wiki/Compiling-the-engine)
@@ -35,3 +39,8 @@ See [Updating Embedding Dependencies](/tools/cipd/android_embedding_bundle).
 ### My new test won't compile. It can't find one of my imports.
 
 See [Updating Embedding Dependencies](/tools/cipd/android_embedding_bundle).
+
+### My test does not show log output in the console
+
+Import `org.robolectric.shadows.ShadowLog;` then
+Use `ShadowLog.stream = System.out;` in your test or setup method.

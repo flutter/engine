@@ -74,12 +74,18 @@ bool InternalFlutterGpu_DeviceBuffer_InitializeWithHostData(
     Dart_Handle wrapper,
     flutter::gpu::Context* gpu_context,
     Dart_Handle byte_data) {
-  auto data = tonic::DartByteData(byte_data);
-  auto mapping = fml::NonOwnedMapping(reinterpret_cast<uint8_t*>(data.data()),
-                                      data.length_in_bytes());
-  auto device_buffer =
-      gpu_context->GetContext()->GetResourceAllocator()->CreateBufferWithCopy(
-          mapping);
+  std::shared_ptr<impeller::DeviceBuffer> device_buffer = nullptr;
+  {
+    // `DartByteData` gets raw pointers into the Dart heap via
+    // `Dart_TypedDataAcquireData`. So it must be destructed before
+    // `AssociateWithDartWrapper` is called, which mutates the heap.
+    auto data = tonic::DartByteData(byte_data);
+    auto mapping = fml::NonOwnedMapping(reinterpret_cast<uint8_t*>(data.data()),
+                                        data.length_in_bytes());
+    device_buffer =
+        gpu_context->GetContext()->GetResourceAllocator()->CreateBufferWithCopy(
+            mapping);
+  }
   if (!device_buffer) {
     FML_LOG(ERROR) << "Failed to create device buffer with copy.";
     return false;
@@ -98,4 +104,13 @@ bool InternalFlutterGpu_DeviceBuffer_Overwrite(
     int destination_offset_in_bytes) {
   return device_buffer->Overwrite(tonic::DartByteData(source_byte_data),
                                   destination_offset_in_bytes);
+}
+
+bool InternalFlutterGpu_DeviceBuffer_Flush(
+    flutter::gpu::DeviceBuffer* device_buffer,
+    int offset_in_bytes,
+    int size_in_bytes) {
+  device_buffer->GetBuffer()->Flush(
+      impeller::Range(offset_in_bytes, size_in_bytes));
+  return true;
 }

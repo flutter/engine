@@ -128,8 +128,11 @@ static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
 }
 
 CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context>& context,
+                                   id<MTLDevice> device,
                                    id<MTLCommandQueue> queue)
-    : CommandBuffer(context), buffer_(CreateCommandBuffer(queue)) {}
+    : CommandBuffer(context),
+      buffer_(CreateCommandBuffer(queue)),
+      device_(device) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
@@ -137,12 +140,14 @@ bool CommandBufferMTL::IsValid() const {
   return buffer_ != nil;
 }
 
-void CommandBufferMTL::SetLabel(const std::string& label) const {
+void CommandBufferMTL::SetLabel(std::string_view label) const {
+#ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return;
   }
 
   [buffer_ setLabel:@(label.data())];
+#endif  // IMPELLER_DEBUG
 }
 
 static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
@@ -208,7 +213,7 @@ std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() {
     return nullptr;
   }
 
-  auto pass = std::shared_ptr<BlitPassMTL>(new BlitPassMTL(buffer_));
+  auto pass = std::shared_ptr<BlitPassMTL>(new BlitPassMTL(buffer_, device_));
   if (!pass->IsValid()) {
     return nullptr;
   }

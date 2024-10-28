@@ -10,7 +10,7 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/display_list/aiks_context.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
@@ -21,7 +21,7 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
     : public Surface {
  public:
   GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                          const std::shared_ptr<impeller::Context>& context,
+                          const std::shared_ptr<impeller::AiksContext>& context,
                           bool render_to_surface = true);
 
   // |Surface|

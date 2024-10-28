@@ -20,13 +20,15 @@ class CommandBufferMTL final : public CommandBuffer {
  private:
   friend class ContextMTL;
 
-  id<MTLCommandBuffer> buffer_ = nullptr;
+  id<MTLCommandBuffer> buffer_ = nil;
+  id<MTLDevice> device_ = nil;
 
   CommandBufferMTL(const std::weak_ptr<const Context>& context,
+                   id<MTLDevice> device,
                    id<MTLCommandQueue> queue);
 
   // |CommandBuffer|
-  void SetLabel(const std::string& label) const override;
+  void SetLabel(std::string_view label) const override;
 
   // |CommandBuffer|
   bool IsValid() const override;

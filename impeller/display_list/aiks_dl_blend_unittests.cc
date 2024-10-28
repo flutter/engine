@@ -10,7 +10,7 @@
 #include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_builder.h"
@@ -18,6 +18,11 @@
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/scalar.h"
+#include "impeller/display_list/aiks_context.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/playground/playground.h"
+#include "impeller/playground/playground_test.h"
+#include "impeller/renderer/testing/mocks.h"
 #include "include/core/SkMatrix.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +132,7 @@ TEST_P(AiksTest, DrawPaintWithAdvancedBlendOverFilter) {
   paint.setColor(DlColor::kWhite());
   builder.DrawPaint(paint);
   paint.setColor(DlColor::kBlack());
-  builder.DrawCircle({300, 300}, 200, paint);
+  builder.DrawCircle(SkPoint{300, 300}, 200, paint);
   paint.setColor(DlColor::kGreen());
   paint.setBlendMode(DlBlendMode::kScreen);
   builder.DrawPaint(paint);
@@ -161,7 +166,7 @@ TEST_P(AiksTest, DrawAdvancedBlendPartlyOffscreen) {
       ));
   paint.setBlendMode(DlBlendMode::kLighten);
 
-  builder.DrawCircle({100, 100}, 100, paint);
+  builder.DrawCircle(SkPoint{100, 100}, 100, paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -171,23 +176,223 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   // Default is kSourceOver.
 
   paint.setColor(DlColor::RGBA(1, 0, 0, 0.5));
-  builder.DrawCircle({150, 200}, 100, paint);
+  builder.DrawCircle(SkPoint{150, 200}, 100, paint);
 
   paint.setColor(DlColor::RGBA(0, 1, 0, 0.5));
-  builder.DrawCircle({250, 200}, 100, paint);
+  builder.DrawCircle(SkPoint{250, 200}, 100, paint);
 
   paint.setBlendMode(DlBlendMode::kPlus);
 
   paint.setColor(DlColor::kRed());
-  builder.DrawCircle({450, 250}, 100, paint);
+  builder.DrawCircle(SkPoint{450, 250}, 100, paint);
 
   paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({550, 250}, 100, paint);
+  builder.DrawCircle(SkPoint{550, 250}, 100, paint);
 
   paint.setColor(DlColor::kBlue());
-  builder.DrawCircle({500, 150}, 100, paint);
+  builder.DrawCircle(SkPoint{500, 150}, 100, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Compare results with https://api.flutter.dev/flutter/dart-ui/BlendMode.html
+TEST_P(AiksTest, ColorFilterBlend) {
+  bool has_color_filter = true;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Checkbox("has color filter", &has_color_filter);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    auto src_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_src.png"));
+    auto dst_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_dst.png"));
+
+    std::vector<DlBlendMode> blend_modes = {
+        DlBlendMode::kSrc,     DlBlendMode::kSrcATop, DlBlendMode::kSrcOver,
+        DlBlendMode::kSrcIn,   DlBlendMode::kSrcOut,  DlBlendMode::kDst,
+        DlBlendMode::kDstATop, DlBlendMode::kDstOver, DlBlendMode::kDstIn,
+        DlBlendMode::kDstOut,  DlBlendMode::kClear,   DlBlendMode::kXor};
+
+    for (uint32_t i = 0; i < blend_modes.size(); ++i) {
+      builder.Save();
+      builder.Translate((i % 5) * 200, (i / 5) * 200);
+      builder.Scale(0.4, 0.4);
+      {
+        DlPaint dstPaint;
+        builder.DrawImage(dst_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &dstPaint);
+      }
+      {
+        DlPaint srcPaint;
+        srcPaint.setBlendMode(blend_modes[i]);
+        if (has_color_filter) {
+          std::shared_ptr<const DlColorFilter> color_filter =
+              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+                                       DlBlendMode::kSrcIn);
+          srcPaint.setColorFilter(color_filter);
+        }
+        builder.DrawImage(src_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &srcPaint);
+      }
+      builder.Restore();
+    }
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+// Verification for: https://github.com/flutter/flutter/issues/155691
+TEST_P(AiksTest, ColorFilterAdvancedBlend) {
+  bool has_color_filter = true;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Checkbox("has color filter", &has_color_filter);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    auto src_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_src.png"));
+    auto dst_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_dst.png"));
+
+    std::vector<DlBlendMode> blend_modes = {
+        DlBlendMode::kScreen,     DlBlendMode::kOverlay,
+        DlBlendMode::kDarken,     DlBlendMode::kLighten,
+        DlBlendMode::kColorDodge, DlBlendMode::kColorBurn,
+        DlBlendMode::kHardLight,  DlBlendMode::kSoftLight,
+        DlBlendMode::kDifference, DlBlendMode::kExclusion,
+        DlBlendMode::kMultiply,   DlBlendMode::kHue,
+        DlBlendMode::kSaturation, DlBlendMode::kColor,
+        DlBlendMode::kLuminosity,
+    };
+
+    for (uint32_t i = 0; i < blend_modes.size(); ++i) {
+      builder.Save();
+      builder.Translate((i % 5) * 200, (i / 5) * 200);
+      builder.Scale(0.4, 0.4);
+      {
+        DlPaint dstPaint;
+        builder.DrawImage(dst_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &dstPaint);
+      }
+      {
+        DlPaint srcPaint;
+        srcPaint.setBlendMode(blend_modes[i]);
+        if (has_color_filter) {
+          std::shared_ptr<const DlColorFilter> color_filter =
+              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+                                       DlBlendMode::kSrcIn);
+          srcPaint.setColorFilter(color_filter);
+        }
+        builder.DrawImage(src_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &srcPaint);
+      }
+      builder.Restore();
+    }
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+// Variant of the https://github.com/flutter/flutter/issues/155691 test that
+// uses an advanced blend in the color filter and disables framebuffer fetch
+// to force usage of BlendFilterContents::CreateForegroundAdvancedBlend.
+TEST_P(AiksTest, ColorFilterAdvancedBlendNoFbFetch) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP()
+        << "This backend doesn't yet support setting device capabilities.";
+  }
+  if (!WillRenderSomething()) {
+    GTEST_SKIP() << "This test requires playgrounds.";
+  }
+
+  std::shared_ptr<const Capabilities> old_capabilities =
+      GetContext()->GetCapabilities();
+  auto mock_capabilities = std::make_shared<MockCapabilities>();
+  EXPECT_CALL(*mock_capabilities, SupportsFramebufferFetch())
+      .Times(::testing::AtLeast(1))
+      .WillRepeatedly(::testing::Return(false));
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              GetDefaultDepthStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsImplicitResolvingMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsReadFromResolve);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsSSBO);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsCompute);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsTextureToTextureBlits);
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultGlyphAtlasFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsDecalSamplerAddressMode);
+  ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
+
+  bool has_color_filter = true;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Checkbox("has color filter", &has_color_filter);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    auto src_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_src.png"));
+    auto dst_image =
+        DlImageImpeller::Make(CreateTextureForFixture("blend_mode_dst.png"));
+
+    std::vector<DlBlendMode> blend_modes = {
+        DlBlendMode::kScreen,     DlBlendMode::kOverlay,
+        DlBlendMode::kDarken,     DlBlendMode::kLighten,
+        DlBlendMode::kColorDodge, DlBlendMode::kColorBurn,
+        DlBlendMode::kHardLight,  DlBlendMode::kSoftLight,
+        DlBlendMode::kDifference, DlBlendMode::kExclusion,
+        DlBlendMode::kMultiply,   DlBlendMode::kHue,
+        DlBlendMode::kSaturation, DlBlendMode::kColor,
+        DlBlendMode::kLuminosity,
+    };
+
+    for (uint32_t i = 0; i < blend_modes.size(); ++i) {
+      builder.Save();
+      builder.Translate((i % 5) * 200, (i / 5) * 200);
+      builder.Scale(0.4, 0.4);
+      {
+        DlPaint dstPaint;
+        builder.DrawImage(dst_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &dstPaint);
+      }
+      {
+        DlPaint srcPaint;
+        srcPaint.setBlendMode(blend_modes[i]);
+        if (has_color_filter) {
+          std::shared_ptr<const DlColorFilter> color_filter =
+              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+                                       DlBlendMode::kMultiply);
+          srcPaint.setColorFilter(color_filter);
+        }
+        builder.DrawImage(src_image, SkPoint{0, 0},
+                          DlImageSampling::kMipmapLinear, &srcPaint);
+      }
+      builder.Restore();
+    }
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 // Bug: https://github.com/flutter/flutter/issues/142549
@@ -288,7 +493,7 @@ TEST_P(AiksTest, ClearBlend) {
   DlPaint clear;
   clear.setBlendMode(DlBlendMode::kClear);
 
-  builder.DrawCircle({300.0, 300.0}, 200.0, clear);
+  builder.DrawCircle(SkPoint{300.0, 300.0}, 200.0, clear);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -392,7 +597,7 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
   // Draw grid behind the images.
   {
     DlPaint paint;
-    paint.setColor(DlColor::RGBA(41 / 255.0, 41 / 255.0, 41 / 255.0, 255));
+    paint.setColor(DlColor::RGBA(41 / 255.0, 41 / 255.0, 41 / 255.0, 1));
     builder.DrawRect(SkRect::MakeLTRB(0, 0, 800, 400), paint);
   }
 
@@ -411,12 +616,12 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
   builder.Save();
   builder.SaveLayer(nullptr, &paint);
   {
-    builder.DrawImage(dst_image, {0, 0}, DlImageSampling::kMipmapLinear,
+    builder.DrawImage(dst_image, SkPoint{0, 0}, DlImageSampling::kMipmapLinear,
                       &paint);
 
     paint.setColor(DlColor::kWhite().withAlpha(src_alpha * 255));
     paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
-    builder.DrawImage(src_image, {0, 0}, DlImageSampling::kMipmapLinear,
+    builder.DrawImage(src_image, SkPoint{0, 0}, DlImageSampling::kMipmapLinear,
                       &paint);
   }
   builder.Restore();
@@ -428,16 +633,16 @@ static sk_sp<DisplayList> BlendModeTest(Vector2 content_scale,
   DlPaint save_paint;
   builder.SaveLayer(nullptr, &save_paint);
   {
-    builder.DrawImage(dst_image, {400, 0}, DlImageSampling::kMipmapLinear,
-                      nullptr);
+    builder.DrawImage(dst_image, SkPoint{400, 0},
+                      DlImageSampling::kMipmapLinear, nullptr);
 
     DlPaint save_paint;
     save_paint.setColor(DlColor::kWhite().withAlpha(src_alpha * 255));
     save_paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
     builder.SaveLayer(nullptr, &save_paint);
     {
-      builder.DrawImage(src_image, {400, 0}, DlImageSampling::kMipmapLinear,
-                        nullptr);
+      builder.DrawImage(src_image, SkPoint{400, 0},
+                        DlImageSampling::kMipmapLinear, nullptr);
     }
     builder.Restore();
   }
@@ -519,7 +724,7 @@ TEST_P(AiksTest, ForegroundPipelineBlendAppliesTransformCorrectly) {
       DlColor::RGBA(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f),
       DlBlendMode::kSrcIn));
 
-  builder.DrawImage(DlImageImpeller::Make(texture), {200, 200},
+  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint{200, 200},
                     DlImageSampling::kMipmapLinear, &image_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -537,7 +742,7 @@ TEST_P(AiksTest, ForegroundAdvancedBlendAppliesTransformCorrectly) {
       DlColor::RGBA(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f),
       DlBlendMode::kColorDodge));
 
-  builder.DrawImage(DlImageImpeller::Make(texture), {200, 200},
+  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint{200, 200},
                     DlImageSampling::kMipmapLinear, &image_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -560,9 +765,143 @@ TEST_P(AiksTest, FramebufferAdvancedBlendCoverage) {
   DlPaint image_paint;
   image_paint.setBlendMode(DlBlendMode::kMultiply);
 
-  builder.DrawImage(DlImageImpeller::Make(texture), {20, 20},
+  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint{20, 20},
                     DlImageSampling::kMipmapLinear, &image_paint);
 
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, ColorWheel) {
+  // Compare with https://fiddle.skia.org/c/@BlendModes
+
+  BlendModeSelection blend_modes = GetBlendModeSelection();
+
+  auto draw_color_wheel = [](DisplayListBuilder& builder) -> void {
+    /// color_wheel_sampler: r=0 -> fuchsia, r=2pi/3 -> yellow, r=4pi/3 ->
+    /// cyan domain: r >= 0 (because modulo used is non euclidean)
+    auto color_wheel_sampler = [](Radians r) {
+      Scalar x = r.radians / k2Pi + 1;
+
+      // https://www.desmos.com/calculator/6nhjelyoaj
+      auto color_cycle = [](Scalar x) {
+        Scalar cycle = std::fmod(x, 6.0f);
+        return std::max(0.0f, std::min(1.0f, 2 - std::abs(2 - cycle)));
+      };
+      return Color(color_cycle(6 * x + 1),  //
+                   color_cycle(6 * x - 1),  //
+                   color_cycle(6 * x - 3),  //
+                   1);
+    };
+
+    DlPaint paint;
+    paint.setBlendMode(DlBlendMode::kSrcOver);
+
+    // Draw a fancy color wheel for the backdrop.
+    // https://www.desmos.com/calculator/xw7kafthwd
+    const int max_dist = 900;
+    for (int i = 0; i <= 900; i++) {
+      Radians r(kPhi / k2Pi * i);
+      Scalar distance = r.radians / std::powf(4.12, 0.0026 * r.radians);
+      Scalar normalized_distance = static_cast<Scalar>(i) / max_dist;
+
+      auto color = color_wheel_sampler(r).WithAlpha(1.0f - normalized_distance);
+      paint.setColor(
+          DlColor::RGBA(color.red, color.green, color.blue, color.alpha));
+      SkPoint position = SkPoint::Make(distance * std::sin(r.radians),
+                                       -distance * std::cos(r.radians));
+
+      builder.DrawCircle(position, 9 + normalized_distance * 3, paint);
+    }
+  };
+
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    // UI state.
+    static bool cache_the_wheel = true;
+    static int current_blend_index = 3;
+    static float dst_alpha = 1;
+    static float src_alpha = 1;
+    static DlColor color0 = DlColor::kRed();
+    static DlColor color1 = DlColor::kGreen();
+    static DlColor color2 = DlColor::kBlue();
+
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
+      ImGui::ListBox("Blending mode", &current_blend_index,
+                     blend_modes.blend_mode_names.data(),
+                     blend_modes.blend_mode_names.size());
+      ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
+      ImGui::ColorEdit4("Color A", reinterpret_cast<float*>(&color0));
+      ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
+      ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
+      ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+
+    DlPaint paint;
+    paint.setColor(DlColor::kWhite().withAlpha(dst_alpha * 255));
+    paint.setBlendMode(DlBlendMode::kSrc);
+    builder.SaveLayer(nullptr, &paint);
+    {
+      DlPaint paint;
+      paint.setColor(DlColor::kWhite());
+      builder.DrawPaint(paint);
+
+      builder.SaveLayer(nullptr, nullptr);
+      builder.Scale(GetContentScale().x, GetContentScale().y);
+      builder.Translate(500, 400);
+      builder.Scale(3, 3);
+      draw_color_wheel(builder);
+      builder.Restore();
+    }
+    builder.Restore();
+
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+    builder.Translate(500, 400);
+    builder.Scale(3, 3);
+
+    // Draw 3 circles to a subpass and blend it in.
+    DlPaint save_paint;
+    save_paint.setColor(DlColor::kWhite().withAlpha(src_alpha * 255));
+    save_paint.setBlendMode(static_cast<DlBlendMode>(
+        blend_modes.blend_mode_values[current_blend_index]));
+    builder.SaveLayer(nullptr, &save_paint);
+    {
+      DlPaint paint;
+      paint.setBlendMode(DlBlendMode::kPlus);
+      const Scalar x = std::sin(k2Pi / 3);
+      const Scalar y = -std::cos(k2Pi / 3);
+      paint.setColor(color0);
+      builder.DrawCircle(SkPoint::Make(-x * 45, y * 45), 65, paint);
+      paint.setColor(color1);
+      builder.DrawCircle(SkPoint::Make(0, -45), 65, paint);
+      paint.setColor(color2);
+      builder.DrawCircle(SkPoint::Make(x * 45, y * 45), 65, paint);
+    }
+    builder.Restore();
+
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, DestructiveBlendColorFilterFloodsClip) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  paint.setColor(DlColor::kBlue());
+  builder.DrawPaint(paint);
+
+  DlPaint save_paint;
+  save_paint.setColorFilter(
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc));
+  builder.SaveLayer(nullptr, &save_paint);
+  builder.Restore();
+
+  // Should be solid red as the destructive color filter floods the clip.
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

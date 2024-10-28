@@ -37,8 +37,13 @@
 
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  NSArray<NSString*>* processArguments = NSProcessInfo.processInfo.arguments;
+  if ([processArguments containsObject:@"--enable-software-rendering"]) {
+    @throw @"--enable-software-rendering is unsupported in iOS scenario tests";
+  }
+
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--maskview-blocking"]) {
+  if ([processArguments containsObject:@"--maskview-blocking"]) {
     self.window.tintColor = UIColor.systemPinkColor;
   }
   NSDictionary<NSString*, NSString*>* launchArgsMap = @{
@@ -60,14 +65,27 @@
     @"--platform-view-multiple-background-foreground" :
         @"platform_view_multiple_background_foreground",
     @"--platform-view-cliprect" : @"platform_view_cliprect",
+    @"--platform-view-cliprect-multiple-clips" : @"platform_view_cliprect_multiple_clips",
     @"--platform-view-cliprrect" : @"platform_view_cliprrect",
+    @"--platform-view-cliprrect-multiple-clips" : @"platform_view_cliprrect_multiple_clips",
     @"--platform-view-large-cliprrect" : @"platform_view_large_cliprrect",
+    @"--platform-view-large-cliprrect-multiple-clips" :
+        @"platform_view_large_cliprrect_multiple_clips",
     @"--platform-view-clippath" : @"platform_view_clippath",
+    @"--platform-view-clippath-multiple-clips" : @"platform_view_clippath_multiple_clips",
     @"--platform-view-cliprrect-with-transform" : @"platform_view_cliprrect_with_transform",
+    @"--platform-view-cliprrect-with-transform-multiple-clips" :
+        @"platform_view_cliprrect_with_transform_multiple_clips",
     @"--platform-view-large-cliprrect-with-transform" :
         @"platform_view_large_cliprrect_with_transform",
+    @"--platform-view-large-cliprrect-with-transform-multiple-clips" :
+        @"platform_view_large_cliprrect_with_transform_multiple_clips",
     @"--platform-view-cliprect-with-transform" : @"platform_view_cliprect_with_transform",
+    @"--platform-view-cliprect-with-transform-multiple-clips" :
+        @"platform_view_cliprect_with_transform_multiple_clips",
     @"--platform-view-clippath-with-transform" : @"platform_view_clippath_with_transform",
+    @"--platform-view-clippath-with-transform-multiple-clips" :
+        @"platform_view_clippath_with_transform_multiple_clips",
     @"--platform-view-transform" : @"platform_view_transform",
     @"--platform-view-opacity" : @"platform_view_opacity",
     @"--platform-view-with-other-backdrop-filter" : @"platform_view_with_other_backdrop_filter",
@@ -91,30 +109,38 @@
     @"--pointer-events" : @"pointer_events",
     @"--platform-view-scrolling-under-widget" : @"platform_view_scrolling_under_widget",
     @"--platform-views-with-clips-scrolling" : @"platform_views_with_clips_scrolling",
+    @"--platform-views-with-clips-scrolling-multiple-clips" :
+        @"platform_views_with_clips_scrolling_multiple_clips",
     @"--platform-view-cliprect-after-moved" : @"platform_view_cliprect_after_moved",
+    @"--platform-view-cliprect-after-moved-multiple-clips" :
+        @"platform_view_cliprect_after_moved_multiple_clips",
     @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
+    @"--two-platform-view-clip-rect-multiple-clips" : @"two_platform_view_clip_rect_multiple_clips",
     @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
+    @"--two-platform-view-clip-rrect-multiple-clips" :
+        @"two_platform_view_clip_rrect_multiple_clips",
     @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
+    @"--two-platform-view-clip-path-multiple-clips" : @"two_platform_view_clip_path_multiple_clips",
     @"--darwin-system-font" : @"darwin_system_font",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
       enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL* stop) {
-        if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
+        if ([processArguments containsObject:argument]) {
           flutterViewControllerTestName = testName;
           *stop = YES;
         }
       }];
   if (flutterViewControllerTestName) {
     [self setupFlutterViewControllerTest:flutterViewControllerTestName];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
+  } else if ([processArguments containsObject:@"--screen-before-flutter"]) {
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
 
   [self.window makeKeyAndVisible];
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--with-continuous-texture"]) {
+  if ([processArguments containsObject:@"--with-continuous-texture"]) {
     [ContinuousTexture
         registerWithRegistrar:[self registrarForPlugin:@"com.constant.firing.texture"]];
   }
@@ -192,16 +218,6 @@
   }
 
   self.window.rootViewController = rootViewController;
-
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--assert-ca-layer-type"]) {
-    if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--enable-software-rendering"]) {
-      NSAssert([flutterViewController.view.layer isKindOfClass:[CALayer class]],
-               @"Expected CALayer for software rendering.");
-    } else {
-      NSAssert([flutterViewController.view.layer isKindOfClass:[CAMetalLayer class]],
-               @"Expected CAMetalLayer for non-software rendering.");
-    }
-  }
 }
 
 @end

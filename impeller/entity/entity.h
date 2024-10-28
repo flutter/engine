@@ -73,6 +73,8 @@ class Entity {
 
   Entity(Entity&&);
 
+  Entity& operator=(Entity&&);
+
   /// @brief  Get the global transform matrix for this Entity.
   const Matrix& GetTransform() const;
 
@@ -89,11 +91,6 @@ class Entity {
   void SetTransform(const Matrix& transform);
 
   std::optional<Rect> GetCoverage() const;
-
-  Contents::ClipCoverage GetClipCoverage(
-      const std::optional<Rect>& current_clip_coverage) const;
-
-  bool ShouldRender(const std::optional<Rect>& clip_coverage) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
@@ -115,13 +112,9 @@ class Entity {
 
   static bool IsBlendModeDestructive(BlendMode blend_mode);
 
-  bool CanInheritOpacity() const;
-
   bool SetInheritedOpacity(Scalar alpha);
 
   std::optional<Color> AsBackgroundColor(ISize target_size) const;
-
-  Scalar DeriveTextScale() const;
 
   Entity Clone() const;
 

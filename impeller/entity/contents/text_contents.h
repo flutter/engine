@@ -44,9 +44,6 @@ class TextContents final : public Contents {
   Color GetColor() const;
 
   // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
   // The offset is only used for computing the subpixel glyph position.
@@ -57,11 +54,6 @@ class TextContents final : public Contents {
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
-  // |Contents|
-  void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) override;
-
   void SetScale(Scalar scale) { scale_ = scale; }
 
   // |Contents|
@@ -70,6 +62,8 @@ class TextContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
+  std::optional<GlyphProperties> GetGlyphProperties() const;
+
   std::shared_ptr<TextFrame> frame_;
   Scalar scale_ = 1.0;
   Scalar inherited_opacity_ = 1.0;

@@ -25,6 +25,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/buildtools', // only used by build
   r'flutter/ci',
   r'flutter/docs',
+  r'flutter/engine.code-workspace',
   r'flutter/flutter_frontend_server',
   r'flutter/impeller/docs',
   r'flutter/lib/web_ui/build', // this is compiler-generated output
@@ -49,6 +50,15 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'flutter/third_party/boringssl/src/rust', // rust-related code is not shipped
   r'flutter/third_party/boringssl/src/util', // code generators, not shipped
+  r'flutter/third_party/brotli/csharp', // C# code, not shipped.
+  r'flutter/third_party/brotli/docs', // Docs, not shipped.
+  r'flutter/third_party/brotli/go', // Go code, not shipped.
+  r'flutter/third_party/brotli/java', // Java code, not shipped.
+  r'flutter/third_party/brotli/js', // JavaScript code, not shipped.
+  r'flutter/third_party/brotli/python', // Python code, not shipped.
+  r'flutter/third_party/brotli/research', // Research tools, not shipped.
+  r'flutter/third_party/brotli/scripts', // Scripts, not shipped.
+  r'flutter/third_party/brotli/tests', // Tests, not shipped.
   r'flutter/third_party/dart/benchmarks', // not shipped in binary
   r'flutter/third_party/dart/build', // not shipped in binary
   r'flutter/third_party/dart/docs', // not shipped in binary
@@ -143,7 +153,6 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/pkg/flutter_packages',
   r'flutter/third_party/pkg/gcloud',
   r'flutter/third_party/pkg/googleapis',
-  r'flutter/third_party/pkg/platform',
   r'flutter/third_party/pkg/process',
   r'flutter/third_party/pkg/process_runner',
   r'flutter/third_party/pkg/vector_math',
@@ -175,7 +184,6 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/stb',
   r'flutter/third_party/swiftshader/third_party', // See: https://github.com/flutter/flutter/issues/145726
   r'flutter/third_party/test_shaders', // for tests only
-  r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
   r'flutter/third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
   r'flutter/third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files

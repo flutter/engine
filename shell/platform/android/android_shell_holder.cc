@@ -49,14 +49,14 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     case fml::Thread::ThreadPriority::kDisplay: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::kRaster: {
-      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
+      fml::RequestAffinity(fml::CpuAffinity::kNotEfficiency);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -89,17 +89,17 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  auto mask =
-      ThreadHost::Type::kUi | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  auto mask = ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
+  if (!settings.merged_platform_ui_thread) {
+    mask |= ThreadHost::Type::kUi;
+  }
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
-  if (!settings.merged_platform_ui_thread) {
-    host_config.ui_config = fml::Thread::ThreadConfig(
-        flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-            flutter::ThreadHost::Type::kUi, thread_label),
-        fml::Thread::ThreadPriority::kDisplay);
-  }
+  host_config.ui_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::kUi, thread_label),
+      fml::Thread::ThreadPriority::kDisplay);
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
           flutter::ThreadHost::Type::kRaster, thread_label),
@@ -140,8 +140,6 @@ AndroidShellHolder::AndroidShellHolder(
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   raster_runner = thread_host_->raster_thread->GetTaskRunner();
   if (settings.merged_platform_ui_thread) {
-    FML_LOG(IMPORTANT)
-        << "Warning: Using highly experimental merged thread mode.";
     ui_runner = platform_runner;
   } else {
     ui_runner = thread_host_->ui_thread->GetTaskRunner();

@@ -239,17 +239,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
 }
 
-- (void)testPlatformViewsControllerRenderingSoftware {
-  auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_software_rendering = true;
-  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine run];
-  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
-
-  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kSoftware);
-}
-
 - (void)testWaitForFirstFrameTimeout {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
@@ -260,7 +249,7 @@ FLUTTER_ASSERT_ARC
                        [timeoutFirstFrame fulfill];
                      }
                    }];
-  [self waitForExpectationsWithTimeout:5 handler:nil];
+  [self waitForExpectations:@[ timeoutFirstFrame ]];
 }
 
 - (void)testSpawn {
@@ -286,7 +275,7 @@ FLUTTER_ASSERT_ARC
                                  [deallocNotification fulfill];
                                }];
   }
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ deallocNotification ]];
   [center removeObserver:observer];
 }
 
@@ -310,7 +299,7 @@ FLUTTER_ASSERT_ARC
                                  [gotMessage fulfill];
                                }];
   });
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ gotMessage ]];
 }
 
 - (void)testThreadPrioritySetCorrectly {
@@ -336,7 +325,7 @@ FLUTTER_ASSERT_ARC
 
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine run];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ prioritiesSet ]];
 
   method_setImplementation(method, originalSetThreadPriority);
 }
@@ -471,25 +460,29 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testCanMergePlatformAndUIThread {
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
-  settings.merged_platform_ui_thread = true;
+  settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
 
   XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
                  engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+#endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 
-- (void)testCanUnMergePlatformAndUIThread {
+- (void)testCanNotUnMergePlatformAndUIThread {
+#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
-  settings.merged_platform_ui_thread = false;
+  settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
 
-  XCTAssertNotEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
-                    engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+#endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 
 @end

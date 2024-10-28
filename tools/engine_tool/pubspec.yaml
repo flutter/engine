@@ -14,6 +14,7 @@ resolution: workspace
 
 dependencies:
   args: any
+  collection: any
   engine_build_configs: any
   engine_repo_tools: any
   file: any
@@ -24,5 +25,5 @@ dependencies:
   process_runner: any
 
 dev_dependencies:
-  litetest: any
   process_fakes: any
+  test: any

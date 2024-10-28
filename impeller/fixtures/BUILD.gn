@@ -78,20 +78,13 @@ impeller_shaders("shader_fixtures") {
   }
 }
 
-scenec("scene_fixtures") {
-  geometry = [
-    "flutter_logo_baked.glb",
-    "two_triangles.glb",
-  ]
-  type = "gltf"
-}
-
 impellerc("runtime_stages") {
   shaders = [
     "ink_sparkle.frag",
     "runtime_stage_example.frag",
     "runtime_stage_filter_example.frag",
     "runtime_stage_simple.frag",
+    "runtime_stage_position.frag",
     "gradient.frag",
     "uniforms_and_sampler_1.frag",
     "uniforms_and_sampler_2.frag",
@@ -111,6 +104,7 @@ test_fixtures("file_fixtures") {
   fixtures = [
     "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
     "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     "airplane.jpg",
     "bay_bridge.jpg",
@@ -123,7 +117,6 @@ test_fixtures("file_fixtures") {
     "flutter_gpu_texture.vert",
     "flutter_gpu_unlit.frag",
     "flutter_gpu_unlit.vert",
-    "flutter_logo_baked.glb",
     "kalimba.jpg",
     "monkey.png",
     "multiple_stages.hlsl",
@@ -146,7 +139,6 @@ test_fixtures("file_fixtures") {
     "table_mountain_py.png",
     "table_mountain_pz.png",
     "test_texture.frag",
-    "two_triangles.glb",
     "types.h",
     "wtf.otf",
     "texture_lookup.frag",
@@ -155,12 +147,8 @@ test_fixtures("file_fixtures") {
     fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
   }
   fixtures +=
-      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ]) +
-      filter_include(get_target_outputs(":scene_fixtures"), [ "*.ipscene" ])
-  deps = [
-    ":runtime_stages",
-    ":scene_fixtures",
-  ]
+      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
+  deps = [ ":runtime_stages" ]
 }
 
 impellerc("flutter_gpu_shaders") {
@@ -195,7 +183,6 @@ group("fixtures") {
   public_deps = [
     ":file_fixtures",
     ":modern_shader_fixtures",
-    ":scene_fixtures",
     ":shader_fixtures",
   ]
 }

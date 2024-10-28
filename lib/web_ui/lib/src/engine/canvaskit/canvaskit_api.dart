@@ -1516,6 +1516,9 @@ class SkImageFilter {}
 extension SkImageFilterExtension on SkImageFilter {
   external JSVoid delete();
 
+  @JS('isDeleted')
+  external JSBoolean _isDeleted();
+  bool isDeleted() => _isDeleted().toDart;
 
   @JS('getOutputBounds')
   external JSInt32Array _getOutputBounds(JSFloat32Array bounds);
@@ -2622,6 +2625,10 @@ extension SkCanvasExtension on SkCanvas {
   external JSAny _getLocalToDevice();
   List<dynamic> getLocalToDevice() => _getLocalToDevice().toObjectShallow as
       List<dynamic>;
+
+  @JS('quickReject')
+  external JSBoolean _quickReject(JSFloat32Array rect);
+  bool quickReject(Float32List rect) => _quickReject(rect.toJS).toDart;
 
   external JSVoid drawPicture(SkPicture picture);
 
