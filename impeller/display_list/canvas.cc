@@ -623,14 +623,9 @@ void Canvas::ClipGeometry(const Geometry& geometry,
       entity,                                                      //
       *render_passes_.back().inline_pass_context->GetRenderPass()  //
   );
-  if (backdrop_count_ == 0 &&
-      renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
-    clip_contents.SetGeometry(std::move(geometry_result));
-  } else {
-    clip_contents.SetGeometry(geometry_result);
-    clip_coverage_stack_.GetLastReplayResult().clip_contents.SetGeometry(
-        std::move(geometry_result));
-  }
+  clip_contents.SetGeometry(geometry_result);
+  clip_coverage_stack_.GetLastReplayResult().clip_contents.SetGeometry(
+      geometry_result);
 
   clip_contents.Render(
       renderer_, *render_passes_.back().inline_pass_context->GetRenderPass(),
