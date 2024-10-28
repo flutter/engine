@@ -15,9 +15,9 @@ class NSDataMapping : public fml::Mapping {
  public:
   explicit NSDataMapping(NSData* data) : data_(data) {}
 
-  size_t GetSize() const override { return [data_ length]; }
+  size_t GetSize() const override { return data_.length; }
 
-  const uint8_t* GetMapping() const override { return static_cast<const uint8_t*>([data_ bytes]); }
+  const uint8_t* GetMapping() const override { return static_cast<const uint8_t*>(data_.bytes); }
 
   bool IsDontNeedSafe() const override { return false; }
 
