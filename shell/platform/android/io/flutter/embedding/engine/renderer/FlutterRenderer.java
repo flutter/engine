@@ -1231,11 +1231,10 @@ public class FlutterRenderer implements TextureRegistry {
     for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
       DisplayCutout displayCutout = viewportMetrics.displayCutouts.get(i);
       translateFeatureBounds(displayFeaturesBounds, cutoutOffset + 4 * i, displayCutout.bounds);
-      // Display cutouts always have type CUTOUT and state UNKNOWN.
       displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
-          DisplayFeatureType.CUTOUT.encodedValue;
+          DisplayCutout.type.encodedValue;
       displayFeaturesState[viewportMetrics.displayFeatures.size() + i] =
-          DisplayFeatureState.UNKNOWN.encodedValue;
+          DisplayCutout.state.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -1387,6 +1386,9 @@ public class FlutterRenderer implements TextureRegistry {
    */
   public static final class DisplayCutout {
     public final Rect bounds;
+    // Display cutouts always have type CUTOUT and state UNKNOWN.
+    public static final DisplayFeatureType type = DisplayFeatureType.CUTOUT;
+    public static final DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
 
     public DisplayCutout(Rect bounds) {
       this.bounds = bounds;
