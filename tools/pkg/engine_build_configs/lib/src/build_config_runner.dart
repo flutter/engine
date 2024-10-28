@@ -589,6 +589,17 @@ final class BuildRunner extends Runner {
     return './${p.relative(abs)}';
   }
 
+  /// Takes a [line] from compilation and makes the path relative to `CWD` where
+  /// the paths are relative to [outDir].
+  static String fixGccPaths(String line, String outDir) {
+    final Match? match = _gccRegex.firstMatch(line);
+    if (match == null) {
+      return line;
+    } else {
+      return '${_makeRelative(match.group(1)!, outDir)}${match.group(2)}';
+    }
+  }
+
   Future<bool> _runNinja(RunnerEventHandler eventHandler) async {
     if (_isRbe) {
       if (!await _bootstrapRbe(eventHandler)) {
@@ -647,14 +658,8 @@ final class BuildRunner extends Runner {
             if (_ninjaProgress(eventHandler, command, line)) {
               return;
             }
-            final Match? match = _gccRegex.firstMatch(line);
-            List<int> bytes;
-            if (match == null) {
-              bytes = utf8.encode('$line\n');
-            } else {
-              bytes = utf8.encode(
-                  '${_makeRelative(match.group(1)!, outDir)}${match.group(2)}\n');
-            }
+            line = fixGccPaths(line, outDir);
+            final List<int> bytes = utf8.encode('$line\n');
             stdoutOutput.addAll(bytes);
           },
           onDone: () async => stdoutComplete.complete(),
