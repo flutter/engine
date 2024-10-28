@@ -646,6 +646,8 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    // Each dimension of the viewport metric paddings should be the maximum of the corresponding
+    // dimension from the display cutout's safe insets and waterfall insets.
     validateViewportMetricPadding(viewportMetricsCaptor, 200, 120, 250, 140);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);

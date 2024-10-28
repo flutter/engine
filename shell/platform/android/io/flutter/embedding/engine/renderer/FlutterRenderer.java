@@ -1157,6 +1157,13 @@ public class FlutterRenderer implements TextureRegistry {
     }
   }
 
+  private void translateFeatureBounds(int[] displayFeatureBounds, int offset, Rect bounds) {
+    displayFeatureBounds[offset] = bounds.left;
+    displayFeatureBounds[offset + 1] = bounds.top;
+    displayFeatureBounds[offset + 2] = bounds.right;
+    displayFeatureBounds[offset + 3] = bounds.bottom;
+  }
+
   /**
    * Notifies Flutter that the viewport metrics, e.g. window height and width, have changed.
    *
@@ -1216,20 +1223,14 @@ public class FlutterRenderer implements TextureRegistry {
     int[] displayFeaturesState = new int[totalFeaturesAndCutouts];
     for (int i = 0; i < viewportMetrics.displayFeatures.size(); i++) {
       DisplayFeature displayFeature = viewportMetrics.displayFeatures.get(i);
-      displayFeaturesBounds[4 * i] = displayFeature.bounds.left;
-      displayFeaturesBounds[4 * i + 1] = displayFeature.bounds.top;
-      displayFeaturesBounds[4 * i + 2] = displayFeature.bounds.right;
-      displayFeaturesBounds[4 * i + 3] = displayFeature.bounds.bottom;
+      translateFeatureBounds(displayFeaturesBounds, 4 * i, displayFeature.bounds);
       displayFeaturesType[i] = displayFeature.type.encodedValue;
       displayFeaturesState[i] = displayFeature.state.encodedValue;
     }
     int cutoutOffset = viewportMetrics.displayFeatures.size() * 4;
     for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
       DisplayCutout displayCutout = viewportMetrics.displayCutouts.get(i);
-      displayFeaturesBounds[cutoutOffset + 4 * i] = displayCutout.bounds.left;
-      displayFeaturesBounds[cutoutOffset + 4 * i + 1] = displayCutout.bounds.top;
-      displayFeaturesBounds[cutoutOffset + 4 * i + 2] = displayCutout.bounds.right;
-      displayFeaturesBounds[cutoutOffset + 4 * i + 3] = displayCutout.bounds.bottom;
+      translateFeatureBounds(displayFeaturesBounds, cutoutOffset + 4 * i, displayCutout.bounds);
       // Display cutouts always have type CUTOUT and state UNKNOWN.
       displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
           DisplayFeatureType.CUTOUT.encodedValue;
