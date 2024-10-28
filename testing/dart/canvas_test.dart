@@ -1440,6 +1440,7 @@ void main() async {
     );
     final filter = ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0, tileMode: tileMode);
     final Paint white = Paint()..color = const Color.fromARGB(255, 255, 255, 255);
+    final Paint grey = Paint()..color = const Color.fromARGB(255, 127, 127, 127);
     final Paint unblurredFill = Paint()..shader = gradient;
     final Paint blurredFill = Paint.from(unblurredFill)
       ..imageFilter = filter;
@@ -1536,6 +1537,8 @@ void main() async {
     const double pad = 10;
     final double offset = arena.width + pad;
     const int columns = 5;
+    final Rect pairArena = Rect.fromLTRB(arena.left - 3, arena.top - 3,
+                                         arena.right + 3, arena.bottom + offset + 3);
 
     final List<void Function(Canvas canvas, Paint fill, Paint stroke)> renderers = [
       (canvas, fill, stroke) {
@@ -1577,6 +1580,7 @@ void main() async {
       canvas.save();
       for (int col = 0; col < columns && renderIndex < renderers.length; col++) {
         final renderer = renderers[renderIndex++];
+        canvas.drawRect(pairArena, grey);
         canvas.drawRect(arena, white);
         renderer(canvas, unblurredFill, unblurredStroke);
         canvas.save();
