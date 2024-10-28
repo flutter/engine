@@ -292,9 +292,9 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
     FillPathGeometry geom(path);
     AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
   } else {
-    // StrokePathGeometry geom(path, paint.stroke_width, paint.stroke_miter,
-    //                         paint.stroke_cap, paint.stroke_join);
-    // AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+    StrokePathGeometry geom(path, paint.stroke_width, paint.stroke_miter,
+                            paint.stroke_cap, paint.stroke_join);
+    AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
   }
 }
 

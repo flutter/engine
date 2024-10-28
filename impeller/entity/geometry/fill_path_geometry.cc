@@ -42,7 +42,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
       path_, host_buffer, entity.GetTransform().GetMaxBasisLengthXY());
 
   return GeometryResult{
-      .type = PrimitiveType::kTriangleFan,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = std::move(vertex_buffer),
       .transform = entity.GetShaderTransform(pass),
       .mode = GetResultMode(),

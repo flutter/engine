@@ -42,7 +42,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
     BufferView index_buffer = host_buffer.Emplace(
         nullptr, sizeof(uint16_t) * (point_count + contour_count - 1),
         alignof(uint16_t));
-    DirectVertexWriter writer(
+    StripVertexWriter writer(
         reinterpret_cast<Point*>(point_buffer.buffer->OnGetContents() +
                                  point_buffer.range.offset),
         reinterpret_cast<uint16_t*>(index_buffer.buffer->OnGetContents() +

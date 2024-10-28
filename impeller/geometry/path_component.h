@@ -24,12 +24,12 @@ class VertexWriter {
   virtual void Write(Point point) = 0;
 };
 
-class DirectVertexWriter : public VertexWriter {
+class FanVertexWriter : public VertexWriter {
  public:
-  explicit DirectVertexWriter(Point* point_buffer, uint16_t* index_buffer)
+  explicit FanVertexWriter(Point* point_buffer, uint16_t* index_buffer)
       : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
 
-  ~DirectVertexWriter() = default;
+  ~FanVertexWriter() = default;
 
   size_t GetIndexCount() const { return index_count_; }
 
@@ -48,6 +48,52 @@ class DirectVertexWriter : public VertexWriter {
  private:
   size_t count_ = 0;
   size_t index_count_ = 0;
+  Point* point_buffer_;
+  uint16_t* index_buffer_;
+};
+
+class StripVertexWriter : public VertexWriter {
+ public:
+  explicit StripVertexWriter(Point* point_buffer, uint16_t* index_buffer)
+      : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
+
+  ~StripVertexWriter() = default;
+
+  size_t GetIndexCount() const { return index_count_; }
+
+  void EndContour() override {
+    if (count_ == 0u || contour_start_ == count_ - 1) {
+      // Empty or first contour.
+      return;
+    }
+
+    size_t start = contour_start_;
+    size_t end = count_ - 1;
+
+    index_buffer_[index_count_++] = start;
+
+    size_t a = start + 1;
+    size_t b = end;
+    while (a < b) {
+      index_buffer_[index_count_++] = a;
+      index_buffer_[index_count_++] = b;
+      a++;
+      b--;
+    }
+    if (a == b) {
+      index_buffer_[index_count_++] = a;
+    }
+
+    contour_start_ = count_;
+    index_buffer_[index_count_++] = 0xFFFF;
+  }
+
+  void Write(Point point) override { point_buffer_[count_++] = point; }
+
+ private:
+  size_t count_ = 0;
+  size_t index_count_ = 0;
+  size_t contour_start_ = 0;
   Point* point_buffer_;
   uint16_t* index_buffer_;
 };
