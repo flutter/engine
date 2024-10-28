@@ -41,8 +41,8 @@ class FanVertexWriter : public VertexWriter {
  private:
   size_t count_ = 0;
   size_t index_count_ = 0;
-  Point* point_buffer_;
-  uint16_t* index_buffer_;
+  Point* point_buffer_ = nullptr;
+  uint16_t* index_buffer_ = nullptr;
 };
 
 /// @brief A vertex writer that generates a triangle strip and requires
@@ -63,8 +63,8 @@ class StripVertexWriter : public VertexWriter {
   size_t count_ = 0;
   size_t index_count_ = 0;
   size_t contour_start_ = 0;
-  Point* point_buffer_;
-  uint16_t* index_buffer_;
+  Point* point_buffer_ = nullptr;
+  uint16_t* index_buffer_ = nullptr;
 };
 
 /// @brief A vertex writer that has no hardware requirements.

@@ -9,6 +9,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/round_rect.h"
 
 namespace impeller {
 namespace testing {
@@ -556,6 +557,40 @@ TEST(PathTest, CanBeCloned) {
     EXPECT_EQ(poly_a.contours[i].start_direction,
               poly_b.contours[i].start_direction);
   }
+}
+
+TEST(PathTest, FanTessellation) {
+  Path path = PathBuilder{}
+                  .AddRoundRect(RoundRect::MakeRectRadius(
+                      Rect::MakeLTRB(0, 0, 100, 100), 10))
+                  .TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  FanVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
+}
+
+TEST(PathTest, StripTessellation) {
+  Path path = PathBuilder{}
+                  .AddRoundRect(RoundRect::MakeRectRadius(
+                      Rect::MakeLTRB(0, 0, 100, 100), 10))
+                  .TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  StripVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
 }
 
 TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
