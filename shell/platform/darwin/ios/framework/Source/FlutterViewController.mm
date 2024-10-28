@@ -970,6 +970,8 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)dealloc {
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
+  // Eliminate method calls in initializers and dealloc.
   [self removeInternalPlugins];
   [self deregisterNotifications];
 
