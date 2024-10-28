@@ -34,24 +34,6 @@ class Contents {
   /// unpremultiplied color.
   using ColorFilterProc = std::function<Color(Color)>;
 
-  struct ClipCoverage {
-    enum class Type { kNoChange, kAppend, kRestore };
-
-    Type type = Type::kNoChange;
-    // TODO(jonahwilliams): this should probably use the Entity::ClipOperation
-    // enum, but that has transitive import errors.
-    bool is_difference_or_non_square = false;
-
-    /// @brief This coverage is the outer coverage of the clip.
-    ///
-    /// For example, if the clip is a circular clip, this is the rectangle that
-    /// contains the circle and not the rectangle that is contained within the
-    /// circle. This means that we cannot use the coverage alone to determine if
-    /// a clip can be culled, and instead also use the somewhat hacky
-    /// "is_difference_or_non_square" field.
-    std::optional<Rect> coverage = std::nullopt;
-  };
-
   using RenderProc = std::function<bool(const ContentContext& renderer,
                                         const Entity& entity,
                                         RenderPass& pass)>;
@@ -101,19 +83,6 @@ class Contents {
   virtual bool IsOpaque(const Matrix& transform) const;
 
   //----------------------------------------------------------------------------
-  /// @brief Given the current pass space bounding rectangle of the clip
-  ///        buffer, return the expected clip coverage after this draw call.
-  ///        This should only be implemented for contents that may write to the
-  ///        clip buffer.
-  ///
-  ///        During rendering, coverage coordinates count pixels from the top
-  ///        left corner of the framebuffer.
-  ///
-  virtual ClipCoverage GetClipCoverage(
-      const Entity& entity,
-      const std::optional<Rect>& current_clip_coverage) const;
-
-  //----------------------------------------------------------------------------
   /// @brief Render this contents to a snapshot, respecting the entity's
   ///        transform, path, clip depth, and blend mode.
   ///        The result texture size is always the size of
@@ -156,12 +125,6 @@ class Contents {
   ///
   virtual std::optional<Color> AsBackgroundColor(const Entity& entity,
                                                  ISize target_size) const;
-
-  //----------------------------------------------------------------------------
-  /// @brief Cast to a filter. Returns `nullptr` if this Contents is not a
-  ///        filter.
-  ///
-  virtual const FilterContents* AsFilter() const;
 
   //----------------------------------------------------------------------------
   /// @brief      If possible, applies a color filter to this contents inputs on

@@ -17,7 +17,6 @@
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/typographer/glyph_atlas.h"
-#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -212,7 +211,6 @@ bool TextContents::Render(const ContentContext& renderer,
             // known when the glyph was recorded. Perform a slow lookup into the
             // glyph atlas hash table.
             if (frame_bounds.is_placeholder) {
-              // Note: uses unrounded scale for more accurate subpixel position.
               if (!font_atlas) {
                 font_atlas = atlas->GetOrCreateFontGlyphAtlas(
                     ScaledFont{font, rounded_scale});
@@ -279,12 +277,9 @@ bool TextContents::Render(const ContentContext& renderer,
         }
       });
 
-  pass.SetVertexBuffer({
-      .vertex_buffer = std::move(buffer_view),
-      .index_buffer = {},
-      .vertex_count = vertex_count,
-      .index_type = IndexType::kNone,
-  });
+  pass.SetVertexBuffer(std::move(buffer_view));
+  pass.SetIndexBuffer({}, IndexType::kNone);
+  pass.SetElementCount(vertex_count);
 
   return pass.Draw().ok();
 }

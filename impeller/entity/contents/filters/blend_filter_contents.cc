@@ -21,6 +21,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/color.h"
@@ -242,10 +243,7 @@ static std::optional<Entity> AdvancedBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
@@ -303,7 +301,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
                                  BlendModeToString(blend_mode)));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
-    auto options = OptionsFromPass(pass);
+    auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
 
     switch (blend_mode) {
@@ -370,8 +368,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
 
-    frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(),
-                                                pass, dst_snapshot->transform);
+    frame_info.mvp = Entity::GetShaderTransform(
+        entity.GetShaderClipDepth(), pass,
+        entity.GetTransform() * dst_snapshot->transform);
 
     blend_info.dst_input_alpha =
         absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
@@ -402,6 +401,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
+  sub_entity.SetBlendMode(entity.GetBlendMode());
 
   return sub_entity;
 }
@@ -624,8 +624,8 @@ static std::optional<Entity> PipelineBlend(
 
     if (foreground_color.has_value()) {
       auto contents = std::make_shared<SolidColorContents>();
-      contents->SetGeometry(
-          Geometry::MakeRect(Rect::MakeSize(pass.GetRenderTargetSize())));
+      RectGeometry geom(Rect::MakeSize(pass.GetRenderTargetSize()));
+      contents->SetGeometry(&geom);
       contents->SetColor(foreground_color.value());
 
       Entity foreground_entity;
@@ -652,11 +652,7 @@ static std::optional<Entity> PipelineBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
@@ -892,11 +888,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(cmd_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(cmd_buffer))) {
     return std::nullopt;
   }
 

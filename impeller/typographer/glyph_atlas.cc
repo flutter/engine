@@ -6,6 +6,7 @@
 
 #include <numeric>
 #include <utility>
+
 #include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {

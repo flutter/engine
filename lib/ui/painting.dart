@@ -78,10 +78,17 @@ Color _scaleAlpha(Color x, double factor) {
 /// Color c2 = const Color(0xFFFFFFFF); // fully opaque white (visible)
 /// ```
 ///
+/// [Color]'s color components are stored as floating-point values. Care should
+/// be taken if one does not want the literal equality provided by `operator==`.
+/// To test equality inside of Flutter tests consider using `package:test`'s
+/// `isSameColorAs`.
+///
 /// See also:
 ///
-///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
-///    defines the colors found in the Material Design specification.
+///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html),
+///    which defines the colors found in the Material Design specification.
+///  * [`isSameColorAs`](https://api.flutter.dev/flutter/flutter_test/isSameColorAs.html),
+///    a Matcher to handle floating-point deltas when checking [Color] equality.
 class Color {
   /// Construct an sRGB color from the lower 32 bits of an [int].
   ///
@@ -1110,15 +1117,19 @@ enum PaintingStyle {
   stroke,
 }
 
-/// Different ways to clip a widget's content.
+/// Different ways to clip content.
+///
+/// See also:
+///
+///  * [Paint.isAntiAlias], the anti-aliasing switch for general draw operations.
 enum Clip {
   /// No clip at all.
   ///
   /// This is the default option for most widgets: if the content does not
   /// overflow the widget boundary, don't pay any performance cost for clipping.
   ///
-  /// If the content does overflow, please explicitly specify the following
-  /// [Clip] options:
+  /// If the content does overflow, consider the following [Clip] options:
+  ///
   ///  * [hardEdge], which is the fastest clipping, but with lower fidelity.
   ///  * [antiAlias], which is a little slower than [hardEdge], but with smoothed edges.
   ///  * [antiAliasWithSaveLayer], which is much slower than [antiAlias], and should
@@ -1137,50 +1148,53 @@ enum Clip {
   ///
   /// See also:
   ///
-  ///  * [antiAlias], which is more reasonable when clipping is needed and the shape is not
+  ///  * [antiAlias], recommended when clipping is needed and the shape is not
   ///    an axis-aligned rectangle.
   hardEdge,
 
   /// Clip with anti-aliasing.
   ///
-  /// This mode has anti-aliased clipping edges to achieve a smoother look.
+  /// This mode has anti-aliased clipping edges, which reduces jagged edges when
+  /// the clip shape itself has edges that are diagonal, curved, or otherwise
+  /// not axis-aligned.
   ///
-  /// It' s much faster than [antiAliasWithSaveLayer], but slower than [hardEdge].
+  /// This is much faster than [antiAliasWithSaveLayer], but slower than [hardEdge].
   ///
-  /// This will be the common case when dealing with circles and arcs.
-  ///
-  /// Different from [hardEdge] and [antiAliasWithSaveLayer], this clipping may have
-  /// bleeding edge artifacts.
-  /// (See https://fiddle.skia.org/c/21cb4c2b2515996b537f36e7819288ae for an example.)
+  /// Unlike [hardEdge] and [antiAliasWithSaveLayer], this clipping can have
+  /// bleeding edge artifacts
+  /// ([Skia Fiddle example](https://fiddle.skia.org/c/21cb4c2b2515996b537f36e7819288ae)).
   ///
   /// See also:
   ///
-  ///  * [hardEdge], which is a little faster, but with lower fidelity.
-  ///  * [antiAliasWithSaveLayer], which is much slower, but can avoid the
-  ///    bleeding edges if there's no other way.
+  ///  * [hardEdge], which is faster, but with lower fidelity.
+  ///  * [antiAliasWithSaveLayer], which is much slower, but avoids bleeding
+  ///    edge artifacts.
   ///  * [Paint.isAntiAlias], which is the anti-aliasing switch for general draw operations.
   antiAlias,
 
-  /// Clip with anti-aliasing and saveLayer immediately following the clip.
+  /// Clip with anti-aliasing and `saveLayer` immediately following the clip.
   ///
   /// This mode not only clips with anti-aliasing, but also allocates an offscreen
   /// buffer. All subsequent paints are carried out on that buffer before finally
   /// being clipped and composited back.
   ///
-  /// This is very slow. It has no bleeding edge artifacts (that [antiAlias] has)
-  /// but it changes the semantics as an offscreen buffer is now introduced.
-  /// (See https://github.com/flutter/flutter/issues/18057#issuecomment-394197336
-  /// for a difference between paint without saveLayer and paint with saveLayer.)
+  /// This is very slow. It has no bleeding edge artifacts, unlike [antiAlias],
+  /// but it changes the semantics as it introduces an offscreen buffer.
+  /// For example, see this
+  /// [Skia Fiddle without `saveLayer`](https://fiddle.skia.org/c/83ed46ceadaf90f36a4df3b98cbe1c35)
+  /// and this
+  /// [Skia Fiddle with `saveLayer`](https://fiddle.skia.org/c/704acfa049a7e99fbe685232c45d1582).
   ///
-  /// This will be only rarely needed. One case where you might need this is if
-  /// you have an image overlaid on a very different background color. In these
-  /// cases, consider whether you can avoid overlaying multiple colors in one
-  /// spot (e.g. by having the background color only present where the image is
-  /// absent). If you can, [antiAlias] would be fine and much faster.
+  /// Use this mode only if necessary. For example, if you have an
+  /// image overlaid on a very different background color. In these
+  /// cases, consider if you can avoid overlaying multiple colors in one
+  /// location (e.g. by having the background color only present where the image is
+  /// absent). If possible, prefer [antiAlias] as it is much faster.
   ///
   /// See also:
   ///
   ///  * [antiAlias], which is much faster, and has similar clipping results.
+  ///  * [Canvas.saveLayer].
   antiAliasWithSaveLayer,
 }
 

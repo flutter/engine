@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -73,6 +74,23 @@ Future<void> testMain() async {
 
       await renderScene(sceneBuilder.build());
       await matchGoldenFile('scene_builder_circle_clip_rect.png',
+          region: region);
+    });
+
+    test('Devtools rendering regression test', () async {
+      // This is a regression test for https://github.com/flutter/devtools/issues/8401
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+
+      sceneBuilder.pushClipRect(const ui.Rect.fromLTRB(12.0, 0.0, 300.0, 27.0));
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawOval(
+          const ui.Rect.fromLTRB(15.0, 5.0, 64.0, 21.0),
+          ui.Paint()..color = const ui.Color(0xFF0000FF),
+        );
+      }));
+
+      await renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_oval_clip_rect.png',
           region: region);
     });
 
@@ -223,7 +241,7 @@ Future<void> testMain() async {
           region: region);
     });
 
-    test('image filter layer', () async {
+    test('blur image filter layer', () async {
       final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushImageFilter(ui.ImageFilter.blur(
         sigmaX: 5.0,
@@ -237,6 +255,23 @@ Future<void> testMain() async {
 
       await renderScene(sceneBuilder.build());
       await matchGoldenFile('scene_builder_image_filter.png', region: region);
+    });
+
+    test('matrix image filter layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      sceneBuilder.pushOffset(50.0, 50.0);
+
+      final Matrix4 matrix = Matrix4.rotationZ(math.pi / 18);
+      final ui.ImageFilter matrixFilter = ui.ImageFilter.matrix(toMatrix64(matrix.storage));
+      sceneBuilder.pushImageFilter(matrixFilter);
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawRect(
+          region,
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+      await renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_matrix_image_filter.png', region: region);
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/154303
@@ -403,6 +438,69 @@ Future<void> testMain() async {
     },
         skip: isFirefox &&
             isHtml); // https://github.com/flutter/flutter/issues/86623
+
+    test('opacity layer with transformed children', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      sceneBuilder.pushOffset(0, 0);
+      sceneBuilder.pushOpacity(128);
+      // Push some complex transforms
+      final Float64List transform1 = Float64List.fromList([
+        1.00,
+        0.00,
+        0.00,
+        0.00,
+        0.06,
+        1.00,
+        -0.88,
+        0.00,
+        -0.03,
+        0.60,
+        0.47,
+        -0.00,
+        -4.58,
+        257.03,
+        63.11,
+        0.81,
+      ]);
+      final Float64List transform2 = Float64List.fromList([
+        1.00,
+        0.00,
+        0.00,
+        0.00,
+        0.07,
+        0.90,
+        -0.94,
+        0.00,
+        -0.02,
+        0.75,
+        0.33,
+        -0.00,
+        -3.28,
+        309.29,
+        45.20,
+        0.86,
+      ]);
+      sceneBuilder
+          .pushTransform(Matrix4.identity().scaled(0.3, 0.3).toFloat64());
+      sceneBuilder.pushTransform(transform1);
+      sceneBuilder.pushTransform(transform2);
+
+      sceneBuilder.addPicture(const ui.Offset(20, 20),
+          drawPicture((ui.Canvas canvas) {
+        canvas.drawCircle(const ui.Offset(25, 75), 25,
+            ui.Paint()..color = const ui.Color(0xFFFF0000));
+      }));
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      sceneBuilder.pop();
+      await renderScene(sceneBuilder.build());
+
+      await matchGoldenFile(
+          'scene_builder_opacity_layer_with_transformed_children.png',
+          region: region);
+    });
   });
 }
 

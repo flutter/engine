@@ -216,6 +216,9 @@ class PictureLayer extends Layer {
   /// A hint to the compositor that this picture is likely to change.
   final bool willChange;
 
+  /// The bounds measured in the measure step.
+  ui.Rect? sceneBounds;
+
   /// Whether or not this picture is culled in the final scene. We compute this
   /// when we optimize the scene.
   bool isCulled = false;

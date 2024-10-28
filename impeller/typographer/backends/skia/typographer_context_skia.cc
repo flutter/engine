@@ -14,6 +14,7 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 
+#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -232,7 +233,7 @@ static void DrawGlyph(SkCanvas* canvas,
     glyph_paint.setStrokeWidth(prop->stroke_width * scaled_font.scale);
     glyph_paint.setStrokeCap(ToSkiaCap(prop->stroke_cap));
     glyph_paint.setStrokeJoin(ToSkiaJoin(prop->stroke_join));
-    glyph_paint.setStrokeMiter(prop->stroke_miter * scaled_font.scale);
+    glyph_paint.setStrokeMiter(prop->stroke_miter);
   }
   canvas->save();
   canvas->translate(glyph.subpixel_offset.x, glyph.subpixel_offset.y);
@@ -372,6 +373,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                             IRect::MakeXYWH(pos.GetLeft() - 1, pos.GetTop() - 1,
                                             size.width, size.height),  //
                             /*label=*/"",                              //
+                            /*mip_level=*/0,                           //
                             /*slice=*/0,                               //
                             /*convert_to_read=*/false                  //
                             )) {
@@ -391,7 +393,7 @@ static Rect ComputeGlyphSize(const SkFont& font,
     glyph_paint.setStrokeWidth(glyph.properties->stroke_width * scale);
     glyph_paint.setStrokeCap(ToSkiaCap(glyph.properties->stroke_cap));
     glyph_paint.setStrokeJoin(ToSkiaJoin(glyph.properties->stroke_join));
-    glyph_paint.setStrokeMiter(glyph.properties->stroke_miter * scale);
+    glyph_paint.setStrokeMiter(glyph.properties->stroke_miter);
   }
   font.getBounds(&glyph.glyph.index, 1, &scaled_bounds, &glyph_paint);
 
@@ -444,7 +446,7 @@ TypographerContextSkia::CollectNewGlyphs(
       for (const auto& glyph_position : run.GetGlyphPositions()) {
         Point subpixel = TextFrame::ComputeSubpixelPosition(
             glyph_position, scaled_font.font.GetAxisAlignment(),
-            frame->GetOffset(), rounded_scale);
+            frame->GetOffset(), frame->GetScale());
         SubpixelGlyph subpixel_glyph(glyph_position.glyph, subpixel,
                                      frame->GetProperties());
         const auto& font_glyph_bounds =
@@ -529,7 +531,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
     fml::ScopedCleanupClosure closure([&]() {
       blit_pass->EncodeCommands(context.GetResourceAllocator());
-      context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+      if (!context.EnqueueCommandBuffer(std::move(cmd_buffer))) {
+        VALIDATION_LOG << "Failed to submit glyph atlas command buffer";
+      }
     });
 
     // ---------------------------------------------------------------------------
@@ -619,7 +623,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
-    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+    if (!context.EnqueueCommandBuffer(std::move(cmd_buffer))) {
+      VALIDATION_LOG << "Failed to submit glyph atlas command buffer";
+    }
   });
 
   // Now append all remaining glyphs. This should never have any missing data...

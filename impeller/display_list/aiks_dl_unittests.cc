@@ -10,7 +10,7 @@
 #include "display_list/effects/dl_image_filter.h"
 #include "display_list/geometry/dl_geometry_types.h"
 #include "display_list/image/dl_image.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_builder.h"
@@ -160,11 +160,14 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendColorFilterDrawsCorrectly) {
   paint.setColor(DlColor::kBlack().withAlpha(128));
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstOver));
+  builder.Save();
+  builder.ClipRect(SkRect::MakeXYWH(100, 500, 300, 300));
   builder.SaveLayer(nullptr, &paint);
 
   DlPaint draw_paint;
   draw_paint.setColor(DlColor::kBlue());
   builder.DrawRect(SkRect::MakeXYWH(100, 500, 300, 300), draw_paint);
+  builder.Restore();
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -203,11 +206,14 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
   save_paint.setColor(DlColor::kBlack().withAlpha(128));
   save_paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstOver));
+  builder.Save();
+  builder.ClipRect(SkRect::MakeXYWH(100, 500, 300, 300));
   builder.SaveLayer(nullptr, &save_paint);
 
   DlPaint draw_paint;
   draw_paint.setColor(DlColor::kBlue());
   builder.DrawRect(SkRect::MakeXYWH(100, 500, 300, 300), draw_paint);
+  builder.Restore();
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -242,12 +248,12 @@ TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {100, 100}, DlImageSampling::kMipmapLinear);
+  builder.DrawImage(image, SkPoint{100, 100}, DlImageSampling::kMipmapLinear);
 
   DlPaint paint;
   paint.setColor(DlColor::kBlack().withAlpha(128));
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(image, {100, 500}, DlImageSampling::kMipmapLinear);
+  builder.DrawImage(image, SkPoint{100, 500}, DlImageSampling::kMipmapLinear);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -257,7 +263,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixColorFilterDrawsCorrectly) {
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {100, 100}, {});
+  builder.DrawImage(image, SkPoint{100, 100}, {});
 
   const float matrix[20] = {
       1, 0, 0, 0, 0,  //
@@ -269,7 +275,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixColorFilterDrawsCorrectly) {
   paint.setColor(DlColor::kBlack().withAlpha(128));
   paint.setColorFilter(DlMatrixColorFilter::Make(matrix));
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(image, {100, 500}, {});
+  builder.DrawImage(image, SkPoint{100, 500}, {});
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -279,7 +285,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {100, 100}, {});
+  builder.DrawImage(image, SkPoint{100, 100}, {});
 
   const float matrix[20] = {
       1, 0, 0, 0, 0,  //
@@ -291,7 +297,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
   paint.setColor(DlColor::kBlack().withAlpha(128));
   paint.setColorFilter(DlMatrixColorFilter::Make(matrix));
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(image, {100, 500}, {});
+  builder.DrawImage(image, SkPoint{100, 500}, {});
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -302,7 +308,7 @@ TEST_P(AiksTest,
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {100, 100}, {});
+  builder.DrawImage(image, SkPoint{100, 100}, {});
 
   const float matrix[20] = {
       1, 0,   0, 0,   0,  //
@@ -317,7 +323,7 @@ TEST_P(AiksTest,
   paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kGreen(), DlBlendMode::kModulate));
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(image, {100, 500}, {});
+  builder.DrawImage(image, SkPoint{100, 500}, {});
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -337,7 +343,7 @@ TEST_P(AiksTest, TranslucentSaveLayerWithAdvancedBlendModeDrawsCorrectly) {
 
   DlPaint draw_paint;
   draw_paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({200, 200}, 100, draw_paint);
+  builder.DrawCircle(SkPoint{200, 200}, 100, draw_paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -358,10 +364,10 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
 
   DlPaint yellow_paint;
   yellow_paint.setColor(DlColor::kYellow());
-  builder.DrawCircle({100, 100}, 0.1, yellow_paint);
+  builder.DrawCircle(SkPoint{100, 100}, 0.1, yellow_paint);
   builder.Restore();
   builder.SaveLayer({});
-  builder.DrawCircle({100, 100}, 0.1, yellow_paint);
+  builder.DrawCircle(SkPoint{100, 100}, 0.1, yellow_paint);
   builder.Restore();
 
   DlPaint draw_paint;
@@ -387,7 +393,7 @@ TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
 
   DlPaint draw_paint;
   draw_paint.setColor(DlColor::kGreen());
-  builder.DrawCircle({300, 300}, 100, draw_paint);
+  builder.DrawCircle(SkPoint{300, 300}, 100, draw_paint);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -576,7 +582,7 @@ TEST_P(AiksTest, SetContentsWithRegion) {
   auto image = DlImageImpeller::Make(bridge);
 
   DisplayListBuilder builder;
-  builder.DrawImage(image, {0, 0}, {});
+  builder.DrawImage(image, SkPoint{0, 0}, {});
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -639,7 +645,8 @@ TEST_P(AiksTest, MatrixImageFilterMagnify) {
 
     DlPaint rect_paint;
     rect_paint.setAlpha(0.5 * 255);
-    builder.DrawImage(image, {0, 0}, DlImageSampling::kLinear, &rect_paint);
+    builder.DrawImage(image, SkPoint{0, 0}, DlImageSampling::kLinear,
+                      &rect_paint);
     builder.Restore();
 
     return builder.Build();
@@ -782,7 +789,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
   {
     paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
     paint.setBlendMode(DlBlendMode::kPlus);
-    builder.DrawCircle({200, 200}, 100, paint);
+    builder.DrawCircle(SkPoint{200, 200}, 100, paint);
     // Should render a second circle, centered on the bottom-right-most edge of
     // the circle.
 
@@ -799,7 +806,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
     DlPaint circle_paint;
     circle_paint.setColor(DlColor::kGreen().withAlpha(255 * 0.5));
     circle_paint.setBlendMode(DlBlendMode::kPlus);
-    builder.DrawCircle({200, 200}, 100, circle_paint);
+    builder.DrawCircle(SkPoint{200, 200}, 100, circle_paint);
     builder.Restore();
   }
   builder.Restore();
@@ -941,7 +948,7 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   auto image =
       DisplayListToTexture(recorder_canvas.Build(), {1000, 1000}, renderer);
   if (image) {
-    canvas.DrawImage(DlImageImpeller::Make(image), {}, {});
+    canvas.DrawImage(DlImageImpeller::Make(image), SkPoint{}, {});
     paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 0.2));
     canvas.DrawRect(SkRect::MakeSize({1000, 1000}), paint);
   }
@@ -965,7 +972,8 @@ TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
   auto result_image =
       DisplayListToTexture(builder.Build(), ISize{1000, 1000}, renderer);
   if (result_image) {
-    recorder_builder.DrawImage(DlImageImpeller::Make(result_image), {}, {});
+    recorder_builder.DrawImage(DlImageImpeller::Make(result_image), SkPoint{},
+                               {});
 
     paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 0.2));
     recorder_builder.DrawRect(SkRect::MakeSize({1000, 1000}), paint);

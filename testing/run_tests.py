@@ -430,7 +430,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
-      make_test('testing_unittests'),
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
@@ -1350,9 +1349,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     assert not is_windows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
-      logger.wraning(
+      logger.warning(
           'Can only filter JUnit4 tests by single entire class name, '
-          'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
+          'eg "io.flutter.SmokeTest". Ignoring filter=%s', java_filter
       )
       java_filter = None
     run_java_tests(java_filter, args.android_variant)

@@ -13,7 +13,6 @@
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
@@ -97,10 +96,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
       return nullptr;
     }
 
-    auto cull_rect =
-        surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-    impeller::RenderTarget render_target =
-        surface->GetTargetRenderPassDescriptor();
+    impeller::RenderTarget render_target = surface->GetRenderTarget();
+    auto cull_rect = render_target.GetRenderTargetSize();
 
     SurfaceFrame::EncodeCallback encode_callback = [aiks_context =
                                                         aiks_context_,  //
@@ -196,10 +193,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         std::make_shared<WrappedTextureSourceVK>(vk_image, image_view, desc);
     auto surface = impeller::SurfaceVK::WrapSwapchainImage(
         transients_, wrapped_onscreen, [&]() -> bool { return true; });
-    auto cull_rect =
-        surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-    impeller::RenderTarget render_target =
-        surface->GetTargetRenderPassDescriptor();
+    impeller::RenderTarget render_target = surface->GetRenderTarget();
+    auto cull_rect = render_target.GetRenderTargetSize();
 
     SurfaceFrame::EncodeCallback encode_callback = [aiks_context =
                                                         aiks_context_,  //
@@ -239,9 +234,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         ///
         auto cmd_buffer = context.CreateCommandBuffer();
 
-        auto vk_final_cmd_buffer = impeller::CommandBufferVK::Cast(*cmd_buffer)
-                                       .GetEncoder()
-                                       ->GetCommandBuffer();
+        auto vk_final_cmd_buffer =
+            impeller::CommandBufferVK::Cast(*cmd_buffer).GetCommandBuffer();
         {
           impeller::BarrierVK barrier;
           barrier.new_layout =

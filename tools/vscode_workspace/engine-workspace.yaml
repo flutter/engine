@@ -133,11 +133,26 @@ settings:
       gtest:
         prependTestRunningArgs:
           - --enable_playground
+      env:
+        MTL_DEBUG_LAYER: "1"
+        MTL_DEBUG_LAYER_ERROR_MODE: assert
+        MTL_DEBUG_LAYER_WARNING_MODE: nslog
+        MTL_SHADER_VALIDATION: "1"
     - name: display_list_unittests_arm64
       pattern: ../out/host_debug_unopt_arm64/display_list_unittests
       runTask:
         before:
           - display_list_unittests_arm64
+    - name: shell_unittests_arm64
+      pattern: ../out/host_debug_unopt_arm64/shell_unittests
+      runTask:
+        before:
+          - shell_unittests_arm64
+    - name: ui_unittests_arm64
+      pattern: ../out/host_debug_unopt_arm64/ui_unittests
+      runTask:
+        before:
+          - ui_unittests_arm64
     - name: impeller_golden_tests_arm64
       pattern: ../out/host_debug_unopt_arm64/impeller_golden_tests
       runTask:
@@ -205,6 +220,20 @@ tasks:
         - -c
         - host_debug_unopt_arm64
         - //flutter/display_list:display_list_unittests
+    - <<: *et-task
+      label: shell_unittests_arm64
+      args:
+        - build
+        - -c
+        - host_debug_unopt_arm64
+        - //flutter/shell:shell_unittests
+    - <<: *et-task
+      label: ui_unittests_arm64
+      args:
+        - build
+        - -c
+        - host_debug_unopt_arm64
+        - //flutter/lib/ui:ui_unittests
     - <<: *et-task
       label: impeller_golden_tests_arm64
       args:

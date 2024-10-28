@@ -15,6 +15,7 @@
 #include "impeller/toolkit/interop/impeller.h"
 #include "impeller/toolkit/interop/object.h"
 #include "impeller/toolkit/interop/paint.h"
+#include "impeller/toolkit/interop/paragraph.h"
 #include "impeller/toolkit/interop/path.h"
 #include "impeller/toolkit/interop/texture.h"
 
@@ -50,6 +51,8 @@ class DisplayListBuilder final
 
   void SetTransform(const Matrix& matrix);
 
+  void Transform(const Matrix& matrix);
+
   void ResetTransform();
 
   uint32_t GetSaveCount() const;
@@ -61,7 +64,7 @@ class DisplayListBuilder final
   void ClipOval(const Rect& rect, flutter::DlCanvas::ClipOp op);
 
   void ClipRoundedRect(const Rect& rect,
-                       const impeller::PathBuilder::RoundingRadii& radii,
+                       const RoundingRadii& radii,
                        flutter::DlCanvas::ClipOp op);
 
   void ClipPath(const Path& path, flutter::DlCanvas::ClipOp op);
@@ -81,15 +84,14 @@ class DisplayListBuilder final
   void DrawOval(const Rect& oval_bounds, const Paint& paint);
 
   void DrawRoundedRect(const Rect& rect,
-                       const impeller::PathBuilder::RoundingRadii& radii,
+                       const RoundingRadii& radii,
                        const Paint& paint);
 
-  void DrawRoundedRectDifference(
-      const Rect& outer_rect,
-      const impeller::PathBuilder::RoundingRadii& outer_radii,
-      const Rect& inner_rect,
-      const impeller::PathBuilder::RoundingRadii& inner_radii,
-      const Paint& paint);
+  void DrawRoundedRectDifference(const Rect& outer_rect,
+                                 const RoundingRadii& outer_radii,
+                                 const Rect& inner_rect,
+                                 const RoundingRadii& inner_radii,
+                                 const Paint& paint);
 
   void DrawPath(const Path& path, const Paint& paint);
 
@@ -105,6 +107,8 @@ class DisplayListBuilder final
                        const Paint* paint);
 
   void DrawDisplayList(const DisplayList& dl, Scalar opacity);
+
+  void DrawParagraph(const Paragraph& paragraph, Point point);
 
   ScopedObject<DisplayList> Build();
 
