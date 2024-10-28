@@ -24,26 +24,19 @@ class VertexWriter {
   virtual void Write(Point point) = 0;
 };
 
+/// @brief A vertex writer that generates a triangle fan and requires primitive
+/// restart.
 class FanVertexWriter : public VertexWriter {
  public:
-  explicit FanVertexWriter(Point* point_buffer, uint16_t* index_buffer)
-      : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
+  explicit FanVertexWriter(Point* point_buffer, uint16_t* index_buffer);
 
-  ~FanVertexWriter() = default;
+  ~FanVertexWriter();
 
-  size_t GetIndexCount() const { return index_count_; }
+  size_t GetIndexCount() const;
 
-  void EndContour() override {
-    if (count_ == 0) {
-      return;
-    }
-    index_buffer_[index_count_++] = 0xFFFF;
-  }
+  void EndContour() override;
 
-  void Write(Point point) override {
-    index_buffer_[index_count_++] = count_;
-    point_buffer_[count_++] = point;
-  }
+  void Write(Point point) override;
 
  private:
   size_t count_ = 0;
@@ -52,43 +45,19 @@ class FanVertexWriter : public VertexWriter {
   uint16_t* index_buffer_;
 };
 
+/// @brief A vertex writer that generates a triangle strip and requires
+///        primitive restart.
 class StripVertexWriter : public VertexWriter {
  public:
-  explicit StripVertexWriter(Point* point_buffer, uint16_t* index_buffer)
-      : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
+  explicit StripVertexWriter(Point* point_buffer, uint16_t* index_buffer);
 
-  ~StripVertexWriter() = default;
+  ~StripVertexWriter();
 
-  size_t GetIndexCount() const { return index_count_; }
+  size_t GetIndexCount() const;
 
-  void EndContour() override {
-    if (count_ == 0u || contour_start_ == count_ - 1) {
-      // Empty or first contour.
-      return;
-    }
+  void EndContour() override;
 
-    size_t start = contour_start_;
-    size_t end = count_ - 1;
-
-    index_buffer_[index_count_++] = start;
-
-    size_t a = start + 1;
-    size_t b = end;
-    while (a < b) {
-      index_buffer_[index_count_++] = a;
-      index_buffer_[index_count_++] = b;
-      a++;
-      b--;
-    }
-    if (a == b) {
-      index_buffer_[index_count_++] = a;
-    }
-
-    contour_start_ = count_;
-    index_buffer_[index_count_++] = 0xFFFF;
-  }
-
-  void Write(Point point) override { point_buffer_[count_++] = point; }
+  void Write(Point point) override;
 
  private:
   size_t count_ = 0;
@@ -98,6 +67,7 @@ class StripVertexWriter : public VertexWriter {
   uint16_t* index_buffer_;
 };
 
+/// @brief A vertex writer that has no hardware requirements.
 class GLESVertexWriter : public VertexWriter {
  public:
   explicit GLESVertexWriter(std::vector<Point>& points,

@@ -11,6 +11,74 @@
 
 namespace impeller {
 
+/////////// FanVertexWriter ///////////
+
+FanVertexWriter::FanVertexWriter(Point* point_buffer, uint16_t* index_buffer)
+    : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
+
+FanVertexWriter::~FanVertexWriter() = default;
+
+size_t FanVertexWriter::GetIndexCount() const {
+  return index_count_;
+}
+
+void FanVertexWriter::EndContour() {
+  if (count_ == 0) {
+    return;
+  }
+  index_buffer_[index_count_++] = 0xFFFF;
+}
+
+void FanVertexWriter::Write(Point point) {
+  index_buffer_[index_count_++] = count_;
+  point_buffer_[count_++] = point;
+}
+
+/////////// StripVertexWriter ///////////
+
+StripVertexWriter::StripVertexWriter(Point* point_buffer,
+                                     uint16_t* index_buffer)
+    : point_buffer_(point_buffer), index_buffer_(index_buffer) {}
+
+StripVertexWriter::~StripVertexWriter() = default;
+
+size_t StripVertexWriter::GetIndexCount() const {
+  return index_count_;
+}
+
+void StripVertexWriter::EndContour() {
+  if (count_ == 0u || contour_start_ == count_ - 1) {
+    // Empty or first contour.
+    return;
+  }
+
+  size_t start = contour_start_;
+  size_t end = count_ - 1;
+
+  index_buffer_[index_count_++] = start;
+
+  size_t a = start + 1;
+  size_t b = end;
+  while (a < b) {
+    index_buffer_[index_count_++] = a;
+    index_buffer_[index_count_++] = b;
+    a++;
+    b--;
+  }
+  if (a == b) {
+    index_buffer_[index_count_++] = a;
+  }
+
+  contour_start_ = count_;
+  index_buffer_[index_count_++] = 0xFFFF;
+}
+
+void StripVertexWriter::Write(Point point) {
+  point_buffer_[count_++] = point;
+}
+
+/////////// GLESVertexWriter ///////////
+
 GLESVertexWriter::GLESVertexWriter(std::vector<Point>& points,
                                    std::vector<uint16_t>& indices)
     : points_(points), indices_(indices) {}

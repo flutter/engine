@@ -242,6 +242,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsTriangleFan() const override;
 
   // |Capabilities|
+  bool SupportsPrimitiveRestart() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
