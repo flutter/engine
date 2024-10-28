@@ -579,6 +579,16 @@ final class BuildRunner extends Runner {
     return min(multiplier * cores, 1000);
   }();
 
+  static final RegExp _gccRegex =
+      RegExp(r'^(.+)(:\d+:\d+:\s+(?:error|note|warning):\s+.*)$');
+
+  /// Converts relative [path], who is relative to [dirPath] to a relative path
+  /// of the `CWD`.
+  static String _makeRelative(String path, String dirPath) {
+    final String abs = p.join(dirPath, path);
+    return './${p.relative(abs)}';
+  }
+
   Future<bool> _runNinja(RunnerEventHandler eventHandler) async {
     if (_isRbe) {
       if (!await _bootstrapRbe(eventHandler)) {
@@ -637,7 +647,14 @@ final class BuildRunner extends Runner {
             if (_ninjaProgress(eventHandler, command, line)) {
               return;
             }
-            final List<int> bytes = utf8.encode('$line\n');
+            final Match? match = _gccRegex.firstMatch(line);
+            List<int> bytes;
+            if (match == null) {
+              bytes = utf8.encode('$line\n');
+            } else {
+              bytes = utf8.encode(
+                  '${_makeRelative(match.group(1)!, outDir)}${match.group(2)}\n');
+            }
             stdoutOutput.addAll(bytes);
           },
           onDone: () async => stdoutComplete.complete(),
