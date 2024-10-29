@@ -1232,12 +1232,10 @@ public class FlutterRenderer implements TextureRegistry {
     }
     int cutoutOffset = viewportMetrics.displayFeatures.size() * 4;
     for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
-      DisplayCutout displayCutout = viewportMetrics.displayCutouts.get(i);
+      DisplayFeature displayCutout = viewportMetrics.displayCutouts.get(i);
       translateFeatureBounds(displayFeaturesBounds, cutoutOffset + 4 * i, displayCutout.bounds);
-      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
-          DisplayCutout.type.encodedValue;
-      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] =
-          DisplayCutout.state.encodedValue;
+      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] = displayCutout.type.encodedValue;
+      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] = displayCutout.state.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -1357,23 +1355,7 @@ public class FlutterRenderer implements TextureRegistry {
     public List<DisplayFeature> displayFeatures = new ArrayList<>();
 
     // Specifically display cutouts.
-    public List<DisplayCutout> displayCutouts = new ArrayList<>();
-  }
-
-  /**
-   * Description of a cutout on the physical display.
-   *
-   * <p>A simplified analog to {@link DisplayFeature} that specifically handles display cutouts.
-   */
-  public static final class DisplayCutout {
-    public final Rect bounds;
-    // Display cutouts always have type CUTOUT and state UNKNOWN.
-    public static final DisplayFeatureType type = DisplayFeatureType.CUTOUT;
-    public static final DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
-
-    public DisplayCutout(Rect bounds) {
-      this.bounds = bounds;
-    }
+    public List<DisplayFeature> displayCutouts = new ArrayList<>();
   }
 
   /**

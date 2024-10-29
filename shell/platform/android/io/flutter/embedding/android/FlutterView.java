@@ -775,7 +775,7 @@ public class FlutterView extends FrameLayout
       if (cutout != null) {
         for (Rect bounds : cutout.getBoundingRects()) {
           Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-          viewportMetrics.displayCutouts.add(new FlutterRenderer.DisplayCutout(bounds));
+          viewportMetrics.displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT, DisplayFeatureState.UNKNOWN));
         }
       }
     }

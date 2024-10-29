@@ -722,11 +722,13 @@ public class FlutterViewTest {
     assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
     assertEquals(featureBounds, features.get(0).bounds);
 
-    List<FlutterRenderer.DisplayCutout> cutouts = viewportMetricsCaptor.getValue().displayCutouts;
+    List<FlutterRenderer.DisplayFeature> cutouts = viewportMetricsCaptor.getValue().displayCutouts;
     // Asserts for display cutouts.
     assertEquals(2, cutouts.size());
     for (int i = 0; i < 2; i++) {
       assertEquals(cutoutBoundingRects.get(i), cutouts.get(i).bounds);
+      assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, cutouts.get(i).type);
+      assertEquals(FlutterRenderer.DisplayFeatureState.UNKNOWN, cutouts.get(i).state);
     }
   }
 
@@ -822,8 +824,10 @@ public class FlutterViewTest {
 
     // Assert the display cutout is unaffected.
     assertEquals(1, viewportMetricsCaptor.getValue().displayCutouts.size());
-    FlutterRenderer.DisplayCutout cutout = viewportMetricsCaptor.getValue().displayCutouts.get(0);
+    FlutterRenderer.DisplayFeature cutout = viewportMetricsCaptor.getValue().displayCutouts.get(0);
     assertEquals(cutoutBoundingRects.get(0), cutout.bounds);
+    assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, cutout.type);
+    assertEquals(FlutterRenderer.DisplayFeatureState.UNKNOWN, cutout.state);
   }
 
   @Test
