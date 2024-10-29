@@ -965,7 +965,7 @@
       ]
     },
     {
-      "name": "Linux run chrome-dart2wasm-skwasm-ui suite",
+      "name": "Linux run chrome-coi-dart2wasm-skwasm-ui suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
@@ -991,11 +991,48 @@
       ],
       "tasks": [
         {
-          "name": "run suite chrome-dart2wasm-skwasm-ui",
+          "name": "run suite chrome-coi-dart2wasm-skwasm-ui",
           "parameters": [
             "test",
             "--run",
-            "--suite=chrome-dart2wasm-skwasm-ui"
+            "--suite=chrome-coi-dart2wasm-skwasm-ui"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Linux run chrome-force-st-dart2wasm-skwasm-ui suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Linux"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/dart2wasm-skwasm-ui"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-force-st-dart2wasm-skwasm-ui",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-force-st-dart2wasm-skwasm-ui"
           ],
           "script": "flutter/lib/web_ui/dev/felt"
         }
@@ -1107,6 +1144,80 @@
             "test",
             "--run",
             "--suite=chrome-fallbacks"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Linux run chrome-coi-fallbacks suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Linux"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/fallbacks"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-coi-fallbacks",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-coi-fallbacks"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Linux run chrome-force-st-fallbacks suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Linux"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/fallbacks"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-force-st-fallbacks",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-force-st-fallbacks"
           ],
           "script": "flutter/lib/web_ui/dev/felt"
         }
@@ -1798,7 +1909,7 @@
       ]
     },
     {
-      "name": "Windows run chrome-dart2wasm-skwasm-ui suite",
+      "name": "Windows run chrome-coi-dart2wasm-skwasm-ui suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
@@ -1824,11 +1935,48 @@
       ],
       "tasks": [
         {
-          "name": "run suite chrome-dart2wasm-skwasm-ui",
+          "name": "run suite chrome-coi-dart2wasm-skwasm-ui",
           "parameters": [
             "test",
             "--run",
-            "--suite=chrome-dart2wasm-skwasm-ui"
+            "--suite=chrome-coi-dart2wasm-skwasm-ui"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Windows run chrome-force-st-dart2wasm-skwasm-ui suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Windows"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/dart2wasm-skwasm-ui"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-force-st-dart2wasm-skwasm-ui",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-force-st-dart2wasm-skwasm-ui"
           ],
           "script": "flutter/lib/web_ui/dev/felt"
         }
@@ -1940,6 +2088,80 @@
             "test",
             "--run",
             "--suite=chrome-fallbacks"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Windows run chrome-coi-fallbacks suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Windows"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/fallbacks"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-coi-fallbacks",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-coi-fallbacks"
+          ],
+          "script": "flutter/lib/web_ui/dev/felt"
+        }
+      ]
+    },
+    {
+      "name": "Windows run chrome-force-st-fallbacks suite",
+      "recipe": "engine_v2/tester_engine",
+      "drone_dimensions": [
+        "device_type=none",
+        "os=Windows"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "download_jdk": false
+      },
+      "dependencies": [
+        "web_tests/artifacts",
+        "web_tests/test_bundles/fallbacks"
+      ],
+      "test_dependencies": [
+        {
+          "dependency": "goldctl",
+          "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+        },
+        {
+          "dependency": "chrome_and_driver",
+          "version": "125.0.6422.141"
+        }
+      ],
+      "tasks": [
+        {
+          "name": "run suite chrome-force-st-fallbacks",
+          "parameters": [
+            "test",
+            "--run",
+            "--suite=chrome-force-st-fallbacks"
           ],
           "script": "flutter/lib/web_ui/dev/felt"
         }
