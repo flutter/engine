@@ -34,9 +34,7 @@ template("skwasm_variant") {
       "wrappers.h",
     ]
 
-    cflags = [
-      "-mreference-types",
-    ]
+    cflags = [ "-mreference-types" ]
 
     ldflags = [
       "-std=c++20",

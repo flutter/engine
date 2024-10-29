@@ -101,7 +101,7 @@ run-configs:
   - name: chrome
     browser: chrome
     canvaskit-variant: chromium
-  
+
   - name: chrome-coi
     browser: chrome
     canvaskit-variant: chromium
