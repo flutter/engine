@@ -1214,7 +1214,10 @@ public class FlutterRenderer implements TextureRegistry {
             + viewportMetrics.systemGestureInsetRight
             + "\n"
             + "Display Features: "
-            + viewportMetrics.displayFeatures.size());
+            + viewportMetrics.displayFeatures.size()
+            + "\n"
+            + "Display Cutouts: "
+            + viewportMetrics.displayCutouts.size());
 
     int totalFeaturesAndCutouts =
         viewportMetrics.displayFeatures.size() + viewportMetrics.displayCutouts.size();
@@ -1358,6 +1361,22 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   /**
+   * Description of a cutout on the physical display.
+   *
+   * <p>A simplified analog to {@link DisplayFeature} that specifically handles display cutouts.
+   */
+  public static final class DisplayCutout {
+    public final Rect bounds;
+    // Display cutouts always have type CUTOUT and state UNKNOWN.
+    public static final DisplayFeatureType type = DisplayFeatureType.CUTOUT;
+    public static final DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
+
+    public DisplayCutout(Rect bounds) {
+      this.bounds = bounds;
+    }
+  }
+
+  /**
    * Description of a physical feature on the display.
    *
    * <p>A display feature is a distinctive physical attribute located within the display panel of
@@ -1376,22 +1395,6 @@ public class FlutterRenderer implements TextureRegistry {
       this.bounds = bounds;
       this.type = type;
       this.state = state;
-    }
-  }
-
-  /**
-   * Description of a cutout on the physical display.
-   *
-   * <p>A simplified analog to {@link DisplayFeature} that specifically handles display cutouts.
-   */
-  public static final class DisplayCutout {
-    public final Rect bounds;
-    // Display cutouts always have type CUTOUT and state UNKNOWN.
-    public static final DisplayFeatureType type = DisplayFeatureType.CUTOUT;
-    public static final DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
-
-    public DisplayCutout(Rect bounds) {
-      this.bounds = bounds;
     }
   }
 

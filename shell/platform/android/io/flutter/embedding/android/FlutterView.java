@@ -73,7 +73,6 @@ import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -146,8 +145,6 @@ public class FlutterView extends FrameLayout
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
-  private List<FlutterRenderer.DisplayFeature> displayFeatures = new ArrayList<>();
-  private final List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
 
   private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener =
       new AccessibilityBridge.OnAccessibilityChangeListener() {
