@@ -46,7 +46,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
         alignof(uint16_t));
 
     if (supports_triangle_fan) {
-      StripVertexWriter writer(
+      FanVertexWriter writer(
           reinterpret_cast<Point*>(point_buffer.buffer->OnGetContents() +
                                    point_buffer.range.offset),
           reinterpret_cast<uint16_t*>(index_buffer.buffer->OnGetContents() +
@@ -60,7 +60,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
           .index_type = IndexType::k16bit,
       };
     } else {
-      FanVertexWriter writer(
+      StripVertexWriter writer(
           reinterpret_cast<Point*>(point_buffer.buffer->OnGetContents() +
                                    point_buffer.range.offset),
           reinterpret_cast<uint16_t*>(index_buffer.buffer->OnGetContents() +
