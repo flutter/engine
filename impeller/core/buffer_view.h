@@ -14,7 +14,10 @@ class DeviceBuffer;
 
 struct BufferView {
  public:
-  BufferView() : buffer_(nullptr), range_({}) {}
+  BufferView() : buffer_(nullptr), raw_buffer_(nullptr), range_({}) {}
+
+  BufferView(DeviceBuffer* buffer, Range range)
+      : buffer_(), raw_buffer_(buffer), range_(range) {}
 
   BufferView(std::shared_ptr<const DeviceBuffer> buffer, Range range)
       : buffer_(std::move(buffer)), raw_buffer_(nullptr), range_(range) {}
@@ -30,9 +33,7 @@ struct BufferView {
     return std::move(buffer_);
   }
 
-  constexpr explicit operator bool() const {
-    return static_cast<bool>(buffer_);
-  }
+  constexpr explicit operator bool() const { return buffer_ || raw_buffer_; }
 
  private:
   std::shared_ptr<const DeviceBuffer> buffer_;
