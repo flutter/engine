@@ -63,8 +63,15 @@ class RollFallbackFontsCommand extends Command<bool>
     final http.Client client = http.Client();
     final List<String> fallbackFonts = <String>[];
     final Map<String, Uri> urlForFamily = <String, Uri>{};
-    await _addApiFallbackFonts(client, fallbackFonts, urlForFamily);
-    await _addSplitFallbackFonts(client, fallbackFonts, urlForFamily);
+    fallbackFonts.addAll(
+      await _processFallbackFonts(client, apiFallbackFonts, urlForFamily)
+    );
+    fallbackFonts.addAll(
+      await _processSplitFallbackFonts(client, splitFallbackFonts, urlForFamily)
+    );
+    fallbackFonts.addAll(
+      await _processFallbackFonts(client, lowPriorityFallbackFonts, urlForFamily)
+    );
 
     final Map<String, String> charsetForFamily = <String, String>{};
     final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
@@ -307,14 +314,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     ]);
   }
 
-  Future<void> _addApiFallbackFonts(
+  Future<List<String>> _processFallbackFonts(
     http.Client client,
-    List<String> fallbackFonts,
+    List<String> availableFonts,
     Map<String, Uri> urlForFamily,
   ) async {
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
+    final List<String> processedFonts = <String>[];
     final http.Response response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
@@ -327,22 +335,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             .cast<Map<String, dynamic>>();
     for (final Map<String, Object?> fontData in fontDatas) {
       final String family = fontData['family']! as String;
-      if (apiFallbackFonts.contains(family)) {
+      if (availableFonts.contains(family)) {
         final files = fontData['files']! as Map<String, Object?>;
         final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
         urlForFamily[family] = uri;
-        fallbackFonts.add(family);
+        processedFonts.add(family);
       }
     }
+    return processedFonts;
   }
 
-  Future<void> _addSplitFallbackFonts(
+  Future<List<String>> _processSplitFallbackFonts(
     http.Client client,
-    List<String> fallbackFonts,
+    List<String> availableSplitFonts,
     Map<String, Uri> urlForFamily,
   ) async {
-    for (final String font in splitFallbackFonts) {
+    final List<String> processedFonts = <String>[];
+    for (final String font in availableSplitFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
       final Uri cssUri = Uri.parse(
           'https://fonts.googleapis.com/css2?family=$modifiedFontName');
@@ -360,11 +370,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       int familyCount = 0;
       for (final Uri uri in uriCollector.uris) {
         final String fontName = '$font $familyCount';
-        fallbackFonts.add(fontName);
+        processedFonts.add(fontName);
         urlForFamily[fontName] = uri;
         familyCount += 1;
       }
     }
+    return processedFonts;
   }
 }
 
@@ -377,12 +388,16 @@ class UriCollector extends Visitor {
   }
 }
 
+/// These fonts will be added *after* the Split fallback fonts.
+const List<String> lowPriorityFallbackFonts = <String> [
+  'Noto Sans Symbols',
+  'Noto Sans Symbols 2',
+];
+
 /// Fonts that should be downloaded directly from the Google Fonts API.
 const List<String> apiFallbackFonts = <String>[
   'Noto Sans',
   'Noto Music',
-  'Noto Sans Symbols',
-  'Noto Sans Symbols 2',
   'Noto Sans Adlam',
   'Noto Sans Anatolian Hieroglyphs',
   'Noto Sans Arabic',
