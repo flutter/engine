@@ -27,9 +27,9 @@ bool ShadowRealm::ShouldDisableAHBInternal(std::string_view clientidbase,
                                            uint32_t api_level) {
   // Most devices that have updated to API 29 don't seem to correctly
   // support AHBs: https://github.com/flutter/flutter/issues/157113
-  if (first_api_level == "28" || first_api_level == "27" ||
-      first_api_level == "26" || first_api_level == "25" ||
-      first_api_level == "24") {
+  if (first_api_level.compare("28") || first_api_level.compare("27") ||
+      first_api_level.compare("26") || first_api_level.compare("25") ||
+      first_api_level.compare("24")) {
     return true;
   }
   // From local testing, neither the swapchain nor AHB import works, see also:
