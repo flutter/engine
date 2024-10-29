@@ -75,7 +75,7 @@ class RollFallbackFontsCommand extends Command<bool>
     final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
     final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
 
-    for (final font in fallbackFonts) {
+    for (final _Font font in fallbackFonts) {
       print('Downloading ${font.family}...');
       final http.Response fontResponse = await client.get(font.uri);
       if (fontResponse.statusCode != 200) {
