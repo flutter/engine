@@ -24,10 +24,6 @@ import 'utils.dart';
 
 const String expectedUrlPrefix = 'https://fonts.gstatic.com/s/';
 
-/// A Record that encapsulates a font family name and its uri in the CDN.
-// Should this be superseded by _Font?
-typedef ProcessedFallbackFont = ({ String family, Uri? uri });
-
 class RollFallbackFontsCommand extends Command<bool>
     with ArgUtils<bool> {
   RollFallbackFontsCommand() {
@@ -65,7 +61,7 @@ class RollFallbackFontsCommand extends Command<bool>
 
   Future<void> _generateFallbackFontData() async {
     final http.Client client = http.Client();
-    final List<ProcessedFallbackFont> fallbackFonts = <ProcessedFallbackFont>[];
+    final List<_Font> fallbackFonts = <_Font>[];
     fallbackFonts.addAll(
       await _processSplitFallbackFonts(client, splitFallbackFonts)
     );
@@ -78,17 +74,14 @@ class RollFallbackFontsCommand extends Command<bool>
     print('Downloading fonts into temp directory: ${fontDir.path}');
     final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
     final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
-    for (final (:family, :uri) in fallbackFonts) {
-      print('Downloading $family...');
-      if (uri == null) {
-        throw ToolExit('Unable to determine URL to download $family. '
-            'Check if it is still hosted on Google Fonts.');
-      }
-      final http.Response fontResponse = await client.get(uri);
+
+    for (final font in fallbackFonts) {
+      print('Downloading ${font.family}...');
+      final http.Response fontResponse = await client.get(font.uri);
       if (fontResponse.statusCode != 200) {
-        throw ToolExit('Failed to download font for $family');
+        throw ToolExit('Failed to download font for ${font.family}');
       }
-      final String urlString = uri.toString();
+      final String urlString = font.uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
       }
@@ -113,17 +106,16 @@ class RollFallbackFontsCommand extends Command<bool>
         fontFile.path,
       ]);
       final String encodedCharset = fcQueryResult.stdout as String;
-      charsetForFamily[family] = encodedCharset;
+      charsetForFamily[font.family] = encodedCharset;
     }
 
     final StringBuffer sb = StringBuffer();
 
-    final List<_Font> fonts = <_Font>[];
-
-    for (final (:family, :uri) in fallbackFonts) {
+    for (int i = 0; i < fallbackFonts.length; i++) {
+      final _Font font = fallbackFonts[i];
       final List<int> starts = <int>[];
       final List<int> ends = <int>[];
-      final String charset = charsetForFamily[family]!;
+      final String charset = charsetForFamily[font.family]!;
       for (final String range in charset.split(' ')) {
         // Range is one hexadecimal number or two, separated by `-`.
         final List<String> parts = range.split('-');
@@ -135,11 +127,14 @@ class RollFallbackFontsCommand extends Command<bool>
         starts.add(first);
         ends.add(last);
       }
-
-      fonts.add(_Font(family, fonts.length, starts, ends, uri: uri));
+      // Update the range data in `font`.
+      font
+        ..index = i
+        ..starts = starts
+        ..ends = ends;
     }
 
-    final String fontSetsCode = _computeEncodedFontSets(fonts);
+    final String fontSetsCode = _computeEncodedFontSets(fallbackFonts);
 
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
@@ -152,9 +147,9 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln();
     sb.writeln('List<NotoFont> getFallbackFontList() => <NotoFont>[');
 
-    for (final _Font font in fonts) {
+    for (final _Font font in fallbackFonts) {
       final String family = font.family;
-      final String urlString = font.uri!.toString();
+      final String urlString = font.uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit(
             'Unexpected url format received from Google Fonts API: $urlString.');
@@ -313,14 +308,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     ]);
   }
 
-  Future<List<ProcessedFallbackFont>> _processFallbackFonts(
+  Future<List<_Font>> _processFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
   ) async {
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
-    final List<ProcessedFallbackFont> processedFonts = <ProcessedFallbackFont>[];
+    final List<_Font> processedFonts = <_Font>[];
     final http.Response response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
@@ -337,20 +332,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         final files = fontData['files']! as Map<String, Object?>;
         final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
-        processedFonts.add((
-          family: family,
-          uri: uri,
-        ));
+        processedFonts.add(_Font(family, uri));
       }
     }
     return processedFonts;
   }
 
-  Future<List<ProcessedFallbackFont>> _processSplitFallbackFonts(
+  Future<List<_Font>> _processSplitFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
   ) async {
-    final List<ProcessedFallbackFont> processedFonts = <ProcessedFallbackFont>[];
+    final List<_Font> processedFonts = <_Font>[];
     for (final String font in requestedFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
       final Uri cssUri = Uri.parse(
@@ -369,10 +361,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       int familyCount = 0;
       for (final Uri uri in uriCollector.uris) {
         final String fontName = '$font $familyCount';
-        processedFonts.add((
-          family: fontName,
-          uri: uri,
-        ));
+        processedFonts.add(_Font(fontName, uri));
         familyCount += 1;
       }
     }
@@ -564,15 +553,16 @@ Future<bool> _checkForLicenseAttribution(
 }
 
 class _Font {
-  _Font(this.family, this.index, this.starts, this.ends, {
-    this.uri,
-  });
+  _Font(this.family, this.uri);
 
   final String family;
-  final int index;
-  final List<int> starts;
-  final List<int> ends; // inclusive ends
-  final Uri? uri;
+  final Uri uri;
+
+  // The following properties are added to the _Font instances as additional
+  // metadata is downloaded.
+  late final int index;
+  late final List<int> starts;
+  late final List<int> ends; // inclusive ends
 
   static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
 
