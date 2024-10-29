@@ -375,12 +375,12 @@ constexpr vk::PolygonMode ToVKPolygonMode(PolygonMode mode) {
 constexpr bool PrimitiveTopologySupportsPrimitiveRestart(
     PrimitiveType primitive) {
   switch (primitive) {
-    case PrimitiveType::kTriangle:
     case PrimitiveType::kTriangleStrip:
     case PrimitiveType::kLine:
     case PrimitiveType::kPoint:
     case PrimitiveType::kTriangleFan:
       return true;
+    case PrimitiveType::kTriangle:
     case PrimitiveType::kLineStrip:
       return false;
   }
