@@ -158,16 +158,14 @@ Map<String, dynamic> _getTestStepForPlatformAndBrowser(
           'version': 'version:106.0',
         }
     ],
-    'tasks': <dynamic>[
-      <String, dynamic>{
-        'name': 'run suites for $browser',
-        'parameters': <String>[
-          'test',
-          '--run',
-          ...filteredSuites.map((suite) => '--suite=${suite.name}')
-        ],
-        'script': 'flutter/lib/web_ui/dev/felt',
-      }
-    ]
+    'tasks': filteredSuites.map((suite) => <String, dynamic> {
+      'name': 'run suite ${suite.name}',
+      'parameters': <String>[
+        'test',
+        '--run',
+        '--suite=${suite.name}',
+      ],
+      'script': 'flutter/lib/web_ui/dev/felt',
+    }).toList(),
   };
 }
