@@ -64,13 +64,10 @@ class RollFallbackFontsCommand extends Command<bool>
     final List<String> fallbackFonts = <String>[];
     final Map<String, Uri> urlForFamily = <String, Uri>{};
     fallbackFonts.addAll(
-      await _processFallbackFonts(client, apiFallbackFonts, urlForFamily)
-    );
-    fallbackFonts.addAll(
       await _processSplitFallbackFonts(client, splitFallbackFonts, urlForFamily)
     );
     fallbackFonts.addAll(
-      await _processFallbackFonts(client, lowPriorityFallbackFonts, urlForFamily)
+      await _processFallbackFonts(client, apiFallbackFonts, urlForFamily)
     );
 
     final Map<String, String> charsetForFamily = <String, String>{};
@@ -388,16 +385,12 @@ class UriCollector extends Visitor {
   }
 }
 
-/// These fonts will be added *after* the Split fallback fonts.
-const List<String> lowPriorityFallbackFonts = <String> [
-  'Noto Sans Symbols',
-  'Noto Sans Symbols 2',
-];
-
 /// Fonts that should be downloaded directly from the Google Fonts API.
 const List<String> apiFallbackFonts = <String>[
   'Noto Sans',
   'Noto Music',
+  'Noto Sans Symbols',
+  'Noto Sans Symbols 2',
   'Noto Sans Adlam',
   'Noto Sans Anatolian Hieroglyphs',
   'Noto Sans Arabic',
