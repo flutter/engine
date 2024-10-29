@@ -24,6 +24,10 @@ import 'utils.dart';
 
 const String expectedUrlPrefix = 'https://fonts.gstatic.com/s/';
 
+/// A Record that encapsulates a font family name and its uri in the CDN.
+// Should this be superseded by _Font?
+typedef ProcessedFallbackFont = ({ String family, Uri? uri });
+
 class RollFallbackFontsCommand extends Command<bool>
     with ArgUtils<bool> {
   RollFallbackFontsCommand() {
@@ -61,13 +65,12 @@ class RollFallbackFontsCommand extends Command<bool>
 
   Future<void> _generateFallbackFontData() async {
     final http.Client client = http.Client();
-    final List<String> fallbackFonts = <String>[];
-    final Map<String, Uri> urlForFamily = <String, Uri>{};
+    final List<ProcessedFallbackFont> fallbackFonts = <ProcessedFallbackFont>[];
     fallbackFonts.addAll(
-      await _processSplitFallbackFonts(client, splitFallbackFonts, urlForFamily)
+      await _processSplitFallbackFonts(client, splitFallbackFonts)
     );
     fallbackFonts.addAll(
-      await _processFallbackFonts(client, apiFallbackFonts, urlForFamily)
+      await _processFallbackFonts(client, apiFallbackFonts)
     );
 
     final Map<String, String> charsetForFamily = <String, String>{};
@@ -75,9 +78,8 @@ class RollFallbackFontsCommand extends Command<bool>
     print('Downloading fonts into temp directory: ${fontDir.path}');
     final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
     final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
-    for (final String family in fallbackFonts) {
+    for (final (:family, :uri) in fallbackFonts) {
       print('Downloading $family...');
-      final Uri? uri = urlForFamily[family];
       if (uri == null) {
         throw ToolExit('Unable to determine URL to download $family. '
             'Check if it is still hosted on Google Fonts.');
@@ -118,7 +120,7 @@ class RollFallbackFontsCommand extends Command<bool>
 
     final List<_Font> fonts = <_Font>[];
 
-    for (final String family in fallbackFonts) {
+    for (final (:family, :uri) in fallbackFonts) {
       final List<int> starts = <int>[];
       final List<int> ends = <int>[];
       final String charset = charsetForFamily[family]!;
@@ -134,7 +136,7 @@ class RollFallbackFontsCommand extends Command<bool>
         ends.add(last);
       }
 
-      fonts.add(_Font(family, fonts.length, starts, ends));
+      fonts.add(_Font(family, fonts.length, starts, ends, uri: uri));
     }
 
     final String fontSetsCode = _computeEncodedFontSets(fonts);
@@ -152,7 +154,7 @@ class RollFallbackFontsCommand extends Command<bool>
 
     for (final _Font font in fonts) {
       final String family = font.family;
-      final String urlString = urlForFamily[family]!.toString();
+      final String urlString = font.uri!.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit(
             'Unexpected url format received from Google Fonts API: $urlString.');
@@ -311,15 +313,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     ]);
   }
 
-  Future<List<String>> _processFallbackFonts(
+  Future<List<ProcessedFallbackFont>> _processFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
-    Map<String, Uri> urlForFamily,
   ) async {
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
-    final List<String> processedFonts = <String>[];
+    final List<ProcessedFallbackFont> processedFonts = <ProcessedFallbackFont>[];
     final http.Response response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
@@ -336,19 +337,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         final files = fontData['files']! as Map<String, Object?>;
         final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
-        urlForFamily[family] = uri;
-        processedFonts.add(family);
+        processedFonts.add((
+          family: family,
+          uri: uri,
+        ));
       }
     }
     return processedFonts;
   }
 
-  Future<List<String>> _processSplitFallbackFonts(
+  Future<List<ProcessedFallbackFont>> _processSplitFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
-    Map<String, Uri> urlForFamily,
   ) async {
-    final List<String> processedFonts = <String>[];
+    final List<ProcessedFallbackFont> processedFonts = <ProcessedFallbackFont>[];
     for (final String font in requestedFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
       final Uri cssUri = Uri.parse(
@@ -367,8 +369,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       int familyCount = 0;
       for (final Uri uri in uriCollector.uris) {
         final String fontName = '$font $familyCount';
-        processedFonts.add(fontName);
-        urlForFamily[fontName] = uri;
+        processedFonts.add((
+          family: fontName,
+          uri: uri,
+        ));
         familyCount += 1;
       }
     }
@@ -560,12 +564,15 @@ Future<bool> _checkForLicenseAttribution(
 }
 
 class _Font {
-  _Font(this.family, this.index, this.starts, this.ends);
+  _Font(this.family, this.index, this.starts, this.ends, {
+    this.uri,
+  });
 
   final String family;
   final int index;
   final List<int> starts;
   final List<int> ends; // inclusive ends
+  final Uri? uri;
 
   static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
 
