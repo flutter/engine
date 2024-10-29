@@ -8,6 +8,7 @@ import 'dart:ffi' as ffi;
 import 'dart:io' as io show Directory, File, Process, ProcessResult;
 import 'dart:math';
 
+import 'package:meta/meta.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:process_runner/process_runner.dart';
@@ -591,6 +592,7 @@ final class BuildRunner extends Runner {
 
   /// Takes a [line] from compilation and makes the path relative to `CWD` where
   /// the paths are relative to [outDir].
+  @visibleForTesting
   static String fixGccPaths(String line, String outDir) {
     final Match? match = _gccRegex.firstMatch(line);
     if (match == null) {
