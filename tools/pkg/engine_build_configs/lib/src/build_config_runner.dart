@@ -658,6 +658,7 @@ final class BuildRunner extends Runner {
             if (_ninjaProgress(eventHandler, command, line)) {
               return;
             }
+            // TODO(157816): Forward errors to `et`.
             line = fixGccPaths(line, outDir);
             final List<int> bytes = utf8.encode('$line\n');
             stdoutOutput.addAll(bytes);
