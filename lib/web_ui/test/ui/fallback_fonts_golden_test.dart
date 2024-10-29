@@ -231,12 +231,18 @@ void testMain() {
     Future<void> checkDownloadedFamilyForCharCode(
         int charCode, String partialFontFamilyName) async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
       pb.addText(String.fromCharCode(charCode));
       pb.build().layout(const ui.ParagraphConstraints(width: 1000));
 
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
 
+      expect(
+        downloadedFontFamilies,
+        hasLength(1),
+        reason:
+          'Downloaded more than one font family for character: 0x${charCode.toRadixString(16)}'
+      );
       expect(
         downloadedFontFamilies.first,
         startsWith(partialFontFamilyName),

@@ -313,7 +313,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   Future<List<String>> _processFallbackFonts(
     http.Client client,
-    List<String> availableFonts,
+    List<String> requestedFonts,
     Map<String, Uri> urlForFamily,
   ) async {
     if (apiKey.isEmpty) {
@@ -332,7 +332,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             .cast<Map<String, dynamic>>();
     for (final Map<String, Object?> fontData in fontDatas) {
       final String family = fontData['family']! as String;
-      if (availableFonts.contains(family)) {
+      if (requestedFonts.contains(family)) {
         final files = fontData['files']! as Map<String, Object?>;
         final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
@@ -345,11 +345,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   Future<List<String>> _processSplitFallbackFonts(
     http.Client client,
-    List<String> availableSplitFonts,
+    List<String> requestedFonts,
     Map<String, Uri> urlForFamily,
   ) async {
     final List<String> processedFonts = <String>[];
-    for (final String font in availableSplitFonts) {
+    for (final String font in requestedFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
       final Uri cssUri = Uri.parse(
           'https://fonts.googleapis.com/css2?family=$modifiedFontName');
