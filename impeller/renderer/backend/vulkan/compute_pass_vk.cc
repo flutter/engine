@@ -178,18 +178,18 @@ bool ComputePassVK::BindResource(
 
 bool ComputePassVK::BindResource(size_t binding,
                                  DescriptorType type,
-                                 const BufferView& view) {
+                                 BufferView view) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.GetBuffer();
-  auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
+  auto buffer = DeviceBufferVK::Cast(*view.GetBuffer()).GetBuffer();
   if (!buffer) {
     return false;
   }
 
-  if (!command_buffer_->Track(device_buffer)) {
+  std::shared_ptr<const DeviceBuffer> device_buffer = view.TakeBuffer();
+  if (device_buffer && !command_buffer_->Track(device_buffer)) {
     return false;
   }
 

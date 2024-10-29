@@ -149,8 +149,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& vertex_buffer =
-      vertex_buffer_view.GetBuffer();
+  const DeviceBuffer* vertex_buffer = vertex_buffer_view.GetBuffer();
 
   if (!vertex_buffer) {
     return false;
@@ -460,8 +459,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.index_buffer;
-      const std::shared_ptr<const DeviceBuffer>& index_buffer =
-          index_buffer_view.GetBuffer();
+      const DeviceBuffer* index_buffer = index_buffer_view.GetBuffer();
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {

@@ -88,7 +88,7 @@ bool ComputePassMTL::BindResource(ShaderStage stage,
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.GetBuffer();
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }

@@ -380,7 +380,11 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
     buffers[i] =
         DeviceBufferVK::Cast(*vertex_buffers[i].GetBuffer()).GetBuffer();
     vertex_buffer_offsets[i] = vertex_buffers[i].GetRange().offset;
-    command_buffer_->Track(vertex_buffers[i].GetBuffer());
+    std::shared_ptr<const DeviceBuffer> device_buffer =
+        vertex_buffers[i].TakeBuffer();
+    if (device_buffer) {
+      command_buffer_->Track(std::move(device_buffer));
+    }
   }
 
   // Bind the vertex buffers.
@@ -400,25 +404,25 @@ bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
   if (index_type != IndexType::kNone) {
     has_index_buffer_ = true;
 
-    const BufferView& index_buffer_view = index_buffer;
+    BufferView index_buffer_view = std::move(index_buffer);
     if (!index_buffer_view) {
       return false;
     }
 
-    const std::shared_ptr<const DeviceBuffer>& index_buffer =
-        index_buffer_view.GetBuffer();
-    if (!index_buffer) {
+    if (!index_buffer_view.GetBuffer()) {
       VALIDATION_LOG << "Failed to acquire device buffer"
                      << " for index buffer view";
       return false;
     }
 
-    if (!command_buffer_->Track(index_buffer)) {
+    std::shared_ptr<const DeviceBuffer> index_buffer =
+        index_buffer_view.TakeBuffer();
+    if (index_buffer && !command_buffer_->Track(index_buffer)) {
       return false;
     }
 
     vk::Buffer index_buffer_handle =
-        DeviceBufferVK::Cast(*index_buffer).GetBuffer();
+        DeviceBufferVK::Cast(*index_buffer_view.GetBuffer()).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
                                        index_buffer_view.GetRange().offset,
                                        ToVKIndexType(index_type));
@@ -556,18 +560,18 @@ bool RenderPassVK::BindResource(
 
 bool RenderPassVK::BindResource(size_t binding,
                                 DescriptorType type,
-                                const BufferView& view) {
+                                BufferView view) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.GetBuffer();
-  auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
+  auto buffer = DeviceBufferVK::Cast(*view.GetBuffer()).GetBuffer();
   if (!buffer) {
     return false;
   }
 
-  if (!command_buffer_->Track(device_buffer)) {
+  std::shared_ptr<const DeviceBuffer> device_buffer = view.TakeBuffer();
+  if (device_buffer && !command_buffer_->Track(std::move(device_buffer))) {
     return false;
   }
 
