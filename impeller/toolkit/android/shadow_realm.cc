@@ -30,7 +30,7 @@ bool ShadowRealm::ShouldDisableAHBInternal(std::string_view clientidbase,
   if (first_api_level == "28" || first_api_level == "27" ||
       first_api_level == "26" || first_api_level == "25" ||
       first_api_level == "24") {
-    return false;
+    return true;
   }
   // From local testing, neither the swapchain nor AHB import works, see also:
   // https://github.com/flutter/flutter/issues/154068
