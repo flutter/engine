@@ -1234,8 +1234,10 @@ public class FlutterRenderer implements TextureRegistry {
     for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
       DisplayFeature displayCutout = viewportMetrics.displayCutouts.get(i);
       translateFeatureBounds(displayFeaturesBounds, cutoutOffset + 4 * i, displayCutout.bounds);
-      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] = displayCutout.type.encodedValue;
-      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] = displayCutout.state.encodedValue;
+      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
+          displayCutout.type.encodedValue;
+      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] =
+          displayCutout.state.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -1352,10 +1354,28 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     // Features
-    public List<DisplayFeature> displayFeatures = new ArrayList<>();
+    private final List<DisplayFeature> displayFeatures = new ArrayList<>();
 
     // Specifically display cutouts.
-    public List<DisplayFeature> displayCutouts = new ArrayList<>();
+    private final List<DisplayFeature> displayCutouts = new ArrayList<>();
+
+    public List<DisplayFeature> getDisplayFeatures() {
+      return displayFeatures;
+    }
+
+    public List<DisplayFeature> getDisplayCutouts() {
+      return displayCutouts;
+    }
+
+    public void setDisplayFeatures(List<DisplayFeature> newFeatures) {
+      displayFeatures.clear();
+      displayFeatures.addAll(newFeatures);
+    }
+
+    public void setDisplayCutouts(List<DisplayFeature> newCutouts) {
+      displayCutouts.clear();
+      displayCutouts.addAll(newCutouts);
+    }
   }
 
   /**

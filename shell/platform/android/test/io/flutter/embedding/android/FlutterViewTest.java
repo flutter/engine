@@ -699,7 +699,7 @@ public class FlutterViewTest {
     // Assert the display feature is set.
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     List<FlutterRenderer.DisplayFeature> features =
-        viewportMetricsCaptor.getValue().displayFeatures;
+        viewportMetricsCaptor.getValue().getDisplayFeatures();
     assertEquals(1, features.size());
     assertEquals(FlutterRenderer.DisplayFeatureType.HINGE, features.get(0).type);
     assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
@@ -714,7 +714,7 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
-    features = viewportMetricsCaptor.getValue().displayFeatures;
+    features = viewportMetricsCaptor.getValue().getDisplayFeatures();
 
     // Assert the old display feature is still present.
     assertEquals(1, features.size());
@@ -722,7 +722,8 @@ public class FlutterViewTest {
     assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, features.get(0).state);
     assertEquals(featureBounds, features.get(0).bounds);
 
-    List<FlutterRenderer.DisplayFeature> cutouts = viewportMetricsCaptor.getValue().displayCutouts;
+    List<FlutterRenderer.DisplayFeature> cutouts =
+        viewportMetricsCaptor.getValue().getDisplayCutouts();
     // Asserts for display cutouts.
     assertEquals(2, cutouts.size());
     for (int i = 0; i < 2; i++) {
@@ -782,7 +783,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(Collections.emptyList(), viewportMetricsCaptor.getValue().displayFeatures);
+    assertEquals(Collections.emptyList(), viewportMetricsCaptor.getValue().getDisplayFeatures());
     clearInvocations(flutterRenderer);
 
     // Test that display features do not override cutouts.
@@ -790,9 +791,10 @@ public class FlutterViewTest {
     WindowInsets windowInsets = setupMockDisplayCutout(cutoutBoundingRects);
     flutterView.onApplyWindowInsets(windowInsets);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(1, viewportMetricsCaptor.getValue().displayCutouts.size());
+    assertEquals(1, viewportMetricsCaptor.getValue().getDisplayCutouts().size());
     assertEquals(
-        cutoutBoundingRects.get(0), viewportMetricsCaptor.getValue().displayCutouts.get(0).bounds);
+        cutoutBoundingRects.get(0),
+        viewportMetricsCaptor.getValue().getDisplayCutouts().get(0).bounds);
     clearInvocations(flutterRenderer);
 
     FoldingFeature displayFeature = mock(FoldingFeature.class);
@@ -815,16 +817,17 @@ public class FlutterViewTest {
 
     // Then the Renderer receives the display feature
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(1, viewportMetricsCaptor.getValue().displayFeatures.size());
+    assertEquals(1, viewportMetricsCaptor.getValue().getDisplayFeatures().size());
     FlutterRenderer.DisplayFeature feature =
-        viewportMetricsCaptor.getValue().displayFeatures.get(0);
+        viewportMetricsCaptor.getValue().getDisplayFeatures().get(0);
     assertEquals(FlutterRenderer.DisplayFeatureType.HINGE, feature.type);
     assertEquals(FlutterRenderer.DisplayFeatureState.POSTURE_FLAT, feature.state);
     assertEquals(featureRect, feature.bounds);
 
     // Assert the display cutout is unaffected.
-    assertEquals(1, viewportMetricsCaptor.getValue().displayCutouts.size());
-    FlutterRenderer.DisplayFeature cutout = viewportMetricsCaptor.getValue().displayCutouts.get(0);
+    assertEquals(1, viewportMetricsCaptor.getValue().getDisplayCutouts().size());
+    FlutterRenderer.DisplayFeature cutout =
+        viewportMetricsCaptor.getValue().getDisplayCutouts().get(0);
     assertEquals(cutoutBoundingRects.get(0), cutout.bounds);
     assertEquals(FlutterRenderer.DisplayFeatureType.CUTOUT, cutout.type);
     assertEquals(FlutterRenderer.DisplayFeatureState.UNKNOWN, cutout.state);

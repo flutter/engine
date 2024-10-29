@@ -73,6 +73,7 @@ import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -538,7 +539,7 @@ public class FlutterView extends FrameLayout
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> newDisplayFeatures = layoutInfo.getDisplayFeatures();
-    viewportMetrics.displayFeatures.clear();
+    List<FlutterRenderer.DisplayFeature> flutterDisplayFeatures = new ArrayList<>();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
@@ -565,16 +566,17 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        viewportMetrics.displayFeatures.add(
+        flutterDisplayFeatures.add(
             new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        viewportMetrics.displayFeatures.add(
+        flutterDisplayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
                 DisplayFeatureState.UNKNOWN));
       }
     }
+    viewportMetrics.setDisplayFeatures(flutterDisplayFeatures);
     sendViewportMetricsToFlutter();
   }
 
@@ -769,16 +771,19 @@ public class FlutterView extends FrameLayout
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
     // populated here. DisplayCutout was introduced in API 28.
-    viewportMetrics.displayCutouts.clear();
+    List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       DisplayCutout cutout = insets.getDisplayCutout();
       if (cutout != null) {
         for (Rect bounds : cutout.getBoundingRects()) {
           Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-          viewportMetrics.displayCutouts.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT, DisplayFeatureState.UNKNOWN));
+          displayCutouts.add(
+              new FlutterRenderer.DisplayFeature(
+                  bounds, DisplayFeatureType.CUTOUT, DisplayFeatureState.UNKNOWN));
         }
       }
     }
+    viewportMetrics.setDisplayCutouts(displayCutouts);
 
     // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
     // bounding Rects instead of an Insets object, which is a newer API method, as compared to the
