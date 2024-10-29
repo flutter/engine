@@ -377,9 +377,10 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
   vk::Buffer buffers[kMaxVertexBuffers];
   vk::DeviceSize vertex_buffer_offsets[kMaxVertexBuffers];
   for (size_t i = 0; i < vertex_buffer_count; i++) {
-    buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
-    vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
-    command_buffer_->Track(vertex_buffers[i].buffer);
+    buffers[i] =
+        DeviceBufferVK::Cast(*vertex_buffers[i].GetBuffer()).GetBuffer();
+    vertex_buffer_offsets[i] = vertex_buffers[i].GetRange().offset;
+    command_buffer_->Track(vertex_buffers[i].GetBuffer());
   }
 
   // Bind the vertex buffers.
@@ -405,7 +406,7 @@ bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
     }
 
     const std::shared_ptr<const DeviceBuffer>& index_buffer =
-        index_buffer_view.buffer;
+        index_buffer_view.GetBuffer();
     if (!index_buffer) {
       VALIDATION_LOG << "Failed to acquire device buffer"
                      << " for index buffer view";
@@ -419,7 +420,7 @@ bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
     vk::Buffer index_buffer_handle =
         DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
-                                       index_buffer_view.range.offset,
+                                       index_buffer_view.GetRange().offset,
                                        ToVKIndexType(index_type));
   } else {
     has_index_buffer_ = false;
@@ -560,7 +561,7 @@ bool RenderPassVK::BindResource(size_t binding,
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.buffer;
+  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.GetBuffer();
   auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
   if (!buffer) {
     return false;
@@ -570,12 +571,12 @@ bool RenderPassVK::BindResource(size_t binding,
     return false;
   }
 
-  uint32_t offset = view.range.offset;
+  uint32_t offset = view.GetRange().offset;
 
   vk::DescriptorBufferInfo buffer_info;
   buffer_info.buffer = buffer;
   buffer_info.offset = offset;
-  buffer_info.range = view.range.length;
+  buffer_info.range = view.GetRange().length;
   buffer_workspace_[bound_buffer_offset_++] = buffer_info;
 
   vk::WriteDescriptorSet write_set;

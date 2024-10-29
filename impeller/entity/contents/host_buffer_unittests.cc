@@ -27,7 +27,7 @@ TEST_P(HostBufferTest, CanEmplace) {
   for (size_t i = 0; i < 12500; i++) {
     auto view = buffer->Emplace(Length2{});
     ASSERT_TRUE(view);
-    ASSERT_EQ(view.range, Range(i * sizeof(Length2), 2u));
+    ASSERT_EQ(view.GetRange(), Range(i * sizeof(Length2), 2u));
   }
 }
 
@@ -48,26 +48,26 @@ TEST_P(HostBufferTest, CanEmplaceWithAlignment) {
   {
     auto view = buffer->Emplace(Length2{});
     ASSERT_TRUE(view);
-    ASSERT_EQ(view.range, Range(0u, 2u));
+    ASSERT_EQ(view.GetRange(), Range(0u, 2u));
   }
 
   {
     auto view = buffer->Emplace(Align16{});
     ASSERT_TRUE(view);
-    ASSERT_EQ(view.range.offset, 16u);
-    ASSERT_EQ(view.range.length, 16u);
+    ASSERT_EQ(view.GetRange().offset, 16u);
+    ASSERT_EQ(view.GetRange().length, 16u);
   }
   {
     auto view = buffer->Emplace(Length2{});
     ASSERT_TRUE(view);
-    ASSERT_EQ(view.range, Range(32u, 2u));
+    ASSERT_EQ(view.GetRange(), Range(32u, 2u));
   }
 
   {
     auto view = buffer->Emplace(Align16{});
     ASSERT_TRUE(view);
-    ASSERT_EQ(view.range.offset, 48u);
-    ASSERT_EQ(view.range.length, 16u);
+    ASSERT_EQ(view.GetRange().offset, 48u);
+    ASSERT_EQ(view.GetRange().length, 16u);
   }
 }
 
@@ -157,10 +157,10 @@ TEST_P(HostBufferTest, EmplaceWithProcIsAligned) {
   auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
 
   BufferView view = buffer->Emplace(std::array<char, 21>());
-  EXPECT_EQ(view.range, Range(0, 21));
+  EXPECT_EQ(view.GetRange(), Range(0, 21));
 
   view = buffer->Emplace(64, 16, [](uint8_t*) {});
-  EXPECT_EQ(view.range, Range(32, 64));
+  EXPECT_EQ(view.GetRange(), Range(32, 64));
 }
 
 static constexpr const size_t kMagicFailingAllocation = 1024000 * 2;
@@ -201,9 +201,9 @@ TEST_P(HostBufferTest, EmplaceWithFailingAllocationDoesntCrash) {
 
   auto view = buffer->Emplace(nullptr, kMagicFailingAllocation, 0);
 
-  EXPECT_EQ(view.buffer, nullptr);
-  EXPECT_EQ(view.range.offset, 0u);
-  EXPECT_EQ(view.range.length, 0u);
+  EXPECT_EQ(view.GetBuffer(), nullptr);
+  EXPECT_EQ(view.GetRange().offset, 0u);
+  EXPECT_EQ(view.GetRange().length, 0u);
 }
 
 }  // namespace  testing

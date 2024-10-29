@@ -84,7 +84,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
                 EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
                 auto view = DeviceBuffer::AsBufferView(output_buffer);
-                EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
+                EXPECT_EQ(view.GetRange().length, sizeof(CS::Output<kCount>));
 
                 CS::Output<kCount>* output =
                     reinterpret_cast<CS::Output<kCount>*>(
@@ -152,7 +152,7 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
                      EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
                      auto view = DeviceBuffer::AsBufferView(output_buffer);
-                     EXPECT_EQ(view.range.length,
+                     EXPECT_EQ(view.GetRange().length,
                                sizeof(CS::OutputData<kCount>));
 
                      CS::OutputData<kCount>* output =
@@ -210,7 +210,7 @@ TEST_P(ComputeTest, 1DThreadgroupSizingIsCorrect) {
                      EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
                      auto view = DeviceBuffer::AsBufferView(output_buffer);
-                     EXPECT_EQ(view.range.length,
+                     EXPECT_EQ(view.GetRange().length,
                                sizeof(CS::OutputData<kCount>));
 
                      CS::OutputData<kCount>* output =
@@ -427,7 +427,7 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
                 EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
                 auto view = DeviceBuffer::AsBufferView(output_buffer);
-                EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
+                EXPECT_EQ(view.GetRange().length, sizeof(CS::Output<kCount>));
 
                 CS::Output<kCount>* output =
                     reinterpret_cast<CS::Output<kCount>*>(

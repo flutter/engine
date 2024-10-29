@@ -255,17 +255,14 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     pass.SetPipeline(pipeline);
 
     std::array<BufferView, 2> vertex_buffers = {
-        BufferView{
-            .buffer = device_buffer,
-            .range = Range(offsetof(Cube, positions), sizeof(Cube::positions))},
-        BufferView{
-            .buffer = device_buffer,
-            .range = Range(offsetof(Cube, colors), sizeof(Cube::colors))},
+        BufferView(device_buffer,
+                   Range(offsetof(Cube, positions), sizeof(Cube::positions))),
+        BufferView(device_buffer,
+                   Range(offsetof(Cube, colors), sizeof(Cube::colors))),
     };
 
-    BufferView index_buffer = {
-        .buffer = device_buffer,
-        .range = Range(offsetof(Cube, indices), sizeof(Cube::indices))};
+    BufferView index_buffer(
+        device_buffer, Range(offsetof(Cube, indices), sizeof(Cube::indices)));
     pass.SetVertexBuffer(vertex_buffers.data(), vertex_buffers.size());
     pass.SetElementCount(36);
     pass.SetIndexBuffer(index_buffer, IndexType::k16bit);
@@ -751,7 +748,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         auto texture =
             context->GetResourceAllocator()->CreateTexture(texture_desc);
         if (!texture->SetContents(device_buffer->OnGetContents(),
-                                  buffer_view.range.length)) {
+                                  buffer_view.GetRange().length)) {
           VALIDATION_LOG << "Could not upload texture to device memory";
           return false;
         }

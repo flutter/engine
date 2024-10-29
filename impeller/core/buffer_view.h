@@ -13,10 +13,24 @@ namespace impeller {
 class DeviceBuffer;
 
 struct BufferView {
-  std::shared_ptr<const DeviceBuffer> buffer;
-  Range range;
+ public:
+  BufferView() : buffer_(nullptr), range_({}) {}
 
-  constexpr explicit operator bool() const { return static_cast<bool>(buffer); }
+  BufferView(std::shared_ptr<const DeviceBuffer> buffer, Range range)
+      : buffer_(std::move(buffer)), range_(range) {}
+
+  Range GetRange() const { return range_; }
+  const std::shared_ptr<const DeviceBuffer> GetBuffer() const {
+    return buffer_;
+  }
+
+  constexpr explicit operator bool() const {
+    return static_cast<bool>(buffer_);
+  }
+
+ private:
+  std::shared_ptr<const DeviceBuffer> buffer_;
+  Range range_;
 };
 
 }  // namespace impeller
