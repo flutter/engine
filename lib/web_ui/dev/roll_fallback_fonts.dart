@@ -61,13 +61,11 @@ class RollFallbackFontsCommand extends Command<bool>
 
   Future<void> _generateFallbackFontData() async {
     final http.Client client = http.Client();
-    final List<_Font> fallbackFonts = <_Font>[];
-    fallbackFonts.addAll(
-      await _processSplitFallbackFonts(client, splitFallbackFonts)
-    );
-    fallbackFonts.addAll(
-      await _processFallbackFonts(client, apiFallbackFonts)
-    );
+    final List<_FontInfo> fallbackFontInfo = <_FontInfo>[
+      ...await _processSplitFallbackFonts(client, splitFallbackFonts),
+      ...await _processFallbackFonts(client, apiFallbackFonts),
+    ];
+    final List<_Font> fallbackFontData = <_Font>[];
 
     final Map<String, String> charsetForFamily = <String, String>{};
     final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
@@ -75,13 +73,13 @@ class RollFallbackFontsCommand extends Command<bool>
     final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
     final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
 
-    for (final _Font font in fallbackFonts) {
-      print('Downloading ${font.family}...');
-      final http.Response fontResponse = await client.get(font.uri);
+    for (final (:family, :uri) in fallbackFontInfo) {
+      print('Downloading $family...');
+      final http.Response fontResponse = await client.get(uri);
       if (fontResponse.statusCode != 200) {
-        throw ToolExit('Failed to download font for ${font.family}');
+        throw ToolExit('Failed to download font for $family');
       }
-      final String urlString = font.uri.toString();
+      final String urlString = uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
       }
@@ -106,16 +104,16 @@ class RollFallbackFontsCommand extends Command<bool>
         fontFile.path,
       ]);
       final String encodedCharset = fcQueryResult.stdout as String;
-      charsetForFamily[font.family] = encodedCharset;
+      charsetForFamily[family] = encodedCharset;
     }
 
     final StringBuffer sb = StringBuffer();
 
-    for (int i = 0; i < fallbackFonts.length; i++) {
-      final _Font font = fallbackFonts[i];
+    int index = 0;
+    for (final _FontInfo fontInfo in fallbackFontInfo) {
       final List<int> starts = <int>[];
       final List<int> ends = <int>[];
-      final String charset = charsetForFamily[font.family]!;
+      final String charset = charsetForFamily[fontInfo.family]!;
       for (final String range in charset.split(' ')) {
         // Range is one hexadecimal number or two, separated by `-`.
         final List<String> parts = range.split('-');
@@ -127,14 +125,11 @@ class RollFallbackFontsCommand extends Command<bool>
         starts.add(first);
         ends.add(last);
       }
-      // Update the range data in `font`.
-      font
-        ..index = i
-        ..starts = starts
-        ..ends = ends;
+
+      fallbackFontData.add(_Font(fontInfo, index++, starts, ends));
     }
 
-    final String fontSetsCode = _computeEncodedFontSets(fallbackFonts);
+    final String fontSetsCode = _computeEncodedFontSets(fallbackFontData);
 
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
@@ -147,9 +142,9 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln();
     sb.writeln('List<NotoFont> getFallbackFontList() => <NotoFont>[');
 
-    for (final _Font font in fallbackFonts) {
-      final String family = font.family;
-      final String urlString = font.uri.toString();
+    for (final _Font font in fallbackFontData) {
+      final String family = font.info.family;
+      final String urlString = font.info.uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit(
             'Unexpected url format received from Google Fonts API: $urlString.');
@@ -308,14 +303,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     ]);
   }
 
-  Future<List<_Font>> _processFallbackFonts(
+  Future<List<_FontInfo>> _processFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
   ) async {
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
-    final List<_Font> processedFonts = <_Font>[];
+    final List<_FontInfo> processedFonts = <_FontInfo>[];
     final http.Response response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
@@ -332,17 +327,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         final files = fontData['files']! as Map<String, Object?>;
         final Uri uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
-        processedFonts.add(_Font(family, uri));
+        processedFonts.add((
+          family: family,
+          uri: uri,
+        ));
       }
     }
     return processedFonts;
   }
 
-  Future<List<_Font>> _processSplitFallbackFonts(
+  Future<List<_FontInfo>> _processSplitFallbackFonts(
     http.Client client,
     List<String> requestedFonts,
   ) async {
-    final List<_Font> processedFonts = <_Font>[];
+    final List<_FontInfo> processedFonts = <_FontInfo>[];
     for (final String font in requestedFonts) {
       final String modifiedFontName = font.replaceAll(' ', '+');
       final Uri cssUri = Uri.parse(
@@ -359,9 +357,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       final UriCollector uriCollector = UriCollector();
       stylesheet.visit(uriCollector);
       int familyCount = 0;
+      // Give each font shard a unique family name.
       for (final Uri uri in uriCollector.uris) {
-        final String fontName = '$font $familyCount';
-        processedFonts.add(_Font(fontName, uri));
+        final String family = '$font $familyCount';
+        processedFonts.add((
+          family: family,
+          uri: uri,
+        ));
         familyCount += 1;
       }
     }
@@ -552,17 +554,16 @@ Future<bool> _checkForLicenseAttribution(
   return licenseString.contains(attributionString);
 }
 
+// The basic information of a font: its [family] (name) and [uri].
+typedef _FontInfo = ({String family, Uri uri});
+
 class _Font {
-  _Font(this.family, this.uri);
+  _Font(this.info, this.index, this.starts, this.ends);
 
-  final String family;
-  final Uri uri;
-
-  // The following properties are added to the _Font instances as additional
-  // metadata is downloaded.
-  late final int index;
-  late final List<int> starts;
-  late final List<int> ends; // inclusive ends
+  final _FontInfo info;
+  final int index;
+  final List<int> starts;
+  final List<int> ends; // inclusive ends
 
   static int compare(_Font a, _Font b) => a.index.compareTo(b.index);
 
@@ -571,9 +572,9 @@ class _Font {
       String.fromCharCodes(
           '$index'.codeUnits.map((int ch) => ch - 48 + 0x2080));
 
-  String get _shortName => family.startsWith('Noto Sans ')
-      ? family.substring('Noto Sans '.length)
-      : family;
+  String get _shortName => info.family.startsWith('Noto Sans ')
+      ? info.family.substring('Noto Sans '.length)
+      : info.family;
 }
 
 /// The boundary of a range of a font.
