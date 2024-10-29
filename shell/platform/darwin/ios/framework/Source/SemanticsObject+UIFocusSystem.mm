@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "SemanticsObject.h"
+#include "flutter/lib/ui/semantics/semantics_node.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 FLUTTER_ASSERT_ARC
@@ -99,4 +100,46 @@ FLUTTER_ASSERT_ARC
 - (id<UICoordinateSpace>)coordinateSpace {
   return self.bridge->view();
 }
+@end
+
+@interface FlutterScrollableSemanticsObject ()
+@property(nonatomic, readonly) UIScrollView* scrollView;
+@end
+
+@interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
+    UIFocusItemScrollableContainer>
+@end
+
+@implementation FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer)
+- (CGPoint)contentOffset {
+  // After the focus system calls setContentOffset, this value may not
+  // immediately reflect the new offset value as the accessibility updates from
+  // the framework only comes in once per frame.
+  return self.scrollView.contentOffset;
+}
+
+- (void)setContentOffset:(CGPoint)contentOffset {
+  if (![self isAccessibilityBridgeAlive]) {
+    return;
+  }
+
+  // The following code assumes the memory layout of CGPoint is exactly the
+  // same as an array defined as: `double coords[] = { x, y };`
+  //
+  // The size of a CGFloat is architecture-dependent and it's typically the word
+  // size. The last iOS with 32-bit support was iOS 10.
+  static_assert(sizeof(CGPoint) == sizeof(uint8_t) * 8);
+  self.bridge->DispatchSemanticsAction(
+      self.uid, flutter::SemanticsAction::kScrollToOffset,
+      fml::MallocMapping::Copy((uint8_t*)&contentOffset, sizeof(CGPoint) / sizeof(uint8_t)););
+}
+
+- (CGSize)contentSize {
+  return self.scrollView.contentSize;
+}
+
+- (CGSize)visibleSize {
+  return self.scrollView.frame.size;
+}
+
 @end

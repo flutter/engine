@@ -45,6 +45,7 @@ class SemanticsAction {
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
   static const int _kSetTextIndex = 1 << 21;
   static const int _kFocusIndex = 1 << 22;
+  static const int _kScrollToOffset = 1 << 23;
   // READ THIS: if you add an action here, you MUST update the
   // numSemanticsActions value in testing/dart/semantics_test.dart and
   // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests
@@ -85,6 +86,12 @@ class SemanticsAction {
   /// This action should be recognized by controls that are vertically
   /// scrollable.
   static const SemanticsAction scrollDown = SemanticsAction._(_kScrollDownIndex, 'scrollDown');
+
+  /// A request to sroll the scrollable container to a given scroll offset.
+  ///
+  /// This action is used by iOS Full Keyboard Access to reveal contents that
+  /// are currently not visible in the viewport.
+  static const SemanticsAction scrollToOffset = SemanticsAction._(_kScrollToOffset, 'scrollToOffset');
 
   /// A request to increase the value represented by the semantics node.
   ///
@@ -764,7 +771,7 @@ base class LocaleStringAttribute extends StringAttribute {
     _initLocaleStringAttribute(this, range.start, range.end, locale.toLanguageTag());
   }
 
-  /// The lanuage of this attribute.
+  /// The language of this attribute.
   final Locale locale;
 
   @Native<Void Function(Handle, Int32, Int32, Handle)>(symbol: 'NativeStringAttribute::initLocaleStringAttribute')
