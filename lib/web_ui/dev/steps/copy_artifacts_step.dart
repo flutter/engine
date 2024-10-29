@@ -48,7 +48,6 @@ class CopyArtifactsStep implements PipelineStep {
     if (artifactDeps.skwasm) {
       print('Copying Skwasm...');
       await copySkwasm();
-      await copySkwasmSingleThreaded();
     }
   }
 
@@ -235,40 +234,6 @@ class CopyArtifactsStep implements PipelineStep {
       'skwasm.wasm',
       'skwasm.wasm.map',
       'skwasm.js',
-    ]) {
-      final io.File sourceFile = io.File(pathlib.join(
-        outBuildPath,
-        'flutter_web_sdk',
-        'canvaskit',
-        fileName,
-      ));
-      if (!sourceFile.existsSync()) {
-        if (fileName.endsWith('.map')) {
-          // Sourcemaps are only generated under certain build conditions, so
-          // they are optional.
-          continue;
-        } {
-          throw ToolExit('Built Skwasm artifact not found at path "$sourceFile".');
-        }
-      }
-      final io.File targetFile = io.File(pathlib.join(
-        targetDir.path,
-        fileName,
-      ));
-      await sourceFile.copy(targetFile.path);
-    }
-  }
-
-  Future<void> copySkwasmSingleThreaded() async {
-    final io.Directory targetDir = io.Directory(pathlib.join(
-      environment.webTestsArtifactsDir.path,
-      'canvaskit',
-      // 'skwasm_st',
-    ));
-
-    await targetDir.create(recursive: true);
-
-    for (final String fileName in <String>[
       'skwasm_st.wasm',
       'skwasm_st.wasm.map',
       'skwasm_st.js',
@@ -277,7 +242,6 @@ class CopyArtifactsStep implements PipelineStep {
         outBuildPath,
         'flutter_web_sdk',
         'canvaskit',
-        // 'skwasm_st',
         fileName,
       ));
       if (!sourceFile.existsSync()) {
