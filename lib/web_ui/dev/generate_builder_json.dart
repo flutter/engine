@@ -110,71 +110,64 @@ Map<String, dynamic> _getBundleBuildStep(TestBundle bundle) {
 
 Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
   return <dynamic>[
-    ..._getTestStepsForPlatform(suites, 'Linux', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.chrome ||
-      suite.runConfig.browser == BrowserName.firefox
-    ),
-    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13', cpu: 'arm64', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.safari
-    ),
-    ..._getTestStepsForPlatform(suites, 'Windows', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.chrome
-    ),
+    _getTestStepForPlatformAndBrowser(suites, 'Linux', BrowserName.chrome),
+    _getTestStepForPlatformAndBrowser(suites, 'Linux', BrowserName.firefox),
+    _getTestStepForPlatformAndBrowser(suites, 'Mac', BrowserName.chrome, specificOS: 'Mac-13', cpu: 'arm64'),
+    _getTestStepForPlatformAndBrowser(suites, 'Windows', BrowserName.chrome)
   ];
 }
 
-Iterable<dynamic> _getTestStepsForPlatform(
+Map<String, dynamic> _getTestStepForPlatformAndBrowser(
   List<TestSuite> suites,
   String platform,
-  bool Function(TestSuite suite) filter, {
+  BrowserName browser, {
   String? specificOS,
   String? cpu,
 }) {
-  return suites
-    .where(filter)
-    .map((TestSuite suite) => <String, dynamic>{
-        'name': '$platform run ${suite.name} suite',
-        'recipe': 'engine_v2/tester_engine',
-        'drone_dimensions': <String>[
-          'device_type=none',
-          'os=${specificOS ?? platform}',
-          if (cpu != null) 'cpu=$cpu',
-        ],
-        'gclient_variables': <String, dynamic>{
-          'download_android_deps': false,
-          'download_jdk': false,
+  final filteredSuites = suites.where((suite) => suite.runConfig.browser == browser);
+  final bundles = filteredSuites.map((suite) => suite.testBundle).toSet();
+  return <String, dynamic>{
+    'name': '$platform run ${browser.name} suites',
+    'recipe': 'engine_v2/tester_engine',
+    'drone_dimensions': <String>[
+      'device_type=none',
+      'os=${specificOS ?? platform}',
+      if (cpu != null) 'cpu=$cpu',
+    ],
+    'gclient_variables': <String, dynamic>{
+      'download_android_deps': false,
+      'download_jdk': false,
+    },
+    'dependencies': <String>[
+      'web_tests/artifacts',
+      ...bundles.map((bundle) => 'web_tests/test_bundles/${bundle.name}'),
+    ],
+    'test_dependencies': <dynamic>[
+      <String, dynamic>{
+        'dependency': 'goldctl',
+        'version': 'git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd',
+      },
+      if (browser == BrowserName.chrome)
+        <String, dynamic>{
+          'dependency': 'chrome_and_driver',
+          'version': '125.0.6422.141',
         },
-        'dependencies': <String>[
-          'web_tests/artifacts',
-          'web_tests/test_bundles/${suite.testBundle.name}',
+      if (browser == BrowserName.firefox)
+        <String, dynamic>{
+          'dependency': 'firefox',
+          'version': 'version:106.0',
+        }
+    ],
+    'tasks': <dynamic>[
+      <String, dynamic>{
+        'name': 'run suites for $browser',
+        'parameters': <String>[
+          'test',
+          '--run',
+          ...filteredSuites.map((suite) => '--suite=${suite.name}')
         ],
-        'test_dependencies': <dynamic>[
-          <String, dynamic>{
-            'dependency': 'goldctl',
-            'version': 'git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd',
-          },
-          if (suite.runConfig.browser == BrowserName.chrome)
-            <String, dynamic>{
-              'dependency': 'chrome_and_driver',
-              'version': '125.0.6422.141',
-            },
-          if (suite.runConfig.browser == BrowserName.firefox)
-            <String, dynamic>{
-              'dependency': 'firefox',
-              'version': 'version:106.0',
-            }
-        ],
-        'tasks': <dynamic>[
-          <String, dynamic>{
-            'name': 'run suite ${suite.name}',
-            'parameters': <String>[
-              'test',
-              '--run',
-              '--suite=${suite.name}'
-            ],
-            'script': 'flutter/lib/web_ui/dev/felt',
-          }
-        ]
+        'script': 'flutter/lib/web_ui/dev/felt',
       }
-    );
+    ]
+  };
 }
