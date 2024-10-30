@@ -325,3 +325,28 @@ If you need to build a configuration _not-specified_, consider the following:
    ```
 
 ## Contributing
+
+We welcome contributions to improve `et` for our all developers.
+
+- Follow the [Flutter style guide](https://github.com/flutter/flutter/wiki/Style-guide-for-Flutter-repo)
+  for Dart code that are relevant outside of the framework repo. It contains
+  conventions that go beyond code formatting, which we'll follow even if using
+  `dart format` in the future.
+- Do not call directly into `dart:io` except from `main.dart`. Instead access
+  the system only through the `Enviroment` object.
+- All commands must have unit tests. If some functionality needs a fake
+  implementation, then write a fake implementation.
+- When adding or changing functionality, update this README.md file.
+- _Begin with the end in mind_ - Start working from what the interface provided
+  by this tool _should_ be, then modify underlying scripts and tools to provide
+  APIs to support that.
+
+Run tests using `et`:
+
+```shell
+et test //flutter/tools/engine_tool/...
+```
+
+If you're not sure what to work on, consider our existing label of `e: engine-tool`:
+
+[![Open `e: engine-tool` issues](https://img.shields.io/github/issues/flutter/flutter/e%3A%20engine-tool)](https://github.com/flutter/flutter/issues?q=is%3Aopen+is%3Aissue+label%3A%22e%3A+engine-tool%22)
