@@ -369,7 +369,7 @@ final class BuildRunner extends Runner {
 
   // extraGnArgs overrides the build config args.
   late final Set<String> _mergedGnArgs = Set.of(mergeGnArgs(
-    buildArgs: build.gn, 
+    buildArgs: build.gn,
     extraArgs: extraGnArgs,
   ));
 
