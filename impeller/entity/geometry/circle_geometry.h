@@ -9,7 +9,7 @@
 
 namespace impeller {
 
-/// @brief Generator for vertices for or either filled or stroked circles
+/// @brief Generator for vertices or either filled or stroked circles
 class CircleGeometry final : public Geometry {
  public:
   explicit CircleGeometry(const Point& center, Scalar radius);
