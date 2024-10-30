@@ -30,7 +30,8 @@ TEST_P(ComputeTest, CapabilitiesReportSupport) {
 TEST_P(ComputeTest, CanCreateComputePass) {
   using CS = SampleComputeShader;
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
@@ -109,7 +110,8 @@ TEST_P(ComputeTest, CanCreateComputePass) {
 TEST_P(ComputeTest, CanComputePrefixSum) {
   using CS = PrefixSumTestComputeShader;
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
@@ -229,7 +231,8 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
   using CS = PrefixSumTestComputeShader;
 
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
 
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
@@ -275,7 +278,8 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
   using Stage2PipelineBuilder = ComputePipelineBuilder<CS2>;
 
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
@@ -373,7 +377,8 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 TEST_P(ComputeTest, CanCompute1DimensionalData) {
   using CS = SampleComputeShader;
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
@@ -452,7 +457,8 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
 TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
   using CS = SampleComputeShader;
   auto context = GetContext();
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                        context->GetIdleWaiter());
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 

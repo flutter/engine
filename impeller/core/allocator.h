@@ -17,6 +17,12 @@ namespace impeller {
 class Context;
 class DeviceBuffer;
 
+class IdleWaiter {
+ public:
+  virtual ~IdleWaiter() = default;
+  virtual void WaitIdle() const {}
+};
+
 //------------------------------------------------------------------------------
 /// @brief      An object that allocates device memory.
 ///

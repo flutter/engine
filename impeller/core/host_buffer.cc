@@ -19,12 +19,15 @@ namespace impeller {
 constexpr size_t kAllocatorBlockSize = 1024000;  // 1024 Kb.
 
 std::shared_ptr<HostBuffer> HostBuffer::Create(
-    const std::shared_ptr<Allocator>& allocator) {
-  return std::shared_ptr<HostBuffer>(new HostBuffer(allocator));
+    const std::shared_ptr<Allocator>& allocator,
+    const std::shared_ptr<const IdleWaiter>& idle_waiter) {
+  return std::shared_ptr<HostBuffer>(new HostBuffer(allocator, idle_waiter));
 }
 
-HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator)
-    : allocator_(allocator) {
+HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator,
+                       const std::shared_ptr<const IdleWaiter>& idle_waiter)
+    : allocator_(allocator), idle_waiter_(idle_waiter) {
+  FML_DCHECK(idle_waiter_);
   DeviceBufferDescriptor desc;
   desc.size = kAllocatorBlockSize;
   desc.storage_mode = StorageMode::kHostVisible;
@@ -35,7 +38,10 @@ HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator)
   }
 }
 
-HostBuffer::~HostBuffer() = default;
+HostBuffer::~HostBuffer() {
+  FML_LOG(ERROR) << "HostBuffer::~HostBuffer";
+  idle_waiter_->WaitIdle();
+};
 
 BufferView HostBuffer::Emplace(const void* buffer,
                                size_t length,
@@ -214,6 +220,7 @@ const std::shared_ptr<DeviceBuffer>& HostBuffer::GetCurrentBuffer() const {
 }
 
 void HostBuffer::Reset() {
+  FML_LOG(ERROR) << "HostBuffer::Reset";
   // When resetting the host buffer state at the end of the frame, check if
   // there are any unused buffers and remove them.
   while (device_buffers_[frame_index_].size() > current_buffer_ + 1) {

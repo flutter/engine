@@ -22,7 +22,8 @@ TEST_P(HostBufferTest, CanEmplace) {
   };
   static_assert(sizeof(Length2) == 2u);
 
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   for (size_t i = 0; i < 12500; i++) {
     auto view = buffer->Emplace(Length2{});
@@ -42,7 +43,8 @@ TEST_P(HostBufferTest, CanEmplaceWithAlignment) {
   static_assert(alignof(Align16) == 16);
   static_assert(sizeof(Align16) == 16);
 
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
   ASSERT_TRUE(buffer);
 
   {
@@ -72,7 +74,8 @@ TEST_P(HostBufferTest, CanEmplaceWithAlignment) {
 }
 
 TEST_P(HostBufferTest, HostBufferInitialState) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
   EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
@@ -80,7 +83,8 @@ TEST_P(HostBufferTest, HostBufferInitialState) {
 }
 
 TEST_P(HostBufferTest, ResetIncrementsFrameCounter) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
 
@@ -99,7 +103,8 @@ TEST_P(HostBufferTest, ResetIncrementsFrameCounter) {
 
 TEST_P(HostBufferTest,
        EmplacingLargerThanBlockSizeCreatesOneOffBufferCallback) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   // Emplace an amount larger than the block size, to verify that the host
   // buffer does not create a buffer.
@@ -111,7 +116,8 @@ TEST_P(HostBufferTest,
 }
 
 TEST_P(HostBufferTest, EmplacingLargerThanBlockSizeCreatesOneOffBuffer) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   // Emplace an amount larger than the block size, to verify that the host
   // buffer does not create a buffer.
@@ -123,7 +129,8 @@ TEST_P(HostBufferTest, EmplacingLargerThanBlockSizeCreatesOneOffBuffer) {
 }
 
 TEST_P(HostBufferTest, UnusedBuffersAreDiscardedWhenResetting) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   // Emplace two large allocations to force the allocation of a second buffer.
   auto buffer_view_a = buffer->Emplace(1020000, 0, [](uint8_t* data) {});
@@ -154,7 +161,8 @@ TEST_P(HostBufferTest, UnusedBuffersAreDiscardedWhenResetting) {
 }
 
 TEST_P(HostBufferTest, EmplaceWithProcIsAligned) {
-  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                   GetContext()->GetIdleWaiter());
 
   BufferView view = buffer->Emplace(std::array<char, 21>());
   EXPECT_EQ(view.GetRange(), Range(0, 21));
@@ -197,7 +205,7 @@ TEST_P(HostBufferTest, EmplaceWithFailingAllocationDoesntCrash) {
   ScopedValidationDisable disable;
   std::shared_ptr<FailingAllocator> allocator =
       std::make_shared<FailingAllocator>(GetContext()->GetResourceAllocator());
-  auto buffer = HostBuffer::Create(allocator);
+  auto buffer = HostBuffer::Create(allocator, GetContext()->GetIdleWaiter());
 
   auto view = buffer->Emplace(nullptr, kMagicFailingAllocation, 0);
 
