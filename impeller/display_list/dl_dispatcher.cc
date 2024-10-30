@@ -25,7 +25,11 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/ellipse_geometry.h"
+#include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
+#include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
@@ -434,7 +438,8 @@ void DlDispatcherBase::clipRect(const DlRect& rect,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeRect(rect), ToClipOperation(clip_op));
+  RectGeometry geom(rect);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op), /*is_aa=*/is_aa);
 }
 
 // |flutter::DlOpReceiver|
@@ -443,8 +448,8 @@ void DlDispatcherBase::clipOval(const DlRect& bounds,
                                 bool is_aa) {
   AUTO_DEPTH_WATCHER(0u);
 
-  GetCanvas().ClipGeometry(Geometry::MakeOval(bounds),
-                           ToClipOperation(clip_op));
+  EllipseGeometry geom(bounds);
+  GetCanvas().ClipGeometry(geom, ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
@@ -455,17 +460,17 @@ void DlDispatcherBase::clipRoundRect(const DlRoundRect& rrect,
 
   auto clip_op = ToClipOperation(sk_op);
   if (rrect.IsRect()) {
-    GetCanvas().ClipGeometry(Geometry::MakeRect(rrect.GetBounds()), clip_op);
+    RectGeometry geom(rrect.GetBounds());
+    GetCanvas().ClipGeometry(geom, clip_op, /*is_aa=*/is_aa);
   } else if (rrect.IsOval()) {
-    GetCanvas().ClipGeometry(Geometry::MakeOval(rrect.GetBounds()), clip_op);
+    EllipseGeometry geom(rrect.GetBounds());
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else if (rrect.GetRadii().AreAllCornersSame()) {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeRoundRect(rrect.GetBounds(), rrect.GetRadii().top_left),
-        clip_op);
+    RoundRectGeometry geom(rrect.GetBounds(), rrect.GetRadii().top_left);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
-    GetCanvas().ClipGeometry(
-        Geometry::MakeFillPath(PathBuilder{}.AddRoundRect(rrect).TakePath()),
-        clip_op);
+    FillPathGeometry geom(PathBuilder{}.AddRoundRect(rrect).TakePath());
+    GetCanvas().ClipGeometry(geom, clip_op);
   }
 }
 
@@ -477,19 +482,20 @@ void DlDispatcherBase::clipPath(const DlPath& path, ClipOp sk_op, bool is_aa) {
 
   DlRect rect;
   if (path.IsRect(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeRect(rect), clip_op);
+    RectGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op, /*is_aa=*/is_aa);
   } else if (path.IsOval(&rect)) {
-    GetCanvas().ClipGeometry(Geometry::MakeOval(rect), clip_op);
+    EllipseGeometry geom(rect);
+    GetCanvas().ClipGeometry(geom, clip_op);
   } else {
     SkRRect rrect;
     if (path.IsSkRRect(&rrect) && rrect.isSimple()) {
-      GetCanvas().ClipGeometry(
-          Geometry::MakeRoundRect(
-              skia_conversions::ToRect(rrect.rect()),
-              skia_conversions::ToSize(rrect.getSimpleRadii())),
-          clip_op);
+      RoundRectGeometry geom(skia_conversions::ToRect(rrect.rect()),
+                             skia_conversions::ToSize(rrect.getSimpleRadii()));
+      GetCanvas().ClipGeometry(geom, clip_op);
     } else {
-      GetCanvas().ClipGeometry(Geometry::MakeFillPath(path.GetPath()), clip_op);
+      FillPathGeometry geom(path.GetPath());
+      GetCanvas().ClipGeometry(geom, clip_op);
     }
   }
 }
@@ -530,7 +536,8 @@ void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
   //   length is non-positive - drawLine will draw appropriate "dot"
   //   off_length is non-positive - no gaps, drawLine will draw it solid
   //   on_length is negative - invalid dashing
-  // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
+  // Note that a 0 length "on" dash will draw "dot"s every "off" distance
+  // apart
   if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
     Point delta = (p1 - p0) / length;  // length > 0 already tested
     PathBuilder builder;
@@ -969,34 +976,36 @@ void CanvasDlDispatcher::drawVertices(
 }
 
 void CanvasDlDispatcher::SetBackdropData(
-    std::unordered_map<int64_t, BackdropData> backdrop) {
-  GetCanvas().SetBackdropData(std::move(backdrop));
+    std::unordered_map<int64_t, BackdropData> backdrop,
+    size_t backdrop_count) {
+  GetCanvas().SetBackdropData(std::move(backdrop), backdrop_count);
 }
 
 //// Text Frame Dispatcher
 
-TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
+FirstPassDispatcher::FirstPassDispatcher(const ContentContext& renderer,
                                          const Matrix& initial_matrix,
                                          const Rect cull_rect)
     : renderer_(renderer), matrix_(initial_matrix) {
   cull_rect_state_.push_back(cull_rect);
 }
 
-TextFrameDispatcher::~TextFrameDispatcher() {
+FirstPassDispatcher::~FirstPassDispatcher() {
   FML_DCHECK(cull_rect_state_.size() == 1);
 }
 
-void TextFrameDispatcher::save() {
+void FirstPassDispatcher::save() {
   stack_.emplace_back(matrix_);
   cull_rect_state_.push_back(cull_rect_state_.back());
 }
 
-void TextFrameDispatcher::saveLayer(const DlRect& bounds,
+void FirstPassDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop,
                                     std::optional<int64_t> backdrop_id) {
   save();
 
+  backdrop_count_ += (backdrop == nullptr ? 0 : 1);
   if (backdrop != nullptr && backdrop_id.has_value()) {
     std::shared_ptr<flutter::DlImageFilter> shared_backdrop =
         backdrop->shared();
@@ -1031,31 +1040,31 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   }
 }
 
-void TextFrameDispatcher::restore() {
+void FirstPassDispatcher::restore() {
   matrix_ = stack_.back();
   stack_.pop_back();
   cull_rect_state_.pop_back();
 }
 
-void TextFrameDispatcher::translate(DlScalar tx, DlScalar ty) {
+void FirstPassDispatcher::translate(DlScalar tx, DlScalar ty) {
   matrix_ = matrix_.Translate({tx, ty});
 }
 
-void TextFrameDispatcher::scale(DlScalar sx, DlScalar sy) {
+void FirstPassDispatcher::scale(DlScalar sx, DlScalar sy) {
   matrix_ = matrix_.Scale({sx, sy, 1.0f});
 }
 
-void TextFrameDispatcher::rotate(DlScalar degrees) {
+void FirstPassDispatcher::rotate(DlScalar degrees) {
   matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
 }
 
-void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
+void FirstPassDispatcher::skew(DlScalar sx, DlScalar sy) {
   matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
 }
 
 // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  void TextFrameDispatcher::transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+  void FirstPassDispatcher::transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
                                               DlScalar myx, DlScalar myy, DlScalar myt) {
     matrix_ = matrix_ * Matrix::MakeColumn(
         mxx,  myx,  0.0f, 0.0f,
@@ -1066,7 +1075,7 @@ void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
   }
 
   // full 4x4 transform in row major order
-  void TextFrameDispatcher::transformFullPerspective(
+  void FirstPassDispatcher::transformFullPerspective(
       DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
       DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
       DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
@@ -1080,11 +1089,11 @@ void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
   }
 // clang-format on
 
-void TextFrameDispatcher::transformReset() {
+void FirstPassDispatcher::transformReset() {
   matrix_ = Matrix();
 }
 
-void TextFrameDispatcher::drawTextFrame(
+void FirstPassDispatcher::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
     DlScalar x,
     DlScalar y) {
@@ -1103,14 +1112,17 @@ void TextFrameDispatcher::drawTextFrame(
   }
   auto scale =
       (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,  //
-                                              scale,        //
-                                              Point(x, y),  //
-                                              properties    //
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(
+      text_frame,                                       //
+      scale,                                            //
+      Point(x, y),                                      //
+      (properties.stroke || text_frame->HasColor())     //
+          ? std::optional<GlyphProperties>(properties)  //
+          : std::nullopt                                //
   );
 }
 
-const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
+const Rect FirstPassDispatcher::GetCurrentLocalCullingBounds() const {
   auto cull_rect = cull_rect_state_.back();
   if (!cull_rect.IsEmpty() && !cull_rect.IsMaximum()) {
     Matrix inverse = matrix_.Invert();
@@ -1119,7 +1131,7 @@ const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
   return cull_rect;
 }
 
-void TextFrameDispatcher::drawDisplayList(
+void FirstPassDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     DlScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
@@ -1137,11 +1149,12 @@ void TextFrameDispatcher::drawDisplayList(
       display_list->Dispatch(*this);
     } else if (!local_cull_bounds.IsEmpty()) {
       IRect cull_rect = IRect::RoundOut(local_cull_bounds);
-      display_list->Dispatch(*this, SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
-                                                      cull_rect.GetTop(),    //
-                                                      cull_rect.GetRight(),  //
-                                                      cull_rect.GetBottom()  //
-                                                      ));
+      display_list->Dispatch(*this,
+                             SkIRect::MakeLTRB(cull_rect.GetLeft(),   //
+                                               cull_rect.GetTop(),    //
+                                               cull_rect.GetRight(),  //
+                                               cull_rect.GetBottom()  //
+                                               ));
     }
   }
 
@@ -1152,27 +1165,27 @@ void TextFrameDispatcher::drawDisplayList(
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
+void FirstPassDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
   paint_.style = ToStyle(style);
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setColor(flutter::DlColor color) {
+void FirstPassDispatcher::setColor(flutter::DlColor color) {
   paint_.color = skia_conversions::ToColor(color);
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeWidth(DlScalar width) {
+void FirstPassDispatcher::setStrokeWidth(DlScalar width) {
   paint_.stroke_width = width;
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeMiter(DlScalar limit) {
+void FirstPassDispatcher::setStrokeMiter(DlScalar limit) {
   paint_.stroke_miter = limit;
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
+void FirstPassDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
   switch (cap) {
     case flutter::DlStrokeCap::kButt:
       paint_.stroke_cap = Cap::kButt;
@@ -1187,7 +1200,7 @@ void TextFrameDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
+void FirstPassDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
   switch (join) {
     case flutter::DlStrokeJoin::kMiter:
       paint_.stroke_join = Join::kMiter;
@@ -1202,7 +1215,7 @@ void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
+void FirstPassDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   if (filter == nullptr) {
     has_image_filter_ = false;
   } else {
@@ -1210,11 +1223,11 @@ void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   }
 }
 
-std::unordered_map<int64_t, BackdropData>
-TextFrameDispatcher::TakeBackdropData() {
+std::pair<std::unordered_map<int64_t, BackdropData>, size_t>
+FirstPassDispatcher::TakeBackdropData() {
   std::unordered_map<int64_t, BackdropData> temp;
   std::swap(temp, backdrop_data_);
-  return temp;
+  return std::make_pair(temp, backdrop_count_);
 }
 
 std::shared_ptr<Texture> DisplayListToTexture(
@@ -1254,7 +1267,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
   }
 
   SkIRect sk_cull_rect = SkIRect::MakeWH(size.width, size.height);
-  impeller::TextFrameDispatcher collector(
+  impeller::FirstPassDispatcher collector(
       context.GetContentContext(), impeller::Matrix(), Rect::MakeSize(size));
   display_list->Dispatch(collector, sk_cull_rect);
   impeller::CanvasDlDispatcher impeller_dispatcher(
@@ -1264,7 +1277,8 @@ std::shared_ptr<Texture> DisplayListToTexture(
       display_list->max_root_blend_mode(),       //
       impeller::IRect::MakeSize(size)            //
   );
-  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   impeller_dispatcher.FinishRecording();
 
@@ -1272,6 +1286,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
     context.GetContentContext().GetTransientsBuffer().Reset();
   }
   context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+  context.GetContext()->DisposeThreadLocalCachedResources();
 
   return target.GetRenderTargetTexture();
 }
@@ -1283,7 +1298,7 @@ bool RenderToOnscreen(ContentContext& context,
                       bool reset_host_buffer) {
   Rect ip_cull_rect = Rect::MakeLTRB(cull_rect.left(), cull_rect.top(),
                                      cull_rect.right(), cull_rect.bottom());
-  TextFrameDispatcher collector(context, impeller::Matrix(), ip_cull_rect);
+  FirstPassDispatcher collector(context, impeller::Matrix(), ip_cull_rect);
   display_list->Dispatch(collector, cull_rect);
 
   impeller::CanvasDlDispatcher impeller_dispatcher(
@@ -1293,7 +1308,8 @@ bool RenderToOnscreen(ContentContext& context,
       display_list->max_root_blend_mode(),       //
       IRect::RoundOut(ip_cull_rect)              //
   );
-  impeller_dispatcher.SetBackdropData(collector.TakeBackdropData());
+  const auto& [data, count] = collector.TakeBackdropData();
+  impeller_dispatcher.SetBackdropData(data, count);
   display_list->Dispatch(impeller_dispatcher, cull_rect);
   impeller_dispatcher.FinishRecording();
   if (reset_host_buffer) {
