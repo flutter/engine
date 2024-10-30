@@ -143,11 +143,11 @@ enum RbeExecStrategy {
 
   @override
   String toString() => switch (this) {
-        RbeExecStrategy.local => 'local',
-        RbeExecStrategy.racing => 'racing',
-        RbeExecStrategy.remote => 'remote',
-        RbeExecStrategy.remoteLocalFallback => 'remote_local_fallback',
-      };
+    RbeExecStrategy.local => 'local',
+    RbeExecStrategy.racing => 'racing',
+    RbeExecStrategy.remote => 'remote',
+    RbeExecStrategy.remoteLocalFallback => 'remote_local_fallback',
+  };
 }
 
 /// Configuration options that affect how RBE works.
@@ -183,25 +183,25 @@ class RbeConfig {
   /// Defaults mirroring:
   /// https://chromium.googlesource.com/chromium/tools/depot_tools.git/+/refs/heads/main/reclient_helper.py
   Map<String, String> get environment => <String, String>{
-        if (remoteDisabled)
-          'RBE_remote_disabled': '1'
-        else ...<String, String>{
-          'RBE_exec_strategy': execStrategy.toString(),
-          if (execStrategy == RbeExecStrategy.racing) ...<String, String>{
-            'RBE_racing_bias': racingBias.toString(),
-            'RBE_local_resource_fraction': localResourceFraction.toString(),
-          },
-        },
-        // Reduce the cas concurrency. Lower value doesn't impact
-        // performance when on high-speed connection, but does show improvements
-        // on easily congested networks.
-        'RBE_cas_concurrency': '100',
-        // Enable the deps cache. Mac needs a larger deps cache as it
-        // seems to have larger dependency sets per action. A larger deps cache
-        // on other platforms doesn't necessarily help but also won't hurt.
-        'RBE_enable_deps_cache': '1',
-        'RBE_deps_cache_max_mb': '1024',
-      };
+    if (remoteDisabled)
+      'RBE_remote_disabled': '1'
+    else ...<String, String>{
+      'RBE_exec_strategy': execStrategy.toString(),
+      if (execStrategy == RbeExecStrategy.racing) ...<String, String>{
+        'RBE_racing_bias': racingBias.toString(),
+        'RBE_local_resource_fraction': localResourceFraction.toString(),
+      },
+    },
+    // Reduce the cas concurrency. Lower value doesn't impact
+    // performance when on high-speed connection, but does show improvements
+    // on easily congested networks.
+    'RBE_cas_concurrency': '100',
+    // Enable the deps cache. Mac needs a larger deps cache as it
+    // seems to have larger dependency sets per action. A larger deps cache
+    // on other platforms doesn't necessarily help but also won't hurt.
+    'RBE_enable_deps_cache': '1',
+    'RBE_deps_cache_max_mb': '1024',
+  };
 }
 
 /// The type of a callback that handles [RunnerEvent]s while a [Runner]
@@ -263,31 +263,11 @@ final ProcessRunnerResult _dryRunResult = ProcessRunnerResult(
   pid: 0, // pid,
 );
 
-bool _isFlag(String arg) {
-  return !arg.contains('=') && !arg.contains(' ') && !arg.startsWith('--');
-}
-
-(String, bool) _extractRawFlag(String flagArgument) {
-  assert(flagArgument.startsWith('--'), 'Must be a valid flag argument.');
-  var rawFlag = flagArgument.substring(2);
-  var flagValue = true;
-  if (rawFlag.startsWith('no-')) {
-    rawFlag = rawFlag.substring(3);
-    flagValue = false;
-  }
-  return (rawFlag, flagValue);
-}
-
 /// The [Runner] for a [Build].
 ///
 /// Runs the specified `gn` and `ninja` commands, followed by generator tasks,
 /// and finally tests.
 final class BuildRunner extends Runner {
-  /// Creates a runner for building, generating, and executing artifacts.
-  ///
-  /// If [extraGnArgs] are specified, they are merged into the arguments
-  /// implicitly provided by [Build.gn]. See [mergeGnArgs] for details on how
-  /// arguments are merged and what is supported.
   BuildRunner({
     Platform? platform,
     ProcessRunner? processRunner,
@@ -478,11 +458,11 @@ final class BuildRunner extends Runner {
     final ProcessRunnerResult restatsResult;
     if (dryRun) {
       restatsResult = ProcessRunnerResult(
-        0, // exit code.
+        0,                       // exit code.
         utf8.encode('OK\nOK\n'), // stdout.
-        <int>[], // stderr.
+        <int>[],                 // stderr.
         utf8.encode('OK\nOK\n'), // combined,
-        pid: 0, // pid.
+        pid: 0,                  // pid.
       );
     } else {
       restatsResult = await processRunner.runProcess(
@@ -574,7 +554,7 @@ final class BuildRunner extends Runner {
     return bootstrapResult.exitCode == 0;
   }
 
-  late final _computedRbeJValue = () {
+  late final _computedRbeJValue = (){
     // 80 here matches the value used in CI:
     // https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/build_util/api.py#56
     const int multiplier = 80;
@@ -632,13 +612,8 @@ final class BuildRunner extends Runner {
         ninjaPath,
         '-C',
         outDir,
-        if (_isRbe) ...<String>[
-          '-j',
-          '$rbej'
-        ] else if (concurrency != 0) ...<String>[
-          '-j',
-          '$concurrency'
-        ],
+        if (_isRbe) ...<String>['-j', '$rbej']
+        else if (concurrency != 0) ...<String>['-j', '$concurrency'],
         ...extraNinjaArgs,
         ...build.ninja.targets,
       ];
