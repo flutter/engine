@@ -48,12 +48,10 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
                                 transform, stroke_width_,
                                 pass.GetSampleCount() == SampleCount::kCount4);
 
-  const std::shared_ptr<Tessellator>& tessellator = renderer.GetTessellator();
-
   // We call the StrokedCircle method which will simplify to a
   // FilledCircleGenerator if the inner_radius is <= 0.
-  auto generator =
-      tessellator->StrokedCircle(transform, center_, radius_, half_width);
+  auto generator = renderer.GetTessellator().StrokedCircle(transform, center_,
+                                                           radius_, half_width);
 
   return ComputePositionGeometry(renderer, generator, entity, pass);
 }

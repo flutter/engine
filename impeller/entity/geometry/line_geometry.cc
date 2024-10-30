@@ -84,8 +84,8 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
       transform, width_, pass.GetSampleCount() == SampleCount::kCount4);
 
   if (cap_ == Cap::kRound) {
-    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
-    auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
+    auto generator =
+        renderer.GetTessellator().RoundCapLine(transform, p0_, p1_, radius);
     return ComputePositionGeometry(renderer, generator, entity, pass);
   }
 
