@@ -42,7 +42,7 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
     BufferView point_buffer = host_buffer.Emplace(
         nullptr, sizeof(Point) * point_count, alignof(Point));
     BufferView index_buffer = host_buffer.Emplace(
-        nullptr, sizeof(uint16_t) * (point_count + contour_count - 1),
+        nullptr, sizeof(uint16_t) * (point_count + contour_count),
         alignof(uint16_t));
 
     if (supports_triangle_fan) {
