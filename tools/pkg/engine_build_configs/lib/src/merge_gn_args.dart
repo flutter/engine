@@ -111,7 +111,6 @@ bool _isFlag(String arg) {
 }
 
 (String, bool) _extractRawFlag(String flagArgument) {
-  assert(_isFlag(flagArgument), 'Must be a valid flag argument.');
   var rawFlag = flagArgument.substring(2);
   var flagValue = true;
   if (rawFlag.startsWith('no-')) {

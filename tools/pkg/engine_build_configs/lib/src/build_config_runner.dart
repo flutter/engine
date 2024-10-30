@@ -368,12 +368,10 @@ final class BuildRunner extends Runner {
   }
 
   // extraGnArgs overrides the build config args.
-  late final Set<String> _mergedGnArgs = Set.of(
-    mergeGnArgs(
-      buildArgs: build.gn,
-      extraArgs: extraGnArgs,
-    ),
-  );
+  late final Set<String> _mergedGnArgs = Set.of(mergeGnArgs(
+    buildArgs: build.gn, 
+    extraArgs: extraGnArgs,
+  ));
 
   Future<bool> _runGn(RunnerEventHandler eventHandler) async {
     final String gnPath = p.join(engineSrcDir.path, 'flutter', 'tools', 'gn');

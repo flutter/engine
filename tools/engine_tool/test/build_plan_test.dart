@@ -573,7 +573,7 @@ void main() {
       testEnv.environment,
       builds: builds,
     );
-    expect(result.extaGnArgs, ['--foo']);
+    expect(result.extraGnArgs, ['--foo']);
   });
 
   test('can provide multiple extra "--gn-arg"s', () {
@@ -603,7 +603,7 @@ void main() {
       testEnv.environment,
       builds: builds,
     );
-    expect(result.extaGnArgs, ['--foo', '--bar']);
+    expect(result.extraGnArgs, ['--foo', '--bar']);
   });
 
   test('can provide only long-form "--gn-arg"s', () {
@@ -634,11 +634,7 @@ void main() {
         testEnv.environment,
         builds: builds,
       ),
-      throwsA(isA<FatalError>().having(
-        (e) => e.toString(),
-        'toString()',
-        contains('Arguments provided to --gn-args must be'),
-      )),
+      throwsA(BuildPlan.argumentsMustBeFlagsError),
     );
   });
 
@@ -777,7 +773,7 @@ void main() {
         throwsA(isA<FatalError>().having(
           (e) => e.toString(),
           'toString()',
-          contains('specified as direct arguments'),
+          contains(BuildPlan.reservedGnArgsError.toString()),
         )),
       );
     }
@@ -814,7 +810,7 @@ void main() {
       throwsA(isA<FatalError>().having(
         (e) => e.toString(),
         'toString()',
-        contains('Arguments provided to --gn-args must be flags'),
+        contains(BuildPlan.argumentsMustBeFlagsError.toString()),
       )),
     );
   });

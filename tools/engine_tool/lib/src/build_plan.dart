@@ -91,7 +91,7 @@ final class BuildPlan {
     required this.useLto,
     required this.concurrency,
     required Iterable<String> extraGnArgs,
-  }) : extaGnArgs = List.unmodifiable(extraGnArgs) {
+  }) : extraGnArgs = List.unmodifiable(extraGnArgs) {
     if (!useRbe && strategy == BuildStrategy.remote) {
       throw FatalError(
         'Cannot use remote builds without RBE enabled.\n\n$_rbeInstructions',
@@ -110,24 +110,33 @@ final class BuildPlan {
     'no-$_flagLto',
   };
 
+  /// Error thrown when [reservedGnArgs] are used as [extraGnArgs].
+  @visibleForTesting
+  static final reservedGnArgsError = FatalError(
+    'Flags such as ${reservedGnArgs.join(', ')} should be specified as '
+    'direct arguments to "et" and not using "--gn-args".',
+  );
+
+  /// Error thrown when a non-flag argument is provided as [extraGnArgs].
+  @visibleForTesting
+  static final argumentsMustBeFlagsError = FatalError(
+    'Arguments provided to --gn-args must be flags (booleans) and be '
+    'specified as either in the format "--flag" or "--no-flag". Options '
+    'that are not flags or are abberviated ("-F") are not currently '
+    'supported; consider filing a request: '
+    'https://fluter.dev/to/engine-tool-bug.',
+  );
+
   static void _checkExtraGnArgs(Iterable<String> gnArgs) {
     for (final arg in gnArgs) {
       if (!arg.startsWith('--') || arg.contains('=') || arg.contains(' ')) {
-        throw FatalError(
-          'Arguments provided to --gn-args must be flags (booleans) and be '
-          'specified as either in the format "--flag". Options that are not '
-          'flags or are abberviated ("-F") are not currently supported: '
-          'https://fluter.dev/to/engine-tool-bug.',
-        );
+        throw argumentsMustBeFlagsError;
       }
 
       // Strip off the prefix and compare it to reserved flags.
       final withoutPrefix = arg.replaceFirst('--', '');
       if (reservedGnArgs.contains(withoutPrefix)) {
-        throw FatalError(
-          'Both --rbe and --lto (and their --no-x variants) should be '
-          'specified as direct arguments to "et" and not using "--gn-args".',
-        );
+        throw reservedGnArgsError;
       }
     }
   }
@@ -258,7 +267,7 @@ final class BuildPlan {
   /// By contract, these arguments are always strictly _flags_ (not options),
   /// and specified as either `--flag`, `-F`, or as the negative variant (such
   /// as `--no-flag`).
-  final List<String> extaGnArgs;
+  final List<String> extraGnArgs;
 
   @override
   bool operator ==(Object other) {
@@ -268,7 +277,7 @@ final class BuildPlan {
         useRbe == other.useRbe &&
         useLto == other.useLto &&
         concurrency == other.concurrency &&
-        const ListEquality<Object?>().equals(extaGnArgs, other.extaGnArgs);
+        const ListEquality<Object?>().equals(extraGnArgs, other.extraGnArgs);
   }
 
   @override
@@ -279,7 +288,7 @@ final class BuildPlan {
       useRbe,
       useLto,
       concurrency,
-      Object.hashAll(extaGnArgs),
+      Object.hashAll(extraGnArgs),
     );
   }
 
@@ -303,7 +312,7 @@ final class BuildPlan {
     return [
       if (!useRbe) '--no-rbe',
       if (useLto) '--lto' else '--no-lto',
-      ...extaGnArgs,
+      ...extraGnArgs,
     ];
   }
 
@@ -316,7 +325,7 @@ final class BuildPlan {
     buffer.writeln('  useRbe: $useRbe');
     buffer.writeln('  strategy: $strategy');
     buffer.writeln('  concurrency: $concurrency');
-    buffer.writeln('  extraGnArgs: $extaGnArgs');
+    buffer.writeln('  extraGnArgs: $extraGnArgs');
     buffer.write('>');
     return buffer.toString();
   }
