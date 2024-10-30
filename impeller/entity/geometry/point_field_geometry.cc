@@ -35,7 +35,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   }
 
   Scalar min_size = 0.5f / max_basis;
-  Scalar radius = std::max(radius_, min_size);
 
   if (radius_ <= min_size) {
     // Hairline points can be drawn with the point primitive.
@@ -57,7 +56,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
     Tessellator::EllipticalVertexGenerator generator =
-        renderer.GetTessellator()->FilledCircle(transform, {}, radius);
+        renderer.GetTessellator()->FilledCircle(transform, {}, radius_);
     FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
 
     std::vector<Point> circle_vertices;
@@ -99,31 +98,31 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
           size_t offset = 0;
 
           Point point = points_[0];
-          Point first = Point(point.x - radius, point.y - radius);
+          Point first = Point(point.x - radius_, point.y - radius_);
 
           // Z pattern from UL -> UR -> LL -> LR
           Point last_point = Point(0, 0);
           output[offset++] = first;
-          output[offset++] = Point(point.x + radius, point.y - radius);
-          output[offset++] = Point(point.x - radius, point.y + radius);
+          output[offset++] = Point(point.x + radius_, point.y - radius_);
+          output[offset++] = Point(point.x - radius_, point.y + radius_);
           output[offset++] = last_point =
-              Point(point.x + radius, point.y + radius);
+              Point(point.x + radius_, point.y + radius_);
 
           // For all subequent points, insert a degenerate triangle to break
           // the strip. This could be optimized out if we switched to using
           // primitive restart.
           for (size_t i = 1; i < points_.size(); i++) {
             Point point = points_[i];
-            Point first = Point(point.x - radius, point.y - radius);
+            Point first = Point(point.x - radius_, point.y - radius_);
 
             output[offset++] = last_point;
             output[offset++] = first;
 
             output[offset++] = first;
-            output[offset++] = Point(point.x + radius, point.y - radius);
-            output[offset++] = Point(point.x - radius, point.y + radius);
+            output[offset++] = Point(point.x + radius_, point.y - radius_);
+            output[offset++] = Point(point.x - radius_, point.y + radius_);
             output[offset++] = last_point =
-                Point(point.x + radius, point.y + radius);
+                Point(point.x + radius_, point.y + radius_);
           }
         });
   }
