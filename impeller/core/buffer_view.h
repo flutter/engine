@@ -12,31 +12,32 @@ namespace impeller {
 
 class DeviceBuffer;
 
+/// A specific range in a DeviceBuffer.
+///
+/// BufferView can maintain ownership over the DeviceBuffer or not depending on
+/// if it is created with a std::shared_ptr or a raw pointer.
 struct BufferView {
  public:
-  BufferView() : buffer_(nullptr), raw_buffer_(nullptr), range_({}) {}
+  BufferView();
 
-  BufferView(DeviceBuffer* buffer, Range range)
-      : buffer_(), raw_buffer_(buffer), range_(range) {}
+  BufferView(DeviceBuffer* buffer, Range range);
 
-  BufferView(std::shared_ptr<const DeviceBuffer> buffer, Range range)
-      : buffer_(std::move(buffer)), raw_buffer_(nullptr), range_(range) {}
+  BufferView(std::shared_ptr<const DeviceBuffer> buffer, Range range);
 
   Range GetRange() const { return range_; }
 
-  const DeviceBuffer* GetBuffer() const {
-    return raw_buffer_ ? raw_buffer_ : buffer_.get();
-  }
+  const DeviceBuffer* GetBuffer() const;
 
-  std::shared_ptr<const DeviceBuffer> TakeBuffer() {
-    raw_buffer_ = buffer_.get();
-    return std::move(buffer_);
-  }
+  std::shared_ptr<const DeviceBuffer> TakeBuffer();
 
-  constexpr explicit operator bool() const { return buffer_ || raw_buffer_; }
+  explicit operator bool() const;
 
  private:
   std::shared_ptr<const DeviceBuffer> buffer_;
+  /// This is a non-owned DeviceBuffer. Steps should be taken to make sure this
+  /// lives for the duration of the BufferView's life. Usually this is done
+  /// automatically by the graphics API or in the case of Vulkan the HostBuffer
+  /// or TrackedObjectsVK keeps it alive.
   const DeviceBuffer* raw_buffer_;
   Range range_;
 };
