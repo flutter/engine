@@ -193,7 +193,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
     return false;
   }
 
-  const auto& device_buffer = view.GetBuffer();
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }

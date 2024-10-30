@@ -251,7 +251,7 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
   const auto& src = DeviceBufferVK::Cast(*source.GetBuffer());
 
   std::shared_ptr<const DeviceBuffer> source_buffer = source.TakeBuffer();
-  if ((source_buffer && !command_buffer_->Track(std::move(source_buffer))) ||
+  if ((source_buffer && !command_buffer_->Track(source_buffer)) ||
       !command_buffer_->Track(destination)) {
     return false;
   }

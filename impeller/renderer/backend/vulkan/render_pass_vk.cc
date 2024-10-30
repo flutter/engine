@@ -383,7 +383,7 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
     std::shared_ptr<const DeviceBuffer> device_buffer =
         vertex_buffers[i].TakeBuffer();
     if (device_buffer) {
-      command_buffer_->Track(std::move(device_buffer));
+      command_buffer_->Track(device_buffer);
     }
   }
 
@@ -571,7 +571,7 @@ bool RenderPassVK::BindResource(size_t binding,
   }
 
   std::shared_ptr<const DeviceBuffer> device_buffer = view.TakeBuffer();
-  if (device_buffer && !command_buffer_->Track(std::move(device_buffer))) {
+  if (device_buffer && !command_buffer_->Track(device_buffer)) {
     return false;
   }
 
