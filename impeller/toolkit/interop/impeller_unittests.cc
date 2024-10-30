@@ -69,6 +69,15 @@ TEST_P(InteropPlaygroundTest, CanDrawRect) {
   color = {1.0, 0.0, 0.0, 1.0};
   ImpellerPaintSetColor(paint.GetC(), &color);
   ImpellerDisplayListBuilderTranslate(builder.GetC(), 110, 210);
+  ImpellerMatrix scale_transform = {
+      // clang-format off
+      2.0, 0.0, 0.0, 0.0, //
+      0.0, 2.0, 0.0, 0.0, //
+      0.0, 0.0, 1.0, 0.0, //
+      0.0, 0.0, 0.0, 1.0, //
+      // clang-format on
+  };
+  ImpellerDisplayListBuilderTransform(builder.GetC(), &scale_transform);
   ImpellerDisplayListBuilderDrawRect(builder.GetC(), &rect, paint.GetC());
   auto dl = Adopt<DisplayList>(
       ImpellerDisplayListBuilderCreateDisplayListNew(builder.GetC()));
@@ -198,6 +207,7 @@ TEST_P(InteropPlaygroundTest, CanCreateParagraphs) {
   auto style = Adopt<ParagraphStyle>(ImpellerParagraphStyleNew());
   ASSERT_TRUE(style);
   ImpellerParagraphStyleSetFontSize(style.GetC(), 150.0f);
+  ImpellerParagraphStyleSetHeight(style.GetC(), 2.0f);
 
   {
     auto paint = Adopt<Paint>(ImpellerPaintNew());

@@ -1,4 +1,4 @@
-Signature: 620916fdf3016dea71aec2f3eb696474
+Signature: 0850cba22a63d74862aec2054eba0408
 
 ====================================================================================================
 LIBRARY: etc1
@@ -399,6 +399,7 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
+FILE: ../../../flutter/third_party/skia/relnotes/TimerQuery.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9550,6 +9551,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/RenderPassDesc.cpp + 
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/RenderPassDesc.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/ScratchResourceManager.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/ScratchResourceManager.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/ShaderInfo.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/ShaderInfo.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/TextureInfoPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnBackendTexture.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnTextureInfo.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -9577,6 +9580,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/precompile/Precompile
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/precompile/PrecompileShadersPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/AnalyticBlurRenderStep.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/AnalyticBlurRenderStep.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/CircularArcRenderStep.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/CircularArcRenderStep.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/SDFTextLCDRenderStep.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/SDFTextLCDRenderStep.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -9667,6 +9672,8 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/RenderPassDesc.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/RenderPassDesc.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/ScratchResourceManager.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/ScratchResourceManager.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/ShaderInfo.cpp
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/ShaderInfo.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/TextureInfoPriv.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnBackendTexture.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/dawn/DawnTextureInfo.cpp
@@ -9694,6 +9701,8 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/precompile/PrecompileSh
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/precompile/PrecompileShadersPriv.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/AnalyticBlurRenderStep.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/AnalyticBlurRenderStep.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/CircularArcRenderStep.cpp
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/CircularArcRenderStep.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/SDFTextLCDRenderStep.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/SDFTextLCDRenderStep.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.cpp
