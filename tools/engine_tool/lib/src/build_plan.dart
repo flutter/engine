@@ -108,13 +108,19 @@ final class BuildPlan {
     _flagLto,
     'no-$_flagRbe',
     'no-$_flagLto',
+    // If we are to expand this list to include flags that are not a 1:1 mapping
+    // - for example we want to reserve "--foo-bar" but it's called "--use-baz"
+    // in "et", let's (a) re-think having these arguments named differently and
+    // (b) if necessary, consider changing this set to a map instead so a clear
+    // error can be presented below.
   };
 
   /// Error thrown when [reservedGnArgs] are used as [extraGnArgs].
   @visibleForTesting
   static final reservedGnArgsError = FatalError(
     'Flags such as ${reservedGnArgs.join(', ')} should be specified as '
-    'direct arguments to "et" and not using "--gn-args".',
+    'direct arguments to "et" and not using "--gn-args". For example, '
+    '`et build --no-lto` instead of `et build --gn-args="--no-lto"`.',
   );
 
   /// Error thrown when a non-flag argument is provided as [extraGnArgs].
