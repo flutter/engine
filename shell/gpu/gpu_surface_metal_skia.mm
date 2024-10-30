@@ -48,7 +48,7 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
                                                SkSurfaces::TextureReleaseProc release_proc,
                                                SkSurface::ReleaseContext release_context) {
   GrMtlTextureInfo info;
-  info.fTexture.reset((__bridge_retained GrMTLHandle)texture);
+  info.fTexture.retain((__bridge GrMTLHandle)texture);
   GrBackendTexture backend_texture =
       GrBackendTextures::MakeMtl(texture.width, texture.height, skgpu::Mipmapped::kNo, info);
   return SkSurfaces::WrapBackendTexture(context, backend_texture, origin, 1, color_type,
