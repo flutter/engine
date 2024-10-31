@@ -574,17 +574,14 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
     return {};
   }
 
-  Scalar min_size =
-      (pass.GetSampleCount() == SampleCount::kCount4 ? kMinStrokeSizeMSAA
-                                                     : kMinStrokeSize) /
-      max_basis;
+  Scalar min_size = kMinStrokeSize / max_basis;
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
   auto& host_buffer = renderer.GetTransientsBuffer();
   auto scale = entity.GetTransform().GetMaxBasisLengthXY();
 
   PositionWriter position_writer;
-  auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
+  auto polyline = renderer.GetTessellator().CreateTempPolyline(path_, scale);
   CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
                             miter_limit_ * stroke_width_ * 0.5f,
                             GetJoinProc<PositionWriter>(stroke_join_),

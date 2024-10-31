@@ -310,9 +310,12 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Size corner_radii,
                                      const Paint& paint) {
+  if (paint.style != Paint::Style::kFill) {
+    return false;
+  }
+
   if (paint.color_source &&
-      (paint.color_source->type() != flutter::DlColorSourceType::kColor ||
-       paint.style != Paint::Style::kFill)) {
+      paint.color_source->type() != flutter::DlColorSourceType::kColor) {
     return false;
   }
 
@@ -551,7 +554,8 @@ void Canvas::DrawCircle(const Point& center,
 }
 
 void Canvas::ClipGeometry(const Geometry& geometry,
-                          Entity::ClipOperation clip_op) {
+                          Entity::ClipOperation clip_op,
+                          bool is_aa) {
   if (IsSkipping()) {
     return;
   }
@@ -587,12 +591,13 @@ void Canvas::ClipGeometry(const Geometry& geometry,
   clip_contents.SetClipOperation(clip_op);
 
   EntityPassClipStack::ClipStateResult clip_state_result =
-      clip_coverage_stack_.RecordClip(clip_contents,            //
-                                      clip_transform,           //
-                                      GetGlobalPassPosition(),  //
-                                      clip_depth,               //
-                                      GetClipHeightFloor()      //
-      );
+      clip_coverage_stack_.RecordClip(
+          clip_contents,                                     //
+          /*transform=*/clip_transform,                      //
+          /*global_pass_position=*/GetGlobalPassPosition(),  //
+          /*clip_depth=*/clip_depth,                         //
+          /*clip_height_floor=*/GetClipHeightFloor(),        //
+          /*is_aa=*/is_aa);
 
   if (clip_state_result.clip_did_change) {
     // We only need to update the pass scissor if the clip state has changed.
@@ -677,9 +682,28 @@ void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
     return;
   }
 
+  std::optional<Rect> clipped_source =
+      source.Intersection(Rect::MakeSize(size));
+  if (!clipped_source) {
+    return;
+  }
+  if (*clipped_source != source) {
+    Scalar sx = dest.GetWidth() / source.GetWidth();
+    Scalar sy = dest.GetHeight() / source.GetHeight();
+    Scalar tx = dest.GetLeft() - source.GetLeft() * sx;
+    Scalar ty = dest.GetTop() - source.GetTop() * sy;
+    // clang-format off
+    Matrix src_to_dest(  sx, 0.0f, 0.0f, 0.0f,
+                       0.0f,   sy, 0.0f, 0.0f,
+                       0.0f, 0.0f, 1.0f, 0.0f,
+                         tx,   ty, 0.0f, 1.0f);
+    // clang-format on
+    dest = clipped_source->TransformBounds(src_to_dest);
+  }
+
   auto texture_contents = TextureContents::MakeRect(dest);
   texture_contents->SetTexture(image);
-  texture_contents->SetSourceRect(source);
+  texture_contents->SetSourceRect(*clipped_source);
   texture_contents->SetStrictSourceRect(src_rect_constraint ==
                                         SourceRectConstraint::kStrict);
   texture_contents->SetSamplerDescriptor(std::move(sampler));

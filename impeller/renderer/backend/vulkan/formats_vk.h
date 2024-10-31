@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <ostream>
 
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -15,6 +16,18 @@
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
+
+constexpr std::optional<PixelFormat> VkFormatToImpellerFormat(
+    vk::Format format) {
+  switch (format) {
+    case vk::Format::eR8G8B8A8Unorm:
+      return PixelFormat::kR8G8B8A8UNormInt;
+    case vk::Format::eB8G8R8A8Unorm:
+      return PixelFormat::kB8G8R8A8UNormInt;
+    default:
+      return std::nullopt;
+  }
+}
 
 constexpr vk::SampleCountFlagBits ToVKSampleCountFlagBits(SampleCount count) {
   switch (count) {
@@ -367,6 +380,21 @@ constexpr vk::PolygonMode ToVKPolygonMode(PolygonMode mode) {
       return vk::PolygonMode::eFill;
     case PolygonMode::kLine:
       return vk::PolygonMode::eLine;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr bool PrimitiveTopologySupportsPrimitiveRestart(
+    PrimitiveType primitive) {
+  switch (primitive) {
+    case PrimitiveType::kTriangleStrip:
+    case PrimitiveType::kLine:
+    case PrimitiveType::kPoint:
+    case PrimitiveType::kTriangleFan:
+      return true;
+    case PrimitiveType::kTriangle:
+    case PrimitiveType::kLineStrip:
+      return false;
   }
   FML_UNREACHABLE();
 }

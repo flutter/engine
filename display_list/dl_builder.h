@@ -17,10 +17,9 @@
 #include "flutter/display_list/utils/dl_accumulation_rect.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
+#include "flutter/fml/macros.h"
 
 namespace flutter {
-
-uint64_t NextPowerOfTwo(uint64_t x);
 
 // The primary class used to build a display list. The list of methods
 // here matches the list of methods invoked on a |DlOpReceiver| combined
@@ -498,8 +497,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void checkForDeferredSave();
 
   DisplayListStorage storage_;
-  size_t used_ = 0u;
-  size_t allocated_ = 0u;
+  std::vector<size_t> offsets_;
   uint32_t render_op_count_ = 0u;
   uint32_t depth_ = 0u;
   // Most rendering ops will use 1 depth value, but some attributes may
