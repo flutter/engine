@@ -45,6 +45,7 @@ TestMetalContext::TestMetalContext() {
   }
 
   // Retain and transfer to non-ARC-managed pointers.
+  // TODO(cbracken): https://github.com/flutter/flutter/issues/157942
   device_ = (__bridge_retained void*)device;
   command_queue_ = (__bridge_retained void*)command_queue;
 }
@@ -54,12 +55,14 @@ TestMetalContext::~TestMetalContext() {
   textures_.clear();
   if (device_) {
     // Release and transfer to ARC-managed pointer.
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/157942
     id<MTLDevice> device =  // NOLINT(clang-analyzer-deadcode.DeadStores)
         (__bridge_transfer id<MTLDevice>)device_;
     device = nil;
   }
   if (command_queue_) {
     // Release and transfer to ARC-managed pointer.
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/157942
     id<MTLCommandQueue> command_queue =  // NOLINT(clang-analyzer-deadcode.DeadStores)
         (__bridge_transfer id<MTLCommandQueue>)command_queue_;
     command_queue = nil;
@@ -105,7 +108,7 @@ TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize
 
   const int64_t texture_id = texture_id_ctr_++;
   sk_cfp<void*> texture_ptr;
-  texture_ptr.reset((__bridge_retained void*)texture);
+  texture_ptr.retain((__bridge void*)texture);
   textures_[texture_id] = texture_ptr;
 
   return {
