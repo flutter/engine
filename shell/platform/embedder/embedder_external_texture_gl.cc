@@ -139,16 +139,8 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTextureImpeller(
     return nullptr;
   }
 
-  size_t width = size.width();
-  size_t height = size.height();
-
   impeller::TextureDescriptor desc;
-  desc.size = impeller::ISize(width, height);
-
-  if (texture->width != 0 && texture->height != 0) {
-    width = texture->width;
-    height = texture->height;
-  }
+  desc.size = impeller::ISize(texture->width, texture->height);
 
   impeller::ContextGLES& context =
       impeller::ContextGLES::Cast(*aiks_context->GetContext());
@@ -164,7 +156,7 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTextureImpeller(
     if (texture->destruction_callback) {
       texture->destruction_callback(texture->user_data);
     }
-    FML_LOG(ERROR) << "Could not create external texture->";
+    FML_LOG(ERROR) << "Could not create external texture";
     return nullptr;
   }
   if (texture->destruction_callback &&
