@@ -220,7 +220,6 @@ const std::shared_ptr<DeviceBuffer>& HostBuffer::GetCurrentBuffer() const {
 }
 
 void HostBuffer::Reset() {
-  FML_LOG(ERROR) << "HostBuffer::Reset";
   // When resetting the host buffer state at the end of the frame, check if
   // there are any unused buffers and remove them.
   while (device_buffers_[frame_index_].size() > current_buffer_ + 1) {
