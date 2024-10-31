@@ -41,19 +41,20 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                  RenderPass& pass) const {
   auto& transform = entity.GetTransform();
 
-  Scalar half_width = 0;
-  if (stroke_width_ > 0) {
-    auto [width, _] = LineGeometry::ComputePixelHalfWidth(
+  if (stroke_width_ < 0) {
+    auto generator =
+        renderer.GetTessellator().FilledCircle(transform, center_, radius_);
+
+    return ComputePositionGeometry(renderer, generator, entity, pass);
+  } else {
+    auto [half_width, _] = LineGeometry::ComputePixelHalfWidth(
         transform.GetMaxBasisLengthXY(), stroke_width_);
-    half_width = width;
+
+    auto generator = renderer.GetTessellator().StrokedCircle(
+        transform, center_, radius_, half_width);
+
+    return ComputePositionGeometry(renderer, generator, entity, pass);
   }
-
-  // We call the StrokedCircle method which will simplify to a
-  // FilledCircleGenerator if the inner_radius is <= 0.
-  auto generator = renderer.GetTessellator().StrokedCircle(transform, center_,
-                                                           radius_, half_width);
-
-  return ComputePositionGeometry(renderer, generator, entity, pass);
 }
 
 std::optional<Rect> CircleGeometry::GetCoverage(const Matrix& transform) const {
