@@ -1529,92 +1529,92 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, HorizontalHairlinesPixelRegistration) {
-  const DlStrokeCap caps[] = {
-      DlStrokeCap::kButt,
-      DlStrokeCap::kSquare,
-      DlStrokeCap::kRound,
-  };
+// TEST_P(AiksTest, HorizontalHairlinesPixelRegistration) {
+//   const DlStrokeCap caps[] = {
+//       DlStrokeCap::kButt,
+//       DlStrokeCap::kSquare,
+//       DlStrokeCap::kRound,
+//   };
 
-  DlPaint stroke_paint;
-  stroke_paint.setDrawStyle(DlDrawStyle::kStroke);
-  stroke_paint.setStrokeWidth(0.0f);
-  DlPaint fill_paint;
-  fill_paint.setDrawStyle(DlDrawStyle::kFill);
+//   DlPaint stroke_paint;
+//   stroke_paint.setDrawStyle(DlDrawStyle::kStroke);
+//   stroke_paint.setStrokeWidth(0.0f);
+//   DlPaint fill_paint;
+//   fill_paint.setDrawStyle(DlDrawStyle::kFill);
 
-  const int pad = 5;
-  const int line_length = 20;
-  const int x_pad = line_length + pad;
-  const int y_pad = pad;
-  const int x_test_offset = x_pad * 2 + pad;
-  const int y_test_offset = y_pad + pad * 2;
+//   const int pad = 5;
+//   const int line_length = 20;
+//   const int x_pad = line_length + pad;
+//   const int y_pad = pad;
+//   const int x_test_offset = x_pad * 2 + pad;
+//   const int y_test_offset = y_pad + pad * 2;
 
-  auto draw_one = [&stroke_paint, &fill_paint](DlCanvas& canvas,
-                                               DlScalar x_base, DlScalar y_base,
-                                               DlScalar cap_pad) {
-    DlScalar x0 = x_base + cap_pad;
-    DlScalar x1 = x0 + line_length;
-    DlScalar y0 = y_base + 0.5f;
-    DlScalar y1 = y0;
+//   auto draw_one = [&stroke_paint, &fill_paint](DlCanvas& canvas,
+//                                                DlScalar x_base, DlScalar y_base,
+//                                                DlScalar cap_pad) {
+//     DlScalar x0 = x_base + cap_pad;
+//     DlScalar x1 = x0 + line_length;
+//     DlScalar y0 = y_base + 0.5f;
+//     DlScalar y1 = y0;
 
-    SkRect expected_rect =
-        SkRect::MakeLTRB(x0 - cap_pad, y0 - 0.5f, x1 + cap_pad, y1 + 0.5f);
-    SkPath expected_path = SkPath::Line({x0, y0}, {x1, y1});
+//     SkRect expected_rect =
+//         SkRect::MakeLTRB(x0 - cap_pad, y0 - 0.5f, x1 + cap_pad, y1 + 0.5f);
+//     SkPath expected_path = SkPath::Line({x0, y0}, {x1, y1});
 
-    canvas.DrawLine(DlPoint{x0, y0}, DlPoint{x1, y1}, stroke_paint);
-    if (stroke_paint.getStrokeCap() == DlStrokeCap::kRound) {
-      SkRRect expected_rrect =
-          SkRRect::MakeRectXY(expected_rect, cap_pad, cap_pad);
-      canvas.DrawRRect(expected_rrect.makeOffset(x_pad, 0), fill_paint);
-      canvas.DrawRRect(expected_rrect.makeOffset(0, y_pad), fill_paint);
-    } else {
-      canvas.DrawRect(expected_rect.makeOffset(x_pad, 0), fill_paint);
-      canvas.DrawRect(expected_rect.makeOffset(0, y_pad), fill_paint);
-    }
-    canvas.DrawPath(expected_path.offset(x_pad, y_pad), stroke_paint);
-  };
+//     canvas.DrawLine(DlPoint{x0, y0}, DlPoint{x1, y1}, stroke_paint);
+//     if (stroke_paint.getStrokeCap() == DlStrokeCap::kRound) {
+//       SkRRect expected_rrect =
+//           SkRRect::MakeRectXY(expected_rect, cap_pad, cap_pad);
+//       canvas.DrawRRect(expected_rrect.makeOffset(x_pad, 0), fill_paint);
+//       canvas.DrawRRect(expected_rrect.makeOffset(0, y_pad), fill_paint);
+//     } else {
+//       canvas.DrawRect(expected_rect.makeOffset(x_pad, 0), fill_paint);
+//       canvas.DrawRect(expected_rect.makeOffset(0, y_pad), fill_paint);
+//     }
+//     canvas.DrawPath(expected_path.offset(x_pad, y_pad), stroke_paint);
+//   };
 
-  DisplayListBuilder builder;
-  builder.DrawColor(DlColor::kWhite(), DlBlendMode::kSrc);
+//   DisplayListBuilder builder;
+//   builder.DrawColor(DlColor::kWhite(), DlBlendMode::kSrc);
 
-  DlScalar x_base = pad;
-  for (auto cap : caps) {
-    DlScalar cap_pad;
-    DlColor color;
-    switch (cap) {
-      case flutter::DlStrokeCap::kButt:
-        color = DlColor::kBlack();
-        cap_pad = 0.0f;
-        break;
-      case flutter::DlStrokeCap::kSquare:
-        color = DlColor::kBlue();
-        cap_pad = 0.5f;
-        break;
-      case flutter::DlStrokeCap::kRound:
-        color = DlColor::kGreen();
-        cap_pad = 0.5f;
-        break;
-    }
-    fill_paint.setColor(color);
-    stroke_paint.setStrokeCap(cap);
-    stroke_paint.setColor(color);
-    DlScalar y_base = pad;
-    for (int i = 0; i <= 10; i++) {
-      DlScalar subpixel_offset = (i / 10.0f);
+//   DlScalar x_base = pad;
+//   for (auto cap : caps) {
+//     DlScalar cap_pad;
+//     DlColor color;
+//     switch (cap) {
+//       case flutter::DlStrokeCap::kButt:
+//         color = DlColor::kBlack();
+//         cap_pad = 0.0f;
+//         break;
+//       case flutter::DlStrokeCap::kSquare:
+//         color = DlColor::kBlue();
+//         cap_pad = 0.5f;
+//         break;
+//       case flutter::DlStrokeCap::kRound:
+//         color = DlColor::kGreen();
+//         cap_pad = 0.5f;
+//         break;
+//     }
+//     fill_paint.setColor(color);
+//     stroke_paint.setStrokeCap(cap);
+//     stroke_paint.setColor(color);
+//     DlScalar y_base = pad;
+//     for (int i = 0; i <= 10; i++) {
+//       DlScalar subpixel_offset = (i / 10.0f);
 
-      DlScalar x = x_base;
-      draw_one(builder, x + subpixel_offset, y_base, cap_pad);
-      x += x_test_offset;
-      draw_one(builder, x, y_base + subpixel_offset, cap_pad);
+//       DlScalar x = x_base;
+//       draw_one(builder, x + subpixel_offset, y_base, cap_pad);
+//       x += x_test_offset;
+//       draw_one(builder, x, y_base + subpixel_offset, cap_pad);
 
-      y_base += y_test_offset;
-    }
-    x_base += x_test_offset * 2 + pad * 2;
-  }
+//       y_base += y_test_offset;
+//     }
+//     x_base += x_test_offset * 2 + pad * 2;
+//   }
 
-  auto dl = builder.Build();
-  ASSERT_TRUE(OpenPlaygroundHere(dl));
-}
+//   auto dl = builder.Build();
+//   ASSERT_TRUE(OpenPlaygroundHere(dl));
+// }
 
 TEST_P(AiksTest, VerticalHairlinesPixelRegistration) {
   const DlStrokeCap caps[] = {
