@@ -43,7 +43,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   bool supports_triangle_fan =
       renderer.GetDeviceCapabilities().SupportsTriangleFan() &&
       supports_primitive_restart;
-  VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
+  VertexBuffer vertex_buffer = renderer.GetTessellator().TessellateConvex(
       path_, host_buffer, entity.GetTransform().GetMaxBasisLengthXY(),
       /*supports_primitive_restart=*/supports_primitive_restart,
       /*supports_triangle_fan=*/supports_triangle_fan);
