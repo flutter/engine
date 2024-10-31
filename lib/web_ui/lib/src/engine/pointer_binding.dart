@@ -41,7 +41,6 @@ const int _kButtonsMask = 0x3FFFFFFF;
 // trackpad, therefore these pointer events are assigned fixed device IDs.
 const int _mouseDeviceId = -1;
 const int _trackpadDeviceId = -2;
-const int _touchDeviceId = -3;
 // For now only one stylus is supported.
 //
 // Device may support multiple styluses, but `PointerEvent` does not
@@ -1027,7 +1026,11 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // In contrast, `_globalTarget` (a regular <div>) stops sending move events
     // when the pointer moves outside its bounds and resumes them only when the
     // pointer re-enters.
+    //
     // For demonstration, see this fiddle: https://jsfiddle.net/ditman/7towxaqp
+    //
+    // TODO(dkwingsmt): Investigate whether we can configure the behavior for
+    // `_viewTarget`. https://github.com/flutter/flutter/issues/157968
     _addPointerEventListener(_globalTarget, 'pointermove', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
