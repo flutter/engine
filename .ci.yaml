@@ -53,7 +53,7 @@ targets:
     properties:
       config_name: local_engine
     # local_engine schedules a bunch of other builds, so it's likely to timeout waiting for those builds to run.
-    timeout: 90
+    timeout: 180
 
   - name: Linux linux_android_emulator_tests
     bringup: true
