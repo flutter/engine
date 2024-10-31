@@ -23,14 +23,13 @@ static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>
   return (IOSContextMetalSkia*)context.get();
 }
 
-IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
-                                         std::shared_ptr<IOSContext> context)
+IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(CAMetalLayer* layer, std::shared_ptr<IOSContext> context)
     : IOSSurface(std::move(context)),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
       layer_(layer) {
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
-  auto darwin_context = metal_context->GetDarwinContext().get();
+  auto darwin_context = metal_context->GetDarwinContext();
   command_queue_ = darwin_context.commandQueue;
   device_ = darwin_context.device;
 }
@@ -58,7 +57,7 @@ std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* 
 
 // |GPUSurfaceMetalDelegate|
 GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_info) const {
-  CAMetalLayer* layer = layer_.get();
+  CAMetalLayer* layer = layer_;
   layer.device = device_;
 
   layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
