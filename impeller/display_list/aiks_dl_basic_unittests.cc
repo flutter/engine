@@ -1550,8 +1550,8 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
 //   const int y_test_offset = y_pad + pad * 2;
 
 //   auto draw_one = [&stroke_paint, &fill_paint](DlCanvas& canvas,
-//                                                DlScalar x_base, DlScalar y_base,
-//                                                DlScalar cap_pad) {
+//                                                DlScalar x_base, DlScalar
+//                                                y_base, DlScalar cap_pad) {
 //     DlScalar x0 = x_base + cap_pad;
 //     DlScalar x1 = x0 + line_length;
 //     DlScalar y0 = y_base + 0.5f;
