@@ -188,6 +188,8 @@ class Tessellator {
   VertexBuffer TessellateConvex(const Path& path,
                                 HostBuffer& host_buffer,
                                 Scalar tolerance,
+                                bool supports_primitive_restart = false,
+                                bool supports_triangle_fan = false,
                                 bool line_strip = false);
 
   /// Visible for testing.

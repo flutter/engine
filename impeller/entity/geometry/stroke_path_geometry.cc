@@ -569,8 +569,9 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   if (is_hairline && path_.IsSingleContour() && stroke_cap_ == Cap::kButt) {
     // TODO(jonahwilliams): this could apply to multi contour paths if we add
     // support for primitive restart.
-    auto vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-        path_, host_buffer, scale, /*line_strip=*/true);
+    auto vertex_buffer = renderer.GetTessellator().TessellateConvex(
+        path_, host_buffer, scale, /*supports_primitive_restart=*/false,
+        /*supports_triangle_fan=*/false, /*line_strip=*/true);
     return GeometryResult{
         .type = PrimitiveType::kLineStrip,              //
         .vertex_buffer = vertex_buffer,                 //
@@ -580,7 +581,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   }
 
   PositionWriter position_writer;
-  auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
+  auto polyline = renderer.GetTessellator().CreateTempPolyline(path_, scale);
   CreateSolidStrokeVertices(position_writer,                      //
                             polyline,                             //
                             stroke_width,                         //

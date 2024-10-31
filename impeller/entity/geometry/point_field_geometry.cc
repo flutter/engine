@@ -56,7 +56,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
     Tessellator::EllipticalVertexGenerator generator =
-        renderer.GetTessellator()->FilledCircle(transform, {}, radius_);
+        renderer.GetTessellator().FilledCircle(transform, {}, radius_);
     FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
 
     std::vector<Point> circle_vertices;
