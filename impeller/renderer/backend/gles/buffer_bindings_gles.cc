@@ -158,9 +158,11 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
     return false;
   }
 
-  FML_DCHECK(vertex_array_object_ == 0);
-  gl.GenVertexArrays(1, &vertex_array_object_);
-  gl.BindVertexArray(vertex_array_object_);
+  if (!gl.GetCapabilities()->IsES()) {
+    FML_DCHECK(vertex_array_object_ == 0);
+    gl.GenVertexArrays(1, &vertex_array_object_);
+    gl.BindVertexArray(vertex_array_object_);
+  }
 
   for (const auto& array : vertex_attrib_arrays_[binding]) {
     gl.EnableVertexAttribArray(array.index);
@@ -213,8 +215,10 @@ bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) {
       gl.DisableVertexAttribArray(attribute.index);
     }
   }
-  gl.DeleteVertexArrays(1, &vertex_array_object_);
-  vertex_array_object_ = 0;
+  if (!gl.GetCapabilities()->IsES()) {
+    gl.DeleteVertexArrays(1, &vertex_array_object_);
+    vertex_array_object_ = 0;
+  }
 
   return true;
 }
