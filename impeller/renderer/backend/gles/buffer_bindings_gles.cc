@@ -153,10 +153,14 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
                                               size_t binding,
-                                              size_t vertex_offset) const {
+                                              size_t vertex_offset) {
   if (binding >= vertex_attrib_arrays_.size()) {
     return false;
   }
+
+  FML_DCHECK(vertex_array_object_ == 0);
+  gl.GenVertexArrays(1, &vertex_array_object_);
+  gl.BindVertexArray(vertex_array_object_);
 
   for (const auto& array : vertex_attrib_arrays_[binding]) {
     gl.EnableVertexAttribArray(array.index);
@@ -203,12 +207,14 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
+bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) {
   for (const auto& array : vertex_attrib_arrays_) {
     for (const auto& attribute : array) {
       gl.DisableVertexAttribArray(attribute.index);
     }
   }
+  gl.DeleteVertexArrays(1, &vertex_array_object_);
+  vertex_array_object_ = 0;
 
   return true;
 }
