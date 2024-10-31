@@ -21,14 +21,7 @@ class TestWorker : public ReactorGLES::Worker {
   }
 };
 
-namespace {
-static int testo = 0;
-}
-
-// This test just checks that the proc table is initialized correctly.
-//
-// If this test doesn't pass, no test that uses the proc table will pass.
-TEST(ReactorGLES, CanInitialize) {
+TEST(ReactorGLES, CanAttachCleanupCallbacksToHandles) {
   auto mock_gles = MockGLES::Init();
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
@@ -36,10 +29,15 @@ TEST(ReactorGLES, CanInitialize) {
   auto reactor = std::make_shared<ReactorGLES>(std::move(proc_table));
   reactor->AddWorker(worker);
 
+  int value = 0;
   auto handle = reactor->CreateHandle(HandleType::kTexture, 1123);
-  auto added = reactor->RegisterCleanupCallback(handle, [](void* data) {
-    testo++;
-  }, nullptr);
+  auto added = reactor->RegisterCleanupCallback(
+      handle,
+      [](void* data) {
+        int* cast_data = reinterpret_cast<int*>(data);
+        (*cast_data)++;
+      },
+      &value);
 
   EXPECT_TRUE(added);
   EXPECT_TRUE(reactor->React());
@@ -47,7 +45,7 @@ TEST(ReactorGLES, CanInitialize) {
   reactor->CollectHandle(handle);
   EXPECT_TRUE(reactor->AddOperation([](const ReactorGLES& reactor) {}));
   EXPECT_TRUE(reactor->React());
-  EXPECT_EQ(testo, 1);
+  EXPECT_EQ(value, 1);
 }
 
 }  // namespace testing
