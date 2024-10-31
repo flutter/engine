@@ -47,8 +47,10 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableOpenGLGPUTracing";
   private static final String IMPELLER_VULKAN_GPU_TRACING_DATA_KEY =
       "io.flutter.embedding.android.EnableVulkanGPUTracing";
-  private static final String ENABLED_MERGED_PLATFORM_UI_THREAD_KEY =
-      "io.flutter.embedding.android.EnableMergedPlatformUIThread";
+  private static final String DISABLE_MERGED_PLATFORM_UI_THREAD_KEY =
+      "io.flutter.embedding.android.DisableMergedPlatformUIThread";
+  private static final String DISABLE_SURFACE_CONTROL =
+      "io.flutter.embedding.android.DisableSurfaceControl";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -182,7 +184,7 @@ public class FlutterLoader {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
                 try {
-                  flutterJNI.loadLibrary();
+                  flutterJNI.loadLibrary(appContext);
                 } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
                   String couldntFindVersion = "couldn't find \"libflutter.so\"";
                   String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
@@ -361,9 +363,16 @@ public class FlutterLoader {
         if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-gpu-tracing");
         }
-        if (metaData.getBoolean(ENABLED_MERGED_PLATFORM_UI_THREAD_KEY, false)) {
-          shellArgs.add("--enable-merged-platform-ui-thread");
+        if (metaData.containsKey(DISABLE_MERGED_PLATFORM_UI_THREAD_KEY)) {
+          if (metaData.getBoolean(DISABLE_MERGED_PLATFORM_UI_THREAD_KEY)) {
+            shellArgs.add("--no-enable-merged-platform-ui-thread");
+          }
         }
+
+        if (metaData.getBoolean(DISABLE_SURFACE_CONTROL, false)) {
+          shellArgs.add("--disable-surface-control");
+        }
+
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {
           shellArgs.add("--impeller-backend=" + backend);

@@ -163,7 +163,6 @@ TEST(AndroidShellHolder, HandlePlatformMessage) {
 
 TEST(AndroidShellHolder, CreateWithMergedPlatformAndUIThread) {
   Settings settings;
-  settings.merged_platform_ui_thread = true;
   auto jni = std::make_shared<MockPlatformViewAndroidJNI>();
   auto holder = std::make_unique<AndroidShellHolder>(settings, jni);
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(

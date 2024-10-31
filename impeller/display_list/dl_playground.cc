@@ -5,7 +5,7 @@
 #include "impeller/display_list/dl_playground.h"
 
 #include "flutter/testing/testing.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
@@ -45,29 +45,14 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
           wireframe = !wireframe;
           context.GetContentContext().SetWireframe(wireframe);
         }
-
-        auto list = callback();
-
-#if EXPERIMENTAL_CANVAS
-        TextFrameDispatcher collector(context.GetContentContext(), Matrix());
-        list->Dispatch(collector);
-
-        ExperimentalDlDispatcher impeller_dispatcher(
-            context.GetContentContext(), render_target,
-            list->root_has_backdrop_filter(), list->max_root_blend_mode(),
-            IRect::MakeMaximum());
-        list->Dispatch(impeller_dispatcher);
-        impeller_dispatcher.FinishRecording();
-        context.GetContentContext().GetTransientsBuffer().Reset();
-        context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-        return true;
-#else
-        DlDispatcher dispatcher;
-        list->Dispatch(dispatcher);
-        auto picture = dispatcher.EndRecordingAsPicture();
-
-        return context.Render(picture, render_target, true);
-#endif
+        return RenderToOnscreen(
+            context.GetContentContext(),  //
+            render_target,                //
+            callback(),                   //
+            SkIRect::MakeWH(render_target.GetRenderTargetSize().width,
+                            render_target.GetRenderTargetSize().height),  //
+            /*reset_host_buffer=*/true                                    //
+        );
       });
 }
 

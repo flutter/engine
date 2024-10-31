@@ -501,6 +501,65 @@ constexpr impeller::StencilOperation ToImpellerStencilOperation(int value) {
       static_cast<FlutterGPUStencilOperation>(value));
 }
 
+enum class FlutterGPUCullMode {
+  kNone,
+  kFrontFace,
+  kBackFace,
+};
+
+constexpr impeller::CullMode ToImpellerCullMode(FlutterGPUCullMode value) {
+  switch (value) {
+    case FlutterGPUCullMode::kNone:
+      return impeller::CullMode::kNone;
+    case FlutterGPUCullMode::kFrontFace:
+      return impeller::CullMode::kFrontFace;
+    case FlutterGPUCullMode::kBackFace:
+      return impeller::CullMode::kBackFace;
+  }
+}
+
+constexpr impeller::CullMode ToImpellerCullMode(int value) {
+  return ToImpellerCullMode(static_cast<FlutterGPUCullMode>(value));
+}
+
+enum class FlutterGPUWindingOrder {
+  kClockwise,
+  kCounterClockwise,
+};
+
+constexpr impeller::WindingOrder ToImpellerWindingOrder(
+    FlutterGPUWindingOrder value) {
+  switch (value) {
+    case FlutterGPUWindingOrder::kClockwise:
+      return impeller::WindingOrder::kClockwise;
+    case FlutterGPUWindingOrder::kCounterClockwise:
+      return impeller::WindingOrder::kCounterClockwise;
+  }
+}
+
+constexpr impeller::WindingOrder ToImpellerWindingOrder(int value) {
+  return ToImpellerWindingOrder(static_cast<FlutterGPUWindingOrder>(value));
+}
+
+enum class FlutterGPUPolygonMode {
+  kFill,
+  kLine,
+};
+
+constexpr impeller::PolygonMode ToImpellerPolygonMode(
+    FlutterGPUPolygonMode value) {
+  switch (value) {
+    case FlutterGPUPolygonMode::kFill:
+      return impeller::PolygonMode::kFill;
+    case FlutterGPUPolygonMode::kLine:
+      return impeller::PolygonMode::kLine;
+  }
+}
+
+constexpr impeller::PolygonMode ToImpellerPolygonMode(int value) {
+  return ToImpellerPolygonMode(static_cast<FlutterGPUPolygonMode>(value));
+}
+
 }  // namespace gpu
 }  // namespace flutter
 

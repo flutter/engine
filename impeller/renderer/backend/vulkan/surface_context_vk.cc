@@ -82,13 +82,17 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   if (!surface) {
     return nullptr;
   }
+  MarkFrameEnd();
+  return surface;
+}
+
+void SurfaceContextVK::MarkFrameEnd() {
   if (auto pipeline_library = parent_->GetPipelineLibrary()) {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  parent_->GetCommandPoolRecycler()->Dispose();
+  parent_->DisposeThreadLocalCachedResources();
   parent_->GetResourceAllocator()->DebugTraceMemoryStatistics();
-  return surface;
 }
 
 void SurfaceContextVK::UpdateSurfaceSize(const ISize& size) const {
@@ -103,8 +107,21 @@ void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   parent_->InitializeCommonlyUsedShadersIfNeeded();
 }
 
+void SurfaceContextVK::DisposeThreadLocalCachedResources() {
+  parent_->DisposeThreadLocalCachedResources();
+}
+
 const std::shared_ptr<ContextVK>& SurfaceContextVK::GetParent() const {
   return parent_;
+}
+
+bool SurfaceContextVK::EnqueueCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) {
+  return parent_->EnqueueCommandBuffer(std::move(command_buffer));
+}
+
+bool SurfaceContextVK::FlushCommandBuffers() {
+  return parent_->FlushCommandBuffers();
 }
 
 }  // namespace impeller

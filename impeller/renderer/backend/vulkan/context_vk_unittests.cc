@@ -9,6 +9,7 @@
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 namespace testing {
@@ -70,6 +71,25 @@ TEST(ContextVKTest, DeletesCommandPoolsOnAllThreads) {
   latch2.Signal();
   thread.join();
   ASSERT_FALSE(weak_pool_thread.lock());
+}
+
+TEST(ContextVKTest, ThreadLocalCleanupDeletesCommandPool) {
+  std::shared_ptr<ContextVK> context = MockVulkanContextBuilder().Build();
+
+  fml::AutoResetWaitableEvent latch1, latch2;
+  std::weak_ptr<CommandPoolVK> weak_pool;
+  std::thread thread([&]() {
+    weak_pool = context->GetCommandPoolRecycler()->Get();
+    context->DisposeThreadLocalCachedResources();
+    latch1.Signal();
+    latch2.Wait();
+  });
+
+  latch1.Wait();
+  ASSERT_FALSE(weak_pool.lock());
+
+  latch2.Signal();
+  thread.join();
 }
 
 TEST(ContextVKTest, DeletePipelineAfterContext) {
@@ -239,6 +259,99 @@ TEST(ContextVKTest, HasDefaultColorFormat) {
   const CapabilitiesVK* capabilites_vk =
       reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
   ASSERT_NE(capabilites_vk->GetDefaultColorFormat(), PixelFormat::kUnknown);
+}
+
+TEST(ContextVKTest, EmbedderOverridesUsesInstanceExtensions) {
+  ContextVK::EmbedderData data;
+  auto other_context = MockVulkanContextBuilder().Build();
+
+  data.instance = other_context->GetInstance();
+  data.device = other_context->GetDevice();
+  data.physical_device = other_context->GetPhysicalDevice();
+  data.queue = VkQueue{};
+  data.queue_family_index = 0;
+  // Missing surface extension.
+  data.instance_extensions = {};
+  data.device_extensions = {"VK_KHR_swapchain"};
+
+  ScopedValidationDisable scoped;
+  auto context = MockVulkanContextBuilder().SetEmbedderData(data).Build();
+
+  EXPECT_EQ(context, nullptr);
+}
+
+TEST(ContextVKTest, EmbedderOverrides) {
+  ContextVK::EmbedderData data;
+  auto other_context = MockVulkanContextBuilder().Build();
+
+  data.instance = other_context->GetInstance();
+  data.device = other_context->GetDevice();
+  data.physical_device = other_context->GetPhysicalDevice();
+  data.queue = VkQueue{};
+  data.queue_family_index = 0;
+  data.instance_extensions = {"VK_KHR_surface",
+                              "VK_KHR_portability_enumeration"};
+  data.device_extensions = {"VK_KHR_swapchain"};
+
+  auto context = MockVulkanContextBuilder().SetEmbedderData(data).Build();
+
+  EXPECT_TRUE(context->IsValid());
+  EXPECT_EQ(context->GetInstance(), other_context->GetInstance());
+  EXPECT_EQ(context->GetDevice(), other_context->GetDevice());
+  EXPECT_EQ(context->GetPhysicalDevice(), other_context->GetPhysicalDevice());
+  EXPECT_EQ(context->GetGraphicsQueue()->GetIndex().index, 0u);
+  EXPECT_EQ(context->GetGraphicsQueue()->GetIndex().family, 0u);
+}
+
+TEST(ContextVKTest, BatchSubmitCommandBuffersOnArm) {
+  std::shared_ptr<ContextVK> context =
+      MockVulkanContextBuilder()
+          .SetPhysicalPropertiesCallback(
+              [](VkPhysicalDevice device, VkPhysicalDeviceProperties* prop) {
+                prop->vendorID = 0x13B5;  // ARM
+                prop->deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+              })
+          .Build();
+
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+
+  // If command buffers are batch submitted, we should have created them but not
+  // created the fence to track them after enqueing.
+  auto functions = GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkAllocateCommandBuffers") != functions->end());
+  EXPECT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkCreateFence") == functions->end());
+
+  context->FlushCommandBuffers();
+
+  // After flushing, the fence should be created.
+  functions = GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkCreateFence") != functions->end());
+}
+
+TEST(ContextVKTest, BatchSubmitCommandBuffersOnNonArm) {
+  std::shared_ptr<ContextVK> context =
+      MockVulkanContextBuilder()
+          .SetPhysicalPropertiesCallback(
+              [](VkPhysicalDevice device, VkPhysicalDeviceProperties* prop) {
+                prop->vendorID = 0x8686;  // Made up ID
+                prop->deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+              })
+          .Build();
+
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+  EXPECT_TRUE(context->EnqueueCommandBuffer(context->CreateCommandBuffer()));
+
+  // If command buffers are batch not submitted, we should have created them and
+  // a corresponding fence immediately.
+  auto functions = GetMockVulkanFunctions(context->GetDevice());
+  EXPECT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkAllocateCommandBuffers") != functions->end());
+  EXPECT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkCreateFence") != functions->end());
 }
 
 }  // namespace testing

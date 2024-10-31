@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import com.getkeepsafe.relinker.ReLinker;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
@@ -139,12 +140,11 @@ public class FlutterJNI {
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
-  public void loadLibrary() {
+  public void loadLibrary(Context context) {
     if (FlutterJNI.loadLibraryCalled) {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
-
-    System.loadLibrary("flutter");
+    ReLinker.loadLibrary(context, "flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -1039,8 +1039,7 @@ public class FlutterJNI {
    * will be dropped (ignored). Therefore, when using {@code FlutterJNI} to integrate a Flutter
    * context in an app, a {@link PlatformMessageHandler} must be registered for 2-way Java/Dart
    * communication to operate correctly. Moreover, the handler must be implemented such that
-   * fundamental platform messages are handled as expected. See {@link
-   * io.flutter.view.FlutterNativeView} for an example implementation.
+   * fundamental platform messages are handled as expected.
    */
   @UiThread
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {

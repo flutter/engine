@@ -101,9 +101,11 @@ struct GLProc {
   PROC(BindFramebuffer);                     \
   PROC(BindRenderbuffer);                    \
   PROC(BindTexture);                         \
+  PROC(BindVertexArray);                     \
   PROC(BlendEquationSeparate);               \
   PROC(BlendFuncSeparate);                   \
   PROC(BufferData);                          \
+  PROC(BufferSubData);                       \
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \
   PROC(ClearColor);                          \
@@ -119,6 +121,7 @@ struct GLProc {
   PROC(DeleteRenderbuffers);                 \
   PROC(DeleteShader);                        \
   PROC(DeleteTextures);                      \
+  PROC(DeleteVertexArrays);                  \
   PROC(DepthFunc);                           \
   PROC(DepthMask);                           \
   PROC(DetachShader);                        \
@@ -137,6 +140,7 @@ struct GLProc {
   PROC(GenFramebuffers);                     \
   PROC(GenRenderbuffers);                    \
   PROC(GenTextures);                         \
+  PROC(GenVertexArrays);                     \
   PROC(GetActiveUniform);                    \
   PROC(GetBooleanv);                         \
   PROC(GetFloatv);                           \

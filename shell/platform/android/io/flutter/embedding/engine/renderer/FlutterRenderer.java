@@ -108,8 +108,9 @@ public class FlutterRenderer implements TextureRegistry {
               public void onResume(@NonNull LifecycleOwner owner) {
                 Log.v(TAG, "onResume called; notifying SurfaceProducers");
                 for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
-                  if (producer.callback != null) {
-                    producer.callback.onSurfaceCreated();
+                  if (producer.callback != null && producer.notifiedDestroy) {
+                    producer.notifiedDestroy = false;
+                    producer.callback.onSurfaceAvailable();
                   }
                 }
               }
@@ -462,6 +463,13 @@ public class FlutterRenderer implements TextureRegistry {
     // will be produced at that size.
     private boolean createNewReader = true;
 
+    /**
+     * Stores whether {@link Callback#onSurfaceDestroyed()} was previously invoked.
+     *
+     * <p>Used to avoid signaling {@link Callback#onSurfaceAvailable()} unnecessarily.
+     */
+    private boolean notifiedDestroy = false;
+
     // State held to track latency of various stages.
     private long lastDequeueTime = 0;
     private long lastQueueTime = 0;
@@ -545,6 +553,10 @@ public class FlutterRenderer implements TextureRegistry {
         return imageQueue.isEmpty() && lastReaderDequeuedFrom != this;
       }
 
+      boolean imageQueueIsEmpty() {
+        return imageQueue.isEmpty();
+      }
+
       void close() {
         closed = true;
         if (VERBOSE_LOGS) {
@@ -622,6 +634,7 @@ public class FlutterRenderer implements TextureRegistry {
 
     PerImage dequeueImage() {
       PerImage r = null;
+      boolean hasPendingImages = false;
       synchronized (lock) {
         for (PerImageReader reader : imageReaderQueue) {
           r = reader.dequeueImage();
@@ -671,6 +684,21 @@ public class FlutterRenderer implements TextureRegistry {
           break;
         }
         pruneImageReaderQueue();
+        for (PerImageReader reader : imageReaderQueue) {
+          if (!reader.imageQueueIsEmpty()) {
+            hasPendingImages = true;
+            break;
+          }
+        }
+      }
+      if (hasPendingImages) {
+        // Request another frame to ensure that images are consumed until the queue is empty.
+        handler.post(
+            () -> {
+              if (!released) {
+                scheduleEngineFrame();
+              }
+            });
       }
       return r;
     }
@@ -689,6 +717,7 @@ public class FlutterRenderer implements TextureRegistry {
       cleanup();
       createNewReader = true;
       if (this.callback != null) {
+        notifiedDestroy = true;
         this.callback.onSurfaceDestroyed();
       }
     }
@@ -696,6 +725,7 @@ public class FlutterRenderer implements TextureRegistry {
     private void releaseInternal() {
       cleanup();
       released = true;
+      removeOnTrimMemoryListener(this);
       imageReaderProducers.remove(this);
     }
 
@@ -754,6 +784,11 @@ public class FlutterRenderer implements TextureRegistry {
     @Override
     public void setCallback(Callback callback) {
       this.callback = callback;
+    }
+
+    @Override
+    public boolean handlesCropAndRotation() {
+      return false;
     }
 
     @Override
@@ -1230,7 +1265,8 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.registerImageTexture(textureId, imageTexture);
   }
 
-  private void scheduleEngineFrame() {
+  @VisibleForTesting
+  /* package */ void scheduleEngineFrame() {
     flutterJNI.scheduleFrame();
   }
 

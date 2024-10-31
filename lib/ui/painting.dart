@@ -48,8 +48,8 @@ bool _radiusIsValid(Radius radius) {
   return true;
 }
 
-Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+Color _scaleAlpha(Color x, double factor) {
+  return x.withValues(alpha: clampDouble(x.a * factor, 0, 1));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -78,10 +78,17 @@ Color _scaleAlpha(Color a, double factor) {
 /// Color c2 = const Color(0xFFFFFFFF); // fully opaque white (visible)
 /// ```
 ///
+/// [Color]'s color components are stored as floating-point values. Care should
+/// be taken if one does not want the literal equality provided by `operator==`.
+/// To test equality inside of Flutter tests consider using `package:test`'s
+/// `isSameColorAs`.
+///
 /// See also:
 ///
-///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
-///    defines the colors found in the Material Design specification.
+///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html),
+///    which defines the colors found in the Material Design specification.
+///  * [`isSameColorAs`](https://api.flutter.dev/flutter/flutter_test/isSameColorAs.html),
+///    a Matcher to handle floating-point deltas when checking [Color] equality.
 class Color {
   /// Construct an sRGB color from the lower 32 bits of an [int].
   ///
@@ -100,12 +107,8 @@ class Color {
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
   const Color(int value)
-      : _value = value & 0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromARGBC(
+            value >> 24, value >> 16, value >> 8, value, ColorSpace.sRGB);
 
   /// Construct a color with normalized color components.
   ///
@@ -118,11 +121,10 @@ class Color {
       required double green,
       required double blue,
       this.colorSpace = ColorSpace.sRGB})
-      : _value = 0,
-        _a = alpha,
-        _r = red,
-        _g = green,
-        _b = blue;
+      : a = alpha,
+        r = red,
+        g = green,
+        b = blue;
 
   /// Construct an sRGB color from the lower 8 bits of four integers.
   ///
@@ -137,28 +139,12 @@ class Color {
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b)
-      : _value = (((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromARGBC(a, r, g, b, ColorSpace.sRGB);
 
   const Color._fromARGBC(
-      int alpha, int red, int green, int blue, this.colorSpace)
-      : _value = (((alpha & 0xff) << 24) |
-                ((red & 0xff) << 16) |
-                ((green & 0xff) << 8) |
-                ((blue & 0xff) << 0)) &
-            0xFFFFFFFF,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      int alpha, int red, int green, int blue, ColorSpace colorSpace)
+      : this._fromRGBOC(
+            red, green, blue, (alpha & 0xff) / 255, colorSpace);
 
   /// Create an sRGB color from red, green, blue, and opacity, similar to
   /// `rgba()` in CSS.
@@ -173,41 +159,34 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity)
-      : _value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) &
-            0xFFFFFFFF,
-        colorSpace = ColorSpace.sRGB,
-        _a = null,
-        _r = null,
-        _g = null,
-        _b = null;
+      : this._fromRGBOC(r, g, b, opacity, ColorSpace.sRGB);
+
+  const Color._fromRGBOC(int r, int g, int b, double opacity, this.colorSpace)
+      : a = opacity,
+        r = (r & 0xff) / 255,
+        g = (g & 0xff) / 255,
+        b = (b & 0xff) / 255;
 
   /// The alpha channel of this color.
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  double get a => _a ?? (alpha / 255);
-  final double? _a;
+  final double a;
 
   /// The red channel of this color.
-  double get r => _r ?? (red / 255);
-  final double? _r;
+  final double r;
 
   /// The green channel of this color.
-  double get g => _g ?? (green / 255);
-  final double? _g;
+  final double g;
 
   /// The blue channel of this color.
-  double get b => _b ?? (blue / 255);
-  final double? _b;
+  final double b;
 
   /// The color space of this color.
   final ColorSpace colorSpace;
 
   static int _floatToInt8(double x) {
-    return ((x * 255.0).round()) & 0xff;
+    return (x * 255.0).round() & 0xff;
   }
 
   /// A 32 bit value representing this color.
@@ -220,16 +199,11 @@ class Color {
   /// * Bits 0-7 are the blue value.
   @Deprecated('Use component accessors like .r or .g.')
   int get value {
-    if (_a != null && _r != null && _g != null && _b != null) {
-      return _floatToInt8(_a) << 24 |
-          _floatToInt8(_r) << 16 |
-          _floatToInt8(_g) << 8 |
-          _floatToInt8(_b) << 0;
-    } else {
-      return _value;
-    }
+    return _floatToInt8(a) << 24 |
+        _floatToInt8(r) << 16 |
+        _floatToInt8(g) << 8 |
+        _floatToInt8(b) << 0;
   }
-  final int _value;
 
   /// The alpha channel of this color in an 8 bit value.
   ///
@@ -343,10 +317,11 @@ class Color {
   ///
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
+    assert(colorSpace != ColorSpace.extendedSRGB);
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(r);
+    final double G = _linearizeColorComponent(g);
+    final double B = _linearizeColorComponent(b);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -372,28 +347,26 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color? lerp(Color? a, Color? b, double t) {
-    // TODO(gaaclarke): Update math to use floats. This was already attempted
-    //                  but it leads to subtle changes that change test results.
-    assert(a?.colorSpace != ColorSpace.extendedSRGB);
-    assert(b?.colorSpace != ColorSpace.extendedSRGB);
-    if (b == null) {
-      if (a == null) {
+  static Color? lerp(Color? x, Color? y, double t) {
+    assert(x?.colorSpace != ColorSpace.extendedSRGB);
+    assert(y?.colorSpace != ColorSpace.extendedSRGB);
+    if (y == null) {
+      if (x == null) {
         return null;
       } else {
-        return _scaleAlpha(a, 1.0 - t);
+        return _scaleAlpha(x, 1.0 - t);
       }
     } else {
-      if (a == null) {
-        return _scaleAlpha(b, t);
+      if (x == null) {
+        return _scaleAlpha(y, t);
       } else {
-        assert(a.colorSpace == b.colorSpace);
-        return Color._fromARGBC(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
-          a.colorSpace,
+        assert(x.colorSpace == y.colorSpace);
+        return Color.from(
+          alpha: clampDouble(_lerpDouble(x.a, y.a, t), 0, 1),
+          red: clampDouble(_lerpDouble(x.r, y.r, t), 0, 1),
+          green: clampDouble(_lerpDouble(x.g, y.g, t), 0, 1),
+          blue: clampDouble(_lerpDouble(x.b, y.b, t), 0, 1),
+          colorSpace: x.colorSpace,
         );
       }
     }
@@ -410,32 +383,30 @@ class Color {
   static Color alphaBlend(Color foreground, Color background) {
     assert(foreground.colorSpace == background.colorSpace);
     assert(foreground.colorSpace != ColorSpace.extendedSRGB);
-    // TODO(gaaclarke): Update math to use floats. This was already attempted
-    //                  but it leads to subtle changes that change test results.
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) { // Foreground completely transparent.
+    final double alpha = foreground.a;
+    if (alpha == 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
-    if (backAlpha == 0xff) { // Opaque background case
-      return Color._fromARGBC(
-        0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
-        foreground.colorSpace,
+    final double invAlpha = 1 - alpha;
+    double backAlpha = background.a;
+    if (backAlpha == 1) { // Opaque background case
+      return Color.from(
+        alpha: 1,
+        red: alpha * foreground.r + invAlpha * background.r,
+        green: alpha * foreground.g + invAlpha * background.g,
+        blue: alpha * foreground.b + invAlpha * background.b,
+        colorSpace: foreground.colorSpace,
       );
     } else { // General case
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color._fromARGBC(
-        outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
-        foreground.colorSpace,
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0);
+      return Color.from(
+        alpha: outAlpha,
+        red: (foreground.r * alpha + background.r * backAlpha) / outAlpha,
+        green: (foreground.g * alpha + background.g * backAlpha) / outAlpha,
+        blue: (foreground.b * alpha + background.b * backAlpha) / outAlpha,
+        colorSpace: foreground.colorSpace,
       );
     }
   }
@@ -456,16 +427,19 @@ class Color {
       return false;
     }
     return other is Color &&
-        other.value == value &&
+        other.a == a &&
+        other.r == r &&
+        other.g == g &&
+        other.b == b &&
         other.colorSpace == colorSpace;
   }
 
   @override
-  int get hashCode => Object.hash(value, colorSpace);
+  int get hashCode => Object.hash(a, r, g, b, colorSpace);
 
-  // TODO(gaaclarke): Make toString() print out float values.
   @override
-  String toString() => 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
+  String toString() =>
+      'Color(alpha: ${a.toStringAsFixed(4)}, red: ${r.toStringAsFixed(4)}, green: ${g.toStringAsFixed(4)}, blue: ${b.toStringAsFixed(4)}, colorSpace: $colorSpace)';
 }
 
 /// Algorithms to use when painting on the canvas.
@@ -1143,15 +1117,19 @@ enum PaintingStyle {
   stroke,
 }
 
-/// Different ways to clip a widget's content.
+/// Different ways to clip content.
+///
+/// See also:
+///
+///  * [Paint.isAntiAlias], the anti-aliasing switch for general draw operations.
 enum Clip {
   /// No clip at all.
   ///
   /// This is the default option for most widgets: if the content does not
   /// overflow the widget boundary, don't pay any performance cost for clipping.
   ///
-  /// If the content does overflow, please explicitly specify the following
-  /// [Clip] options:
+  /// If the content does overflow, consider the following [Clip] options:
+  ///
   ///  * [hardEdge], which is the fastest clipping, but with lower fidelity.
   ///  * [antiAlias], which is a little slower than [hardEdge], but with smoothed edges.
   ///  * [antiAliasWithSaveLayer], which is much slower than [antiAlias], and should
@@ -1170,50 +1148,53 @@ enum Clip {
   ///
   /// See also:
   ///
-  ///  * [antiAlias], which is more reasonable when clipping is needed and the shape is not
+  ///  * [antiAlias], recommended when clipping is needed and the shape is not
   ///    an axis-aligned rectangle.
   hardEdge,
 
   /// Clip with anti-aliasing.
   ///
-  /// This mode has anti-aliased clipping edges to achieve a smoother look.
+  /// This mode has anti-aliased clipping edges, which reduces jagged edges when
+  /// the clip shape itself has edges that are diagonal, curved, or otherwise
+  /// not axis-aligned.
   ///
-  /// It' s much faster than [antiAliasWithSaveLayer], but slower than [hardEdge].
+  /// This is much faster than [antiAliasWithSaveLayer], but slower than [hardEdge].
   ///
-  /// This will be the common case when dealing with circles and arcs.
-  ///
-  /// Different from [hardEdge] and [antiAliasWithSaveLayer], this clipping may have
-  /// bleeding edge artifacts.
-  /// (See https://fiddle.skia.org/c/21cb4c2b2515996b537f36e7819288ae for an example.)
+  /// Unlike [hardEdge] and [antiAliasWithSaveLayer], this clipping can have
+  /// bleeding edge artifacts
+  /// ([Skia Fiddle example](https://fiddle.skia.org/c/21cb4c2b2515996b537f36e7819288ae)).
   ///
   /// See also:
   ///
-  ///  * [hardEdge], which is a little faster, but with lower fidelity.
-  ///  * [antiAliasWithSaveLayer], which is much slower, but can avoid the
-  ///    bleeding edges if there's no other way.
+  ///  * [hardEdge], which is faster, but with lower fidelity.
+  ///  * [antiAliasWithSaveLayer], which is much slower, but avoids bleeding
+  ///    edge artifacts.
   ///  * [Paint.isAntiAlias], which is the anti-aliasing switch for general draw operations.
   antiAlias,
 
-  /// Clip with anti-aliasing and saveLayer immediately following the clip.
+  /// Clip with anti-aliasing and `saveLayer` immediately following the clip.
   ///
   /// This mode not only clips with anti-aliasing, but also allocates an offscreen
   /// buffer. All subsequent paints are carried out on that buffer before finally
   /// being clipped and composited back.
   ///
-  /// This is very slow. It has no bleeding edge artifacts (that [antiAlias] has)
-  /// but it changes the semantics as an offscreen buffer is now introduced.
-  /// (See https://github.com/flutter/flutter/issues/18057#issuecomment-394197336
-  /// for a difference between paint without saveLayer and paint with saveLayer.)
+  /// This is very slow. It has no bleeding edge artifacts, unlike [antiAlias],
+  /// but it changes the semantics as it introduces an offscreen buffer.
+  /// For example, see this
+  /// [Skia Fiddle without `saveLayer`](https://fiddle.skia.org/c/83ed46ceadaf90f36a4df3b98cbe1c35)
+  /// and this
+  /// [Skia Fiddle with `saveLayer`](https://fiddle.skia.org/c/704acfa049a7e99fbe685232c45d1582).
   ///
-  /// This will be only rarely needed. One case where you might need this is if
-  /// you have an image overlaid on a very different background color. In these
-  /// cases, consider whether you can avoid overlaying multiple colors in one
-  /// spot (e.g. by having the background color only present where the image is
-  /// absent). If you can, [antiAlias] would be fine and much faster.
+  /// Use this mode only if necessary. For example, if you have an
+  /// image overlaid on a very different background color. In these
+  /// cases, consider if you can avoid overlaying multiple colors in one
+  /// location (e.g. by having the background color only present where the image is
+  /// absent). If possible, prefer [antiAlias] as it is much faster.
   ///
   /// See also:
   ///
   ///  * [antiAlias], which is much faster, and has similar clipping results.
+  ///  * [Canvas.saveLayer].
   antiAliasWithSaveLayer,
 }
 
@@ -4027,7 +4008,7 @@ abstract class ImageFilter {
   ImageFilter._(); // ignore: unused_element
 
   /// Creates an image filter that applies a Gaussian blur.
-  factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp }) {
+  factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode? tileMode }) {
     return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
@@ -4109,7 +4090,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
 
   final double sigmaX;
   final double sigmaY;
-  final TileMode tileMode;
+  final TileMode? tileMode;
 
   // MakeBlurFilter
   late final _ImageFilter nativeFilter = _ImageFilter.blur(this);
@@ -4122,6 +4103,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
       case TileMode.mirror: return 'mirror';
       case TileMode.repeated: return 'repeated';
       case TileMode.decal: return 'decal';
+      case null: return 'unspecified';
     }
   }
 
@@ -4247,7 +4229,7 @@ base class _ImageFilter extends NativeFieldWrapperClass1 {
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
     : creator = filter {
     _constructor();
-    _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
+    _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode?.index ?? -1);
   }
 
   /// Creates an image filter that dilates each input pixel's channel values
@@ -4355,7 +4337,7 @@ base class Shader extends NativeFieldWrapperClass1 {
   /// Classes that override this method must call `super.dispose()`.
   void dispose() {
     assert(() {
-      assert(!_debugDisposed);
+      assert(!_debugDisposed, 'A Shader cannot be disposed more than once.');
       _debugDisposed = true;
       return true;
     }());

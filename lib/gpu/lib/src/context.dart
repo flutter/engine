@@ -40,6 +40,24 @@ base class GpuContext extends NativeFieldWrapperClass1 {
     return PixelFormat.values[_getDefaultDepthStencilFormat()];
   }
 
+  /// The minimum alignment required when referencing uniform blocks stored in a
+  /// `DeviceBuffer`.
+  int get minimumUniformByteAlignment {
+    return _getMinimumUniformByteAlignment();
+  }
+
+  /// Whether the backend supports multisample anti-aliasing for offscreen
+  /// color and stencil attachments. A subset of OpenGLES-only devices do not
+  /// support this functionality.
+  ///
+  /// Any texture created via [createTexture] is an offscreen texture.
+  /// There is currently no way to render directly against the "onscreen"
+  /// texture that the framework renders to, so all Flutter GPU textures are
+  /// "offscreen".
+  bool get doesSupportOffscreenMSAA {
+    return _getSupportsOffscreenMSAA();
+  }
+
   /// Allocates a new region of GPU-resident memory.
   ///
   /// The [storageMode] must be either [StorageMode.hostVisible] or
@@ -69,8 +87,12 @@ base class GpuContext extends NativeFieldWrapperClass1 {
     return result.isValid ? result : null;
   }
 
-  HostBuffer createHostBuffer() {
-    return HostBuffer._initialize(this);
+  /// Creates a bump allocator that managed a [DeviceBuffer] block list.
+  ///
+  /// See also [HostBuffer].
+  HostBuffer createHostBuffer(
+      {int blockLengthInBytes = HostBuffer.kDefaultBlockLengthInBytes}) {
+    return HostBuffer._initialize(this, blockLengthInBytes: blockLengthInBytes);
   }
 
   /// Allocates a new texture in GPU-resident memory.
@@ -124,6 +146,14 @@ base class GpuContext extends NativeFieldWrapperClass1 {
   @Native<Int Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_Context_GetDefaultDepthStencilFormat')
   external int _getDefaultDepthStencilFormat();
+
+  @Native<Int Function(Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_Context_GetMinimumUniformByteAlignment')
+  external int _getMinimumUniformByteAlignment();
+
+  @Native<Bool Function(Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_Context_GetSupportsOffscreenMSAA')
+  external bool _getSupportsOffscreenMSAA();
 }
 
 /// The default graphics context.

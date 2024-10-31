@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:litetest/litetest.dart';
+import 'package:test/test.dart';
 
 import 'goldens.dart';
 import 'impeller_enabled.dart';
@@ -68,7 +68,7 @@ void main() async {
     return bytes.buffer.asUint32List();
   }
 
-  ImageFilter makeBlur(double sigmaX, double sigmaY, [TileMode tileMode = TileMode.clamp]) =>
+  ImageFilter makeBlur(double sigmaX, double sigmaY, [TileMode? tileMode]) =>
     ImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
   ImageFilter makeDilate(double radiusX, double radiusY) =>
@@ -106,6 +106,9 @@ void main() async {
     return <ImageFilter>[
       makeBlur(10.0, 10.0),
       makeBlur(10.0, 10.0, TileMode.decal),
+      makeBlur(10.0, 10.0, TileMode.clamp),
+      makeBlur(10.0, 10.0, TileMode.mirror),
+      makeBlur(10.0, 10.0, TileMode.repeated),
       makeBlur(10.0, 20.0),
       makeBlur(20.0, 20.0),
       makeDilate(10.0, 20.0),
@@ -133,9 +136,9 @@ void main() async {
           expect(a[i].hashCode, equals(b[j].hashCode));
           expect(a[i].toString(), equals(b[j].toString()));
         } else {
-          expect(a[i], notEquals(b[j]));
+          expect(a[i], isNot(b[j]));
           // No expectations on hashCode if objects are not equal
-          expect(a[i].toString(), notEquals(b[j].toString()));
+          expect(a[i].toString(), isNot(b[j].toString()));
         }
       }
     }
@@ -181,6 +184,24 @@ void main() async {
 
     final Uint32List bytes = await getBytesForPaint(paint);
     checkBytes(bytes, greenCenterBlurred, greenSideBlurred, greenCornerBlurred);
+  });
+
+  test('ImageFilter - blur toString', () async {
+
+    var filter = makeBlur(1.9, 2.1);
+    expect(filter.toString(), 'ImageFilter.blur(1.9, 2.1, unspecified)');
+
+    filter = makeBlur(1.9, 2.1, TileMode.decal);
+    expect(filter.toString(), 'ImageFilter.blur(1.9, 2.1, decal)');
+
+    filter = makeBlur(1.9, 2.1, TileMode.clamp);
+    expect(filter.toString(), 'ImageFilter.blur(1.9, 2.1, clamp)');
+
+    filter = makeBlur(1.9, 2.1, TileMode.mirror);
+    expect(filter.toString(), 'ImageFilter.blur(1.9, 2.1, mirror)');
+
+    filter = makeBlur(1.9, 2.1, TileMode.repeated);
+    expect(filter.toString(), 'ImageFilter.blur(1.9, 2.1, repeated)');
   });
 
   test('ImageFilter - dilate', () async {
@@ -279,7 +300,7 @@ void main() async {
   test('Composite ImageFilter toString', () {
     expect(
       ImageFilter.compose(outer: makeBlur(20.0, 20.0, TileMode.decal), inner: makeBlur(10.0, 10.0)).toString(),
-      contains('blur(10.0, 10.0, clamp) -> blur(20.0, 20.0, decal)'),
+      contains('blur(10.0, 10.0, unspecified) -> blur(20.0, 20.0, decal)'),
     );
 
     // Produces a flat list of filters
@@ -293,7 +314,7 @@ void main() async {
       ).toString(),
       contains(
         'matrix([10.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.0, -0.0, 0.0, 1.0], FilterQuality.low) -> '
-        'ColorFilter.mode(Color(0xffabcdef), BlendMode.color) -> '
+        'ColorFilter.mode(${const Color(0xFFABCDEF)}, BlendMode.color) -> '
         'blur(20.0, 20.0, repeated) -> '
         'blur(30.0, 30.0, mirror)'
       ),
@@ -301,7 +322,7 @@ void main() async {
   });
 
   // Tests that FilterQuality.<value> produces the expected golden file.
-  group('ImageFilter|FilterQuality', () async {
+  group('ImageFilter|FilterQuality', () {
     /// Draw a red-green checkerboard pattern with 1x1 squares (pixels).
     Future<Image> drawCheckerboard({
       int width = 100,
