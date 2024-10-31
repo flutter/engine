@@ -105,6 +105,13 @@ et build --config host_debug_unopt_arm64
 See [building a host engine](#building-a-host-engine) and
 [building a target engine](#building-a-target-engine) for more details.
 
+> [!CAUTION]
+> Each build configuration (sometimes called a _variant_) produces a different
+> set of output files in `$ENGINE/src/out`, e.g. ``$ENGINE/src/out/host_debug`;
+> these outputs can be multiple GBs, and add up quickly. Consider manually
+> cleaning up a `src/out` directory and/or +1'ing the following feature
+> request: <https://github.com/flutter/flutter/issues/157945>.
+
 ## Common Tasks
 
 Tasks we expect the majority of contributors and users of the engine to need.
@@ -235,6 +242,25 @@ repository.
 
 ### Running a Flutter app with a local engine build
 
+Normally to run a Flutter application with a prebuilt engine, you'd run:
+
+```sh
+cd to/project/dir
+flutter run
+```
+
+While iterating on the engine source, you may want to use the engine outputs
+(both host and target) built above. `et run` can help:
+
+```sh
+cd to/project/dir
+et run
+```
+
+> [!NOTE]
+> `et run` will rebuild (if necessary) host and target builds, which can take
+> a significant amount of time.
+
 ## Advanced Features
 
 Tasks that might be restricted to a subset of the engine team, or for upstream
@@ -323,6 +349,9 @@ If you need to build a configuration _not-specified_, consider the following:
    ```sh
    et build --config host_debug --gn-args="--no-prebuilt-dart-sdk"
    ```
+
+> [!TIP]
+> For more information on [build configurations, see the README](../../ci/builders/README.md).
 
 ## Contributing
 
