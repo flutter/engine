@@ -120,7 +120,7 @@ Tasks we expect the majority of contributors and users of the engine to need.
 
 The default and most common operation is to build a _host_ variant of the
 engine, or an engine that runs on the local (desktop) operating system currently
-being used. For example, when running on an ARM64 MacOS laptop, an ARM64 MacOS
+being used. For example, when running on an ARM64 macOS laptop, an ARM64 macOS
 desktop engine build, or when running an x64 Linux desktop, a x64 Linux desktop
 engine build.
 
