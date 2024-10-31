@@ -223,7 +223,7 @@ class Context {
   [[nodiscard]] virtual bool FlushCommandBuffers();
 
   virtual std::shared_ptr<const IdleWaiter> GetIdleWaiter() const {
-    return idle_waiter_;
+    return nullptr;
   }
 
  protected:
@@ -235,9 +235,6 @@ class Context {
   Context(const Context&) = delete;
 
   Context& operator=(const Context&) = delete;
-
-  std::shared_ptr<const IdleWaiter> idle_waiter_ =
-      std::make_shared<IdleWaiter>();
 };
 
 }  // namespace impeller

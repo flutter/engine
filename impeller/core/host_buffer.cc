@@ -27,7 +27,6 @@ std::shared_ptr<HostBuffer> HostBuffer::Create(
 HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator,
                        const std::shared_ptr<const IdleWaiter>& idle_waiter)
     : allocator_(allocator), idle_waiter_(idle_waiter) {
-  FML_DCHECK(idle_waiter_);
   DeviceBufferDescriptor desc;
   desc.size = kAllocatorBlockSize;
   desc.storage_mode = StorageMode::kHostVisible;
@@ -39,8 +38,9 @@ HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator,
 }
 
 HostBuffer::~HostBuffer() {
-  FML_LOG(ERROR) << "HostBuffer::~HostBuffer";
-  idle_waiter_->WaitIdle();
+  if (idle_waiter_) {
+    idle_waiter_->WaitIdle();
+  }
 };
 
 BufferView HostBuffer::Emplace(const void* buffer,

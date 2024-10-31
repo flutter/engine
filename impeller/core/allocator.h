@@ -20,7 +20,7 @@ class DeviceBuffer;
 class IdleWaiter {
  public:
   virtual ~IdleWaiter() = default;
-  virtual void WaitIdle() const {}
+  virtual void WaitIdle() const = 0;
 };
 
 //------------------------------------------------------------------------------

@@ -43,17 +43,20 @@ class DescriptorPoolVK;
 
 class IdleWaiterVK : public IdleWaiter {
  public:
-  explicit IdleWaiterVK(std::shared_ptr<DeviceHolderVK> device_holder)
+  explicit IdleWaiterVK(std::weak_ptr<DeviceHolderVK> device_holder)
       : device_holder_(std::move(device_holder)) {}
 
   void WaitIdle() const override {
-    if (device_holder_ && device_holder_->GetDevice()) {
-      [[maybe_unused]] auto result = device_holder_->GetDevice().waitIdle();
+    std::shared_ptr<DeviceHolderVK> strong_device_holder_ =
+        device_holder_.lock();
+    if (strong_device_holder_ && strong_device_holder_->GetDevice()) {
+      [[maybe_unused]] auto result =
+          strong_device_holder_->GetDevice().waitIdle();
     }
   }
 
  private:
-  std::shared_ptr<DeviceHolderVK> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
 };
 
 class ContextVK final : public Context,
@@ -227,7 +230,7 @@ class ContextVK final : public Context,
   bool FlushCommandBuffers() override;
 
   std::shared_ptr<const IdleWaiter> GetIdleWaiter() const override {
-    return idle_waiter_vk_ ? idle_waiter_vk_ : Context::GetIdleWaiter();
+    return idle_waiter_vk_;
   }
 
  private:
