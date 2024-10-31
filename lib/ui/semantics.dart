@@ -272,6 +272,7 @@ class SemanticsAction {
     _kScrollRightIndex: scrollRight,
     _kScrollUpIndex: scrollUp,
     _kScrollDownIndex: scrollDown,
+    _kScrollToOffset: scrollToOffset,
     _kIncreaseIndex: increase,
     _kDecreaseIndex: decrease,
     _kShowOnScreenIndex: showOnScreen,

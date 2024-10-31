@@ -124,14 +124,26 @@ FLUTTER_ASSERT_ARC
   }
 
   // The following code assumes the memory layout of CGPoint is exactly the
-  // same as an array defined as: `double coords[] = { x, y };`
+  // same as an array defined as: `double coords[] = { x, y };`. When converted
+  // to dart:typed_data it's a Float64List.
   //
   // The size of a CGFloat is architecture-dependent and it's typically the word
   // size. The last iOS with 32-bit support was iOS 10.
-  static_assert(sizeof(CGPoint) == sizeof(uint8_t) * 8);
+  static_assert(sizeof(CGPoint) == sizeof(CGFloat) * 2);
+  static_assert(sizeof(CGFloat) == sizeof(double));
+  constexpr size_t bytesPerElement = sizeof(CGFloat);
+  CGFloat* data = reinterpret_cast<CGFloat*>(malloc(3 * bytesPerElement));
+
+  static_assert(sizeof(uint64_t) == bytesPerElement);
+
+  // Assumes the host is little endian.
+  ((uint64_t*)data)[0] = 11ULL         // 11 means the payload is a Float64List.
+                         | 2ULL << 8;  // 2 elements in the Float64List.
+  memcpy(data + 1, &contentOffset, sizeof(CGPoint));
+
   self.bridge->DispatchSemanticsAction(
       self.uid, flutter::SemanticsAction::kScrollToOffset,
-      fml::MallocMapping::Copy((uint8_t*)&contentOffset, sizeof(CGPoint) / sizeof(uint8_t)););
+      fml::MallocMapping(reinterpret_cast<uint8_t*>(data), 3 * bytesPerElement));
 }
 
 - (CGSize)contentSize {
