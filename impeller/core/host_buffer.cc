@@ -39,6 +39,8 @@ HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator,
 
 HostBuffer::~HostBuffer() {
   if (idle_waiter_) {
+    // Since we hold on to DeviceBuffers we should make sure they aren't being
+    // used while we are deleting the HostBuffer.
     idle_waiter_->WaitIdle();
   }
 };

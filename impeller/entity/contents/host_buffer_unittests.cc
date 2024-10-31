@@ -4,17 +4,34 @@
 
 #include <limits>
 #include <utility>
+
 #include "flutter/testing/testing.h"
+#include "gmock/gmock.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/core/idle_waiter.h"
 #include "impeller/entity/entity_playground.h"
 
 namespace impeller {
 namespace testing {
 
+class MockIdleWaiter : public IdleWaiter {
+ public:
+  MOCK_METHOD(void, WaitIdle, (), (const, override));
+};
+
 using HostBufferTest = EntityPlayground;
 INSTANTIATE_PLAYGROUND_SUITE(HostBufferTest);
+
+TEST_P(HostBufferTest, IdleWaiter) {
+  auto mock_idle_waiter = std::make_shared<MockIdleWaiter>();
+  {
+    auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                     mock_idle_waiter);
+    EXPECT_CALL(*mock_idle_waiter, WaitIdle());
+  }
+}
 
 TEST_P(HostBufferTest, CanEmplace) {
   struct Length2 {

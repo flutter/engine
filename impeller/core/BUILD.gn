@@ -18,6 +18,7 @@ impeller_component("core") {
     "formats.h",
     "host_buffer.cc",
     "host_buffer.h",
+    "idle_waiter.h",
     "platform.cc",
     "platform.h",
     "range.cc",
