@@ -167,6 +167,12 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTextureImpeller(
     FML_LOG(ERROR) << "Could not create external texture->";
     return nullptr;
   }
+  if (texture->destruction_callback &&
+      !context.GetReactor()->RegisterCleanupCallback(
+          handle, texture->destruction_callback, texture->user_data)) {
+    FML_LOG(ERROR) << "Could not register destruction callback";
+    return nullptr;
+  }
 
   return impeller::DlImageImpeller::Make(image);
 }

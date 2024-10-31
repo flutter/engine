@@ -85,6 +85,21 @@ bool ReactorGLES::AddOperation(Operation operation) {
   return true;
 }
 
+bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
+                                          VoidCallback callback,
+                                          void* user_data) {
+  if (handle.IsDead()) {
+    return false;
+  }
+  WriterLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    found->second.cleanup_callback = callback;
+    found->second.user_data = user_data;
+    return true;
+  }
+  return false;
+}
+
 static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
                                             HandleType type) {
   GLuint handle = GL_NONE;

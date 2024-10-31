@@ -15,6 +15,8 @@
 
 namespace impeller {
 
+typedef void (*VoidCallback)(void* /* user data */);
+
 //------------------------------------------------------------------------------
 /// @brief      The reactor attempts to make thread-safe usage of OpenGL ES
 ///             easier to reason about.
@@ -217,6 +219,25 @@ class ReactorGLES {
   [[nodiscard]] bool AddOperation(Operation operation);
 
   //----------------------------------------------------------------------------
+  /// @brief      Register a cleanup callback that will be invokved with the
+  ///             provided user data when the handle is destroyed.
+  ///
+  ///             This operation is not guaranteed to run immediately. It will
+  ///             complete in a finite amount of time on any thread as long as
+  ///             there is a reactor worker and the reactor itself is not being
+  ///             torn down.
+  ///
+  /// @param[in]  handle  The handle to attach the cleanup to.
+  /// @param[in]  callback The cleanup callback to execute.
+  /// @param[in]  user_data The data to pass to the cleanup callback.
+  ///
+  /// @return     If the operation was successfully queued for completion.
+  ///
+  bool RegisterCleanupCallback(const HandleGLES& handle,
+                               VoidCallback callback,
+                               void* user_data);
+
+  //----------------------------------------------------------------------------
   /// @brief      Perform a reaction on the current thread if able.
   ///
   ///             It is safe to call this simultaneously from multiple threads
@@ -231,10 +252,18 @@ class ReactorGLES {
     std::optional<GLuint> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
+    VoidCallback cleanup_callback = nullptr;
+    void* user_data = nullptr;
 
     LiveHandle() = default;
 
     explicit LiveHandle(std::optional<GLuint> p_name) : name(p_name) {}
+
+    ~LiveHandle() {
+      if (cleanup_callback) {
+        cleanup_callback(user_data);
+      }
+    }
 
     constexpr bool IsLive() const { return name.has_value(); }
   };
