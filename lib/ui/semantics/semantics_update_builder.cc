@@ -69,8 +69,7 @@ void SemanticsUpdateBuilder::updateNode(
     const tonic::Int32List& localContextActions,
     int headingLevel,
     std::string linkUrl,
-    int role
-  ) {
+    int role) {
   FML_CHECK(scrollChildren == 0 ||
             (scrollChildren > 0 && childrenInHitTestOrder.data()))
       << "Semantics update contained scrollChildren but did not have "
