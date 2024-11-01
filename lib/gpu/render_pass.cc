@@ -206,6 +206,7 @@ bool RenderPass::Draw() {
   render_pass_->SetElementCount(element_count);
 
   render_pass_->SetStencilReference(stencil_reference);
+  render_pass_->SetScissor(scissor);
 
   bool result = render_pass_->Draw().ok();
 
@@ -534,6 +535,11 @@ void InternalFlutterGpu_RenderPass_SetStencilReference(
     flutter::gpu::RenderPass* wrapper,
     int stencil_reference) {
   wrapper->stencil_reference = static_cast<uint32_t>(stencil_reference);
+}
+
+void InternalFlutterGpu_RenderPass_SetScissor(
+    flutter::gpu::RenderPass* wrapper, int x, int y, int width, int height) {
+  wrapper->scissor = impeller::TRect<int64_t>::MakeXYWH(x, y, width, height);
 }
 
 void InternalFlutterGpu_RenderPass_SetStencilConfig(
