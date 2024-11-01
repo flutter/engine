@@ -45,6 +45,7 @@ ENCODING = 'UTF-8'
 
 LOG_FILE = os.path.join(OUT_DIR, 'run_tests.log')
 logger = logging.getLogger(__name__)
+# Write console logs to stdout (by default StreamHandler uses stderr)
 console_logger_handler = logging.StreamHandler(sys_stdout)
 file_logger_handler = logging.FileHandler(LOG_FILE)
 
