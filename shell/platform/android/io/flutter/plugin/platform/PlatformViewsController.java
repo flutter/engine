@@ -11,23 +11,17 @@ import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.graphics.PixelFormat;
-import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.SparseArray;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.MotionEvent.PointerProperties;
+import android.view.Surface;
 import android.view.SurfaceControl;
-import android.view.SurfaceControlViewHost;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
-import android.window.InputTransferToken;
-import android.window.SurfaceSyncGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -58,81 +52,6 @@ import java.util.List;
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
 
-  /**
-   * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack}
-   * to its children.
-   */
-  public class FlutterPlatformHostView extends FrameLayout {
-    private final AndroidTouchProcessor androidTouchProcessor;
-    private float screenDensity;
-    private WindowManager windowManager;
-    private InputTransferToken hostToken;
-    private InputTransferToken destToken;
-
-    public FlutterPlatformHostView(
-        @NonNull Context context,
-        AndroidTouchProcessor androidTouchProcessor,
-        float screenDensity,
-        WindowManager windowManager,
-        InputTransferToken hostToken,
-        InputTransferToken destToken) {
-      super(context, null);
-      this.androidTouchProcessor = androidTouchProcessor;
-      this.screenDensity = screenDensity;
-      this.windowManager = windowManager;
-      this.hostToken = hostToken;
-      this.destToken = destToken;
-    }
-
-    /**
-     * Pass the necessary parameters to the view so it can apply correct mutations to its children.
-     */
-    public void readyToDisplay(int width, int height) {
-      WindowManager.LayoutParams layoutParams =
-          new WindowManager.LayoutParams(width, height, 0, 0, 0, 0, PixelFormat.RGBA_8888);
-
-      setLayoutParams(layoutParams);
-      setWillNotDraw(false);
-    }
-
-    /** Intercept the events here and do not propagate them to the child platform views. */
-    @Override
-    public boolean onInterceptTouchEvent(MotionEvent event) {
-      return false;
-    }
-
-    @Override
-    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
-      final View embeddedView = getChildAt(0);
-      if (embeddedView != null
-          && embeddedView.getImportantForAccessibility()
-              == View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS) {
-        return false;
-      }
-      // Forward the request only if the embedded view is in the Flutter accessibility
-      // tree. The embedded view may be ignored when the framework doesn't populate a
-      // SemanticNode for the current platform view. See AccessibilityBridge for more.
-      return super.requestSendAccessibilityEvent(child, event);
-    }
-
-    // @Override
-    // @SuppressLint("ClickableViewAccessibility")
-    // public boolean onTouchEvent(MotionEvent event) {
-    // Log.e("FlutterPlatformHostView", "onTouchEvent");
-    // if (!windowManager.transferTouchGesture(destToken, hostToken)) {
-    //   Log.e("FlutterPlatformHostView", "Failed to transfer gesture");
-    //   return false;
-    // }
-    // return true;
-    // if (androidTouchProcessor == null) {
-    //   return super.onTouchEvent(event);
-    // }
-
-    // final Matrix screenMatrix = new Matrix();
-    // return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-    // }
-  }
-
   // These view types allow out-of-band drawing commands that don't notify the
   // Android view
   // hierarchy.
@@ -154,10 +73,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final PlatformViewRegistryImpl registry;
 
   private AndroidTouchProcessor androidTouchProcessor;
-  private SurfaceSyncGroup currentSyncGroup = null;
-  private FlutterPlatformHostView platformViewHost = null;
-  private SurfaceControlViewHost scvh = null;
-  private SurfaceControlViewHost.SurfacePackage surfacePackage = null;
 
   // The context of the Activity or Fragment hosting the render target for the
   // Flutter engine.
@@ -239,9 +154,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Next available unique ID for use in overlayLayerViews.
   private int nextOverlayLayerId = 0;
   private FlutterRenderer flutterRenderer;
-
-  // Platform view IDs that were displayed since the start of the current frame.
-  private final ArrayList<PlatformViewData> currentFrameUsedPlatformViews;
 
   // Used to acquire the original motion events using the motionEventIds.
   private final MotionEventTracker motionEventTracker;
@@ -392,7 +304,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final FlutterMutatorView parentView = platformViewParent.get(viewId);
           if (parentView != null) {
             parentView.removeAllViews();
-            // parentView.unsetOnDescendantFocusChangeListener();
+            parentView.unsetOnDescendantFocusChangeListener();
             platformViewParent.remove(viewId);
           }
         }
@@ -866,7 +778,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     accessibilityEventsDelegate = new AccessibilityEventsDelegate();
     contextToEmbeddedView = new HashMap<>();
     overlayLayerViews = new SparseArray<>();
-    currentFrameUsedPlatformViews = new ArrayList<>();
     pendingTransactions = new ArrayList<>();
     activeTransactions = new ArrayList<>();
     viewWrappers = new SparseArray<>();
@@ -1238,33 +1149,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @VisibleForTesting
   boolean initializePlatformViewIfNeeded(int viewId) {
-    if (platformViewHost == null) {
-      WindowManager windowManager =
-          (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-
-      InputTransferToken inputTransferToken = flutterView.getInputTransferToken();
-
-      DisplayManager displayManager =
-          (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-      Display[] displays = displayManager.getDisplays();
-
-      scvh = new SurfaceControlViewHost(context, displays[0], inputTransferToken);
-
-      platformViewHost =
-          new FlutterPlatformHostView(
-              context,
-              androidTouchProcessor,
-              context.getResources().getDisplayMetrics().density,
-              windowManager,
-              inputTransferToken,
-              scvh.getSurfacePackage().getInputTransferToken());
-
-      scvh.setView(platformViewHost, flutterView.getWidth(), flutterView.getHeight());
-      platformViewHost.readyToDisplay(flutterView.getWidth(), flutterView.getHeight());
-      surfacePackage = scvh.getSurfacePackage();
-      flutterView.addPlatformView(surfacePackage);
-    }
-
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
       return false;
@@ -1286,29 +1170,28 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
 
-    // parentView.setOnDescendantFocusChangeListener(
-    //     (view, hasFocus) -> {
-    //       if (hasFocus) {
-    //         platformViewsChannel.invokeViewFocused(viewId);
-    //       } else if (textInputPlugin != null) {
-    //         textInputPlugin.clearPlatformViewClient(viewId);
-    //       }
-    //     });
+    parentView.setOnDescendantFocusChangeListener(
+        (view, hasFocus) -> {
+          if (hasFocus) {
+            platformViewsChannel.invokeViewFocused(viewId);
+          } else if (textInputPlugin != null) {
+            textInputPlugin.clearPlatformViewClient(viewId);
+          }
+        });
 
     platformViewParent.put(viewId, parentView);
 
-    // Accessibility in the embedded view is initially disabled because if a Flutter
-    // app disabled  accessibility in the first frame, the embedding won't receive an update to
-    // disable  accessibility since the embedding never received an update to enable it.
-    // The AccessibilityBridge keeps track of the accessibility nodes, and handles
-    // the deltas when  the framework sends a new a11y tree to the embedding.
-    // To prevent races, the framework populate the SemanticsNode after the platform
-    // view has been created.
+    // Accessibility in the embedded view is initially disabled because if a Flutter app disabled
+    // accessibility in the first frame, the embedding won't receive an update to disable
+    // accessibility since the embedding never received an update to enable it.
+    // The AccessibilityBridge keeps track of the accessibility nodes, and handles the deltas when
+    // the framework sends a new a11y tree to the embedding.
+    // To prevent races, the framework populate the SemanticsNode after the platform view has been
+    // created.
     embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+
     parentView.addView(embeddedView);
-
-    platformViewHost.addView(parentView);
-
+    flutterView.addView(parentView);
     return true;
   }
 
@@ -1316,25 +1199,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     this.flutterRenderer = flutterRenderer;
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /* trackMotionEvents= */ true);
-  }
-
-  class PlatformViewData {
-    int viewId;
-    int x;
-    int y;
-    int width;
-    int height;
-    FlutterMutatorsStack mutatorsStack;
-
-    PlatformViewData(
-        int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
-      this.viewId = viewId;
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
-      this.mutatorsStack = mutatorsStack;
-    }
   }
 
   /**
@@ -1363,8 +1227,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return;
     }
 
-    currentFrameUsedPlatformViews.add(
-        new PlatformViewData(viewId, x, y, width, height, mutatorsStack));
+    final FlutterMutatorView parentView = platformViewParent.get(viewId);
+    parentView.readyToDisplay(mutatorsStack, x, y, width, height);
+    parentView.setVisibility(View.VISIBLE);
+    parentView.bringToFront();
+
+    final FrameLayout.LayoutParams layoutParams =
+        new FrameLayout.LayoutParams(viewWidth, viewHeight);
+    final View view = platformViews.get(viewId).getView();
+    if (view != null) {
+      view.setLayoutParams(layoutParams);
+      view.bringToFront();
+    }
   }
 
   /**
@@ -1378,31 +1252,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void finishFrame(ArrayList<SurfaceControl.Transaction> transactions) {
-    SurfaceSyncGroup currentSyncGroup = new SurfaceSyncGroup("Flutter Sync Group");
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     for (int i = 0; i < transactions.size(); i++) {
       tx = tx.merge(transactions.get(i));
     }
-    currentSyncGroup.add(
-        surfacePackage,
-        new Runnable() {
-          @Override
-          public void run() {
-            for (PlatformViewData data : currentFrameUsedPlatformViews) {
-              final FlutterMutatorView parentView = platformViewParent.get(data.viewId);
-              if (parentView == null) {
-                continue;
-              }
-              parentView.readyToDisplay(
-                  data.mutatorsStack, data.x, data.y, data.width, data.height);
-              parentView.setVisibility(View.VISIBLE);
-              parentView.invalidate();
-            }
-          }
-        });
-
-    currentSyncGroup.addTransaction(tx);
-    currentSyncGroup.markSyncReady();
+    flutterView.invalidate();
+    flutterView.getRootSurfaceControl().applyTransactionOnDraw(tx);
   }
 
   // NOT called from UI thread.
@@ -1432,6 +1287,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public ArrayList<SurfaceControl.Transaction> pendingTransactions;
   public ArrayList<SurfaceControl.Transaction> activeTransactions;
+  private Surface overlayerSurface = null;
 
   /**
    * Creates an overlay surface while the Flutter view is rendered by {@code PlatformOverlayView}.
@@ -1442,8 +1298,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @NonNull
   public synchronized FlutterOverlaySurface createOverlaySurface() {
-    final int id = nextOverlayLayerId++;
-    return new FlutterOverlaySurface(id, flutterRenderer.getActiveSurface());
+    if (overlayerSurface == null) {
+      Log.e(TAG, "Create Overlay Surface");
+      final SurfaceControl.Builder scb = new SurfaceControl.Builder();
+      scb.setBufferSize(flutterView.getWidth(), flutterView.getHeight());
+      scb.setFormat(PixelFormat.RGBA_8888);
+      scb.setName("Flutter Overlay Surface");
+      scb.setHidden(false);
+      scb.setOpaque(false);
+      final SurfaceControl sc = scb.build();
+      final SurfaceControl.Transaction tx =
+          flutterView.getRootSurfaceControl().buildReparentTransaction(sc);
+      tx.setLayer(sc, 1000);
+      tx.apply();
+      overlayerSurface = new Surface(sc);
+    }
+
+    return new FlutterOverlaySurface(nextOverlayLayerId, overlayerSurface);
   }
 
   /**
@@ -1452,15 +1323,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This method is used only internally by {@code FlutterJNI}.
    */
   public void destroyOverlaySurfaces() {
-    if (surfacePackage != null) {
-      if (scvh != null) {
-        scvh.release();
-      }
-      scvh = null;
-      platformViewHost = null;
-      surfacePackage.release();
-      surfacePackage = null;
-    }
+    // TODO
   }
 
   private void removeOverlaySurfaces() {
