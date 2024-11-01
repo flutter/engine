@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_renderer_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 

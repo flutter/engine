@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "fl_renderer.h"
-
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
 
@@ -11,6 +9,8 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_framebuffer.h"
+#include "flutter/shell/platform/linux/fl_renderer_private.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_renderer.h"
 
 // Vertex shader to draw Flutter window contents.
 static const char* vertex_shader_src =
@@ -359,27 +359,27 @@ void* fl_renderer_get_proc_address(FlRenderer* self, const char* name) {
   return reinterpret_cast<void*>(eglGetProcAddress(name));
 }
 
-void fl_renderer_make_current(FlRenderer* self) {
+G_MODULE_EXPORT void fl_renderer_make_current(FlRenderer* self) {
   g_return_if_fail(FL_IS_RENDERER(self));
   FL_RENDERER_GET_CLASS(self)->make_current(self);
 }
 
-void fl_renderer_make_resource_current(FlRenderer* self) {
+G_MODULE_EXPORT void fl_renderer_make_resource_current(FlRenderer* self) {
   g_return_if_fail(FL_IS_RENDERER(self));
   FL_RENDERER_GET_CLASS(self)->make_resource_current(self);
 }
 
-void fl_renderer_clear_current(FlRenderer* self) {
+G_MODULE_EXPORT void fl_renderer_clear_current(FlRenderer* self) {
   g_return_if_fail(FL_IS_RENDERER(self));
   FL_RENDERER_GET_CLASS(self)->clear_current(self);
 }
 
-gdouble fl_renderer_get_refresh_rate(FlRenderer* self) {
+G_MODULE_EXPORT gdouble fl_renderer_get_refresh_rate(FlRenderer* self) {
   g_return_val_if_fail(FL_IS_RENDERER(self), -1.0);
   return FL_RENDERER_GET_CLASS(self)->get_refresh_rate(self);
 }
 
-guint32 fl_renderer_get_fbo(FlRenderer* self) {
+G_MODULE_EXPORT guint32 fl_renderer_get_fbo(FlRenderer* self) {
   g_return_val_if_fail(FL_IS_RENDERER(self), 0);
 
   // There is only one frame buffer object - always return that.

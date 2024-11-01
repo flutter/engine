@@ -6,7 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_TESTING_MOCK_RENDERER_H_
 
 #include "flutter/shell/platform/linux/fl_renderable.h"
-#include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_renderer.h"
 
 G_BEGIN_DECLS
 

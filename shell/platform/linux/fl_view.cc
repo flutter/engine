@@ -19,6 +19,7 @@
 #include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
+#include "flutter/shell/platform/linux/fl_renderer_private.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
