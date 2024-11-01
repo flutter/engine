@@ -490,7 +490,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int readMask,
       int writeMask,
       int target_face);
-  
+
   @Native<Void Function(Pointer<Void>, Int, Int, Int, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetScissor')
   external void _setScissor(

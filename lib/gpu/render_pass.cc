@@ -537,8 +537,11 @@ void InternalFlutterGpu_RenderPass_SetStencilReference(
   wrapper->stencil_reference = static_cast<uint32_t>(stencil_reference);
 }
 
-void InternalFlutterGpu_RenderPass_SetScissor(
-    flutter::gpu::RenderPass* wrapper, int x, int y, int width, int height) {
+void InternalFlutterGpu_RenderPass_SetScissor(flutter::gpu::RenderPass* wrapper,
+                                              int x,
+                                              int y,
+                                              int width,
+                                              int height) {
   wrapper->scissor = impeller::TRect<int64_t>::MakeXYWH(x, y, width, height);
 }
 
