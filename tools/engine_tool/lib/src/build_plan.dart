@@ -179,7 +179,7 @@ final class BuildPlan {
           'Selects a build configuration for the current platform.\n'
           '\n'
           'If omitted, et attempts '
-          'to default to a suitable target platform, which is typically a '
+          'to default to a suitable target platform. This is typically a '
           '"host_debug" build when building on a supported desktop OS, or a '
           'suitable build when targeting (via "et run") a flutter app.\n'
           '\n'
