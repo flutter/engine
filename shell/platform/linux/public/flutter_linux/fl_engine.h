@@ -16,6 +16,10 @@
 #include "fl_dart_project.h"
 #include "fl_texture_registrar.h"
 
+#ifdef FLUTTER_HAS_EMBEDDER_API
+#include <flutter_embedder.h>
+#endif
+
 G_BEGIN_DECLS
 
 G_MODULE_EXPORT
@@ -66,6 +70,18 @@ FlBinaryMessenger* fl_engine_get_binary_messenger(FlEngine* engine);
  * Returns: an #FlTextureRegistrar.
  */
 FlTextureRegistrar* fl_engine_get_texture_registrar(FlEngine* engine);
+
+#ifdef FLUTTER_HAS_EMBEDDER_API
+/**
+ * fl_engine_get_embedder_api:
+ * @engine: an #FlEngine
+ *
+ * Gets the embedder API
+ *
+ * Returns: an #FlutterEngineProcTable
+ */
+FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* self);
+#endif
 
 G_END_DECLS
 

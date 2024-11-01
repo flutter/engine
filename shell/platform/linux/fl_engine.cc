@@ -635,7 +635,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   return TRUE;
 }
 
-FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* self) {
+G_MODULE_EXPORT FlutterEngineProcTable* fl_engine_get_embedder_api(
+    FlEngine* self) {
   return &(self->embedder_api);
 }
 
