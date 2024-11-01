@@ -387,7 +387,7 @@ _ConfigsByName _runnableBuildConfigs(
   });
 }
 
-/// Creates a final listing of builds from a mapping of builds.
+/// Extracts [Build]s from [runnableConfigs] that can execute on [platform].
 ///
 /// If [hideCiSpecificBuilds], builds that are unlikely to be picked for local
 /// development (i.e. start with the prefix `ci/` by convention) are not
