@@ -197,8 +197,26 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
-  @Deprecated('Use component accessors like .r or .g.')
-  int get value {
+  @Deprecated('Use component accessors like .r or .g, or toARGB32 for an explicit conversion')
+  int get value => toARGB32();
+
+  /// Returns a 32-bit value representing this color.
+  ///
+  /// Unlike accessing the floating point equivalent channels individually
+  /// ([a], [r], [g], [b]), this method is intentionally _lossy_, and scales
+  /// each channel using `(channel * 255.0).round() & 0xff`.
+  ///
+  /// While useful for storing a 32-bit integer value, prefer accessing the
+  /// individual channels (and storing the double equivalent) where higher
+  /// precision is required.
+  ///
+  /// The bits are assigned as follows:
+  ///
+  /// * Bits 24-31 represents the [a] channel as an 8-bit unsigned integer.
+  /// * Bits 16-23 represents the [r] channel as an 8-bit unsigned integer.
+  /// * Bits 8-15 represents the [g] channel as an 8-bit unsigned integer.
+  /// * Bits 0-7 represents the [b] channel as an 8-bit unsigned integer.
+  int toARGB32() {
     return _floatToInt8(a) << 24 |
         _floatToInt8(r) << 16 |
         _floatToInt8(g) << 8 |
@@ -210,7 +228,7 @@ class Color {
   /// A value of 0 means this color is fully transparent. A value of 255 means
   /// this color is fully opaque.
   @Deprecated('Use .a.')
-  int get alpha => (0xff000000 & value) >> 24;
+  int get alpha => _floatToInt8(a);
 
   /// The alpha channel of this color as a double.
   ///
@@ -221,15 +239,15 @@ class Color {
 
   /// The red channel of this color in an 8 bit value.
   @Deprecated('Use .r.')
-  int get red => (0x00ff0000 & value) >> 16;
+  int get red => _floatToInt8(r);
 
   /// The green channel of this color in an 8 bit value.
   @Deprecated('Use .g.')
-  int get green => (0x0000ff00 & value) >> 8;
+  int get green => _floatToInt8(g);
 
   /// The blue channel of this color in an 8 bit value.
   @Deprecated('Use .b.')
-  int get blue => (0x000000ff & value) >> 0;
+  int get blue => _floatToInt8(b);
 
   /// Returns a new color that matches this color with the passed in components
   /// changed.

@@ -339,6 +339,11 @@ void main() {
     // Call base class member, make sure it uses overridden value.
     expect(color.red, 0xE0);
   });
+
+  test('value and toARGB32 are equivalent methods', () {
+    const Color halfRed = Color.from(alpha: 1.0, red: 0.5, green: 0, blue: 0);
+    expect(halfRed.value, halfRed.toARGB32());
+  });
 }
 
 class DynamicColorClass extends Color {
