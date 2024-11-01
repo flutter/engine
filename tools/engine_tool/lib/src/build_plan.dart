@@ -183,7 +183,11 @@ final class BuildPlan {
           '"host_debug" build when building on a supported desktop OS, or a '
           'suitable build when targeting (via "et run") a flutter app.\n'
           '\n'
-          'Options include (use --verbose for more details):',
+          '${environment.verbose ? ''
+              'Since verbose mode was selected, both local development '
+              'configurations and configurations that are typically only '
+              'used on CI will be visible, including possible duplicates.' : ''
+              'Configurations include (use --verbose for more details):'}',
       allowed: [
         for (final config in builds) mangleConfigName(environment, config.name),
       ]..sort(),
