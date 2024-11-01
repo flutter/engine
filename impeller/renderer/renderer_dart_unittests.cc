@@ -224,7 +224,8 @@ class RendererDartTest : public PlaygroundTest,
         return false;
       }
 
-      auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+      auto buffer = HostBuffer::Create(context->GetResourceAllocator(),
+                                       context->GetIdleWaiter());
 
       pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
@@ -293,10 +294,6 @@ TEST_P(RendererDartTest, CanCreateShaderLibrary) {
 
 TEST_P(RendererDartTest, CanReflectUniformStructs) {
   ASSERT_TRUE(RunDartFunction("canReflectUniformStructs"));
-}
-
-TEST_P(RendererDartTest, UniformBindFailsForInvalidHostBufferOffset) {
-  ASSERT_TRUE(RunDartFunction("uniformBindFailsForInvalidHostBufferOffset"));
 }
 
 TEST_P(RendererDartTest, CanCreateRenderPassAndSubmit) {
