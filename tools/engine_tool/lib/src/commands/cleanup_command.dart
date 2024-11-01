@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../logger.dart';
@@ -69,7 +68,7 @@ final class CleanupCommand extends CommandBase {
     // Look at the directories in "out" for ones older than "since".
     environment.logger.status('Checking ${environment.engine.outDir.path}...');
     final toDelete = [
-      for (final entity in environment.engine.outDir.listSync())
+      await for (final entity in environment.engine.outDir.list())
         if (entity is Directory &&
             _shouldDelete(entity, ifAccessedLaterThan: since))
           entity
@@ -156,9 +155,9 @@ String _toReadableBytes(double bytes) {
 
 enum _FileSize {
   bytes('bytes'),
-  kilobytes('kb'),
-  megabytes('mb'),
-  gigabytes('gb');
+  kilobytes('KB'),
+  megabytes('MB'),
+  gigabytes('GB');
 
   const _FileSize(this.suffix);
   final String suffix;
