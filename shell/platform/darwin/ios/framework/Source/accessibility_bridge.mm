@@ -331,7 +331,7 @@ SemanticsObject* AccessibilityBridge::FindNextFocusableIfNecessary() {
   }
 
   // Tries to refocus the previous focused semantics object to avoid random jumps.
-  return FindFirstFocusable([objects_ objectForKey:@(last_focused_semantics_object_id_)]);
+  return FindFirstFocusable(objects_[@(last_focused_semantics_object_id_)]);
 }
 
 SemanticsObject* AccessibilityBridge::FindFirstFocusable(SemanticsObject* parent) {

@@ -386,7 +386,7 @@ FlutterTouchInterceptingView* PlatformViewsController::GetFlutterTouchIntercepti
 
 long PlatformViewsController::FindFirstResponderPlatformViewId() {
   for (auto const& [id, platform_view_data] : platform_views_) {
-    UIView* root_view = (UIView*)platform_view_data.root_view;
+    UIView* root_view = platform_view_data.root_view;
     if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
       return id;
     }

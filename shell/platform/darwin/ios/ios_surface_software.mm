@@ -119,7 +119,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
     return false;
   }
 
-  layer_.contents = (__bridge id)(static_cast<CGImageRef>(pixmap_image));
+  layer_.contents = (__bridge id) static_cast<CGImageRef>(pixmap_image);
 
   return true;
 }

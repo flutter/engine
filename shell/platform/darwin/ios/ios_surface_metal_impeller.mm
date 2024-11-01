@@ -52,7 +52,6 @@ std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectConte
 
 // |GPUSurfaceMetalDelegate|
 GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& frame_info) const {
-  CAMetalLayer* layer = layer_;
   const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());
   if (!CGSizeEqualToSize(drawable_size, layer_.drawableSize)) {
     layer_.drawableSize = drawable_size;
@@ -60,9 +59,9 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
 
   // Flutter needs to read from the color attachment in cases where there are effects such as
   // backdrop filters. Flutter plugins that create platform views may also read from the layer.
-  layer.framebufferOnly = NO;
+  layer_.framebufferOnly = NO;
 
-  return (__bridge GPUCAMetalLayerHandle)layer;
+  return (__bridge GPUCAMetalLayerHandle)layer_;
 }
 
 // |GPUSurfaceMetalDelegate|
