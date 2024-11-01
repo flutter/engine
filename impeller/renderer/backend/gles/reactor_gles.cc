@@ -93,7 +93,7 @@ bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
   }
   WriterLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.callback = callback;
+    found->second.callback = fml::ScopedCleanupClosure(callback);
     return true;
   }
   return false;

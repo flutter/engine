@@ -249,17 +249,11 @@ class ReactorGLES {
     std::optional<GLuint> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
-    fml::closure callback = {};
+    fml::ScopedCleanupClosure callback = {};
 
     LiveHandle() = default;
 
     explicit LiveHandle(std::optional<GLuint> p_name) : name(p_name) {}
-
-    ~LiveHandle() {
-      if (callback) {
-        callback();
-      }
-    }
 
     constexpr bool IsLive() const { return name.has_value(); }
   };
