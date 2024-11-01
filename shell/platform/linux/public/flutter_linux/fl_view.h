@@ -18,17 +18,17 @@
 G_BEGIN_DECLS
 
 G_MODULE_EXPORT
-G_DECLARE_FINAL_TYPE(FlView, fl_view, FL, VIEW, GtkBox)
+G_DECLARE_INTERFACE(FlView, fl_view, FL, VIEW, GObject)
 
 /**
  * FlView:
  *
- * #FlView is a GTK widget that is capable of displaying a Flutter application.
+ * #FlView is an interface representing a Flutter view.
  *
  * The following example shows how to set up a view in a GTK application:
  * |[<!-- language="C" -->
  *   FlDartProject *project = fl_dart_project_new ();
- *   FlView *view = fl_view_new (project);
+ *   FlView *view = fl_view_widget_new (project);
  *   gtk_widget_show (GTK_WIDGET (view));
  *   gtk_container_add (GTK_CONTAINER (parent), view);
  *
@@ -38,26 +38,38 @@ G_DECLARE_FINAL_TYPE(FlView, fl_view, FL, VIEW, GtkBox)
  * ]|
  */
 
-/**
- * fl_view_new:
- * @project: The project to show.
- *
- * Creates a widget to show a Flutter application.
- *
- * Returns: a new #FlView.
- */
-FlView* fl_view_new(FlDartProject* project);
+struct _FlViewInterface {
+  GTypeInterface g_iface;
 
-/**
- * fl_view_new_for_engine:
- * @engine: an #FlEngine.
- *
- * Creates a widget to show a window in a Flutter application.
- * The engine must be not be headless.
- *
- * Returns: a new #FlView.
- */
-FlView* fl_view_new_for_engine(FlEngine* engine);
+  /**
+   * FlView::get_engine:
+   * @view: an #FlView
+   *
+   * Gets the engine being rendered in the view.
+   *
+   * Returns: an #FlEngine
+   */
+  FlEngine* (*get_engine)(FlView* view);
+
+  /**
+   * FlView::get_id:
+   * @view: an #FlView.
+   *
+   * Gets the Flutter view ID used by this view.
+   *
+   * Returns: a view ID or -1 if now ID assigned.
+   */
+  int64_t (*get_id)(FlView* view);
+
+  /**
+   * FlView::set_background_color:
+   * @view: an #FlView.
+   * @color: a background color.
+   *
+   * Set the background color for Flutter (defaults to black).
+   */
+  void (*set_background_color)(FlView* view, const GdkRGBA* color);
+};
 
 /**
  * fl_view_get_engine:
