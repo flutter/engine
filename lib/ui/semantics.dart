@@ -310,7 +310,7 @@ class SemanticsAction {
 }
 
 /// A enum to describe the role for a semantics node.
-/// 
+///
 /// The roles are translated into native accessibility roles in each platform.
 enum SemanticsRole {
   /// Does not represent any role.
