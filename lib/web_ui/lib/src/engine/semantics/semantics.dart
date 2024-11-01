@@ -1126,6 +1126,8 @@ class SemanticsObject {
   int get headingLevel => _headingLevel;
   int _headingLevel = 0;
 
+  int get effectiveHeadingLevel => isHeader ? 2 : headingLevel;
+
   static const int _headingLevelIndex = 1 << 24;
 
   /// Whether the [headingLevel] field has been updated but has not been
@@ -1270,23 +1272,37 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
-  /// Whether this object represents a heading element.
+  /// Whether this object represents a heading.
   ///
-  /// Typically, a heading is a prominent piece of text that describes what the
-  /// rest of the screen or page is about.
+  /// Typically, a heading is a prominent piece of text that provides a title
+  /// for a section in the UI.
   ///
-  /// Not to be confused with [isHeader].
-  bool get isHeading => headingLevel != 0;
+  /// Labeled empty headers are treated as headings too.
+  ///
+  /// See also:
+  ///
+  /// * [isHeader], which also describes the rest of the screen, and is
+  ///   sometimes presented to the user as a heading.
+  bool get isHeading => headingLevel != 0 || isHeader && hasLabel && !hasChildren;
 
   /// Whether this object represents an interactive link.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
 
   /// Whether this object represents a header.
   ///
-  /// A header is a group of widgets that introduce the content of the screen
-  /// or a page.
+  /// A header is used for one of two purposes:
   ///
-  /// Not to be confused with [isHeading].
+  /// * Introduce the content of the main screen or a page. In this case, the
+  ///   header is a, possibly labeled, container of widgets that together
+  ///   provide the description of the screen.
+  /// * Provide a heading (like [isHeading]). Native mobile apps do not have a
+  ///   notion of "heading". It is common to mark headings as headers instead
+  ///   and the screen readers will announce "heading". Labeled empty headers
+  ///   are treated as heading by the web engine.
+  ///
+  /// See also:
+  ///
+  ///  * [isHeading], which determines whether this node represents a heading.
   bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// Whether this object needs screen readers attention right away.
@@ -1685,6 +1701,8 @@ class SemanticsObject {
     if (isPlatformView) {
       return SemanticRoleKind.platformView;
     } else if (isHeading) {
+      // IMPORTANT: because headings also cover certain kinds of headers, the
+      //            `heading` role has precedence over the `header` role.
       return SemanticRoleKind.heading;
     } else if (isTextField) {
       return SemanticRoleKind.textField;
