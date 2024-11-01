@@ -33,11 +33,9 @@ TEST(ReactorGLES, CanAttachCleanupCallbacksToHandles) {
   auto handle = reactor->CreateHandle(HandleType::kTexture, 1123);
   auto added = reactor->RegisterCleanupCallback(
       handle,
-      [](void* data) {
-        int* cast_data = reinterpret_cast<int*>(data);
-        (*cast_data)++;
-      },
-      &value);
+      [&value]() {
+        value++;
+      });
 
   EXPECT_TRUE(added);
   EXPECT_TRUE(reactor->React());

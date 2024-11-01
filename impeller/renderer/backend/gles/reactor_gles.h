@@ -9,13 +9,12 @@
 #include <memory>
 #include <vector>
 
+#include "fml/closure.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
-
-typedef void (*VoidCallback)(void* /* user data */);
 
 //------------------------------------------------------------------------------
 /// @brief      The reactor attempts to make thread-safe usage of OpenGL ES
@@ -229,13 +228,11 @@ class ReactorGLES {
   ///
   /// @param[in]  handle  The handle to attach the cleanup to.
   /// @param[in]  callback The cleanup callback to execute.
-  /// @param[in]  user_data The data to pass to the cleanup callback.
   ///
   /// @return     If the operation was successfully queued for completion.
   ///
   bool RegisterCleanupCallback(const HandleGLES& handle,
-                               VoidCallback callback,
-                               void* user_data);
+                               const fml::closure& callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Perform a reaction on the current thread if able.
@@ -252,16 +249,15 @@ class ReactorGLES {
     std::optional<GLuint> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
-    VoidCallback cleanup_callback = nullptr;
-    void* user_data = nullptr;
+    fml::closure callback = {};
 
     LiveHandle() = default;
 
     explicit LiveHandle(std::optional<GLuint> p_name) : name(p_name) {}
 
     ~LiveHandle() {
-      if (cleanup_callback) {
-        cleanup_callback(user_data);
+      if (callback) {
+        callback();
       }
     }
 

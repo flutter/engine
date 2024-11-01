@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 
@@ -86,15 +87,13 @@ bool ReactorGLES::AddOperation(Operation operation) {
 }
 
 bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
-                                          VoidCallback callback,
-                                          void* user_data) {
+                                          const fml::closure& callback) {
   if (handle.IsDead()) {
     return false;
   }
   WriterLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.cleanup_callback = callback;
-    found->second.user_data = user_data;
+    found->second.callback = callback;
     return true;
   }
   return false;

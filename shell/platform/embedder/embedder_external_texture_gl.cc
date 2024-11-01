@@ -161,7 +161,9 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTextureImpeller(
   }
   if (texture->destruction_callback &&
       !context.GetReactor()->RegisterCleanupCallback(
-          handle, texture->destruction_callback, texture->user_data)) {
+          handle,
+          [callback = texture->destruction_callback,
+           user_data = texture->user_data]() { callback(user_data); })) {
     FML_LOG(ERROR) << "Could not register destruction callback";
     return nullptr;
   }
