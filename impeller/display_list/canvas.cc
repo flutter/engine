@@ -1205,7 +1205,7 @@ bool Canvas::Restore() {
   // larger depth (it will pre-increment the current_depth_ value).
   FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
-  current_depth_ = transform_stack_.back().clip_depth + 1;
+  current_depth_ = transform_stack_.back().clip_depth;
 
   if (IsSkipping()) {
     transform_stack_.pop_back();
@@ -1301,6 +1301,8 @@ bool Canvas::Restore() {
     // state is per render target, and no more rendering operations will be
     // performed as the render target workloaded is completed in the restore.
     return true;
+  } else {
+    current_depth_++;
   }
 
   size_t num_clips = transform_stack_.back().num_clips;
