@@ -154,19 +154,19 @@ class FlutterViewManager {
     _transferFocusToViewRoot(element, removeElement: true);
   }
 
-  /// Attempts to transfer focus (blur) from [element] to its
-  /// [EngineFlutterView] DOM's `rootElement`.
+  /// Blurs (removes focus) from [element] by transferring its focus to its
+  /// [EngineFlutterView] DOM's `rootElement` before (optionally) removing it.
   ///
-  /// This focus "transfer" achieves two things:
+  /// By default, blurring a focused `element` (or removing it from the DOM)
+  /// transfers its focus to the `body` element of the page.
+  ///
+  /// This method achieves two things when blurring/removing `element`:
   ///
   /// * Ensures the focus is preserved within the Flutter View when blurring
   ///   elements that are part of the internal DOM structure of the Flutter
-  ///   app. This...
+  ///   app.
   /// * Prevents the Flutter engine from reporting bogus "blur" events from the
-  ///   Flutter View because, by default, calling "blur" on an element moves the
-  ///   document.currentElement to the `body` of the page.
-  ///
-  /// See: https://jsfiddle.net/ditman/1e2swpno for a JS-only demonstration.
+  ///   Flutter View.
   ///
   /// When [removeElement] is true, `element` will be removed from the DOM after
   /// its focus is transferred to the root of the view. This can be used to
@@ -174,18 +174,20 @@ class FlutterViewManager {
   /// the Flutter view.
   ///
   /// When [delayed] is true, the blur operation is executed asynchronously as
-  /// soon as possible (see [Timer.run]). Else it runs immediately.
+  /// soon as possible (see [Timer.run]). Otherwise it runs synchronously.
+  ///
+  /// See: https://jsfiddle.net/ditman/1e2swpno for a JS focus transfer demo.
   void _transferFocusToViewRoot(
     DomElement element, {
     bool removeElement = false,
   }) {
     final DomElement? activeElement = domDocument.activeElement;
     // If the element we're operating on is not active anymore (it can happen
-    // when this method is called asynchronously),
-    // OR...
-    // If the element that we want to remove *contains* the `activeElement`...
+    // when this method is called asynchronously), OR the element that we want
+    // to remove *contains* the `activeElement`.
     if (element == activeElement || removeElement && element.contains(activeElement)) {
-      // Transfer the browser focus to the root element of `view`
+      // Transfer the browser focus to the `rootElement` of the
+      // [EngineFlutterView] that contains `element`
       final EngineFlutterView? view = findViewForElement(element);
       view?.dom.rootElement.focusWithoutScroll();
     }
