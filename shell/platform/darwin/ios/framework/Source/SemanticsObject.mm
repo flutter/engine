@@ -801,6 +801,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
       self.node.HasAction(flutter::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
+  switch (self.node.role) {
+    case flutter::SemanticsRole::kTabBar:
+      traits |= UIAccessibilityTraitTabBar;
+      break;
+    default:
+      break;
+  }
   // This should also capture radio buttons.
   if (self.node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
       self.node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {

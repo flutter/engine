@@ -309,6 +309,24 @@ class SemanticsAction {
   String toString() => 'SemanticsAction.$name';
 }
 
+/// A enum to describe the role for a semantics node.
+/// 
+/// The roles are translated into native accessibility roles in each platform.
+enum SemanticsRole {
+  /// Does not represent any role.
+  none,
+
+  /// A tab button.
+  tab,
+
+  /// The container that contains multiple tab buttons.
+  tabBar,
+
+  /// The main desplay for a tab.
+  tabPanel,
+
+}
+
 /// A Boolean value that can be associated with a semantics node.
 //
 // When changes are made to this class, the equivalent APIs in
@@ -940,6 +958,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List additionalActions,
     int headingLevel = 0,
     String linkUrl = '',
+    SemanticsRole role = SemanticsRole.none,
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -1012,6 +1031,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List additionalActions,
     int headingLevel = 0,
     String linkUrl = '',
+    SemanticsRole role = SemanticsRole.none,
   }) {
     assert(_matrix4IsValid(transform));
     assert (
@@ -1057,6 +1077,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       additionalActions,
       headingLevel,
       linkUrl,
+      role.index,
     );
   }
   @Native<
@@ -1099,7 +1120,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Int32,
-          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Handle,
+          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
@@ -1138,7 +1160,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Int32List childrenInHitTestOrder,
       Int32List additionalActions,
       int headingLevel,
-      String linkUrl);
+      String linkUrl,
+      int role,);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
