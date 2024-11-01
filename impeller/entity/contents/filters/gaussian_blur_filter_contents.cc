@@ -407,7 +407,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
           frag_info.edge = edge;
           frag_info.ratio = ratio;
           frag_info.pixel_size = Vector2(1.0f / Size(input_texture->GetSize()));
-          frag_info.decal = (tile_mode == Entity::TileMode::kDecal) ? 1.0 : 0.0;
+          frag_info.use_decal =
+              (tile_mode == Entity::TileMode::kDecal) ? 1.0 : 0.0;
 
           const Quad& uvs = pass_args.uvs;
           std::array<VS::PerVertexData, 4> vertices = {

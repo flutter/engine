@@ -14,7 +14,7 @@ uniform f16sampler2D texture_sampler;
 uniform FragInfo {
   float edge;
   float ratio;
-  float decal;
+  float use_decal;
   vec2 pixel_size;
 }
 frag_info;
@@ -27,7 +27,7 @@ vec4 Sample(vec2 uv) {
   if (supports_decal == 1.0) {
     return texture(texture_sampler, uv, float16_t(kDefaultMipBias));
   } else {
-    if (frag_info.decal == 1.0 &&
+    if (frag_info.use_decal == 1.0 &&
         (uv.x < 0 || uv.y < 0 || uv.x > 1 || uv.y > 1)) {
       return vec4(0);
     } else {
