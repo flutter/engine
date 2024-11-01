@@ -483,7 +483,8 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, GithubIssue157885) {
+// Regression test for https://github.com/flutter/flutter/issues/157885.
+TEST_P(AiksTest, DifferenceClipsMustRenderIdenticallyAcrossBackends) {
   DisplayListBuilder builder;
 
   DlPaint paint;
