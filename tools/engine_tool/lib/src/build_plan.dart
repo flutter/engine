@@ -6,6 +6,7 @@ import 'package:args/args.dart';
 import 'package:collection/collection.dart';
 import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:meta/meta.dart';
+import 'package:platform/platform.dart';
 
 import 'build_utils.dart';
 import 'environment.dart';
@@ -162,28 +163,36 @@ final class BuildPlan {
     required Map<String, BuilderConfig> configs,
   }) {
     // Add --config.
-    final builds = runnableBuilds(
-      environment,
-      configs,
-      environment.verbose || !help,
+    final builds = _extractBuilds(
+      environment.platform,
+      runnableConfigs: _runnableBuildConfigs(
+        environment.platform,
+        configsByName: configs,
+      ),
+      hideCiSpecificBuilds: help && !environment.verbose,
     );
     debugCheckBuilds(builds);
     parser.addOption(
       _flagConfig,
       abbr: 'c',
-      defaultsTo: () {
-        if (builds.any((b) => b.name == 'host_debug')) {
-          return 'host_debug';
-        }
-        return null;
-      }(),
+      help: ''
+          'Selects a build configuration for the current platform.\n'
+          '\n'
+          'If omitted attempts '
+          'to default to a suitable target platform, which is typically a '
+          '"host_debug" build when building on a supported desktop OS, or a '
+          'suitable build when targeting (via "et run") a flutter app.\n'
+          '\n'
+          'Options include (use --verbose for more details):',
       allowed: [
         for (final config in builds) mangleConfigName(environment, config.name),
-      ],
-      allowedHelp: {
-        for (final config in builds)
-          mangleConfigName(environment, config.name): config.description,
-      },
+      ]..sort(),
+      allowedHelp: environment.verbose
+          ? {
+              for (final config in builds)
+                mangleConfigName(environment, config.name): config.description,
+            }
+          : null,
     );
 
     // Add --lto.
@@ -360,4 +369,42 @@ enum BuildStrategy {
 
   const BuildStrategy(this._help);
   final String _help;
+}
+
+typedef _ConfigsByName = Iterable<MapEntry<String, BuilderConfig>>;
+
+/// Computes a list of build configs that can can execute on [environment].
+_ConfigsByName _runnableBuildConfigs(
+  Platform platform, {
+  required Map<String, BuilderConfig> configsByName,
+}) {
+  return configsByName.entries.where((entry) {
+    return entry.value.canRunOn(platform);
+  });
+}
+
+/// Creates a final listing of builds from a mapping of builds.
+///
+/// If [hideCiSpecificBuilds], builds that are unlikely to be picked for local
+/// development (i.e. start with the prefix `ci/` by convention) are not
+/// returned in order to make command-line _help_ text shorter.
+List<Build> _extractBuilds(
+  Platform platform, {
+  required _ConfigsByName runnableConfigs,
+  required bool hideCiSpecificBuilds,
+}) {
+  return [
+    for (final buildConfig in runnableConfigs)
+      ...buildConfig.value.builds.where(
+        (build) {
+          if (!build.canRunOn(platform)) {
+            return false;
+          }
+          if (!hideCiSpecificBuilds) {
+            return true;
+          }
+          return build.name.startsWith(platform.operatingSystem);
+        },
+      ),
+  ];
 }
