@@ -1205,7 +1205,7 @@ bool Canvas::Restore() {
   // larger depth (it will pre-increment the current_depth_ value).
   FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
-  current_depth_ = transform_stack_.back().clip_depth;
+  current_depth_ = transform_stack_.back().clip_depth + 1;
 
   if (IsSkipping()) {
     transform_stack_.pop_back();
