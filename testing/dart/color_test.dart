@@ -340,9 +340,9 @@ void main() {
     expect(color.red, 0xE0);
   });
 
-  test('value and toARGB32 are equivalent methods', () {
-    const Color halfRed = Color.from(alpha: 1.0, red: 0.5, green: 0, blue: 0);
-    expect(halfRed.value, halfRed.toARGB32());
+  test('toARGB32 converts to a 32-bit integer', () {
+    const Color color = Color.from(alpha: 0.1, red: 0.2, green: 0.3, blue: 0.4);
+    expect(color.toARGB32(), equals(0x1a334d66));
   });
 }
 
