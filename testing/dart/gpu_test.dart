@@ -752,7 +752,7 @@ void main() async {
     state.renderPass.setPrimitiveType(gpu.PrimitiveType.triangle);
 
     // Set scissor.
-    state.renderPass.setScissor(gpu.Scissor(x: 25, y: 0, width: 50, height: 100));
+    state.renderPass.setScissor(gpu.Scissor(x: 25, width: 50, height: 100));
 
     final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
     final gpu.BufferView vertices = transients.emplace(float32(<double>[
