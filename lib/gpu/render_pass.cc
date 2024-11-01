@@ -206,7 +206,10 @@ bool RenderPass::Draw() {
   render_pass_->SetElementCount(element_count);
 
   render_pass_->SetStencilReference(stencil_reference);
-  render_pass_->SetScissor(scissor);
+
+  if (scissor.has_value()) {
+    render_pass_->SetScissor(scissor.value());
+  }
 
   bool result = render_pass_->Draw().ok();
 
