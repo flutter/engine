@@ -1,4 +1,4 @@
-Signature: b6c3001bd1b9717fc30669efde3e2d68
+Signature: 6fc5e22c97db750ed9fca6ff8e8b5cae
 
 ====================================================================================================
 LIBRARY: etc1
@@ -400,6 +400,7 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/TimerQuery.md
+FILE: ../../../flutter/third_party/skia/relnotes/WGLWaitSync.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9815,9 +9816,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.cpp
+FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h
 ----------------------------------------------------------------------------------------------------
