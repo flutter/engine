@@ -1301,8 +1301,6 @@ bool Canvas::Restore() {
     // state is per render target, and no more rendering operations will be
     // performed as the render target workloaded is completed in the restore.
     return true;
-  } else {
-    current_depth_++;
   }
 
   size_t num_clips = transform_stack_.back().num_clips;

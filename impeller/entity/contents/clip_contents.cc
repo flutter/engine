@@ -20,7 +20,7 @@ static Scalar GetShaderClipDepth(uint32_t clip_depth) {
   // Draw the clip at the max of the clip entity's depth slice, so that other
   // draw calls with this same depth value will be culled even if they have a
   // perspective transform.
-  return std::nextafterf(Entity::GetShaderClipDepth(clip_depth + 1), 0.0f);
+  return std::nextafterf(Entity::GetShaderClipDepth(clip_depth), 0.0f);
 }
 
 /*******************************************************************************
