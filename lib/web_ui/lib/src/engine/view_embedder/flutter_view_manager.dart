@@ -141,9 +141,7 @@ class FlutterViewManager {
   ///
   /// There's a synchronous version of this method: [safeRemoveSync].
   Future<void> safeRemove(DomElement element) {
-    return Future<void>(() {
-      _transferFocusToViewRoot(element, removeElement: true);
-    });
+    return Future<void>(() => safeRemoveSync(element));
   }
 
   /// Synchronously removes [element] after transferring its focus to its
@@ -169,12 +167,8 @@ class FlutterViewManager {
   ///   Flutter View.
   ///
   /// When [removeElement] is true, `element` will be removed from the DOM after
-  /// its focus is transferred to the root of the view. This can be used to
-  /// safely remove (potentially focused) element, by preserving focus within
-  /// the Flutter view.
-  ///
-  /// When [delayed] is true, the blur operation is executed asynchronously as
-  /// soon as possible (see [Timer.run]). Otherwise it runs synchronously.
+  /// its focus (or that of any of its children) is transferred to the root of
+  /// the view.
   ///
   /// See: https://jsfiddle.net/ditman/1e2swpno for a JS focus transfer demo.
   void _transferFocusToViewRoot(
