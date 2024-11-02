@@ -7,8 +7,8 @@
 #include <cstdint>
 #include <iomanip>
 
-#include "display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 
 namespace flutter {
 namespace testing {

@@ -819,7 +819,26 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
   }
 
  protected:
-  bool equals_(const DlImageFilter& other) const override { return false; }
+  bool equals_(const DlImageFilter& other) const override {
+    FML_DCHECK(other.type() == DlImageFilterType::kRuntimeEffect);
+    auto that = static_cast<const DlRuntimeEffectImageFilter*>(&other);
+    if (runtime_effect_ != that->runtime_effect_ ||
+        samplers_.size() != that->samplers().size() ||
+        uniform_data_->size() != that->uniform_data()->size()) {
+      return false;
+    }
+    for (auto i = 0u; i < samplers_.size(); i++) {
+      if (samplers_[i] != that->samplers()[i]) {
+        return false;
+      }
+    }
+    for (auto i = 0u; i < uniform_data_->size(); i++) {
+      if (uniform_data_->at(i) != that->uniform_data()->at(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
  private:
   sk_sp<DlRuntimeEffect> runtime_effect_;
