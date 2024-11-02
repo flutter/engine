@@ -4,8 +4,6 @@
 
 #include "flutter/benchmarking/benchmarking.h"
 
-#include "flutter/impeller/entity/solid_fill.vert.h"
-
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"

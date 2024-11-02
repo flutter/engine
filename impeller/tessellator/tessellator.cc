@@ -35,8 +35,9 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
                                            HostBuffer& host_buffer,
                                            Scalar tolerance,
                                            bool supports_primitive_restart,
-                                           bool supports_triangle_fan) {
-  if (supports_primitive_restart) {
+                                           bool supports_triangle_fan,
+                                           bool line_strip) {
+  if (supports_primitive_restart && !line_strip) {
     // Primitive Restart.
     const auto [point_count, contour_count] = path.CountStorage(tolerance);
     BufferView point_buffer = host_buffer.Emplace(
@@ -80,7 +81,8 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
 
   FML_DCHECK(point_buffer_);
   FML_DCHECK(index_buffer_);
-  TessellateConvexInternal(path, *point_buffer_, *index_buffer_, tolerance);
+  TessellateConvexInternal(path, *point_buffer_, *index_buffer_, tolerance,
+                           line_strip);
 
   if (point_buffer_->empty()) {
     return VertexBuffer{
@@ -102,19 +104,21 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
   return VertexBuffer{
       .vertex_buffer = std::move(vertex_buffer),
       .index_buffer = std::move(index_buffer),
-      .vertex_count = index_buffer_->size(),
-      .index_type = IndexType::k16bit,
+      .vertex_count =
+          line_strip ? point_buffer_->size() : index_buffer_->size(),
+      .index_type = line_strip ? IndexType::kNone : IndexType::k16bit,
   };
 }
 
 void Tessellator::TessellateConvexInternal(const Path& path,
                                            std::vector<Point>& point_buffer,
                                            std::vector<uint16_t>& index_buffer,
-                                           Scalar tolerance) {
+                                           Scalar tolerance,
+                                           bool line_strip) {
   point_buffer.clear();
   index_buffer.clear();
 
-  GLESVertexWriter writer(point_buffer, index_buffer);
+  GLESVertexWriter writer(point_buffer, index_buffer, line_strip);
 
   path.WritePolyline(tolerance, writer);
 }

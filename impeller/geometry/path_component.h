@@ -71,7 +71,8 @@ class StripVertexWriter : public VertexWriter {
 class GLESVertexWriter : public VertexWriter {
  public:
   explicit GLESVertexWriter(std::vector<Point>& points,
-                            std::vector<uint16_t>& indices);
+                            std::vector<uint16_t>& indices,
+                            bool line_strip = false);
 
   ~GLESVertexWriter() = default;
 
@@ -84,6 +85,7 @@ class GLESVertexWriter : public VertexWriter {
   size_t contour_start_ = 0u;
   std::vector<Point>& points_;
   std::vector<uint16_t>& indices_;
+  const bool line_strip_;
 };
 
 struct LinearPathComponent {
