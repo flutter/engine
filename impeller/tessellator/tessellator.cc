@@ -54,6 +54,8 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
               index_buffer.GetBuffer()->OnGetContents() +
               index_buffer.GetRange().offset));
       path.WritePolyline(tolerance, writer);
+      point_buffer.GetBuffer()->Flush(point_buffer.GetRange());
+      index_buffer.GetBuffer()->Flush(index_buffer.GetRange());
 
       return VertexBuffer{
           .vertex_buffer = std::move(point_buffer),
@@ -69,6 +71,8 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
               index_buffer.GetBuffer()->OnGetContents() +
               index_buffer.GetRange().offset));
       path.WritePolyline(tolerance, writer);
+      point_buffer.GetBuffer()->Flush(point_buffer.GetRange());
+      index_buffer.GetBuffer()->Flush(index_buffer.GetRange());
 
       return VertexBuffer{
           .vertex_buffer = std::move(point_buffer),
