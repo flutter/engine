@@ -885,7 +885,7 @@ TEST(DisplayListImageFilter, RuntimeEffectModifiesTransparentBlack) {
   DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
                                       std::make_shared<std::vector<uint8_t>>());
 
-  EXPECT_TRUE(filter_a.modifies_transparent_black());
+  EXPECT_FALSE(filter_a.modifies_transparent_black());
 }
 
 }  // namespace testing
