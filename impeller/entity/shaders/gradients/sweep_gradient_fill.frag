@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-precision mediump float;
-
 #include <impeller/color.glsl>
 #include <impeller/constants.glsl>
 #include <impeller/texture.glsl>
@@ -12,14 +10,14 @@ precision mediump float;
 uniform sampler2D texture_sampler;
 
 uniform FragInfo {
+  vec4 decal_border_color;
   highp vec2 center;
+  vec2 half_texel;
+  float texture_sampler_y_coord_scale;
+  float alpha;
   float bias;
   float scale;
   float tile_mode;
-  vec4 decal_border_color;
-  float texture_sampler_y_coord_scale;
-  float alpha;
-  vec2 half_texel;
 }
 frag_info;
 
