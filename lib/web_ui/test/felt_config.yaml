@@ -17,10 +17,6 @@ compile-configs:
     compiler: dart2wasm
     renderer: html
 
-  - name: dart2wasm-canvaskit
-    compiler: dart2wasm
-    renderer: canvaskit
-
   - name: dart2wasm-skwasm
     compiler: dart2wasm
     renderer: skwasm
@@ -71,22 +67,6 @@ test-bundles:
     test-set: engine
     compile-configs: dart2wasm-html
 
-  - name: dart2wasm-html-html
-    test-set: html
-    compile-configs: dart2wasm-html
-
-  - name: dart2wasm-html-ui
-    test-set: ui
-    compile-configs: dart2wasm-html
-
-  - name: dart2wasm-canvaskit-canvaskit
-    test-set: canvaskit
-    compile-configs: dart2wasm-canvaskit
-
-  - name: dart2wasm-canvaskit-ui
-    test-set: ui
-    compile-configs: dart2wasm-canvaskit
-
   - name: dart2wasm-skwasm-ui
     test-set: ui
     compile-configs: dart2wasm-skwasm
@@ -101,6 +81,17 @@ run-configs:
   - name: chrome
     browser: chrome
     canvaskit-variant: chromium
+
+  - name: chrome-coi
+    browser: chrome
+    canvaskit-variant: chromium
+    cross-origin-isolated: true
+
+  - name: chrome-force-st
+    browser: chrome
+    canvaskit-variant: chromium
+    cross-origin-isolated: true
+    force-single-threaded-skwasm: true
 
   - name: chrome-full
     browser: chrome
@@ -235,42 +226,29 @@ test-suites:
     test-bundle: dart2wasm-html-engine
     run-config: chrome
 
-  - name: chrome-dart2wasm-html-html
-    test-bundle: dart2wasm-html-html
-    run-config: chrome
-
-  - name: chrome-dart2wasm-html-ui
-    test-bundle: dart2wasm-html-ui
-    run-config: chrome
-
-  - name: chrome-dart2wasm-canvaskit-canvaskit
-    test-bundle: dart2wasm-canvaskit-canvaskit
-    run-config: chrome
-    artifact-deps: [ canvaskit_chromium ]
-
-  - name: chrome-dart2wasm-canvaskit-ui
-    test-bundle: dart2wasm-canvaskit-ui
-    run-config: chrome
-    artifact-deps: [ canvaskit_chromium ]
-
-  - name: chrome-dart2wasm-skwasm-ui
+  - name: chrome-coi-dart2wasm-skwasm-ui
     test-bundle: dart2wasm-skwasm-ui
-    run-config: chrome
+    run-config: chrome-coi
     artifact-deps: [ skwasm ]
 
-  - name: chrome-full-dart2wasm-canvaskit-canvaskit
-    test-bundle: dart2wasm-canvaskit-canvaskit
-    run-config: chrome-full
-    artifact-deps: [ canvaskit ]
-
-  - name: chrome-full-dart2wasm-canvaskit-ui
-    test-bundle: dart2wasm-canvaskit-ui
-    run-config: chrome-full
-    artifact-deps: [ canvaskit ]
+  - name: chrome-force-st-dart2wasm-skwasm-ui
+    test-bundle: dart2wasm-skwasm-ui
+    run-config: chrome-force-st
+    artifact-deps: [ skwasm ]
 
   - name: chrome-fallbacks
     test-bundle: fallbacks
     run-config: chrome
+    artifact-deps: [ canvaskit, skwasm ]
+
+  - name: chrome-coi-fallbacks
+    test-bundle: fallbacks
+    run-config: chrome-coi
+    artifact-deps: [ canvaskit, skwasm ]
+
+  - name: chrome-force-st-fallbacks
+    test-bundle: fallbacks
+    run-config: chrome-force-st
     artifact-deps: [ canvaskit, skwasm ]
 
   - name: firefox-fallbacks

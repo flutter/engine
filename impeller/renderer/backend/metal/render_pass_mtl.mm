@@ -170,7 +170,7 @@ bool RenderPassMTL::IsValid() const {
   return is_valid_;
 }
 
-void RenderPassMTL::OnSetLabel(std::string label) {
+void RenderPassMTL::OnSetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return;
@@ -189,11 +189,11 @@ static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
                  const BufferView& view) {
-  if (!view.buffer) {
+  if (!view.GetBuffer()) {
     return false;
   }
 
-  auto device_buffer = view.buffer;
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }
@@ -204,7 +204,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
     return false;
   }
 
-  return pass.SetBuffer(stage, bind_index, view.range.offset, buffer);
+  return pass.SetBuffer(stage, bind_index, view.GetRange().offset, buffer);
 }
 
 static bool Bind(PassBindingsCacheMTL& pass,
@@ -284,14 +284,18 @@ void RenderPassMTL::SetScissor(IRect scissor) {
 }
 
 // |RenderPass|
+void RenderPassMTL::SetElementCount(size_t count) {
+  vertex_count_ = count;
+}
+
+// |RenderPass|
 void RenderPassMTL::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
 // |RenderPass|
 bool RenderPassMTL::SetVertexBuffer(BufferView vertex_buffers[],
-                                    size_t vertex_buffer_count,
-                                    size_t vertex_count) {
+                                    size_t vertex_buffer_count) {
   if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
@@ -303,8 +307,6 @@ bool RenderPassMTL::SetVertexBuffer(BufferView vertex_buffers[],
       return false;
     }
   }
-
-  vertex_count_ = vertex_count;
 
   return true;
 }
@@ -344,13 +346,13 @@ fml::Status RenderPassMTL::Draw() {
     }
   } else {
     id<MTLBuffer> mtl_index_buffer =
-        DeviceBufferMTL::Cast(*index_buffer_.buffer).GetMTLBuffer();
+        DeviceBufferMTL::Cast(*index_buffer_.GetBuffer()).GetMTLBuffer();
     if (instance_count_ != 1u) {
       [encoder_ drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type_)
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset
+                    indexBufferOffset:index_buffer_.GetRange().offset
                         instanceCount:instance_count_
                            baseVertex:base_vertex_
                          baseInstance:0u];
@@ -359,7 +361,7 @@ fml::Status RenderPassMTL::Draw() {
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset];
+                    indexBufferOffset:index_buffer_.GetRange().offset];
     }
   }
 

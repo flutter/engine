@@ -253,6 +253,25 @@ TEST_F(DisplayListTest, EmptyRebuild) {
   ASSERT_TRUE(dl2->Equals(dl3));
 }
 
+TEST_F(DisplayListTest, NopReusedBuildIsReallyEmpty) {
+  DisplayListBuilder builder;
+  builder.DrawRect(DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f), DlPaint());
+
+  {
+    auto dl1 = builder.Build();
+    EXPECT_EQ(dl1->op_count(), 1u);
+    EXPECT_GT(dl1->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl1->GetBounds(), DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f));
+  }
+
+  {
+    auto dl2 = builder.Build();
+    EXPECT_EQ(dl2->op_count(), 0u);
+    EXPECT_EQ(dl2->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl2->GetBounds(), DlRect());
+  }
+}
+
 TEST_F(DisplayListTest, GeneralReceiverInitialValues) {
   DisplayListGeneralReceiver receiver;
 
@@ -1483,7 +1502,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     FML_UNREACHABLE();
   }
 
@@ -1491,7 +1511,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
                          const SaveLayerOptions& options,
                          uint32_t total_content_depth,
                          DlBlendMode max_content_blend_mode,
-                         const DlImageFilter* backdrop = nullptr) {
+                         const DlImageFilter* backdrop = nullptr,
+                         std::optional<int64_t> backdrop_id = std::nullopt) {
     ASSERT_LT(save_layer_count_, expected_.size()) << label();
     auto expect = expected_[save_layer_count_];
     if (expect.options.has_value()) {
@@ -2945,7 +2966,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
   {
     builder1.Save();
     {
-      builder1.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+      builder1.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
       builder1.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
     }
@@ -2961,7 +2982,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
 
   DisplayListBuilder builder2;
   builder2.Save();
-  builder2.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+  builder2.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
   builder2.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
   builder2.Restore();
@@ -3666,7 +3687,8 @@ class SaveLayerBoundsExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     ASSERT_LT(save_layer_count_, expected_.size());
     auto expected = expected_[save_layer_count_];
     EXPECT_EQ(options.bounds_from_caller(),
@@ -4131,7 +4153,8 @@ class DepthExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     // This method should not be called since we override the variant with
     // the total_content_depth parameter.
     FAIL() << "saveLayer(no depth parameter) method should not be called";
@@ -4141,7 +4164,8 @@ class DepthExpector : public virtual DlOpReceiver,
                  const SaveLayerOptions& options,
                  uint32_t total_content_depth,
                  DlBlendMode max_content_mode,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     ASSERT_LT(index_, depth_expectations_.size());
     EXPECT_EQ(depth_expectations_[index_], total_content_depth)
         << "at index " << index_;
@@ -4533,7 +4557,7 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
 #define CLIP_EXPECTOR(name) ClipExpector name(__FILE__, __LINE__)
 
 struct ClipExpectation {
-  std::variant<DlRect, SkRRect, DlPath> shape;
+  std::variant<DlRect, DlRoundRect, DlPath> shape;
   bool is_oval;
   ClipOp clip_op;
   bool is_aa;
@@ -4543,7 +4567,7 @@ struct ClipExpectation {
       case 0:
         return is_oval ? "SkOval" : "SkRect";
       case 1:
-        return "SkRRect";
+        return "DlRoundRect";
       case 2:
         return "DlPath";
       default:
@@ -4562,7 +4586,7 @@ struct ClipExpectation {
       }
       break;
     case 1:
-      os << std::get<SkRRect>(expect.shape);
+      os << std::get<DlRoundRect>(expect.shape);
       break;
     case 2:
       os << std::get<DlPath>(expect.shape).GetSkPath();
@@ -4621,8 +4645,10 @@ class ClipExpector : public virtual DlOpReceiver,
   ClipExpector& addExpectation(const SkRRect& rrect,
                                ClipOp clip_op = ClipOp::kIntersect,
                                bool is_aa = false) {
+    auto dl_rrect = ToDlRoundRect(rrect);
+    EXPECT_EQ(ToSkRRect(dl_rrect), rrect);
     clip_expectations_.push_back({
-        .shape = rrect,
+        .shape = dl_rrect,
         .is_oval = false,
         .clip_op = clip_op,
         .is_aa = is_aa,
@@ -4658,9 +4684,9 @@ class ClipExpector : public virtual DlOpReceiver,
                 bool is_aa) override {
     check(bounds, clip_op, is_aa, true);
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     check(rrect, clip_op, is_aa);
   }
   void clipPath(const DlPath& path,
@@ -5885,6 +5911,38 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culled_dl, expected_dl));
   }
+}
+
+TEST_F(DisplayListTest, RecordManyLargeDisplayListOperations) {
+  DisplayListBuilder builder;
+
+  // 2050 points is sizeof(DlPoint) * 2050 = 16400 bytes, this is more
+  // than the page size of 16384 bytes.
+  std::vector<DlPoint> points(2050);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, RecordSingleLargeDisplayListOperation) {
+  DisplayListBuilder builder;
+
+  std::vector<DlPoint> points(40000);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
 }
 
 }  // namespace testing

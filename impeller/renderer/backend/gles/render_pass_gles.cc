@@ -36,8 +36,8 @@ bool RenderPassGLES::IsValid() const {
 }
 
 // |RenderPass|
-void RenderPassGLES::OnSetLabel(std::string label) {
-  label_ = std::move(label);
+void RenderPassGLES::OnSetLabel(std::string_view label) {
+  label_ = label;
 }
 
 void ConfigureBlending(const ProcTableGLES& gl,
@@ -149,7 +149,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  auto vertex_buffer = vertex_buffer_view.buffer;
+  const DeviceBuffer* vertex_buffer = vertex_buffer_view.GetBuffer();
 
   if (!vertex_buffer) {
     return false;
@@ -165,7 +165,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   /// Bind the vertex attributes associated with vertex buffer.
   ///
   if (!vertex_desc_gles->BindVertexAttributes(
-          gl, buffer_index, vertex_buffer_view.range.offset)) {
+          gl, buffer_index, vertex_buffer_view.GetRange().offset)) {
     return false;
   }
 
@@ -455,21 +455,21 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     /// Finally! Invoke the draw call.
     ///
     if (command.index_type == IndexType::kNone) {
-      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+      gl.DrawArrays(mode, command.base_vertex, command.element_count);
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.index_buffer;
-      auto index_buffer = index_buffer_view.buffer;
+      const DeviceBuffer* index_buffer = index_buffer_view.GetBuffer();
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
         return false;
       }
       gl.DrawElements(mode,                             // mode
-                      command.vertex_count,             // count
+                      command.element_count,            // count
                       ToIndexType(command.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                          index_buffer_view.range.offset))  // indices
+                          index_buffer_view.GetRange().offset))  // indices
       );
     }
 

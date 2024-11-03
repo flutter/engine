@@ -338,11 +338,7 @@ class FlutterConfiguration {
   String get fontFallbackBaseUrl =>
       _configuration?.fontFallbackBaseUrl ?? 'https://fonts.gstatic.com/s/';
 
-  /// Whether to use color emojis or not.
-  ///
-  /// The font used to render color emojis is large (~24MB). This configuration
-  /// gives developers the ability to decide for their app.
-  bool get useColorEmoji => _configuration?.useColorEmoji ?? false;
+  bool get forceSingleThreadedSkwasm => _configuration?.forceSingleThreadedSkwasm ?? false;
 }
 
 @JS('window.flutterConfiguration')
@@ -400,9 +396,9 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external JSString? get _fontFallbackBaseUrl;
   String? get fontFallbackBaseUrl => _fontFallbackBaseUrl?.toDart;
 
-  @JS('useColorEmoji')
-  external JSBoolean? get _useColorEmoji;
-  bool? get useColorEmoji => _useColorEmoji?.toDart;
+  @JS('forceSingleThreadedSkwasm')
+  external JSBoolean? get _forceSingleThreadedSkwasm;
+  bool? get forceSingleThreadedSkwasm => _forceSingleThreadedSkwasm?.toDart;
 }
 
 /// A JavaScript entrypoint that allows developer to set rendering backend

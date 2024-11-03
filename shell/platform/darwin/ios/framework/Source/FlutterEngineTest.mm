@@ -249,7 +249,7 @@ FLUTTER_ASSERT_ARC
                        [timeoutFirstFrame fulfill];
                      }
                    }];
-  [self waitForExpectationsWithTimeout:5 handler:nil];
+  [self waitForExpectations:@[ timeoutFirstFrame ]];
 }
 
 - (void)testSpawn {
@@ -275,7 +275,7 @@ FLUTTER_ASSERT_ARC
                                  [deallocNotification fulfill];
                                }];
   }
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ deallocNotification ]];
   [center removeObserver:observer];
 }
 
@@ -299,7 +299,7 @@ FLUTTER_ASSERT_ARC
                                  [gotMessage fulfill];
                                }];
   });
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ gotMessage ]];
 }
 
 - (void)testThreadPrioritySetCorrectly {
@@ -325,7 +325,7 @@ FLUTTER_ASSERT_ARC
 
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine run];
-  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [self waitForExpectations:@[ prioritiesSet ]];
 
   method_setImplementation(method, originalSetThreadPriority);
 }
@@ -472,16 +472,17 @@ FLUTTER_ASSERT_ARC
 #endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 
-- (void)testCanNotUnMergePlatformAndUIThread {
+- (void)testCanUnMergePlatformAndUIThread {
 #if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
   settings.enable_impeller = true;
+  settings.merged_platform_ui_thread = false;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
 
-  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
-                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+  XCTAssertNotEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                    engine.shell.GetTaskRunners().GetPlatformTaskRunner());
 #endif  // defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
 }
 

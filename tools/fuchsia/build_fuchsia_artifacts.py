@@ -131,8 +131,8 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type, api_lev
   source_root = os.path.join(_out_dir, source)
   destination = os.path.join(_bucket_directory, destination, mode)
 
-  far_file = '%s_%s%s_runner' % (runner_type, mode, '_product' if product else '')
-  CopyPath('%s/%s-0.far' % (source_root, far_file), '%s/%s.far' % (destination, far_file))
+  far_file = '%s_%s%s_runner-0.far' % (runner_type, mode, '_product' if product else '')
+  CopyPath('%s/%s' % (source_root, far_file), '%s/%s' % (destination, far_file))
 
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
@@ -235,7 +235,7 @@ def RunCIPDCommandWithRetries(command):
       subprocess.check_call(command, cwd=_bucket_directory)
       break
     except subprocess.CalledProcessError:
-      print('Failed %s times' % tries + 1)
+      print('Failed %s times' % str(tries + 1))
       if tries == num_tries - 1:
         raise
 

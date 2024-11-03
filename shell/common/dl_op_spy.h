@@ -41,7 +41,8 @@ class DlOpSpy final : public virtual DlOpReceiver,
   void save() override;
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
   void restore() override;
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawPaint() override;
@@ -53,8 +54,9 @@ class DlOpSpy final : public virtual DlOpReceiver,
   void drawRect(const DlRect& rect) override;
   void drawOval(const DlRect& bounds) override;
   void drawCircle(const DlPoint& center, DlScalar radius) override;
-  void drawRRect(const SkRRect& rrect) override;
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
   void drawPath(const DlPath& path) override;
   void drawArc(const DlRect& oval_bounds,
                DlScalar start_degrees,

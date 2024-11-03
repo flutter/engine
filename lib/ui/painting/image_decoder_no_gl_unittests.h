@@ -22,6 +22,7 @@ class TestImpellerTexture : public Texture {
   explicit TestImpellerTexture(TextureDescriptor desc) : Texture(desc) {}
 
   void SetLabel(std::string_view label) override {}
+  void SetLabel(std::string_view label, std::string_view trailing) override {}
   bool IsValid() const override { return true; }
   ISize GetSize() const { return GetTextureDescriptor().size; }
 
@@ -44,9 +45,9 @@ class TestImpellerDeviceBuffer : public DeviceBuffer {
   ~TestImpellerDeviceBuffer() { free(bytes_); }
 
  private:
-  bool SetLabel(const std::string& label) override { return true; }
+  bool SetLabel(std::string_view label) override { return true; }
 
-  bool SetLabel(const std::string& label, Range range) override { return true; }
+  bool SetLabel(std::string_view label, Range range) override { return true; }
 
   uint8_t* OnGetContents() const override { return bytes_; }
 

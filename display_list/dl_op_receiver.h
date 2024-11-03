@@ -17,8 +17,6 @@
 #include "flutter/display_list/effects/dl_mask_filter.h"
 #include "flutter/display_list/image/dl_image.h"
 
-#include "flutter/impeller/geometry/path.h"
-
 namespace flutter {
 
 class DisplayList;
@@ -143,15 +141,17 @@ class DlOpReceiver {
   // layer before further rendering happens.
   virtual void saveLayer(const DlRect& bounds,
                          const SaveLayerOptions options,
-                         const DlImageFilter* backdrop = nullptr) = 0;
+                         const DlImageFilter* backdrop = nullptr,
+                         std::optional<int64_t> backdrop_id = std::nullopt) = 0;
   // Optional variant of saveLayer() that passes the total depth count of
   // all rendering operations that occur until the next restore() call.
   virtual void saveLayer(const DlRect& bounds,
                          const SaveLayerOptions& options,
                          uint32_t total_content_depth,
                          DlBlendMode max_content_blend_mode,
-                         const DlImageFilter* backdrop = nullptr) {
-    saveLayer(bounds, options, backdrop);
+                         const DlImageFilter* backdrop = nullptr,
+                         std::optional<int64_t> backdrop_id = std::nullopt) {
+    saveLayer(bounds, options, backdrop, backdrop_id);
   }
   virtual void restore() = 0;
 
@@ -170,13 +170,17 @@ class DlOpReceiver {
   // public DisplayListBuilder/DlCanvas public interfaces where possible,
   // as tracked in:
   // https://github.com/flutter/flutter/issues/144070
-  virtual void saveLayer(const DlRect* bounds,
-                         const SaveLayerOptions options,
-                         const DlImageFilter* backdrop = nullptr) final {
+  virtual void saveLayer(
+      const DlRect* bounds,
+      const SaveLayerOptions options,
+      const DlImageFilter* backdrop = nullptr,
+      std::optional<int64_t> backdrop_id = std::nullopt) final {
     if (bounds) {
-      saveLayer(*bounds, options.with_bounds_from_caller(), backdrop);
+      saveLayer(*bounds, options.with_bounds_from_caller(), backdrop,
+                backdrop_id);
     } else {
-      saveLayer(DlRect(), options.without_bounds_from_caller(), backdrop);
+      saveLayer(DlRect(), options.without_bounds_from_caller(), backdrop,
+                backdrop_id);
     }
   }
   // ---------------------------------------------------------------------
@@ -289,7 +293,9 @@ class DlOpReceiver {
 
   virtual void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) = 0;
   virtual void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) = 0;
-  virtual void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRoundRect(const DlRoundRect& rrect,
+                             ClipOp clip_op,
+                             bool is_aa) = 0;
   virtual void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) = 0;
 
   // The following rendering methods all take their rendering attributes
@@ -309,8 +315,9 @@ class DlOpReceiver {
   virtual void drawRect(const DlRect& rect) = 0;
   virtual void drawOval(const DlRect& bounds) = 0;
   virtual void drawCircle(const DlPoint& center, DlScalar radius) = 0;
-  virtual void drawRRect(const SkRRect& rrect) = 0;
-  virtual void drawDRRect(const SkRRect& outer, const SkRRect& inner) = 0;
+  virtual void drawRoundRect(const DlRoundRect& rrect) = 0;
+  virtual void drawDiffRoundRect(const DlRoundRect& outer,
+                                 const DlRoundRect& inner) = 0;
   virtual void drawPath(const DlPath& path) = 0;
   virtual void drawArc(const DlRect& oval_bounds,
                        DlScalar start_degrees,

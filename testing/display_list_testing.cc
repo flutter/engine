@@ -4,6 +4,7 @@
 
 #include "flutter/testing/display_list_testing.h"
 
+#include <cstdint>
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
@@ -197,20 +198,6 @@ static std::ostream& operator<<(std::ostream& os, const SkRect& rect) {
             << "top: " << rect.fTop << ", "
             << "right: " << rect.fRight << ", "
             << "bottom: " << rect.fBottom
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkRRect& rrect) {
-  return os << "SkRRect("
-            << rrect.rect() << ", "
-            << "ul: (" << rrect.radii(SkRRect::kUpperLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperLeft_Corner).fY << "), "
-            << "ur: (" << rrect.radii(SkRRect::kUpperRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperRight_Corner).fY << "), "
-            << "lr: (" << rrect.radii(SkRRect::kLowerRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerRight_Corner).fY << "), "
-            << "ll: (" << rrect.radii(SkRRect::kLowerLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerLeft_Corner).fY << ")"
             << ")";
 }
 
@@ -701,12 +688,17 @@ void DisplayListStreamDispatcher::save() {
 }
 void DisplayListStreamDispatcher::saveLayer(const DlRect& bounds,
                                             const SaveLayerOptions options,
-                                            const DlImageFilter* backdrop) {
+                                            const DlImageFilter* backdrop,
+                                            std::optional<int64_t> backdrop_id) {
   startl() << "saveLayer(" << bounds << ", " << options;
   if (backdrop) {
     os_ << "," << std::endl;
     indent(10);
-    startl() << "backdrop: ";
+    if (backdrop_id.has_value()) {
+      startl() << "backdrop: " << backdrop_id.value();
+    } else {
+      startl() << "backdrop: (no id)";
+    }
     out(backdrop);
     outdent(10);
   } else {
@@ -794,9 +786,9 @@ void DisplayListStreamDispatcher::clipOval(const DlRect& bounds, ClipOp clip_op,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
-                         ClipOp clip_op,
-                         bool is_aa) {
+void DisplayListStreamDispatcher::clipRoundRect(const DlRoundRect& rrect,
+                                                ClipOp clip_op,
+                                                bool is_aa) {
   startl() << "clipRRect("
            << rrect << ", "
            << clip_op << ", "
@@ -846,11 +838,11 @@ void DisplayListStreamDispatcher::drawCircle(const DlPoint& center,
                                              DlScalar radius) {
   startl() << "drawCircle(" << center << ", " << radius << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawRRect(const SkRRect& rrect) {
+void DisplayListStreamDispatcher::drawRoundRect(const DlRoundRect& rrect) {
   startl() << "drawRRect(" << rrect << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawDRRect(const SkRRect& outer,
-                                             const SkRRect& inner) {
+void DisplayListStreamDispatcher::drawDiffRoundRect(const DlRoundRect& outer,
+                                                    const DlRoundRect& inner) {
   startl() << "drawDRRect(outer: " << outer << ", " << std::endl;
   startl() << "           inner: " << inner << ");" << std::endl;
 }

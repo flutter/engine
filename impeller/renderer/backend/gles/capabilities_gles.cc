@@ -124,8 +124,12 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
   }
-
+  is_es_ = desc->IsES();
   is_angle_ = desc->IsANGLE();
+}
+
+bool CapabilitiesGLES::IsES() const {
+  return is_es_;
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -199,6 +203,10 @@ PixelFormat CapabilitiesGLES::GetDefaultDepthStencilFormat() const {
 
 bool CapabilitiesGLES::IsANGLE() const {
   return is_angle_;
+}
+
+bool CapabilitiesGLES::SupportsPrimitiveRestart() const {
+  return false;
 }
 
 PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {

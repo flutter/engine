@@ -32,7 +32,8 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void Save() override;
   void SaveLayer(std::optional<const DlRect>& bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr) override;
+                 const DlImageFilter* backdrop = nullptr,
+                 std::optional<int64_t> backdrop_id = std::nullopt) override;
   void Restore() override;
   int GetSaveCount() const override;
   void RestoreToCount(int restore_count) override;
@@ -65,7 +66,9 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
 
   void ClipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override;
   void ClipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override;
-  void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void ClipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override;
   void ClipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   /// Conservative estimate of the bounds of all outstanding clip operations
@@ -97,10 +100,10 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void DrawCircle(const DlPoint& center,
                   DlScalar radius,
                   const DlPaint& paint) override;
-  void DrawRRect(const SkRRect& rrect, const DlPaint& paint) override;
-  void DrawDRRect(const SkRRect& outer,
-                  const SkRRect& inner,
-                  const DlPaint& paint) override;
+  void DrawRoundRect(const DlRoundRect& rrect, const DlPaint& paint) override;
+  void DrawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner,
+                         const DlPaint& paint) override;
   void DrawPath(const DlPath& path, const DlPaint& paint) override;
   void DrawArc(const DlRect& bounds,
                DlScalar start,

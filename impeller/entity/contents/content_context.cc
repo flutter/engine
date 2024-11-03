@@ -250,14 +250,15 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator(),
+                                      context_->GetIdleWaiter())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
 
   {
     TextureDescriptor desc;
-    desc.storage_mode = StorageMode::kHostVisible;
+    desc.storage_mode = StorageMode::kDevicePrivate;
     desc.format = PixelFormat::kR8G8B8A8UNormInt;
     desc.size = ISize{1, 1};
     empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
@@ -336,8 +337,8 @@ ContentContext::ContentContext(
     clip_pipelines_.SetDefault(
         options,
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
-    texture_downsample_pipelines_.CreateDefault(*context_,
-                                                options_trianglestrip);
+    texture_downsample_pipelines_.CreateDefault(
+        *context_, options_trianglestrip, {supports_decal});
     rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
     texture_strict_src_pipelines_.CreateDefault(*context_, options);
     tiled_texture_pipelines_.CreateDefault(*context_, options,
@@ -493,12 +494,12 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = GetRenderTargetCache()->CreateOffscreenMSAA(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
     subpass_target = GetRenderTargetCache()->CreateOffscreen(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
   return MakeSubpass(label, subpass_target, command_buffer, subpass_callback);
@@ -520,7 +521,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (!sub_renderpass) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
-  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.data()));
+  sub_renderpass->SetLabel(label);
 
   if (!subpass_callback(*this, *sub_renderpass)) {
     return fml::Status(fml::StatusCode::kUnknown, "");
@@ -543,8 +544,8 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   return subpass_target;
 }
 
-std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
-  return tessellator_;
+Tessellator& ContentContext::GetTessellator() const {
+  return *tessellator_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {

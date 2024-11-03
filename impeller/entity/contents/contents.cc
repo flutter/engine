@@ -26,7 +26,7 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   FML_DCHECK(pass.HasDepthAttachment() == pass.HasStencilAttachment());
 
   opts.has_depth_stencil_attachments = has_depth_stencil_attachments;
-  opts.depth_compare = CompareFunction::kGreater;
+  opts.depth_compare = CompareFunction::kGreaterEqual;
   opts.stencil_mode = ContentContextOptions::StencilMode::kIgnore;
   return opts;
 }
@@ -51,13 +51,6 @@ Contents::~Contents() = default;
 
 bool Contents::IsOpaque(const Matrix& transform) const {
   return false;
-}
-
-Contents::ClipCoverage Contents::GetClipCoverage(
-    const Entity& entity,
-    const std::optional<Rect>& current_clip_coverage) const {
-  return {.type = ClipCoverage::Type::kNoChange,
-          .coverage = current_clip_coverage};
 }
 
 std::optional<Snapshot> Contents::RenderToSnapshot(
@@ -110,10 +103,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   if (!render_target.ok()) {
     return std::nullopt;
   }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{std::move(command_buffer)})
-           .ok()) {
+  if (!renderer.GetContext()->EnqueueCommandBuffer(std::move(command_buffer))) {
     return std::nullopt;
   }
 
