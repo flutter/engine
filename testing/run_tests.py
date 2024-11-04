@@ -23,7 +23,7 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform, path as sys_path
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path, stdout as sys_stdout
 import tempfile
 import time
 import typing
@@ -45,7 +45,8 @@ ENCODING = 'UTF-8'
 
 LOG_FILE = os.path.join(OUT_DIR, 'run_tests.log')
 logger = logging.getLogger(__name__)
-console_logger_handler = logging.StreamHandler()
+# Write console logs to stdout (by default StreamHandler uses stderr)
+console_logger_handler = logging.StreamHandler(sys_stdout)
 file_logger_handler = logging.FileHandler(LOG_FILE)
 
 
@@ -130,8 +131,9 @@ def run_cmd( # pylint: disable=too-many-arguments
 
   for forbidden_string in forbidden_output:
     if forbidden_string in output:
+      matches = [x.group(0) for x in re.findall(f'^.*{forbidden_string}.*$', output)]
       raise RuntimeError(
-          'command "%s" contained forbidden string "%s"' % (command_string, forbidden_string)
+          f'command "{command_string}" contained forbidden string "{forbidden_string}": {matches}'
       )
 
   print_divider('<')
