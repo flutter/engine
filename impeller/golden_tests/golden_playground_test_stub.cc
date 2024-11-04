@@ -7,9 +7,11 @@
 #include <filesystem>
 
 #include "flutter/impeller/golden_tests/golden_digest.h"
+#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "flutter/impeller/playground/playground_impl.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
-#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_image_impeller.h"
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -30,35 +32,8 @@ std::string GetTestName() {
   return result;
 }
 
-std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
-  FML_CHECK(::glfwInit() == GLFW_TRUE);
-  PlaygroundSwitches playground_switches;
-  playground_switches.enable_vulkan_validation = enable_validations;
-  return PlaygroundImpl::Create(PlaygroundBackend::kVulkan,
-                                playground_switches);
-}
-
-// Returns a static instance to a playground that can be used across tests.
-const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
-    bool enable_validations) {
-  if (enable_validations) {
-    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
-        vulkan_validation_playground(
-            MakeVulkanPlayground(/*enable_validations=*/true));
-    // TODO(142237): This can be removed when the thread local storage is
-    // removed.
-    static fml::ScopedCleanupClosure context_cleanup(
-        [&] { (*vulkan_validation_playground)->GetContext()->Shutdown(); });
-    return *vulkan_validation_playground;
-  } else {
-    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
-        vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
-    // TODO(142237): This can be removed when the thread local storage is
-    // removed.
-    static fml::ScopedCleanupClosure context_cleanup(
-        [&] { (*vulkan_playground)->GetContext()->Shutdown(); });
-    return *vulkan_playground;
-  }
+std::string GetGoldenFilename(const std::string& postfix) {
+  return GetTestName() + postfix + ".png";
 }
 }  // namespace
 
@@ -69,7 +44,8 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   ISize window_size = ISize{1024, 768};
 };
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
+GoldenPlaygroundTest::GoldenPlaygroundTest()
+    : pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
 
 GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
 
@@ -94,17 +70,10 @@ void GoldenPlaygroundTest::SetUp() {
   bool enable_wide_gamut = test_name.find("WideGamut_") != std::string::npos;
   switch (GetParam()) {
     case PlaygroundBackend::kMetal:
-      GTEST_SKIP()
-        << "Platform doesn't support metal.";
+      GTEST_SKIP() << "Platform doesn't support metal.";
       break;
     case PlaygroundBackend::kVulkan: {
-      if (enable_wide_gamut) {
-        GTEST_SKIP() << "Vulkan doesn't support wide gamut golden tests.";
-      }
-      const std::unique_ptr<PlaygroundImpl>& playground =
-          GetSharedVulkanPlayground(/*enable_validations=*/true);
-      pimpl_->screenshotter =
-          std::make_unique<testing::VulkanScreenshotter>(playground);
+      GTEST_SKIP() << "Platform doesn't support metal.";
       break;
     }
     case PlaygroundBackend::kOpenGLES: {
@@ -122,13 +91,6 @@ void GoldenPlaygroundTest::SetUp() {
     }
   }
 
-  // if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
-  //     kSkipTests.end()) {
-  //   GTEST_SKIP()
-  //       << "GoldenPlaygroundTest doesn't support interactive playground tests "
-  //          "yet.";
-  // }
-
   testing::GoldenDigest::Instance()->AddDimension(
       "gpu_string", GetContext()->DescribeGpuModel());
 }
@@ -139,37 +101,60 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
     const AiksDlPlaygroundCallback& callback) {
-  return false;
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  std::unique_ptr<testing::Screenshot> screenshot;
+  for (int i = 0; i < 2; ++i) {
+    auto display_list = callback();
+    auto texture =
+        DisplayListToTexture(display_list, pimpl_->window_size, renderer);
+    screenshot = pimpl_->screenshotter->MakeScreenshot(renderer, texture);
+  }
+  return SaveScreenshot(std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
     const sk_sp<flutter::DisplayList>& list) {
-  return false;
+  return OpenPlaygroundHere([&list]() { return list; });
 }
 
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return nullptr;
+    std::shared_ptr<fml::Mapping> mapping =
+      flutter::testing::OpenFixtureAsMapping(fixture_name);
+  auto result = Playground::CreateTextureForMapping(GetContext(), mapping,
+                                                    enable_mipmapping);
+  if (result) {
+    result->SetLabel(fixture_name);
+  }
+  return result;
 }
 
 sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return nullptr;
+  std::shared_ptr<Texture> texture =
+      CreateTextureForFixture(fixture_name, enable_mipmapping);
+  return DlImageImpeller::Make(texture);
 }
 
 RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  return {};
+    const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(asset_name);
+  if (!fixture || fixture->GetSize() == 0) {
+    return {};
+  }
+  return RuntimeStage::DecodeRuntimeStages(fixture);
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
-  return nullptr;
+  return pimpl_->screenshotter->GetPlayground().GetContext();
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
-  return Point();
+  return pimpl_->screenshotter->GetPlayground().GetContentScale();
 }
 
 Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
@@ -177,21 +162,25 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 }
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
-  return ISize();
+  return pimpl_->window_size;
 }
 
-void GoldenPlaygroundTest::SetWindowSize(ISize size) {}
+void GoldenPlaygroundTest::SetWindowSize(ISize size) {
+    pimpl_->window_size = size;
+}
 
 fml::Status GoldenPlaygroundTest::SetCapabilities(
     const std::shared_ptr<Capabilities>& capabilities) {
-  return fml::Status(
-      fml::StatusCode::kUnimplemented,
-      "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+  return pimpl_->screenshotter->GetPlayground().SetCapabilities(capabilities);
 }
 
 std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
     const sk_sp<flutter::DisplayList>& list) {
-  return nullptr;
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  return pimpl_->screenshotter->MakeScreenshot(
+      renderer, DisplayListToTexture(list, pimpl_->window_size, renderer));
+
 }
 
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
@@ -205,18 +194,31 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
     FML_CHECK(false) << "not supported.";
     return nullptr;
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    bool enable_vulkan_validations = true;
-    FML_CHECK(!pimpl_->test_vulkan_playground)
-        << "We don't support creating multiple contexts for one test";
-    pimpl_->test_vulkan_playground =
-        MakeVulkanPlayground(enable_vulkan_validations);
-    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-        pimpl_->test_vulkan_playground);
-    return pimpl_->test_vulkan_playground->GetContext();
+    FML_CHECK(false) << "not supported.";
+    return nullptr;
   } else {
     /// On OpenGL we create a context for each test.
     return GetContext();
   }
+}
+
+bool GoldenPlaygroundTest::SaveScreenshot(
+    std::unique_ptr<testing::Screenshot> screenshot,
+    const std::string& postfix) {
+  if (!screenshot || !screenshot->GetBytes()) {
+    FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
+    return false;
+  }
+  std::string test_name = GetTestName();
+  std::string filename = GetGoldenFilename(postfix);
+  testing::GoldenDigest::Instance()->AddImage(
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
+  if (!screenshot->WriteToPNG(
+          testing::WorkingDirectory::Instance()->GetFilenamePath(filename))) {
+    FML_LOG(ERROR) << "Failed to write screenshot to " << filename;
+    return false;
+  }
+  return true;
 }
 
 }  // namespace impeller

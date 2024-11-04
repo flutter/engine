@@ -6,9 +6,7 @@
 
 #define IMPELLER_PLAYGROUND_SUPPORTS_ANGLE FML_OS_MACOSX
 
-#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
 #include <dlfcn.h>
-#endif
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -153,10 +151,12 @@ Playground::GLProcAddressResolver
 PlaygroundImplGLES::CreateGLProcAddressResolver() const {
   return use_angle_ ? [](const char* name) -> void* {
     void* symbol = nullptr;
-#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
+#if FML_MACOSX
     void* angle_glesv2 = dlopen("libGLESv2.dylib", RTLD_LAZY);
-    symbol = dlsym(angle_glesv2, name);
+#else
+    void* angle_glesv2 = dlopen("libGLESv2.so", RTLD_LAZY);
 #endif
+    symbol = dlsym(angle_glesv2, name);
     FML_CHECK(symbol);
     return symbol;
   }
