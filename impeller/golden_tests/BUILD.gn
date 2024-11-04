@@ -65,7 +65,7 @@ impeller_component("vulkan_screenshot") {
   testonly = true
   sources = [
     "vulkan_screenshotter.h",
-    "vulkan_screenshotter.mm",
+    "vulkan_screenshotter.cc",
   ]
   deps = [
     ":screenshot",
