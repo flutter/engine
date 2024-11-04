@@ -47,7 +47,9 @@ TEST(ReactorGLES, DeletesHandlesDuringShutdown) {
   auto mock_gles = MockGLES::Init();
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
+  auto worker = std::make_shared<TestWorker>();
   auto reactor = std::make_shared<ReactorGLES>(std::move(proc_table));
+  reactor->AddWorker(worker);
 
   reactor->CreateHandle(HandleType::kTexture, 123);
 

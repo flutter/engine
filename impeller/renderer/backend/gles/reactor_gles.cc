@@ -73,11 +73,13 @@ ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
 }
 
 ReactorGLES::~ReactorGLES() {
-  for (auto& handle : handles_) {
-    CollectGLHandle(*proc_table_, handle.first.type,
-                    handle.second.name.value());
+  if (CanReactOnCurrentThread()) {
+    for (auto& handle : handles_) {
+      CollectGLHandle(*proc_table_, handle.first.type,
+                      handle.second.name.value());
+    }
+    proc_table_->Flush();
   }
-  proc_table_->Flush();
 }
 
 bool ReactorGLES::IsValid() const {
