@@ -43,5 +43,20 @@ TEST(ReactorGLES, CanAttachCleanupCallbacksToHandles) {
   EXPECT_EQ(value, 1);
 }
 
+TEST(ReactorGLES, DeletesHandlesDuringShutdown) {
+  auto mock_gles = MockGLES::Init();
+  ProcTableGLES::Resolver resolver = kMockResolverGLES;
+  auto proc_table = std::make_unique<ProcTableGLES>(resolver);
+  auto reactor = std::make_shared<ReactorGLES>(std::move(proc_table));
+
+  reactor->CreateHandle(HandleType::kTexture, 123);
+
+  reactor.reset();
+
+  auto calls = mock_gles->GetCapturedCalls();
+  EXPECT_TRUE(std::find(calls.begin(), calls.end(), "glDeleteTextures") !=
+              calls.end());
+}
+
 }  // namespace testing
 }  // namespace impeller
