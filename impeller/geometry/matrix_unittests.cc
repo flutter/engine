@@ -213,17 +213,17 @@ TEST(MatrixTest, TranslateWithPerspective) {
 
 TEST(MatrixTest, MakeScaleTranslate) {
   EXPECT_TRUE(MatrixNear(
-      Matrix::MakeScaleTranslate({1, 1, 1.0 / 1024}, {10, 10, 1.0 / 1024}),
-      Matrix::MakeScale({1, 1, 1.0 / 1024}) *
-          Matrix::MakeTranslation({10, 10, 1.0 / 1024})));
+      Matrix::MakeTranslateScale({1, 1, 1.0 / 1024}, {10, 10, 1.0 / 1024}),
+      Matrix::MakeTranslation({10, 10, 1.0 / 1024}) *
+          Matrix::MakeScale({1, 1, 1.0 / 1024})));
 
   EXPECT_TRUE(MatrixNear(
-      Matrix::MakeScaleTranslate({2, 2, 2}, {10, 10, 0}),
-      Matrix::MakeScale({2, 2, 2}) * Matrix::MakeTranslation({10, 10, 0})));
+      Matrix::MakeTranslateScale({2, 2, 2}, {10, 10, 0}),
+      Matrix::MakeTranslation({10, 10, 0}) * Matrix::MakeScale({2, 2, 2})));
 
   EXPECT_TRUE(MatrixNear(
-      Matrix::MakeScaleTranslate({0, 0, 0}, {0, 0, 0}),
-      Matrix::MakeScale({0, 0, 0}) * Matrix::MakeTranslation({0, 0, 0})));
+      Matrix::MakeTranslateScale({0, 0, 0}, {0, 0, 0}),
+      Matrix::MakeTranslation({0, 0, 0}) * Matrix::MakeScale({0, 0, 0})));
 }
 
 }  // namespace testing
