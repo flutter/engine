@@ -8,6 +8,7 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
@@ -15,6 +16,9 @@
 
 namespace impeller {
 namespace testing {
+
+using AllocatorVKTest = PlaygroundTest;
+INSTANTIATE_VULKAN_PLAYGROUND_SUITE(AllocatorVKTest);
 
 TEST(AllocatorVKTest, ToVKImageUsageFlags) {
   EXPECT_EQ(AllocatorVK::ToVKImageUsageFlags(
@@ -76,6 +80,18 @@ TEST(AllocatorVKTest, MemoryTypeSelectionTwoHeap) {
 TEST(AllocatorVKTest, DeviceBufferCoherency) {
   auto const context = MockVulkanContextBuilder().Build();
   auto allocator = context->GetResourceAllocator();
+
+  std::shared_ptr<DeviceBuffer> buffer =
+      allocator->CreateBuffer(DeviceBufferDescriptor{
+          .storage_mode = StorageMode::kHostVisible,
+          .size = 1024,
+      });
+
+  EXPECT_TRUE(DeviceBufferVK::Cast(*buffer).IsHostCoherent());
+}
+
+TEST_P(AllocatorVKTest, DeviceBufferNonCoherency) {
+  auto allocator = GetContext()->GetResourceAllocator();
 
   std::shared_ptr<DeviceBuffer> buffer =
       allocator->CreateBuffer(DeviceBufferDescriptor{
