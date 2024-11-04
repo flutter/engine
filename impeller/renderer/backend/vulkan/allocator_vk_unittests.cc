@@ -77,19 +77,6 @@ TEST(AllocatorVKTest, MemoryTypeSelectionTwoHeap) {
   EXPECT_EQ(AllocatorVK::FindMemoryTypeIndex(4, properties), -1);
 }
 
-TEST(AllocatorVKTest, DeviceBufferCoherency) {
-  auto const context = MockVulkanContextBuilder().Build();
-  auto allocator = context->GetResourceAllocator();
-
-  std::shared_ptr<DeviceBuffer> buffer =
-      allocator->CreateBuffer(DeviceBufferDescriptor{
-          .storage_mode = StorageMode::kHostVisible,
-          .size = 1024,
-      });
-
-  EXPECT_TRUE(DeviceBufferVK::Cast(*buffer).IsHostCoherent());
-}
-
 TEST_P(AllocatorVKTest, DeviceBufferNonCoherency) {
   auto allocator = GetContext()->GetResourceAllocator();
 
@@ -100,6 +87,14 @@ TEST_P(AllocatorVKTest, DeviceBufferNonCoherency) {
       });
 
   EXPECT_TRUE(DeviceBufferVK::Cast(*buffer).IsHostCoherent());
+
+  std::shared_ptr<DeviceBuffer> buffer_2 =
+      allocator->CreateBuffer(DeviceBufferDescriptor{
+          .storage_mode = StorageMode::kDevicePrivate,
+          .size = 1024,
+      });
+
+  EXPECT_FALSE(DeviceBufferVK::Cast(*buffer_2).IsHostCoherent());
 }
 
 #ifdef IMPELLER_DEBUG
