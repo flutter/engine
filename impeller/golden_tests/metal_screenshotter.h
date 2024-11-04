@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
 
-#include "flutter/impeller/golden_tests/metal_screenshot.h"
 #include "flutter/impeller/golden_tests/screenshotter.h"
 #include "flutter/impeller/playground/playground_impl.h"
 #include "impeller/display_list/aiks_context.h"

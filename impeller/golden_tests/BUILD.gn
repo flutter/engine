@@ -19,16 +19,20 @@ impeller_component("golden_playground_test") {
     "//flutter/impeller/playground",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//flutter/testing:testing_lib",
+    "//flutter/third_party/abseil-cpp/absl/base:no_destructor",
   ]
 
   if (is_mac) {
     sources += [ "golden_playground_test_mac.cc" ]
     deps += [
       ":metal_screenshot",
-      "//flutter/third_party/abseil-cpp/absl/base:no_destructor",
+      ":vulkan_screenshot",
     ]
   } else {
     sources += [ "golden_playground_test_stub.cc" ]
+    deps += [
+      ":vulkan_screenshot",
+    ]
   }
 }
 
@@ -47,21 +51,36 @@ impeller_component("digest") {
 
 impeller_component("screenshot") {
   testonly = true
-  sources = [ "screenshot.h" ]
+  sources = [
+    "screenshot.h",
+    "screenshotter.h",
+  ]
+  deps = [
+    "//flutter/impeller/display_list",
+    "//flutter/impeller/playground",
+  ]
 }
 
-if (is_mac) {
+impeller_component("vulkan_screenshot") {
+  testonly = true
+  sources = [
+    "vulkan_screenshotter.h",
+    "vulkan_screenshotter.mm",
+  ]
+  deps = [
+    ":screenshot",
+    "//flutter/impeller/playground",
+  ]
+}
+
   impeller_component("metal_screenshot") {
     testonly = true
 
     sources = [
-      "metal_screenshot.h",
-      "metal_screenshot.mm",
-      "metal_screenshotter.h",
-      "metal_screenshotter.mm",
-      "screenshotter.h",
-      "vulkan_screenshotter.h",
-      "vulkan_screenshotter.mm",
+      # "metal_screenshot.h",
+      # "metal_screenshot.mm",
+      # "metal_screenshotter.h",
+      # "metal_screenshotter.mm",
     ]
 
     deps = [
@@ -80,7 +99,6 @@ if (is_mac) {
     testonly = true
 
     sources = [
-      "golden_tests.cc",
       "main.cc",
     ]
 
@@ -98,4 +116,3 @@ if (is_mac) {
       "//flutter/third_party/swiftshader",
     ]
   }
-}
