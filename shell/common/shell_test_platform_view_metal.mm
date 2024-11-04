@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
@@ -16,14 +17,14 @@
 namespace flutter {
 namespace testing {
 
-static id<MTLTexture> CreateOffscreenTexture(id<MTLDevice> device) {
+static fml::scoped_nsprotocol<id<MTLTexture>> CreateOffscreenTexture(id<MTLDevice> device) {
   auto descriptor =
       [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
                                                          width:800
                                                         height:600
                                                      mipmapped:NO];
   descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-  return [device newTextureWithDescriptor:descriptor];
+  return fml::scoped_nsprotocol<id<MTLTexture>>{[device newTextureWithDescriptor:descriptor]};
 }
 
 // This is out of the header so that shell_test_platform_view_metal.h can be included in
@@ -42,23 +43,25 @@ class DarwinContextMetal {
 
   ~DarwinContextMetal() = default;
 
-  const FlutterDarwinContextMetalImpeller* impeller_context() const { return impeller_context_; }
+  fml::scoped_nsobject<FlutterDarwinContextMetalImpeller> impeller_context() const {
+    return impeller_context_;
+  }
 
-  const FlutterDarwinContextMetalSkia* context() const { return context_; }
+  fml::scoped_nsobject<FlutterDarwinContextMetalSkia> context() const { return context_; }
 
-  id<MTLTexture> offscreen_texture() const { return offscreen_texture_; }
+  fml::scoped_nsprotocol<id<MTLTexture>> offscreen_texture() const { return offscreen_texture_; }
 
   GPUMTLTextureInfo offscreen_texture_info() const {
     GPUMTLTextureInfo info = {};
     info.texture_id = 0;
-    info.texture = (__bridge GPUMTLTextureHandle)offscreen_texture_;
+    info.texture = reinterpret_cast<GPUMTLTextureHandle>(offscreen_texture_.get());
     return info;
   }
 
  private:
-  const FlutterDarwinContextMetalSkia* context_;
-  const FlutterDarwinContextMetalImpeller* impeller_context_;
-  const id<MTLTexture> offscreen_texture_;
+  const fml::scoped_nsobject<FlutterDarwinContextMetalSkia> context_;
+  const fml::scoped_nsobject<FlutterDarwinContextMetalImpeller> impeller_context_;
+  const fml::scoped_nsprotocol<id<MTLTexture>> offscreen_texture_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DarwinContextMetal);
 };
