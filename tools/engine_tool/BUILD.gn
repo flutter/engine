@@ -8,8 +8,8 @@ group("tests") {
   testonly = true
   public_deps = [
     ":build_command_test",
-    ":cleanup_command_test",
     ":build_plan_test",
+    ":cleanup_command_test",
     ":entry_point_test",
     ":fetch_command_test",
     ":flutter_tools_test",
