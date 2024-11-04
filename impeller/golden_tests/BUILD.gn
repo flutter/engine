@@ -30,9 +30,7 @@ impeller_component("golden_playground_test") {
     ]
   } else {
     sources += [ "golden_playground_test_stub.cc" ]
-    deps += [
-      ":vulkan_screenshot",
-    ]
+    deps += [ ":vulkan_screenshot" ]
   }
 }
 
@@ -64,10 +62,10 @@ impeller_component("screenshot") {
 impeller_component("vulkan_screenshot") {
   testonly = true
   sources = [
-    "vulkan_screenshotter.h",
-    "vulkan_screenshotter.cc",
     "libpng_screenshot.cc",
     "libpng_screenshot.h",
+    "vulkan_screenshotter.cc",
+    "vulkan_screenshotter.h",
   ]
   deps = [
     ":screenshot",
@@ -75,46 +73,44 @@ impeller_component("vulkan_screenshot") {
   ]
 }
 
-  impeller_component("metal_screenshot") {
-    testonly = true
+impeller_component("metal_screenshot") {
+  testonly = true
 
-    sources = [
-      # "metal_screenshot.h",
-      # "metal_screenshot.mm",
-      # "metal_screenshotter.h",
-      # "metal_screenshotter.mm",
-    ]
+  sources = [
+    # "metal_screenshot.h",
+    # "metal_screenshot.mm",
+    # "metal_screenshotter.h",
+    # "metal_screenshotter.mm",
+  ]
 
-    deps = [
-      ":screenshot",
-      "//flutter/display_list",
-      "//flutter/impeller/display_list",
-      "//flutter/impeller/playground",
-      "//flutter/impeller/renderer/backend/metal:metal",
-      "//flutter/impeller/renderer/backend/vulkan",
-    ]
-  }
+  deps = [
+    ":screenshot",
+    "//flutter/display_list",
+    "//flutter/impeller/display_list",
+    "//flutter/impeller/playground",
+    "//flutter/impeller/renderer/backend/metal:metal",
+    "//flutter/impeller/renderer/backend/vulkan",
+  ]
+}
 
-  impeller_component("impeller_golden_tests") {
-    target_type = "executable"
+impeller_component("impeller_golden_tests") {
+  target_type = "executable"
 
-    testonly = true
+  testonly = true
 
-    sources = [
-      "main.cc",
-    ]
+  sources = [ "main.cc" ]
 
-    deps = [
-      ":digest",
-      ":metal_screenshot",
-      "//flutter/display_list",
-      "//flutter/impeller/display_list",
-      "//flutter/impeller/display_list:aiks_unittests_golden",
-      "//flutter/impeller/display_list:display_list_unittests_golden",
-      "//flutter/impeller/fixtures",
-      "//flutter/third_party/angle:libEGL",
-      "//flutter/third_party/angle:libGLESv2",
-      "//flutter/third_party/googletest:gtest",
-      "//flutter/third_party/swiftshader",
-    ]
-  }
+  deps = [
+    ":digest",
+    ":metal_screenshot",
+    "//flutter/display_list",
+    "//flutter/impeller/display_list",
+    "//flutter/impeller/display_list:aiks_unittests_golden",
+    "//flutter/impeller/display_list:display_list_unittests_golden",
+    "//flutter/impeller/fixtures",
+    "//flutter/third_party/angle:libEGL",
+    "//flutter/third_party/angle:libGLESv2",
+    "//flutter/third_party/googletest:gtest",
+    "//flutter/third_party/swiftshader",
+  ]
+}

@@ -121,7 +121,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-    std::shared_ptr<fml::Mapping> mapping =
+  std::shared_ptr<fml::Mapping> mapping =
       flutter::testing::OpenFixtureAsMapping(fixture_name);
   auto result = Playground::CreateTextureForMapping(GetContext(), mapping,
                                                     enable_mipmapping);
@@ -141,7 +141,7 @@ sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
 
 RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-    const std::shared_ptr<fml::Mapping> fixture =
+  const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping(asset_name);
   if (!fixture || fixture->GetSize() == 0) {
     return {};
@@ -166,7 +166,7 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
 }
 
 void GoldenPlaygroundTest::SetWindowSize(ISize size) {
-    pimpl_->window_size = size;
+  pimpl_->window_size = size;
 }
 
 fml::Status GoldenPlaygroundTest::SetCapabilities(
@@ -180,7 +180,6 @@ std::unique_ptr<testing::Screenshot> GoldenPlaygroundTest::MakeScreenshot(
 
   return pimpl_->screenshotter->MakeScreenshot(
       renderer, DisplayListToTexture(list, pimpl_->window_size, renderer));
-
 }
 
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,

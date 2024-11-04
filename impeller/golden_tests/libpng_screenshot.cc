@@ -49,7 +49,7 @@ bool LibPNGScreenshot::WriteToPNG(const std::string& path) const {
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
-    png_destroy_write_struct(&png_ptr, (png_infopp)nullptr);
+    png_destroy_write_struct(&png_ptr, (png_infopp) nullptr);
     return false;
   }
 
