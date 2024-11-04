@@ -5,7 +5,7 @@
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 
 #include "flutter/fml/synchronization/waitable_event.h"
-// #include "flutter/impeller/golden_tests/metal_screenshot.h"
+#include "flutter/impeller/golden_tests/libpng_screenshot.h"
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
 
@@ -13,14 +13,6 @@ namespace impeller {
 namespace testing {
 
 namespace {
-
-// using CGContextPtr = std::unique_ptr<std::remove_pointer<CGContextRef>::type,
-//                                      decltype(&CGContextRelease)>;
-// using CGImagePtr = std::unique_ptr<std::remove_pointer<CGImageRef>::type,
-//                                    decltype(&CGImageRelease)>;
-// using CGColorSpacePtr =
-//     std::unique_ptr<std::remove_pointer<CGColorSpaceRef>::type,
-//                     decltype(&CGColorSpaceRelease)>;
 
 std::unique_ptr<Screenshot> ReadTexture(
     const std::shared_ptr<Context>& surface_context,
@@ -55,47 +47,12 @@ std::unique_ptr<Screenshot> ReadTexture(
   latch.Wait();
   device_buffer->Invalidate();
 
-  // TODO(gaaclarke): Replace CoreImage requirement with something
-  // crossplatform.
+  FML_DCHECK(texture->GetTextureDescriptor().format ==
+             PixelFormat::kB8G8R8A8UNormInt);
 
-//   CGColorSpacePtr color_space(CGColorSpaceCreateDeviceRGB(),
-//                               &CGColorSpaceRelease);
-//   CGBitmapInfo bitmap_info =
-//       texture->GetTextureDescriptor().format == PixelFormat::kB8G8R8A8UNormInt
-//           ? kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little
-//           : kCGImageAlphaPremultipliedLast;
-//   CGContextPtr context(
-//       CGBitmapContextCreate(
-//           device_buffer->OnGetContents(), texture->GetSize().width,
-//           texture->GetSize().height,
-//           /*bitsPerComponent=*/8,
-//           /*bytesPerRow=*/texture->GetTextureDescriptor().GetBytesPerRow(),
-//           color_space.get(), bitmap_info),
-//       &CGContextRelease);
-//   FML_CHECK(context);
-//   CGImagePtr image(CGBitmapContextCreateImage(context.get()), &CGImageRelease);
-//   FML_CHECK(image);
-
-  // TODO(142641): Perform the flip at the blit stage to avoid this slow copy.
-//   if (texture->GetYCoordScale() == -1) {
-//     CGContextPtr flipped_context(
-//         CGBitmapContextCreate(
-//             nullptr, texture->GetSize().width, texture->GetSize().height,
-//             /*bitsPerComponent=*/8,
-//             /*bytesPerRow=*/0, color_space.get(), bitmap_info),
-//         &CGContextRelease);
-//     CGContextTranslateCTM(flipped_context.get(), 0, texture->GetSize().height);
-//     CGContextScaleCTM(flipped_context.get(), 1.0, -1.0);
-//     CGContextDrawImage(
-//         flipped_context.get(),
-//         CGRectMake(0, 0, texture->GetSize().width, texture->GetSize().height),
-//         image.get());
-//     CGImagePtr flipped_image(CGBitmapContextCreateImage(flipped_context.get()),
-//                              &CGImageRelease);
-//     image.swap(flipped_image);
-//   }
-
-  return nullptr;
+  return std::make_unique<LibPNGScreenshot>(device_buffer->OnGetContents(),
+                                            texture->GetSize().width,
+                                            texture->GetSize().height);
 }
 }  // namespace
 

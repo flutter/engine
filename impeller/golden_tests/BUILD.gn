@@ -66,6 +66,8 @@ impeller_component("vulkan_screenshot") {
   sources = [
     "vulkan_screenshotter.h",
     "vulkan_screenshotter.cc",
+    "libpng_screenshot.cc",
+    "libpng_screenshot.h",
   ]
   deps = [
     ":screenshot",
