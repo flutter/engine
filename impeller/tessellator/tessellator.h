@@ -284,10 +284,14 @@ class Tessellator {
                                             const Rect& bounds,
                                             const Size& radii);
 
+  std::vector<Point>& GetStrokePointCache() { return stroke_points_; }
+
  protected:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
   std::unique_ptr<std::vector<uint16_t>> index_buffer_;
+  /// Used for stroke path generation.
+  std::vector<Point> stroke_points_;
 
  private:
   // Data for various Circle/EllipseGenerator classes, cached per
