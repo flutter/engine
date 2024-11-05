@@ -13,7 +13,7 @@ namespace impeller {
 
 class ImpellerBenchmarkAccessor {
  public:
-  static const std::vector<Point>& GenerateSolidStrokeVertices(
+  static std::vector<Point> GenerateSolidStrokeVertices(
       const Path::Polyline& polyline,
       Scalar stroke_width,
       Scalar miter_limit,
