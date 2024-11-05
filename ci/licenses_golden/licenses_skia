@@ -1,4 +1,4 @@
-Signature: 708013255f63867f3424df96a9a8e20b
+Signature: 521b97a395b8b6a7329e4928e185778a
 
 ====================================================================================================
 LIBRARY: etc1
@@ -9816,9 +9816,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.cpp
+FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_proxy.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h
 ----------------------------------------------------------------------------------------------------
