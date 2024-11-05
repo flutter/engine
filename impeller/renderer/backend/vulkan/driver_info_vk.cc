@@ -348,6 +348,11 @@ bool DriverInfoVK::IsKnownBadDriver() const {
         return false;
     }
   }
+  // Disable Maleoon series GPUs, see:
+  // https://github.com/flutter/flutter/issues/156623
+  if (vendor_ == VendorVK::kHuawei) {
+    return true;
+  }
   return false;
 }
 
