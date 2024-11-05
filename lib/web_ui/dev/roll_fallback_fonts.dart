@@ -71,7 +71,6 @@ class RollFallbackFontsCommand extends Command<bool>
       throw ToolExit('Could not find license attribution at: $failedUrl');
     }
 
-
     final List<_Font> fallbackFontData = <_Font>[];
 
     final Map<String, String> charsetForFamily = <String, String>{};
@@ -535,6 +534,11 @@ String getUrlSuffix(Uri fontUri) {
   return urlString.substring(expectedUrlPrefix.length);
 }
 
+/// Checks the license attribution for unique fonts in the [fallbackFontInfo]
+/// list.
+///
+/// When the license check fails, it returns the URL of the license file that
+/// failed the check. When the check passes, it returns `null`.
 Future<String?> _checkForLicenseAttributions(
   http.Client client,
   List<_FontInfo> fallbackFontInfo,
