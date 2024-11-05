@@ -81,6 +81,7 @@ source_set("glfw") {
     defines = [
       "_GLFW_X11",
       "_GLFW_HAS_XF86VM",
+      "_GLFW_EGL_LIBRARY=\"libEGL.so\"",
     ]
 
     libs = [
