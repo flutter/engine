@@ -45,7 +45,7 @@ struct _FlEngine {
   // Renders the Flutter app.
   FlRenderer* renderer;
 
-  // Messenger used to communicate with engine.
+  // Messenger used to send and receive platform messages.
   FlBinaryMessenger* binary_messenger;
 
   // Implements the flutter/settings channel.
