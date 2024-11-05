@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "fml/trace_event.h"
-#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -250,7 +249,8 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator(),
+                                      context_->GetIdleWaiter())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -336,8 +336,8 @@ ContentContext::ContentContext(
     clip_pipelines_.SetDefault(
         options,
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
-    texture_downsample_pipelines_.CreateDefault(*context_,
-                                                options_trianglestrip);
+    texture_downsample_pipelines_.CreateDefault(
+        *context_, options_trianglestrip, {supports_decal});
     rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
     texture_strict_src_pipelines_.CreateDefault(*context_, options);
     tiled_texture_pipelines_.CreateDefault(*context_, options,

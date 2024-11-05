@@ -84,6 +84,7 @@
 ../../../flutter/flow/texture_unittests.cc
 ../../../flutter/flow/view_slicer_unittests.cc
 ../../../flutter/flutter_frontend_server
+../../../flutter/flutter_vma/include/README.md
 ../../../flutter/fml/ascii_trie_unittests.cc
 ../../../flutter/fml/backtrace_unittests.cc
 ../../../flutter/fml/base32_unittest.cc
@@ -106,11 +107,7 @@
 ../../../flutter/fml/message_loop_unittests.cc
 ../../../flutter/fml/paths_unittests.cc
 ../../../flutter/fml/platform/darwin/cf_utils_unittests.mm
-../../../flutter/fml/platform/darwin/scoped_nsobject_arc_unittests.mm
-../../../flutter/fml/platform/darwin/scoped_nsobject_unittests.mm
 ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.mm
-../../../flutter/fml/platform/darwin/weak_nsobject_arc_unittests.mm
-../../../flutter/fml/platform/darwin/weak_nsobject_unittests.mm
 ../../../flutter/fml/platform/fuchsia/log_interest_listener_unittests.cc
 ../../../flutter/fml/platform/win/file_win_unittests.cc
 ../../../flutter/fml/platform/win/wstring_conversion_unittests.cc
@@ -136,6 +133,7 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/core/buffer_view_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_atlas_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_basic_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_blend_unittests.cc
@@ -193,6 +191,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/driver_info_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/formats_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_data_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
@@ -3364,7 +3363,6 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.development/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
-../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.metadata/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
