@@ -11,7 +11,7 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view_widget.h"
 
 struct FlApplicationPrivate {
   // Arguments to pass to Dart.
@@ -89,7 +89,7 @@ static void fl_application_activate(GApplication* application) {
   fl_dart_project_set_dart_entrypoint_arguments(
       project, priv->dart_entrypoint_arguments);
 
-  FlView* view = fl_view_new(project);
+  FlView* view = fl_view_widget_new(project);
   g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
                            self);
   gtk_widget_show(GTK_WIDGET(view));
