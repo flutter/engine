@@ -792,10 +792,8 @@ static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::kRaster | flutter::ThreadHost::Type::kIo;
-  if (!settings.enable_impeller) {
-    threadHostType |= flutter::ThreadHost::Type::kUi;
-  }
+  uint32_t threadHostType = flutter::ThreadHost::Type::kRaster | flutter::ThreadHost::Type::kIo |
+                            flutter::ThreadHost::Type::kUi;
 
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
@@ -877,12 +875,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
-  fml::RefPtr<fml::TaskRunner> ui_runner;
-  if (settings.enable_impeller) {
-    ui_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-  } else {
-    ui_runner = _threadHost->ui_thread->GetTaskRunner();
-  }
+  fml::RefPtr<fml::TaskRunner> ui_runner = _threadHost->ui_thread->GetTaskRunner();
   flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                     fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
                                     _threadHost->raster_thread->GetTaskRunner(),     // raster

@@ -477,8 +477,8 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
 
-  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
-                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+  XCTAssertNotEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                    engine.shell.GetTaskRunners().GetPlatformTaskRunner());
 }
 
 - (void)testCanNotUnMergePlatformAndUIThread {
@@ -488,8 +488,8 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
 
-  XCTAssertEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
-                 engine.shell.GetTaskRunners().GetPlatformTaskRunner());
+  XCTAssertNotEqual(engine.shell.GetTaskRunners().GetUITaskRunner(),
+                    engine.shell.GetTaskRunners().GetPlatformTaskRunner());
 }
 
 @end
