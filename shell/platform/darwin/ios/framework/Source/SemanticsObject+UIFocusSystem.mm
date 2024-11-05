@@ -4,6 +4,7 @@
 
 #import "SemanticsObject.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 FLUTTER_ASSERT_ARC
@@ -102,6 +103,8 @@ FLUTTER_ASSERT_ARC
 }
 @end
 
+#pragma mark - UIFocusItemScrollableContainer Conformance
+
 @interface FlutterScrollableSemanticsObject ()
 @property(nonatomic, readonly) UIScrollView* scrollView;
 @end
@@ -124,26 +127,41 @@ FLUTTER_ASSERT_ARC
   }
 
   // The following code assumes the memory layout of CGPoint is exactly the
-  // same as an array defined as: `double coords[] = { x, y };`. When converted
-  // to dart:typed_data it's a Float64List.
-  //
+  // same as an array defined as: `double coords[] = { x, y };`. Converts
+  // to a Float64List in dart.
   // The size of a CGFloat is architecture-dependent and it's typically the word
   // size. The last iOS with 32-bit support was iOS 10.
   static_assert(sizeof(CGPoint) == sizeof(CGFloat) * 2);
   static_assert(sizeof(CGFloat) == sizeof(double));
-  constexpr size_t bytesPerElement = sizeof(CGFloat);
-  CGFloat* data = reinterpret_cast<CGFloat*>(malloc(3 * bytesPerElement));
+  FlutterStandardTypedData* offsetData = [FlutterStandardTypedData
+      typedDataWithFloat64:[NSData dataWithBytes:&contentOffset length:sizeof(CGPoint)]];
+  NSData* encoded = [[FlutterStandardMessageCodec sharedInstance] encode:offsetData];
 
-  static_assert(sizeof(uint64_t) == bytesPerElement);
+  self.bridge->DispatchSemanticsAction(self.uid, flutter::SemanticsAction::kScrollToOffset,
+                                       fml::MallocMapping::Copy(encoded.bytes, encoded.length));
+}
 
-  // Assumes the host is little endian.
-  ((uint64_t*)data)[0] = 11ULL         // 11 means the payload is a Float64List.
-                         | 2ULL << 8;  // 2 elements in the Float64List.
-  memcpy(data + 1, &contentOffset, sizeof(CGPoint));
+- (NSArray<id<UIFocusItem>>*)focusItemsInRect:(CGRect)rect {
+  // It seems the iOS focus system relies heavily on focusItemsInRect
+  // (instead of preferredFocusEnvironments) for directional navigation.
+  //
+  // The order of the items seems to be important, menus and dialogs become
+  // unreachable via FKA if the returned children are organized
+  // in hit-test order.
+  //
+  // This method is only supposed to return items within the given
+  // rect but returning everything in the subtree seems to work fine.
+  NSMutableArray<id<UIFocusItem>>* reversedItems =
+      [[NSMutableArray alloc] initWithCapacity:self.childrenInHitTestOrder.count];
+  for (NSUInteger i = 0; i < self.childrenInHitTestOrder.count; ++i) {
+    [reversedItems
+        addObject:self.childrenInHitTestOrder[self.childrenInHitTestOrder.count - 1 - i]];
+  }
+  return reversedItems;
+}
 
-  self.bridge->DispatchSemanticsAction(
-      self.uid, flutter::SemanticsAction::kScrollToOffset,
-      fml::MallocMapping(reinterpret_cast<uint8_t*>(data), 3 * bytesPerElement));
+- (BOOL)canBecomeFocused {
+  return NO;
 }
 
 - (CGSize)contentSize {

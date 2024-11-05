@@ -19,6 +19,10 @@ const float kFloatCompareEpsilon = 0.001;
 @interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
 @end
 
+@interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
+    UIFocusItemScrollableContainer>
+@end
+
 @interface TextInputSemanticsObject (Test)
 - (UIView<UITextInput>*)textInputSurrogate;
 @end
@@ -1205,5 +1209,29 @@ const float kFloatCompareEpsilon = 0.001;
   XCTAssertEqual(itemsInRect.count, (unsigned long)2);
   XCTAssertTrue([itemsInRect containsObject:child1]);
   XCTAssertTrue([itemsInRect containsObject:child2]);
+}
+
+- (void)testUIFocusItemScrollableContainerConformance {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::testing::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithBridge:bridge uid:5];
+
+  // setContentOffset
+  const CGPoint p = CGPointMake(123.0, 456.0);
+  [scrollable setContentOffset:p];
+  XCTAssertEqual(bridge->observations.size(), (size_t)1);
+  XCTAssertEqual(bridge->observations[0].id, 5);
+  XCTAssertEqual(bridge->observations[0].action, flutter::SemanticsAction::kScrollToOffset);
+
+  std::vector<uint8_t> args = bridge->observations[0].args;
+  XCTAssertEqual(args.size(), 3 * sizeof(CGFloat));
+
+  NSData* encoded = [NSData dataWithBytes:args.data() length:args.size()];
+  FlutterStandardTypedData* decoded = [[FlutterStandardMessageCodec sharedInstance] decode:encoded];
+  CGPoint point = CGPointZero;
+  memcpy(&point, decoded.data.bytes, decoded.data.length);
+  XCTAssertTrue(CGPointEqualToPoint(point, p));
 }
 @end
