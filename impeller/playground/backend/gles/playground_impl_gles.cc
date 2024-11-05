@@ -65,8 +65,10 @@ PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
       worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
       use_angle_(switches.use_angle) {
   if (use_angle_) {
-#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
+#if FML_MACOSX
     angle_glesv2_ = dlopen("libGLESv2.dylib", RTLD_LAZY);
+#else
+    angle_glesv2_ = dlopen("libGLESv2.so", RTLD_LAZY);
 #endif
     FML_CHECK(angle_glesv2_ != nullptr);
   }
@@ -75,8 +77,10 @@ PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
 
 #if FML_OS_MACOSX
   FML_CHECK(use_angle_) << "Must use Angle on macOS for OpenGL ES.";
-  ::glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 #endif  // FML_OS_MACOSX
+  if (use_angle_) {
+    ::glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+  }
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
   ::glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   ::glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);

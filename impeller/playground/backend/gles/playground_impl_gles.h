@@ -26,7 +26,7 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   UniqueHandle handle_;
   std::shared_ptr<ReactorWorker> worker_;
   const bool use_angle_;
-  void* angle_glesv2_;
+  void* angle_glesv2_ = nullptr;
 
   // |PlaygroundImpl|
   std::shared_ptr<Context> GetContext() const override;
