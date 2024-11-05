@@ -337,8 +337,8 @@ ContentContext::ContentContext(
     clip_pipelines_.SetDefault(
         options,
         std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
-    texture_downsample_pipelines_.CreateDefault(
-        *context_, options_trianglestrip, {supports_decal});
+    texture_downsample_pipelines_.CreateDefault(*context_,
+                                                options_trianglestrip);
     rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
     texture_strict_src_pipelines_.CreateDefault(*context_, options);
     tiled_texture_pipelines_.CreateDefault(*context_, options,
@@ -460,6 +460,8 @@ ContentContext::ContentContext(
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
   }
+  texture_downsample_gles_pipelines_.CreateDefault(*context_,
+                                                   options_trianglestrip);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   is_valid_ = true;
