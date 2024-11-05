@@ -12,20 +12,14 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 
 @class CALayer;
 
 namespace flutter {
 
-// Returns true if the app explicitly specified to use the iOS view embedding
-// mechanism which is still in a release preview.
-bool IsIosEmbeddedViewsPreviewEnabled();
-
 class IOSSurface {
  public:
-  static std::unique_ptr<IOSSurface> Create(std::shared_ptr<IOSContext> context,
-                                            const fml::scoped_nsobject<CALayer>& layer);
+  static std::unique_ptr<IOSSurface> Create(std::shared_ptr<IOSContext> context, CALayer* layer);
 
   std::shared_ptr<IOSContext> GetContext() const;
 

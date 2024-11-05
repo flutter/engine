@@ -108,8 +108,9 @@ public class FlutterRenderer implements TextureRegistry {
               public void onResume(@NonNull LifecycleOwner owner) {
                 Log.v(TAG, "onResume called; notifying SurfaceProducers");
                 for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
-                  if (producer.callback != null) {
-                    producer.callback.onSurfaceCreated();
+                  if (producer.callback != null && producer.notifiedDestroy) {
+                    producer.notifiedDestroy = false;
+                    producer.callback.onSurfaceAvailable();
                   }
                 }
               }
@@ -462,6 +463,13 @@ public class FlutterRenderer implements TextureRegistry {
     // will be produced at that size.
     private boolean createNewReader = true;
 
+    /**
+     * Stores whether {@link Callback#onSurfaceDestroyed()} was previously invoked.
+     *
+     * <p>Used to avoid signaling {@link Callback#onSurfaceAvailable()} unnecessarily.
+     */
+    private boolean notifiedDestroy = false;
+
     // State held to track latency of various stages.
     private long lastDequeueTime = 0;
     private long lastQueueTime = 0;
@@ -545,6 +553,10 @@ public class FlutterRenderer implements TextureRegistry {
         return imageQueue.isEmpty() && lastReaderDequeuedFrom != this;
       }
 
+      boolean imageQueueIsEmpty() {
+        return imageQueue.isEmpty();
+      }
+
       void close() {
         closed = true;
         if (VERBOSE_LOGS) {
@@ -622,6 +634,7 @@ public class FlutterRenderer implements TextureRegistry {
 
     PerImage dequeueImage() {
       PerImage r = null;
+      boolean hasPendingImages = false;
       synchronized (lock) {
         for (PerImageReader reader : imageReaderQueue) {
           r = reader.dequeueImage();
@@ -671,6 +684,21 @@ public class FlutterRenderer implements TextureRegistry {
           break;
         }
         pruneImageReaderQueue();
+        for (PerImageReader reader : imageReaderQueue) {
+          if (!reader.imageQueueIsEmpty()) {
+            hasPendingImages = true;
+            break;
+          }
+        }
+      }
+      if (hasPendingImages) {
+        // Request another frame to ensure that images are consumed until the queue is empty.
+        handler.post(
+            () -> {
+              if (!released) {
+                scheduleEngineFrame();
+              }
+            });
       }
       return r;
     }
@@ -689,6 +717,7 @@ public class FlutterRenderer implements TextureRegistry {
       cleanup();
       createNewReader = true;
       if (this.callback != null) {
+        notifiedDestroy = true;
         this.callback.onSurfaceDestroyed();
       }
     }
@@ -696,6 +725,7 @@ public class FlutterRenderer implements TextureRegistry {
     private void releaseInternal() {
       cleanup();
       released = true;
+      removeOnTrimMemoryListener(this);
       imageReaderProducers.remove(this);
     }
 
@@ -754,6 +784,11 @@ public class FlutterRenderer implements TextureRegistry {
     @Override
     public void setCallback(Callback callback) {
       this.callback = callback;
+    }
+
+    @Override
+    public boolean handlesCropAndRotation() {
+      return false;
     }
 
     @Override
@@ -1122,6 +1157,13 @@ public class FlutterRenderer implements TextureRegistry {
     }
   }
 
+  private void translateFeatureBounds(int[] displayFeatureBounds, int offset, Rect bounds) {
+    displayFeatureBounds[offset] = bounds.left;
+    displayFeatureBounds[offset + 1] = bounds.top;
+    displayFeatureBounds[offset + 2] = bounds.right;
+    displayFeatureBounds[offset + 3] = bounds.bottom;
+  }
+
   /**
    * Notifies Flutter that the viewport metrics, e.g. window height and width, have changed.
    *
@@ -1172,19 +1214,30 @@ public class FlutterRenderer implements TextureRegistry {
             + viewportMetrics.systemGestureInsetRight
             + "\n"
             + "Display Features: "
-            + viewportMetrics.displayFeatures.size());
+            + viewportMetrics.displayFeatures.size()
+            + "\n"
+            + "Display Cutouts: "
+            + viewportMetrics.displayCutouts.size());
 
-    int[] displayFeaturesBounds = new int[viewportMetrics.displayFeatures.size() * 4];
-    int[] displayFeaturesType = new int[viewportMetrics.displayFeatures.size()];
-    int[] displayFeaturesState = new int[viewportMetrics.displayFeatures.size()];
+    int totalFeaturesAndCutouts =
+        viewportMetrics.displayFeatures.size() + viewportMetrics.displayCutouts.size();
+    int[] displayFeaturesBounds = new int[totalFeaturesAndCutouts * 4];
+    int[] displayFeaturesType = new int[totalFeaturesAndCutouts];
+    int[] displayFeaturesState = new int[totalFeaturesAndCutouts];
     for (int i = 0; i < viewportMetrics.displayFeatures.size(); i++) {
       DisplayFeature displayFeature = viewportMetrics.displayFeatures.get(i);
-      displayFeaturesBounds[4 * i] = displayFeature.bounds.left;
-      displayFeaturesBounds[4 * i + 1] = displayFeature.bounds.top;
-      displayFeaturesBounds[4 * i + 2] = displayFeature.bounds.right;
-      displayFeaturesBounds[4 * i + 3] = displayFeature.bounds.bottom;
+      translateFeatureBounds(displayFeaturesBounds, 4 * i, displayFeature.bounds);
       displayFeaturesType[i] = displayFeature.type.encodedValue;
       displayFeaturesState[i] = displayFeature.state.encodedValue;
+    }
+    int cutoutOffset = viewportMetrics.displayFeatures.size() * 4;
+    for (int i = 0; i < viewportMetrics.displayCutouts.size(); i++) {
+      DisplayFeature displayCutout = viewportMetrics.displayCutouts.get(i);
+      translateFeatureBounds(displayFeaturesBounds, cutoutOffset + 4 * i, displayCutout.bounds);
+      displayFeaturesType[viewportMetrics.displayFeatures.size() + i] =
+          displayCutout.type.encodedValue;
+      displayFeaturesState[viewportMetrics.displayFeatures.size() + i] =
+          displayCutout.state.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -1230,7 +1283,8 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.registerImageTexture(textureId, imageTexture);
   }
 
-  private void scheduleEngineFrame() {
+  @VisibleForTesting
+  /* package */ void scheduleEngineFrame() {
     flutterJNI.scheduleFrame();
   }
 
@@ -1299,7 +1353,29 @@ public class FlutterRenderer implements TextureRegistry {
       return width > 0 && height > 0 && devicePixelRatio > 0;
     }
 
-    public List<DisplayFeature> displayFeatures = new ArrayList<>();
+    // Features
+    private final List<DisplayFeature> displayFeatures = new ArrayList<>();
+
+    // Specifically display cutouts.
+    private final List<DisplayFeature> displayCutouts = new ArrayList<>();
+
+    public List<DisplayFeature> getDisplayFeatures() {
+      return displayFeatures;
+    }
+
+    public List<DisplayFeature> getDisplayCutouts() {
+      return displayCutouts;
+    }
+
+    public void setDisplayFeatures(List<DisplayFeature> newFeatures) {
+      displayFeatures.clear();
+      displayFeatures.addAll(newFeatures);
+    }
+
+    public void setDisplayCutouts(List<DisplayFeature> newCutouts) {
+      displayCutouts.clear();
+      displayCutouts.addAll(newCutouts);
+    }
   }
 
   /**
@@ -1321,12 +1397,6 @@ public class FlutterRenderer implements TextureRegistry {
       this.bounds = bounds;
       this.type = type;
       this.state = state;
-    }
-
-    public DisplayFeature(Rect bounds, DisplayFeatureType type) {
-      this.bounds = bounds;
-      this.type = type;
-      this.state = DisplayFeatureState.UNKNOWN;
     }
   }
 

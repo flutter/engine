@@ -81,7 +81,7 @@ dart --version
 # Runs the tests for the license script.
 function run_tests() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  find . -name "*_test.dart" | xargs -n 1 dart -enable-asserts
+  find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
 )
 
 # Collects the license information from the repo.
@@ -173,7 +173,7 @@ function verify_licenses() (
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=909 # When changing this number: Update the error message below as well describing the newly expected license types.
+  local expectedLicenseCount=918
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
     echo "=============================== ERROR ==============================="

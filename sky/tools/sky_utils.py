@@ -25,20 +25,33 @@ def assert_file(path, what):
     sys.exit(os.EX_NOINPUT)
 
 
-def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, without_entitlements):
+def assert_valid_codesign_config(
+    framework_dir, zip_contents, entitlements, without_entitlements, unsigned_binaries
+):
   """Exits with exit code 1 if the codesign configuration contents are incorrect.
   All Mach-O binaries found within zip_contents exactly must be listed in
   either entitlements or without_entitlements."""
   if _contains_duplicates(entitlements):
     log_error('ERROR: duplicate value(s) found in entitlements.txt')
+    log_error_items(sorted(entitlements))
     sys.exit(os.EX_DATAERR)
 
   if _contains_duplicates(without_entitlements):
     log_error('ERROR: duplicate value(s) found in without_entitlements.txt')
+    log_error_items(sorted(without_entitlements))
     sys.exit(os.EX_DATAERR)
 
-  if _contains_duplicates(entitlements + without_entitlements):
-    log_error('ERROR: value(s) found in both entitlements and without_entitlements.txt')
+  if _contains_duplicates(unsigned_binaries):
+    log_error('ERROR: duplicate value(s) found in unsigned_binaries.txt')
+    log_error_items(sorted(unsigned_binaries))
+    sys.exit(os.EX_DATAERR)
+
+  if _contains_duplicates(entitlements + without_entitlements + unsigned_binaries):
+    log_error(
+        'ERROR: duplicate value(s) found between '
+        'entitlements.txt, without_entitlements.txt, unsigned_binaries.txt'
+    )
+    log_error_items(sorted(entitlements + without_entitlements + unsigned_binaries))
     sys.exit(os.EX_DATAERR)
 
   binaries = set()
@@ -52,12 +65,13 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
         if _is_macho_binary(file):
           binaries.add(os.path.relpath(file, framework_dir))
 
-  # Verify that all Mach-O binaries are listed in either entitlements or without_entitlements.
-  listed_binaries = set(entitlements + without_entitlements)
+  # Verify that all Mach-O binaries are listed in either entitlements,
+  # without_entitlements, or unsigned_binaries.
+  listed_binaries = set(entitlements + without_entitlements + unsigned_binaries)
   if listed_binaries != binaries:
     log_error(
-        'ERROR: binaries listed in entitlements.txt and without_entitlements.txt do not '
-        'match the set of binaries in the files to be zipped'
+        'ERROR: binaries listed in entitlements.txt, without_entitlements.txt, and'
+        'unsigned_binaries.txt do not match the set of binaries in the files to be zipped'
     )
     log_error('Binaries found in files to be zipped:')
     for file in sorted(binaries):
@@ -65,13 +79,19 @@ def assert_valid_codesign_config(framework_dir, zip_contents, entitlements, with
 
     not_listed = sorted(binaries - listed_binaries)
     if not_listed:
-      log_error('Binaries NOT LISTED in entitlements.txt/without_entitlements.txt:')
+      log_error(
+          'Binaries NOT LISTED in entitlements.txt, without_entitlements.txt, '
+          'unsigned_binaries.txt:'
+      )
       for file in not_listed:
         log_error('    ' + file)
 
     not_found = sorted(listed_binaries - binaries)
     if not_found:
-      log_error('Binaries listed in entitlements.txt/without_entitlements.txt but NOT FOUND:')
+      log_error(
+          'Binaries listed in entitlements.txt, without_entitlements.txt, '
+          'unsigned_binaries.txt but NOT FOUND:'
+      )
       for file in not_found:
         log_error('    ' + file)
     sys.exit(os.EX_NOINPUT)
@@ -239,6 +259,12 @@ def lipo(input_binaries, output_binary):
 def log_error(message):
   """Writes the message to stderr, followed by a newline."""
   print(message, file=sys.stderr)
+
+
+def log_error_items(items):
+  """Writes each item indented to stderr, followed by a newline."""
+  for item in items:
+    log_error('  ' + item)
 
 
 def strip_binary(binary_path, unstripped_copy_path):

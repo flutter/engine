@@ -526,7 +526,7 @@ static BOOL _preparedOnce = NO;
 // setting the state to `UIGestureRecognizerStateEnded`.
 @property(nonatomic) BOOL touchedEndedWithoutBlocking;
 
-@property(nonatomic, readonly) UIGestureRecognizer* forwardingRecognizer;
+@property(nonatomic) UIGestureRecognizer* forwardingRecognizer;
 
 - (instancetype)initWithTarget:(id)target
                         action:(SEL)action
@@ -547,6 +547,7 @@ static BOOL _preparedOnce = NO;
 - (instancetype)initWithTarget:(id)target
        platformViewsController:
            (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
+- (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target;
 @end
 
 @interface FlutterTouchInterceptingView ()
@@ -584,6 +585,20 @@ static BOOL _preparedOnce = NO;
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
+}
+
+- (void)forceResetForwardingGestureRecognizerState {
+  // When iPad pencil is involved in a finger touch gesture, the gesture is not reset to "possible"
+  // state and is stuck on "failed" state, which causes subsequent touches to be blocked. As a
+  // workaround, we force reset the state by recreating the forwarding gesture recognizer. See:
+  // https://github.com/flutter/flutter/issues/136244
+  ForwardingGestureRecognizer* oldForwardingRecognizer =
+      (ForwardingGestureRecognizer*)self.delayingRecognizer.forwardingRecognizer;
+  ForwardingGestureRecognizer* newForwardingRecognizer =
+      [oldForwardingRecognizer recreateRecognizerWithTarget:self];
+  self.delayingRecognizer.forwardingRecognizer = newForwardingRecognizer;
+  [self removeGestureRecognizer:oldForwardingRecognizer];
+  [self addGestureRecognizer:newForwardingRecognizer];
 }
 
 - (void)releaseGesture {
@@ -699,7 +714,7 @@ static BOOL _preparedOnce = NO;
   // This gesture recognizer retains the `FlutterViewController` until the
   // end of a gesture sequence, that is all the touches in touchesBegan are concluded
   // with |touchesCancelled| or |touchesEnded|.
-  fml::scoped_nsobject<UIViewController<FlutterViewResponder>> _flutterViewController;
+  UIViewController<FlutterViewResponder>* _flutterViewController;
 }
 
 - (instancetype)initWithTarget:(id)target
@@ -715,24 +730,29 @@ static BOOL _preparedOnce = NO;
   return self;
 }
 
+- (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target {
+  return [[ForwardingGestureRecognizer alloc] initWithTarget:target
+                                     platformViewsController:std::move(_platformViewsController)];
+}
+
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   FML_DCHECK(_currentTouchPointersCount >= 0);
   if (_currentTouchPointersCount == 0) {
     // At the start of each gesture sequence, we reset the `_flutterViewController`,
     // so that all the touch events in the same sequence are forwarded to the same
     // `_flutterViewController`.
-    _flutterViewController.reset(_platformViewsController->GetFlutterViewController());
+    _flutterViewController = _platformViewsController->GetFlutterViewController();
   }
-  [_flutterViewController.get() touchesBegan:touches withEvent:event];
+  [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController.get() touchesMoved:touches withEvent:event];
+  [_flutterViewController touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController.get() touchesEnded:touches withEvent:event];
+  [_flutterViewController touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -740,7 +760,8 @@ static BOOL _preparedOnce = NO;
   // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
-    _flutterViewController.reset(nil);
+    _flutterViewController = nil;
+    [self forceResetStateIfNeeded];
   }
 }
 
@@ -750,12 +771,26 @@ static BOOL _preparedOnce = NO;
   // Flutter needs all the cancelled touches to be "cancelled" change types in order to correctly
   // handle gesture sequence.
   // We always override the change type to "cancelled".
-  [_flutterViewController.get() forceTouchesCancelled:touches];
+  [_flutterViewController forceTouchesCancelled:touches];
   _currentTouchPointersCount -= touches.count;
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
-    _flutterViewController.reset(nil);
+    _flutterViewController = nil;
+    [self forceResetStateIfNeeded];
   }
+}
+
+- (void)forceResetStateIfNeeded {
+  __weak ForwardingGestureRecognizer* weakSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    ForwardingGestureRecognizer* strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+    if (strongSelf.state != UIGestureRecognizerStatePossible) {
+      [(FlutterTouchInterceptingView*)strongSelf.view forceResetForwardingGestureRecognizerState];
+    }
+  });
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer

@@ -26,7 +26,7 @@ import 'dart:typed_data';
 // ignore: uri_does_not_exist
 import 'dart:ui' as ui;
 
-export 'src/smoketest.dart';
+import 'package:vector_math/vector_math.dart' as vm;
 
 part 'src/buffer.dart';
 part 'src/command_buffer.dart';

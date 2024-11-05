@@ -420,6 +420,7 @@ abstract class SemanticRole {
     addLiveRegion();
     addRouteName();
     addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
+    addSelectableBehavior();
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -438,6 +439,26 @@ abstract class SemanticRole {
 
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
+
+  /// Whether this role accepts pointer events.
+  ///
+  /// This boolean decides whether to set the `pointer-events` CSS property to
+  /// `all` or to `none` on the semantics [element].
+  bool get acceptsPointerEvents {
+    final behaviors = _behaviors;
+    if (behaviors != null) {
+      for (final behavior in behaviors) {
+        if (behavior.acceptsPointerEvents) {
+          return true;
+        }
+      }
+    }
+    // Ignore pointer events on all container nodes.
+    if (semanticsObject.hasChildren) {
+      return false;
+    }
+    return true;
+  }
 
   /// Semantic behaviors provided by this role, if any.
   List<SemanticBehavior>? get behaviors => _behaviors;
@@ -543,6 +564,16 @@ abstract class SemanticRole {
   /// Adds generic functionality for handling taps and clicks.
   void addTappable() {
     addSemanticBehavior(Tappable(semanticsObject, this));
+  }
+
+  /// Adds the [Selectable] behavior, if the node is selectable but not checkable.
+  void addSelectableBehavior() {
+    // Do not use the [Selectable] behavior on checkables. Checkables use
+    // special ARIA roles and `aria-checked`. Adding `aria-selected` in addition
+    // to `aria-checked` would be confusing.
+    if (semanticsObject.isSelectable && !semanticsObject.isCheckable) {
+      addSemanticBehavior(Selectable(semanticsObject, this));
+    }
   }
 
   /// Adds a semantic behavior to this role.
@@ -733,6 +764,12 @@ abstract class SemanticBehavior {
   final SemanticsObject semanticsObject;
 
   final SemanticRole owner;
+
+  /// Whether this role accepts pointer events.
+  ///
+  /// This boolean decides whether to set the `pointer-events` CSS property to
+  /// `all` or to `none` on [SemanticsObject.element].
+  bool get acceptsPointerEvents => false;
 
   /// Called immediately after the [semanticsObject] updates some of its fields.
   ///
@@ -1439,10 +1476,7 @@ class SemanticsObject {
       recomputePositionAndSize();
     }
 
-    // Ignore pointer events on all container nodes and all platform view nodes.
-    // This is so that the platform views are not obscured by semantic elements
-    // and can be reached by inspecting the web page.
-    if (!hasChildren && !isPlatformView) {
+    if (semanticRole!.acceptsPointerEvents) {
       element.style.pointerEvents = 'all';
     } else {
       element.style.pointerEvents = 'none';
@@ -1740,9 +1774,34 @@ class SemanticsObject {
   /// "hamburger" menu, etc.
   bool get isTappable => hasAction(ui.SemanticsAction.tap);
 
+  /// If true, this node represents something that can be in a "checked" or
+  /// "toggled" state, such as checkboxes, radios, and switches.
+  ///
+  /// Because such widgets require the use of specific ARIA roles and HTML
+  /// elements, they are managed by the [SemanticCheckable] role, and they do
+  /// not use the [Selectable] behavior.
   bool get isCheckable =>
       hasFlag(ui.SemanticsFlag.hasCheckedState) ||
       hasFlag(ui.SemanticsFlag.hasToggledState);
+
+  /// If true, this node represents something that can be annotated as
+  /// "selected", such as a tab, or an item in a list.
+  ///
+  /// Selectability is managed by `aria-selected` and is compatible with
+  /// multiple ARIA roles (tabs, gridcells, options, rows, etc). It is therefore
+  /// mapped onto the [Selectable] behavior.
+  ///
+  /// [Selectable] and [SemanticCheckable] are not used together on the same
+  /// node. [SemanticCheckable] has precendence over [Selectable].
+  ///
+  /// See also:
+  ///
+  ///   * [isSelected], which indicates whether the node is currently selected.
+  bool get isSelectable => hasFlag(ui.SemanticsFlag.hasSelectedState);
+
+  /// If [isSelectable] is true, indicates whether the node is currently
+  /// selected.
+  bool get isSelected => hasFlag(ui.SemanticsFlag.isSelected);
 
   /// Role-specific adjustment of the vertical position of the child container.
   ///
@@ -1928,7 +1987,9 @@ class SemanticsObject {
   void dispose() {
     assert(!_isDisposed);
     _isDisposed = true;
-    element.remove();
+
+    EnginePlatformDispatcher.instance.viewManager.safeRemoveSync(element);
+
     _parent = null;
     semanticRole?.dispose();
     semanticRole = null;

@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "fml/closure.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -163,11 +164,12 @@ class ReactorGLES {
   ///             This can be called on any thread. Even one that doesn't have
   ///             an OpenGL context.
   ///
-  /// @param[in]  type  The type of handle to create.
+  /// @param[in]  type             The type of handle to create.
+  /// @param[in]  external_handle  An already created GL handle if one exists.
   ///
   /// @return     The reactor handle.
   ///
-  HandleGLES CreateHandle(HandleType type);
+  HandleGLES CreateHandle(HandleType type, GLuint external_handle = GL_NONE);
 
   //----------------------------------------------------------------------------
   /// @brief      Collect a reactor handle.
@@ -189,7 +191,14 @@ class ReactorGLES {
   /// @param[in]  handle  The handle
   /// @param[in]  label   The label
   ///
-  void SetDebugLabel(const HandleGLES& handle, std::string label);
+  void SetDebugLabel(const HandleGLES& handle, std::string_view label);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Whether the device is capable of writing debug labels.
+  ///
+  ///             This function is useful for short circuiting expensive debug
+  ///             labeling.
+  bool CanSetDebugLabels() const;
 
   using Operation = std::function<void(const ReactorGLES& reactor)>;
 
@@ -209,6 +218,23 @@ class ReactorGLES {
   [[nodiscard]] bool AddOperation(Operation operation);
 
   //----------------------------------------------------------------------------
+  /// @brief      Register a cleanup callback that will be invokved with the
+  ///             provided user data when the handle is destroyed.
+  ///
+  ///             This operation is not guaranteed to run immediately. It will
+  ///             complete in a finite amount of time on any thread as long as
+  ///             there is a reactor worker and the reactor itself is not being
+  ///             torn down.
+  ///
+  /// @param[in]  handle  The handle to attach the cleanup to.
+  /// @param[in]  callback The cleanup callback to execute.
+  ///
+  /// @return     If the operation was successfully queued for completion.
+  ///
+  bool RegisterCleanupCallback(const HandleGLES& handle,
+                               const fml::closure& callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Perform a reaction on the current thread if able.
   ///
   ///             It is safe to call this simultaneously from multiple threads
@@ -223,6 +249,7 @@ class ReactorGLES {
     std::optional<GLuint> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
+    fml::ScopedCleanupClosure callback = {};
 
     LiveHandle() = default;
 

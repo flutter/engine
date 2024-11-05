@@ -27,6 +27,29 @@ TEST(RenderPassBuilder, CreatesRenderPassWithNoDepthStencil) {
   EXPECT_FALSE(builder.GetDepthStencil().has_value());
 }
 
+TEST(RenderPassBuilder, RenderPassWithLoadOpUsesCurrentLayout) {
+  RenderPassBuilderVK builder = RenderPassBuilderVK();
+  auto const context = MockVulkanContextBuilder().Build();
+
+  builder.SetColorAttachment(0, PixelFormat::kR8G8B8A8UNormInt,
+                             SampleCount::kCount1, LoadAction::kLoad,
+                             StoreAction::kStore,
+                             vk::ImageLayout::eColorAttachmentOptimal);
+
+  auto render_pass = builder.Build(context->GetDevice());
+
+  EXPECT_TRUE(!!render_pass);
+
+  auto maybe_color = builder.GetColorAttachments().find(0u);
+  ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
+  auto color = maybe_color->second;
+
+  EXPECT_EQ(color.initialLayout, vk::ImageLayout::eColorAttachmentOptimal);
+  EXPECT_EQ(color.finalLayout, vk::ImageLayout::eGeneral);
+  EXPECT_EQ(color.loadOp, vk::AttachmentLoadOp::eLoad);
+  EXPECT_EQ(color.storeOp, vk::AttachmentStoreOp::eStore);
+}
+
 TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
   RenderPassBuilderVK builder = RenderPassBuilderVK();
   auto const context = MockVulkanContextBuilder().Build();
@@ -34,7 +57,7 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
   // Create a single color attachment with a transient depth stencil.
   builder.SetColorAttachment(0, PixelFormat::kR8G8B8A8UNormInt,
                              SampleCount::kCount1, LoadAction::kClear,
-                             StoreAction::kStore);
+                             StoreAction::kStore, vk::ImageLayout::eGeneral);
   builder.SetDepthStencilAttachment(PixelFormat::kD24UnormS8Uint,
                                     SampleCount::kCount1, LoadAction::kDontCare,
                                     StoreAction::kDontCare);
@@ -47,7 +70,7 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
   ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
   auto color = maybe_color->second;
 
-  EXPECT_EQ(color.initialLayout, vk::ImageLayout::eGeneral);
+  EXPECT_EQ(color.initialLayout, vk::ImageLayout::eUndefined);
   EXPECT_EQ(color.finalLayout, vk::ImageLayout::eGeneral);
   EXPECT_EQ(color.loadOp, vk::AttachmentLoadOp::eClear);
   EXPECT_EQ(color.storeOp, vk::AttachmentStoreOp::eStore);
@@ -117,7 +140,7 @@ TEST(RenderPassBuilder, CreatesMSAAResolveWithCorrectStore) {
   auto color = maybe_color->second;
 
   // MSAA Texture.
-  EXPECT_EQ(color.initialLayout, vk::ImageLayout::eGeneral);
+  EXPECT_EQ(color.initialLayout, vk::ImageLayout::eUndefined);
   EXPECT_EQ(color.finalLayout, vk::ImageLayout::eGeneral);
   EXPECT_EQ(color.loadOp, vk::AttachmentLoadOp::eClear);
   EXPECT_EQ(color.storeOp, vk::AttachmentStoreOp::eDontCare);
@@ -127,7 +150,7 @@ TEST(RenderPassBuilder, CreatesMSAAResolveWithCorrectStore) {
   auto resolve = maybe_resolve->second;
 
   // MSAA Resolve Texture.
-  EXPECT_EQ(resolve.initialLayout, vk::ImageLayout::eGeneral);
+  EXPECT_EQ(resolve.initialLayout, vk::ImageLayout::eUndefined);
   EXPECT_EQ(resolve.finalLayout, vk::ImageLayout::eGeneral);
   EXPECT_EQ(resolve.loadOp, vk::AttachmentLoadOp::eClear);
   EXPECT_EQ(resolve.storeOp, vk::AttachmentStoreOp::eStore);

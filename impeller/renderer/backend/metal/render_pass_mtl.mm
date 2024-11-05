@@ -170,7 +170,7 @@ bool RenderPassMTL::IsValid() const {
   return is_valid_;
 }
 
-void RenderPassMTL::OnSetLabel(std::string label) {
+void RenderPassMTL::OnSetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return;
@@ -189,11 +189,11 @@ static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
                  const BufferView& view) {
-  if (!view.buffer) {
+  if (!view.GetBuffer()) {
     return false;
   }
 
-  auto device_buffer = view.buffer;
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }
@@ -204,7 +204,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
     return false;
   }
 
-  return pass.SetBuffer(stage, bind_index, view.range.offset, buffer);
+  return pass.SetBuffer(stage, bind_index, view.GetRange().offset, buffer);
 }
 
 static bool Bind(PassBindingsCacheMTL& pass,
@@ -284,27 +284,45 @@ void RenderPassMTL::SetScissor(IRect scissor) {
 }
 
 // |RenderPass|
+void RenderPassMTL::SetElementCount(size_t count) {
+  vertex_count_ = count;
+}
+
+// |RenderPass|
 void RenderPassMTL::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
 // |RenderPass|
-bool RenderPassMTL::SetVertexBuffer(VertexBuffer buffer) {
-  if (buffer.index_type == IndexType::kUnknown) {
+bool RenderPassMTL::SetVertexBuffer(BufferView vertex_buffers[],
+                                    size_t vertex_buffer_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
 
-  if (!Bind(pass_bindings_, ShaderStage::kVertex,
-            VertexDescriptor::kReservedVertexBufferIndex,
-            buffer.vertex_buffer)) {
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    if (!Bind(pass_bindings_, ShaderStage::kVertex,
+              VertexDescriptor::kReservedVertexBufferIndex - i,
+              vertex_buffers[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// |RenderPass|
+bool RenderPassMTL::SetIndexBuffer(BufferView index_buffer,
+                                   IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
     return false;
   }
 
-  vertex_count_ = buffer.vertex_count;
-  if (buffer.index_type != IndexType::kNone) {
-    index_type_ = ToMTLIndexType(buffer.index_type);
-    index_buffer_ = std::move(buffer.index_buffer);
+  if (index_type != IndexType::kNone) {
+    index_type_ = ToMTLIndexType(index_type);
+    index_buffer_ = std::move(index_buffer);
   }
+
   return true;
 }
 
@@ -328,13 +346,13 @@ fml::Status RenderPassMTL::Draw() {
     }
   } else {
     id<MTLBuffer> mtl_index_buffer =
-        DeviceBufferMTL::Cast(*index_buffer_.buffer).GetMTLBuffer();
+        DeviceBufferMTL::Cast(*index_buffer_.GetBuffer()).GetMTLBuffer();
     if (instance_count_ != 1u) {
       [encoder_ drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type_)
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset
+                    indexBufferOffset:index_buffer_.GetRange().offset
                         instanceCount:instance_count_
                            baseVertex:base_vertex_
                          baseInstance:0u];
@@ -343,7 +361,7 @@ fml::Status RenderPassMTL::Draw() {
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset];
+                    indexBufferOffset:index_buffer_.GetRange().offset];
     }
   }
 

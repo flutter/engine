@@ -22,7 +22,6 @@
 #include "impeller/playground/imgui/gles/imgui_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
 
 namespace impeller {
 
@@ -123,26 +122,12 @@ ShaderLibraryMappingsForPlayground() {
           impeller_modern_fixtures_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_imgui_shaders_gles_data, impeller_imgui_shaders_gles_length),
-      std::make_shared<fml::NonOwnedMapping>(
-          impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
   };
 }
 
 // |PlaygroundImpl|
 std::shared_ptr<Context> PlaygroundImplGLES::GetContext() const {
-  auto resolver = use_angle_ ? [](const char* name) -> void* {
-    void* symbol = nullptr;
-#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
-    void* angle_glesv2 = dlopen("libGLESv2.dylib", RTLD_LAZY);
-    symbol = dlsym(angle_glesv2, name);
-#endif
-    FML_CHECK(symbol);
-    return symbol;
-  }
-  : [](const char* name) -> void* {
-      return reinterpret_cast<void*>(::glfwGetProcAddress(name));
-    };
-  auto gl = std::make_unique<ProcTableGLES>(resolver);
+  auto gl = std::make_unique<ProcTableGLES>(CreateGLProcAddressResolver());
   if (!gl->IsValid()) {
     FML_LOG(ERROR) << "Proc table when creating a playground was invalid.";
     return nullptr;
@@ -161,6 +146,23 @@ std::shared_ptr<Context> PlaygroundImplGLES::GetContext() const {
     return nullptr;
   }
   return context;
+}
+
+// |PlaygroundImpl|
+Playground::GLProcAddressResolver
+PlaygroundImplGLES::CreateGLProcAddressResolver() const {
+  return use_angle_ ? [](const char* name) -> void* {
+    void* symbol = nullptr;
+#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
+    void* angle_glesv2 = dlopen("libGLESv2.dylib", RTLD_LAZY);
+    symbol = dlsym(angle_glesv2, name);
+#endif
+    FML_CHECK(symbol);
+    return symbol;
+  }
+  : [](const char* name) -> void* {
+      return reinterpret_cast<void*>(::glfwGetProcAddress(name));
+    };
 }
 
 // |PlaygroundImpl|

@@ -73,10 +73,6 @@
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-#if IMPELLER_ENABLE_3D
-#include "impeller/scene/scene_context.h"  // nogncheck
-#endif
-
 namespace impeller {
 
 using FastGradientPipeline =
@@ -241,7 +237,7 @@ using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 using TiledTextureExternalPipeline =
-    RenderPipelineHandle<TextureUvFillVertexShader,
+    RenderPipelineHandle<TextureFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -378,11 +374,7 @@ class ContentContext {
 
   bool IsValid() const;
 
-#if IMPELLER_ENABLE_3D
-  std::shared_ptr<scene::SceneContext> GetSceneContext() const;
-#endif  // IMPELLER_ENABLE_3D
-
-  std::shared_ptr<Tessellator> GetTessellator() const;
+  Tessellator& GetTessellator() const;
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
       ContentContextOptions opts) const {
@@ -1000,7 +992,7 @@ class ContentContext {
                              PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
-              SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
+              SPrintF("%s V#%zu", desc.GetLabel().data(), variants_count));
         });
     std::unique_ptr<RenderPipelineHandleT> variant =
         std::make_unique<RenderPipelineHandleT>(std::move(variant_future));
@@ -1010,9 +1002,6 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-#if IMPELLER_ENABLE_3D
-  std::shared_ptr<scene::SceneContext> scene_context_;
-#endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
   std::shared_ptr<Texture> empty_texture_;

@@ -44,8 +44,8 @@ class DeviceBufferGLES final
   ReactorGLES::Ref reactor_;
   HandleGLES handle_;
   mutable std::shared_ptr<Allocation> backing_store_;
-  mutable uint32_t generation_ = 0;
-  mutable uint32_t upload_generation_ = 0;
+  mutable std::optional<Range> dirty_range_ = std::nullopt;
+  mutable bool initialized_ = false;
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;
@@ -56,10 +56,10 @@ class DeviceBufferGLES final
                         size_t offset) override;
 
   // |DeviceBuffer|
-  bool SetLabel(const std::string& label) override;
+  bool SetLabel(std::string_view label) override;
 
   // |DeviceBuffer|
-  bool SetLabel(const std::string& label, Range range) override;
+  bool SetLabel(std::string_view label, Range range) override;
 
   DeviceBufferGLES(const DeviceBufferGLES&) = delete;
 

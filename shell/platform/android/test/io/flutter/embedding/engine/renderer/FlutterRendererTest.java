@@ -1,10 +1,17 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine.renderer;
 
+import static android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND;
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -281,14 +288,20 @@ public class FlutterRendererTest {
     metrics.width = 1000;
     metrics.height = 1000;
     metrics.devicePixelRatio = 2;
-    metrics.displayFeatures.add(
-        new FlutterRenderer.DisplayFeature(
-            new Rect(10, 20, 30, 40),
-            FlutterRenderer.DisplayFeatureType.FOLD,
-            FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
-    metrics.displayFeatures.add(
-        new FlutterRenderer.DisplayFeature(
-            new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
+    metrics
+        .getDisplayFeatures()
+        .add(
+            new FlutterRenderer.DisplayFeature(
+                new Rect(10, 20, 30, 40),
+                FlutterRenderer.DisplayFeatureType.FOLD,
+                FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
+    metrics
+        .getDisplayCutouts()
+        .add(
+            new FlutterRenderer.DisplayFeature(
+                new Rect(50, 60, 70, 80),
+                FlutterRenderer.DisplayFeatureType.CUTOUT,
+                FlutterRenderer.DisplayFeatureState.UNKNOWN));
 
     // Execute the behavior under test.
     flutterRenderer.setViewportMetrics(metrics);
@@ -665,7 +678,7 @@ public class FlutterRendererTest {
 
     // Invoke the onTrimMemory callback with level 40.
     // This should result in a trim.
-    texture.onTrimMemory(40);
+    texture.onTrimMemory(TRIM_MEMORY_BACKGROUND);
     shadowOf(Looper.getMainLooper()).idle();
 
     assertEquals(0, texture.numImageReaders());
@@ -732,6 +745,27 @@ public class FlutterRendererTest {
   }
 
   @Test
+  public void SurfaceTextureSurfaceProducerDoesNotCropOrRotate() {
+    try {
+      FlutterRenderer.debugForceSurfaceProducerGlTextures = true;
+      FlutterRenderer flutterRenderer = engineRule.getFlutterEngine().getRenderer();
+      TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+
+      assertTrue(producer.handlesCropAndRotation());
+    } finally {
+      FlutterRenderer.debugForceSurfaceProducerGlTextures = false;
+    }
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerDoesNotCropOrRotate() {
+    FlutterRenderer flutterRenderer = engineRule.getFlutterEngine().getRenderer();
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+
+    assertFalse(producer.handlesCropAndRotation());
+  }
+
+  @Test
   public void ImageReaderSurfaceProducerIsDestroyedOnTrimMemory() {
     FlutterRenderer flutterRenderer = engineRule.getFlutterEngine().getRenderer();
     TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
@@ -742,10 +776,31 @@ public class FlutterRendererTest {
     producer.setCallback(callback);
 
     // Trim memory.
-    ((FlutterRenderer.ImageReaderSurfaceProducer) producer).onTrimMemory(40);
+    flutterRenderer.onTrimMemory(TRIM_MEMORY_BACKGROUND);
 
     // Verify.
     verify(callback).onSurfaceDestroyed();
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerUnsubscribesWhenReleased() {
+    // Regression test for https://github.com/flutter/flutter/issues/156434.
+    FlutterRenderer flutterRenderer = engineRule.getFlutterEngine().getRenderer();
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+
+    // Create and set a mock callback.
+    TextureRegistry.SurfaceProducer.Callback callback =
+        mock(TextureRegistry.SurfaceProducer.Callback.class);
+    producer.setCallback(callback);
+
+    // Release the surface.
+    producer.release();
+
+    // Call trim memory.
+    flutterRenderer.onTrimMemory(TRIM_MEMORY_BACKGROUND);
+
+    // Verify was not called.
+    verify(callback, never()).onSurfaceDestroyed();
   }
 
   @Test
@@ -758,7 +813,7 @@ public class FlutterRendererTest {
     TextureRegistry.SurfaceProducer.Callback callback =
         new TextureRegistry.SurfaceProducer.Callback() {
           @Override
-          public void onSurfaceCreated() {
+          public void onSurfaceAvailable() {
             latch.countDown();
           }
 
@@ -767,11 +822,53 @@ public class FlutterRendererTest {
         };
     producer.setCallback(callback);
 
+    // Trim memory.
+    flutterRenderer.onTrimMemory(TRIM_MEMORY_BACKGROUND);
+
     // Trigger a resume.
     ((LifecycleRegistry) ProcessLifecycleOwner.get().getLifecycle())
         .setCurrentState(Lifecycle.State.RESUMED);
 
     // Verify.
     latch.await();
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerSchedulesFrameIfQueueNotEmpty() throws Exception {
+    FlutterRenderer flutterRenderer = spy(engineRule.getFlutterEngine().getRenderer());
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        (FlutterRenderer.ImageReaderSurfaceProducer) producer;
+    texture.disableFenceForTest();
+    texture.setSize(1, 1);
+
+    // Render two frames.
+    for (int i = 0; i < 2; i++) {
+      Surface surface = texture.getSurface();
+      assertNotNull(surface);
+      Canvas canvas = surface.lockHardwareCanvas();
+      canvas.drawARGB(255, 255, 0, 0);
+      surface.unlockCanvasAndPost(canvas);
+      shadowOf(Looper.getMainLooper()).idle();
+    }
+
+    // Each enqueue of an image should result in a call to scheduleEngineFrame.
+    verify(flutterRenderer, times(2)).scheduleEngineFrame();
+
+    // Consume the first image.
+    Image image = texture.acquireLatestImage();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // The dequeue should call scheduleEngineFrame because another image
+    // remains in the queue.
+    verify(flutterRenderer, times(3)).scheduleEngineFrame();
+
+    // Consume the second image.
+    image = texture.acquireLatestImage();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // The dequeue should not call scheduleEngineFrame because the queue
+    // is now empty.
+    verify(flutterRenderer, times(3)).scheduleEngineFrame();
   }
 }

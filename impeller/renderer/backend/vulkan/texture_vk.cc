@@ -4,8 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 
@@ -20,6 +20,7 @@ TextureVK::TextureVK(std::weak_ptr<Context> context,
 TextureVK::~TextureVK() = default;
 
 void TextureVK::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   auto context = context_.lock();
   if (!context) {
     // The context may have died.
@@ -27,6 +28,20 @@ void TextureVK::SetLabel(std::string_view label) {
   }
   ContextVK::Cast(*context).SetDebugName(GetImage(), label);
   ContextVK::Cast(*context).SetDebugName(GetImageView(), label);
+#endif  // IMPELLER_DEBUG
+}
+
+void TextureVK::SetLabel(std::string_view label, std::string_view trailing) {
+#ifdef IMPELLER_DEBUG
+  auto context = context_.lock();
+  if (!context) {
+    // The context may have died.
+    return;
+  }
+
+  ContextVK::Cast(*context).SetDebugName(GetImage(), label, trailing);
+  ContextVK::Cast(*context).SetDebugName(GetImageView(), label, trailing);
+#endif  // IMPELLER_DEBUG
 }
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
@@ -64,13 +79,13 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
     return false;
   }
 
-  const auto encoder = CommandBufferVK::Cast(*cmd_buffer).GetEncoder();
+  auto& cmd_buffer_vk = CommandBufferVK::Cast(*cmd_buffer);
 
-  if (!encoder->Track(staging_buffer) || !encoder->Track(source_)) {
+  if (!cmd_buffer_vk.Track(staging_buffer) || !cmd_buffer_vk.Track(source_)) {
     return false;
   }
 
-  const auto& vk_cmd_buffer = encoder->GetCommandBuffer();
+  const auto& vk_cmd_buffer = cmd_buffer_vk.GetCommandBuffer();
 
   BarrierVK barrier;
   barrier.cmd_buffer = vk_cmd_buffer;

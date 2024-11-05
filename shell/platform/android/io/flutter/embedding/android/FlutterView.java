@@ -14,6 +14,7 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,6 +22,7 @@ import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -31,7 +33,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
-import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -62,6 +63,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.editing.ScribePlugin;
 import io.flutter.plugin.editing.SpellCheckPlugin;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -132,6 +134,7 @@ public class FlutterView extends FrameLayout
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private SpellCheckPlugin spellCheckPlugin;
+  @Nullable private ScribePlugin scribePlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
@@ -193,13 +196,7 @@ public class FlutterView extends FrameLayout
         }
       };
 
-  private final Consumer<WindowLayoutInfo> windowInfoListener =
-      new Consumer<WindowLayoutInfo>() {
-        @Override
-        public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowInfoListenerDisplayFeatures(layoutInfo);
-        }
-      };
+  private Consumer<WindowLayoutInfo> windowInfoListener;
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes.
@@ -511,6 +508,10 @@ public class FlutterView extends FrameLayout
     this.windowInfoRepo = createWindowInfoRepo();
     Activity activity = ViewUtils.getActivity(getContext());
     if (windowInfoRepo != null && activity != null) {
+      // Creating windowInfoListener on-demand instead of at initialization is necessary in order to
+      // prevent it from capturing the wrong instance of `this` when spying for testing.
+      // See https://github.com/mockito/mockito/issues/3479
+      windowInfoListener = this::setWindowInfoListenerDisplayFeatures;
       windowInfoRepo.addWindowLayoutInfoListener(
           activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
@@ -523,9 +524,10 @@ public class FlutterView extends FrameLayout
    */
   @Override
   protected void onDetachedFromWindow() {
-    if (windowInfoRepo != null) {
+    if (windowInfoRepo != null && windowInfoListener != null) {
       windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
     }
+    windowInfoListener = null;
     this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }
@@ -536,12 +538,12 @@ public class FlutterView extends FrameLayout
    */
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
-    List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
-    List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
+    List<DisplayFeature> newDisplayFeatures = layoutInfo.getDisplayFeatures();
+    List<FlutterRenderer.DisplayFeature> flutterDisplayFeatures = new ArrayList<>();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
-    for (DisplayFeature displayFeature : displayFeatures) {
+    for (DisplayFeature displayFeature : newDisplayFeatures) {
       Log.v(
           TAG,
           "WindowInfoTracker Display Feature reported with bounds = "
@@ -564,31 +566,17 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
+        flutterDisplayFeatures.add(
+            new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        result.add(
+        flutterDisplayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
                 DisplayFeatureState.UNKNOWN));
       }
     }
-
-    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
-    // populated here. DisplayCutout was introduced in API 28.
-    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
-      WindowInsets insets = getRootWindowInsets();
-      if (insets != null) {
-        DisplayCutout cutout = insets.getDisplayCutout();
-        if (cutout != null) {
-          for (Rect bounds : cutout.getBoundingRects()) {
-            Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-            result.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
-          }
-        }
-      }
-    }
-    viewportMetrics.displayFeatures = result;
+    viewportMetrics.setDisplayFeatures(flutterDisplayFeatures);
     sendViewportMetricsToFlutter();
   }
 
@@ -597,26 +585,35 @@ public class FlutterView extends FrameLayout
   // android may decide to place the software navigation bars on the side. When the nav
   // bar is hidden, the reported insets should be removed to prevent extra useless space
   // on the sides.
-  private enum ZeroSides {
+  @VisibleForTesting
+  public enum ZeroSides {
     NONE,
     LEFT,
     RIGHT,
     BOTH
   }
 
-  private ZeroSides calculateShouldZeroSides() {
+  /**
+   * This method can be run on APIs 30 and above but its intended use is for 30 and below.
+   *
+   * @return some ZeroSides enum
+   */
+  @androidx.annotation.DeprecatedSinceApi(api = API_LEVELS.API_30)
+  @VisibleForTesting
+  public ZeroSides calculateShouldZeroSides() {
     // We get both orientation and rotation because rotation is all 4
     // rotations relative to default rotation while orientation is portrait
     // or landscape. By combining both, we can obtain a more precise measure
     // of the rotation.
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
-    int rotation =
-        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
-            .getDefaultDisplay()
-            .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+      int rotation =
+          ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE))
+              .getDisplay(Display.DEFAULT_DISPLAY)
+              .getRotation();
+
       if (rotation == Surface.ROTATION_90) {
         return ZeroSides.RIGHT;
       } else if (rotation == Surface.ROTATION_270) {
@@ -673,7 +670,7 @@ public class FlutterView extends FrameLayout
   // The annotations to suppress "InlinedApi" and "NewApi" lints prevent lint warnings
   // caused by usage of Android Q APIs. These calls are safe because they are
   // guarded.
-  @SuppressLint({"InlinedApi", "NewApi"})
+  @SuppressLint({"InlinedApi", "NewApi", "DeprecatedSinceApi"})
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
@@ -771,6 +768,22 @@ public class FlutterView extends FrameLayout
       viewportMetrics.viewInsetBottom = guessBottomKeyboardInset(insets);
       viewportMetrics.viewInsetLeft = 0;
     }
+
+    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
+    // populated here. DisplayCutout was introduced in API 28.
+    List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        for (Rect bounds : cutout.getBoundingRects()) {
+          Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
+          displayCutouts.add(
+              new FlutterRenderer.DisplayFeature(
+                  bounds, DisplayFeatureType.CUTOUT, DisplayFeatureState.UNKNOWN));
+        }
+      }
+    }
+    viewportMetrics.setDisplayCutouts(displayCutouts);
 
     // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
     // bounding Rects instead of an Insets object, which is a newer API method, as compared to the
@@ -1110,10 +1123,12 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
+
     textInputPlugin =
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
+            this.flutterEngine.getScribeChannel(),
             this.flutterEngine.getPlatformViewsController());
 
     try {
@@ -1125,6 +1140,10 @@ public class FlutterView extends FrameLayout
     } catch (Exception e) {
       Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
     }
+
+    scribePlugin =
+        new ScribePlugin(
+            this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 

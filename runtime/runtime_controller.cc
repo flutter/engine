@@ -69,7 +69,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                        std::move(image_generator_registry),
                                        advisory_script_uri,
                                        advisory_script_entrypoint,
-                                       context_.volatile_path_tracker,
+                                       context_.deterministic_rendering_enabled,
                                        context_.concurrent_task_runner,
                                        context_.enable_impeller,
                                        context_.runtime_stage_backend};
@@ -100,7 +100,7 @@ RuntimeController::~RuntimeController() {
   }
 }
 
-bool RuntimeController::IsRootIsolateRunning() {
+bool RuntimeController::IsRootIsolateRunning() const {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (root_isolate) {
     return root_isolate->GetPhase() == DartIsolate::Phase::Running;

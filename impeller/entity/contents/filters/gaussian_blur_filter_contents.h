@@ -9,17 +9,26 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
 // Comes from gaussian.frag.
 static constexpr int32_t kGaussianBlurMaxKernelSize = 50;
 
+static_assert(sizeof(GaussianBlurPipeline::FragmentShader::KernelSamples) ==
+              sizeof(Vector4) * kGaussianBlurMaxKernelSize + sizeof(Vector4));
+
 struct BlurParameters {
   Point blur_uv_offset;
   Scalar blur_sigma;
   int blur_radius;
   int step_size;
+};
+
+struct KernelSample {
+  Vector2 uv_offset;
+  float coefficient;
 };
 
 /// A larger mirror of GaussianBlurPipeline::FragmentShader::KernelSamples.
@@ -30,7 +39,7 @@ struct BlurParameters {
 struct KernelSamples {
   static constexpr int kMaxKernelSize = kGaussianBlurMaxKernelSize * 2;
   int sample_count;
-  GaussianBlurPipeline::FragmentShader::KernelSample samples[kMaxKernelSize];
+  KernelSample samples[kMaxKernelSize];
 };
 
 KernelSamples GenerateBlurInfo(BlurParameters parameters);
@@ -46,12 +55,11 @@ GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
 /// Note: This will replace `DirectionalGaussianBlurFilterContents`.
 class GaussianBlurFilterContents final : public FilterContents {
  public:
-  explicit GaussianBlurFilterContents(
-      Scalar sigma_x,
-      Scalar sigma_y,
-      Entity::TileMode tile_mode,
-      BlurStyle mask_blur_style,
-      const std::shared_ptr<Geometry>& mask_geometry);
+  explicit GaussianBlurFilterContents(Scalar sigma_x,
+                                      Scalar sigma_y,
+                                      Entity::TileMode tile_mode,
+                                      BlurStyle mask_blur_style,
+                                      const Geometry* mask_geometry = nullptr);
 
   Scalar GetSigmaX() const { return sigma_.x; }
   Scalar GetSigmaY() const { return sigma_.y; }
@@ -108,7 +116,7 @@ class GaussianBlurFilterContents final : public FilterContents {
   const Vector2 sigma_ = Vector2(0.0, 0.0);
   const Entity::TileMode tile_mode_;
   const BlurStyle mask_blur_style_;
-  std::shared_ptr<Geometry> mask_geometry_;
+  const Geometry* mask_geometry_ = nullptr;
 };
 
 }  // namespace impeller

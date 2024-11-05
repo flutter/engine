@@ -44,7 +44,7 @@ class FilterContents : public Contents {
       Sigma sigma_y,
       Entity::TileMode tile_mode = Entity::TileMode::kDecal,
       BlurStyle mask_blur_style = BlurStyle::kNormal,
-      const std::shared_ptr<Geometry>& mask_geometry = nullptr);
+      const Geometry* mask_geometry = nullptr);
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
       FilterInput::Ref input,
@@ -111,11 +111,6 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) override;
-
-  // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
@@ -124,9 +119,6 @@ class FilterContents : public Contents {
       bool msaa_enabled = true,
       int32_t mip_count = 1,
       const std::string& label = "Filter Snapshot") const override;
-
-  // |Contents|
-  const FilterContents* AsFilter() const override;
 
   /// @brief  Determines the coverage of source pixels that will be needed
   ///         to produce results for the specified |output_limit| under the
@@ -164,25 +156,6 @@ class FilterContents : public Contents {
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
-
-  /// @brief  Returns true if this filter graph doesn't perform any basis
-  ///         transforms to the filtered content. For example: Rotating,
-  ///         scaling, and skewing are all basis transforms, but
-  ///         translating is not.
-  ///
-  ///         This is useful for determining whether a filtered object's space
-  ///         is compatible enough with the parent pass space to perform certain
-  ///         subpass clipping optimizations.
-  virtual bool IsTranslationOnly() const;
-
-  /// @brief  Returns `true` if this filter does not have any `FilterInput`
-  ///         children.
-  bool IsLeaf() const;
-
-  /// @brief  Replaces the set of all leaf `FilterContents` with a new set
-  ///         of `FilterInput`s.
-  /// @see    `FilterContents::IsLeaf`
-  void SetLeafInputs(const FilterInput::Vector& inputs);
 
   /// @brief  Marks this filter chain as applying in a subpass scenario.
   ///

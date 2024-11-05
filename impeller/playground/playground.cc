@@ -263,7 +263,7 @@ bool Playground::OpenPlaygroundHere(
     ImGui_ImplGlfw_NewFrame();
 
     auto surface = impl_->AcquireSurfaceFrame(context_);
-    RenderTarget render_target = surface->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = surface->GetRenderTarget();
 
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
@@ -388,8 +388,8 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     const std::shared_ptr<Context>& context,
     DecompressedImage& decompressed_image,
     bool enable_mipmapping) {
-  auto texture_descriptor = TextureDescriptor{};
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = decompressed_image.GetSize();
   texture_descriptor.mip_count =
@@ -463,8 +463,8 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
     images[i] = image.value();
   }
 
-  auto texture_descriptor = TextureDescriptor{};
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.type = TextureType::kTextureCube;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = images[0].GetSize();
@@ -484,7 +484,7 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
     auto device_buffer = context_->GetResourceAllocator()->CreateBufferWithCopy(
         *images[i].GetAllocation());
     blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), texture, {},
-                       "", /*slice=*/i);
+                       "", /*mip_level=*/0, /*slice=*/i);
   }
 
   if (!blit_pass->EncodeCommands(context_->GetResourceAllocator()) ||
@@ -511,6 +511,11 @@ fml::Status Playground::SetCapabilities(
 
 bool Playground::WillRenderSomething() const {
   return switches_.enable_playground;
+}
+
+Playground::GLProcAddressResolver Playground::CreateGLProcAddressResolver()
+    const {
+  return impl_->CreateGLProcAddressResolver();
 }
 
 }  // namespace impeller

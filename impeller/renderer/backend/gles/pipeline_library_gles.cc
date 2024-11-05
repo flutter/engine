@@ -48,7 +48,7 @@ static std::string GetShaderSource(const ProcTableGLES& gl, GLuint shader) {
 
 static void LogShaderCompilationFailure(const ProcTableGLES& gl,
                                         GLuint shader,
-                                        const std::string& name,
+                                        std::string_view name,
                                         const fml::Mapping& source_mapping,
                                         ShaderStage stage) {
   std::stringstream stream;
@@ -99,10 +99,9 @@ static bool LinkProgram(
   }
 
   gl.SetDebugLabel(DebugResourceType::kShader, vert_shader,
-                   SPrintF("%s Vertex Shader", descriptor.GetLabel().c_str()));
-  gl.SetDebugLabel(
-      DebugResourceType::kShader, frag_shader,
-      SPrintF("%s Fragment Shader", descriptor.GetLabel().c_str()));
+                   SPrintF("%s Vertex Shader", descriptor.GetLabel().data()));
+  gl.SetDebugLabel(DebugResourceType::kShader, frag_shader,
+                   SPrintF("%s Fragment Shader", descriptor.GetLabel().data()));
 
   fml::ScopedCleanupClosure delete_vert_shader(
       [&gl, vert_shader]() { gl.DeleteShader(vert_shader); });
@@ -305,6 +304,11 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryGLES::GetPipeline(
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
   promise->set_value(nullptr);
   return {descriptor, promise->get_future()};
+}
+
+// |PipelineLibrary|
+bool PipelineLibraryGLES::HasPipeline(const PipelineDescriptor& descriptor) {
+  return pipelines_.find(descriptor) != pipelines_.end();
 }
 
 // |PipelineLibrary|

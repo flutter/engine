@@ -29,26 +29,35 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
     const std::vector<ShaderStageIOSlot>& p_inputs,
     const std::vector<ShaderStageBufferLayout>& layouts) {
-  std::vector<VertexAttribPointer> vertex_attrib_arrays;
-  for (auto i = 0u; i < p_inputs.size(); i++) {
-    const auto& input = p_inputs[i];
-    const auto& layout = layouts[input.binding];
-    VertexAttribPointer attrib;
-    attrib.index = input.location;
-    // Component counts must be 1, 2, 3 or 4. Do that validation now.
-    if (input.vec_size < 1u || input.vec_size > 4u) {
-      return false;
+  std::vector<std::vector<VertexAttribPointer>> vertex_attrib_arrays(
+      layouts.size());
+  // Every layout corresponds to a vertex binding.
+  // As we record, separate the attributes into buckets for each layout in
+  // ascending order. We do this because later on, we'll need to associate each
+  // of the attributes with bound buffers corresponding to the binding.
+  for (auto layout_i = 0u; layout_i < layouts.size(); layout_i++) {
+    const auto& layout = layouts[layout_i];
+    for (const auto& input : p_inputs) {
+      if (input.binding != layout_i) {
+        continue;
+      }
+      VertexAttribPointer attrib;
+      attrib.index = input.location;
+      // Component counts must be 1, 2, 3 or 4. Do that validation now.
+      if (input.vec_size < 1u || input.vec_size > 4u) {
+        return false;
+      }
+      attrib.size = input.vec_size;
+      auto type = ToVertexAttribType(input.type);
+      if (!type.has_value()) {
+        return false;
+      }
+      attrib.type = type.value();
+      attrib.normalized = GL_FALSE;
+      attrib.offset = input.offset;
+      attrib.stride = layout.stride;
+      vertex_attrib_arrays[layout_i].push_back(attrib);
     }
-    attrib.size = input.vec_size;
-    auto type = ToVertexAttribType(input.type);
-    if (!type.has_value()) {
-      return false;
-    }
-    attrib.type = type.value();
-    attrib.normalized = GL_FALSE;
-    attrib.offset = input.offset;
-    attrib.stride = layout.stride;
-    vertex_attrib_arrays.emplace_back(attrib);
   }
   vertex_attrib_arrays_ = std::move(vertex_attrib_arrays);
   return true;
@@ -143,8 +152,19 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 }
 
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
-                                              size_t vertex_offset) const {
-  for (const auto& array : vertex_attrib_arrays_) {
+                                              size_t binding,
+                                              size_t vertex_offset) {
+  if (binding >= vertex_attrib_arrays_.size()) {
+    return false;
+  }
+
+  if (!gl.GetCapabilities()->IsES()) {
+    FML_DCHECK(vertex_array_object_ == 0);
+    gl.GenVertexArrays(1, &vertex_array_object_);
+    gl.BindVertexArray(vertex_array_object_);
+  }
+
+  for (const auto& array : vertex_attrib_arrays_[binding]) {
     gl.EnableVertexAttribArray(array.index);
     gl.VertexAttribPointer(array.index,       // index
                            array.size,        // size (must be 1, 2, 3, or 4)
@@ -189,10 +209,17 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
+bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) {
   for (const auto& array : vertex_attrib_arrays_) {
-    gl.DisableVertexAttribArray(array.index);
+    for (const auto& attribute : array) {
+      gl.DisableVertexAttribArray(attribute.index);
+    }
   }
+  if (!gl.GetCapabilities()->IsES()) {
+    gl.DeleteVertexArrays(1, &vertex_array_object_);
+    vertex_array_object_ = 0;
+  }
+
   return true;
 }
 
@@ -249,14 +276,14 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const auto* metadata = buffer.GetMetadata();
-  auto device_buffer = buffer.resource.buffer;
+  auto device_buffer = buffer.resource.GetBuffer();
   if (!device_buffer) {
     VALIDATION_LOG << "Device buffer not found.";
     return false;
   }
   const auto& device_buffer_gles = DeviceBufferGLES::Cast(*device_buffer);
   const uint8_t* buffer_ptr =
-      device_buffer_gles.GetBufferData() + buffer.resource.range.offset;
+      device_buffer_gles.GetBufferData() + buffer.resource.GetRange().offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "
@@ -279,20 +306,20 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
-    std::vector<uint8_t> array_element_buffer;
-    if (element_count > 1) {
-      // When binding uniform arrays, the elements must be contiguous. Copy
-      // the uniforms to a temp buffer to eliminate any padding needed by the
-      // other backends.
-      array_element_buffer.resize(member.size * element_count);
+    // When binding uniform arrays, the elements must be contiguous. Copy
+    // the uniforms to a temp buffer to eliminate any padding needed by the
+    // other backends if the array elements have padding.
+    std::vector<uint8_t> array_element_buffer_;
+    if (element_count > 1 && element_stride != member.size) {
+      array_element_buffer_.resize(member.size * element_count);
       for (size_t element_i = 0; element_i < element_count; element_i++) {
-        std::memcpy(array_element_buffer.data() + element_i * member.size,
+        std::memcpy(array_element_buffer_.data() + element_i * member.size,
                     reinterpret_cast<const char*>(buffer_data) +
                         element_i * element_stride,
                     member.size);
       }
       buffer_data =
-          reinterpret_cast<const GLfloat*>(array_element_buffer.data());
+          reinterpret_cast<const GLfloat*>(array_element_buffer_.data());
     }
 
     switch (member.type) {
@@ -398,7 +425,7 @@ std::optional<size_t> BufferBindingsGLES::BindTextures(
     /// If there is a sampler for the texture at the same index, configure the
     /// bound texture using that sampler.
     ///
-    const auto& sampler_gles = SamplerGLES::Cast(*data.sampler);
+    const auto& sampler_gles = SamplerGLES::Cast(**data.sampler);
     if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
       return std::nullopt;
     }

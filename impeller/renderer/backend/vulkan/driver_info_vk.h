@@ -10,6 +10,104 @@
 
 namespace impeller {
 
+// https://en.wikipedia.org/wiki/Adreno
+enum class AdrenoGPU {
+  // I don't think the 400 series will ever run Vulkan, but if some show up we
+  // can add them here.
+  // 500s
+  kAdreno504,
+  kAdreno505,
+  kAdreno506,
+  kAdreno508,
+  kAdreno509,
+  kAdreno510,
+  kAdreno512,
+  kAdreno530,
+  kAdreno540,
+  // 600s
+  kAdreno605,
+  kAdreno608,
+  kAdreno610,
+  kAdreno612,
+  kAdreno613,
+  kAdreno615,
+  kAdreno616,
+  kAdreno618,
+  kAdreno619L,
+  kAdreno619,
+  kAdreno620,
+  kAdreno630,
+  // The 640 is the first GPU inside an Android device with upgradable drivers.
+  // Anything before this point exhibiting broken behavior is broken forever.
+  kAdreno640,
+  kAdreno642L,
+  kAdreno642,
+  kAdreno643L,
+  kAdreno644,
+  kAdreno650,
+  kAdreno660,
+  kAdreno663,
+  kAdreno675,
+  kAdreno680,
+  kAdreno685,
+  kAdreno690,
+  kAdreno695,
+  // 700s
+  kAdreno702,
+  kAdreno710,
+  kAdreno720,
+  kAdreno725,
+  kAdreno730,
+  kAdreno732,
+  kAdreno735,
+  kAdreno740,
+  kAdreno750,
+  // X
+  kAdrenoX145,
+  kAdrenoX185,
+  // Unknown GPU, likely newer model.
+  kUnknown,
+};
+
+// https://en.wikipedia.org/wiki/Mali_(processor)
+enum class MaliGPU {
+  // These might be Vulkan 1.0 Only.
+  kT760,
+  kT820,
+  kT830,
+  kT860,
+  kT880,
+
+  // Bifrost
+  kG31,
+  kG51,
+  kG71,
+  kG52,
+  kG72,
+  kG76,
+
+  // Valhall
+  // Note: there is an Immortalis-G715 a Mali-G715
+  kG57,
+  kG77,
+  kG68,
+  kG78,
+  kG310,
+  kG510,
+  kG610,
+  kG710,
+  kG615,
+  kG715,
+
+  // 5th Gen
+  kG620,
+  kG720,
+  kG625,
+  kG725,
+  kG925,
+  kUnknown,
+};
+
 enum class VendorVK {
   kUnknown,
   //----------------------------------------------------------------------------
@@ -54,6 +152,12 @@ enum class DeviceTypeVK {
   ///
   kCPU,
 };
+
+// visible for testing.
+AdrenoGPU GetAdrenoVersion(std::string_view version);
+
+// visible for testing.
+MaliGPU GetMaliVersion(std::string_view version);
 
 //------------------------------------------------------------------------------
 /// @brief      Get information about the Vulkan driver.
@@ -130,15 +234,32 @@ class DriverInfoVK {
   ///             If true, context setup should fail such that the device falls
   ///             back to OpenGLES.
   ///
-  /// @return     True if non-functional device, False otherwiise.
+  /// @return     True if non-functional device, False otherwise.
   ///
   bool IsKnownBadDriver() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Determines if the driver can batch submit command buffers
+  ///             without triggering erronious deadlock errors.
+  ///
+  ///             Early 600 series Adreno drivers would deadlock if a command
+  ///             buffer submission had too much work attached to it, this
+  ///             requires the renderer to split up command buffers that could
+  ///             be logically combined.
+  ///
+  /// @return     True if device can batch submit command buffers.
+  ///
+  bool CanBatchSubmitCommandBuffers() const;
 
  private:
   bool is_valid_ = false;
   Version api_version_;
   VendorVK vendor_ = VendorVK::kUnknown;
   DeviceTypeVK type_ = DeviceTypeVK::kUnknown;
+  // If the VendorVK is  VendorVK::kQualcomm, this will be populated with the
+  // identified Adreno GPU.
+  std::optional<AdrenoGPU> adreno_gpu_ = std::nullopt;
+  std::optional<MaliGPU> mali_gpu_ = std::nullopt;
   std::string driver_name_;
 };
 

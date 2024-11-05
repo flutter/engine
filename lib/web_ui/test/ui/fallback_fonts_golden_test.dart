@@ -149,7 +149,7 @@ void testMain() {
           renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           <String>[
             'Roboto',
-            'Noto Color Emoji',
+            'Noto Color Emoji 9',
             'Noto Sans Arabic',
           ]);
     });
@@ -171,7 +171,7 @@ void testMain() {
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
 
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
-          contains('Noto Color Emoji'));
+          contains('Noto Color Emoji 9'));
 
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
@@ -222,6 +222,33 @@ void testMain() {
       expect(downloadedFontFamilies, isEmpty);
     }
 
+    /// Asserts that a given [partialFontFamilyName] is downloaded to render
+    /// a given [charCode].
+    ///
+    /// The match on [partialFontFamilyName] is "starts with", so this method
+    /// supports split fonts, without hardcoding the shard number (which we
+    /// don't own).
+    Future<void> checkDownloadedFamilyForCharCode(
+        int charCode, String partialFontFamilyName) async {
+      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
+      final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      pb.addText(String.fromCharCode(charCode));
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+
+      expect(
+        downloadedFontFamilies,
+        hasLength(1),
+        reason:
+          'Downloaded more than one font family for character: 0x${charCode.toRadixString(16)}'
+      );
+      expect(
+        downloadedFontFamilies.first,
+        startsWith(partialFontFamilyName),
+      );
+    }
+
     // Regression test for https://github.com/flutter/flutter/issues/75836
     // When we had this bug our font fallback resolution logic would end up in an
     // infinite loop and this test would freeze and time out.
@@ -261,6 +288,11 @@ void testMain() {
       ]);
     });
 
+    // https://github.com/flutter/flutter/issues/157763
+    test('prioritizes Noto Color Emoji over Noto Sans Symbols', () async {
+      await checkDownloadedFamilyForCharCode(0x1f3d5, 'Noto Color Emoji');
+    });
+
     test('findMinimumFontsForCodePoints for all supported code points',
         () async {
       // Collect all supported code points from all fallback fonts in the Noto
@@ -270,17 +302,9 @@ void testMain() {
       renderer.fontCollection.fontFallbackManager!.codePointToComponents
           .forEachRange((int start, int end, FallbackFontComponent component) {
         if (component.fonts.isNotEmpty) {
-          bool componentHasEnabledFont = false;
-          for (final NotoFont font in component.fonts) {
-            if (font.enabled) {
-              testedFonts.add(font.name);
-              componentHasEnabledFont = true;
-            }
-          }
-          if (componentHasEnabledFont) {
-            for (int codePoint = start; codePoint <= end; codePoint++) {
-              supportedUniqueCodePoints.add(codePoint);
-            }
+          testedFonts.addAll(component.fonts.map((font) => font.name));
+          for (int codePoint = start; codePoint <= end; codePoint++) {
+            supportedUniqueCodePoints.add(codePoint);
           }
         }
       });
@@ -290,7 +314,18 @@ void testMain() {
       expect(
           testedFonts,
           unorderedEquals(<String>{
-            'Noto Color Emoji',
+            'Noto Color Emoji 0',
+            'Noto Color Emoji 1',
+            'Noto Color Emoji 2',
+            'Noto Color Emoji 3',
+            'Noto Color Emoji 4',
+            'Noto Color Emoji 5',
+            'Noto Color Emoji 6',
+            'Noto Color Emoji 7',
+            'Noto Color Emoji 8',
+            'Noto Color Emoji 9',
+            'Noto Color Emoji 10',
+            'Noto Color Emoji 11',
             'Noto Music',
             'Noto Sans',
             'Noto Sans Symbols',
@@ -496,7 +531,7 @@ void testMain() {
 
       // Make sure we didn't download the fallback font.
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
-          isNot(contains('Noto Color Emoji')));
+          isNot(contains('Noto Color Emoji 9')));
     });
   },
       // HTML renderer doesn't use the fallback font manager.

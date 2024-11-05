@@ -14,9 +14,6 @@
 #include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
-#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 
 #include <cstdlib>
 #include <memory>
@@ -24,6 +21,7 @@
 
 #ifdef SHELL_ENABLE_VULKAN
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkTypes.h"
 #endif  // SHELL_ENABLE_VULKAN
 
 #ifdef SHELL_ENABLE_METAL
@@ -33,6 +31,8 @@
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/testing/test_gl_surface.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLTypes.h"
 #endif  // SHELL_ENABLE_GL
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -258,6 +258,7 @@ bool EmbedderTestBackingStoreProducer::CreateSurface(
   backing_store_out->open_gl.surface.clear_current_callback = clear_current;
   backing_store_out->open_gl.surface.destruction_callback =
       destruction_callback;
+  backing_store_out->open_gl.surface.format = 0x93A1 /* GL_BGRA8_EXT */;
 
   return true;
 #else

@@ -83,6 +83,12 @@ class Capabilities {
   ///         This feature is especially useful for MSAA and stencils.
   virtual bool SupportsDeviceTransientTextures() const = 0;
 
+  /// @brief Whether the primitive type TriangleFan is supported by the backend.
+  virtual bool SupportsTriangleFan() const = 0;
+
+  /// @brief Whether primitive restart is supported.
+  virtual bool SupportsPrimitiveRestart() const = 0;
+
   /// @brief  Returns a supported `PixelFormat` for textures that store
   ///         4-channel colors (red/green/blue/alpha).
   virtual PixelFormat GetDefaultColorFormat() const = 0;
@@ -104,6 +110,11 @@ class Capabilities {
   ///        Some backends may use Red channel while others use grey. This
   ///        should not have any impact
   virtual PixelFormat GetDefaultGlyphAtlasFormat() const = 0;
+
+  /// @brief Return the maximum size of a render pass attachment.
+  ///
+  /// Note that this may be smaller than the maximum allocatable texture size.
+  virtual ISize GetMaximumRenderPassAttachmentSize() const = 0;
 
  protected:
   Capabilities();
@@ -145,6 +156,10 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetDefaultGlyphAtlasFormat(PixelFormat value);
 
+  CapabilitiesBuilder& SetSupportsTriangleFan(bool value);
+
+  CapabilitiesBuilder& SetMaximumRenderPassAttachmentSize(ISize size);
+
   std::unique_ptr<Capabilities> Build();
 
  private:
@@ -157,10 +172,13 @@ class CapabilitiesBuilder {
   bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
+  bool supports_triangle_fan_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_depth_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_glyph_atlas_format_ = std::nullopt;
+  std::optional<ISize> default_maximum_render_pass_attachment_size_ =
+      std::nullopt;
 
   CapabilitiesBuilder(const CapabilitiesBuilder&) = delete;
 

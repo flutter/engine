@@ -73,7 +73,7 @@ bool BlitCopyTextureToTextureCommandGLES::Encode(
   // glBlitFramebuffer is a GLES3 proc. Since we target GLES2, we need to
   // emulate the blit when it's not available in the driver.
   if (!gl.BlitFramebuffer.IsAvailable()) {
-    // TODO(135818): Emulate the blit using a raster draw call here.
+    // TODO(157064): Emulate the blit using a raster draw call here.
     VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
     return false;
   }
@@ -220,7 +220,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   }
 
   if (!tex_descriptor.IsValid() ||
-      source.range.length !=
+      source.GetRange().length !=
           BytesPerPixelForPixelFormat(tex_descriptor.format) *
               destination_region.Area()) {
     return false;
@@ -263,14 +263,14 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   }
   const auto& gl = reactor.GetProcTable();
   gl.BindTexture(texture_type, gl_handle.value());
-  const GLvoid* tex_data =
-      data.buffer_view.buffer->OnGetContents() + data.buffer_view.range.offset;
+  const GLvoid* tex_data = data.buffer_view.GetBuffer()->OnGetContents() +
+                           data.buffer_view.GetRange().offset;
 
   // GL_INVALID_OPERATION if the texture array has not been
   // defined by a previous glTexImage2D operation.
   if (!texture_gles.IsSliceInitialized(slice)) {
     gl.TexImage2D(texture_target,              // target
-                  0u,                          // LOD level
+                  mip_level,                   // LOD level
                   data.internal_format,        // internal format
                   tex_descriptor.size.width,   // width
                   tex_descriptor.size.height,  // height
@@ -283,11 +283,9 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   }
 
   {
-    TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
-                 std::to_string(data.buffer_view.range.length).c_str());
     gl.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
     gl.TexSubImage2D(texture_target,                  // target
-                     0u,                              // LOD level
+                     mip_level,                       // LOD level
                      destination_region.GetX(),       // xoffset
                      destination_region.GetY(),       // yoffset
                      destination_region.GetWidth(),   // width
@@ -369,7 +367,7 @@ bool BlitResizeTextureCommandGLES::Encode(const ReactorGLES& reactor) const {
   // glBlitFramebuffer is a GLES3 proc. Since we target GLES2, we need to
   // emulate the blit when it's not available in the driver.
   if (!gl.BlitFramebuffer.IsAvailable()) {
-    // TODO(135818): Emulate the blit using a raster draw call here.
+    // TODO(157064): Emulate the blit using a raster draw call here.
     VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
     return false;
   }

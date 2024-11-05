@@ -7,12 +7,13 @@
 #include <algorithm>
 
 #include "flutter/flow/surface.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/dl_dispatcher.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/geometry/size.h"
 #include "flutter/shell/common/snapshot_controller.h"
-#include "impeller/renderer/render_target.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 
 namespace flutter {
 
@@ -45,62 +46,11 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
     render_target_size.height *= scale_factor;
   }
 
-#if EXPERIMENTAL_CANVAS
-  // Do not use the render target cache as the lifecycle of this texture
-  // will outlive a particular frame.
-  impeller::RenderTargetAllocator render_target_allocator =
-      impeller::RenderTargetAllocator(
-          context->GetContext()->GetResourceAllocator());
-  impeller::RenderTarget target;
-  if (context->GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = render_target_allocator.CreateOffscreenMSAA(
-        *context->GetContext(),  // context
-        render_target_size,      // size
-        /*mip_count=*/1,
-        "Picture Snapshot MSAA",  // label
-        impeller::RenderTarget::
-            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
-    );
-  } else {
-    target = render_target_allocator.CreateOffscreen(
-        *context->GetContext(),  // context
-        render_target_size,      // size
-        /*mip_count=*/1,
-        "Picture Snapshot",  // label
-        impeller::RenderTarget::
-            kDefaultColorAttachmentConfig  // color_attachment_config
-    );
-  }
-
-  impeller::TextFrameDispatcher collector(context->GetContentContext(),
-                                          impeller::Matrix());
-  display_list->Dispatch(collector, SkIRect::MakeSize(size));
-  impeller::ExperimentalDlDispatcher impeller_dispatcher(
-      context->GetContentContext(), target,
-      display_list->root_has_backdrop_filter(),
-      display_list->max_root_blend_mode(),
-      impeller::IRect::MakeSize(render_target_size));
-  display_list->Dispatch(impeller_dispatcher, SkIRect::MakeSize(size));
-  impeller_dispatcher.FinishRecording();
-
-  context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
-
-  return impeller::DlImageImpeller::Make(target.GetRenderTargetTexture(),
-                                         DlImage::OwningContext::kRaster);
-#else
-  impeller::DlDispatcher dispatcher;
-  display_list->Dispatch(dispatcher);
-  impeller::Picture picture = dispatcher.EndRecordingAsPicture();
-
-  std::shared_ptr<impeller::Texture> image =
-      picture.ToImage(*context, render_target_size);
-  if (image) {
-    return impeller::DlImageImpeller::Make(image,
-                                           DlImage::OwningContext::kRaster);
-  }
-#endif  // EXPERIMENTAL_CANVAS
-
-  return nullptr;
+  return impeller::DlImageImpeller::Make(
+      impeller::DisplayListToTexture(display_list, render_target_size, *context,
+                                     /*reset_host_buffer=*/false,
+                                     /*generate_mips=*/true),
+      DlImage::OwningContext::kRaster);
 }
 
 sk_sp<DlImage> DoMakeRasterSnapshot(
@@ -126,7 +76,6 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize picture_size,
     std::function<void(const sk_sp<DlImage>&)> callback) {
-  sk_sp<DlImage> result;
   std::shared_ptr<const fml::SyncSwitch> sync_switch =
       GetDelegate().GetIsGpuDisabledSyncSwitch();
   sync_switch->Execute(
@@ -143,10 +92,25 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
                   },
                   [callback]() { callback(nullptr); });
             } else {
+#if FML_OS_IOS_SIMULATOR
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+#else
               callback(nullptr);
+
+#endif  // FML_OS_IOS_SIMULATOR
             }
           })
           .SetIfFalse([&] {
+#if FML_OS_IOS_SIMULATOR
+            if (!GetDelegate().GetAiksContext()) {
+              callback(impeller::DlImageImpeller::Make(
+                  nullptr, DlImage::OwningContext::kRaster,
+                  /*is_fake_image=*/true));
+              return;
+            }
+#endif
             callback(DoMakeRasterSnapshot(display_list, picture_size,
                                           GetDelegate().GetAiksContext()));
           }));
