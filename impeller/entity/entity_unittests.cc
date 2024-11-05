@@ -1863,8 +1863,9 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   //   8 bytes for iResolution
   //   4 bytes for iTime
   //   4 bytes padding
-  EXPECT_EQ(command.fragment_bindings.buffers[0].view.resource.range.length,
-            16u);
+  EXPECT_EQ(
+      command.fragment_bindings.buffers[0].view.resource.GetRange().length,
+      16u);
 }
 
 TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
@@ -2169,16 +2170,16 @@ TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
 // set of options, we can just compare benchmarks.
 TEST_P(EntityTest, ContentContextOptionsHasReasonableHashFunctions) {
   ContentContextOptions opts;
-  auto hash_a = ContentContextOptions::Hash{}(opts);
+  auto hash_a = opts.ToKey();
 
   opts.blend_mode = BlendMode::kColorBurn;
-  auto hash_b = ContentContextOptions::Hash{}(opts);
+  auto hash_b = opts.ToKey();
 
   opts.has_depth_stencil_attachments = false;
-  auto hash_c = ContentContextOptions::Hash{}(opts);
+  auto hash_c = opts.ToKey();
 
   opts.primitive_type = PrimitiveType::kPoint;
-  auto hash_d = ContentContextOptions::Hash{}(opts);
+  auto hash_d = opts.ToKey();
 
   EXPECT_NE(hash_a, hash_b);
   EXPECT_NE(hash_b, hash_c);

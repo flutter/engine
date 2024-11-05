@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "base/platform/darwin/scoped_nsobject.h"
+#include "surface.h"
 
-namespace base {
+using namespace Skwasm;
 
-//
+Surface::Surface() : _thread(0) {
+  _init();
+}
 
-}  // namespace base
+SKWASM_EXPORT bool skwasm_isMultiThreaded() {
+  return false;
+}
