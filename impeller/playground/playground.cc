@@ -133,8 +133,6 @@ void Playground::SetupContext(PlaygroundBackend backend,
   }
 
   context_ = impl_->GetContext();
-  host_buffer_ = HostBuffer::Create(context_->GetResourceAllocator(),
-                                    context_->GetIdleWaiter());
 }
 
 void Playground::SetupWindow() {
@@ -151,7 +149,9 @@ bool Playground::IsPlaygroundEnabled() const {
 }
 
 void Playground::TeardownWindow() {
-  host_buffer_.reset();
+  if (host_buffer_) {
+    host_buffer_.reset();
+  }
   if (context_) {
     context_->Shutdown();
   }
@@ -307,6 +307,10 @@ bool Playground::OpenPlaygroundHere(
         return false;
       }
       pass->SetLabel("ImGui Render Pass");
+      if (!host_buffer_) {
+        host_buffer_ = HostBuffer::Create(context_->GetResourceAllocator(),
+                                          context_->GetIdleWaiter());
+      }
 
       ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass,
                                         *host_buffer_);
