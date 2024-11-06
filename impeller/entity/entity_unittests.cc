@@ -2364,6 +2364,45 @@ APPLY_COLOR_FILTER_GRADIENT_TEST(Radial);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Conical);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Sweep);
 
+TEST_P(EntityTest, GiantStrokePathAllocation) {
+  PathBuilder builder{};
+  for (int i = 0; i < 10000; i++) {
+    builder.LineTo(Point(i, i));
+  }
+  Path path = builder.TakePath();
+  auto geom = Geometry::MakeStrokePath(path, /*stroke_width=*/10);
+
+  ContentContext content_context(GetContext(), nullptr);
+  Entity entity;
+
+  auto cmd_buffer = content_context.GetContext()->CreateCommandBuffer();
+
+  RenderTargetAllocator allocator(
+      content_context.GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      allocator.CreateOffscreen(*content_context.GetContext(), {10, 10}, 1);
+  auto pass = cmd_buffer->CreateRenderPass(render_target);
+
+  GeometryResult result =
+      geom->GetPositionBuffer(content_context, entity, *pass);
+
+  // Validate the buffer data overflowed the small buffer
+  EXPECT_GT(result.vertex_buffer.vertex_count, 4096u);
+
+  // Validate that there are no uninitialized points near the gap.
+  Point* written_data = reinterpret_cast<Point*>(
+      (result.vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
+       result.vertex_buffer.vertex_buffer.GetRange().offset));
+
+  EXPECT_NE(*(written_data + 4094), Point(0, 0));
+  EXPECT_NE(*(written_data + 4095), Point(0, 0));
+  EXPECT_NE(*(written_data + 4096), Point(0, 0));
+  EXPECT_NE(*(written_data + 4097), Point(0, 0));
+  EXPECT_NE(*(written_data + 4098), Point(0, 0));
+  EXPECT_NE(*(written_data + 4099), Point(0, 0));
+}
+
 }  // namespace testing
 }  // namespace impeller
 

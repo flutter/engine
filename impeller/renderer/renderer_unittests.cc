@@ -8,8 +8,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/sampler_descriptor.h"
-#include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
 #include "impeller/fixtures/baby.frag.h"
@@ -1626,45 +1624,6 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
     return true;
   };
   OpenPlaygroundHere(callback);
-}
-
-TEST_P(RendererTest, GiantStrokePathAllocation) {
-  PathBuilder builder{};
-  for (int i = 0; i < 10000; i++) {
-    builder.LineTo(Point(i, i));
-  }
-  Path path = builder.TakePath();
-  auto geom = Geometry::MakeStrokePath(path, /*stroke_width=*/10);
-
-  ContentContext content_context(GetContext(), nullptr);
-  Entity entity;
-
-  auto cmd_buffer = content_context.GetContext()->CreateCommandBuffer();
-
-  RenderTargetAllocator allocator(
-      content_context.GetContext()->GetResourceAllocator());
-
-  auto render_target =
-      allocator.CreateOffscreen(*content_context.GetContext(), {10, 10}, 1);
-  auto pass = cmd_buffer->CreateRenderPass(render_target);
-
-  GeometryResult result =
-      geom->GetPositionBuffer(content_context, entity, *pass);
-
-  // Validate the buffer data overflowed the small buffer
-  EXPECT_GT(result.vertex_buffer.vertex_count, 4096u);
-
-  // Validate that there are no uninitialized points near the gap.
-  Point* written_data = reinterpret_cast<Point*>(
-      (result.vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
-       result.vertex_buffer.vertex_buffer.GetRange().offset));
-
-  EXPECT_NE(*(written_data + 4094), Point(0, 0));
-  EXPECT_NE(*(written_data + 4095), Point(0, 0));
-  EXPECT_NE(*(written_data + 4096), Point(0, 0));
-  EXPECT_NE(*(written_data + 4097), Point(0, 0));
-  EXPECT_NE(*(written_data + 4098), Point(0, 0));
-  EXPECT_NE(*(written_data + 4099), Point(0, 0));
 }
 
 }  // namespace testing
