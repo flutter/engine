@@ -455,13 +455,15 @@ ContentContext::ContentContext(
                                                  options_trianglestrip);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
 
-  // GLES only shader that is unsupported on macOS.
-#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
+#if defined(IMPELLER_ENABLE_OPENGLES)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+#if !defined(FML_OS_MACOSX)
+    // GLES only shader that is unsupported on macOS.
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
+#endif  // !defined(FML_OS_MACOSX)
+    texture_downsample_gles_pipelines_.CreateDefault(*context_,
+                                                     options_trianglestrip);
   }
-  texture_downsample_gles_pipelines_.CreateDefault(*context_,
-                                                   options_trianglestrip);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   is_valid_ = true;
