@@ -23,10 +23,11 @@ class PositionWriter {
       : points_(points), oversized_(0) {}
 
   void AppendVertex(const Point& point) {
-    if (offset_ >= 4096) {
+    if (offset_ >= 4096u) {
       oversized_.push_back(point);
+    } else {
+      points_[offset_++] = point;
     }
-    points_[offset_++] = point;
   }
 
   size_t GetUsedSize() const { return offset_; }
@@ -603,7 +604,6 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
                           .transform = entity.GetShaderTransform(pass),
                           .mode = GeometryResult::Mode::kPreventOverdraw};
   }
-  FML_LOG(ERROR) << "Oversized";
   const std::vector<Point>& oversized_data =
       position_writer.GetOveriszedBuffer();
   BufferView buffer_view = host_buffer.Emplace(
