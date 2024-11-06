@@ -578,7 +578,7 @@ targets:
       config_name: windows_unopt
 
   - name: Linux ci_yaml engine roller
-    bringup: false
+    bringup: true
     recipe: infra/ci_yaml
     properties:
       backfill: "false"
