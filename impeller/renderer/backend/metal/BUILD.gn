@@ -5,9 +5,6 @@
 import("../../../tools/impeller.gni")
 
 impeller_component("metal") {
-  cflags_objc = flutter_cflags_objc_arc
-  cflags_objcc = flutter_cflags_objcc_arc
-
   sources = [
     "allocator_mtl.h",
     "allocator_mtl.mm",
@@ -70,8 +67,6 @@ impeller_component("metal") {
 
 impeller_component("metal_unittests") {
   testonly = true
-  cflags_objc = flutter_cflags_objc_arc
-  cflags_objcc = flutter_cflags_objcc_arc
 
   sources = [
     "allocator_mtl_unittests.mm",
