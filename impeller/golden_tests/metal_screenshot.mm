@@ -12,10 +12,7 @@ MetalScreenshot::MetalScreenshot(CGImageRef cgImage) : cg_image_(cgImage) {
   pixel_data_ = CGDataProviderCopyData(data_provider);
 }
 
-MetalScreenshot::~MetalScreenshot() {
-  CFRelease(pixel_data_);
-  CGImageRelease(cg_image_);
-}
+MetalScreenshot::~MetalScreenshot() = default;
 
 const uint8_t* MetalScreenshot::GetBytes() const {
   return CFDataGetBytePtr(pixel_data_);
@@ -37,17 +34,16 @@ bool MetalScreenshot::WriteToPNG(const std::string& path) const {
   bool result = false;
   NSURL* output_url =
       [NSURL fileURLWithPath:[NSString stringWithUTF8String:path.c_str()]];
-  CGImageDestinationRef destination = CGImageDestinationCreateWithURL(
-      (__bridge CFURLRef)output_url, kUTTypePNG, 1, nullptr);
-  if (destination != nullptr) {
+  fml::CFRef<CGImageDestinationRef> destination =
+      CGImageDestinationCreateWithURL((__bridge CFURLRef)output_url, kUTTypePNG,
+                                      1, nullptr);
+  if (destination) {
     CGImageDestinationAddImage(destination, cg_image_,
                                (__bridge CFDictionaryRef) @{});
 
     if (CGImageDestinationFinalize(destination)) {
       result = true;
     }
-
-    CFRelease(destination);
   }
   return result;
 }
