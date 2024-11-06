@@ -66,9 +66,9 @@ class RollFallbackFontsCommand extends Command<bool>
       ...await _processFallbackFonts(client, apiFallbackFonts),
     ];
 
-    final String? failedUrl = await _checkForLicenseAttributions(client, fallbackFontInfo);
-    if (failedUrl != null) {
-      throw ToolExit('Could not find license attribution at: $failedUrl');
+    final List<String> failedUrls = await _checkForLicenseAttributions(client, fallbackFontInfo);
+    if (failedUrls.isNotEmpty) {
+      throw ToolExit('Could not find license attribution at:\n - ${failedUrls.join('\n - ')}');
     }
 
     final List<_Font> fallbackFontData = <_Font>[];
@@ -537,9 +537,8 @@ String getUrlSuffix(Uri fontUri) {
 /// Checks the license attribution for unique fonts in the [fallbackFontInfo]
 /// list.
 ///
-/// When the license check fails, it returns the URL of the license file that
-/// failed the check. When the check passes, it returns `null`.
-Future<String?> _checkForLicenseAttributions(
+/// Returns a list of URLs that failed to contain the license attribution.
+Future<List<String>> _checkForLicenseAttributions(
   http.Client client,
   List<_FontInfo> fallbackFontInfo,
 ) async {
@@ -547,6 +546,8 @@ Future<String?> _checkForLicenseAttributions(
       'https://github.com/google/fonts/tree/main/ofl';
   const String attributionString =
       'This Font Software is licensed under the SIL Open Font License, Version 1.1.';
+
+  final failedUrls = <String>[];
 
   final uniqueFontPackageNames = <String>{};
   for (final (family: _, :uri) in fallbackFontInfo) {
@@ -559,15 +560,16 @@ Future<String?> _checkForLicenseAttributions(
     final String fontLicenseUrl = '$googleFontsUpstream/$fontPackageName/OFL.txt';
     final http.Response response = await client.get(Uri.parse(fontLicenseUrl));
     if (response.statusCode != 200) {
-      return fontLicenseUrl;
+      failedUrls.add(fontLicenseUrl);
+      continue;
     }
     final String licenseString = response.body;
     if (!licenseString.contains(attributionString)) {
-      return fontLicenseUrl;
+      failedUrls.add(fontLicenseUrl);
     }
   }
 
-  return null;
+  return failedUrls;
 }
 
 // The basic information of a font: its [family] (name) and [uri].
