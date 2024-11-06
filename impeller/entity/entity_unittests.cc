@@ -2372,7 +2372,7 @@ TEST_P(EntityTest, GiantStrokePathAllocation) {
   Path path = builder.TakePath();
   auto geom = Geometry::MakeStrokePath(path, /*stroke_width=*/10);
 
-  ContentContext content_context(GetContext(), nullptr);
+  ContentContext content_context(GetContext(), /*typographer_context=*/nullptr);
   Entity entity;
 
   auto cmd_buffer = content_context.GetContext()->CreateCommandBuffer();
@@ -2380,8 +2380,8 @@ TEST_P(EntityTest, GiantStrokePathAllocation) {
   RenderTargetAllocator allocator(
       content_context.GetContext()->GetResourceAllocator());
 
-  auto render_target =
-      allocator.CreateOffscreen(*content_context.GetContext(), {10, 10}, 1);
+  auto render_target = allocator.CreateOffscreen(
+      *content_context.GetContext(), /*size=*/{10, 10}, /*mip_count=*/1);
   auto pass = cmd_buffer->CreateRenderPass(render_target);
 
   GeometryResult result =
@@ -2395,12 +2395,33 @@ TEST_P(EntityTest, GiantStrokePathAllocation) {
       (result.vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
        result.vertex_buffer.vertex_buffer.GetRange().offset));
 
-  EXPECT_NE(*(written_data + kPointArenaSize - 2), Point(0, 0));
-  EXPECT_NE(*(written_data + kPointArenaSize - 1), Point(0, 0));
-  EXPECT_NE(*(written_data + kPointArenaSize), Point(0, 0));
-  EXPECT_NE(*(written_data + kPointArenaSize + 1), Point(0, 0));
-  EXPECT_NE(*(written_data + kPointArenaSize + 2), Point(0, 0));
-  EXPECT_NE(*(written_data + kPointArenaSize + 3), Point(0, 0));
+  std::vector<Point> expected = {
+      Point(1019.46, 1026.54),  //
+      Point(1026.54, 1019.46),  //
+      Point(1020.45, 1027.54),  //
+      Point(1027.54, 1020.46),  //
+      Point(1020.46, 1027.53)   //
+  };
+
+  Point point = written_data[kPointArenaSize - 2];
+  EXPECT_NEAR(point.x, expected[0].x, 0.1);
+  EXPECT_NEAR(point.y, expected[0].y, 0.1);
+
+  point = written_data[kPointArenaSize - 1];
+  EXPECT_NEAR(point.x, expected[1].x, 0.1);
+  EXPECT_NEAR(point.y, expected[1].y, 0.1);
+
+  point = written_data[kPointArenaSize];
+  EXPECT_NEAR(point.x, expected[2].x, 0.1);
+  EXPECT_NEAR(point.y, expected[2].y, 0.1);
+
+  point = written_data[kPointArenaSize + 1];
+  EXPECT_NEAR(point.x, expected[3].x, 0.1);
+  EXPECT_NEAR(point.y, expected[3].y, 0.1);
+
+  point = written_data[kPointArenaSize + 2];
+  EXPECT_NEAR(point.x, expected[4].x, 0.1);
+  EXPECT_NEAR(point.y, expected[4].y, 0.1);
 }
 
 }  // namespace testing

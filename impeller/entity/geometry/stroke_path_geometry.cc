@@ -6,6 +6,7 @@
 
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
@@ -20,7 +21,9 @@ namespace {
 class PositionWriter {
  public:
   explicit PositionWriter(std::vector<Point>& points)
-      : points_(points), oversized_(0) {}
+      : points_(points), oversized_() {
+    FML_DCHECK(points_.size() == kPointArenaSize);
+  }
 
   void AppendVertex(const Point& point) {
     if (offset_ >= kPointArenaSize) {
@@ -30,7 +33,11 @@ class PositionWriter {
     }
   }
 
-  size_t GetUsedSize() const { return offset_; }
+  /// @brief Return the number of points used in the arena, followed by
+  ///        the number of points allocated in the overized buffer.
+  std::pair<size_t, size_t> GetUsedSize() const {
+    return std::make_pair(offset_, oversized_.size());
+  }
 
   bool HasOversizedBuffer() const { return !oversized_.empty(); }
 
@@ -594,38 +601,38 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
                             GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
                             scale);
 
+  const auto [arena_length, oversized_length] = position_writer.GetUsedSize();
   if (!position_writer.HasOversizedBuffer()) {
     BufferView buffer_view = host_buffer.Emplace(
         renderer.GetTessellator().GetStrokePointCache().data(),
-        position_writer.GetUsedSize() * sizeof(Point), alignof(Point));
+        arena_length * sizeof(Point), alignof(Point));
 
     return GeometryResult{.type = PrimitiveType::kTriangleStrip,
                           .vertex_buffer =
                               {
                                   .vertex_buffer = buffer_view,
-                                  .vertex_count = position_writer.GetUsedSize(),
+                                  .vertex_count = arena_length,
                                   .index_type = IndexType::kNone,
                               },
                           .transform = entity.GetShaderTransform(pass),
                           .mode = GeometryResult::Mode::kPreventOverdraw};
   }
-  FML_LOG(ERROR) << "Oversized";
   const std::vector<Point>& oversized_data =
       position_writer.GetOveriszedBuffer();
   BufferView buffer_view = host_buffer.Emplace(
-      nullptr,
-      (position_writer.GetUsedSize() + oversized_data.size()) * sizeof(Point),
-      alignof(Point));
+      /*buffer=*/nullptr,                                 //
+      (arena_length + oversized_length) * sizeof(Point),  //
+      alignof(Point)                                      //
+  );
   memcpy(buffer_view.GetBuffer()->OnGetContents() +
              buffer_view.GetRange().offset,                       //
          renderer.GetTessellator().GetStrokePointCache().data(),  //
-         position_writer.GetUsedSize() * sizeof(Point)            //
+         arena_length * sizeof(Point)                             //
   );
-  memcpy(
-      buffer_view.GetBuffer()->OnGetContents() + buffer_view.GetRange().offset +
-          position_writer.GetUsedSize() * sizeof(Point),  //
-      oversized_data.data(),                              //
-      oversized_data.size() * sizeof(Point)               //
+  memcpy(buffer_view.GetBuffer()->OnGetContents() +
+             buffer_view.GetRange().offset + arena_length * sizeof(Point),  //
+         oversized_data.data(),                                             //
+         oversized_data.size() * sizeof(Point)                              //
   );
   buffer_view.GetBuffer()->Flush(buffer_view.GetRange());
 
@@ -633,8 +640,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
                         .vertex_buffer =
                             {
                                 .vertex_buffer = buffer_view,
-                                .vertex_count = position_writer.GetUsedSize() +
-                                                oversized_data.size(),
+                                .vertex_count = arena_length + oversized_length,
                                 .index_type = IndexType::kNone,
                             },
                         .transform = entity.GetShaderTransform(pass),
