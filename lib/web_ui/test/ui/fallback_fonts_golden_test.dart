@@ -229,19 +229,35 @@ void testMain() {
     /// supports split fonts, without hardcoding the shard number (which we
     /// don't own).
     Future<void> checkDownloadedFamilyForCharCode(
-        int charCode, String partialFontFamilyName) async {
+      int charCode,
+      String partialFontFamilyName, {
+      String? userPreferredLanguage,
+    }) async {
+      // downloadedFontFamilies.clear();
+      // renderer.fontCollection.debugResetFallbackFonts();
+
+      final fallbackManager = renderer.fontCollection.fontFallbackManager!;
+      final oldLanguage = fallbackManager.debugUserPreferredLanguage;
+      if (userPreferredLanguage != null) {
+        fallbackManager.debugUserPreferredLanguage = userPreferredLanguage;
+      }
+
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
       final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
       pb.addText(String.fromCharCode(charCode));
       pb.build().layout(const ui.ParagraphConstraints(width: 1000));
 
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+      if (userPreferredLanguage != null) {
+        fallbackManager.debugUserPreferredLanguage = oldLanguage;
+      }
 
       expect(
         downloadedFontFamilies,
         hasLength(1),
         reason:
           'Downloaded more than one font family for character: 0x${charCode.toRadixString(16)}'
+          '${userPreferredLanguage == null ? '' : ' (userPreferredLanguage: $userPreferredLanguage)'}',
       );
       expect(
         downloadedFontFamilies.first,
@@ -256,7 +272,7 @@ void testMain() {
         'can find fonts for two adjacent unmatched code points from different fonts',
         () async {
       await checkDownloadedFamiliesForString('ヽಠ', <String>[
-        'Noto Sans SC',
+        'Noto Sans SC 68',
         'Noto Sans Kannada',
       ]);
     });
@@ -293,6 +309,46 @@ void testMain() {
       await checkDownloadedFamilyForCharCode(0x1f3d5, 'Noto Color Emoji');
     });
 
+    // These code points exist in all of our CJK fonts.
+    final commonCJKCodePoints = <int>[
+      0x56de, // CJK Unified Ideographs
+      0x700b, // CJK Unified Ideographs
+      0x9c57, // CJK Unified Ideographs
+    ];
+
+    for (final codePoint in commonCJKCodePoints) {
+      final codePointHex = '0x${codePoint.toRadixString(16)}';
+      // Simplified Chinese
+      for (final lang in <String>['zh-Hans', 'zh-CN', 'zh-SG', 'zh-MY', 'en-US']) {
+        // Simplified Chinese is also prioritized when preferred language is en-US.
+        test('prioritizes Noto Sans SC for code-point=$codePointHex lang=$lang', () async {
+          await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans SC', userPreferredLanguage: lang);
+        });
+      }
+
+      // Traditional Chinese
+      for (final lang in <String>['zh-Hant', 'zh-TW', 'zh-MO']) {
+        test('prioritizes Noto Sans TC for code-point=$codePointHex lang=$lang', () async {
+          await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans TC', userPreferredLanguage: lang);
+        });
+      }
+
+      // Hong Kong
+      test('prioritizes Noto Sans HK for code-point=$codePointHex lang=zh-HK', () async {
+        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans HK', userPreferredLanguage: 'zh-HK');
+      });
+
+      // Japanese
+      test('prioritizes Noto Sans JP for code-point=$codePointHex lang=ja', () async {
+        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans JP', userPreferredLanguage: 'ja');
+      });
+
+      // Korean
+      test('prioritizes Noto Sans KR for code-point=$codePointHex lang=ko', () async {
+        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans KR', userPreferredLanguage: 'ko');
+      });
+    }
+
     test('findMinimumFontsForCodePoints for all supported code points',
         () async {
       // Collect all supported code points from all fallback fonts in the Noto
@@ -311,25 +367,20 @@ void testMain() {
 
       expect(
           supportedUniqueCodePoints.length, greaterThan(10000)); // sanity check
-      expect(
-          testedFonts,
-          unorderedEquals(<String>{
-            'Noto Color Emoji 0',
-            'Noto Color Emoji 1',
-            'Noto Color Emoji 2',
-            'Noto Color Emoji 3',
-            'Noto Color Emoji 4',
-            'Noto Color Emoji 5',
-            'Noto Color Emoji 6',
-            'Noto Color Emoji 7',
-            'Noto Color Emoji 8',
-            'Noto Color Emoji 9',
-            'Noto Color Emoji 10',
-            'Noto Color Emoji 11',
+      final allFonts = <String>{
+            ...[for (int i = 0; i <= 11; i++) 'Noto Color Emoji $i'],
+            ...[for (int i = 0; i <= 5; i++) 'Noto Sans Symbols 2 $i'],
+            ...[for (int i = 0; i <= 2; i++) 'Noto Sans Cuneiform $i'],
+            ...[for (int i = 0; i <= 2; i++) 'Noto Sans Duployan $i'],
+            ...[for (int i = 0; i <= 2; i++) 'Noto Sans Egyptian Hieroglyphs $i'],
+            ...[for (int i = 0; i <= 103; i++) 'Noto Sans HK $i'],
+            ...[for (int i = 0; i <= 123; i++) 'Noto Sans JP $i'],
+            ...[for (int i = 0; i <= 117; i++) 'Noto Sans KR $i'],
+            ...[for (int i = 0; i <= 95; i++) 'Noto Sans SC $i'],
+            ...[for (int i = 0; i <= 99; i++) 'Noto Sans TC $i'],
             'Noto Music',
             'Noto Sans',
             'Noto Sans Symbols',
-            'Noto Sans Symbols 2',
             'Noto Sans Adlam',
             'Noto Sans Anatolian Hieroglyphs',
             'Noto Sans Arabic',
@@ -351,12 +402,9 @@ void testMain() {
             'Noto Sans Cham',
             'Noto Sans Cherokee',
             'Noto Sans Coptic',
-            'Noto Sans Cuneiform',
             'Noto Sans Cypriot',
             'Noto Sans Deseret',
             'Noto Sans Devanagari',
-            'Noto Sans Duployan',
-            'Noto Sans Egyptian Hieroglyphs',
             'Noto Sans Elbasan',
             'Noto Sans Elymaic',
             'Noto Sans Ethiopic',
@@ -367,7 +415,6 @@ void testMain() {
             'Noto Sans Gujarati',
             'Noto Sans Gunjala Gondi',
             'Noto Sans Gurmukhi',
-            'Noto Sans HK',
             'Noto Sans Hanunoo',
             'Noto Sans Hatran',
             'Noto Sans Hebrew',
@@ -375,9 +422,7 @@ void testMain() {
             'Noto Sans Indic Siyaq Numbers',
             'Noto Sans Inscriptional Pahlavi',
             'Noto Sans Inscriptional Parthian',
-            'Noto Sans JP',
             'Noto Sans Javanese',
-            'Noto Sans KR',
             'Noto Sans Kaithi',
             'Noto Sans Kannada',
             'Noto Sans Kayah Li',
@@ -436,7 +481,6 @@ void testMain() {
             'Noto Sans Psalter Pahlavi',
             'Noto Sans Rejang',
             'Noto Sans Runic',
-            'Noto Sans SC',
             'Noto Sans Saurashtra',
             'Noto Sans Sharada',
             'Noto Sans Shavian',
@@ -448,7 +492,6 @@ void testMain() {
             'Noto Sans Sundanese',
             'Noto Sans Syloti Nagri',
             'Noto Sans Syriac',
-            'Noto Sans TC',
             'Noto Sans Tagalog',
             'Noto Sans Tagbanwa',
             'Noto Sans Tai Le',
@@ -469,7 +512,14 @@ void testMain() {
             'Noto Sans Yi',
             'Noto Sans Zanabazar Square',
             'Noto Serif Tibetan',
-          }));
+          };
+      expect(
+        testedFonts,
+        unorderedEquals(allFonts),
+        reason: 'Found mismatch in fonts.\n'
+            'Missing fonts: ${allFonts.difference(testedFonts)}\n'
+            'Extra fonts: ${testedFonts.difference(allFonts)}',
+      );
 
       // Construct random paragraphs out of supported code points.
       final math.Random random = math.Random(0);
