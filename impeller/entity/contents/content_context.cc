@@ -307,18 +307,16 @@ ContentContext::ContentContext(
       radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
       conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
       sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    } else {
-      linear_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
-      radial_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
-      conical_gradient_uniform_fill_pipelines_.CreateDefault(*context_,
-                                                             options);
-      sweep_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
-
-      linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
     }
+    linear_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+    radial_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+    conical_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+    sweep_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+
+    linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
 
     /// Setup default clip pipeline.
     auto clip_pipeline_descriptor =

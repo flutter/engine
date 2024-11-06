@@ -200,12 +200,12 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   // TODO(148651): The fast path is overly restrictive, following the design in
   // https://github.com/flutter/flutter/issues/148651 support for more cases can
   // be gradually added.
-  if (CanApplyFastGradient()) {
-    return FastLinearGradient(renderer, entity, pass);
-  }
-  if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
-    return RenderSSBO(renderer, entity, pass);
-  }
+  // if (CanApplyFastGradient()) {
+  //   return FastLinearGradient(renderer, entity, pass);
+  // }
+  // if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
+  //   return RenderSSBO(renderer, entity, pass);
+  // }
   if (colors_.size() <= kMaxUniformGradientStops &&
       stops_.size() <= kMaxUniformGradientStops) {
     return RenderUniform(renderer, entity, pass);

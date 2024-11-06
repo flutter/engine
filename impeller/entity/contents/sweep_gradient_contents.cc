@@ -72,9 +72,9 @@ static_assert(UNIFORM_STOP_SIZE == kMaxUniformGradientStops / 2);
 bool SweepGradientContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
-    return RenderSSBO(renderer, entity, pass);
-  }
+  // if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
+  //   return RenderSSBO(renderer, entity, pass);
+  // }
   if (colors_.size() <= kMaxUniformGradientStops &&
       stops_.size() <= kMaxUniformGradientStops) {
     return RenderUniform(renderer, entity, pass);
