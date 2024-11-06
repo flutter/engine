@@ -358,7 +358,12 @@ void CreateRoundCap(PositionWriter& vtx_builder,
     vtx = position + (-point).Reflect(forward_normal);
     vtx_builder.AppendVertex(vtx);
   }
-  vtx_builder.AppendVertex(arc.p2);
+
+  Point point = arc.p2;
+  vtx = position + point;
+  vtx_builder.AppendVertex(position + point);
+  vtx = position + (-point).Reflect(forward_normal);
+  vtx_builder.AppendVertex(vtx);
 }
 
 void CreateSquareCap(PositionWriter& vtx_builder,
@@ -604,6 +609,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
                           .transform = entity.GetShaderTransform(pass),
                           .mode = GeometryResult::Mode::kPreventOverdraw};
   }
+  FML_LOG(ERROR) << "Oversized";
   const std::vector<Point>& oversized_data =
       position_writer.GetOveriszedBuffer();
   BufferView buffer_view = host_buffer.Emplace(
