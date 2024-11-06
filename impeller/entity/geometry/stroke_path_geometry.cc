@@ -23,7 +23,7 @@ class PositionWriter {
       : points_(points), oversized_(0) {}
 
   void AppendVertex(const Point& point) {
-    if (offset_ >= 4096u) {
+    if (offset_ >= kPointArenaSize) {
       oversized_.push_back(point);
     } else {
       points_[offset_++] = point;

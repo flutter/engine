@@ -18,6 +18,9 @@
 
 namespace impeller {
 
+/// The size of the point arena buffer stored on the tessellator.
+static constexpr size_t kPointArenaSize = 4096u;
+
 //------------------------------------------------------------------------------
 /// @brief      A utility that generates triangles of the specified fill type
 ///             given a polyline. This happens on the CPU.
@@ -284,7 +287,8 @@ class Tessellator {
                                             const Rect& bounds,
                                             const Size& radii);
 
-  std::vector<Point>& GetStrokePointCache() { return stroke_points_; }
+  /// Retrieve a pre-allocated arena of kPointArenaSize points.
+  std::vector<Point>& GetStrokePointCache();
 
  protected:
   /// Used for polyline generation.

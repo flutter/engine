@@ -2388,19 +2388,19 @@ TEST_P(EntityTest, GiantStrokePathAllocation) {
       geom->GetPositionBuffer(content_context, entity, *pass);
 
   // Validate the buffer data overflowed the small buffer
-  EXPECT_GT(result.vertex_buffer.vertex_count, 4096u);
+  EXPECT_GT(result.vertex_buffer.vertex_count, kPointArenaSize);
 
   // Validate that there are no uninitialized points near the gap.
   Point* written_data = reinterpret_cast<Point*>(
       (result.vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
        result.vertex_buffer.vertex_buffer.GetRange().offset));
 
-  EXPECT_NE(*(written_data + 4094), Point(0, 0));
-  EXPECT_NE(*(written_data + 4095), Point(0, 0));
-  EXPECT_NE(*(written_data + 4096), Point(0, 0));
-  EXPECT_NE(*(written_data + 4097), Point(0, 0));
-  EXPECT_NE(*(written_data + 4098), Point(0, 0));
-  EXPECT_NE(*(written_data + 4099), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize - 2), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize - 1), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize + 1), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize + 2), Point(0, 0));
+  EXPECT_NE(*(written_data + kPointArenaSize + 3), Point(0, 0));
 }
 
 }  // namespace testing
