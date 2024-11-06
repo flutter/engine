@@ -742,7 +742,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders a header with a label and uses a sized span for label', () {
+  test('renders an empty labeled header as a heading with a label and uses a sized span for label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -757,9 +757,27 @@ void _testHeader() {
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<header><span>Header of the page</span></header>
-''');
+    expectSemanticsTree(owner(), '<h2>Header of the page</span></h2>');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  // This is a useless case, but we should at least not crash if it happens.
+  test('renders an empty unlabeled header', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      flags: 0 | ui.SemanticsFlag.isHeader.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '<header></header>');
 
     semantics().semanticsEnabled = false;
   });

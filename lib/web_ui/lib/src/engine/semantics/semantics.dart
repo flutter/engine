@@ -1122,11 +1122,23 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
-  /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int get headingLevel => _headingLevel;
+  // This field is not exposed publicly because code that applies heading levels
+  // should use [effectiveHeadingLevel] instead.
   int _headingLevel = 0;
 
-  int get effectiveHeadingLevel => isHeader ? 2 : headingLevel;
+  /// The effective heading level value to be used when rendering this node as
+  /// a heading.
+  ///
+  /// If a heading is rendered from a header, uses heading level 2.
+  int get effectiveHeadingLevel {
+    if (_headingLevel != 0) {
+      return _headingLevel;
+    } else {
+      // This branch may be taken when a heading is rendered from a header,
+      // where the heading level is not provided.
+      return 2;
+    }
+  }
 
   static const int _headingLevelIndex = 1 << 24;
 
@@ -1136,6 +1148,36 @@ class SemanticsObject {
   void _markHeadingLevelDirty() {
     _dirtyFields |= _headingLevelIndex;
   }
+
+  /// Whether this object represents a heading.
+  ///
+  /// Typically, a heading is a prominent piece of text that provides a title
+  /// for a section in the UI.
+  ///
+  /// Labeled empty headers are treated as headings too.
+  ///
+  /// See also:
+  ///
+  /// * [isHeader], which also describes the rest of the screen, and is
+  ///   sometimes presented to the user as a heading.
+  bool get isHeading => _headingLevel != 0 || isHeader && hasLabel && !hasChildren;
+
+  /// Whether this object represents a header.
+  ///
+  /// A header is used for one of two purposes:
+  ///
+  /// * Introduce the content of the main screen or a page. In this case, the
+  ///   header is a, possibly labeled, container of widgets that together
+  ///   provide the description of the screen.
+  /// * Provide a heading (like [isHeading]). Native mobile apps do not have a
+  ///   notion of "heading". It is common to mark headings as headers instead
+  ///   and the screen readers will announce "heading". Labeled empty headers
+  ///   are treated as heading by the web engine.
+  ///
+  /// See also:
+  ///
+  ///  * [isHeading], which determines whether this node represents a heading.
+  bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   String? get identifier => _identifier;
@@ -1272,38 +1314,8 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
-  /// Whether this object represents a heading.
-  ///
-  /// Typically, a heading is a prominent piece of text that provides a title
-  /// for a section in the UI.
-  ///
-  /// Labeled empty headers are treated as headings too.
-  ///
-  /// See also:
-  ///
-  /// * [isHeader], which also describes the rest of the screen, and is
-  ///   sometimes presented to the user as a heading.
-  bool get isHeading => headingLevel != 0 || isHeader && hasLabel && !hasChildren;
-
   /// Whether this object represents an interactive link.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
-
-  /// Whether this object represents a header.
-  ///
-  /// A header is used for one of two purposes:
-  ///
-  /// * Introduce the content of the main screen or a page. In this case, the
-  ///   header is a, possibly labeled, container of widgets that together
-  ///   provide the description of the screen.
-  /// * Provide a heading (like [isHeading]). Native mobile apps do not have a
-  ///   notion of "heading". It is common to mark headings as headers instead
-  ///   and the screen readers will announce "heading". Labeled empty headers
-  ///   are treated as heading by the web engine.
-  ///
-  /// See also:
-  ///
-  ///  * [isHeading], which determines whether this node represents a heading.
-  bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// Whether this object needs screen readers attention right away.
   bool get isLiveRegion =>
