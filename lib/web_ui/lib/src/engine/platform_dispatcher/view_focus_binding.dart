@@ -27,10 +27,17 @@ final class ViewFocusBinding {
   StreamSubscription<int>? _onViewCreatedListener;
 
   void init() {
+    // We need a global listener here to know if the user was pressing "shift"
+    // when the Flutter view receives focus, to move the Flutter focus to the
+    // *last* focusable element.
     domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
+    // Can these focus events be attached directly to the view, instead the body?
     domDocument.body?.addEventListener(_focusin, _handleFocusin);
     domDocument.body?.addEventListener(_focusout, _handleFocusout);
+
+    // If so, update `_handleViewCreated` and add a `_handleViewDisposed` to attach
+    // and remove the focus/blur listener.
     _onViewCreatedListener = _viewManager.onViewCreated.listen(_handleViewCreated);
   }
 
@@ -48,13 +55,14 @@ final class ViewFocusBinding {
     }
     final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
 
-    if (state == ui.ViewFocusState.focused) {
-      // Only move the focus to the flutter view if nothing inside it is focused already.
-      if (viewId != _viewId(domDocument.activeElement)) {
-        viewElement?.focusWithoutScroll();
-      }
-    } else {
-      viewElement?.blur();
+    switch (state) {
+      case ui.ViewFocusState.unfocused:
+        // Only move the focus to the flutter view if nothing inside it is focused already.
+        if (viewId != _viewId(domDocument.activeElement)) {
+          viewElement?.focusWithoutScroll();
+        }
+      case ui.ViewFocusState.focused:
+        viewElement?.blur();
     }
   }
 
@@ -115,8 +123,8 @@ final class ViewFocusBinding {
         direction: _viewFocusDirection,
       );
     }
-    _updateViewFocusStatus(_lastViewId, reachableByKeyboard: true);
-    _updateViewFocusStatus(viewId, reachableByKeyboard: false);
+    _updateViewKeyboardReachability(_lastViewId, reachable: true);
+    _updateViewKeyboardReachability(viewId, reachable: false);
     _lastViewId = viewId;
     _onViewFocusChange(event);
   }
@@ -127,12 +135,14 @@ final class ViewFocusBinding {
   }
 
   void _handleViewCreated(int viewId) {
-    _updateViewFocusStatus(viewId, reachableByKeyboard: true);
+    _updateViewKeyboardReachability(viewId, reachable: true);
   }
 
-  void _updateViewFocusStatus(
+  // Controls whether the Flutter view identified by [viewId] is reachable by
+  // keyboard.
+  void _updateViewKeyboardReachability(
     int? viewId, {
-    required bool reachableByKeyboard,
+    required bool reachable,
   }) {
     if (viewId == null) {
       return;
@@ -145,7 +155,7 @@ final class ViewFocusBinding {
     // important when the semantics tree is enabled as it puts DOM nodes inside
     // the flutter view and having it with a zero tabindex messes the focus
     // traversal order when pressing tab or shift tab.
-    rootElement?.setAttribute('tabindex', reachableByKeyboard ? 0 : -1);
+    rootElement?.setAttribute('tabindex', reachable ? 0 : -1);
   }
 
   static const String _focusin = 'focusin';
