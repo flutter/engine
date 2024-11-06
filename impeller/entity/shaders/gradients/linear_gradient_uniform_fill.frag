@@ -44,6 +44,7 @@ void main() {
       // stop_pairs[i/2].zw = values for stop i+1
       vec2 cur_stop = even ? frag_info.stop_pairs[i / 2].xy
                            : frag_info.stop_pairs[i / 2].zw;
+      even = !even;
       // stop.x == t value
       // stop.y == inverse_delta to next stop
       if (t >= prev_stop.x && t <= cur_stop.x) {
