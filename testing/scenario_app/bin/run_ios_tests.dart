@@ -238,12 +238,12 @@ final _args = ArgParser()
   ..addOption(
     'os-runtime',
     help: 'The OS runtime of the iOS simulator device to use.',
-    defaultsTo: 'com.apple.CoreSimulator.SimRuntime.iOS-17-0',
+    defaultsTo: 'com.apple.CoreSimulator.SimRuntime.iOS-18-1',
   )
   ..addOption(
     'os-version',
     help: 'The OS version of the iOS simulator device to use.',
-    defaultsTo: '17.0',
+    defaultsTo: '18.1',
   )
   ..addFlag(
     'with-impeller',

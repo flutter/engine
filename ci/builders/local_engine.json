@@ -3,7 +3,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -29,14 +29,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -63,14 +63,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -96,14 +96,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -129,14 +129,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -163,14 +163,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -199,14 +199,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -231,7 +231,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
@@ -317,7 +317,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -343,14 +343,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -375,7 +375,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
@@ -434,7 +434,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -459,7 +459,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
@@ -518,7 +518,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -543,14 +543,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -576,14 +576,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -609,14 +609,14 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -642,7 +642,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
@@ -755,7 +755,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -780,7 +780,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
@@ -839,7 +839,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13|Mac-14",
+        "os=Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -864,7 +864,7 @@
       },
       "properties": {
         "$flutter/osx_sdk": {
-          "sdk_version": "15a240d"
+          "sdk_version": "16b40"
         }
       }
     },
