@@ -11,5 +11,6 @@ out vec4 frag_color;
 
 void main() {
   frag_color = texture(u_texture, FlutterFragCoord().xy / u_size) *
-               (sin(FlutterFragCoord().y) * cos(FlutterFragCoord().x));
+               (sin(FlutterFragCoord().y / u_size.y * 3.14) *
+                cos(FlutterFragCoord().x / u_size.x * 3.14));
 }
