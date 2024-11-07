@@ -692,6 +692,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return NO;
   }
   if (!self.node.HasAction(flutter::SemanticsAction::kTap)) {
+    if (self.node.HasFlag(flutter::SemanticsFlags::kIsSlider)) {
+      return YES;
+    }
     return NO;
   }
   self.bridge->DispatchSemanticsAction(self.uid, flutter::SemanticsAction::kTap);
