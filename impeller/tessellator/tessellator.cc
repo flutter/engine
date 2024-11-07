@@ -4,6 +4,7 @@
 
 #include "impeller/tessellator/tessellator.h"
 #include <cstdint>
+#include <cstring>
 
 #include "impeller/core/device_buffer.h"
 #include "impeller/geometry/path_component.h"
@@ -119,7 +120,45 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
 VertexBuffer Tessellator::GenerateLineStrip(const Path& path,
                                             HostBuffer& host_buffer,
                                             Scalar tolerance) {
+  LineStripVertexWriter writer(stroke_points_);
+  path.WritePolyline(tolerance, writer);
 
+  const auto [arena_length, oversized_length] = writer.GetVertexCount();
+
+  if (oversized_length == 0) {
+    return VertexBuffer{
+        .vertex_buffer =
+            host_buffer.Emplace(stroke_points_.data(),
+                                arena_length * sizeof(Point), alignof(Point)),
+        .index_buffer = {},
+        .vertex_count = arena_length,
+        .index_type = IndexType::kNone,
+    };
+  }
+  const std::vector<Point>& oversized_data = writer.GetOveriszedBuffer();
+  BufferView buffer_view = host_buffer.Emplace(
+      /*buffer=*/nullptr,                                 //
+      (arena_length + oversized_length) * sizeof(Point),  //
+      alignof(Point)                                      //
+  );
+  memcpy(buffer_view.GetBuffer()->OnGetContents() +
+             buffer_view.GetRange().offset,  //
+         stroke_points_.data(),              //
+         arena_length * sizeof(Point)        //
+  );
+  memcpy(buffer_view.GetBuffer()->OnGetContents() +
+             buffer_view.GetRange().offset + arena_length * sizeof(Point),  //
+         oversized_data.data(),                                             //
+         oversized_data.size() * sizeof(Point)                              //
+  );
+  buffer_view.GetBuffer()->Flush(buffer_view.GetRange());
+
+  return VertexBuffer{
+      .vertex_buffer = buffer_view,
+      .index_buffer = {},
+      .vertex_count = arena_length + oversized_length,
+      .index_type = IndexType::kNone,
+  };
 }
 
 void Tessellator::TessellateConvexInternal(const Path& path,

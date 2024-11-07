@@ -78,12 +78,15 @@ class LineStripVertexWriter : public VertexWriter {
 
   void Write(Point point) override;
 
+  std::pair<size_t, size_t> GetVertexCount() const;
+
+  const std::vector<Point>& GetOveriszedBuffer() const;
+
  private:
   size_t offset_ = 0u;
   std::vector<Point>& points_;
   std::vector<Point> overflow_;
 };
-
 
 /// @brief A vertex writer that has no hardware requirements.
 class GLESVertexWriter : public VertexWriter {

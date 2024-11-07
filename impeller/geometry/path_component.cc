@@ -5,6 +5,7 @@
 #include "path_component.h"
 
 #include <cmath>
+#include <utility>
 
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/wangs_formula.h"
@@ -79,14 +80,26 @@ void StripVertexWriter::Write(Point point) {
 
 /////////// LineStripVertexWriter ////////
 
-LineStripVertexWriter::LineStripVertexWriter(std::vector<Point>& points) : points_(points) {}
+LineStripVertexWriter::LineStripVertexWriter(std::vector<Point>& points)
+    : points_(points) {}
 
 void LineStripVertexWriter::EndContour() {}
 
 void LineStripVertexWriter::Write(Point point) {
-
+  if (offset_ >= points_.size()) {
+    overflow_.push_back(point);
+  } else {
+    points_[offset_++] = point;
+  }
 }
 
+const std::vector<Point>& LineStripVertexWriter::GetOveriszedBuffer() const {
+  return overflow_;
+}
+
+std::pair<size_t, size_t> LineStripVertexWriter::GetVertexCount() const {
+  return std::make_pair(offset_, overflow_.size());
+}
 
 /////////// GLESVertexWriter ///////////
 
