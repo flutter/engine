@@ -4099,13 +4099,18 @@ abstract class ImageFilter {
     if (!_impellerEnabled) {
       throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
     }
-    if (shader._floats.length < 2) {
-      throw StateError(
-        'ImageFilter.shader requires that the first uniform is a vec2.');
-    }
-    if (!shader._validateImageFilter()) {
-      throw StateError(
-        'ImageFilter.shader requires that at least one sampler uniform is present.');
+    final bool invalidFloats = shader._floats.length < 2;
+    final bool invalidSampler = !shader._validateImageFilter();
+    if (invalidFloats || invalidSampler) {
+      final StringBuffer buffer = StringBuffer(
+        'ImageFilter.shader requires that the first uniform is a vec2 and at '
+        'least one sampler uniform is present.\n');
+      if (invalidFloats) {
+        buffer.write('The shader has fewer than two float uniforms.\n');
+      }
+      if (invalidSampler) {
+        buffer.write('The shader is missing a sampler uniform.\n');
+      }
     }
     return _FragmentShaderImageFilter(shader);
   }

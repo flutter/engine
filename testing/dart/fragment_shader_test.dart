@@ -355,7 +355,13 @@ void main() async {
       'missing_size.frag.iplr',
       'missing_texture.frag.iplr'
     ];
-    for (final String fileName in shaders) {
+    const List<(bool, bool)> errors = [
+      (true, true),
+      (true, false),
+      (false, false)
+    ];
+    for (int i = 0; i < 3; i++) {
+      final String fileName = shaders[i];
       final FragmentProgram program = await FragmentProgram.fromAsset(
         fileName
       );
@@ -368,6 +374,13 @@ void main() async {
         error = err;
       }
       expect(error is StateError, true);
+      final (floatError, samplerError) = errors[i];
+      if (floatError) {
+        expect(error.toString(), contains('shader has fewer than two float'));
+      }
+      if (samplerError) {
+        expect(error.toString(), contains('shader is missing a sampler uniform'));
+      }
     }
   });
 
