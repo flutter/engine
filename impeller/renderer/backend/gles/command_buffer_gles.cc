@@ -4,8 +4,11 @@
 
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 
+#include "GLES/gl.h"
 #include "impeller/base/config.h"
 #include "impeller/renderer/backend/gles/blit_pass_gles.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
 namespace impeller {
@@ -66,7 +69,16 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() {
   if (!IsValid()) {
     return nullptr;
   }
-  auto pass = std::shared_ptr<BlitPassGLES>(new BlitPassGLES(reactor_));
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
+  std::optional<HandleGLES> blit_handle;
+  if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable()) {
+    blit_handle = ContextGLES::Cast(*context).GetEmulatedBlitProgram();
+  }
+  auto pass =
+      std::shared_ptr<BlitPassGLES>(new BlitPassGLES(reactor_, blit_handle));
   if (!pass->IsValid()) {
     return nullptr;
   }

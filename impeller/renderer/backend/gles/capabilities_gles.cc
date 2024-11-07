@@ -158,7 +158,7 @@ bool CapabilitiesGLES::SupportsSSBO() const {
 }
 
 bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
-  return false;
+  return true;
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {

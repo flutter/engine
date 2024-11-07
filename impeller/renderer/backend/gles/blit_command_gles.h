@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BLIT_COMMAND_GLES_H_
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/blit_command.h"
 
@@ -35,6 +36,8 @@ struct BlitCopyTextureToTextureCommandGLES
       public BlitCopyTextureToTextureCommand {
   ~BlitCopyTextureToTextureCommandGLES() override;
 
+  std::optional<HandleGLES> blit_program;
+
   std::string GetLabel() const override;
 
   [[nodiscard]] bool Encode(const ReactorGLES& reactor) const override;
@@ -62,6 +65,8 @@ struct BlitGenerateMipmapCommandGLES : public BlitEncodeGLES,
 struct BlitResizeTextureCommandGLES : public BlitEncodeGLES,
                                       public BlitResizeTextureCommand {
   ~BlitResizeTextureCommandGLES() override;
+
+  std::optional<HandleGLES> blit_program;
 
   std::string GetLabel() const override;
 

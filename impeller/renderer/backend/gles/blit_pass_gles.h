@@ -8,10 +8,12 @@
 #include <cstdint>
 #include <memory>
 
+#include "GLES/gl.h"
 #include "flutter/impeller/base/config.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/blit_pass.h"
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 
 namespace impeller {
 
@@ -27,15 +29,20 @@ class BlitPassGLES final : public BlitPass,
   std::vector<std::unique_ptr<BlitEncodeGLES>> commands_;
   ReactorGLES::Ref reactor_;
   std::string label_;
+  std::optional<HandleGLES> blit_program_;
   bool is_valid_ = false;
 
-  explicit BlitPassGLES(ReactorGLES::Ref reactor);
+  explicit BlitPassGLES(ReactorGLES::Ref reactor,
+                        std::optional<HandleGLES> blit_program);
 
   // |BlitPass|
   bool IsValid() const override;
 
   // |BlitPass|
   void OnSetLabel(std::string_view label) override;
+
+  // |BlitPass|
+  bool SupportsBlitResolve() const override { return true; }
 
   // |BlitPass|
   bool EncodeCommands(

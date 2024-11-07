@@ -5,10 +5,12 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 
+#include "GLES/gl.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_library_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/backend/gles/sampler_library_gles.h"
@@ -43,6 +45,8 @@ class ContextGLES final : public Context,
 
   std::shared_ptr<GPUTracerGLES> GetGPUTracer() const { return gpu_tracer_; }
 
+  std::optional<HandleGLES> GetEmulatedBlitProgram() const;
+
  private:
   ReactorGLES::Ref reactor_;
   std::shared_ptr<ShaderLibraryGLES> shader_library_;
@@ -51,6 +55,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<AllocatorGLES> resource_allocator_;
   std::shared_ptr<CommandQueue> command_queue_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
+  mutable std::optional<HandleGLES> emulated_blit_program_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
   // in order to satisfy the Context::GetCapabilities signature which returns

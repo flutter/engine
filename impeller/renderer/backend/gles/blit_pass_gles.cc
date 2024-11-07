@@ -10,12 +10,15 @@
 #include "fml/closure.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
 
-BlitPassGLES::BlitPassGLES(ReactorGLES::Ref reactor)
+BlitPassGLES::BlitPassGLES(ReactorGLES::Ref reactor,
+                           std::optional<HandleGLES> blit_program)
     : reactor_(std::move(reactor)),
+      blit_program_(blit_program),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
 // |BlitPass|
@@ -103,6 +106,7 @@ bool BlitPassGLES::OnCopyTextureToTextureCommand(
   command->destination = std::move(destination);
   command->source_region = source_region;
   command->destination_origin = destination_origin;
+  command->blit_program = blit_program_;
 
   commands_.push_back(std::move(command));
   return true;

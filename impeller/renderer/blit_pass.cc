@@ -37,8 +37,9 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
     return false;
   }
 
-  if (source->GetTextureDescriptor().sample_count !=
-      destination->GetTextureDescriptor().sample_count) {
+  if ((source->GetTextureDescriptor().sample_count !=
+       destination->GetTextureDescriptor().sample_count) &&
+      !SupportsBlitResolve()) {
     VALIDATION_LOG << SPrintF(
         "The source sample count (%d) must match the destination sample count "
         "(%d) for blits.",

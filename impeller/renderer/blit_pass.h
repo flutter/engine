@@ -157,6 +157,10 @@ class BlitPass {
  protected:
   explicit BlitPass();
 
+  /// @brief Whether the backend blit pass implementation supports using
+  ///        a blit pass to resolve MSAA.
+  virtual bool SupportsBlitResolve() const { return false; }
+
   virtual void OnSetLabel(std::string_view label) = 0;
 
   virtual bool OnCopyTextureToTextureCommand(

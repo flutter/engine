@@ -5,10 +5,10 @@
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
 
 #include "flutter/fml/closure.h"
-#include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
@@ -66,6 +66,12 @@ std::string BlitCopyTextureToTextureCommandGLES::GetLabel() const {
   return label;
 }
 
+namespace {
+static GLfloat pixels_to_gl_coords(GLfloat position, GLfloat pixels) {
+  return (2.0 * position / pixels) - 1.0;
+}
+}  // namespace
+
 bool BlitCopyTextureToTextureCommandGLES::Encode(
     const ReactorGLES& reactor) const {
   const auto& gl = reactor.GetProcTable();
@@ -73,9 +79,65 @@ bool BlitCopyTextureToTextureCommandGLES::Encode(
   // glBlitFramebuffer is a GLES3 proc. Since we target GLES2, we need to
   // emulate the blit when it's not available in the driver.
   if (!gl.BlitFramebuffer.IsAvailable()) {
-    // TODO(157064): Emulate the blit using a raster draw call here.
-    VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
-    return false;
+    if (!blit_program.has_value()) {
+      return false;
+    }
+    GLint program = blit_program.value().name->id;
+
+    GLuint draw_fbo = GL_NONE;
+    fml::ScopedCleanupClosure delete_fbos(
+        [&gl, &draw_fbo]() { DeleteFBO(gl, draw_fbo, GL_DRAW_FRAMEBUFFER); });
+
+    auto src_handle = TextureGLES::Cast(source.get())->GetGLHandle();
+    if (!src_handle.has_value()) {
+      return false;
+    }
+
+    auto dst_handle = ConfigureFBO(gl, destination, GL_DRAW_FRAMEBUFFER);
+    if (!dst_handle.has_value()) {
+      return false;
+    }
+    draw_fbo = dst_handle.value();
+
+    gl.Disable(GL_BLEND);
+    gl.Disable(GL_SCISSOR_TEST);
+    gl.Disable(GL_DITHER);
+    gl.Disable(GL_CULL_FACE);
+    gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    gl.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    gl.Clear(GL_COLOR_BUFFER_BIT);
+
+    gl.UseProgram(program);
+    gl.BindTexture(GL_TEXTURE_2D, src_handle.value());
+
+    // Translate into OpenGL co-ordinates
+    int64_t texture_width = destination->GetSize().width;
+    int64_t texture_height = destination->GetSize().height;
+    GLfloat x0 = pixels_to_gl_coords(0, texture_width);
+    GLfloat y0 = pixels_to_gl_coords(0, texture_height);
+    GLfloat x1 = pixels_to_gl_coords(texture_width, texture_width);
+    GLfloat y1 = pixels_to_gl_coords(texture_height, texture_height);
+    GLfloat vertex_data[] = {x0, y0, 0, 0, x1, y1, 1, 1, x0, y1, 0, 1,
+                             x0, y0, 0, 0, x1, y0, 1, 0, x1, y1, 1, 1};
+
+    GLuint vertex_buffer;
+    gl.GenBuffers(1, &vertex_buffer);
+    gl.BindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    gl.BufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data,
+                  GL_STATIC_DRAW);
+    GLint position_index = 0;
+    gl.EnableVertexAttribArray(position_index);
+    gl.VertexAttribPointer(position_index, 2, GL_FLOAT, GL_FALSE,
+                           sizeof(GLfloat) * 4, (void*)0);
+    GLint texcoord_index = 1;
+    gl.EnableVertexAttribArray(texcoord_index);
+    gl.VertexAttribPointer(texcoord_index, 2, GL_FLOAT, GL_FALSE,
+                           sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+
+    gl.DrawArrays(GL_TRIANGLES, 0, 6);
+    gl.DeleteBuffers(1, &vertex_buffer);
+    return true;
   }
 
   GLuint read_fbo = GL_NONE;
