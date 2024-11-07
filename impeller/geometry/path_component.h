@@ -67,12 +67,29 @@ class StripVertexWriter : public VertexWriter {
   uint16_t* index_buffer_ = nullptr;
 };
 
+/// @brief A vertex writer that generates a line strip topology.
+class LineStripVertexWriter : public VertexWriter {
+ public:
+  explicit LineStripVertexWriter(std::vector<Point>& points);
+
+  ~LineStripVertexWriter() = default;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
+
+ private:
+  size_t offset_ = 0u;
+  std::vector<Point>& points_;
+  std::vector<Point> overflow_;
+};
+
+
 /// @brief A vertex writer that has no hardware requirements.
 class GLESVertexWriter : public VertexWriter {
  public:
   explicit GLESVertexWriter(std::vector<Point>& points,
-                            std::vector<uint16_t>& indices,
-                            bool line_strip = false);
+                            std::vector<uint16_t>& indices);
 
   ~GLESVertexWriter() = default;
 
@@ -85,7 +102,6 @@ class GLESVertexWriter : public VertexWriter {
   size_t contour_start_ = 0u;
   std::vector<Point>& points_;
   std::vector<uint16_t>& indices_;
-  const bool line_strip_;
 };
 
 struct LinearPathComponent {

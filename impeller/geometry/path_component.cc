@@ -77,16 +77,25 @@ void StripVertexWriter::Write(Point point) {
   point_buffer_[count_++] = point;
 }
 
+/////////// LineStripVertexWriter ////////
+
+LineStripVertexWriter::LineStripVertexWriter(std::vector<Point>& points) : points_(points) {}
+
+void LineStripVertexWriter::EndContour() {}
+
+void LineStripVertexWriter::Write(Point point) {
+
+}
+
+
 /////////// GLESVertexWriter ///////////
 
 GLESVertexWriter::GLESVertexWriter(std::vector<Point>& points,
-                                   std::vector<uint16_t>& indices,
-                                   bool line_strip)
-    : points_(points), indices_(indices), line_strip_(line_strip) {}
+                                   std::vector<uint16_t>& indices)
+    : points_(points), indices_(indices) {}
 
 void GLESVertexWriter::EndContour() {
-  if (points_.size() == 0u || contour_start_ == points_.size() - 1 ||
-      line_strip_) {
+  if (points_.size() == 0u || contour_start_ == points_.size() - 1) {
     // Empty or first contour.
     return;
   }
