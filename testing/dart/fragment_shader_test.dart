@@ -355,7 +355,7 @@ void main() async {
       'missing_size.frag.iplr',
       'missing_texture.frag.iplr'
     ];
-    for (String fileName in shaders) {
+    for (final String fileName in shaders) {
       final FragmentProgram program = await FragmentProgram.fromAsset(
         fileName
       );
