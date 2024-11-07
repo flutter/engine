@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "GLES/gl.h"
 #include "flutter/impeller/base/config.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/blit_pass.h"

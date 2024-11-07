@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 
-#include "GLES/gl.h"
 #include "impeller/base/config.h"
 #include "impeller/renderer/backend/gles/blit_pass_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
