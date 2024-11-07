@@ -10,6 +10,7 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/shader.h"
 
+#include "include/core/SkMatrix.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
@@ -41,7 +42,8 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
 
   std::shared_ptr<DlImageFilter> MakeDlImageFilter(
       std::shared_ptr<std::vector<uint8_t>> float_uniforms,
-      const std::vector<std::shared_ptr<DlColorSource>>& children);
+      const std::vector<std::shared_ptr<DlColorSource>>& children,
+      const SkMatrix& matrix);
 
  private:
   FragmentProgram();

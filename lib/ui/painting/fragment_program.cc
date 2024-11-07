@@ -147,9 +147,10 @@ std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
 
 std::shared_ptr<DlImageFilter> FragmentProgram::MakeDlImageFilter(
     std::shared_ptr<std::vector<uint8_t>> float_uniforms,
-    const std::vector<std::shared_ptr<DlColorSource>>& children) {
+    const std::vector<std::shared_ptr<DlColorSource>>& children,
+    const SkMatrix& matrix) {
   return DlRuntimeEffectImageFilter::Make(runtime_effect_, children,
-                                          std::move(float_uniforms));
+                                          std::move(float_uniforms), matrix);
 }
 
 void FragmentProgram::Create(Dart_Handle wrapper) {

@@ -35,7 +35,7 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   void initMatrix(const tonic::Float64List& matrix4, int filter_quality_index);
   void initColorFilter(ColorFilter* colorFilter);
   void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
-  void initShader(ReusableFragmentShader* shader);
+  void initShader(ReusableFragmentShader* shader, const tonic::Float64List& matrix4);
 
   const std::shared_ptr<const DlImageFilter> filter() const { return filter_; }
 

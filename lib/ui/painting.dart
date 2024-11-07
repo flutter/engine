@@ -4077,7 +4077,7 @@ abstract class ImageFilter {
   /// This API is only supported when using the Impeller rendering engine. On
   /// other backends a [UnsupportedError] will be thrown. To check at runtime
   /// whether this API is suppored use [isShaderFilterSupported].
-  factory ImageFilter.shader(FragmentShader shader) {
+  factory ImageFilter.shader(FragmentShader shader, { Float64List? matrix4 }) {
     if (!_impellerEnabled) {
       throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
     }
@@ -4086,7 +4086,18 @@ abstract class ImageFilter {
         'ImageFilter.shader requires that the first uniform is a '
         'vec2 and at least one sampler uniform is present.');
     }
-    return _FragmentShaderImageFilter(shader);
+    if (matrix4 != null && matrix4.length != 16) {
+      throw ArgumentError.value(matrix4, 'matrix4', 'matrix4" must have 16 entries.');
+    }
+    if (matrix4 == null) {
+      final Float64List identity = Float64List(16);
+      identity[0] = 1.0;
+      identity[5] = 1.0;
+      identity[10] = 1.0;
+      identity[15] = 1.0;
+      matrix4 = identity;
+    }
+    return _FragmentShaderImageFilter(shader, matrix4);
   }
 
   /// Whether [ImageFilter.shader] is supported on the current backend.
@@ -4266,9 +4277,10 @@ class _ComposeImageFilter implements ImageFilter {
 }
 
 class _FragmentShaderImageFilter implements ImageFilter {
-  _FragmentShaderImageFilter(this.shader);
+  _FragmentShaderImageFilter(this.shader, this.matrix4);
 
   final FragmentShader shader;
+  final Float64List matrix4;
 
   late final _ImageFilter nativeFilter = _ImageFilter.shader(this);
 
@@ -4279,7 +4291,7 @@ class _FragmentShaderImageFilter implements ImageFilter {
   String get _shortDescription => 'shader';
 
   @override
-  String toString() => 'ImageFilter.shader(Shader#${shader.hashCode})';
+  String toString() => 'ImageFilter.shader(Shader#${shader.hashCode}, $matrix4)';
 
   @override
   bool operator ==(Object other) {
@@ -4287,7 +4299,8 @@ class _FragmentShaderImageFilter implements ImageFilter {
       return false;
     }
     return other is _FragmentShaderImageFilter
-        && other.shader == shader;
+        && other.shader == shader
+        && _listEquals<double>(other.matrix4, matrix4);
   }
 
   @override
