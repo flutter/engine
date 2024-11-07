@@ -39,16 +39,38 @@ struct _FlEngine {
   // Thread the GLib main loop is running on.
   GThread* thread;
 
+  // The project this engine is running.
   FlDartProject* project;
+
+  // Renders the Flutter app.
   FlRenderer* renderer;
+
+  // Messenger used to send and receive platform messages.
   FlBinaryMessenger* binary_messenger;
+
+  // Implements the flutter/settings channel.
   FlSettingsHandler* settings_handler;
+
+  // Implements the flutter/platform channel.
   FlPlatformHandler* platform_handler;
+
+  // Implements the flutter/mousecursor channel.
   FlMouseCursorHandler* mouse_cursor_handler;
+
+  // Manages textures rendered by native code.
   FlTextureRegistrar* texture_registrar;
+
+  // Schedules tasks to be run on the appropriate thread.
   FlTaskRunner* task_runner;
+
+  // Ahead of time data used to make engine run faster.
   FlutterEngineAOTData aot_data;
+
+  // The Flutter engine.
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
+
+  // Function table for engine API, used to intercept engine calls for testing
+  // purposes.
   FlutterEngineProcTable embedder_api;
 
   // Next ID to use for a view.
