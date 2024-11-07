@@ -2170,16 +2170,16 @@ TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
 // set of options, we can just compare benchmarks.
 TEST_P(EntityTest, ContentContextOptionsHasReasonableHashFunctions) {
   ContentContextOptions opts;
-  auto hash_a = ContentContextOptions::Hash{}(opts);
+  auto hash_a = opts.ToKey();
 
   opts.blend_mode = BlendMode::kColorBurn;
-  auto hash_b = ContentContextOptions::Hash{}(opts);
+  auto hash_b = opts.ToKey();
 
   opts.has_depth_stencil_attachments = false;
-  auto hash_c = ContentContextOptions::Hash{}(opts);
+  auto hash_c = opts.ToKey();
 
   opts.primitive_type = PrimitiveType::kPoint;
-  auto hash_d = ContentContextOptions::Hash{}(opts);
+  auto hash_d = opts.ToKey();
 
   EXPECT_NE(hash_a, hash_b);
   EXPECT_NE(hash_b, hash_c);
@@ -2363,6 +2363,66 @@ APPLY_COLOR_FILTER_GRADIENT_TEST(Linear);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Radial);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Conical);
 APPLY_COLOR_FILTER_GRADIENT_TEST(Sweep);
+
+TEST_P(EntityTest, GiantStrokePathAllocation) {
+  PathBuilder builder{};
+  for (int i = 0; i < 10000; i++) {
+    builder.LineTo(Point(i, i));
+  }
+  Path path = builder.TakePath();
+  auto geom = Geometry::MakeStrokePath(path, /*stroke_width=*/10);
+
+  ContentContext content_context(GetContext(), /*typographer_context=*/nullptr);
+  Entity entity;
+
+  auto cmd_buffer = content_context.GetContext()->CreateCommandBuffer();
+
+  RenderTargetAllocator allocator(
+      content_context.GetContext()->GetResourceAllocator());
+
+  auto render_target = allocator.CreateOffscreen(
+      *content_context.GetContext(), /*size=*/{10, 10}, /*mip_count=*/1);
+  auto pass = cmd_buffer->CreateRenderPass(render_target);
+
+  GeometryResult result =
+      geom->GetPositionBuffer(content_context, entity, *pass);
+
+  // Validate the buffer data overflowed the small buffer
+  EXPECT_GT(result.vertex_buffer.vertex_count, kPointArenaSize);
+
+  // Validate that there are no uninitialized points near the gap.
+  Point* written_data = reinterpret_cast<Point*>(
+      (result.vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
+       result.vertex_buffer.vertex_buffer.GetRange().offset));
+
+  std::vector<Point> expected = {
+      Point(1019.46, 1026.54),  //
+      Point(1026.54, 1019.46),  //
+      Point(1020.45, 1027.54),  //
+      Point(1027.54, 1020.46),  //
+      Point(1020.46, 1027.53)   //
+  };
+
+  Point point = written_data[kPointArenaSize - 2];
+  EXPECT_NEAR(point.x, expected[0].x, 0.1);
+  EXPECT_NEAR(point.y, expected[0].y, 0.1);
+
+  point = written_data[kPointArenaSize - 1];
+  EXPECT_NEAR(point.x, expected[1].x, 0.1);
+  EXPECT_NEAR(point.y, expected[1].y, 0.1);
+
+  point = written_data[kPointArenaSize];
+  EXPECT_NEAR(point.x, expected[2].x, 0.1);
+  EXPECT_NEAR(point.y, expected[2].y, 0.1);
+
+  point = written_data[kPointArenaSize + 1];
+  EXPECT_NEAR(point.x, expected[3].x, 0.1);
+  EXPECT_NEAR(point.y, expected[3].y, 0.1);
+
+  point = written_data[kPointArenaSize + 2];
+  EXPECT_NEAR(point.x, expected[4].x, 0.1);
+  EXPECT_NEAR(point.y, expected[4].y, 0.1);
+}
 
 }  // namespace testing
 }  // namespace impeller
