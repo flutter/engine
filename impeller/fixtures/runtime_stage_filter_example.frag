@@ -10,5 +10,6 @@ uniform sampler2D u_texture;
 out vec4 frag_color;
 
 void main() {
-  frag_color = texture(u_texture, FlutterFragCoord().xy / u_size);
+  frag_color = texture(u_texture, FlutterFragCoord().xy / u_size) *
+               (sin(FlutterFragCoord().y) * cos(FlutterFragCoord().x));
 }

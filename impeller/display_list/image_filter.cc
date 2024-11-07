@@ -104,17 +104,16 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
           FilterInput::Make(WrapInput(inner_dl_filter.get(), input)));
     }
     case flutter::DlImageFilterType::kRuntimeEffect: {
-      auto fragment_program_filter = filter->asRuntimeEffectFilter();
-      FML_DCHECK(fragment_program_filter);
       const flutter::DlRuntimeEffectImageFilter* runtime_filter =
-          fragment_program_filter->asRuntimeEffectFilter();
-      auto runtime_stage = runtime_filter->runtime_effect()->runtime_stage();
-      const auto& uniform_data = runtime_filter->uniform_data();
-      const auto& samplers = runtime_filter->samplers();
+          filter->asRuntimeEffectFilter();
+      FML_DCHECK(runtime_filter);
+      std::shared_ptr<impeller::RuntimeStage> runtime_stage =
+          runtime_filter->runtime_effect()->runtime_stage();
 
       std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
       size_t index = 0;
-      for (auto& sampler : samplers) {
+      for (const std::shared_ptr<flutter::DlColorSource>& sampler :
+           runtime_filter->samplers()) {
         if (index == 0 && sampler == nullptr) {
           // Insert placeholder for filter.
           texture_inputs.push_back(
@@ -126,7 +125,7 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
           return nullptr;
         }
         auto* image = sampler->asImage();
-        if (!sampler->asImage()) {
+        if (!image) {
           return nullptr;
         }
         FML_DCHECK(image->image()->impeller_texture());
@@ -138,7 +137,7 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
         });
       }
       return FilterContents::MakeRuntimeEffect(input, std::move(runtime_stage),
-                                               uniform_data,
+                                               runtime_filter->uniform_data(),
                                                std::move(texture_inputs));
     }
   }

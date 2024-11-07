@@ -88,7 +88,7 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
 
-  auto runtime_stage =
+  std::shared_ptr<RuntimeStage> runtime_stage =
       runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());

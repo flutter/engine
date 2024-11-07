@@ -234,7 +234,6 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
     case DlImageFilterType::kRuntimeEffect:
       // UNSUPPORTED.
       return nullptr;
-      break;
   }
 }
 

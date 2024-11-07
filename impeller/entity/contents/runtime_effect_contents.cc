@@ -249,6 +249,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
                      Context::BackendType::kVulkan);
           ShaderUniformSlot uniform_slot;
           uniform_slot.binding = uniform.location;
+          uniform_slot.name = uniform.name.c_str();
 
           // TODO(jonahwilliams): rewrite this to emplace directly into
           // HostBuffer.
