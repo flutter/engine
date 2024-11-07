@@ -24,28 +24,6 @@ void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
-namespace {
-Matrix CalculateSubpassTransform(const Matrix& snapshot_transform,
-                                 const Matrix& effect_transform,
-                                 const Matrix& matrix,
-                                 Entity::RenderingMode rendering_mode) {
-  if (rendering_mode ==
-      Entity::RenderingMode::kSubpassAppendSnapshotTransform) {
-    return snapshot_transform *  //
-           effect_transform *    //
-           matrix *              //
-           effect_transform.Invert();
-  } else {
-    FML_DCHECK(rendering_mode ==
-               Entity::RenderingMode::kSubpassPrependSnapshotTransform);
-    return effect_transform *           //
-           matrix *                     //
-           effect_transform.Invert() *  //
-           snapshot_transform;
-  }
-}
-}  // namespace
-
 std::optional<Entity> MatrixFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,

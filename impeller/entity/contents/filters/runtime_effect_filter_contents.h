@@ -23,10 +23,23 @@ class RuntimeEffectFilterContents final : public FilterContents {
   void SetTextureInputs(
       std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
+  void SetMatrix(const Matrix& matrix);
+
+  // |FilterContents|
+  void SetRenderingMode(Entity::RenderingMode rendering_mode) override;
+
+  // |FilterContents|
+  std::optional<Rect> GetFilterCoverage(
+      const FilterInput::Vector& inputs,
+      const Entity& entity,
+      const Matrix& effect_transform) const override;
+
  private:
   std::shared_ptr<RuntimeStage> runtime_stage_;
   std::shared_ptr<std::vector<uint8_t>> uniforms_;
   std::vector<RuntimeEffectContents::TextureInput> texture_inputs_;
+  Matrix matrix_;
+  Entity::RenderingMode rendering_mode_ = Entity::RenderingMode::kDirect;
 
   // |FilterContents|
   std::optional<Entity> RenderFilter(

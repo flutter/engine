@@ -35,6 +35,28 @@ namespace impeller {
 const int32_t FilterContents::kBlurFilterRequiredMipCount =
     GaussianBlurFilterContents::kBlurFilterRequiredMipCount;
 
+// static
+Matrix FilterContents::CalculateSubpassTransform(
+    const Matrix& snapshot_transform,
+    const Matrix& effect_transform,
+    const Matrix& matrix,
+    Entity::RenderingMode rendering_mode) {
+  if (rendering_mode ==
+      Entity::RenderingMode::kSubpassAppendSnapshotTransform) {
+    return snapshot_transform *  //
+           effect_transform *    //
+           matrix *              //
+           effect_transform.Invert();
+  } else {
+    FML_DCHECK(rendering_mode ==
+               Entity::RenderingMode::kSubpassPrependSnapshotTransform);
+    return effect_transform *           //
+           matrix *                     //
+           effect_transform.Invert() *  //
+           snapshot_transform;
+  }
+}
+
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
     Sigma sigma_x,
@@ -120,12 +142,14 @@ std::shared_ptr<FilterContents> FilterContents::MakeRuntimeEffect(
     FilterInput::Ref input,
     std::shared_ptr<RuntimeStage> runtime_stage,
     std::shared_ptr<std::vector<uint8_t>> uniforms,
-    std::vector<RuntimeEffectContents::TextureInput> texture_inputs) {
+    std::vector<RuntimeEffectContents::TextureInput> texture_inputs,
+    Matrix matrix) {
   auto filter = std::make_shared<impeller::RuntimeEffectFilterContents>();
   filter->SetInputs({std::move(input)});
   filter->SetRuntimeStage(std::move(runtime_stage));
   filter->SetUniforms(std::move(uniforms));
   filter->SetTextureInputs(std::move(texture_inputs));
+  filter->SetMatrix(matrix);
   return filter;
 }
 

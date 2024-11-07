@@ -11,6 +11,7 @@
 #include "flutter/display_list/effects/dl_runtime_effect.h"
 #include "flutter/impeller/display_list/aiks_unittests.h"
 
+#include "include/core/SkMatrix.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkRRect.h"
 
@@ -103,7 +104,34 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   paint.setColor(DlColor::kAqua());
   paint.setImageFilter(std::make_shared<DlRuntimeEffectImageFilter>(
       DlRuntimeEffect::MakeImpeller(runtime_stage), sampler_inputs,
-      uniform_data));
+      uniform_data, SkMatrix()));
+
+  DisplayListBuilder builder;
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 400, 400), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, CanRenderRuntimeEffectFilterWithTransform) {
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
+
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  std::vector<std::shared_ptr<DlColorSource>> sampler_inputs = {
+      nullptr,
+  };
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(Vector2));
+
+  DlPaint paint;
+  paint.setColor(DlColor::kAqua());
+  paint.setImageFilter(std::make_shared<DlRuntimeEffectImageFilter>(
+      DlRuntimeEffect::MakeImpeller(runtime_stage), sampler_inputs,
+      uniform_data, SkMatrix::Scale(0.5, 0.5)));
 
   DisplayListBuilder builder;
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 400, 400), paint);

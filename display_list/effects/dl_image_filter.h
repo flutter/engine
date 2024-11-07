@@ -766,7 +766,8 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
 
   std::shared_ptr<DlImageFilter> shared() const override {
     return std::make_shared<DlRuntimeEffectImageFilter>(
-        this->runtime_effect_, this->samplers_, this->uniform_data_, this->matrix_);
+        this->runtime_effect_, this->samplers_, this->uniform_data_,
+        this->matrix_);
   }
 
   static std::shared_ptr<DlImageFilter> Make(
@@ -775,8 +776,8 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
       std::shared_ptr<std::vector<uint8_t>> uniform_data,
       const SkMatrix& matrix) {
     return std::make_shared<DlRuntimeEffectImageFilter>(
-        std::move(runtime_effect), std::move(samplers),
-        std::move(uniform_data), matrix);
+        std::move(runtime_effect), std::move(samplers), std::move(uniform_data),
+        matrix);
   }
 
   DlImageFilterType type() const override {
@@ -786,7 +787,7 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
 
   bool modifies_transparent_black() const override { return false; }
 
- SkRect* map_local_bounds(const SkRect& input_bounds,
+  SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
     output_bounds = matrix_.mapRect(input_bounds);
     return &output_bounds;
@@ -841,9 +842,7 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
     return uniform_data_;
   }
 
-  const SkMatrix& matrix() const {
-    return matrix_;
-  }
+  const SkMatrix& matrix() const { return matrix_; }
 
  protected:
   bool equals_(const DlImageFilter& other) const override {

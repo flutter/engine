@@ -137,9 +137,10 @@ std::shared_ptr<FilterContents> WrapInput(const flutter::DlImageFilter* filter,
             .texture = image->image()->impeller_texture(),
         });
       }
-      return FilterContents::MakeRuntimeEffect(input, std::move(runtime_stage),
-                                               uniform_data,
-                                               std::move(texture_inputs));
+      return FilterContents::MakeRuntimeEffect(
+          input, std::move(runtime_stage), uniform_data,
+          std::move(texture_inputs),
+          skia_conversions::ToMatrix(runtime_filter->matrix()));
     }
   }
   FML_UNREACHABLE();

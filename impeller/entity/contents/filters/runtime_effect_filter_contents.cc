@@ -29,6 +29,10 @@ void RuntimeEffectFilterContents::SetTextureInputs(
   texture_inputs_ = std::move(texture_inputs);
 }
 
+void RuntimeEffectFilterContents::SetMatrix(const Matrix& matrix) {
+  matrix_ = matrix;
+}
+
 // |FilterContents|
 std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
@@ -41,12 +45,26 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  auto input_snapshot =
-      inputs[0]->GetSnapshot("RuntimeEffectContents", renderer, entity);
-  if (!input_snapshot.has_value()) {
+  auto snapshot = inputs[0]->GetSnapshot("Matrix", renderer, entity);
+  if (!snapshot.has_value()) {
     return std::nullopt;
   }
-  std::optional<Rect> maybe_input_coverage = input_snapshot->GetCoverage();
+
+  if (rendering_mode_ ==
+          Entity::RenderingMode::kSubpassPrependSnapshotTransform ||
+      rendering_mode_ ==
+          Entity::RenderingMode::kSubpassAppendSnapshotTransform) {
+    // See Note in MatrixFilterContents::RenderFilter
+    snapshot->transform = CalculateSubpassTransform(
+        snapshot->transform, effect_transform, matrix_, rendering_mode_);
+  } else {
+    snapshot->transform = entity.GetTransform() *           //
+                          matrix_ *                         //
+                          entity.GetTransform().Invert() *  //
+                          snapshot->transform;
+  }
+
+  std::optional<Rect> maybe_input_coverage = snapshot->GetCoverage();
   if (!maybe_input_coverage.has_value()) {
     return std::nullopt;
   }
@@ -65,16 +83,17 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   // Update uniform values.
   std::vector<RuntimeEffectContents::TextureInput> texture_input_copy =
       texture_inputs_;
-  texture_input_copy[0].texture = input_snapshot->texture;
+  texture_input_copy[0].texture = snapshot->texture;
 
-  Size size = Size(input_snapshot->texture->GetSize());
+  Size size = Size(snapshot->texture->GetSize());
+  FML_LOG(ERROR) << "Size: " << size;
   memcpy(uniforms_->data(), &size, sizeof(Size));
 
   //----------------------------------------------------------------------------
   /// Create AnonymousContents for rendering.
   ///
   RenderProc render_proc =
-      [input_snapshot, runtime_stage = runtime_stage_, uniforms = uniforms_,
+      [snapshot, runtime_stage = runtime_stage_, uniforms = uniforms_,
        texture_inputs = texture_input_copy,
        input_coverage](const ContentContext& renderer, const Entity& entity,
                        RenderPass& pass) -> bool {
@@ -97,15 +116,57 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetBlendMode(entity.GetBlendMode());
-  sub_entity.SetTransform(input_snapshot->transform);
+  sub_entity.SetTransform(snapshot->transform);
   return sub_entity;
+}
+
+void RuntimeEffectFilterContents::SetRenderingMode(
+    Entity::RenderingMode rendering_mode) {
+  rendering_mode_ = rendering_mode;
+}
+
+std::optional<Rect> RuntimeEffectFilterContents::GetFilterCoverage(
+    const FilterInput::Vector& inputs,
+    const Entity& entity,
+    const Matrix& effect_transform) const {
+  if (inputs.empty()) {
+    return std::nullopt;
+  }
+
+  std::optional<Rect> coverage = inputs[0]->GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return std::nullopt;
+  }
+
+  Matrix input_transform = inputs[0]->GetTransform(entity);
+  if (rendering_mode_ ==
+          Entity::RenderingMode::kSubpassPrependSnapshotTransform ||
+      rendering_mode_ ==
+          Entity::RenderingMode::kSubpassAppendSnapshotTransform) {
+    Rect coverage_bounds = coverage->TransformBounds(input_transform.Invert());
+    Matrix transform = CalculateSubpassTransform(
+        input_transform, effect_transform, matrix_, rendering_mode_);
+    return coverage_bounds.TransformBounds(transform);
+  } else {
+    Matrix transform = input_transform *          //
+                       matrix_ *                  //
+                       input_transform.Invert();  //
+    return coverage->TransformBounds(transform);
+  }
 }
 
 // |FilterContents|
 std::optional<Rect> RuntimeEffectFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
     const Rect& output_limit) const {
-  return output_limit;
+  auto transform = effect_transform *          //
+                   matrix_ *                   //
+                   effect_transform.Invert();  //
+  if (transform.GetDeterminant() == 0.0) {
+    return std::nullopt;
+  }
+  auto inverse = transform.Invert();
+  return output_limit.TransformBounds(inverse);
 }
 
 }  // namespace impeller
