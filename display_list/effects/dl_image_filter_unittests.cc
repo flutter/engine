@@ -12,6 +12,7 @@
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
 
+#include "impeller/display_list/dl_image_impeller.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkBlendMode.h"
@@ -835,6 +836,25 @@ TEST(DisplayListImageFilter, RuntimeEffectEquality) {
 
   DlRuntimeEffectImageFilter filter_c(
       nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(1));
+
+  EXPECT_NE(filter_a, filter_c);
+}
+
+TEST(DisplayListImageFilter, RuntimeEffectEqualityWithSamplers) {
+  auto image_a = std::make_shared<DlImageColorSource>(
+      nullptr, DlTileMode::kClamp, DlTileMode::kDecal);
+  auto image_b = std::make_shared<DlImageColorSource>(
+      nullptr, DlTileMode::kClamp, DlTileMode::kClamp);
+
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr, image_a},
+                                      std::make_shared<std::vector<uint8_t>>());
+  DlRuntimeEffectImageFilter filter_b(nullptr, {nullptr, image_a},
+                                      std::make_shared<std::vector<uint8_t>>());
+
+  EXPECT_EQ(filter_a, filter_b);
+
+  DlRuntimeEffectImageFilter filter_c(nullptr, {nullptr, image_b},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   EXPECT_NE(filter_a, filter_c);
 }

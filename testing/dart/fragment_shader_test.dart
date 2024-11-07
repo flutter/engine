@@ -350,18 +350,25 @@ void main() async {
       print('Skipped for Skia');
       return;
     }
-    final FragmentProgram program = await FragmentProgram.fromAsset(
+    const List<String> shaders = [
       'no_uniforms.frag.iplr',
-    );
-    final FragmentShader shader = program.fragmentShader();
+      'missing_size.frag.iplr',
+      'missing_texture.frag.iplr'
+    ];
+    for (String fileName in shaders) {
+      final FragmentProgram program = await FragmentProgram.fromAsset(
+        fileName
+      );
+      final FragmentShader shader = program.fragmentShader();
 
-    Object? error;
-    try {
-      ImageFilter.shader(shader);
-    } catch (err) {
-      error = err;
+      Object? error;
+      try {
+        ImageFilter.shader(shader);
+      } catch (err) {
+        error = err;
+      }
+      expect(error is StateError, true);
     }
-    expect(error is StateError, true);
   });
 
   test('ImageFilter.shader can be applied to canvas operations', () async {
