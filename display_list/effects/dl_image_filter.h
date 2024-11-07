@@ -15,7 +15,6 @@
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/fml/logging.h"
 
-#include "include/core/SkM44.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
@@ -757,26 +756,23 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
   explicit DlRuntimeEffectImageFilter(
       sk_sp<DlRuntimeEffect> runtime_effect,
       std::vector<std::shared_ptr<DlColorSource>> samplers,
-      std::shared_ptr<std::vector<uint8_t>> uniform_data,
-      const SkMatrix& matrix)
+      std::shared_ptr<std::vector<uint8_t>> uniform_data)
       : runtime_effect_(std::move(runtime_effect)),
         samplers_(std::move(samplers)),
-        uniform_data_(std::move(uniform_data)),
-        matrix_(matrix) {}
+        uniform_data_(std::move(uniform_data)) {}
 
   std::shared_ptr<DlImageFilter> shared() const override {
     return std::make_shared<DlRuntimeEffectImageFilter>(
-        this->runtime_effect_, this->samplers_, this->uniform_data_, this->matrix_);
+        this->runtime_effect_, this->samplers_, this->uniform_data_);
   }
 
   static std::shared_ptr<DlImageFilter> Make(
       sk_sp<DlRuntimeEffect> runtime_effect,
       std::vector<std::shared_ptr<DlColorSource>> samplers,
-      std::shared_ptr<std::vector<uint8_t>> uniform_data,
-      const SkMatrix& matrix) {
+      std::shared_ptr<std::vector<uint8_t>> uniform_data) {
     return std::make_shared<DlRuntimeEffectImageFilter>(
         std::move(runtime_effect), std::move(samplers),
-        std::move(uniform_data), matrix);
+        std::move(uniform_data));
   }
 
   DlImageFilterType type() const override {
@@ -786,42 +782,23 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
 
   bool modifies_transparent_black() const override { return false; }
 
- SkRect* map_local_bounds(const SkRect& input_bounds,
+  SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
-    output_bounds = matrix_.mapRect(input_bounds);
+    output_bounds = input_bounds;
     return &output_bounds;
   }
 
   SkIRect* map_device_bounds(const SkIRect& input_bounds,
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
-    SkMatrix matrix;
-    if (!ctm.invert(&matrix)) {
-      output_bounds = input_bounds;
-      return nullptr;
-    }
-    matrix.postConcat(matrix_);
-    matrix.postConcat(ctm);
-    SkRect device_rect;
-    matrix.mapRect(&device_rect, SkRect::Make(input_bounds));
-    output_bounds = device_rect.roundOut();
+    output_bounds = input_bounds;
     return &output_bounds;
   }
 
   SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
-    SkMatrix matrix = SkMatrix::Concat(ctm, matrix_);
-    SkMatrix inverse;
-    if (!matrix.invert(&inverse)) {
-      input_bounds = output_bounds;
-      return nullptr;
-    }
-    inverse.postConcat(ctm);
-    SkRect bounds;
-    bounds.set(output_bounds);
-    inverse.mapRect(&bounds);
-    input_bounds = bounds.roundOut();
+    input_bounds = output_bounds;
     return &input_bounds;
   }
 
@@ -839,10 +816,6 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
 
   const std::shared_ptr<std::vector<uint8_t>>& uniform_data() const {
     return uniform_data_;
-  }
-
-  const SkMatrix& matrix() const {
-    return matrix_;
   }
 
  protected:
@@ -864,9 +837,6 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
         return false;
       }
     }
-    if (matrix_ != that->matrix_) {
-      return false;
-    }
     return true;
   }
 
@@ -874,7 +844,6 @@ class DlRuntimeEffectImageFilter final : public DlImageFilter {
   sk_sp<DlRuntimeEffect> runtime_effect_;
   std::vector<std::shared_ptr<DlColorSource>> samplers_;
   std::shared_ptr<std::vector<uint8_t>> uniform_data_;
-  SkMatrix matrix_;
 };
 
 }  // namespace flutter

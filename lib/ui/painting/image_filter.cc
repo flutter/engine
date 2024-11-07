@@ -120,9 +120,9 @@ void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
                                        inner->filter(DlTileMode::kClamp));
 }
 
-void ImageFilter::initShader(ReusableFragmentShader* shader, const tonic::Float64List& matrix4) {
+void ImageFilter::initShader(ReusableFragmentShader* shader) {
   FML_DCHECK(shader);
-  filter_ = shader->as_image_filter(ToSkMatrix(matrix4));
+  filter_ = shader->as_image_filter();
 }
 
 }  // namespace flutter
