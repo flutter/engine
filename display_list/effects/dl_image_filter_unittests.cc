@@ -12,7 +12,6 @@
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
 
-#include "impeller/display_list/dl_image_impeller.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkBlendMode.h"
