@@ -826,23 +826,22 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
 }
 
 TEST(DisplayListImageFilter, RuntimeEffectEquality) {
-  DlRuntimeEffectImageFilter filter_a(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
-  DlRuntimeEffectImageFilter filter_b(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
+  DlRuntimeEffectImageFilter filter_b(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   EXPECT_EQ(filter_a, filter_b);
 
-  DlRuntimeEffectImageFilter filter_c(nullptr, {nullptr},
-                                      std::make_shared<std::vector<uint8_t>>(1),
-                                      SkMatrix());
+  DlRuntimeEffectImageFilter filter_c(
+      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(1));
 
   EXPECT_NE(filter_a, filter_c);
 }
 
 TEST(DisplayListImageFilter, RuntimeEffectMapDeviceBounds) {
-  DlRuntimeEffectImageFilter filter_a(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   auto input_bounds = SkIRect::MakeLTRB(0, 0, 100, 100);
   SkMatrix identity;
@@ -855,8 +854,8 @@ TEST(DisplayListImageFilter, RuntimeEffectMapDeviceBounds) {
 }
 
 TEST(DisplayListImageFilter, RuntimeEffectMapInputBounds) {
-  DlRuntimeEffectImageFilter filter_a(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   auto input_bounds = SkRect::MakeLTRB(0, 0, 100, 100);
 
@@ -868,8 +867,8 @@ TEST(DisplayListImageFilter, RuntimeEffectMapInputBounds) {
 }
 
 TEST(DisplayListImageFilter, RuntimeEffectGetInputDeviceBounds) {
-  DlRuntimeEffectImageFilter filter_a(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   auto output_bounds = SkIRect::MakeLTRB(0, 0, 100, 100);
 
@@ -883,8 +882,8 @@ TEST(DisplayListImageFilter, RuntimeEffectGetInputDeviceBounds) {
 }
 
 TEST(DisplayListImageFilter, RuntimeEffectModifiesTransparentBlack) {
-  DlRuntimeEffectImageFilter filter_a(
-      nullptr, {nullptr}, std::make_shared<std::vector<uint8_t>>(), SkMatrix());
+  DlRuntimeEffectImageFilter filter_a(nullptr, {nullptr},
+                                      std::make_shared<std::vector<uint8_t>>());
 
   EXPECT_FALSE(filter_a.modifies_transparent_black());
 }

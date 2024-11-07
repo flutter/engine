@@ -38,11 +38,6 @@ class FilterContents : public Contents {
 
   enum class MorphType { kDilate, kErode };
 
-  static Matrix CalculateSubpassTransform(const Matrix& snapshot_transform,
-                                          const Matrix& effect_transform,
-                                          const Matrix& matrix,
-                                          Entity::RenderingMode rendering_mode);
-
   /// Creates a gaussian blur that operates in 2 dimensions.
   /// See also: `MakeDirectionalGaussianBlur`
   static std::shared_ptr<FilterContents> MakeGaussianBlur(
@@ -88,8 +83,7 @@ class FilterContents : public Contents {
       FilterInput::Ref input,
       std::shared_ptr<RuntimeStage> runtime_stage,
       std::shared_ptr<std::vector<uint8_t>> uniforms,
-      std::vector<RuntimeEffectContents::TextureInput> texture_inputs,
-      Matrix matrix = Matrix());
+      std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
   FilterContents();
 
