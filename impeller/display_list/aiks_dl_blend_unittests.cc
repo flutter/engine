@@ -338,6 +338,7 @@ TEST_P(AiksTest, ColorFilterAdvancedBlendNoFbFetch) {
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsDecalSamplerAddressMode);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsPrimitiveRestart);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
   bool has_color_filter = true;
@@ -899,6 +900,26 @@ TEST_P(AiksTest, DestructiveBlendColorFilterFloodsClip) {
   save_paint.setColorFilter(
       DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc));
   builder.SaveLayer(nullptr, &save_paint);
+  builder.Restore();
+
+  // Should be solid red as the destructive color filter floods the clip.
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, AdvancedBlendColorFilterWithDestinationOpacity) {
+  DisplayListBuilder builder;
+
+  builder.DrawPaint(DlPaint(DlColor::kWhite()));
+
+  DlPaint save_paint;
+  save_paint.setOpacity(0.3);
+  save_paint.setColorFilter(DlBlendColorFilter::Make(DlColor::kTransparent(),
+                                                     DlBlendMode::kSaturation));
+  builder.SaveLayer(nullptr, &save_paint);
+  builder.DrawRect(SkRect::MakeXYWH(100, 100, 300, 300),
+                   DlPaint(DlColor::kMaroon()));
+  builder.DrawRect(SkRect::MakeXYWH(200, 200, 300, 300),
+                   DlPaint(DlColor::kBlue()));
   builder.Restore();
 
   // Should be solid red as the destructive color filter floods the clip.

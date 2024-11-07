@@ -18,6 +18,9 @@
 
 namespace impeller {
 
+/// The size of the point arena buffer stored on the tessellator.
+static constexpr size_t kPointArenaSize = 4096u;
+
 //------------------------------------------------------------------------------
 /// @brief      A utility that generates triangles of the specified fill type
 ///             given a polyline. This happens on the CPU.
@@ -187,7 +190,9 @@ class Tessellator {
   /// @return A vertex buffer containing all data from the provided curve.
   VertexBuffer TessellateConvex(const Path& path,
                                 HostBuffer& host_buffer,
-                                Scalar tolerance);
+                                Scalar tolerance,
+                                bool supports_primitive_restart = false,
+                                bool supports_triangle_fan = false);
 
   /// Visible for testing.
   ///
@@ -282,10 +287,15 @@ class Tessellator {
                                             const Rect& bounds,
                                             const Size& radii);
 
+  /// Retrieve a pre-allocated arena of kPointArenaSize points.
+  std::vector<Point>& GetStrokePointCache();
+
  protected:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
   std::unique_ptr<std::vector<uint16_t>> index_buffer_;
+  /// Used for stroke path generation.
+  std::vector<Point> stroke_points_;
 
  private:
   // Data for various Circle/EllipseGenerator classes, cached per
