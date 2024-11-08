@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'd0ee80612f86727521765f783ce1431088b07fc4',
+  'skia_revision': '778b21720a61d6cce3d2e4e55424cdec49abe7cf',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -925,7 +925,7 @@ deps = {
       'packages': [
         {
           'package': 'flutter/flutter_font_fallbacks',
-          'version': '10da6a95fedad127634500aa854466fe9e3fa760220a2a1c7c20df84073fce76'
+          'version': '8a753fd2150c398a5777a7fdb24fc9d4d5fe8015088c5237b61cf0ff26653fd0'
         }
       ],
       'dep_type': 'cipd',
