@@ -80,7 +80,7 @@ std::shared_ptr<BlitPass> CommandBufferGLES::OnCreateBlitPass() {
 #else
   if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
-    blit_handle = ContextGLES::Cast(*context).GetEmulatedBlitProgram();
+    blit_handle = ContextGLES::Cast(*context).GetEmulatedBlit();
   }
   auto pass =
       std::shared_ptr<BlitPassGLES>(new BlitPassGLES(reactor_, blit_handle));

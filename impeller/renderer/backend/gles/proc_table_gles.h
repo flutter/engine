@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
+#include <optional>
 #include <string>
 
 #include "flutter/fml/logging.h"
@@ -13,6 +14,7 @@
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 
 namespace impeller {
 
@@ -282,6 +284,8 @@ class ProcTableGLES {
   std::optional<std::string> ComputeShaderWithDefines(
       const fml::Mapping& mapping,
       const std::vector<Scalar>& defines) const;
+
+  bool CreateEmulatedBlitProgram(HandleGLES program_handle) const;
 
  private:
   bool is_valid_ = false;

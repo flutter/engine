@@ -44,7 +44,7 @@ class ContextGLES final : public Context,
 
   std::shared_ptr<GPUTracerGLES> GetGPUTracer() const { return gpu_tracer_; }
 
-  std::optional<HandleGLES> GetEmulatedBlitProgram() const;
+  std::optional<HandleGLES> GetEmulatedBlit() const { return blit_program_; }
 
  private:
   ReactorGLES::Ref reactor_;
@@ -54,7 +54,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<AllocatorGLES> resource_allocator_;
   std::shared_ptr<CommandQueue> command_queue_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
-  mutable std::optional<HandleGLES> emulated_blit_program_;
+  std::optional<HandleGLES> blit_program_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
   // in order to satisfy the Context::GetCapabilities signature which returns

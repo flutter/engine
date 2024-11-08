@@ -11,7 +11,6 @@
 #include "impeller/base/comparable.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
-#include "impeller/renderer/capabilities.h"
 
 namespace impeller {
 
@@ -420,6 +419,121 @@ std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {
   }
   return std::string{reinterpret_cast<const char*>(allocation.GetBuffer()),
                      static_cast<size_t>(length)};
+}
+
+namespace {
+static const std::string_view kVertexShaderSource =
+    "#version 100\n"
+    "attribute vec2 position;\n"
+    "attribute vec2 in_texcoord;\n"
+    "varying vec2 texcoord;\n"
+    "\n"
+    "void main() {\n"
+    "  gl_Position = vec4(position, 0, 1);\n"
+    "  texcoord = in_texcoord;\n"
+    "}\n";
+
+static const std::string_view kFragmentShaderSource =
+    "#version 100\n"
+    "precision mediump float;\n"
+    "\n"
+    "uniform sampler2D texture;\n"
+    "varying vec2 texcoord;\n"
+    "\n"
+    "void main() {\n"
+    "  gl_FragColor = texture2D(texture, texcoord);\n"
+    "}\n";
+}  // namespace
+
+bool ProcTableGLES::CreateEmulatedBlitProgram(HandleGLES program_handle) const {
+  const auto& gl = *this;
+  auto vert_shader = gl.CreateShader(GL_VERTEX_SHADER);
+  auto frag_shader = gl.CreateShader(GL_FRAGMENT_SHADER);
+
+  if (vert_shader == 0 || frag_shader == 0) {
+    VALIDATION_LOG << "Could not create shader handles.";
+    return false;
+  }
+
+  gl.SetDebugLabel(DebugResourceType::kShader, vert_shader,
+                   "Blit Vertex Shader");
+  gl.SetDebugLabel(DebugResourceType::kShader, frag_shader,
+                   "Blit Fragment Shader");
+
+  fml::ScopedCleanupClosure delete_vert_shader(
+      [&gl, vert_shader]() { gl.DeleteShader(vert_shader); });
+  fml::ScopedCleanupClosure delete_frag_shader(
+      [&gl, frag_shader]() { gl.DeleteShader(frag_shader); });
+
+  {
+    const GLchar* sources[] = {kVertexShaderSource.data()};
+    const GLint lengths[] = {static_cast<GLint>(kVertexShaderSource.size())};
+
+    gl.ShaderSource(vert_shader, 1u, sources, lengths);
+  }
+  {
+    const GLchar* sources[] = {kFragmentShaderSource.data()};
+    const GLint lengths[] = {static_cast<GLint>(kFragmentShaderSource.size())};
+
+    gl.ShaderSource(frag_shader, 1u, sources, lengths);
+  }
+
+  gl.CompileShader(vert_shader);
+  gl.CompileShader(frag_shader);
+
+  GLint vert_status = GL_FALSE;
+  GLint frag_status = GL_FALSE;
+
+  gl.GetShaderiv(vert_shader, GL_COMPILE_STATUS, &vert_status);
+  gl.GetShaderiv(frag_shader, GL_COMPILE_STATUS, &frag_status);
+
+  if (vert_status != GL_TRUE) {
+    VALIDATION_LOG << "Failed to compile blit framebuffer emulation shader.";
+    return false;
+  }
+
+  if (frag_status != GL_TRUE) {
+    VALIDATION_LOG << "Failed to compile blit framebuffer emulation shader.";
+    return false;
+  }
+
+  if (program_handle.IsDead() || !program_handle.name.has_value()) {
+    return false;
+  }
+  GLint program = program_handle.name->id;
+
+  gl.AttachShader(program, vert_shader);
+  gl.AttachShader(program, frag_shader);
+
+  fml::ScopedCleanupClosure detach_vert_shader(
+      [&gl, program = program, vert_shader]() {
+        gl.DetachShader(program, vert_shader);
+      });
+  fml::ScopedCleanupClosure detach_frag_shader(
+      [&gl, program = program, frag_shader]() {
+        gl.DetachShader(program, frag_shader);
+      });
+
+  gl.BindAttribLocation(program,                 //
+                        static_cast<GLuint>(0),  //
+                        "position"               //
+  );
+  gl.BindAttribLocation(program,                 //
+                        static_cast<GLuint>(1),  //
+                        "in_texcoord"            //
+  );
+
+  gl.LinkProgram(program);
+
+  GLint link_status = GL_FALSE;
+  gl.GetProgramiv(program, GL_LINK_STATUS, &link_status);
+
+  if (link_status != GL_TRUE) {
+    VALIDATION_LOG << "Could not link shader program: "
+                   << gl.GetProgramInfoLogString(program);
+    return false;
+  }
+  return true;
 }
 
 }  // namespace impeller

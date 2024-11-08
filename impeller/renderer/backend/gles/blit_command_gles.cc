@@ -173,7 +173,7 @@ std::string BlitCopyTextureToTextureCommandGLES::GetLabel() const {
 
 bool BlitCopyTextureToTextureCommandGLES::Encode(
     const ReactorGLES& reactor) const {
-  const auto& gl = reactor.GetProcTable();
+  auto& gl = reactor.GetProcTable();
 
 // glBlitFramebuffer is a GLES3 proc. Since we target GLES2, we need to
 // emulate the blit when it's not available in the driver.
