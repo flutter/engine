@@ -68,16 +68,16 @@ ContextGLES::ContextGLES(
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
 #ifdef IMPELLER_DEBUG
-  if (!gl->BlitFramebuffer.IsAvailable() ||
+  if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable() ||
       forceEmulatedBlitFramebufferForTesting) {
 #else
-  if (!gl.BlitFramebuffer.IsAvailable()) {
+  if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
     HandleGLES blit_program = reactor_->CreateHandle(HandleType::kProgram);
-    bool created = reactor_->AddOperation([&, blit_program](
-                                              const ReactorGLES& reactor) {
-      return reactor_->GetProcTable().CreateEmulatedBlitProgram(blit_program);
-    });
+    bool created =
+        reactor_->AddOperation([&, blit_program](const ReactorGLES& reactor) {
+          return reactor.GetProcTable().CreateEmulatedBlitProgram(blit_program);
+        });
     if (!created) {
       VALIDATION_LOG << "Failed to set up proc table emulated blit.";
     }
