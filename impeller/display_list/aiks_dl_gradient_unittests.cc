@@ -219,47 +219,55 @@ TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStopsClamp) {
 namespace {
 void CanRenderGradientWithIncompleteStops(AiksTest* aiks_test,
                                           DlColorSourceType type) {
-  DisplayListBuilder builder;
-  DlPaint paint;
-  builder.DrawColor(DlColor::kDarkGrey(), DlBlendMode::kSrc);
   const DlTileMode tile_modes[4] = {
       DlTileMode::kClamp,
       DlTileMode::kRepeat,
       DlTileMode::kMirror,
       DlTileMode::kDecal,
   };
+  const DlScalar test_size = 250;
+  const DlScalar test_border = 25;
+  const DlScalar gradient_size = 50;
+  const DlScalar quadrant_size = test_size + test_border * 2;
 
-  for (int i = 0; i < 4; i++) {
+  DisplayListBuilder builder;
+  builder.DrawRect(DlRect::MakeWH(quadrant_size * 2, quadrant_size * 2),
+                   DlPaint().setColor(DlColor::kDarkGrey()));
+
+  for (int quadrant = 0; quadrant < 4; quadrant++) {
     builder.Save();
-    builder.Translate((i & 1) * 600 + 100, (i >> 1) * 600 + 100);
+    builder.Translate((quadrant & 1) * quadrant_size + test_border,
+                      (quadrant >> 1) * quadrant_size + test_border);
+
     if (type == DlColorSourceType::kLinearGradient) {
       // Alignment lines for the gradient edges/repeats/mirrors/etc.
       // (rendered under the gradient so as not to obscure it)
-      // White line is at the edge of the gradient
-      // Grey lines are where the 0.1 and 0.9 color stops land
-      DlPaint line_paint;
-      line_paint.setColor(DlColor::kWhite());
-      // strokewidth of 2 straddles the dividing line
-      line_paint.setStrokeWidth(2.0f);
-      line_paint.setDrawStyle(DlDrawStyle::kStroke);
-      DlPoint center(250.0f, 250.0f);
-      DlScalar ten_percent = 100 * 0.1;
-      for (int i = 50; i <= 250; i += 100) {
-        auto draw_at = [&builder, &line_paint, center](DlScalar offset,
-                                                       DlColor color) {
+      DlPoint center = DlPoint(test_size, test_size) * 0.5;
+      DlScalar ten_percent = gradient_size * 0.1;
+      for (int i = gradient_size / 2; i <= test_size / 2; i += gradient_size) {
+        auto draw_at = [=](DlCanvas& canvas, DlScalar offset, DlColor color) {
+          DlPaint line_paint;
           line_paint.setColor(color);
+          // strokewidth of 2 straddles the dividing line
+          line_paint.setStrokeWidth(2.0f);
+          line_paint.setDrawStyle(DlDrawStyle::kStroke);
+
           DlPoint along(offset, offset);
-          DlPoint across(275.0f - offset, -(275.0f - offset));
-          builder.DrawLine(center - along - across,  //
-                           center - along + across,  //
-                           line_paint);
-          builder.DrawLine(center + along - across,  //
-                           center + along + across,  //
-                           line_paint);
+          DlScalar across_distance = test_size / 2 + 10 - offset;
+          DlPoint across(across_distance, -across_distance);
+
+          canvas.DrawLine(center - along - across,  //
+                          center - along + across,  //
+                          line_paint);
+          canvas.DrawLine(center + along - across,  //
+                          center + along + across,  //
+                          line_paint);
         };
-        draw_at(i - ten_percent, DlColor::kMidGrey());
-        draw_at(i, DlColor::kWhite());
-        draw_at(i + ten_percent, DlColor::kMidGrey());
+        // White line is at the edge of the gradient
+        // Grey lines are where the 0.1 and 0.9 color stops land
+        draw_at(builder, i - ten_percent, DlColor::kMidGrey());
+        draw_at(builder, i, DlColor::kWhite());
+        draw_at(builder, i + ten_percent, DlColor::kMidGrey());
       }
     }
 
@@ -271,33 +279,37 @@ void CanRenderGradientWithIncompleteStops(AiksTest* aiks_test,
     };
     std::vector<Scalar> stops = {0.1, 0.3, 0.7, 0.9};
 
+    DlPaint paint;
     switch (type) {
       case DlColorSourceType::kLinearGradient:
         paint.setColorSource(DlColorSource::MakeLinear(
-            {200, 200}, {300, 300},  //
-            stops.size(), colors.data(), stops.data(), tile_modes[i]));
+            {test_size / 2 - gradient_size / 2,
+             test_size / 2 - gradient_size / 2},
+            {test_size / 2 + gradient_size / 2,
+             test_size / 2 + gradient_size / 2},
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
         break;
       case DlColorSourceType::kRadialGradient:
         paint.setColorSource(DlColorSource::MakeRadial(
-            {250, 250}, 50,  //
-            stops.size(), colors.data(), stops.data(), tile_modes[i]));
+            {test_size / 2, test_size / 2}, gradient_size,  //
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
         break;
       case DlColorSourceType::kConicalGradient:
         paint.setColorSource(DlColorSource::MakeConical(
-            {250, 250}, 0, {270, 240}, 50,  //
-            stops.size(), colors.data(), stops.data(), tile_modes[i]));
+            {test_size / 2, test_size / 2}, 0,
+            {test_size / 2 + 20, test_size / 2 - 10}, gradient_size,
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
         break;
       case DlColorSourceType::kSweepGradient:
         paint.setColorSource(DlColorSource::MakeSweep(
-            {250, 250}, 0, 45,  //
-            stops.size(), colors.data(), stops.data(), tile_modes[i]));
+            {test_size / 2, test_size / 2}, 0, 45,  //
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
         break;
       default:
         FML_UNREACHABLE();
     }
 
-    paint.setColor(DlColor::kWhite());
-    builder.DrawRect(SkRect::MakeXYWH(0, 0, 500, 500), paint);
+    builder.DrawRect(SkRect::MakeXYWH(0, 0, test_size, test_size), paint);
     builder.Restore();
   }
 
