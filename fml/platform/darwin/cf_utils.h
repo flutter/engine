@@ -24,9 +24,7 @@ class CFRef {
 
   /// Takes over ownership of `instance`, which is expected to be already
   /// retained.
-  ///
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  CFRef(T instance) : instance_(instance) {}
+  explicit CFRef(T instance) : instance_(instance) {}
 
   /// Copy ctor: Creates a retained copy of the CoreFoundation object owned by
   /// `other`.
@@ -100,7 +98,6 @@ class CFRef {
   ///
   /// See:
   /// https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-SW1
-  // NOLINTNEXTLINE(google-explicit-constructor)
   operator T() const { return instance_; }
 
   /// Returns true if the underlying CoreFoundation object is non-null.

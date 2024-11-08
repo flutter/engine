@@ -9,7 +9,7 @@ namespace testing {
 
 MetalScreenshot::MetalScreenshot(CGImageRef cgImage) : cg_image_(cgImage) {
   CGDataProviderRef data_provider = CGImageGetDataProvider(cgImage);
-  pixel_data_ = CGDataProviderCopyData(data_provider);
+  pixel_data_.Reset(CGDataProviderCopyData(data_provider));
 }
 
 MetalScreenshot::~MetalScreenshot() = default;
@@ -34,9 +34,8 @@ bool MetalScreenshot::WriteToPNG(const std::string& path) const {
   bool result = false;
   NSURL* output_url =
       [NSURL fileURLWithPath:[NSString stringWithUTF8String:path.c_str()]];
-  fml::CFRef<CGImageDestinationRef> destination =
-      CGImageDestinationCreateWithURL((__bridge CFURLRef)output_url, kUTTypePNG,
-                                      1, nullptr);
+  fml::CFRef<CGImageDestinationRef> destination(CGImageDestinationCreateWithURL(
+      (__bridge CFURLRef)output_url, kUTTypePNG, 1, nullptr));
   if (destination) {
     CGImageDestinationAddImage(destination, cg_image_,
                                (__bridge CFDictionaryRef) @{});
