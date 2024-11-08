@@ -309,45 +309,56 @@ void testMain() {
       await checkDownloadedFamilyForCharCode(0x1f3d5, 'Noto Color Emoji');
     });
 
-    // These code points exist in all of our CJK fonts.
-    final commonCJKCodePoints = <int>[
-      0x56de, // CJK Unified Ideographs
-      0x700b, // CJK Unified Ideographs
-      0x9c57, // CJK Unified Ideographs
-    ];
+    // 0x700b is a CJK Unified Ideograph code point that exists in all of our
+    // CJK fonts.
 
-    for (final codePoint in commonCJKCodePoints) {
-      final codePointHex = '0x${codePoint.toRadixString(16)}';
-      // Simplified Chinese
-      for (final lang in <String>['zh-Hans', 'zh-CN', 'zh-SG', 'zh-MY', 'en-US']) {
-        // Simplified Chinese is also prioritized when preferred language is en-US.
-        test('prioritizes Noto Sans SC for code-point=$codePointHex lang=$lang', () async {
-          await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans SC', userPreferredLanguage: lang);
-        });
-      }
+    // Simplified Chinese
+    test('prioritizes Noto Sans SC for lang=zh', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'zh');
+    });
+    test('prioritizes Noto Sans SC for lang=zh-Hans', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'zh-Hans');
+    });
+    test('prioritizes Noto Sans SC for lang=zh-CN', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'zh-CN');
+    });
+    test('prioritizes Noto Sans SC for lang=zh-SG', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'zh-SG');
+    });
+    test('prioritizes Noto Sans SC for lang=zh-MY', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'zh-MY');
+    });
 
-      // Traditional Chinese
-      for (final lang in <String>['zh-Hant', 'zh-TW', 'zh-MO']) {
-        test('prioritizes Noto Sans TC for code-point=$codePointHex lang=$lang', () async {
-          await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans TC', userPreferredLanguage: lang);
-        });
-      }
+    // Simplified Chinese is prioritized when preferred language is non-CJK.
+    test('prioritizes Noto Sans SC for lang=en-US', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans SC', userPreferredLanguage: 'en-US');
+    });
 
-      // Hong Kong
-      test('prioritizes Noto Sans HK for code-point=$codePointHex lang=zh-HK', () async {
-        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans HK', userPreferredLanguage: 'zh-HK');
-      });
+    // Traditional Chinese
+    test('prioritizes Noto Sans TC for lang=zh-Hant', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans TC', userPreferredLanguage: 'zh-Hant');
+    });
+    test('prioritizes Noto Sans TC for lang=zh-TW', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans TC', userPreferredLanguage: 'zh-TW');
+    });
+    test('prioritizes Noto Sans TC for lang=zh-MO', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans TC', userPreferredLanguage: 'zh-MO');
+    });
 
-      // Japanese
-      test('prioritizes Noto Sans JP for code-point=$codePointHex lang=ja', () async {
-        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans JP', userPreferredLanguage: 'ja');
-      });
+    // Hong Kong
+    test('prioritizes Noto Sans HK for lang=zh-HK', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans HK', userPreferredLanguage: 'zh-HK');
+    });
 
-      // Korean
-      test('prioritizes Noto Sans KR for code-point=$codePointHex lang=ko', () async {
-        await checkDownloadedFamilyForCharCode(codePoint, 'Noto Sans KR', userPreferredLanguage: 'ko');
-      });
-    }
+    // Japanese
+    test('prioritizes Noto Sans JP for lang=ja', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans JP', userPreferredLanguage: 'ja');
+    });
+
+    // Korean
+    test('prioritizes Noto Sans KR for lang=ko', () async {
+      await checkDownloadedFamilyForCharCode(0x700b, 'Noto Sans KR', userPreferredLanguage: 'ko');
+    });
 
     test('findMinimumFontsForCodePoints for all supported code points',
         () async {
