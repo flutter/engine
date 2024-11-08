@@ -35,6 +35,9 @@ class MachThreads {
 
 }  // namespace
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
+    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
+
 namespace fml {
 
 /// fml::CFRef retain and release implementations for io_object_t and related types.
@@ -46,6 +49,8 @@ struct CFRefTraits<io_object_t> {
 };
 
 }  // namespace fml
+
+#endif
 
 namespace flutter {
 namespace {
