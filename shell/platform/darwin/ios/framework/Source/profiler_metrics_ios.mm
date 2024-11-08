@@ -54,17 +54,17 @@ namespace {
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
 
 std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
-  for (fml::CFRef<io_registry_entry_t> regEntry(IOIteratorNext(iterator)); regEntry.Get();
-       regEntry.Reset(IOIteratorNext(iterator))) {
-    CFMutableDictionaryRef cfServiceDictionary;
-    if (IORegistryEntryCreateCFProperties(regEntry.Get(), &cfServiceDictionary, kCFAllocatorDefault,
-                                          kNilOptions) != kIOReturnSuccess) {
+  for (fml::CFRef<io_registry_entry_t> reg_entry(IOIteratorNext(iterator)); reg_entry.Get();
+       reg_entry.Reset(IOIteratorNext(iterator))) {
+    CFMutableDictionaryRef cf_service_dictionary;
+    if (IORegistryEntryCreateCFProperties(reg_entry.Get(), &cf_service_dictionary,
+                                          kCFAllocatorDefault, kNilOptions) != kIOReturnSuccess) {
       continue;
     }
     // Transfer ownership to ARC-managed pointer.
-    NSDictionary* serviceDictionary = (__bridge_transfer NSDictionary*)cfServiceDictionary;
-    cfServiceDictionary = nullptr;
-    NSDictionary* performanceStatistics = serviceDictionary[@"PerformanceStatistics"];
+    NSDictionary* service_dictionary = (__bridge_transfer NSDictionary*)cf_service_dictionary;
+    cf_service_dictionary = nullptr;
+    NSDictionary* performanceStatistics = service_dictionary[@"PerformanceStatistics"];
     NSNumber* utilization = performanceStatistics[@"Device Utilization %"];
     if (utilization) {
       return (GpuUsageInfo){.percent_usage = [utilization doubleValue]};
@@ -88,10 +88,10 @@ std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
   if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceNameMatching("sgx"),
                                    &io_iterator) == kIOReturnSuccess) {
     fml::CFRef<io_iterator_t> iterator(io_iterator);
-    for (fml::CFRef<io_registry_entry_t> regEntry(IOIteratorNext(iterator.Get())); regEntry.Get();
-         regEntry.Reset(IOIteratorNext(iterator.Get()))) {
+    for (fml::CFRef<io_registry_entry_t> reg_entry(IOIteratorNext(iterator.Get())); reg_entry.Get();
+         reg_entry.Reset(IOIteratorNext(iterator.Get()))) {
       io_iterator_t io_inner_iterator;
-      if (IORegistryEntryGetChildIterator(regEntry.Get(), kIOServicePlane, &io_inner_iterator) ==
+      if (IORegistryEntryGetChildIterator(reg_entry.Get(), kIOServicePlane, &io_inner_iterator) ==
           kIOReturnSuccess) {
         fml::CFRef<io_iterator_t> inner_iterator(io_inner_iterator);
         std::optional<GpuUsageInfo> result = FindGpuUsageInfo(inner_iterator.Get());
