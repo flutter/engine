@@ -74,8 +74,8 @@ ContextGLES::ContextGLES(
 #else
   if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
-    HandleGLES blit_program = reactor_->CreateHandle(HandleType::kProgram);
-    bool created = reactor_->AddOperation([&, blit_program](
+    blit_program_ = reactor_->CreateHandle(HandleType::kProgram);
+    bool created = reactor_->AddOperation([&, blit_program = blit_program_](
                                               const ReactorGLES& reactor) {
       std::optional<GLint> handle = reactor.GetGLHandle(blit_program);
       if (!handle.has_value()) {
