@@ -68,6 +68,8 @@ struct BlitResizeTextureCommandGLES : public BlitEncodeGLES,
 
   std::string GetLabel() const override;
 
+  std::optional<HandleGLES> blit_program;
+
   [[nodiscard]] bool Encode(const ReactorGLES& reactor) const override;
 };
 

@@ -16,6 +16,10 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
+static bool forceEmulatedBlitFramebufferForTesting = true;
+#endif  // IMPELLER_DEBUG
+
 const char* GLErrorToString(GLenum value);
 bool GLErrorIsFatal(GLenum value);
 

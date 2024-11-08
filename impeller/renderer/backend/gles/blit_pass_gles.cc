@@ -169,6 +169,7 @@ bool BlitPassGLES::ResizeTexture(const std::shared_ptr<Texture>& source,
   auto command = std::make_unique<BlitResizeTextureCommandGLES>();
   command->source = source;
   command->destination = destination;
+  command->blit_program = blit_program_;
 
   commands_.push_back(std::move(command));
   return true;
