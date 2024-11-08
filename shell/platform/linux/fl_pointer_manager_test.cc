@@ -9,9 +9,10 @@
 
 #include "gtest/gtest.h"
 
-static std::vector<FlutterPointerEvent> log_pointer_events(FlEngine* engine) {
+static void log_pointer_events(
+    FlEngine* engine,
+    std::vector<FlutterPointerEvent>& pointer_events) {
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
-  std::vector<FlutterPointerEvent> pointer_events;
   embedder_api->SendPointerEvent = MOCK_ENGINE_PROC(
       SendPointerEvent,
       ([&pointer_events](auto engine, const FlutterPointerEvent* events,
@@ -22,13 +23,12 @@ static std::vector<FlutterPointerEvent> log_pointer_events(FlEngine* engine) {
 
         return kSuccess;
       }));
-
-  return pointer_events;
 }
 
 TEST(FlPointerManagerTest, EnterLeave) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_enter(manager, 1234, kFlutterPointerDeviceKindMouse,
@@ -55,7 +55,8 @@ TEST(FlPointerManagerTest, EnterLeave) {
 
 TEST(FlPointerManagerTest, EnterEnter) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_enter(manager, 1234, kFlutterPointerDeviceKindMouse,
@@ -76,7 +77,8 @@ TEST(FlPointerManagerTest, EnterEnter) {
 
 TEST(FlPointerManagerTest, EnterLeaveLeave) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_enter(manager, 1234, kFlutterPointerDeviceKindMouse,
@@ -106,7 +108,8 @@ TEST(FlPointerManagerTest, EnterLeaveLeave) {
 
 TEST(FlPointerManagerTest, EnterButtonPress) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_enter(manager, 1234, kFlutterPointerDeviceKindMouse,
@@ -134,7 +137,8 @@ TEST(FlPointerManagerTest, EnterButtonPress) {
 
 TEST(FlPointerManagerTest, NoEnterButtonPress) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_button_press(
@@ -161,7 +165,8 @@ TEST(FlPointerManagerTest, NoEnterButtonPress) {
 
 TEST(FlPointerManagerTest, ButtonPressButtonRelease) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_button_press(
@@ -190,7 +195,8 @@ TEST(FlPointerManagerTest, ButtonPressButtonRelease) {
 
 TEST(FlPointerManagerTest, ButtonPressButtonReleaseThreeButtons) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   // Press buttons 1-2-3, release 3-2-1
@@ -248,7 +254,8 @@ TEST(FlPointerManagerTest, ButtonPressButtonReleaseThreeButtons) {
 
 TEST(FlPointerManagerTest, ButtonPressButtonPressButtonRelease) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_button_press(
@@ -281,7 +288,8 @@ TEST(FlPointerManagerTest, ButtonPressButtonPressButtonRelease) {
 
 TEST(FlPointerManagerTest, ButtonPressButtonReleaseButtonRelease) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_button_press(
@@ -314,7 +322,8 @@ TEST(FlPointerManagerTest, ButtonPressButtonReleaseButtonRelease) {
 
 TEST(FlPointerManagerTest, NoButtonPressButtonRelease) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   // Release without associated press, will be ignored
@@ -327,7 +336,8 @@ TEST(FlPointerManagerTest, NoButtonPressButtonRelease) {
 
 TEST(FlPointerManagerTest, Motion) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_motion(manager, 1234,
@@ -362,7 +372,8 @@ TEST(FlPointerManagerTest, Motion) {
 
 TEST(FlPointerManagerTest, Drag) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_motion(manager, 1234,
@@ -410,7 +421,8 @@ TEST(FlPointerManagerTest, Drag) {
 
 TEST(FlPointerManagerTest, DeviceKind) {
   g_autoptr(FlEngine) engine = make_mock_engine();
-  std::vector<FlutterPointerEvent> pointer_events = log_pointer_events(engine);
+  std::vector<FlutterPointerEvent> pointer_events;
+  log_pointer_events(engine, pointer_events);
 
   g_autoptr(FlPointerManager) manager = fl_pointer_manager_new(42, engine);
   fl_pointer_manager_handle_enter(manager, 1234,
