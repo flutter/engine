@@ -6,6 +6,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/IOKit.h"
 
@@ -34,75 +35,37 @@ class MachThreads {
 
 }  // namespace
 
+namespace fml {
+
+/// fml::CFRef retain and release implementations for io_object_t and related types.
+template <>
+struct CFRefTraits<io_object_t> {
+  static constexpr io_object_t kNullValue = 0;
+  static void Retain(io_object_t instance) { IOObjectRetain(instance); }
+  static void Release(io_object_t instance) { IOObjectRelease(instance); }
+};
+
+}  // namespace fml
+
 namespace flutter {
 namespace {
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
 
-template <typename T>
-T ClearValue() {
-  return nullptr;
-}
-
-template <>
-io_object_t ClearValue<io_object_t>() {
-  return 0;
-}
-
-template <typename T>
-/// Generic RAII wrapper like unique_ptr but gives access to its handle.
-class Scoped {
- public:
-  typedef void (*Deleter)(T);
-  explicit Scoped(Deleter deleter) : object_(ClearValue<T>()), deleter_(deleter) {}
-  Scoped(T object, Deleter deleter) : object_(object), deleter_(deleter) {}
-  ~Scoped() {
-    if (object_) {
-      deleter_(object_);
-    }
-  }
-  T* handle() {
-    if (object_) {
-      deleter_(object_);
-      object_ = ClearValue<T>();
-    }
-    return &object_;
-  }
-  T get() { return object_; }
-  void reset(T new_value) {
-    if (object_) {
-      deleter_(object_);
-    }
-    object_ = new_value;
-  }
-
- private:
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Scoped);
-  T object_;
-  Deleter deleter_;
-};
-
-void DeleteCF(CFMutableDictionaryRef value) {
-  CFRelease(value);
-}
-
-void DeleteIO(io_object_t value) {
-  IOObjectRelease(value);
-}
-
 std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
-  for (Scoped<io_registry_entry_t> regEntry(IOIteratorNext(iterator), DeleteIO); regEntry.get();
-       regEntry.reset(IOIteratorNext(iterator))) {
-    Scoped<CFMutableDictionaryRef> serviceDictionary(DeleteCF);
-    if (IORegistryEntryCreateCFProperties(regEntry.get(), serviceDictionary.handle(),
-                                          kCFAllocatorDefault, kNilOptions) != kIOReturnSuccess) {
+  for (fml::CFRef<io_registry_entry_t> regEntry(IOIteratorNext(iterator)); regEntry.Get();
+       regEntry.Reset(IOIteratorNext(iterator))) {
+    CFMutableDictionaryRef cfServiceDictionary;
+    if (IORegistryEntryCreateCFProperties(regEntry.Get(), &cfServiceDictionary, kCFAllocatorDefault,
+                                          kNilOptions) != kIOReturnSuccess) {
       continue;
     }
-
-    NSDictionary* dictionary =
-        ((__bridge NSDictionary*)serviceDictionary.get())[@"PerformanceStatistics"];
-    NSNumber* utilization = dictionary[@"Device Utilization %"];
+    // Transfer ownership to ARC-managed pointer.
+    NSDictionary* serviceDictionary = (__bridge_transfer NSDictionary*)cfServiceDictionary;
+    cfServiceDictionary = nullptr;
+    NSDictionary* performanceStatistics = serviceDictionary[@"PerformanceStatistics"];
+    NSNumber* utilization = performanceStatistics[@"Device Utilization %"];
     if (utilization) {
       return (GpuUsageInfo){.percent_usage = [utilization doubleValue]};
     }
@@ -111,24 +74,27 @@ std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
 }
 
 [[maybe_unused]] std::optional<GpuUsageInfo> FindSimulatorGpuUsageInfo() {
-  Scoped<io_iterator_t> iterator(DeleteIO);
+  io_iterator_t io_iterator;
   if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceNameMatching("IntelAccelerator"),
-                                   iterator.handle()) == kIOReturnSuccess) {
-    return FindGpuUsageInfo(iterator.get());
+                                   &io_iterator) == kIOReturnSuccess) {
+    fml::CFRef<io_iterator_t> iterator(io_iterator);
+    return FindGpuUsageInfo(iterator.Get());
   }
   return std::nullopt;
 }
 
 [[maybe_unused]] std::optional<GpuUsageInfo> FindDeviceGpuUsageInfo() {
-  Scoped<io_iterator_t> iterator(DeleteIO);
+  io_iterator_t io_iterator;
   if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceNameMatching("sgx"),
-                                   iterator.handle()) == kIOReturnSuccess) {
-    for (Scoped<io_registry_entry_t> regEntry(IOIteratorNext(iterator.get()), DeleteIO);
-         regEntry.get(); regEntry.reset(IOIteratorNext(iterator.get()))) {
-      Scoped<io_iterator_t> innerIterator(DeleteIO);
-      if (IORegistryEntryGetChildIterator(regEntry.get(), kIOServicePlane,
-                                          innerIterator.handle()) == kIOReturnSuccess) {
-        std::optional<GpuUsageInfo> result = FindGpuUsageInfo(innerIterator.get());
+                                   &io_iterator) == kIOReturnSuccess) {
+    fml::CFRef<io_iterator_t> iterator(io_iterator);
+    for (fml::CFRef<io_registry_entry_t> regEntry(IOIteratorNext(iterator.Get())); regEntry.Get();
+         regEntry.Reset(IOIteratorNext(iterator.Get()))) {
+      io_iterator_t io_inner_iterator;
+      if (IORegistryEntryGetChildIterator(regEntry.Get(), kIOServicePlane, &io_inner_iterator) ==
+          kIOReturnSuccess) {
+        fml::CFRef<io_iterator_t> inner_iterator(io_inner_iterator);
+        std::optional<GpuUsageInfo> result = FindGpuUsageInfo(inner_iterator.Get());
         if (result.has_value()) {
           return result;
         }

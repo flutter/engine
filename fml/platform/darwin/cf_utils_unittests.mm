@@ -7,6 +7,21 @@
 #include "flutter/testing/testing.h"
 
 namespace fml {
+
+// Support variables for CFTest.SupportsCustomRetainRelease.
+namespace {
+static bool retain_called = false;
+static bool release_called = false;
+}  // namespace
+
+// Template specialization for CFTest.SupportsCustomRetainRelease.
+template <>
+struct CFRefTraits<int64_t> {
+  static constexpr int64_t kNullValue = 0;
+  static void Retain(int64_t instance) { retain_called = true; }
+  static void Release(int64_t instance) { release_called = true; }
+};
+
 namespace testing {
 
 TEST(CFTest, CanCreateRefs) {
@@ -81,6 +96,21 @@ TEST(CFTest, RetainSharesOwnership) {
 
   EXPECT_EQ(cf_string, string_ref);
   EXPECT_EQ(ref_count_before + 1u, ref_count_after);
+}
+
+TEST(CFTest, SupportsCustomRetainRelease) {
+  CFRef<int64_t> ref(1);
+  ASSERT_EQ(ref.Get(), 1);
+  ASSERT_FALSE(retain_called);
+  ASSERT_FALSE(release_called);
+  ref.Reset();
+  ASSERT_EQ(ref.Get(), 0);
+  ASSERT_TRUE(release_called);
+  ref.Retain(2);
+  ASSERT_EQ(ref.Get(), 2);
+  ASSERT_TRUE(retain_called);
+  retain_called = false;
+  release_called = false;
 }
 
 }  // namespace testing
