@@ -8,19 +8,18 @@
 
 namespace fml {
 
-// Support variables for CFTest.SupportsCustomRetainRelease.
-namespace {
-static bool retain_called = false;
-static bool release_called = false;
-}  // namespace
-
-// Template specialization for CFTest.SupportsCustomRetainRelease.
+// Template specialization used in CFTest.SupportsCustomRetainRelease.
 template <>
 struct CFRefTraits<int64_t> {
+  static bool retain_called;
+  static bool release_called;
+
   static constexpr int64_t kNullValue = 0;
   static void Retain(int64_t instance) { retain_called = true; }
   static void Release(int64_t instance) { release_called = true; }
 };
+bool CFRefTraits<int64_t>::retain_called = false;
+bool CFRefTraits<int64_t>::release_called = false;
 
 namespace testing {
 
@@ -101,16 +100,16 @@ TEST(CFTest, RetainSharesOwnership) {
 TEST(CFTest, SupportsCustomRetainRelease) {
   CFRef<int64_t> ref(1);
   ASSERT_EQ(ref.Get(), 1);
-  ASSERT_FALSE(retain_called);
-  ASSERT_FALSE(release_called);
+  ASSERT_FALSE(CFRefTraits<int64_t>::retain_called);
+  ASSERT_FALSE(CFRefTraits<int64_t>::release_called);
   ref.Reset();
   ASSERT_EQ(ref.Get(), 0);
-  ASSERT_TRUE(release_called);
+  ASSERT_TRUE(CFRefTraits<int64_t>::release_called);
   ref.Retain(2);
   ASSERT_EQ(ref.Get(), 2);
-  ASSERT_TRUE(retain_called);
-  retain_called = false;
-  release_called = false;
+  ASSERT_TRUE(CFRefTraits<int64_t>::retain_called);
+  CFRefTraits<int64_t>::retain_called = false;
+  CFRefTraits<int64_t>::release_called = false;
 }
 
 }  // namespace testing
