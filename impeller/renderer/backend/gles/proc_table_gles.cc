@@ -435,7 +435,9 @@ static const std::string_view kVertexShaderSource =
 
 static const std::string_view kFragmentShaderSource =
     "#version 100\n"
+    "#ifdef GL_ES\n"
     "precision mediump float;\n"
+    "#endif\n"
     "\n"
     "uniform sampler2D texture;\n"
     "varying vec2 texcoord;\n"
@@ -445,7 +447,7 @@ static const std::string_view kFragmentShaderSource =
     "}\n";
 }  // namespace
 
-bool ProcTableGLES::CreateEmulatedBlitProgram(HandleGLES program_handle) const {
+bool ProcTableGLES::CreateEmulatedBlitProgram(GLint program) const {
   const auto& gl = *this;
   auto vert_shader = gl.CreateShader(GL_VERTEX_SHADER);
   auto frag_shader = gl.CreateShader(GL_FRAGMENT_SHADER);
@@ -496,11 +498,6 @@ bool ProcTableGLES::CreateEmulatedBlitProgram(HandleGLES program_handle) const {
     VALIDATION_LOG << "Failed to compile blit framebuffer emulation shader.";
     return false;
   }
-
-  if (program_handle.IsDead() || !program_handle.name.has_value()) {
-    return false;
-  }
-  GLint program = program_handle.name->id;
 
   gl.AttachShader(program, vert_shader);
   gl.AttachShader(program, frag_shader);

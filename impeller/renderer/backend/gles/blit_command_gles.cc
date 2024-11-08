@@ -5,7 +5,6 @@
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
 
 #include "flutter/fml/closure.h"
-#include "impeller/base/comparable.h"
 #include "impeller/base/validation.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
@@ -69,7 +68,7 @@ static std::optional<GLuint> ConfigureFBO(
 };
 
 static bool EmulatedBlit(const ProcTableGLES& gl,
-                         std::optional<HandleGLES> blit_program,
+                         std::optional<GLint> blit_program,
                          const std::shared_ptr<Texture>& source,
                          const std::shared_ptr<Texture>& destination,
                          IRect source_region,
@@ -78,11 +77,7 @@ static bool EmulatedBlit(const ProcTableGLES& gl,
   if (!blit_program.has_value()) {
     return false;
   }
-  std::optional<UniqueID> maybe_program = blit_program.value().name;
-  if (!maybe_program.has_value()) {
-    return false;
-  }
-  GLint program = maybe_program.value().id;
+  GLint program = blit_program.value();
 
   GLuint draw_fbo = GL_NONE;
   fml::ScopedCleanupClosure delete_fbos(
@@ -183,8 +178,15 @@ bool BlitCopyTextureToTextureCommandGLES::Encode(
 #else
   if (!gl.BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
+    if (!blit_program.has_value()) {
+      return false;
+    }
+    std::optional<GLint> handle = reactor.GetGLHandle(blit_program.value());
+    if (!handle.has_value()) {
+      return false;
+    }
     return EmulatedBlit(
-        gl, blit_program, source, destination, source_region,
+        gl, handle.value(), source, destination, source_region,
         IRect::MakeOriginSize(destination_origin, source_region.GetSize()));
   }
 
@@ -484,7 +486,14 @@ bool BlitResizeTextureCommandGLES::Encode(const ReactorGLES& reactor) const {
 #else
   if (!gl.BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
-    return EmulatedBlit(gl, blit_program, source, destination, source_region,
+    if (!blit_program.has_value()) {
+      return false;
+    }
+    std::optional<GLint> handle = reactor.GetGLHandle(blit_program.value());
+    if (!handle.has_value()) {
+      return false;
+    }
+    return EmulatedBlit(gl, handle.value(), source, destination, source_region,
                         destination_region, /*linear=*/true);
   }
 

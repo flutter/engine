@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include <memory>
 
+#include "GLES3/gl3.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
@@ -74,10 +75,14 @@ ContextGLES::ContextGLES(
   if (!reactor_->GetProcTable().BlitFramebuffer.IsAvailable()) {
 #endif  // IMPELLER_DEBUG
     HandleGLES blit_program = reactor_->CreateHandle(HandleType::kProgram);
-    bool created =
-        reactor_->AddOperation([&, blit_program](const ReactorGLES& reactor) {
-          return reactor.GetProcTable().CreateEmulatedBlitProgram(blit_program);
-        });
+    bool created = reactor_->AddOperation([&, blit_program](
+                                              const ReactorGLES& reactor) {
+      std::optional<GLint> handle = reactor.GetGLHandle(blit_program);
+      if (!handle.has_value()) {
+        return false;
+      }
+      return reactor.GetProcTable().CreateEmulatedBlitProgram(handle.value());
+    });
     if (!created) {
       VALIDATION_LOG << "Failed to set up proc table emulated blit.";
     }

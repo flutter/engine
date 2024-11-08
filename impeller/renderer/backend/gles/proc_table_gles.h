@@ -285,7 +285,7 @@ class ProcTableGLES {
       const fml::Mapping& mapping,
       const std::vector<Scalar>& defines) const;
 
-  bool CreateEmulatedBlitProgram(HandleGLES program_handle) const;
+  bool CreateEmulatedBlitProgram(GLint program) const;
 
  private:
   bool is_valid_ = false;
