@@ -13,6 +13,17 @@
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
 
+namespace fml {
+
+/// Default retain and release implementations for CGImageRef.
+template <>
+struct CFRefTraits<CGImageRef> {
+  static void Retain(CGImageRef instance) { CGImageRetain(instance); }
+  static void Release(CGImageRef instance) { CGImageRelease(instance); }
+};
+
+}  // namespace fml
+
 namespace impeller {
 namespace testing {
 

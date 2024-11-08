@@ -11,11 +11,17 @@
 
 namespace fml {
 
+/// Default retain and release implementations for CFRef.
+template <typename T>
+struct CFRefTraits {
+  static void Retain(T instance) { CFRetain(instance); }
+  static void Release(T instance) { CFRelease(instance); }
+};
+
 /// RAII-based smart pointer wrapper for CoreFoundation objects.
 ///
-/// CFRef takes over ownership of the object it wraps and ensures that CFRetain
-/// and CFRelease are called as appropriate on creation, assignment, and
-/// disposal.
+/// CFRef takes over ownership of the object it wraps and ensures that retain
+/// and release are called as appropriate on creation, assignment, and disposal.
 template <class T>
 class CFRef {
  public:
@@ -30,7 +36,7 @@ class CFRef {
   /// `other`.
   CFRef(const CFRef& other) : instance_(other.instance_) {
     if (instance_) {
-      CFRetain(instance_);
+      CFRefTraits<T>::Retain(instance_);
     }
   }
 
@@ -49,7 +55,7 @@ class CFRef {
   /// Releases the underlying CoreFoundation object, if non-null.
   ~CFRef() {
     if (instance_) {
-      CFRelease(instance_);
+      CFRefTraits<T>::Release(instance_);
     }
     instance_ = nullptr;
   }
@@ -60,7 +66,7 @@ class CFRef {
   /// Releases the previous object, if non-null.
   void Reset(T instance = nullptr) {
     if (instance_) {
-      CFRelease(instance_);
+      CFRefTraits<T>::Release(instance_);
     }
     instance_ = instance;
   }
@@ -72,7 +78,7 @@ class CFRef {
       return;
     }
     if (instance) {
-      CFRetain(instance);
+      CFRefTraits<T>::Retain(instance);
     }
     Reset(instance);
   }
@@ -98,6 +104,7 @@ class CFRef {
   ///
   /// See:
   /// https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-SW1
+  // NOLINTNEXTLINE(google-explicit-constructor)
   operator T() const { return instance_; }
 
   /// Returns true if the underlying CoreFoundation object is non-null.
