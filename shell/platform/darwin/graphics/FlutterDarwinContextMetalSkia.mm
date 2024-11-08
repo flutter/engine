@@ -116,10 +116,6 @@ FLUTTER_ASSERT_ARC
   return _textureCache;
 }
 
-- (void)setTextureCache:(CVMetalTextureCacheRef)cache {
-  _textureCache.Reset(cache);
-}
-
 @end
 
 #endif  //  !SLIMPELLER
