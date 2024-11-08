@@ -645,7 +645,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
       .struct_size = sizeof(FlutterTaskRunnerDescription),
-      .user_data = (void*)CFBridgingRetain(self),  // Keeps engine alive for post_task_callback.
+      // Retain for use in post_task_callback. Released in destruction_callback.
+      .user_data = (__bridge_retained void*)self,
       .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
         return [[NSThread currentThread] isMainThread];
       },
@@ -657,9 +658,9 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
       .identifier = ++sTaskRunnerIdentifiers,
       .destruction_callback =
           [](void* user_data) {
-            // Balancing release for the CFRetain(self) when setting user_data above.
-            CFTypeRef engine = user_data;
-            CFRelease(engine);
+            // Balancing release for the retain when setting user_data above.
+            FlutterEngine* engine = (__bridge_transfer FlutterEngine*)user_data;
+            engine = nil;
           },
   };
   const FlutterCustomTaskRunners custom_task_runners = {
