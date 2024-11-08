@@ -692,6 +692,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return NO;
   }
   if (!self.node.HasAction(flutter::SemanticsAction::kTap)) {
+    // Prevent Slider to receive a regular tap which will change the value.
+    // This is needed because Slider does not have a semantics tap.
     if (self.node.HasFlag(flutter::SemanticsFlags::kIsSlider)) {
       return YES;
     }
