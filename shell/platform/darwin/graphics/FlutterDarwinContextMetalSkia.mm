@@ -54,11 +54,11 @@ FLUTTER_ASSERT_ARC
                                                     nil,      // texture attributes (nil default)
                                                     &cache    // [out] cache
       );
+      _textureCache.Reset(cache);
       if (cvReturn != kCVReturnSuccess) {
         FML_DLOG(ERROR) << "Could not create Metal texture cache.";
         return nil;
       }
-      _textureCache.Reset(cache);
     }
 
     // The devices are in the same "sharegroup" because they share the same device and command
