@@ -137,7 +137,7 @@ class FlatlandConnection final {
     fml::TimePoint last_presentation_time_;
     FireCallbackCallback pending_fire_callback_;
     uint32_t present_credits_ = 1;
-    bool maybe_run_initial_vsync_callback_sent_ = false;
+    bool initial_vsync_callback_ran_ = false;
   } threadsafe_state_;
 
   // Acquire fences sent to Flatland.

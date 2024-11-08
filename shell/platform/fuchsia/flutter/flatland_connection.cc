@@ -319,13 +319,13 @@ bool FlatlandConnection::MaybeRunInitialVsyncCallback(
     const fml::TimePoint& now,
     FireCallbackCallback& callback) {
   // Only sent maybe_run_initial_vsync once.
-  if (threadsafe_state_.maybe_run_initial_vsync_callback_sent_) {
+  if (threadsafe_state_.initial_vsync_callback_ran_) {
     return false;
   }
   TRACE_DURATION("flutter", "FlatlandConnection::MaybeRunInitialVsyncCallback");
   const auto frame_end = now + kInitialFlatlandVsyncOffset;
   threadsafe_state_.last_presentation_time_ = frame_end;
-  threadsafe_state_.maybe_run_initial_vsync_callback_sent_ = true;
+  threadsafe_state_.initial_vsync_callback_ran_ = true;
   callback(now, frame_end);
   return true;
 }
