@@ -103,10 +103,15 @@ static bool EmulatedBlit(const ProcTableGLES& gl,
   gl.UseProgram(program);
   gl.BindTexture(GL_TEXTURE_2D, src_handle.value());
   if (linear) {
-    gl.TexParameteri(src_handle.value(), GL_TEXTURE_MIN_FILTER,
-                     GL_LINEAR_MIPMAP_LINEAR);
-    gl.TexParameteri(src_handle.value(), GL_TEXTURE_MAG_FILTER,
-                     GL_LINEAR_MIPMAP_LINEAR);
+    if (source->GetMipCount() > 1 && !source->NeedsMipmapGeneration()) {
+      gl.TexParameteri(src_handle.value(), GL_TEXTURE_MIN_FILTER,
+                       GL_LINEAR_MIPMAP_LINEAR);
+      gl.TexParameteri(src_handle.value(), GL_TEXTURE_MAG_FILTER,
+                       GL_LINEAR_MIPMAP_LINEAR);
+    } else {
+      gl.TexParameteri(src_handle.value(), GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      gl.TexParameteri(src_handle.value(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
   }
 
   // Translate into OpenGL coordinates
