@@ -870,15 +870,18 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)handleSearchWebAction {
-  NSLog(@"put search web logic here");
+  [self.textInputDelegate flutterTextInputView:self
+                     searchWebWithSelectedText:[self textInRange:_selectedTextRange]];
 }
 
 - (void)handleLookUpAction {
-  NSLog(@"put look up logic here");
+  [self.textInputDelegate flutterTextInputView:self
+                            lookUpSelectedText:[self textInRange:_selectedTextRange]];
 }
 
 - (void)handleShareAction {
-  NSLog(@"put share logic here");
+  [self.textInputDelegate flutterTextInputView:self
+                             shareSelectedText:[self textInRange:_selectedTextRange]];
 }
 
 // DFS algorithm to search a UICommand from the menu tree.
