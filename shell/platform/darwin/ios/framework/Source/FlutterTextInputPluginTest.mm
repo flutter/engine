@@ -30,6 +30,9 @@ FLUTTER_ASSERT_ARC
 - (BOOL)isVisibleToAutofill;
 - (id<FlutterTextInputDelegate>)textInputDelegate;
 - (void)configureWithDictionary:(NSDictionary*)configuration;
+- (void)handleSearchWebAction;
+- (void)handleLookUpAction;
+- (void)handleShareAction;
 @end
 
 @interface FlutterTextInputViewSpy : FlutterTextInputView
@@ -2968,6 +2971,113 @@ FLUTTER_ASSERT_ARC
     // the encoded target rect is in global coordinate space.
     XCTAssert(CGRectEqualToRect(targetRect, CGRectMake(90, 180, 300, 400)),
               @"targetRectForConfiguration must return the correct target rect.");
+  }
+}
+
+- (void)testEditMenu_shouldPresentEditMenuWithCorectItemsForBasicEditingActions {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* myInputPlugin =
+        [[FlutterTextInputPlugin alloc] initWithDelegate:OCMClassMock([FlutterEngine class])];
+    FlutterViewController* myViewController = [[FlutterViewController alloc] init];
+    myInputPlugin.viewController = myViewController;
+    [myViewController loadView];
+
+    FlutterMethodCall* setClientCall =
+        [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                          arguments:@[ @(123), self.mutableTemplateCopy ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+
+    FlutterTextInputView* myInputView = myInputPlugin.activeView;
+
+    FlutterTextInputView* mockInputView = OCMPartialMock(myInputView);
+    OCMStub([mockInputView isFirstResponder]).andReturn(YES);
+
+    XCTestExpectation* expectation = [[XCTestExpectation alloc]
+        initWithDescription:@"presentEditMenuWithConfiguration must be called."];
+
+    id mockInteraction = OCMClassMock([UIEditMenuInteraction class]);
+    OCMStub([mockInputView editMenuInteraction]).andReturn(mockInteraction);
+    OCMStub([mockInteraction presentEditMenuWithConfiguration:[OCMArg any]])
+        .andDo(^(NSInvocation* invocation) {
+          [expectation fulfill];
+        });
+
+    myInputView.frame = CGRectMake(10, 20, 30, 40);
+    NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
+        @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
+
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[@{@"type": @"default", @"action": @"paste"}, @{@"type": @"default", @"action": @"copy"}];
+
+    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items": encodedItems}];
+    XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
+    [self waitForExpectations:@[ expectation ] timeout:1.0];
+
+    UICommand* copyItem = [UICommand commandWithTitle:@"Copy" image: nil action: @selector(copy:) propertyList:nil];
+    UICommand* pasteItem = [UICommand commandWithTitle:@"Paste" image: nil action: @selector(paste:) propertyList:nil];
+    NSArray<UICommand*>* suggestedActions = @[
+      copyItem,
+      pasteItem
+    ];
+
+    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction menuForConfiguration: OCMClassMock([UIEditMenuConfiguration class]) suggestedActions:suggestedActions];
+    XCTAssert(menu.children.count == 2, @"There must be 2 menu items");
+    XCTAssertEqual(menu.children[0], pasteItem, @"Must be able to find paste item in the tree.");
+    XCTAssertEqual(menu.children[1], copyItem, @"Must be able to find copy item in the tree.");
+  }
+}
+
+- (void)testEditMenu_shouldPresentEditMenuWithCorectItemsForMoreAdditionalItems {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* myInputPlugin =
+        [[FlutterTextInputPlugin alloc] initWithDelegate:OCMClassMock([FlutterEngine class])];
+    FlutterViewController* myViewController = [[FlutterViewController alloc] init];
+    myInputPlugin.viewController = myViewController;
+    [myViewController loadView];
+
+    FlutterMethodCall* setClientCall =
+        [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                          arguments:@[ @(123), self.mutableTemplateCopy ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+
+    FlutterTextInputView* myInputView = myInputPlugin.activeView;
+
+    FlutterTextInputView* mockInputView = OCMPartialMock(myInputView);
+    OCMStub([mockInputView isFirstResponder]).andReturn(YES);
+
+    XCTestExpectation* expectation = [[XCTestExpectation alloc]
+        initWithDescription:@"presentEditMenuWithConfiguration must be called."];
+
+    id mockInteraction = OCMClassMock([UIEditMenuInteraction class]);
+    OCMStub([mockInputView editMenuInteraction]).andReturn(mockInteraction);
+    OCMStub([mockInteraction presentEditMenuWithConfiguration:[OCMArg any]])
+        .andDo(^(NSInvocation* invocation) {
+          [expectation fulfill];
+        });
+
+    myInputView.frame = CGRectMake(10, 20, 30, 40);
+    NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
+        @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
+
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[@{@"type": @"default", @"action": @"searchWeb", @"title": @"Search Web"}, @{@"type": @"default", @"action": @"lookUp", @"title": @"Look Up"}, @{@"type": @"default", @"action": @"share", @"title": @"Share"}];
+
+    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items": encodedItems}];
+    XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
+    [self waitForExpectations:@[ expectation ] timeout:1.0];
+
+    NSArray<UICommand*>* suggestedActions = @[
+      [UICommand commandWithTitle:@"copy" image: nil action: @selector(copy:) propertyList:nil],
+    ];
+
+    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction menuForConfiguration: OCMClassMock([UIEditMenuConfiguration class]) suggestedActions:suggestedActions];
+    XCTAssert(menu.children.count == 3, @"There must be 3 menu items");
+
+    XCTAssert(((UICommand*) menu.children[0]).action == @selector(handleSearchWebAction), @"Must create search web item in the tree.");
+    XCTAssert(((UICommand*) menu.children[1]).action == @selector(handleLookUpAction), @"Must create look up item in the tree.");
+    XCTAssert(((UICommand*) menu.children[2]).action == @selector(handleShareAction), @"Must create share item in the tree.");
   }
 }
 
