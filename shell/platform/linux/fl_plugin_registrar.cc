@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registrar.h"
-#include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 
 #include <gmodule.h>
 
@@ -81,7 +80,7 @@ static void fl_plugin_registrar_impl_iface_init(
 
 static void fl_plugin_registrar_impl_init(FlPluginRegistrarImpl* self) {}
 
-FlPluginRegistrar* fl_plugin_registrar_new(
+G_MODULE_EXPORT FlPluginRegistrar* fl_plugin_registrar_new(
     FlView* view,
     FlBinaryMessenger* messenger,
     FlTextureRegistrar* texture_registrar) {
