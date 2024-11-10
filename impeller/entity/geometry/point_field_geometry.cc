@@ -136,17 +136,16 @@ std::optional<Rect> PointFieldGeometry::GetCoverage(
   if (point_count_ > 0) {
     // Doesn't use MakePointBounds as this isn't resilient to points that
     // all lie along the same axis.
-    const Point* first = points_;
-    const Point* last = points_ + point_count_;
-    auto left = first->x;
-    auto top = first->y;
-    auto right = first->x;
-    auto bottom = first->y;
-    for (auto it = first + 1; it < last; ++it) {
-      left = std::min(left, it->x);
-      top = std::min(top, it->y);
-      right = std::max(right, it->x);
-      bottom = std::max(bottom, it->y);
+    Scalar left = points_[0].x;
+    Scalar top = points_[0].y;
+    Scalar right = points_[0].x;
+    Scalar bottom = points_[0].y;
+    for (auto i = 1u; i < point_count_; i++) {
+      const Point point = points_[i];
+      left = std::min(left, point.x);
+      top = std::min(top, point.y);
+      right = std::max(right, point.x);
+      bottom = std::max(bottom, point.y);
     }
     Rect coverage = Rect::MakeLTRB(left - radius_, top - radius_,
                                    right + radius_, bottom + radius_);

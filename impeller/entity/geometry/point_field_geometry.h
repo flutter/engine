@@ -22,14 +22,14 @@ class PointFieldGeometry final : public Geometry {
 
   ~PointFieldGeometry() override;
 
+  // |Geometry|
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
  private:
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const override;
-
-  // |Geometry|
-  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
   size_t point_count_;
   Scalar radius_;
