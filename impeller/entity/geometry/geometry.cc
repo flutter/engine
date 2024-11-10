@@ -66,7 +66,8 @@ std::unique_ptr<Geometry> Geometry::MakeFillPath(
 std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
                                                    Scalar radius,
                                                    bool round) {
-  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
+  return std::make_unique<PointFieldGeometry>(points.data(), points.size(),
+                                              radius, round);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,

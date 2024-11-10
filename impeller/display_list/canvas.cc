@@ -635,7 +635,8 @@ void Canvas::ClipGeometry(const Geometry& geometry,
       clip_depth);
 }
 
-void Canvas::DrawPoints(std::vector<Point> points,
+void Canvas::DrawPoints(const Point points[],
+                        uint32_t count,
                         Scalar radius,
                         const Paint& paint,
                         PointStyle point_style) {
@@ -647,7 +648,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  PointFieldGeometry geom(std::move(points), radius,
+  PointFieldGeometry geom(points, count, radius,
                           /*round=*/point_style == PointStyle::kRound);
   AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
