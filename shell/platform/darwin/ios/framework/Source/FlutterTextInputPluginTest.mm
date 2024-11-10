@@ -3008,20 +3008,28 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
-    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[@{@"type": @"default", @"action": @"paste"}, @{@"type": @"default", @"action": @"copy"}];
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
+      @{@"type" : @"default", @"action" : @"paste"}, @{@"type" : @"default", @"action" : @"copy"}
+    ];
 
-    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items": encodedItems}];
+    BOOL shownEditMenu =
+        [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items" : encodedItems}];
     XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
     [self waitForExpectations:@[ expectation ] timeout:1.0];
 
-    UICommand* copyItem = [UICommand commandWithTitle:@"Copy" image: nil action: @selector(copy:) propertyList:nil];
-    UICommand* pasteItem = [UICommand commandWithTitle:@"Paste" image: nil action: @selector(paste:) propertyList:nil];
-    NSArray<UICommand*>* suggestedActions = @[
-      copyItem,
-      pasteItem
-    ];
+    UICommand* copyItem = [UICommand commandWithTitle:@"Copy"
+                                                image:nil
+                                               action:@selector(copy:)
+                                         propertyList:nil];
+    UICommand* pasteItem = [UICommand commandWithTitle:@"Paste"
+                                                 image:nil
+                                                action:@selector(paste:)
+                                          propertyList:nil];
+    NSArray<UICommand*>* suggestedActions = @[ copyItem, pasteItem ];
 
-    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction menuForConfiguration: OCMClassMock([UIEditMenuConfiguration class]) suggestedActions:suggestedActions];
+    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction
+                               menuForConfiguration:OCMClassMock([UIEditMenuConfiguration class])
+                                   suggestedActions:suggestedActions];
     XCTAssert(menu.children.count == 2, @"There must be 2 menu items");
     XCTAssertEqual(menu.children[0], pasteItem, @"Must be able to find paste item in the tree.");
     XCTAssertEqual(menu.children[1], copyItem, @"Must be able to find copy item in the tree.");
@@ -3062,22 +3070,32 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
-    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[@{@"type": @"default", @"action": @"searchWeb", @"title": @"Search Web"}, @{@"type": @"default", @"action": @"lookUp", @"title": @"Look Up"}, @{@"type": @"default", @"action": @"share", @"title": @"Share"}];
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
+      @{@"type" : @"default", @"action" : @"searchWeb", @"title" : @"Search Web"},
+      @{@"type" : @"default", @"action" : @"lookUp", @"title" : @"Look Up"},
+      @{@"type" : @"default", @"action" : @"share", @"title" : @"Share"}
+    ];
 
-    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items": encodedItems}];
+    BOOL shownEditMenu =
+        [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items" : encodedItems}];
     XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
     [self waitForExpectations:@[ expectation ] timeout:1.0];
 
     NSArray<UICommand*>* suggestedActions = @[
-      [UICommand commandWithTitle:@"copy" image: nil action: @selector(copy:) propertyList:nil],
+      [UICommand commandWithTitle:@"copy" image:nil action:@selector(copy:) propertyList:nil],
     ];
 
-    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction menuForConfiguration: OCMClassMock([UIEditMenuConfiguration class]) suggestedActions:suggestedActions];
+    UIMenu* menu = [myInputView editMenuInteraction:mockInteraction
+                               menuForConfiguration:OCMClassMock([UIEditMenuConfiguration class])
+                                   suggestedActions:suggestedActions];
     XCTAssert(menu.children.count == 3, @"There must be 3 menu items");
 
-    XCTAssert(((UICommand*) menu.children[0]).action == @selector(handleSearchWebAction), @"Must create search web item in the tree.");
-    XCTAssert(((UICommand*) menu.children[1]).action == @selector(handleLookUpAction), @"Must create look up item in the tree.");
-    XCTAssert(((UICommand*) menu.children[2]).action == @selector(handleShareAction), @"Must create share item in the tree.");
+    XCTAssert(((UICommand*)menu.children[0]).action == @selector(handleSearchWebAction),
+              @"Must create search web item in the tree.");
+    XCTAssert(((UICommand*)menu.children[1]).action == @selector(handleLookUpAction),
+              @"Must create look up item in the tree.");
+    XCTAssert(((UICommand*)menu.children[2]).action == @selector(handleShareAction),
+              @"Must create share item in the tree.");
   }
 }
 
