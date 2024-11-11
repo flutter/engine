@@ -68,6 +68,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
       SkISize target_size,
       impeller::ISize max_texture_size,
       bool supports_wide_gamut,
+      bool force_cpu_resize,
       const std::shared_ptr<impeller::Allocator>& allocator);
 
   /// @brief Create a device private texture from the provided host buffer.
