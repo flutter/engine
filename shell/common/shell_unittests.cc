@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "fml/mapping.h"
-#include "lib/ui/semantics/semantics_node.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
@@ -47,8 +45,10 @@
 #include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
+#include "fml/mapping.h"
 #include "gmock/gmock.h"
 #include "impeller/core/runtime_types.h"
+#include "lib/ui/semantics/semantics_node.h"
 #include "third_party/rapidjson/include/rapidjson/writer.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/tonic/converter/dart_converter.h"
