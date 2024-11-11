@@ -11,13 +11,14 @@ static constexpr int kMicrosecondsPerMillisecond = 1000;
 struct _FlPointerManager {
   GObject parent_instance;
 
-  // Engine events are being sent to.
+  // Engine to send pointer events to.
   GWeakRef engine;
 
-  // ID for this view.
+  // ID to mark events with.
   FlutterViewId view_id;
 
-  // TRUE if the mouse pointer is inside the view.
+  // TRUE if the mouse pointer is inside the view, used for generating missing
+  // add events.
   gboolean pointer_inside;
 
   // Pointer button state recorded for sending status updates.
