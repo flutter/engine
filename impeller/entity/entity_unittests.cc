@@ -14,6 +14,7 @@
 #include "gtest/gtest.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
@@ -35,6 +36,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/geometry/color.h"
@@ -2095,9 +2097,9 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
 
 TEST_P(EntityTest, PointFieldGeometryCoverage) {
   std::vector<Point> points = {{10, 20}, {100, 200}};
-  auto geometry = Geometry::MakePointField(points, 5.0, false);
-  ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
-  ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
+  PointFieldGeometry geometry(points.data(), 2, 5.0, false);
+  ASSERT_EQ(geometry.GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
+  ASSERT_EQ(geometry.GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
             Rect::MakeLTRB(35, 15, 135, 205));
 }
 
@@ -2401,6 +2403,59 @@ TEST_P(EntityTest, GiantStrokePathAllocation) {
       Point(1020.45, 1027.54),  //
       Point(1027.54, 1020.46),  //
       Point(1020.46, 1027.53)   //
+  };
+
+  Point point = written_data[kPointArenaSize - 2];
+  EXPECT_NEAR(point.x, expected[0].x, 0.1);
+  EXPECT_NEAR(point.y, expected[0].y, 0.1);
+
+  point = written_data[kPointArenaSize - 1];
+  EXPECT_NEAR(point.x, expected[1].x, 0.1);
+  EXPECT_NEAR(point.y, expected[1].y, 0.1);
+
+  point = written_data[kPointArenaSize];
+  EXPECT_NEAR(point.x, expected[2].x, 0.1);
+  EXPECT_NEAR(point.y, expected[2].y, 0.1);
+
+  point = written_data[kPointArenaSize + 1];
+  EXPECT_NEAR(point.x, expected[3].x, 0.1);
+  EXPECT_NEAR(point.y, expected[3].y, 0.1);
+
+  point = written_data[kPointArenaSize + 2];
+  EXPECT_NEAR(point.x, expected[4].x, 0.1);
+  EXPECT_NEAR(point.y, expected[4].y, 0.1);
+}
+
+TEST_P(EntityTest, GiantLineStripPathAllocation) {
+  PathBuilder builder{};
+  for (int i = 0; i < 10000; i++) {
+    builder.LineTo(Point(i, i));
+  }
+  Path path = builder.TakePath();
+
+  ContentContext content_context(GetContext(), /*typographer_context=*/nullptr);
+  Entity entity;
+
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                        GetContext()->GetIdleWaiter());
+  auto tessellator = Tessellator();
+
+  auto vertex_buffer = tessellator.GenerateLineStrip(path, *host_buffer, 1.0);
+
+  // Validate the buffer data overflowed the small buffer
+  EXPECT_GT(vertex_buffer.vertex_count, kPointArenaSize);
+
+  // Validate that there are no uninitialized points near the gap.
+  Point* written_data = reinterpret_cast<Point*>(
+      (vertex_buffer.vertex_buffer.GetBuffer()->OnGetContents() +
+       vertex_buffer.vertex_buffer.GetRange().offset));
+
+  std::vector<Point> expected = {
+      Point(4093, 4093),  //
+      Point(4094, 4094),  //
+      Point(4095, 4095),  //
+      Point(4096, 4096),  //
+      Point(4097, 4097)   //
   };
 
   Point point = written_data[kPointArenaSize - 2];
