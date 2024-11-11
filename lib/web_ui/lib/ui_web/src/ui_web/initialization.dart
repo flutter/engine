@@ -32,16 +32,16 @@ Future<void> bootstrapEngine({
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final AppBootstrap bootstrap = AppBootstrap(
     initializeEngine: ([JsFlutterConfiguration? configuration]) async {
-      print('        <=await initializeEngineServices(jsConfiguration: configuration);');
+      print('      <=await initializeEngineServices(jsConfiguration: configuration);');
       await initializeEngineServices(jsConfiguration: configuration);
-      print('        </await initializeEngineServices(jsConfiguration: configuration);');
+      print('      </await initializeEngineServices(jsConfiguration: configuration);');
     }, runApp: () async {
       if (registerPlugins != null) {
         registerPlugins();
       }
-      print('        <=await initializeEngineUi();');
+      print('      <=await initializeEngineUi();');
       await initializeEngineUi();
-      print('        </await initializeEngineUi();');
+      print('      </await initializeEngineUi();');
       if (runApp != null) {
         runApp();
       }
@@ -51,11 +51,10 @@ Future<void> bootstrapEngine({
   final FlutterLoader? loader = flutter?.loader;
   if (loader == null || loader.isAutoStart) {
     // The user does not want control of the app, bootstrap immediately.
-    print('      <=await bootstrap.autoStart();');
     await bootstrap.autoStart();
-    print('      </await bootstrap.autoStart();');
   } else {
     // Yield control of the bootstrap procedure to the user.
+    print('      ==didCreateEngineInitializer(...);');
     loader.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
   }
 }
