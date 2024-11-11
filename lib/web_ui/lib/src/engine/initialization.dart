@@ -200,7 +200,9 @@ Future<void> initializeEngineServices({
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback () async => renderer.initialize();
+  print('        <=await Future.wait([initializeRendererCallback(), _downloadAssetFonts()]);');
   await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
+  print('        </await Future.wait([initializeRendererCallback(), _downloadAssetFonts()]);');
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -262,14 +264,18 @@ Future<void> _downloadAssetFonts() async {
   if (ui_web.debugEmulateFlutterTesterEnvironment) {
     // Load the embedded test font before loading fonts from the assets so that
     // the embedded test font is the default (first) font.
+    print('          <=await renderer.fontCollection.loadFontFromList(EmbeddedTestFont.flutterTest.data ...);');
     await renderer.fontCollection.loadFontFromList(
       EmbeddedTestFont.flutterTest.data,
       fontFamily: EmbeddedTestFont.flutterTest.fontFamily
     );
+    print('          </await renderer.fontCollection.loadFontFromList(EmbeddedTestFont.flutterTest.data ...);');
   }
 
   if (_debugAssetManager != null || _assetManager != null) {
+    print('          <=await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));');
     await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
+    print('          </await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));');
   }
 }
 
