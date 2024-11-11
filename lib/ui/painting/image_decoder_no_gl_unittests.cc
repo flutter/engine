@@ -100,7 +100,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
   std::optional<DecompressResult> wide_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, /*force_cpu_resize=*/false, allocator);
   ASSERT_TRUE(wide_result.has_value());
   ASSERT_EQ(wide_result->image_info.colorType(), kRGBA_F16_SkColorType);
   ASSERT_TRUE(wide_result->image_info.colorSpace()->isSRGB());
@@ -124,7 +124,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
   std::optional<DecompressResult> narrow_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, allocator);
+          /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
 
   ASSERT_TRUE(narrow_result.has_value());
   ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
@@ -157,7 +157,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
   std::optional<DecompressResult> wide_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, /*force_cpu_resize=*/false, allocator);
   ASSERT_EQ(wide_result->image_info.colorType(), kBGR_101010x_XR_SkColorType);
   ASSERT_TRUE(wide_result->image_info.colorSpace()->isSRGB());
 
@@ -180,7 +180,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
   std::optional<DecompressResult> narrow_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, allocator);
+          /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
 
   ASSERT_TRUE(narrow_result.has_value());
   ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
@@ -210,7 +210,7 @@ TEST(ImageDecoderNoGLTest, ImepllerUnmultipliedAlphaPng) {
   std::optional<DecompressResult> result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(11, 11), {11, 11},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, /*force_cpu_resize=*/false, allocator);
   ASSERT_EQ(result->image_info.colorType(), kRGBA_8888_SkColorType);
 
   const SkPixmap& pixmap = result->sk_bitmap->pixmap();
