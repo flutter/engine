@@ -72,8 +72,9 @@ static inline Scalar TimingCurve_SolveCurveX(Scalar ax,
   while (t0 < t1) {
     x2 = TimingCurve_SampleCurve(ax, bx, cx, t2);
 
-    if (fabs(x2 - x) < epsilon)
+    if (fabs(x2 - x) < epsilon) {
       return t2;
+    }
 
     if (x > x2) {
       t0 = t2;
