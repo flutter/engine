@@ -80,7 +80,7 @@ class LineStripVertexWriter : public VertexWriter {
 
   std::pair<size_t, size_t> GetVertexCount() const;
 
-  const std::vector<Point>& GetOveriszedBuffer() const;
+  const std::vector<Point>& GetOversizedBuffer() const;
 
  private:
   size_t offset_ = 0u;

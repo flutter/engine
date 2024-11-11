@@ -135,7 +135,7 @@ VertexBuffer Tessellator::GenerateLineStrip(const Path& path,
         .index_type = IndexType::kNone,
     };
   }
-  const std::vector<Point>& oversized_data = writer.GetOveriszedBuffer();
+  const std::vector<Point>& oversized_data = writer.GetOversizedBuffer();
   BufferView buffer_view = host_buffer.Emplace(
       /*buffer=*/nullptr,                                 //
       (arena_length + oversized_length) * sizeof(Point),  //

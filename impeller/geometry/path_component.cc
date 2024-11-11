@@ -93,7 +93,7 @@ void LineStripVertexWriter::Write(Point point) {
   }
 }
 
-const std::vector<Point>& LineStripVertexWriter::GetOveriszedBuffer() const {
+const std::vector<Point>& LineStripVertexWriter::GetOversizedBuffer() const {
   return overflow_;
 }
 
