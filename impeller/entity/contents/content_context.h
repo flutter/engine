@@ -56,6 +56,11 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
+#include "impeller/entity/conical_gradient_uniform_fill.frag.h"
+#include "impeller/entity/linear_gradient_uniform_fill.frag.h"
+#include "impeller/entity/radial_gradient_uniform_fill.frag.h"
+#include "impeller/entity/sweep_gradient_uniform_fill.frag.h"
+
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
@@ -70,6 +75,7 @@
 #include "impeller/entity/vertices_uber.frag.h"
 
 #ifdef IMPELLER_ENABLE_OPENGLES
+#include "impeller/entity/texture_downsample_gles.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -91,6 +97,18 @@ using ConicalGradientFillPipeline =
 using SweepGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          SweepGradientFillFragmentShader>;
+using LinearGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         LinearGradientUniformFillFragmentShader>;
+using ConicalGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         ConicalGradientUniformFillFragmentShader>;
+using RadialGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         RadialGradientUniformFillFragmentShader>;
+using SweepGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         SweepGradientUniformFillFragmentShader>;
 using LinearGradientSSBOFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientSsboFillFragmentShader>;
@@ -239,6 +257,9 @@ using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
 using TiledTextureExternalPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
+using TextureDownsampleGlesPipeline =
+    RenderPipelineHandle<TextureFillVertexShader,
+                         TextureDownsampleGlesFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
 /// Pipeline state configuration.
@@ -367,6 +388,26 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetLinearGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(linear_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetRadialGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(radial_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetConicalGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(conical_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetSweepGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(sweep_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetLinearGradientSSBOFillPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(linear_gradient_ssbo_fill_pipelines_, opts);
@@ -426,6 +467,11 @@ class ContentContext {
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetDownsampleTextureGlesPipeline(ContentContextOptions opts) const {
+    return GetPipeline(texture_downsample_gles_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
@@ -858,6 +904,14 @@ class ContentContext {
   mutable Variants<ConicalGradientFillPipeline>
       conical_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
+  mutable Variants<LinearGradientUniformFillPipeline>
+      linear_gradient_uniform_fill_pipelines_;
+  mutable Variants<RadialGradientUniformFillPipeline>
+      radial_gradient_uniform_fill_pipelines_;
+  mutable Variants<ConicalGradientUniformFillPipeline>
+      conical_gradient_uniform_fill_pipelines_;
+  mutable Variants<SweepGradientUniformFillPipeline>
+      sweep_gradient_uniform_fill_pipelines_;
   mutable Variants<LinearGradientSSBOFillPipeline>
       linear_gradient_ssbo_fill_pipelines_;
   mutable Variants<RadialGradientSSBOFillPipeline>
@@ -873,6 +927,8 @@ class ContentContext {
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
+  mutable Variants<TextureDownsampleGlesPipeline>
+      texture_downsample_gles_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
