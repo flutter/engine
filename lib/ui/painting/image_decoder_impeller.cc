@@ -530,8 +530,9 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         // Always decompress on the concurrent runner.
         auto bitmap_result = DecompressTexture(
             raw_descriptor, target_size, max_size_supported,
-            supports_wide_gamut,
-            context->GetCapabilities()->SupportsTextureToTextureBlits(),
+            /*supports_wide_gamut=*/supports_wide_gamut,
+            /*force_cpu_resize=*/
+            !context->GetCapabilities()->SupportsTextureToTextureBlits(),
             context->GetResourceAllocator());
         if (!bitmap_result.device_buffer) {
           result(nullptr, bitmap_result.decode_error);
