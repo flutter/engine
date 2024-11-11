@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "fml/mapping.h"
+#include "lib/ui/semantics/semantics_node.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
@@ -4306,6 +4308,39 @@ TEST_F(ShellTest, NavigationMessageDispachedImmediately) {
     latch->CountDown();
   });
   latch->Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, SemanticsActionsPostTask) {
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::kPlatform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  EXPECT_EQ(task_runners.GetPlatformTaskRunner(),
+            task_runners.GetUITaskRunner());
+  auto shell = CreateShell(settings);
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testSemanticsActions");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  SendSemanticsAction(shell.get(), 0, SemanticsAction::kTap,
+                      fml::MallocMapping(nullptr, 0));
+
+  // Fulfill native function for the second Shell's entrypoint.
+  fml::CountDownLatch latch(1);
+  AddNativeCallback(
+      // The Dart native function names aren't very consistent but this is
+      // just the native function name of the second vm entrypoint in the
+      // fixture.
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+  latch.Wait();
 
   DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
