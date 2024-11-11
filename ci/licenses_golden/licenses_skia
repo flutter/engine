@@ -1,4 +1,4 @@
-Signature: 75363bbedd20a7398688edb7a78d37c4
+Signature: 201ba1aaad03106492965b58e7edab2e
 
 ====================================================================================================
 LIBRARY: etc1
@@ -401,7 +401,6 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/TimerQuery.md
 FILE: ../../../flutter/third_party/skia/relnotes/WGLWaitSync.md
-FILE: ../../../flutter/third_party/skia/relnotes/patheffect_dash.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9819,9 +9818,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h
+FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.cpp
+FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 The Android Open Source Project
 
