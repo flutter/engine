@@ -27,23 +27,24 @@ struct _FlPointerManager {
 G_DEFINE_TYPE(FlPointerManager, fl_pointer_manager, G_TYPE_OBJECT);
 
 // Generates a mouse pointer event if the pointer appears inside the window.
-static void check_pointer_inside(FlPointerManager* self,
+static void ensure_pointer_added(FlPointerManager* self,
                                  guint event_time,
                                  FlutterPointerDeviceKind device_kind,
                                  gdouble x,
                                  gdouble y) {
+  if (self->pointer_inside) {
+    return;
+  }
+  self->pointer_inside = TRUE;
+
   g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
   if (engine == nullptr) {
     return;
   }
 
-  if (!self->pointer_inside) {
-    self->pointer_inside = TRUE;
-
-    fl_engine_send_mouse_pointer_event(
-        engine, self->view_id, kAdd, event_time * kMicrosecondsPerMillisecond,
-        x, y, device_kind, 0, 0, self->button_state);
-  }
+  fl_engine_send_mouse_pointer_event(
+      engine, self->view_id, kAdd, event_time * kMicrosecondsPerMillisecond, x,
+      y, device_kind, 0, 0, self->button_state);
 }
 
 static void fl_pointer_manager_dispose(GObject* object) {
@@ -80,7 +81,7 @@ gboolean fl_pointer_manager_handle_button_press(
     int64_t button) {
   g_return_val_if_fail(FL_IS_POINTER_MANAGER(self), FALSE);
 
-  check_pointer_inside(self, event_time, device_kind, x, y);
+  ensure_pointer_added(self, event_time, device_kind, x, y);
 
   // Drop the event if Flutter already thinks the button is down.
   if ((self->button_state & button) != 0) {
@@ -147,7 +148,7 @@ gboolean fl_pointer_manager_handle_motion(FlPointerManager* self,
     return FALSE;
   }
 
-  check_pointer_inside(self, event_time, device_kind, x, y);
+  ensure_pointer_added(self, event_time, device_kind, x, y);
 
   fl_engine_send_mouse_pointer_event(
       engine, self->view_id, self->button_state != 0 ? kMove : kHover,
@@ -169,7 +170,7 @@ gboolean fl_pointer_manager_handle_enter(FlPointerManager* self,
     return FALSE;
   }
 
-  check_pointer_inside(self, event_time, device_kind, x, y);
+  ensure_pointer_added(self, event_time, device_kind, x, y);
 
   return TRUE;
 }
