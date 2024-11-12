@@ -85,8 +85,10 @@ class CanvasKitRenderer implements Renderer {
         // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
         print('          <=await promiseToFuture(windowFlutterCanvasKitLoaded!);');
         print('            [windowFlutterCanvasKitLoaded=$windowFlutterCanvasKitLoaded]');
-        windowFlutterCanvasKitLoaded!.then((dynamic val) {
+        domWindow.console.debug(windowFlutterCanvasKitLoaded);
+        windowFlutterCanvasKitLoaded!.then((JSAny? val) {
           print('            >>[val=$val]');
+          domWindow.console.debug(val);
         }.toJS);
         canvasKit =
             await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
