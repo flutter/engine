@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/platform/darwin/scoped_block.h"
+#include <flutter/runtime_effect.glsl>
 
-namespace fml {
+uniform vec2 u_size;
 
-//
+out vec4 frag_color;
 
-}  // namespace fml
+void main() {
+  frag_color = vec4(u_size.x, u_size.y, 0, 1);
+}
