@@ -205,7 +205,7 @@ TEST(ImageDecoderNoGLTest, ImepllerUnmultipliedAlphaPng) {
   auto image = SkImages::DeferredFromEncodedData(data);
   std::shared_ptr<impeller::Capabilities> capabilities =
       impeller::CapabilitiesBuilder()
-          .SetSupportsTextureToTextureBlits(false)
+          .SetSupportsTextureToTextureBlits(true)
           .Build();
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(11, 11), image->dimensions());
