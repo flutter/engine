@@ -4329,8 +4329,10 @@ TEST_F(ShellTest, SemanticsActionsPostTask) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  SendSemanticsAction(shell.get(), 0, SemanticsAction::kTap,
-                      fml::MallocMapping(nullptr, 0));
+  task_runners.GetPlatformTaskRunner()->PostTask([&] {
+    SendSemanticsAction(shell.get(), 0, SemanticsAction::kTap,
+                        fml::MallocMapping(nullptr, 0));
+  });
 
   // Fulfill native function for the second Shell's entrypoint.
   fml::CountDownLatch latch(1);
