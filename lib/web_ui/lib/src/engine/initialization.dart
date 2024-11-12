@@ -273,9 +273,12 @@ Future<void> _downloadAssetFonts() async {
   }
 
   if (_debugAssetManager != null || _assetManager != null) {
-    print('          <=await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));');
-    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
-    print('          </await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));');
+    print('          <=await fetchFontManifest(ui_web.assetManager);');
+    final manifest = await fetchFontManifest(ui_web.assetManager);
+    print('          </await fetchFontManifest(ui_web.assetManager);');
+    print('          <=await renderer.fontCollection.loadAssetFonts(manifest);');
+    await renderer.fontCollection.loadAssetFonts(manifest);
+    print('          </await renderer.fontCollection.loadAssetFonts(manifest);');
   }
 }
 
