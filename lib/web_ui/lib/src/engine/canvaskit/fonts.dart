@@ -85,8 +85,10 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
+    print('            <=await renderer.initialize();');
     // Make sure CanvasKit is actually loaded
     await renderer.initialize();
+    print('            </await renderer.initialize();');
 
     final SkTypeface? typeface =
         canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
