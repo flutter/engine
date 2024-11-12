@@ -11,6 +11,10 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+extension on JSPromise {
+  external void then(JSFunction callback);
+}
+
 enum CanvasKitVariant {
   /// The appropriate variant is chosen based on the browser.
   ///
@@ -80,6 +84,10 @@ class CanvasKitRenderer implements Renderer {
       } else if (windowFlutterCanvasKitLoaded != null) {
         // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
         print('          <=await promiseToFuture(windowFlutterCanvasKitLoaded!);');
+        print('            [windowFlutterCanvasKitLoaded=$windowFlutterCanvasKitLoaded]');
+        windowFlutterCanvasKitLoaded!.then((dynamic val) {
+          print('            >>[val=$val]');
+        }.toJS);
         canvasKit =
             await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
         print('          </await promiseToFuture(windowFlutterCanvasKitLoaded!);');
