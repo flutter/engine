@@ -441,13 +441,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
       std::move(data), image->imageInfo(), 10 * 4);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> decompressed =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true,
-          /*force_cpu_resize=*/false, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
   ASSERT_TRUE(decompressed.has_value());
   ASSERT_EQ(decompressed->image_info.colorType(), kRGBA_8888_SkColorType);
   ASSERT_EQ(decompressed->image_info.colorSpace(), nullptr);
@@ -469,13 +472,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
       std::move(data), image->imageInfo(), 10 * 16);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> decompressed =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true,
-          /*force_cpu_resize=*/false, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(decompressed.has_value());
   ASSERT_EQ(decompressed->image_info.colorType(), kRGBA_F16_SkColorType);
@@ -498,12 +504,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
                                                          std::move(generator));
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> wide_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, /*force_cpu_resize=*/false, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(wide_result.has_value());
   ASSERT_EQ(wide_result->image_info.colorType(), kBGR_101010x_XR_SkColorType);
@@ -528,7 +538,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
   std::optional<DecompressResult> narrow_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
+          /*supports_wide_gamut=*/false, capabilities, allocator);
 
   ASSERT_TRUE(narrow_result.has_value());
   ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
@@ -550,12 +560,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNonWideGamut) {
                                                          std::move(generator));
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(600, 200), {600, 200},
-          /*supports_wide_gamut=*/true, /*force_cpu_resize=*/false, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(result.has_value());
   ASSERT_EQ(result->image_info.colorType(), kRGBA_8888_SkColorType);
