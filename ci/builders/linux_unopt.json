@@ -109,6 +109,7 @@
             "archives": [],
             "drone_dimensions": [
                 "device_type=none",
+                "os=Linux",
                 "os=Ubuntu-20",
                 "cores=32"
             ],
