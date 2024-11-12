@@ -23,7 +23,7 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform, path as sys_path
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path, stdout as sys_stdout
 import tempfile
 import time
 import typing
@@ -45,7 +45,8 @@ ENCODING = 'UTF-8'
 
 LOG_FILE = os.path.join(OUT_DIR, 'run_tests.log')
 logger = logging.getLogger(__name__)
-console_logger_handler = logging.StreamHandler()
+# Write console logs to stdout (by default StreamHandler uses stderr)
+console_logger_handler = logging.StreamHandler(sys_stdout)
 file_logger_handler = logging.FileHandler(LOG_FILE)
 
 
@@ -428,7 +429,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
       make_test('fml_unittests'),
-      make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
       make_test('tonic_unittests'),
@@ -553,7 +553,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '--enable_vulkan_validation',
             '--enable_playground',
             '--playground_timeout_ms=4000',
-            '--gtest_filter="*ColorWheel/Vulkan"',
+            '--gtest_filter="*ColorWheel*"',
         ],
         coverage=coverage,
         extra_env=extra_env,

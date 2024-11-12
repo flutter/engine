@@ -7,6 +7,21 @@
 #include "flutter/testing/testing.h"
 
 namespace fml {
+
+// Test state used in CFTest.SupportsCustomRetainRelease.
+struct CFRefTestState {
+  bool retain_called;
+  bool release_called;
+};
+
+// Template specialization used in CFTest.SupportsCustomRetainRelease.
+template <>
+struct CFRefTraits<CFRefTestState*> {
+  static constexpr CFRefTestState* kNullValue = nullptr;
+  static void Retain(CFRefTestState* instance) { instance->retain_called = true; }
+  static void Release(CFRefTestState* instance) { instance->release_called = true; }
+};
+
 namespace testing {
 
 TEST(CFTest, CanCreateRefs) {
@@ -58,6 +73,47 @@ TEST(CFTest, CanCreateRefs) {
     ASSERT_FALSE(string);  // NOLINT(bugprone-use-after-move)
     ASSERT_EQ(ref_count, CFGetRetainCount(string_move_assign));
   }
+}
+
+TEST(CFTest, GetReturnsUnderlyingObject) {
+  CFMutableStringRef cf_string = CFStringCreateMutable(kCFAllocatorDefault, 100u);
+  const CFIndex ref_count_before = CFGetRetainCount(cf_string);
+  CFRef<CFMutableStringRef> string_ref(cf_string);
+
+  CFMutableStringRef returned_string = string_ref.Get();
+  const CFIndex ref_count_after = CFGetRetainCount(cf_string);
+  EXPECT_EQ(cf_string, returned_string);
+  EXPECT_EQ(ref_count_before, ref_count_after);
+}
+
+TEST(CFTest, RetainSharesOwnership) {
+  CFMutableStringRef cf_string = CFStringCreateMutable(kCFAllocatorDefault, 100u);
+  const CFIndex ref_count_before = CFGetRetainCount(cf_string);
+
+  CFRef<CFMutableStringRef> string_ref;
+  string_ref.Retain(cf_string);
+  const CFIndex ref_count_after = CFGetRetainCount(cf_string);
+
+  EXPECT_EQ(cf_string, string_ref);
+  EXPECT_EQ(ref_count_before + 1u, ref_count_after);
+}
+
+TEST(CFTest, SupportsCustomRetainRelease) {
+  CFRefTestState instance{};
+  CFRef<CFRefTestState*> ref(&instance);
+  ASSERT_EQ(ref.Get(), &instance);
+  ASSERT_FALSE(instance.retain_called);
+  ASSERT_FALSE(instance.release_called);
+  ref.Reset();
+  ASSERT_EQ(ref.Get(), nullptr);
+  ASSERT_FALSE(instance.retain_called);
+  ASSERT_TRUE(instance.release_called);
+
+  CFRefTestState other_instance{};
+  ref.Retain(&other_instance);
+  ASSERT_EQ(ref.Get(), &other_instance);
+  ASSERT_TRUE(other_instance.retain_called);
+  ASSERT_FALSE(other_instance.release_called);
 }
 
 }  // namespace testing

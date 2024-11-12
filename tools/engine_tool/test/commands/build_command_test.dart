@@ -16,39 +16,6 @@ import '../src/test_build_configs.dart';
 import '../src/utils.dart';
 
 void main() {
-  test('can find host runnable build', () async {
-    final testEnv = TestEnvironment.withTestEngine(
-      abi: Abi.macosArm64,
-    );
-    addTearDown(testEnv.cleanup);
-
-    final builder = TestBuilderConfig();
-    builder.addBuild(
-      name: 'macos/host_debug',
-      dimension: TestDroneDimension.mac,
-    );
-    builder.addBuild(
-      name: 'mac/host_profile',
-      dimension: TestDroneDimension.mac,
-    );
-    builder.addBuild(
-      name: 'linux/host_debug',
-      dimension: TestDroneDimension.linux,
-    );
-
-    final configs = {
-      'mac_test_config': builder.buildConfig(
-        path: 'ci/builders/mac_test_config.json',
-      ),
-    };
-
-    final result = runnableBuilds(testEnv.environment, configs, true);
-    expect(
-      result.map((r) => r.name),
-      unorderedEquals(['macos/host_debug', 'mac/host_profile']),
-    );
-  });
-
   test('build command invokes gn', () async {
     final testEnv = TestEnvironment.withTestEngine(
       abi: Abi.macosArm64,
@@ -475,9 +442,9 @@ void main() {
         CannedProcess(
           (command) => command.contains('desc'),
           stdout: convert.jsonEncode({
-            '//flutter/fml:fml_arc_unittests': {
+            '//flutter/fml:fml_unittests': {
               'outputs': [
-                '//out/host_debug/fml_arc_unittests',
+                '//out/host_debug/fml_unittests',
               ],
               'testonly': true,
               'type': 'executable',
@@ -506,7 +473,7 @@ void main() {
       'build',
       '--config',
       'ci/host_debug',
-      '//flutter/fml:fml_arc_unittests',
+      '//flutter/fml:fml_unittests',
     ]);
 
     printOnFailure(testEnv.testLogs.map((r) => r.message).join('\n'));
@@ -528,7 +495,7 @@ void main() {
     expect(
       ninjaCmd.command,
       contains(
-        contains('flutter/fml:fml_arc_unittests'),
+        contains('flutter/fml:fml_unittests'),
       ),
     );
   });
@@ -554,9 +521,9 @@ void main() {
               'testonly': true,
               'type': 'executable',
             },
-            '//flutter/fml:fml_arc_unittests': {
+            '//flutter/fml:fml_unittests': {
               'outputs': [
-                '//out/host_debug/fml_arc_unittests',
+                '//out/host_debug/fml_unittests',
               ],
               'testonly': true,
               'type': 'executable',
@@ -609,7 +576,7 @@ void main() {
       containsAll([
         'flutter/display_list:display_list_unittests',
         'flutter/flow:flow_unittests',
-        'flutter/fml:fml_arc_unittests',
+        'flutter/fml:fml_unittests',
       ]),
     );
   });

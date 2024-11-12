@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "fml/trace_event.h"
-#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -309,6 +308,12 @@ ContentContext::ContentContext(
       conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
       sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
     } else {
+      linear_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_uniform_fill_pipelines_.CreateDefault(*context_,
+                                                             options);
+      sweep_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+
       linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
       radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
       conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
@@ -455,10 +460,14 @@ ContentContext::ContentContext(
                                                  options_trianglestrip);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
 
-  // GLES only shader that is unsupported on macOS.
-#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
+#if defined(IMPELLER_ENABLE_OPENGLES)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+#if !defined(FML_OS_MACOSX)
+    // GLES only shader that is unsupported on macOS.
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
+#endif  // !defined(FML_OS_MACOSX)
+    texture_downsample_gles_pipelines_.CreateDefault(*context_,
+                                                     options_trianglestrip);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
