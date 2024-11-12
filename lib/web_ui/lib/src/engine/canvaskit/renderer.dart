@@ -73,6 +73,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   Future<void> initialize() async {
+    print('          == renderer.initialize();');
     _initialized ??= () async {
       if (windowFlutterCanvasKit != null) {
         canvasKit = windowFlutterCanvasKit!;
