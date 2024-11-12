@@ -803,8 +803,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setClickable(true);
       }
     } else {
-      // Prevent Slider to receive a regular tap which will change its value.
-      // This is needed because Slider does not have a semantics tap.
+      // Prevent Slider to receive a regular tap which will change the value.
+      //
+      // This is needed because it causes slider to select to middle if it
+      // doesn't have a semantics tap.
       if (semanticsNode.hasFlag(Flag.IS_SLIDER)) {
         result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
         result.setClickable(true);
