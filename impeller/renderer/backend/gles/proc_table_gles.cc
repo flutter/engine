@@ -250,6 +250,7 @@ static std::string DescribeFramebufferAttachment(const ProcTableGLES& gl,
   );
 
   if (param != GL_NONE) {
+    std::string type = AttachmentTypeString(param);
     param = GL_NONE;
     gl.GetFramebufferAttachmentParameteriv(
         GL_FRAMEBUFFER,                         // target
@@ -258,7 +259,7 @@ static std::string DescribeFramebufferAttachment(const ProcTableGLES& gl,
         &param                                  // parameter
     );
     std::stringstream stream;
-    stream << AttachmentTypeString(param) << "(" << param << ")";
+    stream << type << "(" << param << ")";
     return stream.str();
   }
 
@@ -267,12 +268,12 @@ static std::string DescribeFramebufferAttachment(const ProcTableGLES& gl,
 
 std::string ProcTableGLES::DescribeCurrentFramebuffer() const {
   GLint framebuffer = GL_NONE;
-  GetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer);
+  GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &framebuffer);
   if (IsFramebuffer(framebuffer) == GL_FALSE) {
     return "No framebuffer or the default window framebuffer is bound.";
   }
 
-  GLenum status = CheckFramebufferStatus(framebuffer);
+  GLenum status = CheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
   std::stringstream stream;
   stream << "FBO "
          << ((framebuffer == GL_NONE) ? "(Default)"
@@ -287,10 +288,10 @@ std::string ProcTableGLES::DescribeCurrentFramebuffer() const {
   stream << "Color Attachment: "
          << DescribeFramebufferAttachment(*this, GL_COLOR_ATTACHMENT0)
          << std::endl;
-  stream << "Color Attachment: "
+  stream << "Depth Attachment: "
          << DescribeFramebufferAttachment(*this, GL_DEPTH_ATTACHMENT)
          << std::endl;
-  stream << "Color Attachment: "
+  stream << "Stencil Attachment: "
          << DescribeFramebufferAttachment(*this, GL_STENCIL_ATTACHMENT)
          << std::endl;
   return stream.str();
@@ -298,12 +299,12 @@ std::string ProcTableGLES::DescribeCurrentFramebuffer() const {
 
 bool ProcTableGLES::IsCurrentFramebufferComplete() const {
   GLint framebuffer = GL_NONE;
-  GetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer);
+  GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &framebuffer);
   if (IsFramebuffer(framebuffer) == GL_FALSE) {
     // The default framebuffer is always complete.
     return true;
   }
-  GLenum status = CheckFramebufferStatus(framebuffer);
+  GLenum status = CheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
   return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
