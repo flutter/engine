@@ -4323,7 +4323,7 @@ TEST_F(ShellTest, SemanticsActionsPostTask) {
 
   EXPECT_EQ(task_runners.GetPlatformTaskRunner(),
             task_runners.GetUITaskRunner());
-  auto shell = CreateShell(settings);
+  auto shell = CreateShell(settings, task_runners);
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("testSemanticsActions");
 
