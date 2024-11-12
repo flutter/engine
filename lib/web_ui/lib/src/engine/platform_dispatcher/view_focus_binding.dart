@@ -51,12 +51,12 @@ final class ViewFocusBinding {
     final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
 
     switch (state) {
-      case ui.ViewFocusState.unfocused:
+      case ui.ViewFocusState.focused:
         // Only move the focus to the flutter view if nothing inside it is focused already.
         if (viewId != _viewId(domDocument.activeElement)) {
           viewElement?.focusWithoutScroll();
         }
-      case ui.ViewFocusState.focused:
+      case ui.ViewFocusState.unfocused:
         viewElement?.blur();
     }
   }
