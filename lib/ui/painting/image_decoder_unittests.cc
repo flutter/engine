@@ -804,13 +804,21 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   EXPECT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
+  std::shared_ptr<impeller::Capabilities> capabilities_no_blit =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(false)
+          .Build();
   // Bitmap sizes reflect the original image size as resizing is done on the
   // GPU if the src size is smaller than the max texture size.
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {1000, 1000},
-      /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_1.sk_bitmap->width(), 75);
   EXPECT_EQ(result_1.sk_bitmap->height(), 25);
 
@@ -818,7 +826,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   // max texture size even if destination size isn't max texture size.
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {10, 10},
-      /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_2.sk_bitmap->width(), 6);
   EXPECT_EQ(result_2.sk_bitmap->height(), 2);
 
@@ -826,14 +834,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   // is scaled down.
   auto result_3 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
-      /*supports_wide_gamut=*/false, /*force_cpu_resize=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_3.sk_bitmap->width(), 10);
   EXPECT_EQ(result_3.sk_bitmap->height(), 10);
 
   // CPU resize is forced.
   auto result_4 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {1000, 1000},
-      /*supports_wide_gamut=*/false, /*force_cpu_resize=*/true, allocator);
+      /*supports_wide_gamut=*/false, capabilities_no_blit, allocator);
   EXPECT_EQ(result_4.sk_bitmap->width(), 6);
   EXPECT_EQ(result_4.sk_bitmap->height(), 2);
 #endif  // IMPELLER_SUPPORTS_RENDERING

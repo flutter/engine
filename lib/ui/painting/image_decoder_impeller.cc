@@ -114,7 +114,7 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     SkISize target_size,
     impeller::ISize max_texture_size,
     bool supports_wide_gamut,
-    bool force_cpu_resize,
+    const std::shared_ptr<const impeller::Capabilities>& capabilities,
     const std::shared_ptr<impeller::Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
@@ -239,7 +239,8 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
           : std::optional<SkImageInfo>(image_info.makeDimensions(target_size));
 
   if (source_size.width() > max_texture_size.width ||
-      source_size.height() > max_texture_size.height || force_cpu_resize) {
+      source_size.height() > max_texture_size.height ||
+      !capabilities->SupportsTextureToTextureBlits()) {
     //----------------------------------------------------------------------------
     /// 2. If the decoded image isn't the requested target size and the src size
     ///    exceeds the device max texture size, perform a slow CPU reisze.
@@ -531,9 +532,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         auto bitmap_result = DecompressTexture(
             raw_descriptor, target_size, max_size_supported,
             /*supports_wide_gamut=*/supports_wide_gamut,
-            /*force_cpu_resize=*/
-            !context->GetCapabilities()->SupportsTextureToTextureBlits(),
-            context->GetResourceAllocator());
+            context->GetCapabilities(), context->GetResourceAllocator());
         if (!bitmap_result.device_buffer) {
           result(nullptr, bitmap_result.decode_error);
           return;
