@@ -32,9 +32,6 @@ final class ViewFocusBinding {
     // *last* focusable element.
     domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
-    // Can these focus events be attached directly to the view, instead the body?
-    domDocument.body?.addEventListener(_focusin, _handleFocusin);
-    domDocument.body?.addEventListener(_focusout, _handleFocusout);
 
     // If so, update `_handleViewCreated` and add a `_handleViewDisposed` to attach
     // and remove the focus/blur listener.
@@ -44,8 +41,6 @@ final class ViewFocusBinding {
   void dispose() {
     domDocument.body?.removeEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.removeEventListener(_keyUp, _handleKeyUp);
-    domDocument.body?.removeEventListener(_focusin, _handleFocusin);
-    domDocument.body?.removeEventListener(_focusout, _handleFocusout);
     _onViewCreatedListener?.cancel();
   }
 
@@ -135,6 +130,11 @@ final class ViewFocusBinding {
   }
 
   void _handleViewCreated(int viewId) {
+    final DomElement? rootElement = _viewManager[viewId]?.dom.rootElement;
+
+    rootElement?.addEventListener(_focusin, _handleFocusin);
+    rootElement?.addEventListener(_focusout, _handleFocusout);
+
     _updateViewKeyboardReachability(viewId, reachable: true);
   }
 
