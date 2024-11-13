@@ -149,9 +149,9 @@ final class ViewFocusBinding {
     }
 
     final DomElement? rootElement = _viewManager[viewId]?.dom.rootElement;
-    // A tabindex with value zero means the DOM element can be reached by using
-    // the keyboard (tab, shift + tab). When its value is -1 it is still focusable
-    // but can't be focused by the result of keyboard events This is specially
+    // A tabindex with value zero means the DOM element can be reached using the
+    // keyboard (tab, shift + tab). When its value is -1 it is still focusable
+    // but can't be focused as the result of keyboard events. This is specially
     // important when the semantics tree is enabled as it puts DOM nodes inside
     // the flutter view and having it with a zero tabindex messes the focus
     // traversal order when pressing tab or shift tab.
