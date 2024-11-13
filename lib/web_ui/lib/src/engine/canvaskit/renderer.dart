@@ -12,7 +12,11 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 extension on JSPromise {
-  external void then(JSFunction callback);
+  external JSPromise then(JSFunction callback);
+  @JS('catch')
+  external JSPromise onError(JSFunction callback);
+  @JS('finally')
+  external void onFinally(JSFunction callback);
 }
 
 enum CanvasKitVariant {
@@ -85,13 +89,17 @@ class CanvasKitRenderer implements Renderer {
         // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
         print('          <=await promiseToFuture(windowFlutterCanvasKitLoaded!);');
         print('            [windowFlutterCanvasKitLoaded=$windowFlutterCanvasKitLoaded]');
-        domWindow.console.debug(windowFlutterCanvasKitLoaded);
-        windowFlutterCanvasKitLoaded!.then((JSAny? val) {
-          print('            >>[val=$val]');
-          domWindow.console.debug(val);
-        }.toJS);
-        canvasKit =
-            await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
+        windowFlutterCanvasKitLoaded!
+            .then(
+              ((JSAny? val) => print('            >>[val=$val]')).toJS,
+            )
+            .onError(
+              ((JSAny? err) => print('            >>[err=$err]')).toJS,
+            )
+            .onFinally(
+              ((          ) => print('            >>[finally=]')).toJS,
+            );
+        canvasKit = await windowFlutterCanvasKitLoaded!.toDart as CanvasKit;
         print('          </await promiseToFuture(windowFlutterCanvasKitLoaded!);');
       } else {
         print('          <=await downloadCanvasKit();');

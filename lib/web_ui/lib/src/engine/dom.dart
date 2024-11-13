@@ -187,8 +187,8 @@ extension DomConsoleExtension on DomConsole {
   void error(Object? arg) => _error(arg.toString().toJS);
 
   @JS('debug')
-  external void debug(JSAny? arg);
-  // void debug(Object? arg) => _debug(arg.toString().toJS);
+  external void _debug(JSAny? arg);
+  void debug(Object? arg) => _debug(arg.toString().toJS);
 }
 
 @JS('window')
