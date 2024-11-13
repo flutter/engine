@@ -29,6 +29,11 @@ class EmbedderTest : public ThreadTest {
   std::map<EmbedderTestContextType, std::unique_ptr<EmbedderTestContext>>
       embedder_contexts_;
 
+  std::unique_ptr<EmbedderTestContext> CreateSoftwareContext();
+  std::unique_ptr<EmbedderTestContext> CreateGLContext();
+  std::unique_ptr<EmbedderTestContext> CreateMetalContext();
+  std::unique_ptr<EmbedderTestContext> CreateVulkanContext();
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTest);
 };
 
