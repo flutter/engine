@@ -446,13 +446,17 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   return true;
 }
 
-void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
+void Canvas::DrawLine(const Point& p0,
+                      const Point& p1,
+                      const Paint& paint,
+                      bool reuse_depth) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
   LineGeometry geom(p0, p1, paint.stroke_width, paint.stroke_cap);
-  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint,
+                                          /*reuse_depth=*/reuse_depth);
 }
 
 void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
@@ -572,7 +576,6 @@ void Canvas::ClipGeometry(const Geometry& geometry,
   // See https://github.com/flutter/flutter/issues/147021
   FML_DCHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
-
   uint32_t clip_depth = transform_stack_.back().clip_depth;
 
   const Matrix clip_transform =
@@ -635,7 +638,8 @@ void Canvas::ClipGeometry(const Geometry& geometry,
       clip_depth);
 }
 
-void Canvas::DrawPoints(std::vector<Point> points,
+void Canvas::DrawPoints(const Point points[],
+                        uint32_t count,
                         Scalar radius,
                         const Paint& paint,
                         PointStyle point_style) {
@@ -647,7 +651,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  PointFieldGeometry geom(std::move(points), radius,
+  PointFieldGeometry geom(points, count, radius,
                           /*round=*/point_style == PointStyle::kRound);
   AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
