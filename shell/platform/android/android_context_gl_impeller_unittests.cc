@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "third_party/angle/include/EGL/egl.h"
 
 namespace flutter {
 namespace testing {
