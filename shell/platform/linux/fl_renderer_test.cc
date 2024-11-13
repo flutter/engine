@@ -7,6 +7,7 @@
 #include "flutter/common/constants.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/linux/fl_framebuffer.h"
+#include "flutter/shell/platform/linux/fl_renderer_private.h"
 #include "flutter/shell/platform/linux/testing/mock_epoxy.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
