@@ -573,9 +573,6 @@ def to_gn_args(args):
   # on Android.
   gn_args['bssl_use_clang_integrated_as'] = True
 
-  if args.allow_deprecated_api_calls:
-    gn_args['allow_deprecated_api_calls'] = args.allow_deprecated_api_calls
-
   if args.target_os is None:
     if sys.platform.startswith(('cygwin', 'win')):
       gn_args['dart_use_fallback_root_certificates'] = True
@@ -600,10 +597,6 @@ def to_gn_args(args):
     gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
   if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia']:
-    # OpenGL is deprecated on macOS > 10.11.
-    # This is not necessarily needed but enabling this until we have a way to
-    # build a macOS metal only shell and a gl only shell.
-    gn_args['allow_deprecated_api_calls'] = True
     gn_args['skia_use_metal'] = True
     gn_args['shell_enable_metal'] = True
 
