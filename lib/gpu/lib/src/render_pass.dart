@@ -339,7 +339,10 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   }
 
   void setScissor(Scissor scissor) {
-    scissor._validate();
+    assert(() {
+      scissor._validate();
+      return true;
+    }());
     _setScissor(scissor.x, scissor.y, scissor.width, scissor.height);
   }
 
