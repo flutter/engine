@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "third_party/angle/include/EGL/egl.h"
 
 namespace flutter {
 namespace testing {
@@ -38,6 +39,8 @@ bool GetEGLConfigForSurface(EGLint surface_bit, EGLConfig* result) {
       EGL_GREEN_SIZE,      8,
       EGL_BLUE_SIZE,       8,
       EGL_ALPHA_SIZE,      8,
+      EGL_DEPTH_SIZE,      24,
+      EGL_STENCIL_SIZE,    8,
       EGL_NONE,
       // clang-format on
   };
