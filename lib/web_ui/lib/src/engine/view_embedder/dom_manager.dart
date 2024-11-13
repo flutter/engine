@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_interop';
-
 import 'package:ui/ui.dart' as ui;
 
 import '../configuration.dart';
@@ -197,7 +195,7 @@ class DomManager {
     final DomElement? pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
     if (pv == null) {
       domWindow.console.debug('Failed to inject Platform View Id: $platformViewId. '
-        'Render seems to be happening before a `flutter/platform_views:create` platform message!'.toJS);
+        'Render seems to be happening before a `flutter/platform_views:create` platform message!');
       return;
     }
     // If pv is already a descendant of platformViewsHost -> noop
