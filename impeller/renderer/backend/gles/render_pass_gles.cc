@@ -369,6 +369,8 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
           scissor.GetWidth(),                                         // width
           scissor.GetHeight()                                         // height
       );
+    } else {
+      gl.Disable(GL_SCISSOR_TEST);
     }
 
     //--------------------------------------------------------------------------
