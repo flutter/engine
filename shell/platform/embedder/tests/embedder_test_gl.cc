@@ -6,12 +6,10 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::unique_ptr<EmbedderTestContext> EmbedderTest::CreateGLContext() {
   return std::make_unique<EmbedderTestContextGL>(GetFixturesDirectory());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

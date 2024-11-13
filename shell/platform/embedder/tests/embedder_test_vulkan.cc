@@ -6,12 +6,10 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::unique_ptr<EmbedderTestContext> EmbedderTest::CreateVulkanContext() {
   return std::make_unique<EmbedderTestContextVulkan>(GetFixturesDirectory());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

@@ -6,12 +6,10 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::unique_ptr<EmbedderTestContext> EmbedderTest::CreateMetalContext() {
   return std::make_unique<EmbedderTestContextMetal>(GetFixturesDirectory());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

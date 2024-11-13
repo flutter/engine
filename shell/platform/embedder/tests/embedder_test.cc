@@ -5,8 +5,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 EmbedderTest::EmbedderTest() = default;
 
@@ -72,5 +71,4 @@ std::unique_ptr<EmbedderTestContext> EmbedderTest::CreateVulkanContext() {
 }
 #endif
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
