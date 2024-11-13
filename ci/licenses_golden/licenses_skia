@@ -1,4 +1,4 @@
-Signature: bb61bced6c058a190b6135031b3e6187
+Signature: cc284ce5e8f46db0ac0d67806dea6055
 
 ====================================================================================================
 LIBRARY: etc1
@@ -9816,9 +9816,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontScanner_fontations_priv.h
+FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.cpp
+FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_proxy.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 The Android Open Source Project
 
