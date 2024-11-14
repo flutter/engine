@@ -140,6 +140,8 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
 
   capabilities_ = std::make_shared<CapabilitiesGLES>(*this);
 
+  UseProgram.enforce_one_thread = true;
+
   is_valid_ = true;
 }
 
