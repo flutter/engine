@@ -17,6 +17,7 @@ FLUTTER_ASSERT_ARC
 const float kFloatCompareEpsilon = 0.001;
 
 @interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
+@property(nonatomic) UIScrollView* scrollView;
 @end
 
 @interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
@@ -669,7 +670,7 @@ const float kFloatCompareEpsilon = 0.001;
   XCTAssertEqual(container.semanticsObject, parentObject);
 }
 
-- (void)testFlutterScrollableSemanticsObjectHidesScrollBar {
+- (void)testFlutterScrollableSemanticsObjectNoScrollBarOrContentInsets {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::testing::MockAccessibilityBridge());
   fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
@@ -689,6 +690,10 @@ const float kFloatCompareEpsilon = 0.001;
 
   XCTAssertFalse(scrollView.showsHorizontalScrollIndicator);
   XCTAssertFalse(scrollView.showsVerticalScrollIndicator);
+  XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior,
+                 UIScrollViewContentInsetAdjustmentNever);
+  XCTAssertTrue(
+      UIEdgeInsetsEqualToEdgeInsets(scrollView.contentInset, UIEdgeInsetsMake(0, 0, 0, 0)));
 }
 
 - (void)testSemanticsObjectBuildsAttributedString {
@@ -1233,7 +1238,7 @@ const float kFloatCompareEpsilon = 0.001;
 
   // setContentOffset
   const CGPoint p = CGPointMake(123.0, 456.0);
-  [scrollable setContentOffset:p];
+  scrollable.scrollView.contentOffset = p;
   XCTAssertEqual(bridge->observations.size(), (size_t)1);
   XCTAssertEqual(bridge->observations[0].id, 5);
   XCTAssertEqual(bridge->observations[0].action, flutter::SemanticsAction::kScrollToOffset);
@@ -1246,5 +1251,31 @@ const float kFloatCompareEpsilon = 0.001;
   CGPoint point = CGPointZero;
   memcpy(&point, decoded.data.bytes, decoded.data.length);
   XCTAssertTrue(CGPointEqualToPoint(point, p));
+}
+
+- (void)testUIFocusItemScrollableContainerNoFeedbackLoops {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::testing::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithBridge:bridge uid:5];
+
+  // setContentOffset
+  const CGPoint p = CGPointMake(0.0, 456.0);
+  scrollable.scrollView.contentOffset = p;
+  bridge->observations.clear();
+
+  const SkScalar scrollPosition = p.y + 0.0000000000000001;
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kVerticalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  node.scrollExtentMax = 10000;
+  node.scrollPosition = scrollPosition;
+  node.transform = {1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0, 0, 0, scrollPosition, 0, 1.0};
+  [scrollable setSemanticsNode:&node];
+  [scrollable accessibilityBridgeDidFinishUpdate];
+
+  XCTAssertEqual(bridge->observations.size(), (size_t)0);
 }
 @end

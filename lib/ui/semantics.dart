@@ -88,6 +88,11 @@ class SemanticsAction {
   static const SemanticsAction scrollDown = SemanticsAction._(_kScrollDownIndex, 'scrollDown');
 
   /// A request to sroll the scrollable container to a given scroll offset.
+  /// 
+  /// The payload of this [SemanticsAction] is a flutter-stanard-encoded 
+  /// [Float64List] of length 2 containing the target horizontal and vertical 
+  /// offsets (in logical pixels) the receiving scrollable container should
+  /// scroll to.
   ///
   /// This action is used by iOS Full Keyboard Access to reveal contents that
   /// are currently not visible in the viewport.

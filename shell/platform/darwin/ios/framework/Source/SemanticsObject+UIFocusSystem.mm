@@ -128,7 +128,7 @@ FLUTTER_ASSERT_ARC
   // UIFocusItem is not inside of a scroll view).
   //
   // Screen can be nil if the FlutterView is covered by another native view.
-  CGFloat scale = self.bridge->view().window.screen ?: UIScreen.mainScreen).scale;
+  CGFloat scale = (self.bridge->view().window.screen ?: UIScreen.mainScreen).scale;
   return CGRectMake(unscaledRect.origin.x / scale, unscaledRect.origin.y / scale,
                     unscaledRect.size.width / scale, unscaledRect.size.height / scale);
 }
@@ -165,17 +165,6 @@ FLUTTER_ASSERT_ARC
 
 @end
 
-@interface FlutterScrollableSemanticsObject (CoordinateSpace)
-@end
-
-@implementation FlutterScrollableSemanticsObject (CoordinateSpace)
-- (id<UICoordinateSpace>)coordinateSpace {
-  // A scrollable SemanticsObject uses the same coordinate space as the scroll view.
-  // This may not work very well in nested scroll views.
-  return self.scrollView;
-}
-@end
-
 /// Scrollable containers interact with the iOS focus engine using the
 /// `UIFocusItemScrollableContainer` protocol. The said protocol (and other focus-related protocols)
 /// does not provide means to inform the focus system of layout changes. In order for the focus
@@ -189,6 +178,17 @@ FLUTTER_ASSERT_ARC
 ///
 /// Seealso the `frame` method implementation.
 #pragma mark - Scrolling
+
+@interface FlutterScrollableSemanticsObject (CoordinateSpace)
+@end
+
+@implementation FlutterScrollableSemanticsObject (CoordinateSpace)
+- (id<UICoordinateSpace>)coordinateSpace {
+  // A scrollable SemanticsObject uses the same coordinate space as the scroll view.
+  // This may not work very well in nested scroll views.
+  return self.scrollView;
+}
+@end
 
 @interface FlutterSemanticsScrollView (UIFocusItemScrollableContainer) <
     UIFocusItemScrollableContainer>
