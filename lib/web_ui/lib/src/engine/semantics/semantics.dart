@@ -2415,6 +2415,11 @@ class EngineSemanticsOwner {
   /// this frame.
   Map<int, SemanticsObject> _attachments = <int, SemanticsObject>{};
 
+  /// Retrieves the [SemanticsObject] with the given [semanticsNodeId].
+  SemanticsObject? getSemanticsObjectById(int semanticsNodeId) {
+    return _semanticsTree[semanticsNodeId];
+  }
+
   /// Declares that the [child] must be attached to the [parent].
   ///
   /// Attachments take precedence over detachments (see [_detachObject]). This
