@@ -10,7 +10,7 @@
 #include <optional>
 #include <vector>
 
-#include "display_list/effects/dl_color_source.h"
+#include "display_list/dl_sampling_options.h"
 #include "display_list/effects/dl_image_filter.h"
 #include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
@@ -27,7 +27,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/ellipse_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/geometry/color.h"
@@ -663,20 +662,20 @@ void DlDispatcherBase::drawPoints(PointMode mode,
   switch (mode) {
     case flutter::DlCanvas::PointMode::kPoints: {
       // Cap::kButt is also treated as a square.
-      auto point_style = paint.stroke_cap == Cap::kRound ? PointStyle::kRound
-                                                         : PointStyle::kSquare;
-      auto radius = paint.stroke_width;
+      PointStyle point_style = paint.stroke_cap == Cap::kRound
+                                   ? PointStyle::kRound
+                                   : PointStyle::kSquare;
+      Scalar radius = paint.stroke_width;
       if (radius > 0) {
         radius /= 2.0;
       }
-      GetCanvas().DrawPoints(skia_conversions::ToPoints(points, count), radius,
-                             paint, point_style);
+      GetCanvas().DrawPoints(points, count, radius, paint, point_style);
     } break;
     case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = points[i - 1];
         Point p1 = points[i];
-        GetCanvas().DrawLine(p0, p1, paint);
+        GetCanvas().DrawLine(p0, p1, paint, /*reuse_depth=*/i > 1);
       }
       break;
     case flutter::DlCanvas::PointMode::kPolygon:
@@ -684,7 +683,7 @@ void DlDispatcherBase::drawPoints(PointMode mode,
         Point p0 = points[0];
         for (uint32_t i = 1; i < count; i++) {
           Point p1 = points[i];
-          GetCanvas().DrawLine(p0, p1, paint);
+          GetCanvas().DrawLine(p0, p1, paint, /*reuse_depth=*/i > 1);
           p0 = p1;
         }
       }
@@ -983,23 +982,23 @@ void CanvasDlDispatcher::SetBackdropData(
 
 //// Text Frame Dispatcher
 
-TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
+FirstPassDispatcher::FirstPassDispatcher(const ContentContext& renderer,
                                          const Matrix& initial_matrix,
                                          const Rect cull_rect)
     : renderer_(renderer), matrix_(initial_matrix) {
   cull_rect_state_.push_back(cull_rect);
 }
 
-TextFrameDispatcher::~TextFrameDispatcher() {
+FirstPassDispatcher::~FirstPassDispatcher() {
   FML_DCHECK(cull_rect_state_.size() == 1);
 }
 
-void TextFrameDispatcher::save() {
+void FirstPassDispatcher::save() {
   stack_.emplace_back(matrix_);
   cull_rect_state_.push_back(cull_rect_state_.back());
 }
 
-void TextFrameDispatcher::saveLayer(const DlRect& bounds,
+void FirstPassDispatcher::saveLayer(const DlRect& bounds,
                                     const flutter::SaveLayerOptions options,
                                     const flutter::DlImageFilter* backdrop,
                                     std::optional<int64_t> backdrop_id) {
@@ -1040,31 +1039,31 @@ void TextFrameDispatcher::saveLayer(const DlRect& bounds,
   }
 }
 
-void TextFrameDispatcher::restore() {
+void FirstPassDispatcher::restore() {
   matrix_ = stack_.back();
   stack_.pop_back();
   cull_rect_state_.pop_back();
 }
 
-void TextFrameDispatcher::translate(DlScalar tx, DlScalar ty) {
+void FirstPassDispatcher::translate(DlScalar tx, DlScalar ty) {
   matrix_ = matrix_.Translate({tx, ty});
 }
 
-void TextFrameDispatcher::scale(DlScalar sx, DlScalar sy) {
+void FirstPassDispatcher::scale(DlScalar sx, DlScalar sy) {
   matrix_ = matrix_.Scale({sx, sy, 1.0f});
 }
 
-void TextFrameDispatcher::rotate(DlScalar degrees) {
+void FirstPassDispatcher::rotate(DlScalar degrees) {
   matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
 }
 
-void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
+void FirstPassDispatcher::skew(DlScalar sx, DlScalar sy) {
   matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
 }
 
 // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  void TextFrameDispatcher::transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+  void FirstPassDispatcher::transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
                                               DlScalar myx, DlScalar myy, DlScalar myt) {
     matrix_ = matrix_ * Matrix::MakeColumn(
         mxx,  myx,  0.0f, 0.0f,
@@ -1075,7 +1074,7 @@ void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
   }
 
   // full 4x4 transform in row major order
-  void TextFrameDispatcher::transformFullPerspective(
+  void FirstPassDispatcher::transformFullPerspective(
       DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
       DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
       DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
@@ -1089,11 +1088,11 @@ void TextFrameDispatcher::skew(DlScalar sx, DlScalar sy) {
   }
 // clang-format on
 
-void TextFrameDispatcher::transformReset() {
+void FirstPassDispatcher::transformReset() {
   matrix_ = Matrix();
 }
 
-void TextFrameDispatcher::drawTextFrame(
+void FirstPassDispatcher::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
     DlScalar x,
     DlScalar y) {
@@ -1112,14 +1111,17 @@ void TextFrameDispatcher::drawTextFrame(
   }
   auto scale =
       (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,  //
-                                              scale,        //
-                                              Point(x, y),  //
-                                              properties    //
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(
+      text_frame,                                       //
+      scale,                                            //
+      Point(x, y),                                      //
+      (properties.stroke || text_frame->HasColor())     //
+          ? std::optional<GlyphProperties>(properties)  //
+          : std::nullopt                                //
   );
 }
 
-const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
+const Rect FirstPassDispatcher::GetCurrentLocalCullingBounds() const {
   auto cull_rect = cull_rect_state_.back();
   if (!cull_rect.IsEmpty() && !cull_rect.IsMaximum()) {
     Matrix inverse = matrix_.Invert();
@@ -1128,7 +1130,7 @@ const Rect TextFrameDispatcher::GetCurrentLocalCullingBounds() const {
   return cull_rect;
 }
 
-void TextFrameDispatcher::drawDisplayList(
+void FirstPassDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     DlScalar opacity) {
   [[maybe_unused]] size_t stack_depth = stack_.size();
@@ -1162,27 +1164,27 @@ void TextFrameDispatcher::drawDisplayList(
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
+void FirstPassDispatcher::setDrawStyle(flutter::DlDrawStyle style) {
   paint_.style = ToStyle(style);
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setColor(flutter::DlColor color) {
+void FirstPassDispatcher::setColor(flutter::DlColor color) {
   paint_.color = skia_conversions::ToColor(color);
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeWidth(DlScalar width) {
+void FirstPassDispatcher::setStrokeWidth(DlScalar width) {
   paint_.stroke_width = width;
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeMiter(DlScalar limit) {
+void FirstPassDispatcher::setStrokeMiter(DlScalar limit) {
   paint_.stroke_miter = limit;
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
+void FirstPassDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
   switch (cap) {
     case flutter::DlStrokeCap::kButt:
       paint_.stroke_cap = Cap::kButt;
@@ -1197,7 +1199,7 @@ void TextFrameDispatcher::setStrokeCap(flutter::DlStrokeCap cap) {
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
+void FirstPassDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
   switch (join) {
     case flutter::DlStrokeJoin::kMiter:
       paint_.stroke_join = Join::kMiter;
@@ -1212,7 +1214,7 @@ void TextFrameDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
 }
 
 // |flutter::DlOpReceiver|
-void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
+void FirstPassDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
   if (filter == nullptr) {
     has_image_filter_ = false;
   } else {
@@ -1221,7 +1223,7 @@ void TextFrameDispatcher::setImageFilter(const flutter::DlImageFilter* filter) {
 }
 
 std::pair<std::unordered_map<int64_t, BackdropData>, size_t>
-TextFrameDispatcher::TakeBackdropData() {
+FirstPassDispatcher::TakeBackdropData() {
   std::unordered_map<int64_t, BackdropData> temp;
   std::swap(temp, backdrop_data_);
   return std::make_pair(temp, backdrop_count_);
@@ -1264,7 +1266,7 @@ std::shared_ptr<Texture> DisplayListToTexture(
   }
 
   SkIRect sk_cull_rect = SkIRect::MakeWH(size.width, size.height);
-  impeller::TextFrameDispatcher collector(
+  impeller::FirstPassDispatcher collector(
       context.GetContentContext(), impeller::Matrix(), Rect::MakeSize(size));
   display_list->Dispatch(collector, sk_cull_rect);
   impeller::CanvasDlDispatcher impeller_dispatcher(
@@ -1295,7 +1297,7 @@ bool RenderToOnscreen(ContentContext& context,
                       bool reset_host_buffer) {
   Rect ip_cull_rect = Rect::MakeLTRB(cull_rect.left(), cull_rect.top(),
                                      cull_rect.right(), cull_rect.bottom());
-  TextFrameDispatcher collector(context, impeller::Matrix(), ip_cull_rect);
+  FirstPassDispatcher collector(context, impeller::Matrix(), ip_cull_rect);
   display_list->Dispatch(collector, cull_rect);
 
   impeller::CanvasDlDispatcher impeller_dispatcher(

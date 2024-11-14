@@ -78,7 +78,8 @@ Paint::Paint(Dart_Handle paint_objects, void* paint_data)
     : paint_objects_(paint_objects), paint_data_(paint_data) {}
 
 const DlPaint* Paint::paint(DlPaint& paint,
-                            const DisplayListAttributeFlags& flags) const {
+                            const DisplayListAttributeFlags& flags,
+                            DlTileMode tile_mode) const {
   if (isNull()) {
     return nullptr;
   }
@@ -140,7 +141,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
       } else {
         ImageFilter* decoded =
             tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-        paint.setImageFilter(decoded->filter());
+        paint.setImageFilter(decoded->filter(tile_mode));
       }
     }
   }
@@ -200,7 +201,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
   return &paint;
 }
 
-void Paint::toDlPaint(DlPaint& paint) const {
+void Paint::toDlPaint(DlPaint& paint, DlTileMode tile_mode) const {
   if (isNull()) {
     return;
   }
@@ -241,7 +242,7 @@ void Paint::toDlPaint(DlPaint& paint) const {
     if (!Dart_IsNull(image_filter)) {
       ImageFilter* decoded =
           tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-      paint.setImageFilter(decoded->filter());
+      paint.setImageFilter(decoded->filter(tile_mode));
     }
   }
 

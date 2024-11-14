@@ -16,7 +16,7 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
   factory SkwasmImageFilter.blur({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
-    ui.TileMode tileMode = ui.TileMode.clamp,
+    ui.TileMode? tileMode,
   }) => SkwasmBlurFilter(sigmaX, sigmaY, tileMode);
 
   factory SkwasmImageFilter.dilate({
@@ -58,9 +58,16 @@ abstract class SkwasmImageFilter implements SceneImageFilter {
   /// Creates a temporary [ImageFilterHandle] and passes it to the [borrow]
   /// function.
   ///
+  /// If (and only if) the filter is a blur ImageFilter, then the indicated
+  /// [defaultBlurTileMode] is used in place of a missing (null) tile mode.
+  ///
   /// The handle is deleted immediately after [borrow] returns. The [borrow]
   /// function must not store the handle to avoid dangling pointer bugs.
-  void withRawImageFilter(ImageFilterHandleBorrow borrow);
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  });
+
+  ui.TileMode? get backdropTileMode => ui.TileMode.clamp;
 
   @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
@@ -77,17 +84,25 @@ class SkwasmBlurFilter extends SkwasmImageFilter {
 
   final double sigmaX;
   final double sigmaY;
-  final ui.TileMode tileMode;
+  final ui.TileMode? tileMode;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
-    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, tileMode.index);
+  ui.TileMode? get backdropTileMode => tileMode;
+
+  @override
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
+    final rawImageFilter = imageFilterCreateBlur(sigmaX, sigmaY, (tileMode ?? defaultBlurTileMode).index);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
   }
 
   @override
   String toString() => 'ImageFilter.blur($sigmaX, $sigmaY, ${tileModeString(tileMode)})';
+
+  @override
+  Matrix4? get transform => null;
 }
 
 class SkwasmDilateFilter extends SkwasmImageFilter {
@@ -97,7 +112,9 @@ class SkwasmDilateFilter extends SkwasmImageFilter {
   final double radiusY;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     final rawImageFilter = imageFilterCreateDilate(radiusX, radiusY);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
@@ -105,6 +122,9 @@ class SkwasmDilateFilter extends SkwasmImageFilter {
 
   @override
   String toString() => 'ImageFilter.dilate($radiusX, $radiusY)';
+
+  @override
+  Matrix4? get transform => null;
 }
 
 class SkwasmErodeFilter extends SkwasmImageFilter {
@@ -114,7 +134,9 @@ class SkwasmErodeFilter extends SkwasmImageFilter {
   final double radiusY;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     final rawImageFilter = imageFilterCreateErode(radiusX, radiusY);
     borrow(rawImageFilter);
     imageFilterDispose(rawImageFilter);
@@ -122,6 +144,9 @@ class SkwasmErodeFilter extends SkwasmImageFilter {
 
   @override
   String toString() => 'ImageFilter.erode($radiusX, $radiusY)';
+
+  @override
+  Matrix4? get transform => null;
 }
 
 class SkwasmMatrixFilter extends SkwasmImageFilter {
@@ -131,7 +156,9 @@ class SkwasmMatrixFilter extends SkwasmImageFilter {
   final ui.FilterQuality filterQuality;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     withStackScope((scope) {
       final rawImageFilter = imageFilterCreateMatrix(
         scope.convertMatrix4toSkMatrix(matrix4),
@@ -144,6 +171,9 @@ class SkwasmMatrixFilter extends SkwasmImageFilter {
 
   @override
   String toString() => 'ImageFilter.matrix($matrix4, $filterQuality)';
+
+  @override
+  Matrix4? get transform => Matrix4.fromFloat32List(toMatrix32(matrix4));
 }
 
 class SkwasmColorImageFilter extends SkwasmImageFilter {
@@ -152,7 +182,9 @@ class SkwasmColorImageFilter extends SkwasmImageFilter {
   final SkwasmColorFilter filter;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     filter.withRawColorFilter((colroFilterHandle) {
       final rawImageFilter = imageFilterCreateFromColorFilter(colroFilterHandle);
       borrow(rawImageFilter);
@@ -162,6 +194,9 @@ class SkwasmColorImageFilter extends SkwasmImageFilter {
 
   @override
   String toString() => filter.toString();
+
+  @override
+  Matrix4? get transform => null;
 }
 
 class SkwasmComposedImageFilter extends SkwasmImageFilter {
@@ -171,18 +206,30 @@ class SkwasmComposedImageFilter extends SkwasmImageFilter {
   final SkwasmImageFilter inner;
 
   @override
-  void withRawImageFilter(ImageFilterHandleBorrow borrow) {
+  void withRawImageFilter(ImageFilterHandleBorrow borrow, {
+    ui.TileMode defaultBlurTileMode = ui.TileMode.clamp,
+  }) {
     outer.withRawImageFilter((outerHandle) {
       inner.withRawImageFilter((innerHandle) {
         final rawImageFilter = imageFilterCompose(outerHandle, innerHandle);
         borrow(rawImageFilter);
         imageFilterDispose(rawImageFilter);
-      });
-    });
+      }, defaultBlurTileMode: defaultBlurTileMode);
+    }, defaultBlurTileMode: defaultBlurTileMode);
   }
 
   @override
   String toString() => 'ImageFilter.compose($outer, $inner)';
+
+  @override
+  Matrix4? get transform {
+    final outerTransform = outer.transform;
+    final innerTransform = inner.transform;
+    if (outerTransform != null && innerTransform != null) {
+      return outerTransform.multiplied(innerTransform);
+    }
+    return outerTransform ?? innerTransform;
+  }
 }
 
 typedef ColorFilterHandleBorrow = void Function(ColorFilterHandle handle);

@@ -7,7 +7,6 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/testing/test_metal_context.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -21,6 +20,8 @@
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
+static_assert(__has_feature(objc_arc), "ARC must be enabled.");
+
 namespace flutter {
 
 void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_info,
@@ -28,7 +29,7 @@ void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_inf
   id<MTLTexture> texture = (__bridge id<MTLTexture>)texture_info.texture;
 
   GrMtlTextureInfo skia_texture_info;
-  skia_texture_info.fTexture.reset([texture retain]);
+  skia_texture_info.fTexture.retain((__bridge GrMTLHandle)texture);
   GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(
       surface_size.width(), surface_size.height(), skgpu::Mipmapped::kNo, skia_texture_info);
 

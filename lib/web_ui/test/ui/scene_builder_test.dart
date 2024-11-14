@@ -77,6 +77,23 @@ Future<void> testMain() async {
           region: region);
     });
 
+    test('Devtools rendering regression test', () async {
+      // This is a regression test for https://github.com/flutter/devtools/issues/8401
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+
+      sceneBuilder.pushClipRect(const ui.Rect.fromLTRB(12.0, 0.0, 300.0, 27.0));
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawOval(
+          const ui.Rect.fromLTRB(15.0, 5.0, 64.0, 21.0),
+          ui.Paint()..color = const ui.Color(0xFF0000FF),
+        );
+      }));
+
+      await renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_oval_clip_rect.png',
+          region: region);
+    });
+
     test('Test clipRRect layer', () async {
       final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushClipRRect(
@@ -194,9 +211,6 @@ Future<void> testMain() async {
     });
 
     test('empty backdrop filter layer with clip', () async {
-      // Note that this test does not actually render properly in skwasm due to
-      // a Skia bug. See https://g-issues.skia.org/issues/362552959 and
-      // https://github.com/flutter/flutter/issues/152026
       final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
 
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
@@ -224,7 +238,7 @@ Future<void> testMain() async {
           region: region);
     });
 
-    test('image filter layer', () async {
+    test('blur image filter layer', () async {
       final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushImageFilter(ui.ImageFilter.blur(
         sigmaX: 5.0,
@@ -238,6 +252,23 @@ Future<void> testMain() async {
 
       await renderScene(sceneBuilder.build());
       await matchGoldenFile('scene_builder_image_filter.png', region: region);
+    });
+
+    test('matrix image filter layer', () async {
+      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      sceneBuilder.pushOffset(50.0, 50.0);
+
+      final Matrix4 matrix = Matrix4.rotationZ(math.pi / 18);
+      final ui.ImageFilter matrixFilter = ui.ImageFilter.matrix(toMatrix64(matrix.storage));
+      sceneBuilder.pushImageFilter(matrixFilter);
+      sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+        canvas.drawRect(
+          region,
+          ui.Paint()..color = const ui.Color(0xFF00FF00)
+        );
+      }));
+      await renderScene(sceneBuilder.build());
+      await matchGoldenFile('scene_builder_matrix_image_filter.png', region: region);
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/154303
@@ -467,6 +498,61 @@ Future<void> testMain() async {
           'scene_builder_opacity_layer_with_transformed_children.png',
           region: region);
     });
+
+    test('backdrop layer with default blur tile mode', () async {
+      final scene = backdropBlurWithTileMode(null, 10, 50);
+      await renderScene(scene);
+
+      await matchGoldenFile(
+          'scene_builder_backdrop_filter_blur_default_tile_mode.png',
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+    },
+         // HTML renderer doesn't have tile modes
+         skip: isHtml);
+
+    test('backdrop layer with clamp blur tile mode', () async {
+      final scene = backdropBlurWithTileMode(ui.TileMode.clamp, 10, 50);
+      await renderScene(scene);
+
+      await matchGoldenFile(
+          'scene_builder_backdrop_filter_blur_clamp_tile_mode.png',
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+    },
+         // HTML renderer doesn't have tile modes
+         skip: isHtml);
+
+    test('backdrop layer with mirror blur tile mode', () async {
+      final scene = backdropBlurWithTileMode(ui.TileMode.mirror, 10, 50);
+      await renderScene(scene);
+
+      await matchGoldenFile(
+          'scene_builder_backdrop_filter_blur_mirror_tile_mode.png',
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+    },
+         // HTML renderer doesn't have tile modes
+         skip: isHtml);
+
+    test('backdrop layer with repeated blur tile mode', () async {
+      final scene = backdropBlurWithTileMode(ui.TileMode.repeated, 10, 50);
+      await renderScene(scene);
+
+      await matchGoldenFile(
+          'scene_builder_backdrop_filter_blur_repeated_tile_mode.png',
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+    },
+         // HTML renderer doesn't have tile modes
+         skip: isHtml);
+
+    test('backdrop layer with decal blur tile mode', () async {
+      final scene = backdropBlurWithTileMode(ui.TileMode.decal, 10, 50);
+      await renderScene(scene);
+
+      await matchGoldenFile(
+          'scene_builder_backdrop_filter_blur_decal_tile_mode.png',
+          region: const ui.Rect.fromLTWH(0, 0, 10*50, 10*50));
+    },
+         // HTML renderer doesn't have tile modes
+         skip: isHtml);
   });
 }
 
@@ -475,4 +561,59 @@ ui.Picture drawPicture(void Function(ui.Canvas) drawCommands) {
   final ui.Canvas canvas = ui.Canvas(recorder);
   drawCommands(canvas);
   return recorder.endRecording();
+}
+
+ui.Scene backdropBlurWithTileMode(ui.TileMode? tileMode,
+                                  final double rectSize,
+                                  final int count) {
+  final double imgSize = rectSize * count;
+
+  const ui.Color white = ui.Color(0xFFFFFFFF);
+  const ui.Color purple = ui.Color(0xFFFF00FF);
+  const ui.Color blue = ui.Color(0xFF0000FF);
+  const ui.Color green = ui.Color(0xFF00FF00);
+  const ui.Color yellow = ui.Color(0xFFFFFF00);
+  const ui.Color red = ui.Color(0xFFFF0000);
+
+  final ui.Picture blueGreenGridPicture = drawPicture((ui.Canvas canvas) {
+    canvas.drawColor(white, ui.BlendMode.src);
+    for (int i = 0; i < count; i++) {
+      for (int j = 0; j < count; j++) {
+        final bool rectOdd = (i + j) & 1 == 0;
+        final ui.Color fg = (i < count / 2)
+          ? ((j < count / 2) ? green : blue)
+          : ((j < count / 2) ? yellow : red);
+        canvas.drawRect(ui.Rect.fromLTWH(i * rectSize, j * rectSize, rectSize, rectSize),
+                        ui.Paint()..color = rectOdd ? fg : white);
+      }
+    }
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, imgSize, 1), ui.Paint()..color = purple);
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, 1, imgSize), ui.Paint()..color = purple);
+    canvas.drawRect(ui.Rect.fromLTWH(0, imgSize - 1, imgSize, 1), ui.Paint()..color = purple);
+    canvas.drawRect(ui.Rect.fromLTWH(imgSize - 1, 0, 1, imgSize), ui.Paint()..color = purple);
+  });
+
+  final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+  // We push a clipRect layer with the SaveLayer behavior so that it creates
+  // a layer of predetermined size in which the backdrop filter will apply
+  // its filter to show the edge effects on predictable edges.
+  sceneBuilder.pushClipRect(ui.Rect.fromLTWH(0, 0, imgSize, imgSize),
+                            clipBehavior: ui.Clip.antiAliasWithSaveLayer);
+  sceneBuilder.addPicture(ui.Offset.zero, blueGreenGridPicture);
+  sceneBuilder.pushBackdropFilter(ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20, tileMode: tileMode));
+  // The following picture prevents the saveLayer in the backdrop filter from
+  // being completely ignored on the skwasm backend due to an interaction with
+  // SkPictureRecorder eliminating saveLayer entries with no content even if
+  // they have a backdrop filter. It draws nothing because the pixels below
+  // it are opaque and dstOver is a NOP in that case, but it is unlikely that
+  // a recording process would be able to figure that out without extensive
+  // analysis between the pictures and layers.
+  sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
+    canvas.drawRect(ui.Rect.fromLTWH(imgSize * 0.5 - 10, imgSize * 0.5 - 10, 20, 20),
+                    ui.Paint()..color = purple..blendMode = ui.BlendMode.dstOver);
+  }));
+  sceneBuilder.pop();
+  sceneBuilder.pop();
+
+  return sceneBuilder.build();
 }
