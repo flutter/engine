@@ -381,6 +381,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
   }
+  command_buffer->WaitUntilScheduled();
 
   context->DisposeThreadLocalCachedResources();
 
