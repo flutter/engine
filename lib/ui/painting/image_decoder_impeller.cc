@@ -381,6 +381,9 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
   }
+
+  // Flush the pending command buffer to ensure that its output becomes visible
+  // to the raster thread.
   command_buffer->WaitUntilScheduled();
 
   context->DisposeThreadLocalCachedResources();
