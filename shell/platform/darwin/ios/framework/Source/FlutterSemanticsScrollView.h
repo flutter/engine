@@ -22,6 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(nonatomic, weak, nullable) SemanticsObject* semanticsObject;
 
+/// Whether this scroll view's geometry is actively being updated by the accessibility bridge when
+/// the framework sends new semantics data.
+///
+/// When this flag is true, this scroll view will not dispatch any `kScrollToOffset`
+/// SemanticsActions to prevent feedback loops.
+@property(nonatomic, assign) BOOL isProcessFrameworkUpdates;
+
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
