@@ -131,7 +131,7 @@
         return;
       }
       break;
-    default: {
+    default: [[unlikely]] {
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
       callback(false);
       // This should not happen. Return to suppress clang-tidy warning on `type` being nil.
