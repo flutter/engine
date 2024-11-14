@@ -102,6 +102,9 @@ std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
 RenderPass::GetOrCreatePipeline() {
   // Infer the pipeline layout based on the shape of the RenderTarget.
   auto pipeline_desc = pipeline_descriptor_;
+
+  pipeline_desc.SetSampleCount(render_target_.GetSampleCount());
+
   for (const auto& it : render_target_.GetColorAttachments()) {
     auto& color = GetColorAttachmentDescriptor(it.first);
     color.format = render_target_.GetRenderTargetPixelFormat();
@@ -309,10 +312,8 @@ static void BindVertexBuffer(
     int offset_in_bytes,
     int length_in_bytes,
     int vertex_count) {
-  wrapper->vertex_buffer = impeller::BufferView{
-      .buffer = buffer,
-      .range = impeller::Range(offset_in_bytes, length_in_bytes),
-  };
+  wrapper->vertex_buffer = impeller::BufferView(
+      buffer, impeller::Range(offset_in_bytes, length_in_bytes));
 
   // If the index type is set, then the `vertex_count` becomes the index
   // count... So don't overwrite the count if it's already been set when binding
@@ -345,10 +346,8 @@ static void BindIndexBuffer(
     int index_type,
     int index_count) {
   impeller::IndexType type = flutter::gpu::ToImpellerIndexType(index_type);
-  wrapper->index_buffer = impeller::BufferView{
-      .buffer = buffer,
-      .range = impeller::Range(offset_in_bytes, length_in_bytes),
-  };
+  wrapper->index_buffer = impeller::BufferView(
+      buffer, impeller::Range(offset_in_bytes, length_in_bytes));
   wrapper->index_buffer_type = type;
 
   bool setting_index_buffer = type != impeller::IndexType::kNone;
@@ -409,10 +408,8 @@ static bool BindUniform(
           .slot = uniform_struct->slot,
           .view = impeller::BufferResource{
               &uniform_struct->metadata,
-              impeller::BufferView{
-                  .buffer = buffer,
-                  .range = impeller::Range(offset_in_bytes, length_in_bytes),
-              },
+              impeller::BufferView(
+                  buffer, impeller::Range(offset_in_bytes, length_in_bytes)),
           }});
   return true;
 }

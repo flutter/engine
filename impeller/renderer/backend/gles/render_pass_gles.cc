@@ -149,7 +149,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  auto vertex_buffer = vertex_buffer_view.buffer;
+  const DeviceBuffer* vertex_buffer = vertex_buffer_view.GetBuffer();
 
   if (!vertex_buffer) {
     return false;
@@ -165,7 +165,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   /// Bind the vertex attributes associated with vertex buffer.
   ///
   if (!vertex_desc_gles->BindVertexAttributes(
-          gl, buffer_index, vertex_buffer_view.range.offset)) {
+          gl, buffer_index, vertex_buffer_view.GetRange().offset)) {
     return false;
   }
 
@@ -369,8 +369,6 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
           scissor.GetWidth(),                                         // width
           scissor.GetHeight()                                         // height
       );
-    } else {
-      gl.Disable(GL_SCISSOR_TEST);
     }
 
     //--------------------------------------------------------------------------
@@ -459,7 +457,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.index_buffer;
-      auto index_buffer = index_buffer_view.buffer;
+      const DeviceBuffer* index_buffer = index_buffer_view.GetBuffer();
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
@@ -469,7 +467,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
                       command.element_count,            // count
                       ToIndexType(command.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                          index_buffer_view.range.offset))  // indices
+                          index_buffer_view.GetRange().offset))  // indices
       );
     }
 

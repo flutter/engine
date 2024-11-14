@@ -138,12 +138,11 @@ void ImGui_ImplImpeller_Shutdown() {
 }
 
 void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
-                                       impeller::RenderPass& render_pass) {
+                                       impeller::RenderPass& render_pass,
+                                       impeller::HostBuffer& host_buffer) {
   if (draw_data->CmdListsCount == 0) {
     return;  // Nothing to render.
   }
-  auto host_buffer = impeller::HostBuffer::Create(
-      render_pass.GetContext()->GetResourceAllocator());
 
   using VS = impeller::ImguiRasterVertexShader;
   using FS = impeller::ImguiRasterFragmentShader;
@@ -177,7 +176,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   VS::UniformBuffer uniforms;
   uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.GetSize())
                      .Translate(-display_rect.GetOrigin());
-  auto vtx_uniforms = host_buffer->EmplaceUniform(uniforms);
+  auto vtx_uniforms = host_buffer.EmplaceUniform(uniforms);
 
   size_t vertex_buffer_offset = 0;
   size_t index_buffer_offset = total_vtx_bytes;
@@ -265,14 +264,12 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             vertex_buffer_offset + pcmd->VtxOffset * sizeof(ImDrawVert);
 
         impeller::VertexBuffer vertex_buffer;
-        vertex_buffer.vertex_buffer = impeller::BufferView{
-            .buffer = buffer,
-            .range = impeller::Range(vb_start, draw_list_vtx_bytes - vb_start)};
-        vertex_buffer.index_buffer = {
-            .buffer = buffer,
-            .range = impeller::Range(
-                index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
-                pcmd->ElemCount * sizeof(ImDrawIdx))};
+        vertex_buffer.vertex_buffer = impeller::BufferView(
+            buffer, impeller::Range(vb_start, draw_list_vtx_bytes - vb_start));
+        vertex_buffer.index_buffer = impeller::BufferView(
+            buffer, impeller::Range(index_buffer_offset +
+                                        pcmd->IdxOffset * sizeof(ImDrawIdx),
+                                    pcmd->ElemCount * sizeof(ImDrawIdx)));
         vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         render_pass.SetVertexBuffer(std::move(vertex_buffer));
@@ -285,5 +282,5 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
     vertex_buffer_offset += draw_list_vtx_bytes;
     index_buffer_offset += draw_list_idx_bytes;
   }
-  host_buffer->Reset();
+  host_buffer.Reset();
 }

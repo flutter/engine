@@ -6,9 +6,11 @@
 
 #import <Metal/Metal.h>
 
+#import "flutter/fml/platform/darwin/cf_utils.h"
+
 @interface FlutterSurface () {
   CGSize _size;
-  IOSurfaceRef _ioSurface;
+  fml::CFRef<IOSurfaceRef> _ioSurface;
   id<MTLTexture> _texture;
   // Used for testing.
   BOOL _isInUseOverride;
@@ -44,35 +46,31 @@
 - (instancetype)initWithSize:(CGSize)size device:(id<MTLDevice>)device {
   if (self = [super init]) {
     self->_size = size;
-    self->_ioSurface = [FlutterSurface createIOSurfaceWithSize:size];
+    self->_ioSurface.Reset([FlutterSurface createIOSurfaceWithSize:size]);
     self->_texture = [FlutterSurface createTextureForIOSurface:_ioSurface size:size device:device];
   }
   return self;
 }
 
-static void ReleaseSurface(void* surface) {
-  if (surface != nullptr) {
-    CFBridgingRelease(surface);
-  }
-}
-
 - (FlutterMetalTexture)asFlutterMetalTexture {
-  FlutterMetalTexture res;
-  memset(&res, 0, sizeof(FlutterMetalTexture));
-  res.struct_size = sizeof(FlutterMetalTexture);
-  res.texture = (__bridge void*)_texture;
-  res.texture_id = self.textureId;
-  res.user_data = (void*)CFBridgingRetain(self);
-  res.destruction_callback = ReleaseSurface;
-  return res;
+  return FlutterMetalTexture{
+      .struct_size = sizeof(FlutterMetalTexture),
+      .texture_id = self.textureId,
+      .texture = (__bridge void*)_texture,
+      // Retain for use in [FlutterSurface fromFlutterMetalTexture]. Released in
+      // destruction_callback.
+      .user_data = (__bridge_retained void*)self,
+      .destruction_callback =
+          [](void* user_data) {
+            // Balancing release for the retain when setting user_data above.
+            FlutterSurface* surface = (__bridge_transfer FlutterSurface*)user_data;
+            surface = nil;
+          },
+  };
 }
 
 + (FlutterSurface*)fromFlutterMetalTexture:(const FlutterMetalTexture*)texture {
   return (__bridge FlutterSurface*)texture->user_data;
-}
-
-- (void)dealloc {
-  CFRelease(_ioSurface);
 }
 
 + (IOSurfaceRef)createIOSurfaceWithSize:(CGSize)size {

@@ -7,10 +7,60 @@
 #include <algorithm>
 
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 
 namespace impeller {
+
+static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
+                                            HandleType type) {
+  GLuint handle = GL_NONE;
+  switch (type) {
+    case HandleType::kUnknown:
+      return std::nullopt;
+    case HandleType::kTexture:
+      gl.GenTextures(1u, &handle);
+      return handle;
+    case HandleType::kBuffer:
+      gl.GenBuffers(1u, &handle);
+      return handle;
+    case HandleType::kProgram:
+      return gl.CreateProgram();
+    case HandleType::kRenderBuffer:
+      gl.GenRenderbuffers(1u, &handle);
+      return handle;
+    case HandleType::kFrameBuffer:
+      gl.GenFramebuffers(1u, &handle);
+      return handle;
+  }
+  return std::nullopt;
+}
+
+static bool CollectGLHandle(const ProcTableGLES& gl,
+                            HandleType type,
+                            GLuint handle) {
+  switch (type) {
+    case HandleType::kUnknown:
+      return false;
+    case HandleType::kTexture:
+      gl.DeleteTextures(1u, &handle);
+      return true;
+    case HandleType::kBuffer:
+      gl.DeleteBuffers(1u, &handle);
+      return true;
+    case HandleType::kProgram:
+      gl.DeleteProgram(handle);
+      return true;
+    case HandleType::kRenderBuffer:
+      gl.DeleteRenderbuffers(1u, &handle);
+      return true;
+    case HandleType::kFrameBuffer:
+      gl.DeleteFramebuffers(1u, &handle);
+      return true;
+  }
+  return false;
+}
 
 ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
     : proc_table_(std::move(gl)) {
@@ -22,7 +72,17 @@ ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
   is_valid_ = true;
 }
 
-ReactorGLES::~ReactorGLES() = default;
+ReactorGLES::~ReactorGLES() {
+  if (CanReactOnCurrentThread()) {
+    for (auto& handle : handles_) {
+      if (handle.second.name.has_value()) {
+        CollectGLHandle(*proc_table_, handle.first.type,
+                        handle.second.name.value());
+      }
+    }
+    proc_table_->Flush();
+  }
+}
 
 bool ReactorGLES::IsValid() const {
   return is_valid_;
@@ -85,51 +145,15 @@ bool ReactorGLES::AddOperation(Operation operation) {
   return true;
 }
 
-static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
-                                            HandleType type) {
-  GLuint handle = GL_NONE;
-  switch (type) {
-    case HandleType::kUnknown:
-      return std::nullopt;
-    case HandleType::kTexture:
-      gl.GenTextures(1u, &handle);
-      return handle;
-    case HandleType::kBuffer:
-      gl.GenBuffers(1u, &handle);
-      return handle;
-    case HandleType::kProgram:
-      return gl.CreateProgram();
-    case HandleType::kRenderBuffer:
-      gl.GenRenderbuffers(1u, &handle);
-      return handle;
-    case HandleType::kFrameBuffer:
-      gl.GenFramebuffers(1u, &handle);
-      return handle;
+bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
+                                          const fml::closure& callback) {
+  if (handle.IsDead()) {
+    return false;
   }
-  return std::nullopt;
-}
-
-static bool CollectGLHandle(const ProcTableGLES& gl,
-                            HandleType type,
-                            GLuint handle) {
-  switch (type) {
-    case HandleType::kUnknown:
-      return false;
-    case HandleType::kTexture:
-      gl.DeleteTextures(1u, &handle);
-      return true;
-    case HandleType::kBuffer:
-      gl.DeleteBuffers(1u, &handle);
-      return true;
-    case HandleType::kProgram:
-      gl.DeleteProgram(handle);
-      return true;
-    case HandleType::kRenderBuffer:
-      gl.DeleteRenderbuffers(1u, &handle);
-      return true;
-    case HandleType::kFrameBuffer:
-      gl.DeleteFramebuffers(1u, &handle);
-      return true;
+  WriterLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    found->second.callback = fml::ScopedCleanupClosure(callback);
+    return true;
   }
   return false;
 }

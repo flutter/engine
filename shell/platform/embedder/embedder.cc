@@ -1183,21 +1183,21 @@ MakeRenderTargetFromBackingStoreImpeller(
   }
 
   impeller::TextureDescriptor depth_stencil_texture_desc;
-  depth_stencil_texture_desc.type =
-      impeller::TextureType::kTexture2DMultisample;
   depth_stencil_texture_desc.format = impeller::PixelFormat::kD24UnormS8Uint;
   depth_stencil_texture_desc.size = size;
   depth_stencil_texture_desc.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
   if (implicit_msaa) {
+    depth_stencil_texture_desc.type =
+        impeller::TextureType::kTexture2DMultisample;
     depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount4;
   } else {
+    depth_stencil_texture_desc.type = impeller::TextureType::kTexture2D;
     depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
   }
 
-  auto depth_stencil_tex = std::make_shared<impeller::TextureGLES>(
-      gl_context.GetReactor(), depth_stencil_texture_desc,
-      impeller::TextureGLES::IsWrapped::kWrapped);
+  auto depth_stencil_tex = impeller::TextureGLES::CreatePlaceholder(
+      gl_context.GetReactor(), depth_stencil_texture_desc);
 
   impeller::DepthAttachment depth0;
   depth0.clear_depth = 0;

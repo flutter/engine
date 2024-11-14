@@ -189,11 +189,11 @@ static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
                  const BufferView& view) {
-  if (!view.buffer) {
+  if (!view.GetBuffer()) {
     return false;
   }
 
-  auto device_buffer = view.buffer;
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }
@@ -204,7 +204,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
     return false;
   }
 
-  return pass.SetBuffer(stage, bind_index, view.range.offset, buffer);
+  return pass.SetBuffer(stage, bind_index, view.GetRange().offset, buffer);
 }
 
 static bool Bind(PassBindingsCacheMTL& pass,
@@ -346,13 +346,13 @@ fml::Status RenderPassMTL::Draw() {
     }
   } else {
     id<MTLBuffer> mtl_index_buffer =
-        DeviceBufferMTL::Cast(*index_buffer_.buffer).GetMTLBuffer();
+        DeviceBufferMTL::Cast(*index_buffer_.GetBuffer()).GetMTLBuffer();
     if (instance_count_ != 1u) {
       [encoder_ drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type_)
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset
+                    indexBufferOffset:index_buffer_.GetRange().offset
                         instanceCount:instance_count_
                            baseVertex:base_vertex_
                          baseInstance:0u];
@@ -361,7 +361,7 @@ fml::Status RenderPassMTL::Draw() {
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset];
+                    indexBufferOffset:index_buffer_.GetRange().offset];
     }
   }
 
@@ -408,6 +408,9 @@ bool RenderPassMTL::BindResource(
     const ShaderMetadata& metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
+  if (!texture) {
+    return false;
+  }
   return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
 }
 

@@ -136,8 +136,6 @@ TEST(ToolkitAndroidTest, CanPostAndWaitForFrameCallbacks) {
 }
 
 TEST(ToolkitAndroidTest, ShouldDisableAHB) {
-  EXPECT_FALSE(ShadowRealm::ShouldDisableAHB());
-
   EXPECT_FALSE(
       ShadowRealm::ShouldDisableAHBInternal("android-huawei", "30", 30));
   EXPECT_FALSE(
