@@ -371,17 +371,17 @@ void DisplayListBuilder::SetAttributesFromPaint(
     setStrokeJoin(paint.getStrokeJoin());
   }
   if (flags.applies_shader()) {
-    setColorSource(paint.getColorSource().get());
+    setColorSource(paint.getColorSourcePtr());
   }
   if (flags.applies_color_filter()) {
     setInvertColors(paint.isInvertColors());
-    setColorFilter(paint.getColorFilter().get());
+    setColorFilter(paint.getColorFilterPtr());
   }
   if (flags.applies_image_filter()) {
-    setImageFilter(paint.getImageFilter().get());
+    setImageFilter(paint.getImageFilterPtr());
   }
   if (flags.applies_mask_filter()) {
-    setMaskFilter(paint.getMaskFilter().get());
+    setMaskFilter(paint.getMaskFilterPtr());
   }
 }
 
@@ -1767,7 +1767,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
   }
 
   if (flags.applies_mask_filter()) {
-    auto filter = current_.getMaskFilter();
+    auto filter = current_.getMaskFilterPtr();
     if (filter) {
       switch (filter->type()) {
         case DlMaskFilterType::kBlur: {

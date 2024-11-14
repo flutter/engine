@@ -52,7 +52,7 @@ Canvas::~Canvas() {
 }
 
 Dart_Handle Canvas::getScratchSpace() const {
-  return Dart_NewExternalTypedData(Dart_TypedData_kUint8, scratch_space_, 68);
+  return Dart_NewExternalTypedData(Dart_TypedData_kUint8, scratch_space_, 72);
 }
 
 void Canvas::save() {

@@ -14,7 +14,7 @@ namespace flutter {
 // Manages a buffer allocated with malloc.
 class DisplayListStorage {
  public:
-  static const constexpr size_t kDLPageSize = 4096u;
+  static const constexpr size_t kDLPageSize = 4096u * 16;
 
   DisplayListStorage() = default;
   DisplayListStorage(DisplayListStorage&&);

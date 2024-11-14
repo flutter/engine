@@ -91,12 +91,18 @@ class DisplayListMatrixClipState {
     matrix_ = matrix_.Scale({sx, sy, 1.0f});
   }
   void skew(SkScalar skx, SkScalar sky) {
+    is_scale_translate_ = false;
     matrix_ = matrix_ * DlMatrix::MakeSkew(skx, sky);
   }
   void rotate(SkScalar degrees) {
+    is_scale_translate_ = false;
     matrix_ = matrix_ * DlMatrix::MakeRotationZ(DlDegrees(degrees));
   }
-  void transform(const DlMatrix& matrix) { matrix_ = matrix_ * matrix; }
+  void transform(const DlMatrix& matrix) {
+    is_scale_translate_ =
+        is_scale_translate_ && matrix.IsTranslationScaleOnly();
+    matrix_ = matrix_ * matrix;
+  }
   void transform(const SkM44& m44) { transform(ToDlMatrix(m44)); }
   void transform(const SkMatrix& matrix) { transform(ToDlMatrix(matrix)); }
   // clang-format off
@@ -109,6 +115,7 @@ class DisplayListMatrixClipState {
         0.0f, 0.0f, 1.0f, 0.0f,
          mxt,  myt, 0.0f, 1.0f
     );
+    is_scale_translate_ = matrix_.IsTranslationScaleOnly();
   }
   void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
@@ -121,12 +128,25 @@ class DisplayListMatrixClipState {
         mxz, myz, mzz, mwz,
         mxt, myt, mzt, mwt
     );
+    is_scale_translate_ = matrix_.IsTranslationScaleOnly();
   }
   // clang-format on
-  void setTransform(const DlMatrix& matrix) { matrix_ = matrix; }
-  void setTransform(const SkMatrix& matrix) { matrix_ = ToDlMatrix(matrix); }
-  void setTransform(const SkM44& m44) { matrix_ = ToDlMatrix(m44); }
-  void setIdentity() { matrix_ = DlMatrix(); }
+  void setTransform(const DlMatrix& matrix) {
+    matrix_ = matrix;
+    is_scale_translate_ = matrix_.IsTranslationScaleOnly();
+  }
+  void setTransform(const SkMatrix& matrix) {
+    matrix_ = ToDlMatrix(matrix);
+    is_scale_translate_ = matrix_.IsTranslationScaleOnly();
+  }
+  void setTransform(const SkM44& m44) {
+    matrix_ = ToDlMatrix(m44);
+    is_scale_translate_ = matrix_.IsTranslationScaleOnly();
+  }
+  void setIdentity() {
+    matrix_ = DlMatrix();
+    is_scale_translate_ = true;
+  }
   // If the matrix in |other_tracker| is invertible then transform this
   // tracker by the inverse of its matrix and return true. Otherwise,
   // return false and leave this tracker unmodified.
@@ -170,6 +190,7 @@ class DisplayListMatrixClipState {
  private:
   DlRect cull_rect_;
   DlMatrix matrix_;
+  bool is_scale_translate_ = true;
 
   bool getLocalCullCorners(DlPoint corners[4]) const;
   void adjustCullRect(const DlRect& clip, ClipOp op, bool is_aa);

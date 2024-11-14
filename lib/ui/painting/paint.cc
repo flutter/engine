@@ -34,8 +34,9 @@ constexpr int kMaskFilterIndex = 13;
 constexpr int kMaskFilterBlurStyleIndex = 14;
 constexpr int kMaskFilterSigmaIndex = 15;
 constexpr int kInvertColorIndex = 16;
-constexpr size_t kDataByteCount = 68;  // 4 * (last index + 1)
-static_assert(kDataByteCount == sizeof(uint32_t) * (kInvertColorIndex + 1),
+constexpr int kHasObjectsIndex = 17;
+constexpr size_t kDataByteCount = 72;  // 4 * (last index + 1)
+static_assert(kDataByteCount == sizeof(uint32_t) * (kHasObjectsIndex + 1),
               "kDataByteCount must match the size of the data array.");
 
 // Indices for objects.
@@ -87,17 +88,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
   const float* float_data = static_cast<const float*>(paint_data_);
 
   Dart_Handle values[kObjectCount];
-  if (Dart_IsNull(paint_objects_)) {
-    if (flags.applies_shader()) {
-      paint.setColorSource(nullptr);
-    }
-    if (flags.applies_color_filter()) {
-      paint.setColorFilter(nullptr);
-    }
-    if (flags.applies_image_filter()) {
-      paint.setImageFilter(nullptr);
-    }
-  } else {
+  if (uint_data[kHasObjectsIndex] != 0) {
     FML_DCHECK(Dart_IsList(paint_objects_));
     intptr_t length = 0;
     Dart_ListLength(paint_objects_, &length);
@@ -186,7 +177,6 @@ const DlPaint* Paint::paint(DlPaint& paint,
   if (flags.applies_mask_filter()) {
     switch (uint_data[kMaskFilterIndex]) {
       case kNull:
-        paint.setMaskFilter(nullptr);
         break;
       case kBlur:
         DlBlurStyle blur_style =

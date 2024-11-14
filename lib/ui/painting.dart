@@ -1277,6 +1277,7 @@ final class Paint {
   static const int _kMaskFilterBlurStyleIndex = 14;
   static const int _kMaskFilterSigmaIndex = 15;
   static const int _kInvertColorIndex = 16;
+  static const int _kHasObjectsIndex = 17;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorRedOffset = _kColorRedIndex << 2;
@@ -1295,9 +1296,10 @@ final class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
+  static const int _kHasObjectsOffset = _kHasObjectsIndex << 2;
 
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 68; // 4 * (last index + 1).
+  static const int _kDataByteCount = 72; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1715,6 +1717,7 @@ final class Paint {
   }
 
   static void _updatePaintState(Paint paint, Uint8List dest) {
+    paint._data.setInt32(_kHasObjectsOffset, paint._objects == null ? 0 : 1);
     final Uint8List src = paint._data.buffer.asUint8List();
     dest.setRange(0, src.length, src);
   }
