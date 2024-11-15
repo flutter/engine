@@ -113,6 +113,8 @@ impeller_component("renderer_unittests") {
     "../fixtures",
     "../playground:playground_test",
     "../tessellator:tessellator_libtess",
+    "//flutter/impeller/display_list:aiks_unittests",
+    "//flutter/impeller/display_list:display_list",
     "//flutter/testing:testing_lib",
   ]
 
