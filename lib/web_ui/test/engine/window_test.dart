@@ -240,10 +240,7 @@ Future<void> testMain() async {
     });
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-      myWindow.semantics.getSemanticsObjectById(0)!,
-      ui.SemanticsAction.tap,
-      null,
-    );
+        myWindow.viewId, 0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {

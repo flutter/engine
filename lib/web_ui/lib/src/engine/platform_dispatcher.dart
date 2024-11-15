@@ -1298,19 +1298,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(
-    SemanticsObject semanticsObject,
+    int viewId,
+    int nodeId,
     ui.SemanticsAction action,
     ByteData? args,
   ) {
-    final int nodeId = semanticsObject.id;
-    final EngineFlutterView? view = viewManager.findViewForElement(semanticsObject.owner.semanticsHost);
     invoke1<ui.SemanticsActionEvent>(
       _onSemanticsActionEvent,
       _onSemanticsActionEventZone,
       ui.SemanticsActionEvent(
         type: action,
         nodeId: nodeId,
-        viewId: view?.viewId ?? kImplicitViewId,
+        viewId: viewId,
         arguments: args,
       ),
     );

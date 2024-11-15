@@ -206,7 +206,8 @@ class AccessibilityFocusManager {
     // shifting focus.
     if (_lastEvent != AccessibilityFocusManagerEvent.requestedFocus) {
       EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-        _owner.getSemanticsObjectById(target.semanticsNodeId)!,
+        _owner.viewId,
+        target.semanticsNodeId,
         ui.SemanticsAction.focus,
         null,
       );

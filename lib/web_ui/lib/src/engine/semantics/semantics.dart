@@ -444,6 +444,9 @@ abstract class SemanticRole {
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
 
+  /// The ID of the Flutter View that this [SemanticRole] belongs to.
+  int get viewId => semanticsObject.owner.viewId;
+
   /// Whether this role accepts pointer events.
   ///
   /// This boolean decides whether to set the `pointer-events` CSS property to
@@ -763,6 +766,9 @@ abstract class SemanticBehavior {
   final SemanticsObject semanticsObject;
 
   final SemanticRole owner;
+
+  /// The ID of the Flutter View that this [SemanticBehavior] belongs to.
+  int get viewId => semanticsObject.owner.viewId;
 
   /// Whether this role accepts pointer events.
   ///
@@ -2381,11 +2387,14 @@ class EngineSemantics {
 
 /// The top-level service that manages everything semantics-related.
 class EngineSemanticsOwner {
-  EngineSemanticsOwner(this.semanticsHost) {
+  EngineSemanticsOwner(this.viewId, this.semanticsHost) {
     registerHotRestartListener(() {
       _rootSemanticsElement?.remove();
     });
   }
+
+  /// The ID of the Flutter View that this semantics owner belongs to.
+  final int viewId;
 
   /// The permanent element in the view's DOM structure that hosts the semantics
   /// tree.
@@ -2414,11 +2423,6 @@ class EngineSemanticsOwner {
   /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
   /// this frame.
   Map<int, SemanticsObject> _attachments = <int, SemanticsObject>{};
-
-  /// Retrieves the [SemanticsObject] with the given [semanticsNodeId].
-  SemanticsObject? getSemanticsObjectById(int semanticsNodeId) {
-    return _semanticsTree[semanticsNodeId];
-  }
 
   /// Declares that the [child] must be attached to the [parent].
   ///
