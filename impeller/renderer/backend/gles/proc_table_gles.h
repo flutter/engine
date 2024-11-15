@@ -6,7 +6,9 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
+#include <mutex>
 #include <string>
+#include <thread>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
@@ -45,6 +47,31 @@ struct AutoErrorCheck {
   }
 };
 
+template <class Type>
+void BuildGLArgumentsStream(std::stringstream& stream, Type arg) {
+  stream << arg;
+}
+
+constexpr void BuildGLArgumentsStream(std::stringstream& stream) {}
+
+template <class Type, class... Rest>
+void BuildGLArgumentsStream(std::stringstream& stream,
+                            Type arg,
+                            Rest... other_args) {
+  BuildGLArgumentsStream(stream, arg);
+  stream << ", ";
+  BuildGLArgumentsStream(stream, other_args...);
+}
+
+template <class... Type>
+[[nodiscard]] std::string BuildGLArguments(Type... args) {
+  std::stringstream stream;
+  stream << "(";
+  BuildGLArgumentsStream(stream, args...);
+  stream << ")";
+  return stream.str();
+}
+
 template <class T>
 struct GLProc {
   using GLFunctionType = T;
@@ -67,6 +94,22 @@ struct GLProc {
   PFNGLGETERRORPROC error_fn = nullptr;
 
   //----------------------------------------------------------------------------
+  /// Whether the OpenGL call and its arguments should be logged.
+  ///
+  /// Only works in IMPELLER_DEBUG and for environments where traditional
+  /// tracing is hard. Expect log spam and only use during development.
+  ///
+  bool log_calls = false;
+
+  //----------------------------------------------------------------------------
+  /// Whether the OpenGL call asserts it is only used from / one thread in
+  /// IMPELLER_DEBUG builds.
+  ///
+  /// This is used to block drawing calls from happening anywhere but the raster
+  /// thread.
+  bool enforce_one_thread = false;
+
+  //----------------------------------------------------------------------------
   /// @brief      Call the GL function with the appropriate parameters. Lookup
   ///             the documentation for the GL function being called to
   ///             understand the arguments and return types. The arguments
@@ -81,6 +124,20 @@ struct GLProc {
     // validation log will at least give us a hint as to what's going on.
     FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
                              << "This is likely due to a missing extension.";
+    if (log_calls) {
+      FML_LOG(IMPORTANT) << name
+                         << BuildGLArguments(std::forward<Args>(args)...);
+    }
+    if (enforce_one_thread) {
+      static std::thread::id allowed_thread;
+      static std::once_flag flag;
+      std::call_once(flag,
+                     []() { allowed_thread = std::this_thread::get_id(); });
+      FML_CHECK(std::this_thread::get_id() == allowed_thread)
+          << "This symbol is expected to be called from one thread, the raster "
+             "thread. As of this addition, the design of the engine should be "
+             "using non-raster threads only for uploading images.";
+    }
 #endif  // defined(IMPELLER_DEBUG) && !defined(NDEBUG)
     return function(std::forward<Args>(args)...);
   }
@@ -131,6 +188,7 @@ struct GLProc {
   PROC(DrawElements);                        \
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
+  PROC(Finish);                              \
   PROC(Flush);                               \
   PROC(FramebufferRenderbuffer);             \
   PROC(FramebufferTexture2D);                \

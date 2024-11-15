@@ -6,8 +6,7 @@
 #include "flutter/testing/test_metal_surface.h"
 #include "flutter/testing/testing.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 #ifdef SHELL_ENABLE_METAL
 
@@ -28,8 +27,7 @@ TEST(TestMetalSurface, CanCreateValidTestMetalSurface) {
   }
 
   TestMetalContext metal_context = TestMetalContext();
-  auto surface =
-      TestMetalSurface::Create(metal_context, SkISize::Make(100, 100));
+  auto surface = TestMetalSurface::Create(metal_context, SkISize::Make(100, 100));
   ASSERT_NE(surface, nullptr);
   ASSERT_TRUE(surface->IsValid());
   ASSERT_NE(surface->GetSurface(), nullptr);
@@ -38,5 +36,4 @@ TEST(TestMetalSurface, CanCreateValidTestMetalSurface) {
 
 #endif
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
