@@ -222,6 +222,10 @@ class Context {
   /// rendering a 2D workload.
   [[nodiscard]] virtual bool FlushCommandBuffers();
 
+  virtual bool AddTrackingFence(const std::shared_ptr<Texture>& texture) {
+    return true;
+  }
+
   virtual std::shared_ptr<const IdleWaiter> GetIdleWaiter() const {
     return nullptr;
   }

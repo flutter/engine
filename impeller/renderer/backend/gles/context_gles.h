@@ -9,10 +9,12 @@
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_library_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/backend/gles/sampler_library_gles.h"
 #include "impeller/renderer/backend/gles/shader_library_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
@@ -92,6 +94,15 @@ class ContextGLES final : public Context,
 
   // |Context|
   void Shutdown() override;
+
+  bool AddTrackingFence(const std::shared_ptr<Texture>& texture) override {
+    if (!reactor_->GetProcTable().FenceSync.IsAvailable()) {
+      return true;
+    }
+    auto fence = reactor_->CreateHandle(HandleType::kFence);
+    TextureGLES::Cast(*texture).SetFence(fence);
+    return true;
+  }
 
   ContextGLES(const ContextGLES&) = delete;
 

@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "fml/closure.h"
@@ -15,6 +16,13 @@
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
+
+struct GLHandle {
+  union {
+    GLuint handle;
+    GLsync sync;
+  };
+};
 
 //------------------------------------------------------------------------------
 /// @brief      The reactor attempts to make thread-safe usage of OpenGL ES
@@ -158,6 +166,8 @@ class ReactorGLES {
   ///
   std::optional<GLuint> GetGLHandle(const HandleGLES& handle) const;
 
+  std::optional<GLsync> GetGLFence(const HandleGLES& handle) const;
+
   //----------------------------------------------------------------------------
   /// @brief      Create a reactor handle.
   ///
@@ -246,14 +256,14 @@ class ReactorGLES {
 
  private:
   struct LiveHandle {
-    std::optional<GLuint> name;
+    std::optional<GLHandle> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
     fml::ScopedCleanupClosure callback = {};
 
     LiveHandle() = default;
 
-    explicit LiveHandle(std::optional<GLuint> p_name) : name(p_name) {}
+    explicit LiveHandle(std::optional<GLHandle> p_name) : name(p_name) {}
 
     constexpr bool IsLive() const { return name.has_value(); }
   };

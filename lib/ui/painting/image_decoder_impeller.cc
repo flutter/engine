@@ -359,7 +359,6 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
       resize_desc.usage |= impeller::TextureUsage::kShaderWrite;
       resize_desc.compression_type = impeller::CompressionType::kLossless;
     }
-
     auto resize_texture =
         context->GetResourceAllocator()->CreateTexture(resize_desc);
     if (!resize_texture) {
@@ -377,6 +376,8 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     result_texture = std::move(resize_texture);
   }
   blit_pass->EncodeCommands(context->GetResourceAllocator());
+
+  context->AddTrackingFence(result_texture);
 
   if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
     std::string decode_error("Failed to submit image decoding command buffer.");

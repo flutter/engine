@@ -6,58 +6,66 @@
 
 #include <algorithm>
 
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 
 namespace impeller {
 
-static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
-                                            HandleType type) {
-  GLuint handle = GL_NONE;
+static std::optional<GLHandle> CreateGLHandle(const ProcTableGLES& gl,
+                                              HandleType type) {
+  GLHandle handle = GLHandle{.handle = GL_NONE};
   switch (type) {
     case HandleType::kUnknown:
       return std::nullopt;
     case HandleType::kTexture:
-      gl.GenTextures(1u, &handle);
+      gl.GenTextures(1u, &handle.handle);
       return handle;
     case HandleType::kBuffer:
-      gl.GenBuffers(1u, &handle);
+      gl.GenBuffers(1u, &handle.handle);
       return handle;
     case HandleType::kProgram:
-      return gl.CreateProgram();
+      return GLHandle{.handle = gl.CreateProgram()};
     case HandleType::kRenderBuffer:
-      gl.GenRenderbuffers(1u, &handle);
+      gl.GenRenderbuffers(1u, &handle.handle);
       return handle;
     case HandleType::kFrameBuffer:
-      gl.GenFramebuffers(1u, &handle);
+      gl.GenFramebuffers(1u, &handle.handle);
       return handle;
+    case HandleType::kFence:
+      return GLHandle{.sync = gl.FenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)};
+      break;
   }
   return std::nullopt;
 }
 
 static bool CollectGLHandle(const ProcTableGLES& gl,
                             HandleType type,
-                            GLuint handle) {
+                            GLHandle handle) {
   switch (type) {
     case HandleType::kUnknown:
       return false;
     case HandleType::kTexture:
-      gl.DeleteTextures(1u, &handle);
+      gl.DeleteTextures(1u, &handle.handle);
       return true;
     case HandleType::kBuffer:
-      gl.DeleteBuffers(1u, &handle);
+      gl.DeleteBuffers(1u, &handle.handle);
       return true;
     case HandleType::kProgram:
-      gl.DeleteProgram(handle);
+      gl.DeleteProgram(handle.handle);
       return true;
     case HandleType::kRenderBuffer:
-      gl.DeleteRenderbuffers(1u, &handle);
+      gl.DeleteRenderbuffers(1u, &handle.handle);
       return true;
     case HandleType::kFrameBuffer:
-      gl.DeleteFramebuffers(1u, &handle);
+      gl.DeleteFramebuffers(1u, &handle.handle);
       return true;
+    case HandleType::kFence:
+      gl.DeleteSync(handle.sync);
+      break;
   }
   return false;
 }
@@ -115,6 +123,9 @@ const ProcTableGLES& ReactorGLES::GetProcTable() const {
 }
 
 std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+  if (handle.type == HandleType::kFence) {
+    return std::nullopt;
+  }
   ReaderLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
     if (found->second.pending_collection) {
@@ -126,7 +137,28 @@ std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
       VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
       return std::nullopt;
     }
-    return found->second.name;
+    return found->second.name->handle;
+  }
+  VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
+  return std::nullopt;
+}
+
+std::optional<GLsync> ReactorGLES::GetGLFence(const HandleGLES& handle) const {
+  if (handle.type != HandleType::kFence) {
+    return std::nullopt;
+  }
+  ReaderLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    if (found->second.pending_collection) {
+      VALIDATION_LOG
+          << "Attempted to acquire a handle that was pending collection.";
+      return std::nullopt;
+    }
+    if (!found->second.name.has_value()) {
+      VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
+      return std::nullopt;
+    }
+    return found->second.name->sync;
   }
   VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
   return std::nullopt;
@@ -168,9 +200,9 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   }
   WriterLock handles_lock(handles_mutex_);
 
-  std::optional<GLuint> gl_handle;
+  std::optional<GLHandle> gl_handle;
   if (external_handle != GL_NONE) {
-    gl_handle = external_handle;
+    gl_handle = GLHandle{.handle = external_handle};
   } else if (CanReactOnCurrentThread()) {
     gl_handle = CreateGLHandle(GetProcTable(), type);
   }
@@ -216,6 +248,8 @@ static DebugResourceType ToDebugResourceType(HandleType type) {
       return DebugResourceType::kRenderBuffer;
     case HandleType::kFrameBuffer:
       return DebugResourceType::kFrameBuffer;
+    case HandleType::kFence:
+      return DebugResourceType::kFence;
   }
   FML_UNREACHABLE();
 }
@@ -254,9 +288,10 @@ bool ReactorGLES::ConsolidateHandles() {
       handle.second.name = gl_handle;
     }
     // Set pending debug labels.
-    if (handle.second.pending_debug_label.has_value()) {
+    if (handle.second.pending_debug_label.has_value() &&
+        handle.first.type != HandleType::kFence) {
       if (gl.SetDebugLabel(ToDebugResourceType(handle.first.type),
-                           handle.second.name.value(),
+                           handle.second.name.value().handle,
                            handle.second.pending_debug_label.value())) {
         handle.second.pending_debug_label = std::nullopt;
       }

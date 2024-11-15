@@ -7,6 +7,7 @@
 #include <optional>
 #include <utility>
 
+#include "GLES3/gl3.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
@@ -478,6 +479,16 @@ bool TextureGLES::Bind() const {
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
+
+  if (fence_.has_value()) {
+    std::optional<GLsync> fence = reactor_->GetGLFence(fence_.value());
+    if (fence.has_value()) {
+      gl.WaitSync(fence.value(), 0, GL_TIMEOUT_IGNORED);
+    }
+    reactor_->CollectHandle(fence_.value());
+    fence_ = std::nullopt;
+  }
+
   switch (type_) {
     case Type::kTexture:
     case Type::kTextureMultisampled: {

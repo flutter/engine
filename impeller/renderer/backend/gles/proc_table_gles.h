@@ -237,7 +237,11 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(ClearDepth);                               \
   PROC(DepthRange);
 
-#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
+#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) \
+  PROC(FenceSync);                         \
+  PROC(DeleteSync);                        \
+  PROC(WaitSync);                          \
+  PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
   PROC(DebugMessageControlKHR);             \
@@ -261,6 +265,7 @@ enum class DebugResourceType {
   kShader,
   kRenderBuffer,
   kFrameBuffer,
+  kFence,
 };
 
 class ProcTableGLES {
