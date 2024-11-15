@@ -7,6 +7,7 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h"
@@ -17,7 +18,7 @@ FLUTTER_ASSERT_ARC
 const float kFloatCompareEpsilon = 0.001;
 
 @interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
-@property(nonatomic) UIScrollView* scrollView;
+@property(nonatomic) FlutterSemanticsScrollView* scrollView;
 @end
 
 @interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
@@ -1237,8 +1238,12 @@ const float kFloatCompareEpsilon = 0.001;
       [[FlutterScrollableSemanticsObject alloc] initWithBridge:bridge uid:5];
 
   // setContentOffset
-  const CGPoint p = CGPointMake(123.0, 456.0);
+  CGPoint p = CGPointMake(123.0, 456.0);
+  [scrollable.scrollView scrollViewWillEndDragging:scrollable.scrollView
+                                      withVelocity:CGPointMake(0, 0)
+                               targetContentOffset:&p];
   scrollable.scrollView.contentOffset = p;
+  [scrollable.scrollView scrollViewDidEndDecelerating:scrollable.scrollView];
   XCTAssertEqual(bridge->observations.size(), (size_t)1);
   XCTAssertEqual(bridge->observations[0].id, 5);
   XCTAssertEqual(bridge->observations[0].action, flutter::SemanticsAction::kScrollToOffset);

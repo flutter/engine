@@ -18,16 +18,28 @@ NS_ASSUME_NONNULL_BEGIN
  * sends all of selector calls from accessibility services to the
  * owner SemanticsObject.
  */
-@interface FlutterSemanticsScrollView : UIScrollView
+@interface FlutterSemanticsScrollView : UIScrollView <UIScrollViewDelegate>
 
 @property(nonatomic, weak, nullable) SemanticsObject* semanticsObject;
 
-/// Whether this scroll view's geometry is actively being updated by the accessibility bridge when
-/// the framework sends new semantics data.
+/// Whether this scroll view's content offset is actively being updated by UIKit
+/// or other the system services.
 ///
-/// When this flag is true, this scroll view will not dispatch any `kScrollToOffset`
-/// SemanticsActions to prevent feedback loops.
-@property(nonatomic, assign) BOOL isProcessFrameworkUpdates;
+/// This flag is set by the `FlutterSemanticsScrollView` itself, typically in
+/// one of the `UIScrollViewDelegate` methods.
+///
+/// When this flag is true, the Flutter framework should typically cease
+/// updating the content offset of this scroll view until the flag becomes
+/// false, to prevent potential feedback loops (especially when the framework is
+/// only echoing the new content offset back to this scroll view).
+///
+/// For example, to scroll a scrollable container with iOS full keyboard access,
+/// the iOS focus system uses a display link to scroll the container to the
+/// desired offset animatedly. If the user changes the scroll offset during the
+/// animation, the display link will be invalidated and the scrolling animation
+/// will be interrupted. For simplicity, content offset updates coming from the
+/// framework will be ignored in the relatively short animation duration (~1s).
+@property(nonatomic, readonly) BOOL isDoingSystemScrolling;
 
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;

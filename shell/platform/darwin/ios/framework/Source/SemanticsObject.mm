@@ -9,8 +9,6 @@
 
 FLUTTER_ASSERT_ARC
 
-constexpr CGFloat kScrollUpdatePixelThreshould = 0.0000001;
-
 namespace {
 
 flutter::SemanticsAction GetSemanticsActionForScrollDirection(
@@ -158,7 +156,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     [_scrollView setShowsVerticalScrollIndicator:NO];
     [_scrollView setContentInset:UIEdgeInsetsMake(0, 0, 0, 0)];
     [_scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
-    _scrollView.isProcessFrameworkUpdates = NO;
     [self.bridge->view() addSubview:_scrollView];
   }
   return self;
@@ -169,7 +166,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (void)accessibilityBridgeDidFinishUpdate {
-  self.scrollView.isProcessFrameworkUpdates = YES;
   // In order to make iOS think this UIScrollView is scrollable, the following
   // requirements must be true.
   // 1. contentSize must be bigger than the frame size.
@@ -180,23 +176,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // contentOffset is 0.0, only the scroll down action is available.
   self.scrollView.frame = self.accessibilityFrame;
   self.scrollView.contentSize = [self contentSizeInternal];
-  CGPoint newOffset = [self contentOffsetInternal];
-  // The iOS focus system uses a display link to scroll a scrollable container
-  // to the desired offset animatedly. If the user changes the scroll offset
-  // during the animation, the display link will be invalidated and
-  // the scrolling animation will be interrupted. Vet out the framework scroll
-  // offset updates that are generated as a result of the scroll animation to avoid
-  // calling setContentOffset again(which would otherwise interrupt the scrolling).
-  //
-  // The `newOffset` and `currentOffset` values can be slightly different even
-  // if they are the result of the same scroll animation. This happens likely
-  // because we're converting the offset values to single recision somewhere
-  // when sending this to the framework.
-  if (fabs(self.scrollView.contentOffset.x - newOffset.x) > kScrollUpdatePixelThreshould ||
-      fabs(self.scrollView.contentOffset.y - newOffset.y) > kScrollUpdatePixelThreshould) {
-    [self.scrollView setContentOffset:newOffset animated:NO];
+  if (!self.scrollView.isDoingSystemScrolling) {
+    [self.scrollView setContentOffset:self.contentOffsetInternal animated:NO];
   }
-  self.scrollView.isProcessFrameworkUpdates = NO;
 }
 
 - (id)nativeAccessibility {

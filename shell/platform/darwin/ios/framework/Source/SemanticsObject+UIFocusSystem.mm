@@ -206,7 +206,7 @@ FLUTTER_ASSERT_ARC
   [super setContentOffset:contentOffset];
   // Do no send flutter::SemanticsAction::kScrollToOffset if it's triggered
   // by a framework update.
-  if (![self.semanticsObject isAccessibilityBridgeAlive] || self.isProcessFrameworkUpdates) {
+  if (![self.semanticsObject isAccessibilityBridgeAlive] || !self.isDoingSystemScrolling) {
     return;
   }
 
