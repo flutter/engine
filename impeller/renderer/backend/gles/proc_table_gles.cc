@@ -122,8 +122,10 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
     proc_ivar.error_fn = error_fn;                              \
   }
 
-  GLint major_version;
-  GetIntegerv(GL_MAJOR_VERSION, &major_version);
+  GLint major_version = 0;
+  if (GetIntegerv.function) {
+    GetIntegerv(GL_MAJOR_VERSION, &major_version);
+  }
 
   if (major_version >= 3) {
     FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
