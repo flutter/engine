@@ -35,7 +35,6 @@ static std::optional<GLHandle> CreateGLHandle(const ProcTableGLES& gl,
       return handle;
     case HandleType::kFence:
       return GLHandle{.sync = gl.FenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)};
-      break;
   }
   return std::nullopt;
 }
@@ -122,10 +121,7 @@ const ProcTableGLES& ReactorGLES::GetProcTable() const {
   return *proc_table_;
 }
 
-std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
-  if (handle.type == HandleType::kFence) {
-    return std::nullopt;
-  }
+std::optional<GLHandle> ReactorGLES::GetHandle(const HandleGLES& handle) const {
   ReaderLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
     if (found->second.pending_collection) {
@@ -138,9 +134,20 @@ std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
       VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
       return std::nullopt;
     }
-    return name->handle;
+    return name;
   }
   VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
+  return std::nullopt;
+}
+
+std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+  if (handle.type == HandleType::kFence) {
+    return std::nullopt;
+  }
+  std::optional<GLHandle> gl_handle = GetHandle(handle);
+  if (gl_handle.has_value()) {
+    return gl_handle->handle;
+  }
   return std::nullopt;
 }
 
@@ -148,21 +155,10 @@ std::optional<GLsync> ReactorGLES::GetGLFence(const HandleGLES& handle) const {
   if (handle.type != HandleType::kFence) {
     return std::nullopt;
   }
-  ReaderLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    if (found->second.pending_collection) {
-      VALIDATION_LOG
-          << "Attempted to acquire a handle that was pending collection.";
-      return std::nullopt;
-    }
-    std::optional<GLHandle> name = found->second.name;
-    if (!name.has_value()) {
-      VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
-      return std::nullopt;
-    }
-    return name->sync;
+  std::optional<GLHandle> gl_handle = GetHandle(handle);
+  if (gl_handle.has_value()) {
+    return gl_handle->sync;
   }
-  VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
   return std::nullopt;
 }
 

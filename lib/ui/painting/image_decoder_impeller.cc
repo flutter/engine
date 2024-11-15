@@ -377,8 +377,6 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
   }
   blit_pass->EncodeCommands(context->GetResourceAllocator());
 
-  bool did_add_fence = context->AddTrackingFence(result_texture);
-
   if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
     std::string decode_error("Failed to submit image decoding command buffer.");
     FML_DLOG(ERROR) << decode_error;
@@ -387,7 +385,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
 
   // Flush the pending command buffer to ensure that its output becomes visible
   // to the raster thread.
-  if (did_add_fence) {
+  if (context->AddTrackingFence(result_texture)) {
     command_buffer->WaitUntilScheduled();
   } else {
     command_buffer->WaitUntilCompleted();

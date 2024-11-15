@@ -124,7 +124,7 @@ class TextureGLES final : public Texture,
 
   //----------------------------------------------------------------------------
   /// @brief      Attach a sync fence to this texture that will be waited on
-  ///             before encoding a rendering operatio that references it.
+  ///             before encoding a rendering operation that references it.
   ///
   /// @param[in]  fence  A handle to a sync fence.
   ///

@@ -302,6 +302,8 @@ class ReactorGLES {
 
   void SetupDebugGroups();
 
+  std::optional<GLHandle> GetHandle(const HandleGLES& handle) const;
+
   ReactorGLES(const ReactorGLES&) = delete;
 
   ReactorGLES& operator=(const ReactorGLES&) = delete;
