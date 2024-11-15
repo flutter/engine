@@ -33,5 +33,39 @@ TEST(ProcTableGLES, ResolvesCorrectClearDepthProcOnDesktopGL) {
   FOR_EACH_IMPELLER_ES_ONLY_PROC(EXPECT_UNAVAILABLE);
 }
 
+TEST(ProcTableGLES, DebuggingOptionsAreRespected) {
+#ifndef IMPELLER_DEBUG
+  if ((true)) {
+    GTEST_SKIP() << "Debugging is only available in IMPELLER_DEBUG";
+  }
+#endif  // IMPELLER_DEBUG
+  auto mock_gles = MockGLES::Init(std::nullopt, "OpenGL ES 3.0");
+  auto& gl = mock_gles->GetProcTable();
+  // Check call logging.
+  {
+    gl.SetDebugGLCallLogging(false);
+    ASSERT_FALSE(gl.Clear.log_calls);
+    gl.SetDebugGLCallLogging(true);
+    ASSERT_TRUE(gl.Clear.log_calls);
+    gl.SetDebugGLCallLogging(false);
+    ASSERT_FALSE(gl.Clear.log_calls);
+    gl.SetDebugGLCallLogging(true, "glClear");
+    ASSERT_TRUE(gl.Clear.log_calls);
+    gl.SetDebugGLCallLogging(false, "glClear");
+    ASSERT_FALSE(gl.Clear.log_calls);
+  }
+  // Check error checking.
+  {
+    gl.SetDebugGLErrorChecking(true);
+    ASSERT_NE(gl.Clear.error_fn, nullptr);
+    gl.SetDebugGLErrorChecking(false);
+    ASSERT_EQ(gl.Clear.error_fn, nullptr);
+    gl.SetDebugGLErrorChecking(true, "glClear");
+    ASSERT_NE(gl.Clear.error_fn, nullptr);
+    gl.SetDebugGLErrorChecking(false, "glClear");
+    ASSERT_EQ(gl.Clear.error_fn, nullptr);
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller

@@ -83,17 +83,11 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
 
   resolver = WrappedResolver(resolver);
 
-  auto error_fn = reinterpret_cast<PFNGLGETERRORPROC>(resolver("glGetError"));
-  if (!error_fn) {
-    VALIDATION_LOG << "Could not resolve " << "glGetError";
-    return;
-  }
-
 #define IMPELLER_PROC(proc_ivar)                                \
   if (auto fn_ptr = resolver(proc_ivar.name)) {                 \
     proc_ivar.function =                                        \
         reinterpret_cast<decltype(proc_ivar.function)>(fn_ptr); \
-    proc_ivar.error_fn = error_fn;                              \
+    RegisterProc(&proc_ivar);                                   \
   } else {                                                      \
     VALIDATION_LOG << "Could not resolve " << proc_ivar.name;   \
     return;                                                     \
@@ -119,7 +113,7 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
   if (auto fn_ptr = resolver(proc_ivar.name)) {                 \
     proc_ivar.function =                                        \
         reinterpret_cast<decltype(proc_ivar.function)>(fn_ptr); \
-    proc_ivar.error_fn = error_fn;                              \
+    RegisterProc(&proc_ivar);                                   \
   }
   FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
@@ -143,6 +137,10 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
   // This this will force glUseProgram to only be used on one thread in debug
   // builds to identify threading violations in the engine.
   UseProgram.enforce_one_thread = true;
+
+#ifndef NDEBUG
+  SetDebugGLErrorChecking(true);
+#endif  // NDEBUG
 
   is_valid_ = true;
 }
@@ -429,6 +427,64 @@ std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {
   }
   return std::string{reinterpret_cast<const char*>(allocation.GetBuffer()),
                      static_cast<size_t>(length)};
+}
+
+void ProcTableGLES::RegisterProc(GLProcBase* proc) {
+  if (proc && proc->name) {
+    debug_known_procs_[proc->name] = proc;
+  }
+}
+
+void ProcTableGLES::IterateDebugProcs(
+    std::function<bool(GLProcBase*)> iterator) const {
+  if (!iterator) {
+    return;
+  }
+  for (const auto& proc : debug_known_procs_) {
+    if (!iterator(proc.second)) {
+      return;
+    }
+  }
+}
+
+void ProcTableGLES::SetDebugGLCallLogging(bool log) const {
+  IterateDebugProcs([log](GLProcBase* proc) -> bool {
+    proc->log_calls = log;
+    return true;
+  });
+}
+
+void ProcTableGLES::SetDebugGLCallLogging(bool log,
+                                          const char* function_name) const {
+  IterateDebugProcs([log, function_name](GLProcBase* proc) -> bool {
+    if (proc->name == function_name) {
+      proc->log_calls = log;
+      return false;
+    }
+    return true;
+  });
+}
+
+void ProcTableGLES::SetDebugGLErrorChecking(bool check) const {
+  FML_DCHECK(GetError.function != nullptr);
+  PFNGLGETERRORPROC error_fn = check ? GetError.function : nullptr;
+  IterateDebugProcs([error_fn](GLProcBase* proc) -> bool {
+    proc->error_fn = error_fn;
+    return true;
+  });
+}
+
+void ProcTableGLES::SetDebugGLErrorChecking(bool check,
+                                            const char* function_name) const {
+  FML_DCHECK(GetError.function != nullptr);
+  PFNGLGETERRORPROC error_fn = check ? GetError.function : nullptr;
+  IterateDebugProcs([error_fn, function_name](GLProcBase* proc) -> bool {
+    if (proc->name == function_name) {
+      proc->error_fn = error_fn;
+      return false;
+    }
+    return true;
+  });
 }
 
 }  // namespace impeller

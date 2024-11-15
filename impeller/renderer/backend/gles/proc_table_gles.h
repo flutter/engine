@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
+#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -72,20 +73,12 @@ template <class... Type>
   return stream.str();
 }
 
-template <class T>
-struct GLProc {
-  using GLFunctionType = T;
-
+struct GLProcBase {
   //----------------------------------------------------------------------------
   /// The name of the GL function.
   ///
   // TODO(135922) Change to string_view.
   const char* name = nullptr;
-
-  //----------------------------------------------------------------------------
-  /// The pointer to the GL function.
-  ///
-  GLFunctionType* function = nullptr;
 
   //----------------------------------------------------------------------------
   /// An optional error function. If present, all calls will be followed by an
@@ -109,6 +102,20 @@ struct GLProc {
   /// thread.
   bool enforce_one_thread = false;
 
+  explicit GLProcBase(const char* p_name) : name(p_name) {}
+};
+
+template <class T>
+struct GLProc : public GLProcBase {
+  using GLFunctionType = T;
+
+  explicit GLProc(const char* p_name) : GLProcBase(p_name) {}
+
+  //----------------------------------------------------------------------------
+  /// The pointer to the GL function.
+  ///
+  GLFunctionType* function = nullptr;
+
   //----------------------------------------------------------------------------
   /// @brief      Call the GL function with the appropriate parameters. Lookup
   ///             the documentation for the GL function being called to
@@ -117,7 +124,7 @@ struct GLProc {
   ///
   template <class... Args>
   auto operator()(Args&&... args) const {
-#if defined(IMPELLER_DEBUG) && !defined(NDEBUG)
+#if defined(IMPELLER_DEBUG)
     AutoErrorCheck error(error_fn, name);
     // We check for the existence of extensions, and reset the function pointer
     // but it's still called unconditionally below, and will segfault. This
@@ -138,7 +145,7 @@ struct GLProc {
              "thread. As of this addition, the design of the engine should be "
              "using non-raster threads only for uploading images.";
     }
-#endif  // defined(IMPELLER_DEBUG) && !defined(NDEBUG)
+#endif  // defined(IMPELLER_DEBUG)
     return function(std::forward<Args>(args)...);
   }
 
@@ -201,6 +208,7 @@ struct GLProc {
   PROC(GenVertexArrays);                     \
   PROC(GetActiveUniform);                    \
   PROC(GetBooleanv);                         \
+  PROC(GetError);                            \
   PROC(GetFloatv);                           \
   PROC(GetFramebufferAttachmentParameteriv); \
   PROC(GetIntegerv);                         \
@@ -208,6 +216,7 @@ struct GLProc {
   PROC(GetProgramiv);                        \
   PROC(GetShaderInfoLog);                    \
   PROC(GetShaderiv);                         \
+  PROC(GetShaderSource);                     \
   PROC(GetString);                           \
   PROC(GetStringi);                          \
   PROC(GetUniformLocation);                  \
@@ -227,9 +236,9 @@ struct GLProc {
   PROC(StencilMaskSeparate);                 \
   PROC(StencilOpSeparate);                   \
   PROC(TexImage2D);                          \
-  PROC(TexSubImage2D);                       \
-  PROC(TexParameteri);                       \
   PROC(TexParameterfv);                      \
+  PROC(TexParameteri);                       \
+  PROC(TexSubImage2D);                       \
   PROC(Uniform1fv);                          \
   PROC(Uniform1i);                           \
   PROC(Uniform2fv);                          \
@@ -239,7 +248,6 @@ struct GLProc {
   PROC(UseProgram);                          \
   PROC(VertexAttribPointer);                 \
   PROC(Viewport);                            \
-  PROC(GetShaderSource);                     \
   PROC(ReadPixels);
 
 // Calls specific to OpenGLES.
@@ -293,7 +301,7 @@ class ProcTableGLES {
   ~ProcTableGLES();
 
 #define IMPELLER_PROC(name) \
-  GLProc<decltype(gl##name)> name = {"gl" #name, nullptr};
+  GLProc<decltype(gl##name)> name = GLProc<decltype(gl##name)>{"gl" #name};
 
   FOR_EACH_IMPELLER_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_ES_ONLY_PROC(IMPELLER_PROC);
@@ -332,6 +340,55 @@ class ProcTableGLES {
 
   void PopDebugGroup() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Set if all OpenGL function calls in this proc table log their
+  ///             invocation and arguments.
+  ///
+  ///             Example:
+  ///             ```
+  ///             glDepthMask(1)
+  ///             glViewport(0, 0, 2048, 1536)
+  ///             glDepthRangef(0, 1)
+  ///             glDisable(2884)
+  ///             glFrontFace(2304)
+  ///             ```
+  ///
+  /// @warning    Call logging is only available in IMPELLER_DEBUG builds.
+  ///
+  /// @param[in]  log   If logging should be enabled.
+  ///
+  void SetDebugGLCallLogging(bool log) const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Set if the a specific OpenGL function call logs its invocation
+  ///             and arguments.
+  ///
+  /// @warning    Call logging is only available in IMPELLER_DEBUG builds.
+  ///
+  /// @param[in]  log   If logging should be enabled.
+  ///
+  void SetDebugGLCallLogging(bool log, const char* function_name) const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Set if glGetError is called and trapped on all OpenGL function
+  ///             calls in this proc table.
+  ///
+  /// @warning    GL error checking is only available in IMPELLER_DEBUG builds.
+  ///
+  /// @param[in]  check  If error checking should be performed.
+  ///
+  void SetDebugGLErrorChecking(bool check) const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Set if glGetError is called and trapped on a specific OpenGL
+  ///             function in this proc table.
+  ///
+  /// @warning    GL error checking is only available in IMPELLER_DEBUG builds.
+  ///
+  /// @param[in]  check  If error checking should be performed.
+  ///
+  void SetDebugGLErrorChecking(bool check, const char* function_name) const;
+
   // Visible For testing.
   std::optional<std::string> ComputeShaderWithDefines(
       const fml::Mapping& mapping,
@@ -342,10 +399,15 @@ class ProcTableGLES {
   std::unique_ptr<DescriptionGLES> description_;
   std::shared_ptr<const CapabilitiesGLES> capabilities_;
   GLint debug_label_max_length_ = 0;
+  std::map<std::string, GLProcBase*> debug_known_procs_;
 
   ProcTableGLES(const ProcTableGLES&) = delete;
 
   ProcTableGLES& operator=(const ProcTableGLES&) = delete;
+
+  void IterateDebugProcs(std::function<bool(GLProcBase*)> iterator) const;
+
+  void RegisterProc(GLProcBase* proc);
 };
 
 }  // namespace impeller

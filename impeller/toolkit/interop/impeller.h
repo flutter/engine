@@ -626,6 +626,71 @@ ImpellerContextCreateOpenGLESNew(
     void* IMPELLER_NULLABLE gl_proc_address_callback_user_data);
 
 //------------------------------------------------------------------------------
+/// @brief      Only available in instrumented builds with IMPELLER_DEBUG
+///             enabled, setting GL call logging will log all OpenGL calls along
+///             with their arguments.
+///
+///             This becomes spammy and is only meant to be used as a debugging
+///             aid in environments where traditional graphics debuggers like
+///             RenderDoc are not available.
+///
+///             If the function name is NULL, the option applies to all OpenGL
+///             calls made by Impeller.
+///
+///             Only calls made by Impeller will be logged. Impeller doesn't
+///             know about OpenGL calls made by the embedder.
+///
+///             Expect logging in the form of:
+///
+///             ```
+///             glDepthMask(1)
+///             glViewport(0, 0, 2048, 1536)
+///             glDepthRangef(0, 1)
+///             glDisable(2884)
+///             glFrontFace(2304)
+///             ```
+///
+///             This function does nothing if the context is not an OpenGL
+///             context.
+///
+/// @param[in]  context               The context
+/// @param[in]  opengl_function_name  The opengl function name or NULL if the
+///                                   option must be set for all OpenGL methods.
+/// @param[in]  enable                If logging must be enabled.
+///
+IMPELLER_EXPORT void ImpellerContextSetDebugGLCallLogging(
+    ImpellerContext IMPELLER_NONNULL context,
+    const char* IMPELLER_NULLABLE opengl_function_name,
+    bool enable);
+
+//------------------------------------------------------------------------------
+/// @brief      Only available in instrumented builds with IMPELLER_DEBUG
+///             enabled, setting GL error checking will trap on all OpenGL error
+///             after OpenGL calls made by Impeller.
+///
+///             There is appreciable overhead to this form of debugging and it
+///             must only be used in environments where traditional graphics
+///             debuggers like RenderDoc are not available.
+///
+///             If the function name is NULL, the option applies to all OpenGL
+///             calls made by Impeller.
+///
+///             Only calls made by Impeller will be logged. Impeller doesn't
+///             know about OpenGL calls made by the embedder.
+///
+///             This function does nothing if the context is not an OpenGL
+///             context.
+///
+/// @param[in]  context               The context
+/// @param[in]  opengl_function_name  The opengl function name
+/// @param[in]  enable                The enable
+///
+IMPELLER_EXPORT void ImpellerContextSetDebugGLErrorChecking(
+    ImpellerContext IMPELLER_NONNULL context,
+    const char* IMPELLER_NULLABLE opengl_function_name,
+    bool enable);
+
+//------------------------------------------------------------------------------
 /// @brief      Retain a strong reference to the object. The object can be NULL
 ///             in which case this method is a no-op.
 ///
