@@ -19,7 +19,7 @@ android {
         // The others are irrelevant for a test application.
         disable 'UnpackedNativeCode','MissingApplicationIcon','GoogleAppIndexingApiWarning','GoogleAppIndexingWarning','GradleDependency','NewerVersionAvailable','Registered'
     }
-    buildToolsVersion = '35.0.0-rc4'
+    buildToolsVersion = '35.0.0'
     compileSdk 35
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
