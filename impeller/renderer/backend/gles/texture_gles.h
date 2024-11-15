@@ -130,6 +130,9 @@ class TextureGLES final : public Texture,
   ///
   void SetFence(HandleGLES fence);
 
+  // Visible for testing.
+  std::optional<HandleGLES> GetSyncFence() const;
+
  private:
   ReactorGLES::Ref reactor_;
   const Type type_;

@@ -640,4 +640,9 @@ void TextureGLES::SetFence(HandleGLES fence) {
   fence_ = fence;
 }
 
+// Visible for testing.
+std::optional<HandleGLES> TextureGLES::GetSyncFence() const {
+  return fence_;
+}
+
 }  // namespace impeller
