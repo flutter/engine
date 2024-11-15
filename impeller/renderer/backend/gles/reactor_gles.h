@@ -16,14 +16,6 @@
 
 namespace impeller {
 
-/// @brief Storage for either a GL handle or sync fence.
-struct GLHandle {
-  union {
-    GLuint handle;
-    GLsync sync;
-  };
-};
-
 //------------------------------------------------------------------------------
 /// @brief      The reactor attempts to make thread-safe usage of OpenGL ES
 ///             easier to reason about.
@@ -255,15 +247,23 @@ class ReactorGLES {
   [[nodiscard]] bool React();
 
  private:
+  /// @brief Storage for either a GL handle or sync fence.
+  struct GLStorage {
+    union {
+      GLuint handle;
+      GLsync sync;
+    };
+  };
+
   struct LiveHandle {
-    std::optional<GLHandle> name;
+    std::optional<GLStorage> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
     fml::ScopedCleanupClosure callback = {};
 
     LiveHandle() = default;
 
-    explicit LiveHandle(std::optional<GLHandle> p_name) : name(p_name) {}
+    explicit LiveHandle(std::optional<GLStorage> p_name) : name(p_name) {}
 
     constexpr bool IsLive() const { return name.has_value(); }
   };
@@ -302,7 +302,14 @@ class ReactorGLES {
 
   void SetupDebugGroups();
 
-  std::optional<GLHandle> GetHandle(const HandleGLES& handle) const;
+  std::optional<GLStorage> GetHandle(const HandleGLES& handle) const;
+
+  static std::optional<GLStorage> CreateGLHandle(const ProcTableGLES& gl,
+                                                 HandleType type);
+
+  static bool CollectGLHandle(const ProcTableGLES& gl,
+                              HandleType type,
+                              GLStorage handle);
 
   ReactorGLES(const ReactorGLES&) = delete;
 
