@@ -44,10 +44,6 @@ class SolidColorContents final : public ColorSourceContents {
 
  private:
   Color color_;
-
-  SolidColorContents(const SolidColorContents&) = delete;
-
-  SolidColorContents& operator=(const SolidColorContents&) = delete;
 };
 
 }  // namespace impeller

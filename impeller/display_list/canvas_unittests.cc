@@ -4,7 +4,10 @@
 
 #include <unordered_map>
 
+#include "display_list/dl_color.h"
 #include "display_list/dl_tile_mode.h"
+#include "display_list/effects/dl_color_filter.h"
+#include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
 #include "display_list/geometry/dl_geometry_types.h"
 #include "flutter/testing/testing.h"
@@ -13,6 +16,8 @@
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/aiks_unittests.h"
 #include "impeller/display_list/canvas.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/renderer/render_target.h"
 
@@ -274,6 +279,81 @@ TEST_P(AiksTest, BackdropCountDownWithNestedSaveLayers) {
 
   canvas->Restore();
   EXPECT_TRUE(canvas->RequiresReadback());
+}
+
+TEST_P(AiksTest, PaintOpacityPeephole) {
+  {
+    Paint paint;
+
+    EXPECT_TRUE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    Paint paint;
+    paint.blend_mode = BlendMode::kColorBurn;
+
+    EXPECT_FALSE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    Paint paint;
+    paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+        .sigma = Sigma(4),
+        .respect_ctm = true,
+    };
+
+    EXPECT_FALSE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    auto image_filter =
+        flutter::DlBlurImageFilter::Make(1, 1, flutter::DlTileMode::kClamp);
+    Paint paint;
+    paint.image_filter = image_filter.get();
+
+    EXPECT_FALSE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    auto color_filter = flutter::DlBlendColorFilter::Make(
+        flutter::DlColor::kRed(), flutter::DlBlendMode::kDarken);
+    Paint paint;
+    paint.color_filter = color_filter.get();
+
+    EXPECT_FALSE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    std::vector<flutter::DlColor> colors = {flutter::DlColor::kRed(),
+                                            flutter::DlColor::kBlack()};
+    std::vector<flutter::DlScalar> stops = {0, 1};
+    auto color_source = flutter::DlColorSource::MakeLinear(
+        SkPoint{0, 0}, SkPoint{100, 100}, 2, colors.data(), stops.data(),
+        flutter::DlTileMode::kClamp);
+    Paint paint;
+    paint.color_source = color_source.get();
+
+    EXPECT_TRUE(Paint::CanApplyOpacityPeephole(paint));
+  }
+
+  {
+    auto runtime_stages =
+        OpenAssetAsRuntimeStage("runtime_stage_simple.frag.iplr");
+
+    auto runtime_stage =
+        runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+    ASSERT_TRUE(runtime_stage);
+
+    auto runtime_effect = flutter::DlRuntimeEffect::MakeImpeller(runtime_stage);
+    auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+    auto color_source = flutter::DlColorSource::MakeRuntimeEffect(
+        runtime_effect, {}, uniform_data);
+
+    Paint paint;
+    paint.color_source = color_source.get();
+
+    EXPECT_FALSE(Paint::CanApplyOpacityPeephole(paint));
+  }
 }
 
 }  // namespace testing

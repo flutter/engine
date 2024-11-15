@@ -11,6 +11,7 @@
 #include "display_list/geometry/dl_path.h"
 #include "fml/logging.h"
 #include "impeller/display_list/color_filter.h"
+#include "impeller/display_list/image_filter.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
@@ -33,6 +34,22 @@ using DlPoint = flutter::DlPoint;
 using DlRect = flutter::DlRect;
 using DlIRect = flutter::DlIRect;
 using DlPath = flutter::DlPath;
+
+// static
+bool Paint::CanApplyOpacityPeephole(const Paint& paint) {
+  if (paint.blend_mode != BlendMode::kSourceOver) {
+    return false;
+  }
+  if (paint.invert_colors || paint.mask_blur_descriptor.has_value() ||
+      paint.image_filter || paint.color_filter) {
+    return false;
+  }
+  if (paint.color_source && paint.color_source->type() ==
+                                flutter::DlColorSourceType::kRuntimeEffect) {
+    return false;
+  }
+  return true;
+}
 
 std::shared_ptr<ColorSourceContents> Paint::CreateContents() const {
   if (color_source == nullptr) {

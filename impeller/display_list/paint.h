@@ -10,15 +10,12 @@
 #include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_image_filter.h"
-#include "impeller/display_list/color_filter.h"
-#include "impeller/display_list/image_filter.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {
@@ -36,12 +33,7 @@ struct Paint {
 
   /// @brief Whether or not a save layer with the provided paint can perform the
   ///        opacity peephole optimization.
-  static bool CanApplyOpacityPeephole(const Paint& paint) {
-    return paint.blend_mode == BlendMode::kSourceOver &&
-           paint.invert_colors == false &&
-           !paint.mask_blur_descriptor.has_value() &&
-           paint.image_filter == nullptr && paint.color_filter == nullptr;
-  }
+  static bool CanApplyOpacityPeephole(const Paint& paint);
 
   enum class Style {
     kFill,
