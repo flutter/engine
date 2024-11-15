@@ -9,7 +9,9 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/renderer/command_queue.h"
 
 namespace impeller {

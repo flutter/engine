@@ -6,12 +6,10 @@
 
 #include <algorithm>
 
-#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/backend/gles/handle_gles.h"
 
 namespace impeller {
 

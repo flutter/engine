@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include "fml/closure.h"
@@ -17,6 +16,7 @@
 
 namespace impeller {
 
+/// @brief Storage for either a GL handle or sync fence.
 struct GLHandle {
   union {
     GLuint handle;

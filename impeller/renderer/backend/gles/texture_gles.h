@@ -122,10 +122,13 @@ class TextureGLES final : public Texture,
 
   bool IsSliceInitialized(size_t slice) const;
 
-  void SetFence(HandleGLES fence) {
-    FML_DCHECK(!fence_.has_value());
-    fence_ = fence;
-  }
+  //----------------------------------------------------------------------------
+  /// @brief      Attach a sync fence to this texture that will be waited on
+  ///             before encoding a rendering operatio that references it.
+  ///
+  /// @param[in]  fence  A handle to a sync fence.
+  ///
+  void SetFence(HandleGLES fence);
 
  private:
   ReactorGLES::Ref reactor_;

@@ -68,8 +68,7 @@ class CommandBuffer {
 
   //----------------------------------------------------------------------------
   /// @brief      Block the current thread until the GPU has completed
-  /// scheduling
-  ///             execution of the commands.
+  ///             scheduling execution of the commands.
   ///
   void WaitUntilScheduled();
 
