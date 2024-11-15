@@ -1170,7 +1170,7 @@ MakeRenderTargetFromTextureImpeller(
       impeller::TextureUsage::kRenderTarget);
   color0_tex.storage_mode = impeller::StorageMode::kDevicePrivate;
 
-  impeller::HandleGLES color0_handle = gl_context.GetReactor().CreateHandle(
+  impeller::HandleGLES color0_handle = gl_context.GetReactor()->CreateHandle(
       impeller::HandleType::kTexture, texture->name);
 
   impeller::ColorAttachment color0;
