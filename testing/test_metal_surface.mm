@@ -9,7 +9,7 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flutter {
+namespace flutter::testing {
 
 bool TestMetalSurface::PlatformSupportsMetal() {
   return true;
@@ -18,16 +18,14 @@ bool TestMetalSurface::PlatformSupportsMetal() {
 std::unique_ptr<TestMetalSurface> TestMetalSurface::Create(
     const TestMetalContext& test_metal_context,
     SkISize surface_size) {
-  return std::make_unique<TestMetalSurfaceImpl>(test_metal_context,
-                                                surface_size);
+  return std::make_unique<TestMetalSurfaceImpl>(test_metal_context, surface_size);
 }
 
 std::unique_ptr<TestMetalSurface> TestMetalSurface::Create(
     const TestMetalContext& test_metal_context,
     int64_t texture_id,
     SkISize surface_size) {
-  return std::make_unique<TestMetalSurfaceImpl>(test_metal_context, texture_id,
-                                                surface_size);
+  return std::make_unique<TestMetalSurfaceImpl>(test_metal_context, texture_id, surface_size);
 }
 
 TestMetalSurface::TestMetalSurface() = default;
@@ -54,4 +52,4 @@ TestMetalContext::TextureInfo TestMetalSurface::GetTextureInfo() {
   return impl_ ? impl_->GetTextureInfo() : TestMetalContext::TextureInfo();
 }
 
-}  // namespace flutter
+}  // namespace flutter::testing
