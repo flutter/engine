@@ -372,7 +372,7 @@ bool BlitResizeTextureCommandGLES::Encode(const ReactorGLES& reactor) const {
     return false;
   }
 
-  destination->SetCoordinateSystem(TextureCoordinateSystem::kUploadFromHost);
+  destination->SetCoordinateSystem(source->GetCoordinateSystem());
 
   GLuint read_fbo = GL_NONE;
   GLuint draw_fbo = GL_NONE;
