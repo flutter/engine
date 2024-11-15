@@ -384,7 +384,7 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
 
   // Flush the pending command buffer to ensure that its output becomes visible
   // to the raster thread.
-  command_buffer->WaitUntilScheduled();
+  command_buffer->WaitUntilCompleted();
 
   context->DisposeThreadLocalCachedResources();
 

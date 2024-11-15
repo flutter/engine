@@ -169,6 +169,7 @@ struct GLProc {
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
   PROC(Flush);                               \
+  PROC(Finish);                              \
   PROC(FramebufferRenderbuffer);             \
   PROC(FramebufferTexture2D);                \
   PROC(FrontFace);                           \
