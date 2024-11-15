@@ -96,14 +96,7 @@ class ContextGLES final : public Context,
   void Shutdown() override;
 
   // |Context|
-  bool AddTrackingFence(const std::shared_ptr<Texture>& texture) override {
-    if (!reactor_->GetProcTable().FenceSync.IsAvailable()) {
-      return true;
-    }
-    auto fence = reactor_->CreateHandle(HandleType::kFence);
-    TextureGLES::Cast(*texture).SetFence(fence);
-    return true;
-  }
+  bool AddTrackingFence(const std::shared_ptr<Texture>& texture) const override;
 
   // |Context|
   void ResetThreadLocalState() const override;

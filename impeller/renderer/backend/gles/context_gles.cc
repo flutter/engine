@@ -157,4 +157,15 @@ void ContextGLES::ResetThreadLocalState() const {
       });
 }
 
+// |Context|
+bool ContextGLES::AddTrackingFence(
+    const std::shared_ptr<Texture>& texture) const {
+  if (!reactor_->GetProcTable().FenceSync.IsAvailable()) {
+    return false;
+  }
+  HandleGLES fence = reactor_->CreateHandle(HandleType::kFence);
+  TextureGLES::Cast(*texture).SetFence(fence);
+  return true;
+}
+
 }  // namespace impeller

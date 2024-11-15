@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 
+#include "impeller/base/version.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
