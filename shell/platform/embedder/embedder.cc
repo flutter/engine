@@ -1137,6 +1137,104 @@ static std::optional<impeller::PixelFormat> FlutterFormatToImpellerPixelFormat(
 #endif  // defined(SHELL_ENABLE_GL) && defined(IMPELLER_SUPPORTS_RENDERING)
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
+MakeRenderTargetFromTextureImpeller(
+    FlutterBackingStore backing_store,
+    const fml::closure& on_release,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterOpenGLTexture* texture) {
+#if defined(SHELL_ENABLE_GL) && defined(IMPELLER_SUPPORTS_RENDERING)
+  auto format = FlutterFormatToImpellerPixelFormat(texture->target);
+  if (!format.has_value()) {
+    return nullptr;
+  }
+
+  const auto& gl_context =
+      impeller::ContextGLES::Cast(*aiks_context->GetContext());
+  const bool implicit_msaa = aiks_context->GetContext()
+                                 ->GetCapabilities()
+                                 ->SupportsImplicitResolvingMSAA();
+  const auto size = impeller::ISize(config.size.width, config.size.height);
+
+  impeller::TextureDescriptor color0_tex;
+  if (implicit_msaa) {
+    color0_tex.type = impeller::TextureType::kTexture2DMultisample;
+    color0_tex.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    color0_tex.type = impeller::TextureType::kTexture2D;
+    color0_tex.sample_count = impeller::SampleCount::kCount1;
+  }
+  color0_tex.format = format.value();
+  color0_tex.size = size;
+  color0_tex.usage = static_cast<impeller::TextureUsageMask>(
+      impeller::TextureUsage::kRenderTarget);
+  color0_tex.storage_mode = impeller::StorageMode::kDevicePrivate;
+
+  impeller::HandleGLES color0_handle = gl_context.GetReactor().CreateHandle(
+      impeller::HandleType::kTexture, texture->name);
+
+  impeller::ColorAttachment color0;
+  color0.texture = impeller::TextureGLES::WrapTexture(
+      gl_context.GetReactor(), color0_tex, color0_handle);
+  color0.clear_color = impeller::Color::DarkSlateGray();
+  color0.load_action = impeller::LoadAction::kClear;
+  if (implicit_msaa) {
+    color0.store_action = impeller::StoreAction::kMultisampleResolve;
+    color0.resolve_texture = color0.texture;
+  } else {
+    color0.store_action = impeller::StoreAction::kStore;
+  }
+
+  impeller::TextureDescriptor depth_stencil_texture_desc;
+  depth_stencil_texture_desc.format = impeller::PixelFormat::kD24UnormS8Uint;
+  depth_stencil_texture_desc.size = size;
+  depth_stencil_texture_desc.usage = static_cast<impeller::TextureUsageMask>(
+      impeller::TextureUsage::kRenderTarget);
+  if (implicit_msaa) {
+    depth_stencil_texture_desc.type =
+        impeller::TextureType::kTexture2DMultisample;
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount4;
+  } else {
+    depth_stencil_texture_desc.type = impeller::TextureType::kTexture2D;
+    depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
+  }
+
+  auto depth_stencil_tex = impeller::TextureGLES::CreatePlaceholder(
+      gl_context.GetReactor(), depth_stencil_texture_desc);
+
+  impeller::DepthAttachment depth0;
+  depth0.clear_depth = 0;
+  depth0.texture = depth_stencil_tex;
+  depth0.load_action = impeller::LoadAction::kClear;
+  depth0.store_action = impeller::StoreAction::kDontCare;
+
+  impeller::StencilAttachment stencil0;
+  stencil0.clear_stencil = 0;
+  stencil0.texture = depth_stencil_tex;
+  stencil0.load_action = impeller::LoadAction::kClear;
+  stencil0.store_action = impeller::StoreAction::kDontCare;
+
+  impeller::RenderTarget render_target_desc;
+
+  render_target_desc.SetColorAttachment(color0, 0u);
+  render_target_desc.SetDepthAttachment(depth0);
+  render_target_desc.SetStencilAttachment(stencil0);
+
+  fml::closure framebuffer_destruct = [callback = texture->destruction_callback,
+                                       user_data = texture->user_data]() {
+    callback(user_data);
+  };
+
+  return std::make_unique<flutter::EmbedderRenderTargetImpeller>(
+      backing_store, aiks_context,
+      std::make_unique<impeller::RenderTarget>(std::move(render_target_desc)),
+      on_release, framebuffer_destruct);
+#else
+  return nullptr;
+#endif
+}
+
+static std::unique_ptr<flutter::EmbedderRenderTarget>
 MakeRenderTargetFromBackingStoreImpeller(
     FlutterBackingStore backing_store,
     const fml::closure& on_release,
@@ -1420,11 +1518,17 @@ CreateEmbedderRenderTarget(
     case kFlutterBackingStoreTypeOpenGL: {
       switch (backing_store.open_gl.type) {
         case kFlutterOpenGLTargetTypeTexture: {
-          auto skia_surface = MakeSkSurfaceFromBackingStore(
-              context, config, &backing_store.open_gl.texture);
-          render_target = MakeRenderTargetFromSkSurface(
-              backing_store, std::move(skia_surface),
-              collect_callback.Release());
+          if (enable_impeller) {
+            render_target = MakeRenderTargetFromTextureImpeller(
+                backing_store, collect_callback.Release(), aiks_context, config,
+                &backing_store.open_gl.texture);
+          } else {
+            auto skia_surface = MakeSkSurfaceFromBackingStore(
+                context, config, &backing_store.open_gl.texture);
+            render_target = MakeRenderTargetFromSkSurface(
+                backing_store, std::move(skia_surface),
+                collect_callback.Release());
+          }
           break;
         }
         case kFlutterOpenGLTargetTypeFramebuffer: {
