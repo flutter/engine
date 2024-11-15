@@ -21,13 +21,16 @@ void setUpUnitTests({
 }) {
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
+    print('<=setUpAll');
     if (emulateTesterEnvironment) {
       ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     debugOnlyAssetManager = fakeAssetManager;
+    print('  <=await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
     await bootstrapAndRunApp(withImplicitView: withImplicitView);
+    print('  </await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
     engine.debugOverrideJsConfiguration(<String, Object?>{
       'fontFallbackBaseUrl': 'assets/fallback_fonts/',
     }.jsify() as engine.JsFlutterConfiguration?);
@@ -44,6 +47,7 @@ void setUpUnitTests({
     }
 
     setUpRenderingForTests();
+    print('</setUpAll');
   });
 
   tearDownAll(() async {
@@ -53,8 +57,12 @@ void setUpUnitTests({
 
 Future<void> bootstrapAndRunApp({bool withImplicitView = false}) async {
   final Completer<void> completer = Completer<void>();
+  print('    <=await ui_web.bootstrapEngine();');
   await ui_web.bootstrapEngine(runApp: () => completer.complete());
+  print('    </await ui_web.bootstrapEngine();');
+  print('    <=await completer.future;');
   await completer.future;
+  print('    </await completer.future;');
   if (!withImplicitView) {
     _disableImplicitView();
   }
