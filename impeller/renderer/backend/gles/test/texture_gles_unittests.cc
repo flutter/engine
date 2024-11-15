@@ -30,6 +30,7 @@ TEST_P(TextureGLESTest, CanSetSyncFence) {
   TextureDescriptor desc;
   desc.storage_mode = StorageMode::kDevicePrivate;
   desc.size = {100, 100};
+  desc.format = PixelFormat::kR8G8B8A8UNormInt;
 
   auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
   ASSERT_TRUE(!!texture);
