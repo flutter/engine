@@ -38,7 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// desired offset animatedly. If the user changes the scroll offset during the
 /// animation, the display link will be invalidated and the scrolling animation
 /// will be interrupted. For simplicity, content offset updates coming from the
-/// framework will be ignored in the relatively short animation duration (~1s).
+/// framework will be ignored in the relatively short animation duration (~1s),
+/// allowing the scrolling animation to finish.
 @property(nonatomic, readonly) BOOL isDoingSystemScrolling;
 
 - (instancetype)init NS_UNAVAILABLE;
