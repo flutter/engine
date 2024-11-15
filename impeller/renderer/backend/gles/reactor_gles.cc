@@ -133,11 +133,12 @@ std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
           << "Attempted to acquire a handle that was pending collection.";
       return std::nullopt;
     }
-    if (!found->second.name.has_value()) {
+    std::optional<GLHandle> name = found->second.name;
+    if (!name.has_value()) {
       VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
       return std::nullopt;
     }
-    return found->second.name->handle;
+    return name->handle;
   }
   VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
   return std::nullopt;
@@ -154,11 +155,12 @@ std::optional<GLsync> ReactorGLES::GetGLFence(const HandleGLES& handle) const {
           << "Attempted to acquire a handle that was pending collection.";
       return std::nullopt;
     }
-    if (!found->second.name.has_value()) {
+    std::optional<GLHandle> name = found->second.name;
+    if (!name.has_value()) {
       VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
       return std::nullopt;
     }
-    return found->second.name->sync;
+    return name->sync;
   }
   VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
   return std::nullopt;
