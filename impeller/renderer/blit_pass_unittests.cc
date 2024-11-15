@@ -24,7 +24,7 @@ using flutter::DlColor;
 using flutter::DlImageSampling;
 using flutter::DlPaint;
 
-using BlitPassTest = AiksPlayground;
+using BlitPassTest = AiksTest;
 INSTANTIATE_PLAYGROUND_SUITE(BlitPassTest);
 
 TEST_P(BlitPassTest, BlitAcrossDifferentPixelFormatsFails) {
