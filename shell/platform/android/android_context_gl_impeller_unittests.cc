@@ -104,6 +104,15 @@ TEST_F(AndroidContextGLImpellerTest, FallbackForEmulator) {
   EXPECT_CALL(
       *display,
       ChooseConfig(Matcher<ConfigDescriptor>(AllOf(
+          Field(&ConfigDescriptor::api, impeller::egl::API::kOpenGLES3),
+          Field(&ConfigDescriptor::samples, impeller::egl::Samples::kFour),
+          Field(&ConfigDescriptor::surface_type,
+                impeller::egl::SurfaceType::kWindow)))))
+      .WillOnce(Return(ByMove(std::move(first_result))));
+  EXPECT_CALL(
+      *display,
+      ChooseConfig(Matcher<ConfigDescriptor>(AllOf(
+          Field(&ConfigDescriptor::api, impeller::egl::API::kOpenGLES2),
           Field(&ConfigDescriptor::samples, impeller::egl::Samples::kFour),
           Field(&ConfigDescriptor::surface_type,
                 impeller::egl::SurfaceType::kWindow)))))
