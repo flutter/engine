@@ -83,10 +83,6 @@ public class FlutterRenderer implements TextureRegistry {
 
   @NonNull private final List<ImageReaderSurfaceProducer> imageReaderProducers = new ArrayList<>();
 
-  public Surface getActiveSurface() {
-    return surface;
-  }
-
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
       new FlutterUiDisplayListener() {

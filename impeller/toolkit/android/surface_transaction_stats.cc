@@ -9,8 +9,10 @@
 namespace impeller::android {
 
 fml::UniqueFD CreatePreviousReleaseFence(const SurfaceControl& control,
-                                         int release_file_fd) {
-  const auto fd = release_file_fd;
+                                         ASurfaceTransactionStats* stats) {
+  const auto fd =
+      GetProcTable().ASurfaceTransactionStats_getPreviousReleaseFenceFd(
+          stats, control.GetHandle());
   if (fd == -1) {
     // The previous buffer has already been released. This is not an error.
     return {};

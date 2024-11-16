@@ -17,7 +17,6 @@ import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
 import android.text.format.DateFormat;
@@ -29,8 +28,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.Surface;
-import android.view.SurfaceControl;
-import android.view.SurfaceControlViewHost;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -44,7 +41,6 @@ import android.view.inputmethod.InputConnection;
 import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.TextServicesManager;
 import android.widget.FrameLayout;
-import android.window.InputTransferToken;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -1293,25 +1289,6 @@ public class FlutterView extends FrameLayout
   @VisibleForTesting
   public FlutterImageView getCurrentImageSurface() {
     return flutterImageView;
-  }
-
-  public IBinder GetBinder() {
-    return flutterSurfaceView.getHostToken();
-  }
-
-  public SurfaceControl getAttachedSurfaceControl() {
-    if (flutterSurfaceView != null) {
-      return flutterSurfaceView.getSurfaceControl();
-    }
-    return null;
-  }
-
-  public InputTransferToken getInputTransferToken() {
-    return flutterSurfaceView.getRootSurfaceControl().getInputTransferToken();
-  }
-
-  public void addPlatformView(SurfaceControlViewHost.SurfacePackage surfacePackage) {
-    flutterSurfaceView.setChildSurfacePackage(surfacePackage);
   }
 
   /**

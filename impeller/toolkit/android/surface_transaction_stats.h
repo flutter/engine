@@ -11,7 +11,7 @@
 namespace impeller::android {
 
 fml::UniqueFD CreatePreviousReleaseFence(const SurfaceControl& control,
-                                         int release_file_fd);
+                                         ASurfaceTransactionStats* stats);
 
 }  // namespace impeller::android
 

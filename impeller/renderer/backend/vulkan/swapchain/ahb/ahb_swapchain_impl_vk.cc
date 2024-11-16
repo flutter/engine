@@ -179,23 +179,22 @@ bool AHBSwapchainImplVK::Present(
   }
 
   android::SurfaceTransaction transaction = cb_();
-  if (!transaction.SetContents(
-          control.get(),               //
-          texture->GetBackingStore(),  //
-          fence->CreateFD(),           //
-          [signaler, texture, weak = weak_from_this()](int release_file_fd) {
-            auto thiz = weak.lock();
-            if (!thiz) {
-              return;
-            }
-            thiz->OnTextureUpdatedOnSurfaceControl(signaler, texture,
-                                                   release_file_fd);
-          })) {
+  if (!transaction.SetContents(control.get(),               //
+                               texture->GetBackingStore(),  //
+                               fence->CreateFD()            //
+                               )) {
     VALIDATION_LOG << "Could not set swapchain image contents on the surface "
                       "control.";
     return false;
   }
-  return transaction.Apply();
+  return transaction.Apply([signaler, texture, weak = weak_from_this()](
+                               ASurfaceTransactionStats* stats) {
+    auto thiz = weak.lock();
+    if (!thiz) {
+      return;
+    }
+    thiz->OnTextureUpdatedOnSurfaceControl(signaler, texture, stats);
+  });
 }
 
 std::shared_ptr<ExternalFenceVK>
@@ -328,7 +327,7 @@ bool AHBSwapchainImplVK::SubmitWaitForRenderReady(
 void AHBSwapchainImplVK::OnTextureUpdatedOnSurfaceControl(
     const AutoSemaSignaler& signaler,
     std::shared_ptr<AHBTextureSourceVK> texture,
-    int release_file_fd) {
+    ASurfaceTransactionStats* stats) {
   auto control = surface_control_.lock();
   if (!control) {
     return;
@@ -337,7 +336,7 @@ void AHBSwapchainImplVK::OnTextureUpdatedOnSurfaceControl(
   // Ask for an FD that gets signaled when the previous buffer is released. This
   // can be invalid if there is no wait necessary.
   auto render_ready_fence =
-      android::CreatePreviousReleaseFence(*control, release_file_fd);
+      android::CreatePreviousReleaseFence(*control, stats);
 
   // The transaction completion indicates that the surface control now
   // references the hardware buffer. We can recycle the previous set buffer
