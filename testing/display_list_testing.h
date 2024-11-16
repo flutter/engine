@@ -7,11 +7,11 @@
 
 #include <ostream>
 
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_receiver.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 [[nodiscard]] bool DisplayListsEQ_Verbose(const DisplayList* a,
                                           const DisplayList* b);
@@ -36,8 +36,7 @@ namespace testing {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -83,8 +82,7 @@ extern std::ostream& operator<<(std::ostream& os, const flutter::DlPath& path);
 
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
@@ -285,6 +283,7 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlImageFilterType::kCompose:
         case DlImageFilterType::kLocalMatrix:
         case DlImageFilterType::kColorFilter:
+        case DlImageFilterType::kRuntimeEffect:
           RecordByType(DisplayListOpType::kSetSharedImageFilter);
           break;
       }
@@ -607,7 +606,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   uint32_t op_count_ = 0u;
 };
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 #endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_

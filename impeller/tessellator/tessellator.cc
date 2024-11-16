@@ -4,6 +4,7 @@
 
 #include "impeller/tessellator/tessellator.h"
 #include <cstdint>
+#include <cstring>
 
 #include "impeller/core/device_buffer.h"
 #include "impeller/geometry/path_component.h"
@@ -12,12 +13,17 @@ namespace impeller {
 
 Tessellator::Tessellator()
     : point_buffer_(std::make_unique<std::vector<Point>>()),
-      index_buffer_(std::make_unique<std::vector<uint16_t>>()) {
+      index_buffer_(std::make_unique<std::vector<uint16_t>>()),
+      stroke_points_(kPointArenaSize) {
   point_buffer_->reserve(2048);
   index_buffer_->reserve(2048);
 }
 
 Tessellator::~Tessellator() = default;
+
+std::vector<Point>& Tessellator::GetStrokePointCache() {
+  return stroke_points_;
+}
 
 Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
                                                Scalar tolerance) {
@@ -53,6 +59,8 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
               index_buffer.GetBuffer()->OnGetContents() +
               index_buffer.GetRange().offset));
       path.WritePolyline(tolerance, writer);
+      point_buffer.GetBuffer()->Flush(point_buffer.GetRange());
+      index_buffer.GetBuffer()->Flush(index_buffer.GetRange());
 
       return VertexBuffer{
           .vertex_buffer = std::move(point_buffer),
@@ -68,6 +76,8 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
               index_buffer.GetBuffer()->OnGetContents() +
               index_buffer.GetRange().offset));
       path.WritePolyline(tolerance, writer);
+      point_buffer.GetBuffer()->Flush(point_buffer.GetRange());
+      index_buffer.GetBuffer()->Flush(index_buffer.GetRange());
 
       return VertexBuffer{
           .vertex_buffer = std::move(point_buffer),
@@ -104,6 +114,50 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
       .index_buffer = std::move(index_buffer),
       .vertex_count = index_buffer_->size(),
       .index_type = IndexType::k16bit,
+  };
+}
+
+VertexBuffer Tessellator::GenerateLineStrip(const Path& path,
+                                            HostBuffer& host_buffer,
+                                            Scalar tolerance) {
+  LineStripVertexWriter writer(stroke_points_);
+  path.WritePolyline(tolerance, writer);
+
+  const auto [arena_length, oversized_length] = writer.GetVertexCount();
+
+  if (oversized_length == 0) {
+    return VertexBuffer{
+        .vertex_buffer =
+            host_buffer.Emplace(stroke_points_.data(),
+                                arena_length * sizeof(Point), alignof(Point)),
+        .index_buffer = {},
+        .vertex_count = arena_length,
+        .index_type = IndexType::kNone,
+    };
+  }
+  const std::vector<Point>& oversized_data = writer.GetOversizedBuffer();
+  BufferView buffer_view = host_buffer.Emplace(
+      /*buffer=*/nullptr,                                 //
+      (arena_length + oversized_length) * sizeof(Point),  //
+      alignof(Point)                                      //
+  );
+  memcpy(buffer_view.GetBuffer()->OnGetContents() +
+             buffer_view.GetRange().offset,  //
+         stroke_points_.data(),              //
+         arena_length * sizeof(Point)        //
+  );
+  memcpy(buffer_view.GetBuffer()->OnGetContents() +
+             buffer_view.GetRange().offset + arena_length * sizeof(Point),  //
+         oversized_data.data(),                                             //
+         oversized_data.size() * sizeof(Point)                              //
+  );
+  buffer_view.GetBuffer()->Flush(buffer_view.GetRange());
+
+  return VertexBuffer{
+      .vertex_buffer = buffer_view,
+      .index_buffer = {},
+      .vertex_count = arena_length + oversized_length,
+      .index_type = IndexType::kNone,
   };
 }
 

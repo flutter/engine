@@ -8,9 +8,9 @@
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 // clang-format off
 bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b) {
@@ -36,8 +36,7 @@ bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b) {
   return true;
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -388,8 +387,7 @@ std::ostream& operator<<(std::ostream& os, const DlImage* image) {
 
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::ostream& DisplayListStreamDispatcher::startl() {
   for (int i = 0; i < cur_indent_; i++) {
@@ -660,6 +658,12 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       os_ << std::endl;
       outdent(25);
       startl() << ")";
+      break;
+    }
+    case flutter::DlImageFilterType::kRuntimeEffect: {
+      [[maybe_unused]] const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
+      FML_DCHECK(runtime_effect);
+      os_ << "DlRuntimeEffectImageFilter()";
       break;
     }
   }
@@ -971,5 +975,4 @@ void DisplayListStreamDispatcher::drawShadow(const DlPath& path,
 }
 // clang-format on
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

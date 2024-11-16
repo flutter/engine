@@ -7,7 +7,6 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/testing/test_metal_context.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -23,7 +22,7 @@
 
 static_assert(__has_feature(objc_arc), "ARC must be enabled.");
 
-namespace flutter {
+namespace flutter::testing {
 
 void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_info,
                                 const SkISize& surface_size) {
@@ -122,4 +121,4 @@ TestMetalContext::TextureInfo TestMetalSurfaceImpl::GetTextureInfo() {
   return IsValid() ? texture_info_ : TestMetalContext::TextureInfo();
 }
 
-}  // namespace flutter
+}  // namespace flutter::testing

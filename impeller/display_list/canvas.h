@@ -187,7 +187,10 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
-  void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
+  void DrawLine(const Point& p0,
+                const Point& p1,
+                const Paint& paint,
+                bool reuse_depth = false);
 
   void DrawRect(const Rect& rect, const Paint& paint);
 
@@ -197,7 +200,8 @@ class Canvas {
 
   void DrawCircle(const Point& center, Scalar radius, const Paint& paint);
 
-  void DrawPoints(std::vector<Point> points,
+  void DrawPoints(const Point points[],
+                  uint32_t count,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style);
