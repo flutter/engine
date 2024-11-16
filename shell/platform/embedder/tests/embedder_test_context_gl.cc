@@ -63,9 +63,10 @@ bool EmbedderTestContextGL::GLPresent(FlutterPresentInfo present_info) {
   return gl_surface_->Present();
 }
 
-void EmbedderTestContextGL::SetGLGetFBOCallback(GLGetFBOCallback callback) {
+void EmbedderTestContextGL::SetGLGetFBOCallback(
+    const GLGetFBOCallback& callback) {
   std::scoped_lock lock(gl_callback_mutex_);
-  gl_get_fbo_callback_ = std::move(callback);
+  gl_get_fbo_callback_ = callback;
 }
 
 void EmbedderTestContextGL::SetGLPopulateExistingDamageCallback(

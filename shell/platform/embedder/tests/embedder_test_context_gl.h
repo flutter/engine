@@ -40,7 +40,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   /// @param[in]  callback  The callback to set. The previous callback will be
   ///                       un-registered.
   ///
-  void SetGLGetFBOCallback(GLGetFBOCallback callback);
+  void SetGLGetFBOCallback(const GLGetFBOCallback& callback);
 
   void SetGLPopulateExistingDamageCallback(
       GLPopulateExistingDamageCallback callback);
