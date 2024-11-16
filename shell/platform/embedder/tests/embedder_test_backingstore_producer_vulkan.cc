@@ -30,8 +30,12 @@ bool EmbedderTestBackingStoreProducerVulkan::Create(
   }
 
   auto surface_size = SkISize::Make(config->size.width, config->size.height);
-  TestVulkanImage* test_image = new TestVulkanImage(
-      std::move(test_vulkan_context_->CreateImage(surface_size).value()));
+  auto optional_image = test_vulkan_context_->CreateImage(surface_size);
+  if (!optional_image.has_value()) {
+    FML_LOG(ERROR) << "Could not create Vulkan image.";
+    return false;
+  }
+  TestVulkanImage* test_image = new TestVulkanImage(std::move(*optional_image));
 
   GrVkImageInfo image_info = {
       .fImage = test_image->GetImage(),
