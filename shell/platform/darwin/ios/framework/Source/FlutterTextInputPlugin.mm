@@ -925,6 +925,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                               action:selector
                                         propertyList:nil];
     [items addObject:command];
+  } else {
+    FML_LOG(ERROR) << "Missing title for context menu item action \"" << action.UTF8String << "\".";
   }
 }
 
