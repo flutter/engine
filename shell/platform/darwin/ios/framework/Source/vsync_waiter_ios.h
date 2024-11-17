@@ -11,6 +11,8 @@
 #include "flutter/shell/common/variable_refresh_rate_reporter.h"
 #include "flutter/shell/common/vsync_waiter.h"
 
+extern NSString* const kCADisableMinimumFrameDurationOnPhoneKey;
+
 @interface DisplayLinkManager : NSObject
 
 // Whether the max refresh rate on iPhone Pro-motion devices are enabled.
