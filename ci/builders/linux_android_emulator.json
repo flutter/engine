@@ -139,7 +139,6 @@
                         },
                         {
                             "dependency": "avd_cipd_version",
-                            # Do not update build. x86 emulators do not support swangle
                             "version": "build_id:8735216702926189361"
                         }
                     ],
