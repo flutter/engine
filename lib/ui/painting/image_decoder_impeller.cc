@@ -243,7 +243,7 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
       !capabilities->SupportsTextureToTextureBlits()) {
     //----------------------------------------------------------------------------
     /// 2. If the decoded image isn't the requested target size and the src size
-    ///    exceeds the device max texture size, perform a slow CPU reisze.
+    ///    exceeds the device max texture size, perform a slow CPU resize.
     ///
     TRACE_EVENT0("impeller", "SlowCPUDecodeScale");
     const auto scaled_image_info = image_info.makeDimensions(target_size);
@@ -383,6 +383,10 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
   }
+
+  // Flush the pending command buffer to ensure that its output becomes visible
+  // to the raster thread.
+  command_buffer->WaitUntilCompleted();
 
   context->DisposeThreadLocalCachedResources();
 
