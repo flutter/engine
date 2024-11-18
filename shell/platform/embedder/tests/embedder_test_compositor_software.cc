@@ -6,6 +6,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer_software.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -16,6 +17,27 @@ EmbedderTestCompositorSoftware::EmbedderTestCompositorSoftware(
     : EmbedderTestCompositor(surface_size, nullptr) {}
 
 EmbedderTestCompositorSoftware::~EmbedderTestCompositorSoftware() = default;
+
+void EmbedderTestCompositorSoftware::SetRenderTargetType(
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
+  switch (type) {
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer2:
+      backingstore_producer_ =
+          std::make_unique<EmbedderTestBackingStoreProducerSoftware>(
+              context_, type, software_pixfmt);
+      return;
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLSurface:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kVulkanImage:
+      FML_LOG(FATAL) << "Unsupported render target type: "
+                     << static_cast<int>(type);
+      return;
+  }
+}
 
 bool EmbedderTestCompositorSoftware::UpdateOffscrenComposition(
     const FlutterLayer** layers,
@@ -46,13 +68,11 @@ bool EmbedderTestCompositorSoftware::UpdateOffscrenComposition(
     SkIPoint canvas_offset = SkIPoint::Make(0, 0);
 
     switch (layer->type) {
-      case kFlutterLayerContentTypeBackingStore:
+      case kFlutterLayerContentTypeBackingStore: {
         layer_image =
-            reinterpret_cast<EmbedderTestBackingStoreProducer::UserData*>(
-                layer->backing_store->user_data)
-                ->surface->makeImageSnapshot();
-
+            backingstore_producer_->MakeImageSnapshot(layer->backing_store);
         break;
+      }
       case kFlutterLayerContentTypePlatformView:
         layer_image = platform_view_renderer_callback_
                           ? platform_view_renderer_callback_(*layer, nullptr)

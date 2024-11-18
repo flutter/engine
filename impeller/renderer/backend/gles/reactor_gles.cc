@@ -7,83 +7,11 @@
 #include <algorithm>
 
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 
 namespace impeller {
-
-ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
-    : proc_table_(std::move(gl)) {
-  if (!proc_table_ || !proc_table_->IsValid()) {
-    VALIDATION_LOG << "Proc table was invalid.";
-    return;
-  }
-  can_set_debug_labels_ = proc_table_->GetDescription()->HasDebugExtension();
-  is_valid_ = true;
-}
-
-ReactorGLES::~ReactorGLES() = default;
-
-bool ReactorGLES::IsValid() const {
-  return is_valid_;
-}
-
-bool ReactorGLES::CanSetDebugLabels() const {
-  return can_set_debug_labels_;
-}
-
-ReactorGLES::WorkerID ReactorGLES::AddWorker(std::weak_ptr<Worker> worker) {
-  Lock lock(workers_mutex_);
-  auto id = WorkerID{};
-  workers_[id] = std::move(worker);
-  return id;
-}
-
-bool ReactorGLES::RemoveWorker(WorkerID worker) {
-  Lock lock(workers_mutex_);
-  return workers_.erase(worker) == 1;
-}
-
-bool ReactorGLES::HasPendingOperations() const {
-  Lock ops_lock(ops_mutex_);
-  return !ops_.empty();
-}
-
-const ProcTableGLES& ReactorGLES::GetProcTable() const {
-  FML_DCHECK(IsValid());
-  return *proc_table_;
-}
-
-std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
-  ReaderLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    if (found->second.pending_collection) {
-      VALIDATION_LOG
-          << "Attempted to acquire a handle that was pending collection.";
-      return std::nullopt;
-    }
-    if (!found->second.name.has_value()) {
-      VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
-      return std::nullopt;
-    }
-    return found->second.name;
-  }
-  VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
-  return std::nullopt;
-}
-
-bool ReactorGLES::AddOperation(Operation operation) {
-  if (!operation) {
-    return false;
-  }
-  {
-    Lock ops_lock(ops_mutex_);
-    ops_.emplace_back(std::move(operation));
-  }
-  // Attempt a reaction if able but it is not an error if this isn't possible.
-  [[maybe_unused]] auto result = React();
-  return true;
-}
 
 static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
                                             HandleType type) {
@@ -134,6 +62,105 @@ static bool CollectGLHandle(const ProcTableGLES& gl,
   return false;
 }
 
+ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
+    : proc_table_(std::move(gl)) {
+  if (!proc_table_ || !proc_table_->IsValid()) {
+    VALIDATION_LOG << "Proc table was invalid.";
+    return;
+  }
+  can_set_debug_labels_ = proc_table_->GetDescription()->HasDebugExtension();
+  is_valid_ = true;
+}
+
+ReactorGLES::~ReactorGLES() {
+  if (CanReactOnCurrentThread()) {
+    for (auto& handle : handles_) {
+      if (handle.second.name.has_value()) {
+        CollectGLHandle(*proc_table_, handle.first.type,
+                        handle.second.name.value());
+      }
+    }
+    proc_table_->Flush();
+  }
+}
+
+bool ReactorGLES::IsValid() const {
+  return is_valid_;
+}
+
+bool ReactorGLES::CanSetDebugLabels() const {
+  return can_set_debug_labels_;
+}
+
+ReactorGLES::WorkerID ReactorGLES::AddWorker(std::weak_ptr<Worker> worker) {
+  Lock lock(workers_mutex_);
+  auto id = WorkerID{};
+  workers_[id] = std::move(worker);
+  return id;
+}
+
+bool ReactorGLES::RemoveWorker(WorkerID worker) {
+  Lock lock(workers_mutex_);
+  return workers_.erase(worker) == 1;
+}
+
+bool ReactorGLES::HasPendingOperations() const {
+  auto thread_id = std::this_thread::get_id();
+  Lock ops_lock(ops_mutex_);
+  auto it = ops_.find(thread_id);
+  return it != ops_.end() ? !it->second.empty() : false;
+}
+
+const ProcTableGLES& ReactorGLES::GetProcTable() const {
+  FML_DCHECK(IsValid());
+  return *proc_table_;
+}
+
+std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+  ReaderLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    if (found->second.pending_collection) {
+      VALIDATION_LOG
+          << "Attempted to acquire a handle that was pending collection.";
+      return std::nullopt;
+    }
+    if (!found->second.name.has_value()) {
+      VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
+      return std::nullopt;
+    }
+    return found->second.name;
+  }
+  VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
+  return std::nullopt;
+}
+
+bool ReactorGLES::AddOperation(Operation operation) {
+  if (!operation) {
+    return false;
+  }
+  auto thread_id = std::this_thread::get_id();
+  {
+    Lock ops_lock(ops_mutex_);
+    ops_[thread_id].emplace_back(std::move(operation));
+  }
+  // Attempt a reaction if able but it is not an error if this isn't possible.
+  [[maybe_unused]] auto result = React();
+  return true;
+}
+
+bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
+                                          const fml::closure& callback) {
+  if (handle.IsDead()) {
+    return false;
+  }
+  WriterLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    found->second.callback = fml::ScopedCleanupClosure(callback);
+    return true;
+  }
+  return false;
+}
+
 HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   if (type == HandleType::kUnknown) {
     return HandleGLES::DeadHandle();
@@ -167,10 +194,6 @@ bool ReactorGLES::React() {
   }
   TRACE_EVENT0("impeller", "ReactorGLES::React");
   while (HasPendingOperations()) {
-    // Both the raster thread and the IO thread can flush queued operations.
-    // Ensure that execution of the ops is serialized.
-    Lock execution_lock(ops_execution_mutex_);
-
     if (!ReactOnce()) {
       return false;
     }
@@ -255,10 +278,11 @@ bool ReactorGLES::FlushOps() {
 
   // Do NOT hold the ops or handles locks while performing operations in case
   // the ops enqueue more ops.
-  decltype(ops_) ops;
+  decltype(ops_)::mapped_type ops;
+  auto thread_id = std::this_thread::get_id();
   {
     Lock ops_lock(ops_mutex_);
-    std::swap(ops_, ops);
+    std::swap(ops_[thread_id], ops);
   }
   for (const auto& op : ops) {
     TRACE_EVENT0("impeller", "ReactorGLES::Operation");

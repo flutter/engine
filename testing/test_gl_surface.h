@@ -8,31 +8,11 @@
 #include <cstdint>
 
 #include "flutter/fml/macros.h"
-
+#include "flutter/testing/test_gl_context.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 
-namespace flutter {
-namespace testing {
-
-struct TestEGLContext {
-  explicit TestEGLContext();
-
-  ~TestEGLContext();
-
-  using EGLDisplay = void*;
-  using EGLContext = void*;
-  using EGLConfig = void*;
-
-  EGLDisplay display;
-  EGLContext onscreen_context;
-  EGLContext offscreen_context;
-
-  // EGLConfig is technically a property of the surfaces, no the context,
-  // but it's not that well separated in EGL (e.g. when
-  // EGL_KHR_no_config_context is not supported), so we just store it here.
-  EGLConfig config;
-};
+namespace flutter::testing {
 
 class TestGLOnscreenOnlySurface {
  public:
@@ -96,7 +76,6 @@ class TestGLSurface : public TestGLOnscreenOnlySurface {
   FML_DISALLOW_COPY_AND_ASSIGN(TestGLSurface);
 };
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 #endif  // FLUTTER_TESTING_TEST_GL_SURFACE_H_

@@ -510,46 +510,6 @@ static BOOL _preparedOnce = NO;
 }
 @end
 
-// This recognizer delays touch events from being dispatched to the responder chain until it failed
-// recognizing a gesture.
-//
-// We only fail this recognizer when asked to do so by the Flutter framework (which does so by
-// invoking an acceptGesture method on the platform_views channel). And this is how we allow the
-// Flutter framework to delay or prevent the embedded view from getting a touch sequence.
-@interface FlutterDelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-
-// Indicates that if the `FlutterDelayingGestureRecognizer`'s state should be set to
-// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
-@property(nonatomic) BOOL shouldEndInNextTouchesEnded;
-
-// Indicates that the `FlutterDelayingGestureRecognizer`'s `touchesEnded` has been invoked without
-// setting the state to `UIGestureRecognizerStateEnded`.
-@property(nonatomic) BOOL touchedEndedWithoutBlocking;
-
-@property(nonatomic) UIGestureRecognizer* forwardingRecognizer;
-
-- (instancetype)initWithTarget:(id)target
-                        action:(SEL)action
-          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
-@end
-
-// While the FlutterDelayingGestureRecognizer is preventing touches from hitting the responder chain
-// the touch events are not arriving to the FlutterView (and thus not arriving to the Flutter
-// framework). We use this gesture recognizer to dispatch the events directly to the FlutterView
-// while during this phase.
-//
-// If the Flutter framework decides to dispatch events to the embedded view, we fail the
-// FlutterDelayingGestureRecognizer which sends the events up the responder chain. But since the
-// events are handled by the embedded view they are not delivered to the Flutter framework in this
-// phase as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
-// directly to the FlutterView.
-@interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-- (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
-- (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target;
-@end
-
 @interface FlutterTouchInterceptingView ()
 @property(nonatomic, weak, readonly) UIView* embeddedView;
 @property(nonatomic, readonly) FlutterDelayingGestureRecognizer* delayingRecognizer;
@@ -714,7 +674,7 @@ static BOOL _preparedOnce = NO;
   // This gesture recognizer retains the `FlutterViewController` until the
   // end of a gesture sequence, that is all the touches in touchesBegan are concluded
   // with |touchesCancelled| or |touchesEnded|.
-  fml::scoped_nsobject<UIViewController<FlutterViewResponder>> _flutterViewController;
+  UIViewController<FlutterViewResponder>* _flutterViewController;
 }
 
 - (instancetype)initWithTarget:(id)target
@@ -741,18 +701,18 @@ static BOOL _preparedOnce = NO;
     // At the start of each gesture sequence, we reset the `_flutterViewController`,
     // so that all the touch events in the same sequence are forwarded to the same
     // `_flutterViewController`.
-    _flutterViewController.reset(_platformViewsController->GetFlutterViewController());
+    _flutterViewController = _platformViewsController->GetFlutterViewController();
   }
-  [_flutterViewController.get() touchesBegan:touches withEvent:event];
+  [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController.get() touchesMoved:touches withEvent:event];
+  [_flutterViewController touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController.get() touchesEnded:touches withEvent:event];
+  [_flutterViewController touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -760,7 +720,7 @@ static BOOL _preparedOnce = NO;
   // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
-    _flutterViewController.reset(nil);
+    _flutterViewController = nil;
     [self forceResetStateIfNeeded];
   }
 }
@@ -771,11 +731,11 @@ static BOOL _preparedOnce = NO;
   // Flutter needs all the cancelled touches to be "cancelled" change types in order to correctly
   // handle gesture sequence.
   // We always override the change type to "cancelled".
-  [_flutterViewController.get() forceTouchesCancelled:touches];
+  [_flutterViewController forceTouchesCancelled:touches];
   _currentTouchPointersCount -= touches.count;
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
-    _flutterViewController.reset(nil);
+    _flutterViewController = nil;
     [self forceResetStateIfNeeded];
   }
 }

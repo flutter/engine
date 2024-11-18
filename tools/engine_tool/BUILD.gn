@@ -8,6 +8,8 @@ group("tests") {
   testonly = true
   public_deps = [
     ":build_command_test",
+    ":build_plan_test",
+    ":cleanup_command_test",
     ":entry_point_test",
     ":fetch_command_test",
     ":flutter_tools_test",
@@ -38,6 +40,14 @@ dart_test("gn_test") {
 
 dart_test("build_command_test") {
   main_dart = "test/commands/build_command_test.dart"
+}
+
+dart_test("cleanup_command_test") {
+  main_dart = "test/commands/cleanup_command_test.dart"
+}
+
+dart_test("build_plan_test") {
+  main_dart = "test/commands/build_plan_test.dart"
 }
 
 dart_test("entry_point_test") {

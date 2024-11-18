@@ -2358,6 +2358,89 @@ void testMain() {
     },
   );
 
+  // STYLUS
+
+  test(
+    'handles stylus touches',
+    () {
+      // Repeated stylus touches use different pointerIds.
+
+      final _PointerEventContext context = _PointerEventContext();
+
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      rootElement.dispatchEvent(context.stylusTouchDown(
+        pointerId: 100,
+        buttons: 1,
+        clientX: 5.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].buttons, equals(1));
+      expect(packets[0].data[1].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(100.0 * dpi));
+      packets.clear();
+
+      rootElement.dispatchEvent(context.stylusTouchUp(
+        pointerId: 100,
+        buttons: 0,
+        clientX: 5.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].synthesized, isFalse);
+      expect(packets[0].data[0].buttons, equals(0));
+      expect(packets[0].data[0].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(100.0 * dpi));
+      packets.clear();
+
+      rootElement.dispatchEvent(context.stylusTouchDown(
+        pointerId: 101,
+        buttons: 1,
+        clientX: 5.0,
+        clientY: 150.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].buttons, equals(0));
+      expect(packets[0].data[0].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(150.0 * dpi));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].buttons, equals(1));
+      expect(packets[0].data[1].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(150.0 * dpi));
+      packets.clear();
+
+      rootElement.dispatchEvent(context.stylusTouchUp(
+        pointerId: 101,
+        buttons: 0,
+        clientX: 5.0,
+        clientY: 150.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].synthesized, isFalse);
+      expect(packets[0].data[0].buttons, equals(0));
+      expect(packets[0].data[0].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(150.0 * dpi));
+      packets.clear();
+    },
+  );
+
   // MULTIPOINTER ADAPTERS
 
   test(
@@ -2938,7 +3021,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
       }
     );
 
-    PointerBinding.clickDebouncer.onClick(click, 42, true);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, true);
     expect(PointerBinding.clickDebouncer.isDebouncing, false);
     expect(pointerPackets, isEmpty);
     expect(semanticsActions, <CapturedSemanticsEvent>[
@@ -2963,7 +3046,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
       }
     );
 
-    PointerBinding.clickDebouncer.onClick(click, 42, true);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, true);
     expect(pointerPackets, isEmpty);
     expect(semanticsActions, <CapturedSemanticsEvent>[
       (type: ui.SemanticsAction.tap, nodeId: 42)
@@ -2987,7 +3070,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
       }
     );
 
-    PointerBinding.clickDebouncer.onClick(click, 42, false);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, false);
     expect(
       reason: 'When tappable declares that it is not listening to click events '
               'the debouncer flushes the pointer events to the framework and '
@@ -3046,7 +3129,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
         'clientY': testElement.getBoundingClientRect().y,
       }
     );
-    PointerBinding.clickDebouncer.onClick(click, 42, true);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, true);
 
     expect(
       reason: 'Because the DOM click event was deduped.',
@@ -3107,7 +3190,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
         'clientY': testElement.getBoundingClientRect().y,
       }
     );
-    PointerBinding.clickDebouncer.onClick(click, 42, true);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, true);
 
     expect(
       reason: 'Because the DOM click event was deduped.',
@@ -3162,7 +3245,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
         'clientY': testElement.getBoundingClientRect().y,
       }
     );
-    PointerBinding.clickDebouncer.onClick(click, 42, true);
+    PointerBinding.clickDebouncer.onClick(click, view.viewId, 42, true);
 
     expect(
       reason: 'The DOM click should still be sent to the framework because it '
@@ -3599,6 +3682,40 @@ class _PointerEventContext extends _BasicEventContext
               'pointerType': 'touch',
             }))
         .toList();
+  }
+
+  // STYLUSES
+
+  DomEvent stylusTouchDown({
+    double? clientX,
+    double? clientY,
+    int? buttons,
+    int? pointerId = 1000,
+  }) {
+    return _downWithFullDetails(
+      pointer: pointerId,
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+      pointerType: 'pen',
+    );
+  }
+
+  DomEvent stylusTouchUp({
+    double? clientX,
+    double? clientY,
+    int? buttons,
+    int? pointerId = 1000,
+  }) {
+    return _upWithFullDetails(
+      pointer: pointerId,
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+      pointerType: 'pen',
+    );
   }
 }
 

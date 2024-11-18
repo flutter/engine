@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer_software.h"
 #include "flutter/shell/platform/embedder/tests/embedder_unittests_util.h"
 #include "flutter/testing/assertions_skia.h"
 #include "flutter/testing/testing.h"
@@ -210,6 +211,7 @@ TEST_F(EmbedderTest, CanSpecifyCustomPlatformTaskRunner) {
   auto platform_task_runner = CreateNewThread("test_platform_thread");
   static std::mutex engine_mutex;
   static bool signaled_once = false;
+  static std::atomic<bool> destruction_callback_called = false;
   UniqueEngine engine;
 
   EmbedderTestTaskRunner test_task_runner(
@@ -230,6 +232,8 @@ TEST_F(EmbedderTest, CanSpecifyCustomPlatformTaskRunner) {
         ASSERT_EQ(FlutterEngineRunTask(engine.get(), &task), kSuccess);
         latch.Signal();
       });
+  test_task_runner.SetDestructionCallback(
+      [](void* user_data) { destruction_callback_called = true; });
 
   platform_task_runner->PostTask([&]() {
     EmbedderConfigBuilder builder(context);
@@ -263,6 +267,9 @@ TEST_F(EmbedderTest, CanSpecifyCustomPlatformTaskRunner) {
 
   ASSERT_TRUE(signaled_once);
   signaled_once = false;
+
+  ASSERT_TRUE(destruction_callback_called);
+  destruction_callback_called = false;
 }
 
 TEST(EmbedderTestNoFixture, CanGetCurrentTimeInNanoseconds) {
@@ -1839,7 +1846,7 @@ TEST_F(EmbedderTest, BackingStoresCorrespondToTheirViews) {
   builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
   builder.SetCompositor();
 
-  EmbedderTestBackingStoreProducer producer(
+  EmbedderTestBackingStoreProducerSoftware producer(
       context.GetCompositor().GetGrContext(),
       EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
 
@@ -2728,17 +2735,15 @@ static void expectSoftwareRenderingOutputMatches(
   ASSERT_TRUE(engine.is_valid());
 
   context.GetCompositor().SetNextPresentCallback(
-      [&matches, &bytes, &latch](FlutterViewId view_id,
-                                 const FlutterLayer** layers,
-                                 size_t layers_count) {
+      [&context, &matches, &bytes, &latch](FlutterViewId view_id,
+                                           const FlutterLayer** layers,
+                                           size_t layers_count) {
         ASSERT_EQ(layers[0]->type, kFlutterLayerContentTypeBackingStore);
         ASSERT_EQ(layers[0]->backing_store->type,
                   kFlutterBackingStoreTypeSoftware2);
-        matches = SurfacePixelDataMatchesBytes(
-            reinterpret_cast<EmbedderTestBackingStoreProducer::UserData*>(
-                layers[0]->backing_store->software2.user_data)
-                ->surface.get(),
-            bytes);
+        sk_sp<SkSurface> surface =
+            context.GetCompositor().GetSurface(layers[0]->backing_store);
+        matches = SurfacePixelDataMatchesBytes(surface.get(), bytes);
         latch.Signal();
       });
 

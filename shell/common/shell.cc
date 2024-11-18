@@ -710,6 +710,17 @@ bool Shell::EngineHasLivePorts() const {
   return weak_engine_->UIIsolateHasLivePorts();
 }
 
+bool Shell::EngineHasPendingMicrotasks() const {
+  FML_DCHECK(is_set_up_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return false;
+  }
+
+  return weak_engine_->UIIsolateHasPendingMicrotasks();
+}
+
 bool Shell::IsSetup() const {
   return is_set_up_;
 }
@@ -1111,8 +1122,7 @@ void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetUITaskRunner(),
+  task_runners_.GetUITaskRunner()->PostTask(
       fml::MakeCopyable([engine = engine_->GetWeakPtr(), node_id, action,
                          args = std::move(args)]() mutable {
         if (engine) {
