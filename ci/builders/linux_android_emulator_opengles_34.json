@@ -4,7 +4,6 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux",
-                "os=Ubuntu-22",
                 "kvm=1",
                 "cores=8"
             ],
