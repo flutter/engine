@@ -92,15 +92,21 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
   }
 
   impeller::egl::ConfigDescriptor desc;
-  desc.api = impeller::egl::API::kOpenGLES2;
+  desc.api = impeller::egl::API::kOpenGLES3;
   desc.color_format = impeller::egl::ColorFormat::kRGBA8888;
-  desc.depth_bits = impeller::egl::DepthBits::kZero;
+  desc.depth_bits = impeller::egl::DepthBits::kTwentyFour;
   desc.stencil_bits = impeller::egl::StencilBits::kEight;
   desc.samples = impeller::egl::Samples::kFour;
 
   desc.surface_type = impeller::egl::SurfaceType::kWindow;
   std::unique_ptr<impeller::egl::Config> onscreen_config =
       display_->ChooseConfig(desc);
+
+  if (!onscreen_config) {
+    desc.api = impeller::egl::API::kOpenGLES2;
+    onscreen_config = display_->ChooseConfig(desc);
+  }
+
   if (!onscreen_config) {
     // Fallback for Android emulator.
     desc.samples = impeller::egl::Samples::kOne;

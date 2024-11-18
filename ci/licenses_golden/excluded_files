@@ -3473,8 +3473,10 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem2/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.system.state/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.controller/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.perfetto/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing/meta.json

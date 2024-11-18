@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
 
+#import <CoreMedia/CoreMedia.h>
 #import <Metal/Metal.h>
 
 #import "flutter/fml/platform/darwin/cf_utils.h"
@@ -52,21 +53,21 @@
   return self;
 }
 
-static void ReleaseSurface(void* surface) {
-  if (surface != nullptr) {
-    CFBridgingRelease(surface);
-  }
-}
-
 - (FlutterMetalTexture)asFlutterMetalTexture {
-  FlutterMetalTexture res;
-  memset(&res, 0, sizeof(FlutterMetalTexture));
-  res.struct_size = sizeof(FlutterMetalTexture);
-  res.texture = (__bridge void*)_texture;
-  res.texture_id = self.textureId;
-  res.user_data = (void*)CFBridgingRetain(self);
-  res.destruction_callback = ReleaseSurface;
-  return res;
+  return FlutterMetalTexture{
+      .struct_size = sizeof(FlutterMetalTexture),
+      .texture_id = self.textureId,
+      .texture = (__bridge void*)_texture,
+      // Retain for use in [FlutterSurface fromFlutterMetalTexture]. Released in
+      // destruction_callback.
+      .user_data = (__bridge_retained void*)self,
+      .destruction_callback =
+          [](void* user_data) {
+            // Balancing release for the retain when setting user_data above.
+            FlutterSurface* surface = (__bridge_transfer FlutterSurface*)user_data;
+            surface = nil;
+          },
+  };
 }
 
 + (FlutterSurface*)fromFlutterMetalTexture:(const FlutterMetalTexture*)texture {
@@ -74,7 +75,7 @@ static void ReleaseSurface(void* surface) {
 }
 
 + (IOSurfaceRef)createIOSurfaceWithSize:(CGSize)size {
-  unsigned pixelFormat = 'BGRA';
+  unsigned pixelFormat = kCVPixelFormatType_32BGRA;
   unsigned bytesPerElement = 4;
 
   size_t bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, size.width * bytesPerElement);
@@ -89,7 +90,7 @@ static void ReleaseSurface(void* surface) {
   };
 
   IOSurfaceRef res = IOSurfaceCreate((CFDictionaryRef)options);
-  IOSurfaceSetValue(res, CFSTR("IOSurfaceColorSpace"), kCGColorSpaceSRGB);
+  IOSurfaceSetValue(res, kIOSurfaceColorSpace, kCGColorSpaceSRGB);
   return res;
 }
 

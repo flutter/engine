@@ -114,6 +114,7 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     SkISize target_size,
     impeller::ISize max_texture_size,
     bool supports_wide_gamut,
+    const std::shared_ptr<const impeller::Capabilities>& capabilities,
     const std::shared_ptr<impeller::Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
@@ -238,10 +239,11 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
           : std::optional<SkImageInfo>(image_info.makeDimensions(target_size));
 
   if (source_size.width() > max_texture_size.width ||
-      source_size.height() > max_texture_size.height) {
+      source_size.height() > max_texture_size.height ||
+      !capabilities->SupportsTextureToTextureBlits()) {
     //----------------------------------------------------------------------------
     /// 2. If the decoded image isn't the requested target size and the src size
-    ///    exceeds the device max texture size, perform a slow CPU reisze.
+    ///    exceeds the device max texture size, perform a slow CPU resize.
     ///
     TRACE_EVENT0("impeller", "SlowCPUDecodeScale");
     const auto scaled_image_info = image_info.makeDimensions(target_size);
@@ -382,6 +384,10 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     return std::make_pair(nullptr, decode_error);
   }
 
+  // Flush the pending command buffer to ensure that its output becomes visible
+  // to the raster thread.
+  command_buffer->WaitUntilCompleted();
+
   context->DisposeThreadLocalCachedResources();
 
   return std::make_pair(
@@ -519,6 +525,13 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        result,
        supports_wide_gamut = supports_wide_gamut_,  //
        gpu_disabled_switch = gpu_disabled_switch_]() {
+#if FML_OS_IOS_SIMULATOR
+        // No-op backend.
+        if (!context) {
+          return;
+        }
+#endif  // FML_OS_IOS_SIMULATOR
+
         if (!context) {
           result(nullptr, "No Impeller context is available");
           return;
@@ -529,7 +542,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         // Always decompress on the concurrent runner.
         auto bitmap_result = DecompressTexture(
             raw_descriptor, target_size, max_size_supported,
-            supports_wide_gamut, context->GetResourceAllocator());
+            /*supports_wide_gamut=*/supports_wide_gamut,
+            context->GetCapabilities(), context->GetResourceAllocator());
         if (!bitmap_result.device_buffer) {
           result(nullptr, bitmap_result.decode_error);
           return;
