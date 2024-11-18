@@ -22,8 +22,10 @@ typedef enum {
 } FlTextInputType;
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_TEXT_AFFINITY_UPSTREAM,
   FL_TEXT_AFFINITY_DOWNSTREAM,
+  // NOLINTEND(readability-identifier-naming)
 } FlTextAffinity;
 
 G_DECLARE_FINAL_TYPE(FlTextInputChannel,
