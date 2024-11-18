@@ -405,7 +405,8 @@ class ProcTableGLES {
 
   ProcTableGLES& operator=(const ProcTableGLES&) = delete;
 
-  void IterateDebugProcs(std::function<bool(GLProcBase*)> iterator) const;
+  void IterateDebugProcs(
+      const std::function<bool(GLProcBase*)>& iterator) const;
 
   void RegisterProc(GLProcBase* proc);
 };

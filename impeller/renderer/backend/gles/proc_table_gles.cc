@@ -436,7 +436,7 @@ void ProcTableGLES::RegisterProc(GLProcBase* proc) {
 }
 
 void ProcTableGLES::IterateDebugProcs(
-    std::function<bool(GLProcBase*)> iterator) const {
+    const std::function<bool(GLProcBase*)>& iterator) const {
   if (!iterator) {
     return;
   }
