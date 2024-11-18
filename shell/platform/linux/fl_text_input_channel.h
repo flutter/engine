@@ -12,11 +12,13 @@
 G_BEGIN_DECLS
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_TEXT_INPUT_TYPE_TEXT,
   // Send newline when multi-line and enter is pressed.
   FL_TEXT_INPUT_TYPE_MULTILINE,
   // The input method is not shown at all.
   FL_TEXT_INPUT_TYPE_NONE,
+  // NOLINTEND(readability-identifier-naming)
 } FlTextInputType;
 
 typedef enum {

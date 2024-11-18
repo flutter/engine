@@ -10,8 +10,10 @@
 G_BEGIN_DECLS
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_SETTINGS_CHANNEL_PLATFORM_BRIGHTNESS_LIGHT,
   FL_SETTINGS_CHANNEL_PLATFORM_BRIGHTNESS_DARK
+  // NOLINTEND(readability-identifier-naming)
 } FlSettingsChannelPlatformBrightness;
 
 G_DECLARE_FINAL_TYPE(FlSettingsChannel,
