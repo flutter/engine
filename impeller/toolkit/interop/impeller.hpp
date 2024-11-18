@@ -180,7 +180,8 @@ struct Proc {
   PROC(ImpellerTypographyContextRetain)
 
 struct ProcTable {
-  bool Initialize(std::function<void*(const char* function_name)> resolver) {
+  bool Initialize(
+      const std::function<void*(const char* function_name)>& resolver) {
 #define IMPELLER_HPP_PROC(proc)                                         \
   {                                                                     \
     proc.function =                                                     \
@@ -210,7 +211,7 @@ class Object {
  public:
   Object() = default;
 
-  Object(T object) { Reset(object); }
+  explicit Object(T object) { Reset(object); }
 
   Object(T object, AdoptTag) : object_(object) {}
 
@@ -317,7 +318,7 @@ class Context final : public Object<ImpellerContext, ImpellerContextTraits> {
   /// @see      ImpellerContextCreateOpenGLESNew
   ///
   static Context OpenGLES(
-      std::function<void*(const char*)> gl_proc_address_resolver) {
+      const std::function<void*(const char*)>& gl_proc_address_resolver) {
     struct UserData {
       std::function<void*(const char*)> resolver;
     };
@@ -919,7 +920,7 @@ class TypographyContext final : public Object<ImpellerTypographyContext,
 class ParagraphBuilder final
     : public Object<ImpellerParagraphBuilder, ImpellerParagraphBuilderTraits> {
  public:
-  ParagraphBuilder(const TypographyContext& context)
+  explicit ParagraphBuilder(const TypographyContext& context)
       : Object(gGlobalProcTable.ImpellerParagraphBuilderNew(context.Get()),
                AdoptTag::kAdopt) {}
 
@@ -1111,7 +1112,7 @@ class DisplayList final
 ///
 class Surface final : public Object<ImpellerSurface, ImpellerSurfaceTraits> {
  public:
-  Surface(ImpellerSurface surface) : Object(surface) {}
+  explicit Surface(ImpellerSurface surface) : Object(surface) {}
 
   Surface(ImpellerSurface surface, AdoptTag tag) : Object(surface, tag) {}
 
@@ -1150,7 +1151,7 @@ class DisplayListBuilder final
   //----------------------------------------------------------------------------
   /// @see      ImpellerDisplayListBuilderNew
   ///
-  DisplayListBuilder(const ImpellerRect* cull_rect = nullptr)
+  explicit DisplayListBuilder(const ImpellerRect* cull_rect = nullptr)
       : Object(gGlobalProcTable.ImpellerDisplayListBuilderNew(cull_rect),
                AdoptTag::kAdopt) {}
 
