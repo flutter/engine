@@ -54,6 +54,12 @@ class EmbedderTest : public ThreadTest {
   }
 
  protected:
+  // We return the base class here and reinterpret_cast in the template
+  // specializations because we're using forward declarations rather than
+  // including the headers directly, and thus the relationship between the base
+  // class and subclasses is unknown to the compiler here. We avoid including
+  // the headers directly because the Metal headers include Objective-C types,
+  // and thus cannot be included in pure C++ translation units.
   EmbedderTestContext& GetGLContext();
   EmbedderTestContext& GetMetalContext();
   EmbedderTestContext& GetSoftwareContext();
