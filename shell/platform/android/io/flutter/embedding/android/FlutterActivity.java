@@ -1314,7 +1314,8 @@ public class FlutterActivity extends Activity
 
   @Nullable
   @Override
-  public SensitiveContentPlugin provideSensitiveContentPlugin(@Nullable Activity, @NonNull FlutterEngine flutterEngine) {
+  public SensitiveContentPlugin provideSensitiveContentPlugin(
+      @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     return new SensitiveContentPlugin(getActivity(), flutterEngine.getSensitiveContentChannel());
   }
 

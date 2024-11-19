@@ -759,7 +759,7 @@ import java.util.List;
       platformPlugin = null;
     }
 
-    if(sensitiveContentPlugin != null) {
+    if (sensitiveContentPlugin != null) {
       sensitiveContentPlugin.destroy();
       sensitiveContentPlugin = null;
     }
@@ -1197,7 +1197,8 @@ import java.util.List;
      * experience should set content sensitivity.
      */
     @Nullable
-    SensitiveContentPlugin provideSensitiveContentPlugin(@Nullable Activity, @NonNull FlutterEngine flutterEngine);
+    SensitiveContentPlugin provideSensitiveContentPlugin(
+        @Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
 
     /**
      * Hook for the host to configure the {@link io.flutter.embedding.engine.FlutterEngine} as

@@ -1504,7 +1504,8 @@ public class FlutterFragment extends Fragment
 
   @Nullable
   @Override
-  public SensitiveContentPlugin provideSensitiveContentPlugin(@Nullable Activity, @NonNull FlutterEngine flutterEngine) {
+  public SensitiveContentPlugin provideSensitiveContentPlugin(
+      @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     if (activity != null) {
       return new SensitiveContentPlugin(getActivity(), flutterEngine.getSensitiveContentChannel());
     } else {
