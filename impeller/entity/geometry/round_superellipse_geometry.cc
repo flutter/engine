@@ -11,7 +11,7 @@
 
 namespace impeller {
 
-static constexpr Scalar kRatio_N_DOverA_Theta[][4] = {
+static constexpr double kRatio_N_DOverA_Theta[][4] = {
     {2.000, 2.00000, 0.00000, 0.26000},
     {2.020, 2.03300, 0.01441, 0.23845},
     {2.040, 2.06500, 0.02568, 0.20310},
@@ -31,35 +31,37 @@ static constexpr Scalar kRatio_N_DOverA_Theta[][4] = {
 };
 
 static constexpr size_t NUM_RECORDS = sizeof(kRatio_N_DOverA_Theta) / sizeof(kRatio_N_DOverA_Theta[0]);
-static constexpr Scalar MAX_RATIO = kRatio_N_DOverA_Theta[NUM_RECORDS-1][0];
-static constexpr Scalar RATIO_STEP = kRatio_N_DOverA_Theta[1][0] - kRatio_N_DOverA_Theta[0][0];
+static constexpr double MAX_RATIO = kRatio_N_DOverA_Theta[NUM_RECORDS-1][0];
+static constexpr double RATIO_STEP = kRatio_N_DOverA_Theta[1][0] - kRatio_N_DOverA_Theta[0][0];
 
-static constexpr Scalar gap(Scalar corner_radius) {
+static constexpr double gap(double corner_radius) {
   return 0.2924303407 * corner_radius;
 }
 
+typedef TSize<double> DSize;
+typedef TPoint<double> DPoint;
 struct ExpandedVariables {
-  Scalar n;
-  Scalar d;
-  Scalar R;
-  Scalar x0;
-  Scalar y0;
+  double n;
+  double d;
+  double R;
+  double x0;
+  double y0;
 };
 
 // Result will be assigned with [n, d_over_a, theta]
-static ExpandedVariables ExpandVariables(Scalar ratio, Scalar a, Scalar g) {
+static ExpandedVariables ExpandVariables(double ratio, double a, double g) {
   constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
-  Scalar steps = std::clamp<size_t>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS);
-  size_t lo = std::min((size_t)std::floor(steps), NUM_RECORDS - 1);
+  double steps = std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
+  size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
   size_t hi = lo + 1;
-  Scalar pos = steps - lo;
+  double pos = steps - lo;
 
-  Scalar n = pos * kRatio_N_DOverA_Theta[lo][1] + (1-pos) * kRatio_N_DOverA_Theta[hi][1];
-  Scalar d = (pos * kRatio_N_DOverA_Theta[lo][2] + (1-pos) * kRatio_N_DOverA_Theta[hi][2]) * a;
-  Scalar R = a - d - g;
-  Scalar theta = pos * kRatio_N_DOverA_Theta[lo][3] + (1-pos) * kRatio_N_DOverA_Theta[hi][3];
-  Scalar x0 = d + R * sin(theta);
-  Scalar y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
+  double n = (1-pos) * kRatio_N_DOverA_Theta[lo][1] + pos * kRatio_N_DOverA_Theta[hi][1];
+  double d = ((1-pos) * kRatio_N_DOverA_Theta[lo][2] + pos * kRatio_N_DOverA_Theta[hi][2]) * a;
+  double R = (a - d - g) * sqrt(2);
+  double theta = (1-pos) * kRatio_N_DOverA_Theta[lo][3] + pos * kRatio_N_DOverA_Theta[hi][3];
+  double x0 = d + R * sin(theta);
+  double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
   return ExpandedVariables{
     .n = n,
     .d = d,
@@ -69,7 +71,11 @@ static ExpandedVariables ExpandVariables(Scalar ratio, Scalar a, Scalar g) {
   };
 }
 
-static void DrawCircularArc(Point start, Point end, Scalar r) {
+static Point operator+(Point a, DPoint b) {
+  return Point{static_cast<Scalar>(a.x + b.x), static_cast<Scalar>(a.y + b.y)};
+}
+
+static void DrawCircularArc(DPoint start, DPoint end, double r) {
   // TODO
 }
 
@@ -84,20 +90,20 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  Size size = bounds_.GetSize();
+  DSize size {bounds_.GetWidth(), bounds_.GetHeight()};
   Point center = bounds_.GetCenter();
   // printf("Center %.2f, %.2f\n", center.x, center.y);
-  Scalar r = std::min(corner_radius_, std::min(size.width / 2, size.height / 2));
+  const double r = std::min<double>(corner_radius_, std::min(size.width / 2, size.height / 2));
 
   // Derive critical variables
-  Size ratio_wh = {std::min(size.width / r, MAX_RATIO), std::min(size.height / r, MAX_RATIO)};
-  Size ab = ratio_wh * r;
-  Size s_wh = size / 2 - ab;
-  Scalar g = gap(corner_radius_);
+  const DSize ratio_wh = {std::min(size.width / r, MAX_RATIO), std::min<double>(size.height / r, MAX_RATIO)};
+  const DSize ab = ratio_wh * r / 2;
+  const DSize s_wh = size / 2 - ab;
+  const double g = gap(corner_radius_);
 
-  ExpandedVariables var_w = ExpandVariables(ratio_wh.width, ab.width, g);
-  ExpandedVariables var_h = ExpandVariables(ratio_wh.height, ab.height, g);
-  Scalar c = (ab.width - size.height) / 2;
+  const ExpandedVariables var_w = ExpandVariables(ratio_wh.width, ab.width, g);
+  const ExpandedVariables var_h = ExpandVariables(ratio_wh.height, ab.height, g);
+  const double c = ab.width - size.height / 2;
 
   /* Generate the points for the top right quadrant, and then mirror to the other
    * quadrants. The following figure shows the top 1/8 arc (from 0 to pi/4), which
@@ -132,46 +138,62 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
    */
 
   // TODO(dkwingsmt): determine parameter values based on scaling factor.
-  Scalar step = kPi / 80;
+  double step = kPi / 80;
 
-  std::vector<Point> points;
+  std::vector<DPoint> points;
   points.reserve(41);
-  Point pointM {size.width / 2 - g, size.height / 2 - g};
+  const DPoint pointM {size.width / 2 - g, size.height / 2 - g};
 
   // A
   points.emplace_back(0, size.height / 2);
   // B
   points.emplace_back(s_wh.width, size.height / 2);
   // Arc BJ (both ends exclusive)
-  Scalar angle_jsb = atan((var_w.x0 - s_wh.width) / var_w.y0);
-  for (Scalar angle = 0 + step; angle < angle_jsb; angle += step) {
-    // printf("Angle %.2f\n", angle);
-    Scalar x = ab.width * pow(abs(sin(angle)), 2 / var_w.n);
-    Scalar y = ab.width * pow(abs(cos(angle)), 2 / var_w.n) - c;
-    points.emplace_back(x, y);
+  {
+    const double target_slope = var_w.y0 / var_w.x0;
+    for (double angle = 0 + step; ; angle += step) {
+      const double x = ab.width * pow(abs(sin(angle)), 2 / var_w.n);
+      const double y = ab.width * pow(abs(cos(angle)), 2 / var_w.n);
+      if (y / x <= target_slope) {
+        break;
+      }
+      points.emplace_back(x + s_wh.width, y - c);
+    }
   }
   // J
-  points.emplace_back(var_w.x0, var_w.y0 - c);
+  points.emplace_back(var_w.x0 + s_wh.width, var_w.y0 - c);
   // Arc JM (both ends exclusive)
-  DrawCircularArc({var_w.x0, var_w.y0 - c}, pointM, var_w.R);
+  DrawCircularArc({var_w.x0 + s_wh.width, var_w.y0 - c}, pointM, var_w.R);
   // M
   points.push_back(pointM);
   // Arc MJ' (both ends exclusive)
-  DrawCircularArc(pointM, {var_h.y0 + c, var_h.x0}, var_h.R);
+  DrawCircularArc(pointM, {var_h.y0 + c, var_h.x0 + s_wh.height}, var_h.R);
   // J'
-  points.emplace_back(var_h.y0 + c, var_w.x0);
-  // Arc BJ (both ends exclusive)
-  Scalar angle_bsj = atan((var_h.x0 - s_wh.height) / var_h.y0);
-  for (Scalar angle = angle_bsj - step; angle > 0; angle -= step) {
-    // printf("Angle %.2f\n", angle);
-    Scalar x = ab.height * pow(abs(cos(angle)), 2 / var_h.n) + c;
-    Scalar y = ab.height * pow(abs(sin(angle)), 2 / var_h.n);
-    points.emplace_back(x, y);
+  points.emplace_back(var_h.y0 + c, var_w.x0 + s_wh.height);
+  // Arc J'B' (both ends exclusive)
+  {
+    const double target_slope = var_h.y0 / var_h.x0;
+    std::vector<DPoint> points_bsj;
+    for (double angle = 0; ; angle += step) {
+      const double x = ab.height * pow(abs(sin(angle)), 2 / var_h.n);
+      const double y = ab.height * pow(abs(cos(angle)), 2 / var_h.n);
+      if (y / x <= target_slope) {
+        break;
+      }
+      // The coordinates are inverted because this half of arc is mirrowed by the
+      // 45deg line.
+      points_bsj.emplace_back(y + c, x + s_wh.height);
+    }
+    for (size_t i = 0; i < points_bsj.size(); i++) {
+      points.push_back(points_bsj[points_bsj.size() - i - 1]);
+    }
   }
+  // B
+  points.emplace_back(size.width / 2, s_wh.height);
   // A'
   points.emplace_back(size.width / 2, 0);
 
-  static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+  static constexpr DPoint reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
 
   // Reflect into the 4 quadrants and generate the tessellated mesh. The
   // iteration order is reversed so that the trianges are continuous from

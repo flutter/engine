@@ -2343,9 +2343,9 @@ TEST_P(EntityTest, DrawRoundSuperEllipse) {
     // UI state.
     static float center_x = 100;
     static float center_y = 100;
-    static float width = 100;
-    static float height = 80;
-    static float corner_radius = 30;
+    static float width = 900;
+    static float height = 900;
+    static float corner_radius = 391.30;
     static Color color = Color::Red();
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

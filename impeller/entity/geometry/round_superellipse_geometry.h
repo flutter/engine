@@ -22,8 +22,7 @@ namespace impeller {
 /// See also: https://en.wikipedia.org/wiki/Superellipse
 class RoundSuperellipseGeometry final : public Geometry {
  public:
-  explicit RoundSuperellipseGeometry(const Rect& bounds,
-                                Scalar corner_radius);
+  explicit RoundSuperellipseGeometry(const Rect& bounds, Scalar corner_radius);
 
   ~RoundSuperellipseGeometry() override;
 
@@ -43,11 +42,12 @@ class RoundSuperellipseGeometry final : public Geometry {
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
   const Rect bounds_;
-  Scalar corner_radius_;
+  double corner_radius_;
 
   RoundSuperellipseGeometry(const RoundSuperellipseGeometry&) = delete;
 
-  RoundSuperellipseGeometry& operator=(const RoundSuperellipseGeometry&) = delete;
+  RoundSuperellipseGeometry& operator=(const RoundSuperellipseGeometry&) =
+      delete;
 };
 
 }  // namespace impeller
