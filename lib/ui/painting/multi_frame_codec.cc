@@ -214,6 +214,9 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     ImageGenerator::FrameInfo frameInfo =
         generator_->GetFrameInfo(nextFrameIndex_);
     duration = frameInfo.duration;
+    if (duration <= 10) {
+      duration = 100;
+    }
   }
   nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
 
