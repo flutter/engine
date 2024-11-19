@@ -128,6 +128,11 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
   }
+  if (desc->GetGlVersion().IsAtLeast(Version{3, 0, 0})) {
+    GLint value = 0;
+    gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
+    supports_offscreen_msaa_ = value >= 4;
+  }
   is_es_ = desc->IsES();
   is_angle_ = desc->IsANGLE();
 }

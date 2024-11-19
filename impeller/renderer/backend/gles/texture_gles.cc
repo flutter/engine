@@ -53,7 +53,7 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                    : TextureGLES::Type::kRenderBuffer;
   }
-  return is_msaa ? TextureGLES::Type::kTextureMultisampled
+  return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                  : TextureGLES::Type::kTexture;
 }
 
@@ -362,7 +362,7 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kB8G8R8A8UNormInt:
     case PixelFormat::kR8G8B8A8UNormInt:
-      return GL_RGBA4;
+      return GL_RGBA8;
     case PixelFormat::kR32G32B32A32Float:
       return GL_RGBA32F;
     case PixelFormat::kR16G16B16A16Float:
@@ -445,7 +445,8 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       {
         TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
         if (type_ == Type::kRenderBufferMultisampled) {
-          gl.RenderbufferStorageMultisampleEXT(
+          FML_DCHECK(gl.RenderbufferStorageMultisample.IsAvailable());
+          gl.RenderbufferStorageMultisample(
               GL_RENDERBUFFER,               // target
               4,                             // samples
               render_buffer_format.value(),  // internal format
