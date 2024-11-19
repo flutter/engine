@@ -89,7 +89,8 @@ DescriptionGLES::DescriptionGLES(const ProcTableGLES& gl)
 
   auto gl_version = DetermineVersion(gl_version_string_);
   if (!gl_version.has_value()) {
-    VALIDATION_LOG << "Could not determine GL version.";
+    VALIDATION_LOG << "Could not determine GL version (" << gl_version_string_
+                   << ")";
     return;
   }
   gl_version_ = gl_version.value();
