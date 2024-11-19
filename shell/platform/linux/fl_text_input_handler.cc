@@ -50,6 +50,8 @@ struct _FlTextInputHandler {
   // range. This value is updated via `TextInput.setMarkedTextRect` messages
   // over the text input channel.
   GdkRectangle composing_rect;
+
+  GCancellable* cancellable;
 };
 
 G_DEFINE_TYPE(FlTextInputHandler, fl_text_input_handler, G_TYPE_OBJECT)
@@ -61,7 +63,9 @@ static void update_editing_state_response_cb(GObject* object,
   g_autoptr(GError) error = nullptr;
   if (!fl_text_input_channel_update_editing_state_finish(object, result,
                                                          &error)) {
-    g_warning("Failed to update editing state: %s", error->message);
+    if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+      g_warning("Failed to update editing state: %s", error->message);
+    }
   }
 }
 
@@ -73,7 +77,10 @@ static void update_editing_state_with_deltas_response_cb(GObject* object,
   g_autoptr(GError) error = nullptr;
   if (!fl_text_input_channel_update_editing_state_with_deltas_finish(
           object, result, &error)) {
-    g_warning("Failed to update editing state with deltas: %s", error->message);
+    if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+      g_warning("Failed to update editing state with deltas: %s",
+                error->message);
+    }
   }
 }
 
@@ -89,7 +96,7 @@ static void update_editing_state(FlTextInputHandler* self) {
   fl_text_input_channel_update_editing_state(
       self->channel, self->client_id, self->text_model->GetText().c_str(),
       selection.base(), selection.extent(), FL_TEXT_AFFINITY_DOWNSTREAM, FALSE,
-      composing_base, composing_extent, nullptr,
+      composing_base, composing_extent, self->cancellable,
       update_editing_state_response_cb, self);
 }
 
@@ -107,7 +114,7 @@ static void update_editing_state_with_delta(FlTextInputHandler* self,
       self->channel, self->client_id, delta->old_text().c_str(),
       delta->delta_text().c_str(), delta->delta_start(), delta->delta_end(),
       selection.base(), selection.extent(), FL_TEXT_AFFINITY_DOWNSTREAM, FALSE,
-      composing_base, composing_extent, nullptr,
+      composing_base, composing_extent, self->cancellable,
       update_editing_state_with_deltas_response_cb, self);
 }
 
@@ -117,7 +124,9 @@ static void perform_action_response_cb(GObject* object,
                                        gpointer user_data) {
   g_autoptr(GError) error = nullptr;
   if (!fl_text_input_channel_perform_action_finish(object, result, &error)) {
-    g_warning("Failed to perform action: %s", error->message);
+    if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+      g_warning("Failed to perform action: %s", error->message);
+    }
   }
 }
 
@@ -128,7 +137,7 @@ static void perform_action(FlTextInputHandler* self) {
   g_return_if_fail(self->input_action != nullptr);
 
   fl_text_input_channel_perform_action(self->channel, self->client_id,
-                                       self->input_action, nullptr,
+                                       self->input_action, self->cancellable,
                                        perform_action_response_cb, self);
 }
 
@@ -301,11 +310,11 @@ static void clear_client(gpointer user_data) {
 // Update the IM cursor position.
 //
 // As text is input by the user, the framework sends two streams of updates
-// over the text input channel: updates to the composing rect (cursor rect when
-// not in IME composing mode) and updates to the matrix transform from local
-// coordinates to Flutter root coordinates. This function is called after each
-// of these updates. It transforms the composing rect to GDK window coordinates
-// and notifies GTK of the updated cursor position.
+// over the text input channel: updates to the composing rect (cursor rect
+// when not in IME composing mode) and updates to the matrix transform from
+// local coordinates to Flutter root coordinates. This function is called
+// after each of these updates. It transforms the composing rect to GDK window
+// coordinates and notifies GTK of the updated cursor position.
 static void update_im_cursor_position(FlTextInputHandler* self) {
   g_autoptr(FlTextInputViewDelegate) view_delegate =
       FL_TEXT_INPUT_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
@@ -332,8 +341,8 @@ static void update_im_cursor_position(FlTextInputHandler* self) {
   fl_text_input_view_delegate_translate_coordinates(
       view_delegate, x, y, &preedit_rect.x, &preedit_rect.y);
 
-  // Set the cursor location in window coordinates so that GTK can position any
-  // system input method windows.
+  // Set the cursor location in window coordinates so that GTK can position
+  // any system input method windows.
   gtk_im_context_set_cursor_location(self->im_context, &preedit_rect);
 }
 
@@ -377,6 +386,8 @@ static void set_marked_text_rect(double x,
 static void fl_text_input_handler_dispose(GObject* object) {
   FlTextInputHandler* self = FL_TEXT_INPUT_HANDLER(object);
 
+  g_cancellable_cancel(self->cancellable);
+
   g_clear_object(&self->channel);
   g_clear_pointer(&self->input_action, g_free);
   g_clear_object(&self->im_context);
@@ -385,6 +396,7 @@ static void fl_text_input_handler_dispose(GObject* object) {
     self->text_model = nullptr;
   }
   g_weak_ref_clear(&self->view_delegate);
+  g_clear_object(&self->cancellable);
 
   G_OBJECT_CLASS(fl_text_input_handler_parent_class)->dispose(object);
 }
@@ -399,6 +411,7 @@ static void fl_text_input_handler_init(FlTextInputHandler* self) {
   self->client_id = kClientIdUnset;
   self->input_type = FL_TEXT_INPUT_TYPE_TEXT;
   self->text_model = new flutter::TextInputModel();
+  self->cancellable = g_cancellable_new();
 }
 
 static void init_im_context(FlTextInputHandler* self,
