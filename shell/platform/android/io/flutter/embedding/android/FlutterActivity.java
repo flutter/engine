@@ -212,7 +212,7 @@ public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host, LifecycleOwner {
   private static final String TAG = "FlutterActivity";
 
-  private boolean hasRegisteredBackCallback = false;
+  @VisibleForTesting boolean hasRegisteredBackCallback = false;
 
   /**
    * The ID of the {@code FlutterView} created by this activity.
