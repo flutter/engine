@@ -127,8 +127,7 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     GLint value = 0;
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
-  }
-  if (desc->GetGlVersion().IsAtLeast(Version{3, 0, 0})) {
+  } else if (desc->GetGlVersion().major_version >= 3 && desc->IsES()) {
     GLint value = 0;
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
