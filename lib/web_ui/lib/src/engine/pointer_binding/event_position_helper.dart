@@ -23,7 +23,11 @@ import '../window.dart';
 ///
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
-ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view) {
+ui.Offset computeEventOffsetToTarget(
+  DomMouseEvent event,
+  EngineFlutterView view, {
+  DomEventTarget? eventTarget,
+}) {
   final DomElement actualTarget = view.dom.rootElement;
   // On a TalkBack event
   if (EngineSemantics.instance.semanticsEnabled && event.offsetX == 0 && event.offsetY == 0) {
@@ -31,7 +35,8 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view
   }
 
   // On one of our text-editing nodes
-  final bool isInput = view.dom.textEditingHost.contains(event.target! as DomNode);
+  eventTarget ??= event.target!;
+  final bool isInput = view.dom.textEditingHost.contains(eventTarget as DomNode);
   if (isInput) {
     final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
     if (inputGeometry != null) {
