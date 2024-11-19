@@ -2339,6 +2339,7 @@ TEST_P(EntityTest, DrawSuperEllipse) {
 
 TEST_P(EntityTest, DrawRoundSuperEllipse) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // printf("One draw\n");
     // UI state.
     static float center_x = 100;
     static float center_y = 100;
@@ -2358,8 +2359,7 @@ TEST_P(EntityTest, DrawRoundSuperEllipse) {
     auto contents = std::make_shared<SolidColorContents>();
     static std::unique_ptr<RoundSuperellipseGeometry> geom =
         std::make_unique<RoundSuperellipseGeometry>(
-            Rect::MakeLTRB(center_x - width / 2, center_y - height / 2,
-                           center_x + width / 2, center_y + height / 2),
+            Rect::MakeOriginSize({center_x, center_y}, {width, height}),
             corner_radius);
     contents->SetColor(color);
     contents->SetGeometry(geom.get());
