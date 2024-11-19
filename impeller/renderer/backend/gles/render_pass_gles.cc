@@ -532,10 +532,11 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_NONE);
     gl.BindFramebuffer(GL_READ_FRAMEBUFFER, GL_NONE);
     gl.DeleteFramebuffers(1u, &resolve_fbo);
+    // Rebind the original FBO so that we can discard it below.
+    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
   }
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
     std::vector<GLenum> attachments;
 
     // TODO(130048): discarding stencil or depth on the default fbo causes Angle

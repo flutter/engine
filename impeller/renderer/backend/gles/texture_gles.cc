@@ -457,27 +457,27 @@ void TextureGLES::InitializeContentsIfNecessary() const {
           // with regular GLES 3.0 multisampled renderbuffers/textures.
           if (gl.GetCapabilities()->SupportsImplicitResolvingMSAA()) {
             gl.RenderbufferStorageMultisampleEXT(
-                GL_RENDERBUFFER,               // target
-                4,                             // samples
-                render_buffer_format.value(),  // internal format
-                size.width,                    // width
-                size.height                    // height
+                /*target=*/GL_RENDERBUFFER,                        //
+                /*samples=*/4,                                     //
+                /*internal_format=*/render_buffer_format.value(),  //
+                /*width=*/size.width,                              //
+                /*height=*/size.height                             //
             );
           } else {
             gl.RenderbufferStorageMultisample(
-                GL_RENDERBUFFER,               // target
-                4,                             // samples
-                render_buffer_format.value(),  // internal format
-                size.width,                    // width
-                size.height                    // height
+                /*target=*/GL_RENDERBUFFER,                        //
+                /*samples=*/4,                                     //
+                /*internal_format=*/render_buffer_format.value(),  //
+                /*width=*/size.width,                              //
+                /*height=*/size.height                             //
             );
           }
         } else {
           gl.RenderbufferStorage(
-              GL_RENDERBUFFER,               // target
-              render_buffer_format.value(),  // internal format
-              size.width,                    // width
-              size.height                    // height
+              /*target=*/GL_RENDERBUFFER,                        //
+              /*internal_format=*/render_buffer_format.value(),  //
+              /*width=*/size.width,                              //
+              /*height=*/size.height                             //
           );
         }
       }
