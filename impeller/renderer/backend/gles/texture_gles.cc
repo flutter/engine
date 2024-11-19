@@ -45,7 +45,8 @@ static bool IsDepthStencilFormat(PixelFormat format) {
 }
 
 static TextureGLES::Type GetTextureTypeFromDescriptor(
-    const TextureDescriptor& desc) {
+    const TextureDescriptor& desc,
+    bool supports_implict_msaa) {
   const auto usage = static_cast<TextureUsageMask>(desc.usage);
   const auto render_target = TextureUsage::kRenderTarget;
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
@@ -53,7 +54,9 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                    : TextureGLES::Type::kRenderBuffer;
   }
-  return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
+  return is_msaa ? (supports_implict_msaa
+                        ? TextureGLES::Type::kTextureMultisampled
+                        : TextureGLES::Type::kRenderBufferMultisampled)
                  : TextureGLES::Type::kTexture;
 }
 
@@ -190,7 +193,11 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          std::optional<HandleGLES> external_handle)
     : Texture(desc),
       reactor_(std::move(reactor)),
-      type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
+      type_(
+          GetTextureTypeFromDescriptor(GetTextureDescriptor(),
+                                       reactor_->GetProcTable()
+                                           .GetCapabilities()
+                                           ->SupportsImplicitResolvingMSAA())),
       handle_(external_handle.has_value()
                   ? external_handle.value()
                   : reactor_->CreateHandle(ToHandleType(type_))),
@@ -445,14 +452,26 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       {
         TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
         if (type_ == Type::kRenderBufferMultisampled) {
-          FML_DCHECK(gl.RenderbufferStorageMultisample.IsAvailable());
-          gl.RenderbufferStorageMultisample(
-              GL_RENDERBUFFER,               // target
-              4,                             // samples
-              render_buffer_format.value(),  // internal format
-              size.width,                    // width
-              size.height                    // height
-          );
+          // BEWARE: these functions are not at all equivalent! the extensions
+          // are from EXT_multisampled_render_to_texture and cannot be used
+          // with regular GLES 3.0 multisampled renderbuffers/textures.
+          if (gl.GetCapabilities()->SupportsImplicitResolvingMSAA()) {
+            gl.RenderbufferStorageMultisampleEXT(
+                GL_RENDERBUFFER,               // target
+                4,                             // samples
+                render_buffer_format.value(),  // internal format
+                size.width,                    // width
+                size.height                    // height
+            );
+          } else {
+            gl.RenderbufferStorageMultisample(
+                GL_RENDERBUFFER,               // target
+                4,                             // samples
+                render_buffer_format.value(),  // internal format
+                size.width,                    // width
+                size.height                    // height
+            );
+          }
         } else {
           gl.RenderbufferStorage(
               GL_RENDERBUFFER,               // target

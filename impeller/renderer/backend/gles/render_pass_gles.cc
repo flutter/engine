@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include "GLES3/gl3.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
@@ -487,33 +488,6 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   }
 
-  if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
-
-    // TODO(130048): discarding stencil or depth on the default fbo causes Angle
-    // to discard the entire render target. Until we know the reason, default to
-    // storing.
-    bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
-
-    if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
-    }
-    if (pass_data.discard_depth_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
-    }
-
-    if (pass_data.discard_stencil_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
-    }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
-    );
-  }
-
   if (pass_data.resolve_attachment &&
       pass_data.resolve_attachment != pass_data.color_attachment &&
       !is_default_fbo) {
@@ -560,6 +534,34 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     gl.DeleteFramebuffers(1u, &resolve_fbo);
   }
 
+  if (gl.DiscardFramebufferEXT.IsAvailable()) {
+    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    std::vector<GLenum> attachments;
+
+    // TODO(130048): discarding stencil or depth on the default fbo causes Angle
+    // to discard the entire render target. Until we know the reason, default to
+    // storing.
+    bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
+
+    if (pass_data.discard_color_attachment) {
+      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
+                                           : GL_COLOR_ATTACHMENT0);
+    }
+    if (pass_data.discard_depth_attachment && angle_safe) {
+      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
+                                           : GL_DEPTH_ATTACHMENT);
+    }
+
+    if (pass_data.discard_stencil_attachment && angle_safe) {
+      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
+                                           : GL_STENCIL_ATTACHMENT);
+    }
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
+                             attachments.size(),  // attachments to discard
+                             attachments.data()   // size
+    );
+  }
+
 #ifdef IMPELLER_DEBUG
   if (is_default_fbo) {
     tracer->MarkFrameEnd(gl);
@@ -601,7 +603,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   // discard the attachment when we are done.
   if (color0.resolve_texture) {
     pass_data->discard_color_attachment =
-        context.GetCapabilities()->SupportsImplicitResolvingMSAA();
+        !context.GetCapabilities()->SupportsImplicitResolvingMSAA();
   }
 
   //----------------------------------------------------------------------------
