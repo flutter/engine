@@ -156,28 +156,14 @@ static void TestBounds(const DlImageFilter& filter,
         ASSERT_FALSE(matrix.HasPerspective2D()) << matrix;
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
+        matrix.m[3] = 0.001f;
+        matrix.m[7] = 0.001f;
+        ASSERT_TRUE(matrix.IsInvertible()) << matrix;
+        ASSERT_TRUE(matrix.HasPerspective2D()) << matrix;
+        TestBoundsWithMatrix(filter, matrix, sourceBounds,
+                             expectedLocalOutputQuad);
       }
     }
-  }
-
-  {
-    // Just test once with a reasonable perspective transform. Combining
-    // perspective with all of the abusively scaled and skewed transforms
-    // created in the loop above tends to lead to coordinates growing out
-    // of any reasonable scale.
-    DlMatrix matrix;
-    matrix = matrix.Scale({2.0f, 2.0f, 1});
-    matrix = matrix.Translate({1000, 1000, 500});
-    // matrix = DlMatrix::MakeSkew(0.125f, 0.125f) * matrix;
-    matrix = DlMatrix::MakeRotationX(DlDegrees(5)) * matrix;
-    // matrix = DlMatrix::MakeRotationY(DlDegrees(5)) * matrix;
-    // matrix = DlMatrix::MakeTranslation({0, 0, 5});
-    matrix = DlMatrix::MakePerspective(DlDegrees(60), 0.5, -500, 1000) * matrix;
-    // matrix = DlMatrix::MakeLookAt({0, 0, -10}, {0, 0, 10}, {0, 1, 0})
-    // * matrix;
-    ASSERT_TRUE(matrix.IsInvertible()) << matrix;
-    ASSERT_TRUE(matrix.HasPerspective2D()) << matrix;
-    TestBoundsWithMatrix(filter, matrix, sourceBounds, expectedLocalOutputQuad);
   }
 }
 
@@ -375,7 +361,7 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
 
 TEST(DisplayListImageFilter, ErodeBounds) {
   DlErodeImageFilter filter = DlErodeImageFilter(5, 10);
-  DlRect input_bounds = DlRect::MakeLTRB(20, 20, 80, 80).Shift(100, 100);
+  DlRect input_bounds = DlRect::MakeLTRB(20, 20, 80, 80);
   DlRect expected_output_bounds = input_bounds.Expand(-5, -10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }

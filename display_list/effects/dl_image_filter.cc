@@ -46,12 +46,21 @@ DlIRect* DlImageFilter::inset_device_bounds(const DlIRect& input_bounds,
                                             DlIRect& output_bounds) {
   if (ctm.IsFinite() && ctm.IsInvertible()) {
     if (ctm.HasPerspective2D()) {
-      DlRect local_bounds = DlRect::Make(input_bounds)
-                                .TransformAndClipBounds(ctm.Invert())
-                                .Expand(-radius_x, -radius_y);
-      output_bounds =
-          DlIRect::RoundOut(local_bounds.TransformAndClipBounds(ctm));
-      return &output_bounds;
+      // Ideally this code would use Impeller classes to do the math, see:
+      // https://github.com/flutter/flutter/issues/159175
+      SkMatrix sk_ctm = ToSkMatrix(ctm);
+      FML_DCHECK(sk_ctm.hasPerspective());
+      SkIRect sk_input_bounds =
+          SkIRect::MakeLTRB(input_bounds.GetLeft(), input_bounds.GetTop(),
+                            input_bounds.GetRight(), input_bounds.GetBottom());
+
+      SkMatrix inverse;
+      if (sk_ctm.invert(&inverse)) {
+        SkRect local_bounds = inverse.mapRect(SkRect::Make(sk_input_bounds));
+        local_bounds.inset(radius_x, radius_y);
+        output_bounds = ToDlIRect(sk_ctm.mapRect(local_bounds).roundOut());
+        return &output_bounds;
+      }
     } else {
       DlVector2 device_radius = map_vectors_affine(ctm, radius_x, radius_y);
       output_bounds =
@@ -70,12 +79,21 @@ DlIRect* DlImageFilter::outset_device_bounds(const DlIRect& input_bounds,
                                              DlIRect& output_bounds) {
   if (ctm.IsFinite() && ctm.IsInvertible()) {
     if (ctm.HasPerspective2D()) {
-      DlRect local_bounds = DlRect::Make(input_bounds)
-                                .TransformAndClipBounds(ctm.Invert())
-                                .Expand(radius_x, radius_y);
-      output_bounds =
-          DlIRect::RoundOut(local_bounds.TransformAndClipBounds(ctm));
-      return &output_bounds;
+      // Ideally this code would use Impeller classes to do the math, see:
+      // https://github.com/flutter/flutter/issues/159175
+      SkMatrix sk_ctm = ToSkMatrix(ctm);
+      FML_DCHECK(sk_ctm.hasPerspective());
+      SkIRect sk_input_bounds =
+          SkIRect::MakeLTRB(input_bounds.GetLeft(), input_bounds.GetTop(),
+                            input_bounds.GetRight(), input_bounds.GetBottom());
+
+      SkMatrix inverse;
+      if (sk_ctm.invert(&inverse)) {
+        SkRect local_bounds = inverse.mapRect(SkRect::Make(sk_input_bounds));
+        local_bounds.outset(radius_x, radius_y);
+        output_bounds = ToDlIRect(sk_ctm.mapRect(local_bounds).roundOut());
+        return &output_bounds;
+      }
     } else {
       DlVector2 device_radius = map_vectors_affine(ctm, radius_x, radius_y);
       output_bounds =
