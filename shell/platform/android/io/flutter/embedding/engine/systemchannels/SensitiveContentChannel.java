@@ -11,12 +11,11 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.util.ArrayList;
 
 /**
- * {@link SensitiveContentChannel} is a platform channel that is used by the framework to set
- * the content sensitivity of native Flutter Android {@code View}s.
- **/
+ * {@link SensitiveContentChannel} is a platform channel that is used by the framework to set the
+ * content sensitivity of native Flutter Android {@code View}s.
+ */
 public class SensitiveContentChannel {
   private static final String TAG = "SensitiveContentChannel";
 
@@ -42,7 +41,8 @@ public class SensitiveContentChannel {
               final int flutterViewId = argumentList.get(0);
               final int contentSensitivityLevel = argumentList.get(1);
               // TODO(camsim99): Add error handling if required.
-              sensitiveContentMethodHandler.setContentSensitivity(flutterViewId, contentSensitivityLevel);
+              sensitiveContentMethodHandler.setContentSensitivity(
+                  flutterViewId, contentSensitivityLevel);
               break;
             default:
               result.notImplemented();
@@ -52,13 +52,14 @@ public class SensitiveContentChannel {
       };
 
   public SensitiveContentChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, "flutter/sensitivecontent", StandardMethodCodec.INSTANCE);
+    channel =
+        new MethodChannel(dartExecutor, "flutter/sensitivecontent", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
   /**
-   * Sets the {@link SensitiveContentMethodHandler} which receives all requests to set a
-   * particular content sensitivty level sent through this channel.
+   * Sets the {@link SensitiveContentMethodHandler} which receives all requests to set a particular
+   * content sensitivty level sent through this channel.
    */
   public void setSensitiveContentMethodHandler(
       @Nullable SensitiveContentMethodHandler sensitiveContentMethodHandler) {
@@ -67,10 +68,12 @@ public class SensitiveContentChannel {
 
   public interface SensitiveContentMethodHandler {
     /**
-     * Requests that content being marked with the requested {@code contentSensitivity} mode for the native
-     * Flutter Android {@code View} whose ID matches {@Long flutterViewId}.
+     * Requests that content being marked with the requested {@code contentSensitivity} mode for the
+     * native Flutter Android {@code View} whose ID matches {@Long flutterViewId}.
      */
     void setContentSensitivity(
-        @NonNull int flutterViewId, @NonNull int contentSensitivity, @NonNull MethodChannel.Result result);
+        @NonNull int flutterViewId,
+        @NonNull int contentSensitivity,
+        @NonNull MethodChannel.Result result);
   }
 }
