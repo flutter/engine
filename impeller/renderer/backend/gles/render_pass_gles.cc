@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include "GLES3/gl3.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
