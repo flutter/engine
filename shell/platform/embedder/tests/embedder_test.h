@@ -16,29 +16,63 @@
 
 namespace flutter::testing {
 
+class EmbedderTestContextGL;
+class EmbedderTestContextMetal;
+class EmbedderTestContextSoftware;
+class EmbedderTestContextVulkan;
+
 class EmbedderTest : public ThreadTest {
  public:
   EmbedderTest();
 
   std::string GetFixturesDirectory() const;
 
-  EmbedderTestContext& GetEmbedderContext(EmbedderTestContextType type);
+  template <typename T>
+  T& GetEmbedderContext() {
+    static_assert(false, "Unsupported test context type");
+  }
 
- private:
-  std::map<EmbedderTestContextType, std::unique_ptr<EmbedderTestContext>>
-      embedder_contexts_;
+  template <>
+  EmbedderTestContextGL& GetEmbedderContext<EmbedderTestContextGL>() {
+    return reinterpret_cast<EmbedderTestContextGL&>(GetGLContext());
+  }
 
-  std::unique_ptr<EmbedderTestContext> CreateSoftwareContext();
-  std::unique_ptr<EmbedderTestContext> CreateGLContext();
-  std::unique_ptr<EmbedderTestContext> CreateMetalContext();
-  std::unique_ptr<EmbedderTestContext> CreateVulkanContext();
+  template <>
+  EmbedderTestContextMetal& GetEmbedderContext<EmbedderTestContextMetal>() {
+    return reinterpret_cast<EmbedderTestContextMetal&>(GetMetalContext());
+  }
+
+  template <>
+  EmbedderTestContextSoftware&
+  GetEmbedderContext<EmbedderTestContextSoftware>() {
+    return reinterpret_cast<EmbedderTestContextSoftware&>(GetSoftwareContext());
+  }
+
+  template <>
+  EmbedderTestContextVulkan& GetEmbedderContext<EmbedderTestContextVulkan>() {
+    return reinterpret_cast<EmbedderTestContextVulkan&>(GetVulkanContext());
+  }
+
+ protected:
+  EmbedderTestContext& GetGLContext();
+  EmbedderTestContext& GetMetalContext();
+  EmbedderTestContext& GetSoftwareContext();
+  EmbedderTestContext& GetVulkanContext();
+
+  std::unique_ptr<EmbedderTestContext> gl_context_;
+  std::unique_ptr<EmbedderTestContext> metal_context_;
+  std::unique_ptr<EmbedderTestContext> software_context_;
+  std::unique_ptr<EmbedderTestContext> vulkan_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTest);
 };
 
 class EmbedderTestMultiBackend
     : public EmbedderTest,
-      public ::testing::WithParamInterface<EmbedderTestContextType> {};
+      public ::testing::WithParamInterface<EmbedderTestContextType> {
+ public:
+  EmbedderTestContext& GetEmbedderContext(EmbedderTestContextType type);
+};
 
 }  // namespace flutter::testing
 
