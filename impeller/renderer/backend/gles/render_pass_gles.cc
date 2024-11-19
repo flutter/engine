@@ -603,6 +603,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   // discard the attachment when we are done.
   if (color0.resolve_texture) {
     pass_data->discard_color_attachment =
+        pass_data->discard_color_attachment &&
         !context.GetCapabilities()->SupportsImplicitResolvingMSAA();
   }
 
