@@ -445,7 +445,6 @@ FLUTTER_ASSERT_ARC
 - (void)testCanMergePlatformAndUIThread {
 #if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_impeller = true;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   [engine run];
@@ -458,7 +457,6 @@ FLUTTER_ASSERT_ARC
 - (void)testCanUnMergePlatformAndUIThread {
 #if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
   auto settings = FLTDefaultSettingsForBundle();
-  settings.enable_impeller = true;
   settings.merged_platform_ui_thread = false;
   FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
