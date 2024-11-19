@@ -57,6 +57,19 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
   }
 }
 
+std::unique_ptr<PlaygroundImpl> MakeAnglePlayground() {
+  PlaygroundSwitches playground_switches;
+  playground_switches.use_angle = true;
+  return PlaygroundImpl::Create(PlaygroundBackend::kOpenGLES,
+                                playground_switches);
+}
+
+const std::unique_ptr<PlaygroundImpl>& GetSharedOpenGLESPlayground() {
+  static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+      opengles_playground(MakeAnglePlayground());
+  return *opengles_playground;
+}
+
 }  // namespace
 
 #define IMP_AIKSTEST(name)                         \
@@ -180,12 +193,10 @@ void GoldenPlaygroundTest::SetUp() {
         GTEST_SKIP() << "OpenGLES doesn't support wide gamut golden tests.";
       }
       FML_CHECK(::glfwInit() == GLFW_TRUE);
-      PlaygroundSwitches playground_switches;
-      playground_switches.use_angle = true;
-      pimpl_->test_opengl_playground = PlaygroundImpl::Create(
-          PlaygroundBackend::kOpenGLES, playground_switches);
-      pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-          pimpl_->test_opengl_playground);
+      const std::unique_ptr<PlaygroundImpl>& playground =
+          GetSharedOpenGLESPlayground();
+      pimpl_->screenshotter =
+          std::make_unique<testing::VulkanScreenshotter>(playground);
       break;
     }
   }
@@ -279,8 +290,12 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
         pimpl_->test_vulkan_playground);
     return pimpl_->test_vulkan_playground->GetContext();
   } else {
-    /// On OpenGL we create a context for each test.
-    return GetContext();
+    FML_CHECK(!pimpl_->test_opengl_playground)
+        << "We don't support creating multiple contexts for one test";
+    pimpl_->test_opengl_playground = MakeAnglePlayground();
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+        pimpl_->test_opengl_playground);
+    return pimpl_->test_opengl_playground->GetContext();
   }
 }
 
