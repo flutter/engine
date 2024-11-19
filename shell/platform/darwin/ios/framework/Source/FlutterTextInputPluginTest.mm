@@ -3065,7 +3065,7 @@ FLUTTER_ASSERT_ARC
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
     NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"default", @"action" : @"paste"}, @{@"type" : @"default", @"action" : @"copy"}
+      @{@"type" : @"builtIn", @"action" : @"paste"}, @{@"type" : @"builtIn", @"action" : @"copy"}
     ];
 
     BOOL shownEditMenu =
@@ -3127,8 +3127,8 @@ FLUTTER_ASSERT_ARC
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
     NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"default", @"action" : @"cut"}, @{@"type" : @"default", @"action" : @"paste"},
-      @{@"type" : @"default", @"action" : @"copy"}
+      @{@"type" : @"builtIn", @"action" : @"cut"}, @{@"type" : @"builtIn", @"action" : @"paste"},
+      @{@"type" : @"builtIn", @"action" : @"copy"}
     ];
 
     BOOL shownEditMenu =
@@ -3208,9 +3208,9 @@ FLUTTER_ASSERT_ARC
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
     NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"default", @"action" : @"searchWeb", @"title" : @"Search Web"},
-      @{@"type" : @"default", @"action" : @"lookUp", @"title" : @"Look Up"},
-      @{@"type" : @"default", @"action" : @"share", @"title" : @"Share"}
+      @{@"type" : @"builtIn", @"action" : @"searchWeb", @"title" : @"Search Web"},
+      @{@"type" : @"builtIn", @"action" : @"lookUp", @"title" : @"Look Up"},
+      @{@"type" : @"builtIn", @"action" : @"share", @"title" : @"Share"}
     ];
 
     BOOL shownEditMenu =

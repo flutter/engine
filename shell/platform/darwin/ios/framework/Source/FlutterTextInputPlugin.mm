@@ -940,7 +940,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
   NSMutableArray* items = [NSMutableArray array];
   for (NSDictionary<NSString*, id>* encodedItem in _editMenuItems) {
-    if ([encodedItem[@"type"] isEqualToString:@"default"]) {
+    if ([encodedItem[@"type"] isEqualToString:@"builtIn"]) {
       NSString* action = encodedItem[@"action"];
       if ([action isEqualToString:@"copy"]) {
         [self addBasicEditingCommandToItems:items
