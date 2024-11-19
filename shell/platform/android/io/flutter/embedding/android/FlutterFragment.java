@@ -1655,6 +1655,11 @@ public class FlutterFragment extends Fragment
     return true;
   }
 
+  @Override
+  public boolean getBackCallbackState() {
+    return onBackPressedCallback.isEnabled();
+  }
+
   /**
    * {@inheritDoc}
    *

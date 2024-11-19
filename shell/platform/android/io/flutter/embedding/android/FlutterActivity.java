@@ -1478,6 +1478,11 @@ public class FlutterActivity extends Activity
   }
 
   @Override
+  public boolean getBackCallbackState() {
+    return hasRegisteredBackCallback;
+  }
+
+  @Override
   public boolean popSystemNavigator() {
     // Hook for subclass. No-op if returns false.
     return false;
