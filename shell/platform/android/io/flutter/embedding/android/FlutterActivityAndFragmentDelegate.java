@@ -76,7 +76,7 @@ import java.util.List;
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
-  private static final String ON_BACK_CALLBACK_ENABLED_KEY = "enableOnBackInvokedCallbackState";
+  static final String ON_BACK_CALLBACK_ENABLED_KEY = "enableOnBackInvokedCallbackState";
   private static final int FLUTTER_SPLASH_VIEW_FALLBACK_ID = 486947586;
 
   /** Factory to obtain a FlutterActivityAndFragmentDelegate instance. */
