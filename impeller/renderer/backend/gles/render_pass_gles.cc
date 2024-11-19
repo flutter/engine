@@ -6,7 +6,6 @@
 
 #include <cstdint>
 
-#include "GLES3/gl3.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
@@ -489,8 +488,9 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   }
 
   if (pass_data.resolve_attachment &&
-      pass_data.resolve_attachment != pass_data.color_attachment &&
+      !gl.GetCapabilities()->SupportsImplicitResolvingMSAA() &&
       !is_default_fbo) {
+    FML_DCHECK(pass_data.resolve_attachment != pass_data.color_attachment);
     // Perform multisample resolve via blit.
     // Create and bind a resolve FBO.
     GLuint resolve_fbo;
