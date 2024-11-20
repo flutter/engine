@@ -93,21 +93,22 @@ static void DrawCircularArc(std::vector<DPoint>& output,
   /* Denote the middle point of S and E as M. The key is to find the center of
    * the circle.
    *         S --__
-   *          / ⟍  `、
-   *         /   M ⟍ \ E
-   *        /       ⟋
+   *          /  ⟍ `、
+   *         /   M  ⟍\
+   *        /       ⟋  E
    *       /     ⟋
    *      /   ⟋
    *     / ⟋
-   *    ⟋  C
+   *  C ⟋
    */
 
   const DPoint s_to_e = end - start;
   const DPoint m = (start + end) / 2;
-  const DPoint normalized_c_to_m = DPoint(-s_to_e.y, s_to_e.x).Normalize();
+  const DPoint c_to_m = DPoint(-s_to_e.y, s_to_e.x);
   const double distance_sm = s_to_e.GetLength() / 2;
   const double distance_cm = sqrt(r * r - distance_sm * distance_sm);
-  const DPoint c = m - distance_cm * normalized_c_to_m;
+  const DPoint c = m - distance_cm * c_to_m.Normalize();
+  ;
   const Scalar angle_sce = asinf(distance_sm / r) * 2;
   // TODO(dkwingsmt): determine parameter values based on scaling factor.
   Scalar step = kPi / 80;
@@ -117,9 +118,17 @@ static void DrawCircularArc(std::vector<DPoint>& output,
   }
 }
 
+// static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output, DPoint center, double a, double corner_radius) {
+// }
+
+static Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
+  return std::min(corner_radius,
+                  std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
+}
+
 RoundSuperellipseGeometry::RoundSuperellipseGeometry(const Rect& bounds,
                                                      Scalar corner_radius)
-    : bounds_(bounds), corner_radius_(corner_radius) {}
+    : bounds_(bounds), corner_radius_(LimitRadius(corner_radius, bounds)) {}
 
 RoundSuperellipseGeometry::~RoundSuperellipseGeometry() {}
 
@@ -129,14 +138,10 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     RenderPass& pass) const {
   DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
   Point center = bounds_.GetCenter();
-  // printf("Center %.2f, %.2f\n", center.x, center.y);
-  const double r = std::min<double>(corner_radius_,
-                                    std::min(size.width / 2, size.height / 2));
-
   // Derive critical variables
-  const DSize ratio_wh = {std::min(size.width / r, MAX_RATIO),
-                          std::min<double>(size.height / r, MAX_RATIO)};
-  const DSize ab = ratio_wh * r / 2;
+  const DSize ratio_wh = {std::min(size.width / corner_radius_, MAX_RATIO),
+                          std::min<double>(size.height / corner_radius_, MAX_RATIO)};
+  const DSize ab = ratio_wh * corner_radius_ / 2;
   const DSize s_wh = size / 2 - ab;
   const double g = gap(corner_radius_);
 
