@@ -982,6 +982,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
 
     auto input_rect =
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
+
+    std::unique_ptr<Geometry> solid_color_input;
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
@@ -994,10 +996,10 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     } else {
       auto fill = std::make_shared<SolidColorContents>();
       fill->SetColor(input_color);
-      std::unique_ptr<Geometry> geom =
+      solid_color_input =
           Geometry::MakeFillPath(PathBuilder{}.AddRect(input_rect).TakePath());
 
-      fill->SetGeometry(geom.get());
+      fill->SetGeometry(solid_color_input.get());
 
       input = fill;
       input_size = input_rect.GetSize();
