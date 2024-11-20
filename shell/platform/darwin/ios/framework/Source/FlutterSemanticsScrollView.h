@@ -28,10 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// This flag is set by the `FlutterSemanticsScrollView` itself, typically in
 /// one of the `UIScrollViewDelegate` methods.
 ///
-/// When this flag is true, the Flutter framework should typically cease
-/// updating the content offset of this scroll view until the flag becomes
-/// false, to prevent potential feedback loops (especially when the framework is
-/// only echoing the new content offset back to this scroll view).
+/// When this flag is true, the `SemanticsObject` implementation ignores all
+/// content offset updates coming from the Flutter framework, to prevent
+/// potential feedback loops (especially when the framework is only echoing
+/// the new content offset back to this scroll view).
 ///
 /// For example, to scroll a scrollable container with iOS full keyboard access,
 /// the iOS focus system uses a display link to scroll the container to the
