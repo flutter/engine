@@ -346,7 +346,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       final String cssString = response.body;
       // Match the patterns that look like:
       // `src: url(...some url...)`
-      final r = RegExp(r'src:\s*url\(([^)]+)\)');
+      final r = RegExp(r'src:\s*url\((https?://[^)]+?\.woff2)\)');
       int familyCount = 0;
       // Give each font shard a unique family name.
       for (final match in r.allMatches(cssString)) {
