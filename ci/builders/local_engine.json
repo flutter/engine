@@ -300,32 +300,6 @@
       "gn": [
         "--runtime-mode",
         "debug",
-        "--android",
-        "--android-cpu=x64",
-        "--no-stripped",
-        "--no-lto",
-        "--rbe",
-        "--no-goma"
-      ],
-      "name": "linux/android_debug",
-      "description": "Builds a debug mode engine that targets 64-bit x64 Android from a Linux host.",
-      "ninja": {
-        "config": "android_debug",
-        "targets": []
-      }
-    },
-    {
-      "cas_archive": false,
-      "drone_dimensions": [
-        "os=Linux",
-        "device_type=none"
-      ],
-      "gclient_variables": {
-        "use_rbe": true
-      },
-      "gn": [
-        "--runtime-mode",
-        "debug",
         "--unoptimized",
         "--android",
         "--android-cpu=x64",
