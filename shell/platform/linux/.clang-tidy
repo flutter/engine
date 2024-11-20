@@ -1,5 +1,7 @@
 InheritParentConfig: true
 
 # EnumCastOutOfRange warns about some common usages of GTK macros
+# EnumCase allows GTK style enum values
 Checks: >-
   -clang-analyzer-optin.core.EnumCastOutOfRange
+  -readability-identifier-naming.EnumCase
