@@ -23,6 +23,8 @@ namespace flutter {
 
 #if defined(FML_OS_ANDROID)
 #define kTargetOperatingSystemName "android"
+#elif defined(OS_FUCHSIA)
+#define kTargetOperatingSystemName "fuchsia"
 #elif defined(FML_OS_LINUX)
 #define kTargetOperatingSystemName "linux"
 #elif defined(FML_OS_IOS) || defined(FML_OS_IOS_SIMULATOR)
