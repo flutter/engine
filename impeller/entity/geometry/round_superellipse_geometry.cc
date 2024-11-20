@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <cmath>
+#include <ranges>
 #include <vector>
 
 #include "flutter/impeller/entity/geometry/round_superellipse_geometry.h"
@@ -32,6 +33,7 @@ static constexpr double kRatio_N_DOverA_Theta[][4] = {
 
 static constexpr size_t NUM_RECORDS =
     sizeof(kRatio_N_DOverA_Theta) / sizeof(kRatio_N_DOverA_Theta[0]);
+static constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
 static constexpr double MAX_RATIO = kRatio_N_DOverA_Theta[NUM_RECORDS - 1][0];
 static constexpr double RATIO_STEP =
     kRatio_N_DOverA_Theta[1][0] - kRatio_N_DOverA_Theta[0][0];
@@ -50,33 +52,33 @@ struct ExpandedVariables {
   double y0;
 };
 
-// Result will be assigned with [n, d_over_a, theta]
-static ExpandedVariables ExpandVariables(double ratio, double a, double g) {
-  constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
-  double steps =
-      std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
-  size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
-  size_t hi = lo + 1;
-  double pos = steps - lo;
+// // Result will be assigned with [n, d_over_a, theta]
+// static ExpandedVariables ExpandVariables(double ratio, double a, double g) {
+//   constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
+//   double steps =
+//       std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS -
+//       1);
+//   size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS -
+//   2); size_t hi = lo + 1; double pos = steps - lo;
 
-  double n = (1 - pos) * kRatio_N_DOverA_Theta[lo][1] +
-             pos * kRatio_N_DOverA_Theta[hi][1];
-  double d = ((1 - pos) * kRatio_N_DOverA_Theta[lo][2] +
-              pos * kRatio_N_DOverA_Theta[hi][2]) *
-             a;
-  double R = (a - d - g) * sqrt(2);
-  double theta = (1 - pos) * kRatio_N_DOverA_Theta[lo][3] +
-                 pos * kRatio_N_DOverA_Theta[hi][3];
-  double x0 = d + R * sin(theta);
-  double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
-  return ExpandedVariables{
-      .n = n,
-      .d = d,
-      .R = R,
-      .x0 = x0,
-      .y0 = y0,
-  };
-}
+//   double n = (1 - pos) * kRatio_N_DOverA_Theta[lo][1] +
+//              pos * kRatio_N_DOverA_Theta[hi][1];
+//   double d = ((1 - pos) * kRatio_N_DOverA_Theta[lo][2] +
+//               pos * kRatio_N_DOverA_Theta[hi][2]) *
+//              a;
+//   double R = (a - d - g) * sqrt(2);
+//   double theta = (1 - pos) * kRatio_N_DOverA_Theta[lo][3] +
+//                  pos * kRatio_N_DOverA_Theta[hi][3];
+//   double x0 = d + R * sin(theta);
+//   double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
+//   return ExpandedVariables{
+//       .n = n,
+//       .d = d,
+//       .R = R,
+//       .x0 = x0,
+//       .y0 = y0,
+//   };
+// }
 
 static Point operator+(Point a, DPoint b) {
   return Point{static_cast<Scalar>(a.x + b.x), static_cast<Scalar>(a.y + b.y)};
@@ -118,41 +120,11 @@ static void DrawCircularArc(std::vector<DPoint>& output,
   }
 }
 
-// static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output, DPoint center, double a, double corner_radius) {
-// }
-
-static Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
-  return std::min(corner_radius,
-                  std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
-}
-
-RoundSuperellipseGeometry::RoundSuperellipseGeometry(const Rect& bounds,
-                                                     Scalar corner_radius)
-    : bounds_(bounds), corner_radius_(LimitRadius(corner_radius, bounds)) {}
-
-RoundSuperellipseGeometry::~RoundSuperellipseGeometry() {}
-
-GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
-  Point center = bounds_.GetCenter();
-  // Derive critical variables
-  const DSize ratio_wh = {std::min(size.width / corner_radius_, MAX_RATIO),
-                          std::min<double>(size.height / corner_radius_, MAX_RATIO)};
-  const DSize ab = ratio_wh * corner_radius_ / 2;
-  const DSize s_wh = size / 2 - ab;
-  const double g = gap(corner_radius_);
-
-  const double c = ab.width - size.height / 2;
-
-  // Points for the first quadrant.
-  std::vector<DPoint> points;
-  points.reserve(41);
-  // TODO(dkwingsmt): determine parameter values based on scaling factor.
-  double step = kPi / 80;
-
+static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
+                                         double size,
+                                         double corner_radius,
+                                         DPoint center,
+                                         bool flip) {
   /* Generate the points for the top 1/8 arc (from 0 to pi/4), which
    * is a square-like squircle offset by (0, -c).
    *
@@ -178,71 +150,98 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
    *   M = (w/2 - g, h/2 - g)
    */
 
-  const DPoint pointM{size.width / 2 - g, size.height / 2 - g};
-  const ExpandedVariables var_w = ExpandVariables(ratio_wh.width, ab.width, g);
+  // Derive critical variables
+  const double ratio = {std::min(size / corner_radius, MAX_RATIO)};
+  const double a = ratio * corner_radius / 2;
+  const double s = size / 2 - a;
+  const double g = gap(corner_radius);
+
+  // Use look up table to derive critical variables
+  double steps =
+      std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
+  size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
+  size_t hi = lo + 1;
+  double pos = steps - lo;
+
+  double n = (1 - pos) * kRatio_N_DOverA_Theta[lo][1] +
+             pos * kRatio_N_DOverA_Theta[hi][1];
+  double d = ((1 - pos) * kRatio_N_DOverA_Theta[lo][2] +
+              pos * kRatio_N_DOverA_Theta[hi][2]) *
+             a;
+  double R = (a - d - g) * sqrt(2);
+  double theta = (1 - pos) * kRatio_N_DOverA_Theta[lo][3] +
+                 pos * kRatio_N_DOverA_Theta[hi][3];
+  double x0 = d + R * sin(theta);
+  double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
+
+  const DPoint pointM{size / 2 - g, size / 2 - g};
+
+  // Points without applying `flip` and `center`
+  std::vector<DPoint> points;
 
   // A
-  points.emplace_back(0, size.height / 2);
-  // B
-  points.emplace_back(s_wh.width, size.height / 2);
-  // Superellipsoid arc BJ (both ends exclusive)
+  points.emplace_back(0, size / 2);
+  // Superellipsoid arc BJ (B inclusive, J exclusive)
   {
-    const double target_slope = var_w.y0 / var_w.x0;
-    for (double angle = 0 + step;; angle += step) {
-      const double x = ab.width * pow(abs(sin(angle)), 2 / var_w.n);
-      const double y = ab.width * pow(abs(cos(angle)), 2 / var_w.n);
+    // TODO(dkwingsmt): determine parameter values based on scaling factor.
+    constexpr Scalar step = kPi / 80;
+    const Scalar target_slope = y0 / x0;
+    for (Scalar angle = 0;; angle += step) {
+      const double x = a * pow(abs(sinf(angle)), 2 / n);
+      const double y = a * pow(abs(cosf(angle)), 2 / n);
       if (y <= target_slope * x) {
         break;
       }
-      points.emplace_back(x + s_wh.width, y - c);
+      points.emplace_back(x + s, y + s);
     }
   }
   // J
-  points.emplace_back(var_w.x0 + s_wh.width, var_w.y0 - c);
+  points.emplace_back(x0 + s, y0 + s);
   // Circular arc JM (both ends exclusive)
-  DrawCircularArc(points, {var_w.x0 + s_wh.width, var_w.y0 - c}, pointM,
-                  var_w.R);
-  // M
-  points.push_back(pointM);
+  DrawCircularArc(points, {x0 + s, y0 + s}, pointM, R);
 
-  /* Now generate the next 1/8 arc, i.e. from pi/4 to pi/2. It is similar to the
-   * first 1/8 arc but mirrored according to the 45deg line:
-   *
-   *   M  = (w/2 - g, h/2 - g)
-   *   J' = (y0_h + c, x0_h)
-   *   B' = (w/2, s_h)
-   *   A' = (w/2, 0)
-   */
-
-  const ExpandedVariables var_h =
-      ExpandVariables(ratio_wh.height, ab.height, g);
-  // Circular arc MJ' (both ends exclusive)
-  DrawCircularArc(points, pointM, {var_h.y0 + c, var_h.x0 + s_wh.height},
-                  var_h.R);
-  // J'
-  points.emplace_back(var_h.y0 + c, var_w.x0 + s_wh.height);
-  // Superellipsoid arc J'B' (both ends exclusive)
-  {
-    const double target_slope = var_h.y0 / var_h.x0;
-    std::vector<DPoint> points_bsj;
-    for (double angle = 0;; angle += step) {
-      const double x = ab.height * pow(abs(sin(angle)), 2 / var_h.n);
-      const double y = ab.height * pow(abs(cos(angle)), 2 / var_h.n);
-      if (y <= target_slope * x) {
-        break;
-      }
-      // The coordinates are inverted because this half of arc is mirrowed by
-      // the 45deg line.
-      points_bsj.emplace_back(y + c, x + s_wh.height);
+  if (!flip) {
+    for (const DPoint& point : points) {
+      output.push_back(point + center);
     }
-    for (size_t i = 0; i < points_bsj.size(); i++) {
-      points.push_back(points_bsj[points_bsj.size() - i - 1]);
+  } else {
+    for (size_t i = 0; i < points.size(); i++) {
+      const DPoint& point = points[points.size() - i - 1];
+      output.emplace_back(point.y + center.x, point.x + center.y);
     }
   }
-  // B
-  points.emplace_back(size.width / 2, s_wh.height);
-  // A'
-  points.emplace_back(size.width / 2, 0);
+}
+
+static Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
+  return std::min(corner_radius,
+                  std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
+}
+
+RoundSuperellipseGeometry::RoundSuperellipseGeometry(const Rect& bounds,
+                                                     Scalar corner_radius)
+    : bounds_(bounds), corner_radius_(LimitRadius(corner_radius, bounds)) {}
+
+RoundSuperellipseGeometry::~RoundSuperellipseGeometry() {}
+
+GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) const {
+  DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
+  Point center = bounds_.GetCenter();
+
+  DSize ab = size / 2;
+  const double c = ab.width - size.height / 2;
+
+  // Points for the first quadrant.
+  std::vector<DPoint> points;
+  points.reserve(41);
+
+  DrawOctantSquareLikeSquircle(points, size.width, corner_radius_,
+                               DPoint{0, -c}, false);
+  points.push_back(DPoint(size / 2) - gap(corner_radius_));  // Point M
+  DrawOctantSquareLikeSquircle(points, size.height, corner_radius_,
+                               DPoint{c, 0}, true);
 
   static constexpr DPoint reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
 
