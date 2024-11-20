@@ -3700,11 +3700,11 @@ class _PointerEventContext extends _BasicEventContext
                 clientX: details.clientX,
                 clientY: details.clientY,
                 pointerType: 'touch',
-              ))
-          .toList().toJSAnyDeep;
-      js_util.setProperty(event, 'getCoalescedEvents', () {
+              )).toJSAnyDeep;
+
+      js_util.setProperty(event, 'getCoalescedEvents', js_util.allowInterop(() {
         return coalescedEventJs;
-      }.toJS);
+      }));
     }
 
     return event;
