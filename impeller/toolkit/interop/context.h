@@ -37,6 +37,10 @@ class Context final
 
   AiksContext& GetAiksContext();
 
+  void SetDebugGLCallLogging(const char* function_name_or_null, bool enable);
+
+  void SetDebugGLErrorChecking(const char* function_name_or_null, bool enable);
+
  private:
   impeller::AiksContext context_;
   std::shared_ptr<BackendData> backend_data_;

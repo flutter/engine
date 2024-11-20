@@ -1152,4 +1152,18 @@ bool ImpellerTypographyContextRegisterFont(ImpellerTypographyContext context,
                                         family_name_alias);
 }
 
+IMPELLER_EXTERN_C
+void ImpellerContextSetDebugGLCallLogging(ImpellerContext context,
+                                          const char* opengl_function_name,
+                                          bool enable) {
+  GetPeer(context)->SetDebugGLCallLogging(opengl_function_name, enable);
+}
+
+IMPELLER_EXTERN_C
+void ImpellerContextSetDebugGLErrorChecking(ImpellerContext context,
+                                            const char* opengl_function_name,
+                                            bool enable) {
+  GetPeer(context)->SetDebugGLErrorChecking(opengl_function_name, enable);
+}
+
 }  // namespace impeller::interop

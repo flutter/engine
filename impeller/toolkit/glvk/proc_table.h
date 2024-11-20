@@ -87,7 +87,8 @@ class ProcTable {
   ///
   bool IsValid() const;
 
-#define GLVK_PROC(name) GLProc<decltype(gl##name)> name = {"gl" #name, nullptr};
+#define GLVK_PROC(name) \
+  GLProc<decltype(gl##name)> name = GLProc<decltype(gl##name)>("gl" #name);
 
   FOR_EACH_GLVK_PROC(GLVK_PROC);
 

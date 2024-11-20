@@ -108,4 +108,44 @@ AiksContext& Context::GetAiksContext() {
   return context_;
 }
 
+void Context::SetDebugGLCallLogging(const char* function_name_or_null,
+                                    bool enable) {
+#if IMPELLER_ENABLE_OPENGLES
+  if (context_.GetContext()->GetBackendType() !=
+      impeller::Context::BackendType::kOpenGLES) {
+    VALIDATION_LOG << "Not an OpenGL context.";
+    return;
+  }
+  auto& gl =
+      ContextGLES::Cast(*context_.GetContext()).GetReactor()->GetProcTable();
+  if (function_name_or_null == nullptr) {
+    gl.SetDebugGLCallLogging(enable);
+  } else {
+    gl.SetDebugGLCallLogging(enable, function_name_or_null);
+  }
+#else   // IMPELLER_ENABLE_OPENGLES
+  VALIDATION_LOG << "OpenGL unavailable."
+#endif  // IMPELLER_ENABLE_OPENGLES
+}
+
+void Context::SetDebugGLErrorChecking(const char* function_name_or_null,
+                                      bool enable) {
+#if IMPELLER_ENABLE_OPENGLES
+  if (context_.GetContext()->GetBackendType() !=
+      impeller::Context::BackendType::kOpenGLES) {
+    VALIDATION_LOG << "Not an OpenGL context.";
+    return;
+  }
+  auto& gl =
+      ContextGLES::Cast(*context_.GetContext()).GetReactor()->GetProcTable();
+  if (function_name_or_null == nullptr) {
+    gl.SetDebugGLErrorChecking(enable);
+  } else {
+    gl.SetDebugGLErrorChecking(enable, function_name_or_null);
+  }
+#else   // IMPELLER_ENABLE_OPENGLES
+  VALIDATION_LOG << "OpenGL unavailable."
+#endif  // IMPELLER_ENABLE_OPENGLES
+}
+
 }  // namespace impeller::interop
