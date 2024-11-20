@@ -28,7 +28,6 @@ import androidx.annotation.Nullable;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import io.flutter.Build;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
@@ -271,27 +270,30 @@ public class FlutterFragmentActivityTest {
     FlutterEngineCache.getInstance().put("my_cached_engine", cachedEngine);
 
     ActivityScenario<FlutterFragmentActivity> flutterFragmentActivityActivityScenario =
-            ActivityScenario.launch(FlutterFragmentActivity.class);
+        ActivityScenario.launch(FlutterFragmentActivity.class);
 
     // Set to framework handling and then recreate the activity and check the state is preserved.
-    flutterFragmentActivityActivityScenario.onActivity(activity -> {
-      FlutterFragment flutterFragment = activity.retrieveExistingFlutterFragmentIfPossible();
-      flutterFragment.setFrameworkHandlesBack(true);
-      Bundle bundle = flutterFragment.getArguments();
-      bundle.putString(ARG_CACHED_ENGINE_ID, "my_cached_engine");
-      bundle.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
-      FlutterEngineCache.getInstance().put("my_cached_engine", cachedEngine);
-      flutterFragment.setArguments(bundle);
-    });
+    flutterFragmentActivityActivityScenario.onActivity(
+        activity -> {
+          FlutterFragment flutterFragment = activity.retrieveExistingFlutterFragmentIfPossible();
+          flutterFragment.setFrameworkHandlesBack(true);
+          Bundle bundle = flutterFragment.getArguments();
+          bundle.putString(ARG_CACHED_ENGINE_ID, "my_cached_engine");
+          bundle.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
+          FlutterEngineCache.getInstance().put("my_cached_engine", cachedEngine);
+          flutterFragment.setArguments(bundle);
+        });
 
     flutterFragmentActivityActivityScenario.recreate();
 
-    flutterFragmentActivityActivityScenario.onActivity(activity -> {
-            assertTrue(activity
-                    .retrieveExistingFlutterFragmentIfPossible()
-                    .onBackPressedCallback
-                    .isEnabled());
-            });
+    flutterFragmentActivityActivityScenario.onActivity(
+        activity -> {
+          assertTrue(
+              activity
+                  .retrieveExistingFlutterFragmentIfPossible()
+                  .onBackPressedCallback
+                  .isEnabled());
+        });
 
     // Clean up.
     flutterFragmentActivityActivityScenario.close();
@@ -302,7 +304,7 @@ public class FlutterFragmentActivityTest {
   @TargetApi(Build.API_LEVELS.API_34)
   public void whenNotUsingCachedEngine_predictiveBackStateIsNotSaved() {
     ActivityScenario<FlutterActivity> flutterActivityScenario =
-            ActivityScenario.launch(FlutterActivity.class);
+        ActivityScenario.launch(FlutterActivity.class);
 
     // Set to framework handling and then recreate the activity and check the state is preserved.
     flutterActivityScenario.onActivity(activity -> activity.setFrameworkHandlesBack(true));

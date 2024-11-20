@@ -111,7 +111,8 @@ public class FlutterActivityTest {
 
     // Set to framework handling and then recreate the activity and check the state is preserved.
     flutterActivityScenario.onActivity(activity -> activity.setFrameworkHandlesBack(true));
-    flutterActivityScenario.onActivity(activity -> activity.getIntent().putExtra(EXTRA_CACHED_ENGINE_ID, "my_cached_engine"));
+    flutterActivityScenario.onActivity(
+        activity -> activity.getIntent().putExtra(EXTRA_CACHED_ENGINE_ID, "my_cached_engine"));
 
     flutterActivityScenario.recreate();
     flutterActivityScenario.onActivity(activity -> assertTrue(activity.hasRegisteredBackCallback));
@@ -125,7 +126,7 @@ public class FlutterActivityTest {
   @TargetApi(API_LEVELS.API_34)
   public void whenNotUsingCachedEngine_predictiveBackStateIsNotSaved() {
     ActivityScenario<FlutterActivity> flutterActivityScenario =
-            ActivityScenario.launch(FlutterActivity.class);
+        ActivityScenario.launch(FlutterActivity.class);
 
     // Set to framework handling and then recreate the activity and check the state is preserved.
     flutterActivityScenario.onActivity(activity -> activity.setFrameworkHandlesBack(true));
