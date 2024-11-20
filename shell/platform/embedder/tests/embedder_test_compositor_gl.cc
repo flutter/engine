@@ -8,6 +8,8 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer_gl.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer_software.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
@@ -15,11 +17,39 @@ namespace flutter {
 namespace testing {
 
 EmbedderTestCompositorGL::EmbedderTestCompositorGL(
+    std::shared_ptr<TestEGLContext> egl_context,
     SkISize surface_size,
     sk_sp<GrDirectContext> context)
-    : EmbedderTestCompositor(surface_size, std::move(context)) {}
+    : EmbedderTestCompositor(surface_size, std::move(context)),
+      egl_context_(std::move(egl_context)) {}
 
 EmbedderTestCompositorGL::~EmbedderTestCompositorGL() = default;
+
+void EmbedderTestCompositorGL::SetRenderTargetType(
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
+  switch (type) {
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLSurface:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture: {
+      backingstore_producer_ =
+          std::make_unique<EmbedderTestBackingStoreProducerGL>(context_, type,
+                                                               egl_context_);
+      return;
+    }
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer2:
+      backingstore_producer_ =
+          std::make_unique<EmbedderTestBackingStoreProducerSoftware>(
+              context_, type, software_pixfmt);
+      return;
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture:
+    case EmbedderTestBackingStoreProducer::RenderTargetType::kVulkanImage:
+      FML_LOG(FATAL) << "Unsupported render target type: "
+                     << static_cast<int>(type);
+      return;
+  }
+}
 
 bool EmbedderTestCompositorGL::UpdateOffscrenComposition(
     const FlutterLayer** layers,
@@ -59,24 +89,8 @@ bool EmbedderTestCompositorGL::UpdateOffscrenComposition(
 
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore: {
-        auto gl_user_data =
-            reinterpret_cast<EmbedderTestBackingStoreProducer::UserData*>(
-                layer->backing_store->user_data);
-
-        if (gl_user_data->gl_surface != nullptr) {
-          // This backing store is a OpenGL Surface.
-          // We need to make it current so we can snapshot it.
-
-          gl_user_data->gl_surface->MakeCurrent();
-
-          // GetRasterSurfaceSnapshot() does two
-          // gl_surface->makeImageSnapshot()'s. Doing a single
-          // ->makeImageSnapshot() will not work.
-          layer_image = gl_user_data->gl_surface->GetRasterSurfaceSnapshot();
-        } else {
-          layer_image = gl_user_data->surface->makeImageSnapshot();
-        }
-
+        layer_image =
+            backingstore_producer_->MakeImageSnapshot(layer->backing_store);
         // We don't clear the current surface here because we need the
         // EGL context to be current for surface->makeImageSnapshot() below.
         break;
