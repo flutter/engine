@@ -228,8 +228,8 @@ struct Settings {
   // const.
 #if FML_OS_IOS || FML_OS_IOS_SIMULATOR
   static constexpr const
-#endif  // FML_OS_IOS && !FML_OS_IOS_SIMULATOR
-      bool enable_impeller = true;
+#endif                              // FML_OS_IOS && !FML_OS_IOS_SIMULATOR
+      bool enable_impeller = true;  // NOLINT(readability-identifier-naming)
 #else
   bool enable_impeller = false;
 #endif
