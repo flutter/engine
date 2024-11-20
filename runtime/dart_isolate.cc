@@ -1230,8 +1230,7 @@ static char* NativeAssetsAvailableAssets() {
   auto native_assets_manager = (*isolate_group_data)->GetNativeAssetsManager();
   FML_DCHECK(native_assets_manager != nullptr);
   auto available_assets = native_assets_manager->AvailableNativeAssets();
-  auto* result = (char*)malloc(std::strlen(available_assets.c_str()) + 1);
-  std::strcpy(result, available_assets.c_str());
+  auto* result = fml::strdup(available_assets.c_str());
   return result;
 }
 
