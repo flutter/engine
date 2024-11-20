@@ -101,9 +101,7 @@ class ContextGLES final : public Context,
 
   // |Context|
   [[nodiscard]] bool EnqueueCommandBuffer(
-      std::shared_ptr<CommandBuffer> command_buffer) override {
-    return true;
-  }
+      std::shared_ptr<CommandBuffer> command_buffer) override;
 
   // |Context|
   [[nodiscard]] bool FlushCommandBuffers() override;

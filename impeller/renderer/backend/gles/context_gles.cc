@@ -159,6 +159,11 @@ void ContextGLES::ResetThreadLocalState() const {
       });
 }
 
+bool ContextGLES::EnqueueCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) {
+  return true;
+}
+
 // |Context|
 [[nodiscard]] bool ContextGLES::FlushCommandBuffers() {
   return reactor_->React();
