@@ -217,7 +217,7 @@ class ReactorGLES {
   ///
   /// @return     If the operation was successfully queued for completion.
   ///
-  [[nodiscard]] bool AddOperation(Operation operation);
+  [[nodiscard]] bool AddOperation(Operation operation, bool defer = false);
 
   //----------------------------------------------------------------------------
   /// @brief      Register a cleanup callback that will be invokved with the
