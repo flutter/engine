@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.plugin.editing;
+package io.flutter.plugin.view;
 
+import android.app.Activity;
+import android.view.View;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.SensitiveContentChannel;
 import io.flutter.plugin.common.MethodChannel;
@@ -19,11 +21,14 @@ import io.flutter.plugin.common.MethodChannel;
 public class SensitiveContentPlugin
     implements SensitiveContentChannel.SensitiveContentMethodHandler {
 
+  private final Activity mflutterActivity;
   private final SensitiveContentChannel mSensitiveContentChannel;
 
   public SensitiveContentPlugin(
       @NonNull Activity flutterActivity, @NonNull SensitiveContentChannel sensitiveContentChannel) {
+    mflutterActivity = flutterActivity;
     mSensitiveContentChannel = sensitiveContentChannel;
+
     mSensitiveContentChannel.setSensitiveContentMethodHandler(this);
   }
 
@@ -36,12 +41,12 @@ public class SensitiveContentPlugin
       @NonNull int flutterViewId,
       @NonNull int contentSensitivity,
       @NonNull MethodChannel.Result result) {
-    final View flutterView = activity.findViewById(viewId);
+    final View flutterView = mflutterActivity.findViewById(flutterViewId);
     if (flutterView == null) {
       result.error("error", "Requested Flutter View to set content sensitivty of not found.");
     }
 
     flutterView.setContentSensitivity(contentSensitivity);
-    result.success();
+    result.success(null);
   }
 }

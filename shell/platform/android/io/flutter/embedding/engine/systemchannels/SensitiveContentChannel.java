@@ -38,11 +38,15 @@ public class SensitiveContentChannel {
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "SensitiveContent.setContentSensitivity":
+              final ArrayList<String> argumentList = (ArrayList<String>) args;
               final int flutterViewId = argumentList.get(0);
               final int contentSensitivityLevel = argumentList.get(1);
-              // TODO(camsim99): Add error handling if required.
-              sensitiveContentMethodHandler.setContentSensitivity(
-                  flutterViewId, contentSensitivityLevel);
+              try {
+                sensitiveContentMethodHandler.setContentSensitivity(
+                    flutterViewId, contentSensitivityLevel, result);
+              } catch (IllegalStateException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             default:
               result.notImplemented();

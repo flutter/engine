@@ -36,6 +36,7 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.plugin.view.SensitiveContentPlugin;
 import java.util.Arrays;
 import java.util.List;
 
@@ -217,7 +218,7 @@ import java.util.List;
     //                    control of the entire window. This is unacceptable for non-fullscreen
     //                    use-cases.
     platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
-    sensitiveContentPlugin = host.provideSensitiveContentPlugin(host.getActivity());
+    sensitiveContentPlugin = host.provideSensitiveContentPlugin(host.getActivity(), flutterEngine);
 
     host.configureFlutterEngine(flutterEngine);
     isAttached = true;
