@@ -695,7 +695,7 @@ import java.util.List;
 
     // If using a cached engine, we need to save whether the framework or the system should handle
     // backs.
-    if (host.getCachedEngineId() != null) {
+    if (host.getCachedEngineId() != null && !host.shouldDestroyEngineWithHost()) {
       bundle.putBoolean(ON_BACK_CALLBACK_ENABLED_KEY, host.getBackCallbackState());
     }
   }
