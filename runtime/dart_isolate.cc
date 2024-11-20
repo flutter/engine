@@ -1194,7 +1194,8 @@ static void* NativeAssetsDlopen(const char* asset_id, char** error) {
     return nullptr;
   }
 
-  auto asset_path = native_assets_manager->LookupNativeAsset(asset_id);
+  std::vector<std::string> asset_path =
+      native_assets_manager->LookupNativeAsset(asset_id);
   if (asset_path.size() == 0) {
     // The asset id was not in the mapping.
     return nullptr;
@@ -1202,21 +1203,25 @@ static void* NativeAssetsDlopen(const char* asset_id, char** error) {
 
   auto& path_type = asset_path[0];
   std::string path;
-  if (strcmp(path_type.c_str(), "absolute") == 0 ||
-      strcmp(path_type.c_str(), "relative") == 0 ||
-      strcmp(path_type.c_str(), "system") == 0) {
+  static constexpr const char* kAbsolute = "absolute";
+  static constexpr const char* kExecutable = "executable";
+  static constexpr const char* kProcess = "process";
+  static constexpr const char* kRelative = "relative";
+  static constexpr const char* kSystem = "system";
+  if (path_type == kAbsolute || path_type == kRelative ||
+      path_type == kSystem) {
     path = asset_path[1];
   }
 
-  if (strcmp(path_type.c_str(), "absolute") == 0) {
+  if (path_type == kAbsolute) {
     return dart::bin::NativeAssets::DlopenAbsolute(path.c_str(), error);
-  } else if (strcmp(path_type.c_str(), "relative") == 0) {
+  } else if (path_type == kRelative) {
     return NativeAssetsDlopenRelative(path.c_str(), error);
-  } else if (strcmp(path_type.c_str(), "system") == 0) {
+  } else if (path_type == kSystem) {
     return dart::bin::NativeAssets::DlopenSystem(path.c_str(), error);
-  } else if (strcmp(path_type.c_str(), "process") == 0) {
+  } else if (path_type == kProcess) {
     return dart::bin::NativeAssets::DlopenProcess(error);
-  } else if (strcmp(path_type.c_str(), "executable") == 0) {
+  } else if (path_type == kExecutable) {
     return dart::bin::NativeAssets::DlopenExecutable(error);
   }
 

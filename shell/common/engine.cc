@@ -197,7 +197,7 @@ bool Engine::UpdateAssetManager(
   }
 
   if (native_assets_manager_ == nullptr) {
-    native_assets_manager_.reset(new NativeAssetsManager());
+    native_assets_manager_ = std::make_shared<NativeAssetsManager>();
   }
   native_assets_manager_->RegisterNativeAssets(asset_manager_);
 

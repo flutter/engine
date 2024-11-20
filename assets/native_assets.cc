@@ -37,6 +37,8 @@ namespace flutter {
 #error Target operating system detection failed.
 #endif
 
+#define kTarget kTargetOperatingSystemName "_" kTargetArchitectureName
+
 void NativeAssetsManager::RegisterNativeAssets(
     const std::shared_ptr<AssetManager>& asset_manager) {
   std::unique_ptr<fml::Mapping> manifest_mapping =
@@ -68,10 +70,7 @@ void NativeAssetsManager::RegisterNativeAssets(
     FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
     return;
   }
-  char target[100];
-  snprintf(target, sizeof(target), "%s_%s", kTargetOperatingSystemName,
-           kTargetArchitectureName);
-  auto mapping = native_assets->value.FindMember(target);
+  auto mapping = native_assets->value.FindMember(kTarget);
   if (mapping == native_assets->value.MemberEnd() ||
       !mapping->value.IsObject()) {
     FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
@@ -98,11 +97,14 @@ void NativeAssetsManager::RegisterNativeAssets(
 }
 
 std::vector<std::string> NativeAssetsManager::LookupNativeAsset(
-    const std::string& asset_id) {
-  if (parsed_mapping_.find(asset_id) == parsed_mapping_.end()) {
+    std::string_view asset_id) {
+  // Cpp17 does not support unordered_map lookup with std::string_view on a
+  // std::string key.
+  std::string as_string = std::string(asset_id);
+  if (parsed_mapping_.find(as_string) == parsed_mapping_.end()) {
     return std::vector<std::string>();
   }
-  return parsed_mapping_[asset_id];
+  return parsed_mapping_[as_string];
 }
 
 std::string NativeAssetsManager::AvailableNativeAssets() {
