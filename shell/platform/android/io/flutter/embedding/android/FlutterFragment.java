@@ -1009,7 +1009,7 @@ public class FlutterFragment extends Fragment
     return new FlutterActivityAndFragmentDelegate(host);
   }
 
-  private final OnBackPressedCallback onBackPressedCallback =
+  @VisibleForTesting final OnBackPressedCallback onBackPressedCallback =
       new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
