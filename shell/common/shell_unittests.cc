@@ -316,7 +316,8 @@ class ThreadCheckingAssetResolver : public AssetResolver {
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
-    if (asset_name == "FontManifest.json") {
+    if (asset_name == "FontManifest.json" ||
+        asset_name == "NativeAssetsManifest.json") {
       // This file is loaded directly by the engine.
       return nullptr;
     }
