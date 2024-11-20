@@ -243,7 +243,7 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
       !capabilities->SupportsTextureToTextureBlits()) {
     //----------------------------------------------------------------------------
     /// 2. If the decoded image isn't the requested target size and the src size
-    ///    exceeds the device max texture size, perform a slow CPU reisze.
+    ///    exceeds the device max texture size, perform a slow CPU resize.
     ///
     TRACE_EVENT0("impeller", "SlowCPUDecodeScale");
     const auto scaled_image_info = image_info.makeDimensions(target_size);
@@ -359,7 +359,6 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
       resize_desc.usage |= impeller::TextureUsage::kShaderWrite;
       resize_desc.compression_type = impeller::CompressionType::kLossless;
     }
-
     auto resize_texture =
         context->GetResourceAllocator()->CreateTexture(resize_desc);
     if (!resize_texture) {
@@ -382,6 +381,14 @@ ImageDecoderImpeller::UnsafeUploadTextureToPrivate(
     std::string decode_error("Failed to submit image decoding command buffer.");
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
+  }
+
+  // Flush the pending command buffer to ensure that its output becomes visible
+  // to the raster thread.
+  if (context->AddTrackingFence(result_texture)) {
+    command_buffer->WaitUntilScheduled();
+  } else {
+    command_buffer->WaitUntilCompleted();
   }
 
   context->DisposeThreadLocalCachedResources();

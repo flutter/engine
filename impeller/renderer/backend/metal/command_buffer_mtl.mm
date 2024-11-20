@@ -187,6 +187,8 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   return true;
 }
 
+void CommandBufferMTL::OnWaitUntilCompleted() {}
+
 void CommandBufferMTL::OnWaitUntilScheduled() {}
 
 std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
