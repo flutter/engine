@@ -4,10 +4,11 @@
 
 #import "shell/platform/darwin/ios/framework/Source/platform_views_controller.h"
 
-#include "flow/surface_frame.h"
+#include "flutter/display_list/effects/dl_blur_image_filter.h"
+#include "flutter/flow/surface_frame.h"
 #include "flutter/flow/view_slicer.h"
 #include "flutter/fml/make_copyable.h"
-#include "fml/synchronization/count_down_latch.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
