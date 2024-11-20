@@ -782,4 +782,32 @@ void main() async {
     await comparer.addGoldenImage(
         image, 'flutter_gpu_test_scissor.png');
   }, skip: !impellerEnabled);
+
+    test('RenderPass.setScissor doesnt throw for valid values',
+      () async {
+    final state = createSimpleRenderPass();
+
+    state.renderPass.setScissor(gpu.Scissor(x: 25, width: 50, height: 100));
+    state.renderPass.setScissor(gpu.Scissor(width: 50, height: 100));
+  }, skip: !impellerEnabled);
+
+  test('RenderPass.setScissor throws for invalid values', () async {
+    final state = createSimpleRenderPass();
+
+    try {
+      state.renderPass.setScissor(gpu.Scissor(x: -1, width: 50, height: 100));
+      fail('Exception not thrown for invalid scissor.');
+    } catch (e) {
+      expect(e.toString(),
+          contains('Invalid values for scissor. All values should be positive.'));
+    }
+
+    try {
+      state.renderPass.setScissor(gpu.Scissor(width: 50, height: -100));
+      fail('Exception not thrown for invalid scissor.');
+    } catch (e) {
+      expect(e.toString(),
+          contains('Invalid values for scissor. All values should be positive.'));
+    }
+  }, skip: !impellerEnabled);
 }
