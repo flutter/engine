@@ -726,7 +726,7 @@ void DisplayListBuilder::TransferLayerBounds(const SkRect& content_bounds) {
         parent_is_flooded = true;
       } else {
         global_bounds = DlRect::Make(global_ibounds);
-        auto clipped_bounds = global_bounds.Intersection(clip);
+        std::optional<DlRect> clipped_bounds = global_bounds.Intersection(clip);
         if (clipped_bounds.has_value()) {
           parent_layer().global_space_accumulator.accumulate(
               clipped_bounds.value());
