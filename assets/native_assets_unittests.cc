@@ -73,7 +73,13 @@ TEST(NativeAssetsManagerTest, NativeAssetsManifestParsing) {
       "package:my_package/my_package_bindings_generated.dart");
   ASSERT_EQ(existing_asset.size(), 2u);
   ASSERT_EQ(existing_asset[0], "absolute");
+#if defined(FML_OS_MACOSX)
   ASSERT_EQ(existing_asset[1], "my_package.framework/my_package");
+#elif defined(FML_OS_LINUX)
+  ASSERT_EQ(existing_asset[1], "libmy_package.so");
+#elif defined(FML_OS_WIN)
+  ASSERT_EQ(existing_asset[1], "my_package.dll");
+#endif
 
   std::vector<std::string> non_existing_asset =
       manager.LookupNativeAsset("non_existing_asset");
