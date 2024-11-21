@@ -1036,7 +1036,7 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
         }
       });
 
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
       task_runners_.GetUITaskRunner(),
       [engine = engine_->GetWeakPtr(), view_id, metrics]() {
         if (engine) {
@@ -1104,7 +1104,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
                          flow_id = next_pointer_flow_id_]() mutable {
@@ -1122,7 +1122,8 @@ void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(),
       fml::MakeCopyable([engine = engine_->GetWeakPtr(), node_id, action,
                          args = std::move(args)]() mutable {
         if (engine) {
@@ -1136,12 +1137,13 @@ void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [engine = engine_->GetWeakPtr(), enabled] {
-                                      if (engine) {
-                                        engine->SetSemanticsEnabled(enabled);
-                                      }
-                                    });
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(),
+      [engine = engine_->GetWeakPtr(), enabled] {
+        if (engine) {
+          engine->SetSemanticsEnabled(enabled);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -1149,12 +1151,12 @@ void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [engine = engine_->GetWeakPtr(), flags] {
-                                      if (engine) {
-                                        engine->SetAccessibilityFeatures(flags);
-                                      }
-                                    });
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(), [engine = engine_->GetWeakPtr(), flags] {
+        if (engine) {
+          engine->SetAccessibilityFeatures(flags);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
