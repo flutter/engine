@@ -154,7 +154,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     _scrollView = [[FlutterSemanticsScrollView alloc] initWithSemanticsObject:self];
     [_scrollView setShowsHorizontalScrollIndicator:NO];
     [_scrollView setShowsVerticalScrollIndicator:NO];
-    [_scrollView setContentInset:UIEdgeInsetsMake(0, 0, 0, 0)];
+    [_scrollView setContentInset:UIEdgeInsetsZero];
     [_scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
     [self.bridge->view() addSubview:_scrollView];
   }

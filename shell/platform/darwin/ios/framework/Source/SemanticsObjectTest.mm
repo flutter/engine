@@ -694,7 +694,7 @@ const float kFloatCompareEpsilon = 0.001;
   XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior,
                  UIScrollViewContentInsetAdjustmentNever);
   XCTAssertTrue(
-      UIEdgeInsetsEqualToEdgeInsets(scrollView.contentInset, UIEdgeInsetsMake(0, 0, 0, 0)));
+      UIEdgeInsetsEqualToEdgeInsets(scrollView.contentInset, UIEdgeInsetsZero));
 }
 
 - (void)testSemanticsObjectBuildsAttributedString {
@@ -1240,7 +1240,7 @@ const float kFloatCompareEpsilon = 0.001;
   // setContentOffset
   CGPoint p = CGPointMake(123.0, 456.0);
   [scrollable.scrollView scrollViewWillEndDragging:scrollable.scrollView
-                                      withVelocity:CGPointMake(0, 0)
+                                      withVelocity:CGPointZero
                                targetContentOffset:&p];
   scrollable.scrollView.contentOffset = p;
   [scrollable.scrollView scrollViewDidEndDecelerating:scrollable.scrollView];

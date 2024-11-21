@@ -84,7 +84,7 @@ FLUTTER_ASSERT_ARC
 // The frame is described in the `coordinateSpace` of the
 // `parentFocusEnvironment` (all `parentFocusEnvironment`s are `UIFocusItem`s).
 //
-// Seealso the `coordinateSpace` implementation.
+// See also the `coordinateSpace` implementation.
 - (CGRect)frame {
   SkPoint quad[4] = {SkPoint::Make(self.node.rect.left(), self.node.rect.top()),
                      SkPoint::Make(self.node.rect.left(), self.node.rect.bottom()),
@@ -176,7 +176,7 @@ FLUTTER_ASSERT_ARC
 ///  `coordinateSpace` as the containing UIScrollView, or the root `FlutterView`, whichever is
 ///  closer.
 ///
-/// Seealso the `frame` method implementation.
+/// See also the `frame` method implementation.
 #pragma mark - Scrolling
 
 @interface FlutterScrollableSemanticsObject (CoordinateSpace)
