@@ -6,9 +6,7 @@
 
 #include <utility>
 
-#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
-#include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"

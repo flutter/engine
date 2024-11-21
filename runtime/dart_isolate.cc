@@ -5,7 +5,6 @@
 #include "flutter/runtime/dart_isolate.h"
 
 #include <cstdlib>
-#include <tuple>
 #include <utility>
 
 #include "flutter/fml/logging.h"
@@ -14,14 +13,13 @@
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
-#include "flutter/lib/ui/window/platform_isolate.h"
 #include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/dart_plugin_registrant.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
-#include "flutter/runtime/runtime_controller.h"
+#include "flutter/runtime/platform_isolate_manager.h"
 #include "fml/message_loop_task_queues.h"
 #include "fml/task_source.h"
 #include "fml/time/time_point.h"
@@ -33,7 +31,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/dart_message_handler.h"
 #include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
