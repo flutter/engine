@@ -109,6 +109,10 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     default_glyph_atlas_format_ = PixelFormat::kR8UNormInt;
   }
 
+  if (desc->GetGlVersion().major_version >= 3) {
+    supports_texture_to_texture_blits_ = true;
+  }
+
   supports_framebuffer_fetch_ = desc->HasExtension(kFramebufferFetchExt);
 
   if (desc->HasExtension(kTextureBorderClampExt) ||
@@ -121,7 +125,11 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
 
     // We hard-code 4x MSAA, so let's make sure it's supported.
     GLint value = 0;
-    gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
+    gl.GetIntegerv(GL_MAX_SAMPLES, &value);
+    supports_offscreen_msaa_ = value >= 4;
+  } else if (desc->GetGlVersion().major_version >= 3 && desc->IsES()) {
+    GLint value = 0;
+    gl.GetIntegerv(GL_MAX_SAMPLES, &value);
     supports_offscreen_msaa_ = value >= 4;
   }
   is_es_ = desc->IsES();
@@ -158,10 +166,7 @@ bool CapabilitiesGLES::SupportsSSBO() const {
 }
 
 bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
-  // TODO(158523): Switch this to true for improved performance
-  // on GLES 3.0+ devices. Note that this wasn't enabled because
-  // there were some rendering issues on some devices.
-  return false;
+  return supports_texture_to_texture_blits_;
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {

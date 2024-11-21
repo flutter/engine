@@ -1,4 +1,4 @@
-Signature: 75262cdf6e791be76f9bb6f6f740c3a9
+Signature: 91ed5b8f1f2ba593966e5a7f51e880ca
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -4861,6 +4861,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/math.fidl + ../../../fuchsi
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/problem.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/seeking_reader.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.controller/trace_controller.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/provider.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/presenter.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/include/zircon/assert.h + ../../../fuchsia/sdk/linux/LICENSE
@@ -5293,6 +5294,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/math.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/problem.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/seeking_reader.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.controller/trace_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/presenter.fidl
 FILE: ../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/include/zircon/assert.h
@@ -14675,11 +14677,13 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl + .
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/controller.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/log_stream.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.metadata/fuchsia.driver.metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/internal.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.bluetooth/emulator.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.bluetooth/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pin/pin.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/pin-impl.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14771,11 +14775,13 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/log_stream.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.metadata/fuchsia.driver.metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/internal.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.bluetooth/emulator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.bluetooth/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/metadata.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pin/pin.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pinimpl/pin-impl.fidl

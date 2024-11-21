@@ -168,6 +168,7 @@ struct GLProc {
   PROC(DrawElements);                        \
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
+  PROC(Finish);                              \
   PROC(Flush);                               \
   PROC(FramebufferRenderbuffer);             \
   PROC(FramebufferTexture2D);                \
@@ -237,7 +238,12 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(ClearDepth);                               \
   PROC(DepthRange);
 
-#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
+#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) \
+  PROC(FenceSync);                         \
+  PROC(DeleteSync);                        \
+  PROC(WaitSync);                          \
+  PROC(RenderbufferStorageMultisample)     \
+  PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
   PROC(DebugMessageControlKHR);             \
@@ -261,6 +267,7 @@ enum class DebugResourceType {
   kShader,
   kRenderBuffer,
   kFrameBuffer,
+  kFence,
 };
 
 class ProcTableGLES {

@@ -7,7 +7,6 @@
 #include <cstdint>
 
 #include "GLES3/gl3.h"
-#include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
@@ -127,6 +126,7 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
+  std::shared_ptr<Texture> resolve_attachment;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -172,14 +172,25 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   return true;
 }
 
+void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
+  gl.Disable(GL_SCISSOR_TEST);
+  gl.Disable(GL_DEPTH_TEST);
+  gl.Disable(GL_STENCIL_TEST);
+  gl.Disable(GL_CULL_FACE);
+  gl.Disable(GL_BLEND);
+  gl.Disable(GL_DITHER);
+  gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+  gl.DepthMask(GL_TRUE);
+  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
+  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
+}
+
 [[nodiscard]] bool EncodeCommandsInReactor(
     const RenderPassData& pass_data,
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
-  TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
-
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
@@ -267,16 +278,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     clear_bits |= GL_STENCIL_BUFFER_BIT;
   }
 
-  gl.Disable(GL_SCISSOR_TEST);
-  gl.Disable(GL_DEPTH_TEST);
-  gl.Disable(GL_STENCIL_TEST);
-  gl.Disable(GL_CULL_FACE);
-  gl.Disable(GL_BLEND);
-  gl.Disable(GL_DITHER);
-  gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-  gl.DepthMask(GL_TRUE);
-  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
-  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
+  RenderPassGLES::ResetGLState(gl);
 
   gl.Clear(clear_bits);
 
@@ -486,6 +488,55 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     }
   }
 
+  if (pass_data.resolve_attachment &&
+      !gl.GetCapabilities()->SupportsImplicitResolvingMSAA() &&
+      !is_default_fbo) {
+    FML_DCHECK(pass_data.resolve_attachment != pass_data.color_attachment);
+    // Perform multisample resolve via blit.
+    // Create and bind a resolve FBO.
+    GLuint resolve_fbo;
+    gl.GenFramebuffers(1u, &resolve_fbo);
+    gl.BindFramebuffer(GL_FRAMEBUFFER, resolve_fbo);
+
+    if (!TextureGLES::Cast(*pass_data.resolve_attachment)
+             .SetAsFramebufferAttachment(
+                 GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
+      return false;
+    }
+
+    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+      VALIDATION_LOG << "Could not create a complete frambuffer: "
+                     << DebugToFramebufferError(status);
+      return false;
+    }
+
+    // Bind MSAA renderbuffer to read framebuffer.
+    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_fbo);
+
+    RenderPassGLES::ResetGLState(gl);
+    auto size = pass_data.color_attachment->GetSize();
+
+    gl.BlitFramebuffer(0,                    // srcX0
+                       0,                    // srcY0
+                       size.width,           // srcX1
+                       size.height,          // srcY1
+                       0,                    // dstX0
+                       0,                    // dstY0
+                       size.width,           // dstX1
+                       size.height,          // dstY1
+                       GL_COLOR_BUFFER_BIT,  // mask
+                       GL_NEAREST            // filter
+    );
+
+    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_NONE);
+    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, GL_NONE);
+    gl.DeleteFramebuffers(1u, &resolve_fbo);
+    // Rebind the original FBO so that we can discard it below.
+    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+  }
+
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
@@ -543,6 +594,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   /// Setup color data.
   ///
   pass_data->color_attachment = color0.texture;
+  pass_data->resolve_attachment = color0.resolve_texture;
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
@@ -552,8 +604,9 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   // resolved when we bind the texture to the framebuffer. We don't need to
   // discard the attachment when we are done.
   if (color0.resolve_texture) {
-    FML_DCHECK(context.GetCapabilities()->SupportsImplicitResolvingMSAA());
-    pass_data->discard_color_attachment = false;
+    pass_data->discard_color_attachment =
+        pass_data->discard_color_attachment &&
+        !context.GetCapabilities()->SupportsImplicitResolvingMSAA();
   }
 
   //----------------------------------------------------------------------------
@@ -581,14 +634,15 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
 
   std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
   auto tracer = ContextGLES::Cast(context).GetGPUTracer();
-  return reactor_->AddOperation([pass_data,
-                                 allocator = context.GetResourceAllocator(),
-                                 render_pass = std::move(shared_this),
-                                 tracer](const auto& reactor) {
-    auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_, tracer);
-    FML_CHECK(result) << "Must be able to encode GL commands without error.";
-  });
+  return reactor_->AddOperation(
+      [pass_data, allocator = context.GetResourceAllocator(),
+       render_pass = std::move(shared_this), tracer](const auto& reactor) {
+        auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
+                                              render_pass->commands_, tracer);
+        FML_CHECK(result)
+            << "Must be able to encode GL commands without error.";
+      },
+      /*defer=*/true);
 }
 
 }  // namespace impeller
