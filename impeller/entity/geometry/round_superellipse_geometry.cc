@@ -12,9 +12,6 @@
 
 namespace impeller {
 
-typedef TSize<double> DSize;
-typedef TPoint<double> DPoint;
-
 // A look up table with precomputed variables.
 //
 // The columns represent the following variabls respectively:
@@ -25,7 +22,7 @@ typedef TPoint<double> DPoint;
 //  * theta
 //
 // For definition of the variables, see DrawOctantSquareLikeSquircle.
-static constexpr double kPrecomputedVariables[][4] = {
+static constexpr Scalar kPrecomputedVariables[][4] = {
     {2.000, 2.00000, 0.00000, 0.26000},  //
     {2.020, 2.03300, 0.01441, 0.23845},  //
     {2.040, 2.06500, 0.02568, 0.20310},  //
@@ -47,18 +44,14 @@ static constexpr double kPrecomputedVariables[][4] = {
 static constexpr size_t NUM_RECORDS =
     sizeof(kPrecomputedVariables) / sizeof(kPrecomputedVariables[0]);
 static constexpr Scalar MIN_RATIO = kPrecomputedVariables[0][0];
-static constexpr double MAX_RATIO = kPrecomputedVariables[NUM_RECORDS - 1][0];
-static constexpr double RATIO_STEP =
+static constexpr Scalar MAX_RATIO = kPrecomputedVariables[NUM_RECORDS - 1][0];
+static constexpr Scalar RATIO_STEP =
     kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
 static constexpr Scalar STEP = kPi / 80;
 
-static constexpr double gap(double corner_radius) {
+static constexpr Scalar gap(Scalar corner_radius) {
   return 0.2924303407 * corner_radius;
-}
-
-static Point operator+(Point a, DPoint b) {
-  return Point{static_cast<Scalar>(a.x + b.x), static_cast<Scalar>(a.y + b.y)};
 }
 
 // Draw a circular arc from `start` to `end` with a radius of `r`.
@@ -68,10 +61,10 @@ static Point operator+(Point a, DPoint b) {
 //
 // The resulting points are appended to `output` and include the starting point
 // but exclude the ending point.
-static void DrawCircularArc(std::vector<DPoint>& output,
-                            DPoint start,
-                            DPoint end,
-                            double r) {
+static void DrawCircularArc(std::vector<Point>& output,
+                            Point start,
+                            Point end,
+                            Scalar r) {
   /* Denote the middle point of S and E as M. The key is to find the center of
    * the circle.
    *         S --__
@@ -84,20 +77,20 @@ static void DrawCircularArc(std::vector<DPoint>& output,
    *  C ⟋  ↙
    */
 
-  const DPoint s_to_e = end - start;
-  const DPoint m = (start + end) / 2;
-  const DPoint c_to_m = DPoint(-s_to_e.y, s_to_e.x);
-  const double distance_sm = s_to_e.GetLength() / 2;
-  const double distance_cm = sqrt(r * r - distance_sm * distance_sm);
-  const DPoint c = m - distance_cm * c_to_m.Normalize();
+  const Point s_to_e = end - start;
+  const Point m = (start + end) / 2;
+  const Point c_to_m = Point(-s_to_e.y, s_to_e.x);
+  const Scalar distance_sm = s_to_e.GetLength() / 2;
+  const Scalar distance_cm = sqrt(r * r - distance_sm * distance_sm);
+  const Point c = m - distance_cm * c_to_m.Normalize();
   const Scalar angle_sce = asinf(distance_sm / r) * 2;
-  const DPoint c_to_s = start - c;
+  const Point c_to_s = start - c;
   for (Scalar angle = 0; angle < angle_sce; angle += STEP) {
     output.push_back(c_to_s.Rotate(Radians(-angle)) + c);
   }
 }
 
-static double lerp(size_t item, size_t left, size_t frac) {
+static Scalar lerp(size_t item, size_t left, size_t frac) {
   return (1 - frac) * kPrecomputedVariables[left][item] +
          frac * kPrecomputedVariables[left + 1][item];
 }
@@ -117,15 +110,18 @@ static double lerp(size_t item, size_t left, size_t frac) {
 //
 // The list of the resulting points is appended to `output`, and includes the
 // starting point but exclude the ending point.
-static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
-                                         double size,
-                                         double corner_radius,
-                                         DPoint center,
+static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
+                                         Scalar size,
+                                         Scalar corner_radius,
+                                         Point center,
                                          bool flip) {
   /* Ignoring `center` and `flip`, the following figure shows the first quadrant
    * of a square-like rounded superellipse. The target arc consists the stretch
-   * (AB), a superellipsoid arc (BJ), and a circular arc (JM). Assume the
-   * coordinate of J is (xJ, yJ), and M is (size/2 - g, size/2 - g).
+   * (AB), a superellipsoid arc (BJ), and a circular arc (JM).
+   *
+   * Define gap (g) as the distance between point M and the bounding box,
+   * therefore point M is at (size/2 - g, size/2 - g). Assume the coordinate of
+   * J is (xJ, yJ).
    *
    *     straight   superelipse
    *          ↓     ↓
@@ -143,32 +139,31 @@ static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
    *       O     S
    *        ← s →
    *        ←------ size/2 ------→
-   *
    */
 
-  const double ratio = {std::min(size / corner_radius, MAX_RATIO)};
-  const double a = ratio * corner_radius / 2;
-  const double s = size / 2 - a;
-  const double g = gap(corner_radius);
+  const Scalar ratio = {std::min(size / corner_radius, MAX_RATIO)};
+  const Scalar a = ratio * corner_radius / 2;
+  const Scalar s = size / 2 - a;
+  const Scalar g = gap(corner_radius);
 
   // Use look up table to derive critical variables
-  const double steps =
+  const Scalar steps =
       std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
   const size_t left =
       std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
-  const double frac = steps - left;
-  const double n = lerp(1, left, frac);
-  const double d = lerp(2, left, frac) * a;
-  const double theta = lerp(3, left, frac);
+  const Scalar frac = steps - left;
+  const Scalar n = lerp(1, left, frac);
+  const Scalar d = lerp(2, left, frac) * a;
+  const Scalar theta = lerp(3, left, frac);
 
-  const double R = (a - d - g) * sqrt(2);
-  const double xJ = d + R * sin(theta);
-  const double yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
+  const Scalar R = (a - d - g) * sqrt(2);
+  const Scalar xJ = d + R * sin(theta);
+  const Scalar yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
 
-  const DPoint pointM{size / 2 - g, size / 2 - g};
+  const Point pointM{size / 2 - g, size / 2 - g};
 
   // Points without applying `flip` and `center`.
-  std::vector<DPoint> points;
+  std::vector<Point> points;
   points.reserve(21);
 
   // A
@@ -177,8 +172,8 @@ static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
   {
     const Scalar target_slope = yJ / xJ;
     for (Scalar angle = 0;; angle += STEP) {
-      const double x = a * pow(abs(sinf(angle)), 2 / n);
-      const double y = a * pow(abs(cosf(angle)), 2 / n);
+      const Scalar x = a * pow(abs(sinf(angle)), 2 / n);
+      const Scalar y = a * pow(abs(cosf(angle)), 2 / n);
       if (y <= target_slope * x) {
         break;
       }
@@ -190,12 +185,12 @@ static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
   DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
 
   if (!flip) {
-    for (const DPoint& point : points) {
+    for (const Point& point : points) {
       output.push_back(point + center);
     }
   } else {
     for (size_t i = 0; i < points.size(); i++) {
-      const DPoint& point = points[points.size() - i - 1];
+      const Point& point = points[points.size() - i - 1];
       output.emplace_back(point.y + center.x, point.x + center.y);
     }
   }
@@ -216,23 +211,30 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  const DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
+  const Size size = bounds_.GetSize();
   const Point center = bounds_.GetCenter();
 
-  DSize ab = size / 2;
-  const double c = ab.width - size.height / 2;
+  // The full shape is divided into 4 segments: the top and bottom edges come
+  // from two square-like rounded superellipses (width-aligned), while the left
+  // and right squircles come from another two (height-aligned).
+  //
+  // Denote the distance from the center of the square-like squircles to the
+  // origin as `c`. The width-aligned square-like squircle and the
+  // height-aligned one have the same offset in different directions.
+  const Scalar c = (size.width - size.height) / 2;
 
-  // Points for the first quadrant.
-  std::vector<DPoint> points;
+  // Draw the first quadrant of the shape and store in `points`. It will be
+  // mirrored to other quadrants later.
+  std::vector<Point> points;
   points.reserve(41);
 
-  DrawOctantSquareLikeSquircle(points, size.width, corner_radius_,
-                               DPoint{0, -c}, false);
-  points.push_back(DPoint(size / 2) - gap(corner_radius_));  // Point M
-  DrawOctantSquareLikeSquircle(points, size.height, corner_radius_,
-                               DPoint{c, 0}, true);
+  DrawOctantSquareLikeSquircle(points, size.width, corner_radius_, Point{0, -c},
+                               false);
+  points.push_back(Point(size / 2) - gap(corner_radius_));  // Point M
+  DrawOctantSquareLikeSquircle(points, size.height, corner_radius_, Point{c, 0},
+                               true);
 
-  static constexpr DPoint reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+  static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
 
   // Reflect the 1/4 arc into the 4 quadrants and generate the tessellated mesh.
   // The iteration order is reversed so that the trianges are continuous from
