@@ -89,7 +89,7 @@ class SemanticsAction {
 
   /// A request to scroll the scrollable container to a given scroll offset.
   ///
-  /// The payload of this [SemanticsAction] is a flutter-stanard-encoded
+  /// The payload of this [SemanticsAction] is a flutter-standard-encoded
   /// [Float64List] of length 2 containing the target horizontal and vertical
   /// offsets (in logical pixels) the receiving scrollable container should
   /// scroll to.

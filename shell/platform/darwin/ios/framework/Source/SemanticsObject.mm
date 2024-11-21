@@ -176,6 +176,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // contentOffset is 0.0, only the scroll down action is available.
   self.scrollView.frame = self.accessibilityFrame;
   self.scrollView.contentSize = [self contentSizeInternal];
+  // See the documentation on `isDoingSystemScrolling`.
   if (!self.scrollView.isDoingSystemScrolling) {
     [self.scrollView setContentOffset:self.contentOffsetInternal animated:NO];
   }

@@ -214,9 +214,9 @@ FLUTTER_ASSERT_ARC
     return;
   }
 
-  double offsetData[2] = {contentOffset.x, contentOffset.y};
+  double offset[2] = {contentOffset.x, contentOffset.y};
   FlutterStandardTypedData* offsetData = [FlutterStandardTypedData
-      typedDataWithFloat64:[NSData dataWithBytes:&offsetData length:sizeof(offsetData)]];
+      typedDataWithFloat64:[NSData dataWithBytes:&offset length:sizeof(offset)]];
   NSData* encoded = [[FlutterStandardMessageCodec sharedInstance] encode:offsetData];
   self.semanticsObject.bridge->DispatchSemanticsAction(
       self.semanticsObject.uid, flutter::SemanticsAction::kScrollToOffset,
