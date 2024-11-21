@@ -1595,3 +1595,21 @@ void render_impeller_text_test() {
   };
   PlatformDispatcher.instance.scheduleFrame();
 }
+
+@pragma('vm:entry-point')
+// ignore: non_constant_identifier_names
+void render_impeller_image_snapshot_test() async {
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  const int alpha = 255;
+  const int blue = 123;
+  canvas.drawPaint(Paint()..color = Color.fromARGB(alpha, 0, 0, blue));
+  final Picture picture = recorder.endRecording();
+
+  final Image image = await picture.toImage(100, 100);
+  final ByteData? imageData = await image.toByteData();
+  final int pixel = imageData!.getInt32(0);
+
+  final bool result = (pixel & 0xFF) == alpha && ((pixel >> 8) & 0xFF) == blue;
+  notifyBoolValue(result);
+}
