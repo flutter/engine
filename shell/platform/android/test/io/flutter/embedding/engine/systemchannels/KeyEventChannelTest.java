@@ -14,7 +14,6 @@ import static org.mockito.Mockito.verify;
 
 import android.annotation.TargetApi;
 import android.view.KeyEvent;
-
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
@@ -58,33 +57,32 @@ public class KeyEventChannelTest {
     keyEventChannel = new KeyEventChannel(fakeMessenger);
   }
 
-    @Test
-    public void keyDownEventIsSentToFramework() throws JSONException {
-      KeyEventChannel.FlutterKeyEvent flutterKeyEvent =
-          new KeyEventChannel.FlutterKeyEvent(keyEvent, null);
-      keyEventChannel.sendFlutterKeyEvent(
-          flutterKeyEvent,
-          false,
-          (isHandled) -> {
-            handled[0] = isHandled;
-          });
+  @Test
+  public void keyDownEventIsSentToFramework() throws JSONException {
+    KeyEventChannel.FlutterKeyEvent flutterKeyEvent =
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, null);
+    keyEventChannel.sendFlutterKeyEvent(
+        flutterKeyEvent,
+        false,
+        (isHandled) -> {
+          handled[0] = isHandled;
+        });
 
-      ArgumentCaptor<ByteBuffer> byteBufferArgumentCaptor =
-   ArgumentCaptor.forClass(ByteBuffer.class);
-      ArgumentCaptor<BinaryMessenger.BinaryReply> replyArgumentCaptor =
-          ArgumentCaptor.forClass(BinaryMessenger.BinaryReply.class);
-      verify(fakeMessenger, times(1))
-          .send(any(), byteBufferArgumentCaptor.capture(), replyArgumentCaptor.capture());
-      ByteBuffer capturedMessage = byteBufferArgumentCaptor.getValue();
-      capturedMessage.rewind();
-      JSONObject message = (JSONObject) JSONMessageCodec.INSTANCE.decodeMessage(capturedMessage);
-      assertNotNull(message);
-      assertEquals("keydown", message.get("type"));
+    ArgumentCaptor<ByteBuffer> byteBufferArgumentCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    ArgumentCaptor<BinaryMessenger.BinaryReply> replyArgumentCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryReply.class);
+    verify(fakeMessenger, times(1))
+        .send(any(), byteBufferArgumentCaptor.capture(), replyArgumentCaptor.capture());
+    ByteBuffer capturedMessage = byteBufferArgumentCaptor.getValue();
+    capturedMessage.rewind();
+    JSONObject message = (JSONObject) JSONMessageCodec.INSTANCE.decodeMessage(capturedMessage);
+    assertNotNull(message);
+    assertEquals("keydown", message.get("type"));
 
-      // Simulate a reply, and see that it is handled.
-      sendReply(true, replyArgumentCaptor.getValue());
-      assertTrue(handled[0]);
-    }
+    // Simulate a reply, and see that it is handled.
+    sendReply(true, replyArgumentCaptor.getValue());
+    assertTrue(handled[0]);
+  }
 
   @Test
   public void keyUpEventIsSentToFramework() throws JSONException {
