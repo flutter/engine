@@ -39,23 +39,14 @@ namespace flutter {
 
 #define kTarget kTargetOperatingSystemName "_" kTargetArchitectureName
 
-void NativeAssetsManager::RegisterNativeAssets(
-    const std::shared_ptr<AssetManager>& asset_manager) {
-  std::unique_ptr<fml::Mapping> manifest_mapping =
-      asset_manager->GetAsMapping("NativeAssetsManifest.json");
-  if (manifest_mapping == nullptr) {
-    FML_DLOG(WARNING)
-        << "Could not find NativeAssetsManifest.json in the asset store.";
-    return;
-  }
-
+void NativeAssetsManager::RegisterNativeAssets(const uint8_t* manifest,
+                                               size_t manifest_size) {
   parsed_mapping_.clear();
 
   rapidjson::Document document;
   static_assert(sizeof(decltype(document)::Ch) == sizeof(uint8_t), "");
-  document.Parse(reinterpret_cast<const decltype(document)::Ch*>(
-                     manifest_mapping->GetMapping()),
-                 manifest_mapping->GetSize());
+  document.Parse(reinterpret_cast<const decltype(document)::Ch*>(manifest),
+                 manifest_size);
   if (document.HasParseError()) {
     FML_DLOG(WARNING) << "NativeAssetsManifest.json is malformed.";
     return;
@@ -94,6 +85,20 @@ void NativeAssetsManager::RegisterNativeAssets(
     }
     parsed_mapping_[entry->name.GetString()] = std::move(parsed_path);
   }
+}
+
+void NativeAssetsManager::RegisterNativeAssets(
+    const std::shared_ptr<AssetManager>& asset_manager) {
+  std::unique_ptr<fml::Mapping> manifest_mapping =
+      asset_manager->GetAsMapping("NativeAssetsManifest.json");
+  if (manifest_mapping == nullptr) {
+    FML_DLOG(WARNING)
+        << "Could not find NativeAssetsManifest.json in the asset store.";
+    return;
+  }
+
+  RegisterNativeAssets(manifest_mapping->GetMapping(),
+                       manifest_mapping->GetSize());
 }
 
 std::vector<std::string> NativeAssetsManager::LookupNativeAsset(

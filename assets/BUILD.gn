@@ -2,6 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
+
 source_set("assets") {
   sources = [
     "asset_manager.cc",
@@ -20,4 +23,32 @@ source_set("assets") {
   ]
 
   public_configs = [ "//flutter:config" ]
+}
+
+test_fixtures("assets_fixtures") {
+  fixtures = []
+}
+
+if (enable_unittests) {
+  executable("assets_unittests") {
+    testonly = true
+
+    sources = [ "native_assets_unittests.cc" ]
+
+    deps = [
+      ":assets",
+      ":assets_fixtures",
+      "//flutter/testing",
+    ]
+
+    if (!defined(defines)) {
+      defines = []
+    }
+
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
+    if (is_fuchsia) {
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
+    }
+  }
 }

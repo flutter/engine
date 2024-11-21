@@ -25,6 +25,7 @@ class NativeAssetsManager {
   ~NativeAssetsManager() = default;
 
   // Reads the `NativeAssetsManifest.json` bundled in the Flutter application.
+  void RegisterNativeAssets(const uint8_t* manifest, size_t manifest_size);
   void RegisterNativeAssets(const std::shared_ptr<AssetManager>& asset_manager);
 
   // Looks up the asset path for [asset_id].
