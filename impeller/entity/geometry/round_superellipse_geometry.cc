@@ -38,47 +38,14 @@ static constexpr double MAX_RATIO = kRatio_N_DOverA_Theta[NUM_RECORDS - 1][0];
 static constexpr double RATIO_STEP =
     kRatio_N_DOverA_Theta[1][0] - kRatio_N_DOverA_Theta[0][0];
 
+static constexpr Scalar STEP = kPi / 80;
+
 static constexpr double gap(double corner_radius) {
   return 0.2924303407 * corner_radius;
 }
 
 typedef TSize<double> DSize;
 typedef TPoint<double> DPoint;
-struct ExpandedVariables {
-  double n;
-  double d;
-  double R;
-  double x0;
-  double y0;
-};
-
-// // Result will be assigned with [n, d_over_a, theta]
-// static ExpandedVariables ExpandVariables(double ratio, double a, double g) {
-//   constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
-//   double steps =
-//       std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS -
-//       1);
-//   size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS -
-//   2); size_t hi = lo + 1; double pos = steps - lo;
-
-//   double n = (1 - pos) * kRatio_N_DOverA_Theta[lo][1] +
-//              pos * kRatio_N_DOverA_Theta[hi][1];
-//   double d = ((1 - pos) * kRatio_N_DOverA_Theta[lo][2] +
-//               pos * kRatio_N_DOverA_Theta[hi][2]) *
-//              a;
-//   double R = (a - d - g) * sqrt(2);
-//   double theta = (1 - pos) * kRatio_N_DOverA_Theta[lo][3] +
-//                  pos * kRatio_N_DOverA_Theta[hi][3];
-//   double x0 = d + R * sin(theta);
-//   double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
-//   return ExpandedVariables{
-//       .n = n,
-//       .d = d,
-//       .R = R,
-//       .x0 = x0,
-//       .y0 = y0,
-//   };
-// }
 
 static Point operator+(Point a, DPoint b) {
   return Point{static_cast<Scalar>(a.x + b.x), static_cast<Scalar>(a.y + b.y)};
@@ -88,6 +55,9 @@ static Point operator+(Point a, DPoint b) {
 //
 // It is assumed that `start` is north-west to `end`, and the center
 // of the circle is south-west to both points.
+//
+// The resulting points are appended to `output` and include the starting point
+// but exclude the ending point.
 static void DrawCircularArc(std::vector<DPoint>& output,
                             DPoint start,
                             DPoint end,
@@ -98,10 +68,10 @@ static void DrawCircularArc(std::vector<DPoint>& output,
    *          /  ⟍ `、
    *         /   M  ⟍\
    *        /       ⟋  E
-   *       /     ⟋
+   *       /     ⟋   ↗
    *      /   ⟋
-   *     / ⟋
-   *  C ⟋
+   *     / ⟋    r
+   *  C ⟋  ↙
    */
 
   const DPoint s_to_e = end - start;
@@ -110,83 +80,93 @@ static void DrawCircularArc(std::vector<DPoint>& output,
   const double distance_sm = s_to_e.GetLength() / 2;
   const double distance_cm = sqrt(r * r - distance_sm * distance_sm);
   const DPoint c = m - distance_cm * c_to_m.Normalize();
-  ;
   const Scalar angle_sce = asinf(distance_sm / r) * 2;
-  // TODO(dkwingsmt): determine parameter values based on scaling factor.
-  Scalar step = kPi / 80;
   const DPoint c_to_s = start - c;
-  for (Scalar angle = step; angle < angle_sce; angle += step) {
+  for (Scalar angle = 0; angle < angle_sce; angle += STEP) {
     output.push_back(c_to_s.Rotate(Radians(-angle)) + c);
   }
 }
 
+static double lerp(size_t item, size_t left, size_t frac) {
+  return (1 - frac) * kRatio_N_DOverA_Theta[left][item] +
+         frac * kRatio_N_DOverA_Theta[left + 1][item];
+}
+
+// Draws an arc representing the top 1/8 segment of a square-like rounded
+// superellipse. The arc spans from 0 to pi/4, moving clockwise starting from
+// the positive Y-axis.
+//
+// The full square-like rounded superellipse has a width and height specified by
+// `size`. It is centered at `center` and features rounded corners determined by
+// `corner_radius`. The `corner_radius` corresponds to the `cornerRadius`
+// parameter in SwiftUI, rather than the literal radius of corner circles.
+//
+// If `flip` is true, the function instead produces the next 1/8 arc, spanning
+// from pi/4 to pi/8. Technically, the X and Y coordinates of the arc points
+// are swapped before applying `center`, and their order is reversed as well.
+//
+// The list of the resulting points is appended to `output`, and includes the
+// starting point but exclude the ending point.
 static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
                                          double size,
                                          double corner_radius,
                                          DPoint center,
                                          bool flip) {
-  /* Generate the points for the top 1/8 arc (from 0 to pi/4), which
-   * is a square-like squircle offset by (0, -c).
+  /* Ignoring `center` and `flip`, the following figure shows the first quadrant
+   * of a square-like rounded superellipse. The target arc consists the stretch
+   * (AB), a superellipsoid arc (BJ), and a circular arc (JM). Assume the
+   * coordinate of J is (xJ, yJ), and M is (size/2 - g, size/2 - g).
    *
-   *  straight  superelipse
-   *      ↓        ↓
-   *   A       B      J    ↙ circular arc
-   *   ------------..._
-   *   |       |     /  `、 M
-   *   |       |    /   ⟋ \
-   *   |       |   / ⟋     \
-   *   |       |  .⟋        |
-   * O +       | / D        |
-   *   |       |/           |
-   *  E--------|------------|
-   *           S
+   *     straight   superelipse
+   *          ↓     ↓
+   *        A    B      J     circular arc
+   *        ---------...._↙
+   *        |    |      /  `⟍ M
+   *        |    |     /    ⟋ ⟍
+   *        |    |    /θ ⟋     \
+   *        |    |   /◝⟋        |
+   *        |    |  ᜱ           |
+   *        |    | /  D          |
+   *    ↑   +----+               |
+   *    s   |    |               |
+   *    ↓   +----+---------------|
+   *       O     S
+   *        ← s →
+   *        ←------ size/2 ------→
    *
-   * Ignore the central offset until the last step, and assume point O, the
-   * origin, is (0, 0),
-   *
-   *   A = (0, h/2)
-   *   B = (s_w, h/2)
-   *   J = (x0_w, y0_w - c)
-   *   M = (w/2 - g, h/2 - g)
    */
 
-  // Derive critical variables
   const double ratio = {std::min(size / corner_radius, MAX_RATIO)};
   const double a = ratio * corner_radius / 2;
   const double s = size / 2 - a;
   const double g = gap(corner_radius);
 
   // Use look up table to derive critical variables
-  double steps =
+  const double steps =
       std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
-  size_t lo = std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
-  size_t hi = lo + 1;
-  double pos = steps - lo;
+  const size_t left =
+      std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
+  const double frac = steps - left;
+  const double n = lerp(1, left, frac);
+  const double d = lerp(2, left, frac) * a;
+  const double theta = lerp(3, left, frac);
 
-  double n = (1 - pos) * kRatio_N_DOverA_Theta[lo][1] +
-             pos * kRatio_N_DOverA_Theta[hi][1];
-  double d = ((1 - pos) * kRatio_N_DOverA_Theta[lo][2] +
-              pos * kRatio_N_DOverA_Theta[hi][2]) *
-             a;
-  double R = (a - d - g) * sqrt(2);
-  double theta = (1 - pos) * kRatio_N_DOverA_Theta[lo][3] +
-                 pos * kRatio_N_DOverA_Theta[hi][3];
-  double x0 = d + R * sin(theta);
-  double y0 = pow(pow(a, n) - pow(x0, n), 1 / n);
+  const double R = (a - d - g) * sqrt(2);
+  const double xJ = d + R * sin(theta);
+  const double yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
 
   const DPoint pointM{size / 2 - g, size / 2 - g};
 
-  // Points without applying `flip` and `center`
+  // Points without applying `flip` and `center`.
   std::vector<DPoint> points;
+  points.reserve(21);
 
   // A
   points.emplace_back(0, size / 2);
   // Superellipsoid arc BJ (B inclusive, J exclusive)
   {
-    // TODO(dkwingsmt): determine parameter values based on scaling factor.
-    constexpr Scalar step = kPi / 80;
-    const Scalar target_slope = y0 / x0;
-    for (Scalar angle = 0;; angle += step) {
+    const Scalar target_slope = yJ / xJ;
+    for (Scalar angle = 0;; angle += STEP) {
       const double x = a * pow(abs(sinf(angle)), 2 / n);
       const double y = a * pow(abs(cosf(angle)), 2 / n);
       if (y <= target_slope * x) {
@@ -196,9 +176,8 @@ static void DrawOctantSquareLikeSquircle(std::vector<DPoint>& output,
     }
   }
   // J
-  points.emplace_back(x0 + s, y0 + s);
-  // Circular arc JM (both ends exclusive)
-  DrawCircularArc(points, {x0 + s, y0 + s}, pointM, R);
+  // Circular arc JM (B inclusive, M exclusive)
+  DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
 
   if (!flip) {
     for (const DPoint& point : points) {
