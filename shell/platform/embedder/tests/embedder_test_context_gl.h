@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 
 #include "flutter/testing/test_gl_context.h"
+#include "flutter/testing/test_gl_surface.h"
 
 namespace flutter {
 namespace testing {
@@ -28,6 +29,18 @@ class EmbedderTestContextGL : public EmbedderTestContext {
 
   // |EmbedderTestContext|
   EmbedderTestContextType GetContextType() const override;
+
+  // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
+  // cause your test to fail since the ctor for this class sets
+  // `open_gl.fbo_callback_with_frame_info`. This method exists as a utility to
+  // explicitly test this behavior.
+  void SetOpenGLFBOCallBack();
+
+  // Used to explicitly set an `open_gl.present`. Using this method will cause
+  // your test to fail since the ctor for this class sets
+  // `open_gl.present_with_info`. This method exists as a utility to explicitly
+  // test this behavior.
+  void SetOpenGLPresentCallBack();
 
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that will be invoked (on the raster task
@@ -65,14 +78,12 @@ class EmbedderTestContextGL : public EmbedderTestContext {
 
   void* GLGetProcAddress(const char* name);
 
- protected:
-  virtual void SetupCompositor() override;
-
-  void SetupCompositorUsingGLSurfaces();
-
  private:
-  // This allows the builder to access the hooks.
-  friend class EmbedderConfigBuilder;
+  // |EmbedderTestContext|
+  void SetSurface(SkISize surface_size) override;
+
+  // |EmbedderTestContext|
+  void SetupCompositor() override;
 
   std::shared_ptr<TestEGLContext> egl_context_;
   std::unique_ptr<TestGLSurface> gl_surface_;
@@ -81,8 +92,6 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   GLGetFBOCallback gl_get_fbo_callback_;
   GLPresentCallback gl_present_callback_;
   GLPopulateExistingDamageCallback gl_populate_existing_damage_callback_;
-
-  void SetupSurface(SkISize surface_size) override;
 
   bool GLMakeCurrent();
 
