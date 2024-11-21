@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "fml/task_runner.h"
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
 
@@ -1075,24 +1076,16 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
   }
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
-  if (task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread()) {
-    engine_->DispatchPlatformMessage(std::move(message));
-
-    // Post an empty task to make the UI message loop run its task observers.
-    // The observers will execute any Dart microtasks queued by the platform
-    // message handler.
-    task_runners_.GetUITaskRunner()->PostTask([] {});
-  } else {
-    // The static leak checker gets confused by the use of fml::MakeCopyable.
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
-    task_runners_.GetUITaskRunner()->PostTask(
-        fml::MakeCopyable([engine = engine_->GetWeakPtr(),
-                           message = std::move(message)]() mutable {
-          if (engine) {
-            engine->DispatchPlatformMessage(std::move(message));
-          }
-        }));
-  }
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(),
+                         message = std::move(message)]() mutable {
+        if (engine) {
+          engine->DispatchPlatformMessage(std::move(message));
+        }
+      }));
 }
 
 // |PlatformView::Delegate|
