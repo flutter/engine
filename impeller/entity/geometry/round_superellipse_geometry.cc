@@ -12,7 +12,20 @@
 
 namespace impeller {
 
-static constexpr double kRatio_N_DOverA_Theta[][4] = {
+typedef TSize<double> DSize;
+typedef TPoint<double> DPoint;
+
+// A look up table with precomputed variables.
+//
+// The columns represent the following variabls respectively:
+//
+//  * ratio = size / a
+//  * n
+//  * d / a
+//  * theta
+//
+// For definition of the variables, see DrawOctantSquareLikeSquircle.
+static constexpr double kPrecomputedVariables[][4] = {
     {2.000, 2.00000, 0.00000, 0.26000},  //
     {2.020, 2.03300, 0.01441, 0.23845},  //
     {2.040, 2.06500, 0.02568, 0.20310},  //
@@ -32,20 +45,17 @@ static constexpr double kRatio_N_DOverA_Theta[][4] = {
 };
 
 static constexpr size_t NUM_RECORDS =
-    sizeof(kRatio_N_DOverA_Theta) / sizeof(kRatio_N_DOverA_Theta[0]);
-static constexpr Scalar MIN_RATIO = kRatio_N_DOverA_Theta[0][0];
-static constexpr double MAX_RATIO = kRatio_N_DOverA_Theta[NUM_RECORDS - 1][0];
+    sizeof(kPrecomputedVariables) / sizeof(kPrecomputedVariables[0]);
+static constexpr Scalar MIN_RATIO = kPrecomputedVariables[0][0];
+static constexpr double MAX_RATIO = kPrecomputedVariables[NUM_RECORDS - 1][0];
 static constexpr double RATIO_STEP =
-    kRatio_N_DOverA_Theta[1][0] - kRatio_N_DOverA_Theta[0][0];
+    kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
 static constexpr Scalar STEP = kPi / 80;
 
 static constexpr double gap(double corner_radius) {
   return 0.2924303407 * corner_radius;
 }
-
-typedef TSize<double> DSize;
-typedef TPoint<double> DPoint;
 
 static Point operator+(Point a, DPoint b) {
   return Point{static_cast<Scalar>(a.x + b.x), static_cast<Scalar>(a.y + b.y)};
@@ -88,8 +98,8 @@ static void DrawCircularArc(std::vector<DPoint>& output,
 }
 
 static double lerp(size_t item, size_t left, size_t frac) {
-  return (1 - frac) * kRatio_N_DOverA_Theta[left][item] +
-         frac * kRatio_N_DOverA_Theta[left + 1][item];
+  return (1 - frac) * kPrecomputedVariables[left][item] +
+         frac * kPrecomputedVariables[left + 1][item];
 }
 
 // Draws an arc representing the top 1/8 segment of a square-like rounded
@@ -206,8 +216,8 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
-  Point center = bounds_.GetCenter();
+  const DSize size{bounds_.GetWidth(), bounds_.GetHeight()};
+  const Point center = bounds_.GetCenter();
 
   DSize ab = size / 2;
   const double c = ab.width - size.height / 2;
