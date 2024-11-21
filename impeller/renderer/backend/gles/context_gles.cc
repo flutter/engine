@@ -9,7 +9,9 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/renderer/command_queue.h"
 
 namespace impeller {
@@ -155,6 +157,27 @@ void ContextGLES::ResetThreadLocalState() const {
       reactor_->AddOperation([](const ReactorGLES& reactor) {
         RenderPassGLES::ResetGLState(reactor.GetProcTable());
       });
+}
+
+bool ContextGLES::EnqueueCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) {
+  return true;
+}
+
+// |Context|
+[[nodiscard]] bool ContextGLES::FlushCommandBuffers() {
+  return reactor_->React();
+}
+
+// |Context|
+bool ContextGLES::AddTrackingFence(
+    const std::shared_ptr<Texture>& texture) const {
+  if (!reactor_->GetProcTable().FenceSync.IsAvailable()) {
+    return false;
+  }
+  HandleGLES fence = reactor_->CreateHandle(HandleType::kFence);
+  TextureGLES::Cast(*texture).SetFence(fence);
+  return true;
 }
 
 }  // namespace impeller

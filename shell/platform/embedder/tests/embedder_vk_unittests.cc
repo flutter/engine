@@ -95,13 +95,17 @@ static_assert(
     CheckSameSignature<decltype(QueueSubmit), decltype(vkQueueSubmit)>::value);
 }  // namespace
 
-TEST_F(EmbedderTest, CanSwapOutVulkanCalls) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
-  fml::AutoResetWaitableEvent latch;
-  context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
+TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
+  auto& context = GetEmbedderContext<EmbedderTestContextVulkan>();
   EmbedderConfigBuilder builder(context);
-  builder.SetVulkanRendererConfig(
-      SkISize::Make(1024, 1024),
+}
+
+TEST_F(EmbedderTest, CanSwapOutVulkanCalls) {
+  fml::AutoResetWaitableEvent latch;
+
+  auto& context = GetEmbedderContext<EmbedderTestContextVulkan>();
+  context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
+  context.SetVulkanInstanceProcAddressCallback(
       [](void* user_data, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
         if (StrcmpFixed(name, "vkGetInstanceProcAddr") == 0) {
@@ -114,6 +118,9 @@ TEST_F(EmbedderTest, CanSwapOutVulkanCalls) {
         return EmbedderTestContextVulkan::InstanceProcAddr(user_data, instance,
                                                            name);
       });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSurface(SkISize::Make(1024, 1024));
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
   // Wait for the root isolate to launch.
