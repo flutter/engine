@@ -18,7 +18,6 @@ FLUTTER_ASSERT_ARC
 const float kFloatCompareEpsilon = 0.001;
 
 @interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
-@property(nonatomic) FlutterSemanticsScrollView* scrollView;
 @end
 
 @interface FlutterScrollableSemanticsObject (UIFocusItemScrollableContainer) <
@@ -693,8 +692,7 @@ const float kFloatCompareEpsilon = 0.001;
   XCTAssertFalse(scrollView.showsVerticalScrollIndicator);
   XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior,
                  UIScrollViewContentInsetAdjustmentNever);
-  XCTAssertTrue(
-      UIEdgeInsetsEqualToEdgeInsets(scrollView.contentInset, UIEdgeInsetsZero));
+  XCTAssertTrue(UIEdgeInsetsEqualToEdgeInsets(scrollView.contentInset, UIEdgeInsetsZero));
 }
 
 - (void)testSemanticsObjectBuildsAttributedString {

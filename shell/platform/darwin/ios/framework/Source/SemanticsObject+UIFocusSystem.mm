@@ -30,13 +30,18 @@ FLUTTER_ASSERT_ARC
 // translated to calls such as -[NSObject accessibilityActivate]), while most
 // other key events are dispatched to the framework.
 @interface SemanticsObject (UIFocusSystem) <UIFocusItem, UIFocusItemContainer>
-@end
-
-@interface FlutterScrollableSemanticsObject ()
-@property(nonatomic, readonly) FlutterSemanticsScrollView* scrollView;
+/// The `UIFocusItem` that represents this SemanticsObject.
+///
+///  For regular `SemanticsObject`s, this method returns `self`,
+///  for `FlutterScrollableSemanticsObject`s, this method returns its scroll view.
+- (id<UIFocusItem>)focusItem;
 @end
 
 @implementation SemanticsObject (UIFocusSystem)
+
+- (id<UIFocusItem>)focusItem {
+  return self;
+}
 
 #pragma mark - UIFocusEnvironment Conformance
 
@@ -55,11 +60,8 @@ FLUTTER_ASSERT_ARC
 }
 
 - (id<UIFocusEnvironment>)parentFocusEnvironment {
-  if ([self.parent isKindOfClass:[FlutterScrollableSemanticsObject class]]) {
-    return ((FlutterScrollableSemanticsObject*)self.parent).scrollView;
-  }
   // The root SemanticsObject node's parent is the FlutterView.
-  return self.parent ?: self.bridge->view();
+  return self.parent.focusItem ?: self.bridge->view();
 }
 
 - (NSArray<id<UIFocusEnvironment>>*)preferredFocusEnvironments {
@@ -85,6 +87,7 @@ FLUTTER_ASSERT_ARC
 // `parentFocusEnvironment` (all `parentFocusEnvironment`s are `UIFocusItem`s).
 //
 // See also the `coordinateSpace` implementation.
+// TODO(LongCatIsLooong): use CoreGraphics types.
 - (CGRect)frame {
   SkPoint quad[4] = {SkPoint::Make(self.node.rect.left(), self.node.rect.top()),
                      SkPoint::Make(self.node.rect.left(), self.node.rect.bottom()),
@@ -149,11 +152,7 @@ FLUTTER_ASSERT_ARC
       [[NSMutableArray alloc] initWithCapacity:self.childrenInHitTestOrder.count];
   for (NSUInteger i = 0; i < self.childrenInHitTestOrder.count; ++i) {
     SemanticsObject* child = self.childrenInHitTestOrder[self.childrenInHitTestOrder.count - 1 - i];
-    if ([child isKindOfClass:[FlutterScrollableSemanticsObject class]]) {
-      [reversedItems addObject:((FlutterScrollableSemanticsObject*)child).scrollView];
-    } else {
-      [reversedItems addObject:child];
-    }
+    [reversedItems addObject:child.focusItem];
   }
   return reversedItems;
 }
@@ -188,6 +187,11 @@ FLUTTER_ASSERT_ARC
   // This may not work very well in nested scroll views.
   return self.scrollView;
 }
+
+- (id<UIFocusItem>)focusItem {
+  return self.scrollView;
+}
+
 @end
 
 @interface FlutterSemanticsScrollView (UIFocusItemScrollableContainer) <
@@ -210,15 +214,9 @@ FLUTTER_ASSERT_ARC
     return;
   }
 
-  // The following code assumes the memory layout of CGPoint is exactly the
-  // same as an array defined as: `double coords[] = { x, y };`. Converts
-  // to a Float64List in dart.
-  // The size of a CGFloat is architecture-dependent and it's typically the word
-  // size. The last iOS with 32-bit support was iOS 10.
-  static_assert(sizeof(CGPoint) == sizeof(CGFloat) * 2);
-  static_assert(sizeof(CGFloat) == sizeof(double));
+  double offsetData[2] = {contentOffset.x, contentOffset.y};
   FlutterStandardTypedData* offsetData = [FlutterStandardTypedData
-      typedDataWithFloat64:[NSData dataWithBytes:&contentOffset length:sizeof(CGPoint)]];
+      typedDataWithFloat64:[NSData dataWithBytes:&offsetData length:sizeof(offsetData)]];
   NSData* encoded = [[FlutterStandardMessageCodec sharedInstance] encode:offsetData];
   self.semanticsObject.bridge->DispatchSemanticsAction(
       self.semanticsObject.uid, flutter::SemanticsAction::kScrollToOffset,

@@ -186,7 +186,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 /// The semantics object for scrollable. This class creates an UIScrollView to interact with the
 /// iOS.
 @interface FlutterScrollableSemanticsObject : SemanticsObject
-
+@property(nonatomic, readonly) FlutterSemanticsScrollView* scrollView;
 @end
 
 /**
