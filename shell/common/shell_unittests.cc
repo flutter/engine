@@ -4312,7 +4312,8 @@ TEST_F(ShellTest, NavigationMessageDispachedImmediately) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, SemanticsActionsPostTask) {
+// Verifies a semantics Action will flush the dart event loop.
+TEST_F(ShellTest, SemanticsActionsFlushMessageLoop) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
                          ThreadHost::Type::kPlatform);
@@ -4333,7 +4334,38 @@ TEST_F(ShellTest, SemanticsActionsPostTask) {
                         fml::MallocMapping(nullptr, 0));
   });
 
-  // Fulfill native function for the second Shell's entrypoint.
+  fml::CountDownLatch latch(1);
+  AddNativeCallback(
+      // The Dart native function names aren't very consistent but this is
+      // just the native function name of the second vm entrypoint in the
+      // fixture.
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+// Verifies a pointer event will flush the dart event loop.
+TEST_F(ShellTest, PointerPacketFlushMessageLoop) {
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::kPlatform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  EXPECT_EQ(task_runners.GetPlatformTaskRunner(),
+            task_runners.GetUITaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testPointerActions");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  DispatchFakePointerData(shell.get(), 23);
+
   fml::CountDownLatch latch(1);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is
