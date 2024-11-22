@@ -146,8 +146,8 @@ class PlatformViewsController {
     return current_composition_params_.find(view_id)->second;
   }
 
- // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
- // private:
+  // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
+  // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
 

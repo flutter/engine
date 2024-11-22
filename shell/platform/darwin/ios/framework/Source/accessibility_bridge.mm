@@ -39,11 +39,10 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 };
 }  // namespace
 
-AccessibilityBridge::AccessibilityBridge(
-    FlutterViewController* view_controller,
-    PlatformViewIOS* platform_view,
-    FlutterPlatformViewsController* platform_views_controller,
-    std::unique_ptr<IosDelegate> ios_delegate)
+AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
+                                         PlatformViewIOS* platform_view,
+                                         FlutterPlatformViewsController* platform_views_controller,
+                                         std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
@@ -274,8 +273,8 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[FlutterPlatformViewSemanticsContainer alloc]
         initWithBridge:weak_ptr
                    uid:node.id
-          platformView:weak_ptr->GetPlatformViewsController().instance->GetFlutterTouchInterceptingViewByID(
-                           node.platformViewId)];
+          platformView:weak_ptr->GetPlatformViewsController()
+                           .instance->GetFlutterTouchInterceptingViewByID(node.platformViewId)];
   } else {
     return [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
   }

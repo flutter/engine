@@ -41,11 +41,10 @@ void PlatformViewIOS::AccessibilityBridgeManager::Clear() {
   accessibility_bridge_.reset();
 }
 
-PlatformViewIOS::PlatformViewIOS(
-    PlatformView::Delegate& delegate,
-    const std::shared_ptr<IOSContext>& context,
-    const FlutterPlatformViewsController* platform_views_controller,
-    const flutter::TaskRunners& task_runners)
+PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
+                                 const std::shared_ptr<IOSContext>& context,
+                                 const FlutterPlatformViewsController* platform_views_controller,
+                                 const flutter::TaskRunners& task_runners)
     : PlatformView(delegate, task_runners),
       ios_context_(context),
       platform_views_controller_(platform_views_controller),
