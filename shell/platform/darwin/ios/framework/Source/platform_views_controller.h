@@ -312,6 +312,9 @@ class PlatformViewsController {
   /// @brief Set the platform task runner used to post rendering tasks.
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner;
 
+/// @brief Set the flutter view.
+- (void)setFlutterView:(UIView*)view;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

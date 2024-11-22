@@ -783,6 +783,10 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->SetTaskRunner(platformTaskRunner);
 }
 
+- (void)setFlutterView:(UIView*)view {
+  self.instance->SetFlutterView(view);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
