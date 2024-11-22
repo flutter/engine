@@ -61,11 +61,6 @@ class DlColorFilterImageFilter final : public DlImageFilter {
     return MatrixCapability::kComplex;
   }
 
-  std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const DlMatrix& matrix) const override {
-    return shared();
-  }
-
  protected:
   bool equals_(const DlImageFilter& other) const override;
 
