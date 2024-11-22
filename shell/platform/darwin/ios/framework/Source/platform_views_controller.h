@@ -115,10 +115,6 @@ class PlatformViewsController {
                    const std::shared_ptr<IOSContext>& ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
 
-  /// @brief Handler for platform view message channels.
-  void OnMethodCall(FlutterMethodCall* call, FlutterResult result)
-      __attribute__((cf_audited_transfer));
-
   /// @brief Returns the platform view id if the platform view (or any of its descendant view) is
   /// the first responder.
   ///
@@ -154,7 +150,8 @@ class PlatformViewsController {
     return current_composition_params_.find(view_id)->second;
   }
 
- private:
+ // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
+ // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
 
@@ -183,17 +180,6 @@ class PlatformViewsController {
   void CreateMissingOverlays(GrDirectContext* gr_context,
                              const std::shared_ptr<IOSContext>& ios_context,
                              size_t required_overlay_layers);
-
-  void OnCreate(FlutterMethodCall* call, FlutterResult result) __attribute__((cf_audited_transfer));
-
-  void OnDispose(FlutterMethodCall* call, FlutterResult result)
-      __attribute__((cf_audited_transfer));
-
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult result)
-      __attribute__((cf_audited_transfer));
-
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult result)
-      __attribute__((cf_audited_transfer));
 
   /// @brief Return all views to be disposed on the platform thread.
   std::vector<UIView*> GetViewsToDispose();
@@ -328,6 +314,9 @@ class PlatformViewsController {
 - (id)init NS_DESIGNATED_INITIALIZER;
 
 - (std::shared_ptr<flutter::PlatformViewsController>&)instance;
+
+/// @brief Handler for platform view message channels.
+- (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 @end
 

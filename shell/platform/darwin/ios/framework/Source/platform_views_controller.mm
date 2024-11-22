@@ -140,134 +140,6 @@ UIViewController<FlutterViewResponder>* PlatformViewsController::GetFlutterViewC
   return flutter_view_controller_;
 }
 
-void PlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult result) {
-  if ([[call method] isEqualToString:@"create"]) {
-    OnCreate(call, result);
-  } else if ([[call method] isEqualToString:@"dispose"]) {
-    OnDispose(call, result);
-  } else if ([[call method] isEqualToString:@"acceptGesture"]) {
-    OnAcceptGesture(call, result);
-  } else if ([[call method] isEqualToString:@"rejectGesture"]) {
-    OnRejectGesture(call, result);
-  } else {
-    result(FlutterMethodNotImplemented);
-  }
-}
-
-void PlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
-  NSDictionary<NSString*, id>* args = [call arguments];
-
-  int64_t viewId = [args[@"id"] longLongValue];
-  NSString* viewTypeString = args[@"viewType"];
-  std::string viewType(viewTypeString.UTF8String);
-
-  if (platform_views_.count(viewId) != 0) {
-    result([FlutterError errorWithCode:@"recreating_view"
-                               message:@"trying to create an already created view"
-                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
-    return;
-  }
-
-  NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType];
-  if (factory == nil) {
-    result([FlutterError
-        errorWithCode:@"unregistered_view_type"
-              message:[NSString stringWithFormat:@"A UIKitView widget is trying to create a "
-                                                 @"PlatformView with an unregistered type: < %@ >",
-                                                 viewTypeString]
-              details:@"If you are the author of the PlatformView, make sure `registerViewFactory` "
-                      @"is invoked.\n"
-                      @"See: "
-                      @"https://docs.flutter.dev/development/platform-integration/"
-                      @"platform-views#on-the-platform-side-1 for more details.\n"
-                      @"If you are not the author of the PlatformView, make sure to call "
-                      @"`GeneratedPluginRegistrant.register`."]);
-    return;
-  }
-
-  id params = nil;
-  if ([factory respondsToSelector:@selector(createArgsCodec)]) {
-    NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
-    if (codec != nil && args[@"params"] != nil) {
-      FlutterStandardTypedData* paramsData = args[@"params"];
-      params = [codec decode:paramsData.data];
-    }
-  }
-
-  NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
-                                                           viewIdentifier:viewId
-                                                                arguments:params];
-  UIView* platform_view = [embedded_view view];
-  // Set a unique view identifier, so the platform view can be identified in unit tests.
-  platform_view.accessibilityIdentifier =
-      [NSString stringWithFormat:@"platform_view[%lld]", viewId];
-
-  FlutterTouchInterceptingView* touch_interceptor = [[FlutterTouchInterceptingView alloc]
-                  initWithEmbeddedView:platform_view
-               platformViewsController:GetWeakPtr()
-      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies_[viewType]];
-
-  ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
-  [clipping_view addSubview:touch_interceptor];
-
-  platform_views_.emplace(viewId, PlatformViewData{
-                                      .view = embedded_view,                   //
-                                      .touch_interceptor = touch_interceptor,  //
-                                      .root_view = clipping_view               //
-                                  });
-
-  result(nil);
-}
-
-void PlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
-  NSNumber* arg = [call arguments];
-  int64_t viewId = [arg longLongValue];
-
-  if (platform_views_.count(viewId) == 0) {
-    result([FlutterError errorWithCode:@"unknown_view"
-                               message:@"trying to dispose an unknown"
-                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
-    return;
-  }
-  // We wait for next submitFrame to dispose views.
-  views_to_dispose_.insert(viewId);
-  result(nil);
-}
-
-void PlatformViewsController::OnAcceptGesture(FlutterMethodCall* call, FlutterResult result) {
-  NSDictionary<NSString*, id>* args = [call arguments];
-  int64_t viewId = [args[@"id"] longLongValue];
-
-  if (platform_views_.count(viewId) == 0) {
-    result([FlutterError errorWithCode:@"unknown_view"
-                               message:@"trying to set gesture state for an unknown view"
-                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
-    return;
-  }
-
-  FlutterTouchInterceptingView* view = platform_views_[viewId].touch_interceptor;
-  [view releaseGesture];
-
-  result(nil);
-}
-
-void PlatformViewsController::OnRejectGesture(FlutterMethodCall* call, FlutterResult result) {
-  NSDictionary<NSString*, id>* args = [call arguments];
-  int64_t viewId = [args[@"id"] longLongValue];
-
-  if (platform_views_.count(viewId) == 0) {
-    result([FlutterError errorWithCode:@"unknown_view"
-                               message:@"trying to set gesture state for an unknown view"
-                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
-    return;
-  }
-
-  FlutterTouchInterceptingView* view = platform_views_[viewId].touch_interceptor;
-  [view blockGesture];
-
-  result(nil);
-}
-
 void PlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
     NSString* factoryId,
@@ -890,6 +762,13 @@ void PlatformViewsController::ResetFrameState() {
 
 }  // namespace flutter
 
+@interface FlutterPlatformViewsController ()
+- (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+@end
+
 @implementation FlutterPlatformViewsController {
   std::shared_ptr<flutter::PlatformViewsController> _instance;
 }
@@ -903,6 +782,135 @@ void PlatformViewsController::ResetFrameState() {
 
 - (std::shared_ptr<flutter::PlatformViewsController>&)instance {
   return _instance;
+}
+
+- (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if ([[call method] isEqualToString:@"create"]) {
+    [self onCreate:call result:result];
+  } else if ([[call method] isEqualToString:@"dispose"]) {
+    [self onDispose:call result:result];
+  } else if ([[call method] isEqualToString:@"acceptGesture"]) {
+    [self onAcceptGesture:call result:result];
+  } else if ([[call method] isEqualToString:@"rejectGesture"]) {
+    [self onRejectGesture:call result:result];
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSDictionary<NSString*, id>* args = [call arguments];
+
+  int64_t viewId = [args[@"id"] longLongValue];
+  NSString* viewTypeString = args[@"viewType"];
+  std::string viewType(viewTypeString.UTF8String);
+
+  if (self.instance->platform_views_.count(viewId) != 0) {
+    result([FlutterError errorWithCode:@"recreating_view"
+                               message:@"trying to create an already created view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  NSObject<FlutterPlatformViewFactory>* factory = self.instance->factories_[viewType];
+  if (factory == nil) {
+    result([FlutterError
+        errorWithCode:@"unregistered_view_type"
+              message:[NSString stringWithFormat:@"A UIKitView widget is trying to create a "
+                                                 @"PlatformView with an unregistered type: < %@ >",
+                                                 viewTypeString]
+              details:@"If you are the author of the PlatformView, make sure `registerViewFactory` "
+                      @"is invoked.\n"
+                      @"See: "
+                      @"https://docs.flutter.dev/development/platform-integration/"
+                      @"platform-views#on-the-platform-side-1 for more details.\n"
+                      @"If you are not the author of the PlatformView, make sure to call "
+                      @"`GeneratedPluginRegistrant.register`."]);
+    return;
+  }
+
+  id params = nil;
+  if ([factory respondsToSelector:@selector(createArgsCodec)]) {
+    NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
+    if (codec != nil && args[@"params"] != nil) {
+      FlutterStandardTypedData* paramsData = args[@"params"];
+      params = [codec decode:paramsData.data];
+    }
+  }
+
+  NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
+                                                           viewIdentifier:viewId
+                                                                arguments:params];
+  UIView* platform_view = [embedded_view view];
+  // Set a unique view identifier, so the platform view can be identified in unit tests.
+  platform_view.accessibilityIdentifier =
+      [NSString stringWithFormat:@"platform_view[%lld]", viewId];
+
+  FlutterTouchInterceptingView* touch_interceptor = [[FlutterTouchInterceptingView alloc]
+                  initWithEmbeddedView:platform_view
+               platformViewsController:self
+      gestureRecognizersBlockingPolicy:self.instance
+                                           ->gesture_recognizers_blocking_policies_[viewType]];
+
+  ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
+  [clipping_view addSubview:touch_interceptor];
+
+  self.instance->platform_views_.emplace(viewId, flutter::PlatformViewsController::PlatformViewData{
+                                                     .view = embedded_view,                   //
+                                                     .touch_interceptor = touch_interceptor,  //
+                                                     .root_view = clipping_view               //
+                                                 });
+
+  result(nil);
+}
+
+- (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSNumber* arg = [call arguments];
+  int64_t viewId = [arg longLongValue];
+
+  if (self.instance->platform_views_.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to dispose an unknown"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+  // We wait for next submitFrame to dispose views.
+  self.instance->views_to_dispose_.insert(viewId);
+  result(nil);
+}
+
+- (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSDictionary<NSString*, id>* args = [call arguments];
+  int64_t viewId = [args[@"id"] longLongValue];
+
+  if (self.instance->platform_views_.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to set gesture state for an unknown view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  FlutterTouchInterceptingView* view = self.instance->platform_views_[viewId].touch_interceptor;
+  [view releaseGesture];
+
+  result(nil);
+}
+
+- (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSDictionary<NSString*, id>* args = [call arguments];
+  int64_t viewId = [args[@"id"] longLongValue];
+
+  if (self.instance->platform_views_.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to set gesture state for an unknown view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  FlutterTouchInterceptingView* view = self.instance->platform_views_[viewId].touch_interceptor;
+  [view blockGesture];
+
+  result(nil);
 }
 
 @end

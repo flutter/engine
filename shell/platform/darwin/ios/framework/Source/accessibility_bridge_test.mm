@@ -303,11 +303,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
     FlutterResult result = ^(id result) {
     };
-    flutterPlatformViewsController.instance->OnMethodCall(
-        [FlutterMethodCall
-            methodCallWithMethodName:@"create"
-                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-        result);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                       arguments:@{
+                                                         @"id" : @2,
+                                                         @"viewType" : @"MockFlutterPlatformView"
+                                                       }]
+              result:result];
 
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view_controller=*/mockFlutterViewController,
@@ -360,11 +362,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
     FlutterResult result = ^(id result) {
     };
-    flutterPlatformViewsController.instance->OnMethodCall(
-        [FlutterMethodCall
-            methodCallWithMethodName:@"create"
-                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-        result);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                       arguments:@{
+                                                         @"id" : @2,
+                                                         @"viewType" : @"MockFlutterPlatformView"
+                                                       }]
+              result:result];
 
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view_controller=*/flutterViewController,
@@ -389,8 +393,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                /*ui=*/thread_task_runner,
                                /*io=*/thread_task_runner);
 
-    FlutterPlatformViewsController* flutterPlatformViewsController =
-        [[FlutterPlatformViewsController alloc] init];
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
   flutterPlatformViewsController.instance->SetTaskRunner(thread_task_runner);
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,

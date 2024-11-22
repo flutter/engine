@@ -134,8 +134,7 @@
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
 @interface FlutterTouchInterceptingView : UIView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-             platformViewsController:
-                 (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController
+             platformViewsController:(FlutterPlatformViewsController*)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
 
@@ -192,8 +191,7 @@
 // directly to the FlutterView.
 @interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
 - (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
+       platformViewsController:(FlutterPlatformViewsController*)platformViewsController;
 - (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target;
 @end
 

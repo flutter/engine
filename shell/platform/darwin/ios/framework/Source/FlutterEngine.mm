@@ -632,7 +632,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [self.platformViewsChannel
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
-            weakSelf.platformViewsController.instance->OnMethodCall(call, result);
+            [weakSelf.platformViewsController onMethodCall:call result:result];
           }
         }];
 

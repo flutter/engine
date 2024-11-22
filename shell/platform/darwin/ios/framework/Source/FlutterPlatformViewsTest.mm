@@ -183,11 +183,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* flutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController.instance->SetFlutterView(flutterView);
   // Create embedded view params
@@ -241,11 +243,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 }
@@ -335,11 +339,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -414,11 +420,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -493,11 +501,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -573,11 +583,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -697,11 +709,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -847,11 +861,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1140,11 +1156,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1465,11 +1483,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1528,11 +1548,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1632,11 +1654,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1710,11 +1734,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1784,11 +1810,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1857,11 +1885,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -1935,11 +1965,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2033,11 +2065,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2138,11 +2172,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2260,11 +2296,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2366,11 +2404,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2489,11 +2529,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2557,11 +2599,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2682,11 +2726,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2797,11 +2843,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2863,11 +2911,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2969,11 +3019,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -3048,11 +3100,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   };
   // autorelease pool to trigger an autorelease for all the root_views_ and touch_interceptors_.
   @autoreleasepool {
-    flutterPlatformViewsController.instance->OnMethodCall(
-        [FlutterMethodCall
-            methodCallWithMethodName:@"create"
-                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-        result);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                       arguments:@{
+                                                         @"id" : @2,
+                                                         @"viewType" : @"MockFlutterPlatformView"
+                                                       }]
+              result:result];
 
     flutter::MutatorsStack stack;
     SkMatrix finalMatrix;
@@ -3102,11 +3156,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   FlutterResult result = ^(id result) {
   };
 
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @0,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   // First frame, |EmbeddedViewCount| is not empty after composite.
   flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
@@ -3167,19 +3223,23 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @0,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view1 = gMockPlatformView;
 
   // This overwrites `gMockPlatformView` to another view.
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view2 = gMockPlatformView;
 
   flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
@@ -3274,19 +3334,23 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @0,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view1 = gMockPlatformView;
 
   // This overwrites `gMockPlatformView` to another view.
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view2 = gMockPlatformView;
 
   flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
@@ -3463,11 +3527,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
   UIView* flutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
@@ -3509,11 +3575,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   childClippingView1 = gMockPlatformView.superview.superview;
 
   // This overrides gMockPlatformView to point to the newly created platform view.
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   auto embeddedViewParams4 = std::make_unique<flutter::EmbeddedViewParams>(
       screenScaleMatrix, SkSize::Make(10, 10), stack1);
@@ -3559,19 +3627,23 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   FlutterResult result = ^(id result) {
   };
 
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view1 = gMockPlatformView;
 
   // This overwrites `gMockPlatformView` to another view.
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* view2 = gMockPlatformView;
 
   XCTAssertNotNil(gMockPlatformView);
@@ -3642,11 +3714,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   FlutterResult result = ^(id result) {
   };
 
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   XCTAssertNotNil(gMockPlatformView);
   UIView* flutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
@@ -3740,16 +3814,20 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   FlutterResult result = ^(id result) {
   };
 
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @0,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   {
     // **** First frame, view id 0, 1 in the composition_order_, disposing view 0 is called. **** //
@@ -3774,8 +3852,9 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       [expectation fulfill];
     };
 
-    flutterPlatformViewsController.instance->OnMethodCall(
-        [FlutterMethodCall methodCallWithMethodName:@"dispose" arguments:@0], disposeResult);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"dispose" arguments:@0]
+              result:disposeResult];
     [self waitForExpectationsWithTimeout:30 handler:nil];
 
     const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
@@ -3851,11 +3930,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* flutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController.instance->SetFlutterView(flutterView);
   // Create embedded view params
@@ -3924,11 +4005,13 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
   UIView* flutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController.instance->SetFlutterView(flutterView);
 
@@ -4029,18 +4112,22 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @0,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   // This overwrites `gMockPlatformView` to another view.
-  flutterPlatformViewsController.instance->OnMethodCall(
-      [FlutterMethodCall
-          methodCallWithMethodName:@"create"
-                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
-      result);
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @1,
+                                                       @"viewType" : @"MockFlutterPlatformView"
+                                                     }]
+            result:result];
 
   flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
   flutter::MutatorsStack stack;
