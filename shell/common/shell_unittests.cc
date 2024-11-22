@@ -4328,12 +4328,6 @@ TEST_F(ShellTest, SemanticsActionsFlushMessageLoop) {
   configuration.SetEntrypoint("testSemanticsActions");
 
   RunEngine(shell.get(), std::move(configuration));
-
-  task_runners.GetPlatformTaskRunner()->PostTask([&] {
-    SendSemanticsAction(shell.get(), 0, SemanticsAction::kTap,
-                        fml::MallocMapping(nullptr, 0));
-  });
-
   fml::CountDownLatch latch(1);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is
@@ -4341,6 +4335,11 @@ TEST_F(ShellTest, SemanticsActionsFlushMessageLoop) {
       // fixture.
       "NotifyNative",
       CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&] {
+    SendSemanticsAction(shell.get(), 0, SemanticsAction::kTap,
+                        fml::MallocMapping(nullptr, 0));
+  });
   latch.Wait();
 
   DestroyShell(std::move(shell), task_runners);
@@ -4363,9 +4362,6 @@ TEST_F(ShellTest, PointerPacketFlushMessageLoop) {
   configuration.SetEntrypoint("testPointerActions");
 
   RunEngine(shell.get(), std::move(configuration));
-
-  DispatchFakePointerData(shell.get(), 23);
-
   fml::CountDownLatch latch(1);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is
@@ -4373,6 +4369,8 @@ TEST_F(ShellTest, PointerPacketFlushMessageLoop) {
       // fixture.
       "NotifyNative",
       CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+
+  DispatchFakePointerData(shell.get(), 23);
   latch.Wait();
 
   DestroyShell(std::move(shell), task_runners);
