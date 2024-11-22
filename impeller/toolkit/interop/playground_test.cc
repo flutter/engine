@@ -12,7 +12,7 @@ ProcTable gGlobalProcTable;
 
 namespace impeller::interop::testing {
 
-PlaygroundTest::PlaygroundTest() {
+static void SetupImpellerHPPProcTableOnce() {
   static std::once_flag sOnceFlag;
   std::call_once(sOnceFlag, []() {
     std::map<std::string, void*> proc_map;
@@ -23,6 +23,10 @@ PlaygroundTest::PlaygroundTest() {
     hpp::gGlobalProcTable.Initialize(
         [&](auto name) { return proc_map.at(name); });
   });
+}
+
+PlaygroundTest::PlaygroundTest() {
+  SetupImpellerHPPProcTableOnce();
 }
 
 PlaygroundTest::~PlaygroundTest() = default;
@@ -40,8 +44,8 @@ void PlaygroundTest::TearDown() {
 ScopedObject<Context> PlaygroundTest::CreateContext() const {
   switch (GetBackend()) {
     case PlaygroundBackend::kMetal:
-      FML_CHECK(false) << "Metal not yet implemented.";
-      return nullptr;
+      return Adopt<Context>(
+          ImpellerContextCreateMetalNew(ImpellerGetVersion()));
     case PlaygroundBackend::kOpenGLES: {
       Playground::GLProcAddressResolver playground_gl_proc_address_callback =
           CreateGLProcAddressResolver();
@@ -55,24 +59,43 @@ ScopedObject<Context> PlaygroundTest::CreateContext() const {
           &playground_gl_proc_address_callback));
     }
     case PlaygroundBackend::kVulkan:
-      FML_CHECK(false) << "Vulkan not yet implemented.";
-      return nullptr;
+      ImpellerContextVulkanSettings settings = {};
+      struct UserData {
+        Playground::VKProcAddressResolver resolver;
+      } user_data;
+      user_data.resolver = CreateVKProcAddressResolver();
+      settings.user_data = &user_data;
+      settings.enable_vulkan_validation = switches_.enable_vulkan_validation;
+      settings.proc_address_callback = [](void* instance,         //
+                                          const char* proc_name,  //
+                                          void* user_data         //
+                                          ) -> void* {
+        auto resolver = reinterpret_cast<UserData*>(user_data)->resolver;
+        if (resolver) {
+          return resolver(instance, proc_name);
+        } else {
+          return nullptr;
+        }
+      };
+      return Adopt<Context>(
+          ImpellerContextCreateVulkanNew(ImpellerGetVersion(), &settings));
   }
   FML_UNREACHABLE();
 }
 
 bool PlaygroundTest::OpenPlaygroundHere(InteropPlaygroundCallback callback) {
-  auto context = GetInteropContext();
-  if (!context) {
+  auto interop_context = GetInteropContext();
+  if (!interop_context) {
     return false;
   }
   return Playground::OpenPlaygroundHere([&](RenderTarget& target) -> bool {
     auto impeller_surface = std::make_shared<impeller::Surface>(target);
-    auto surface = Create<Surface>(*context.Get(), impeller_surface);
+    auto surface = Create<Surface>(*interop_context.Get(), impeller_surface);
     if (!surface) {
+      VALIDATION_LOG << "Could not wrap test surface as an interop surface.";
       return false;
     }
-    return callback(context, surface);
+    return callback(interop_context, surface);
   });
 }
 
@@ -80,7 +103,7 @@ ScopedObject<Context> PlaygroundTest::GetInteropContext() {
   if (interop_context_) {
     return interop_context_;
   }
-  auto context = Create<Context>(GetContext(), nullptr);
+  auto context = CreateContext();
   if (!context) {
     return nullptr;
   }

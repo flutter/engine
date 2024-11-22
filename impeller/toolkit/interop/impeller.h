@@ -311,6 +311,11 @@ typedef void* IMPELLER_NULLABLE (*ImpellerProcAddressCallback)(
     const char* IMPELLER_NONNULL proc_name,
     void* IMPELLER_NULLABLE user_data);
 
+typedef void* IMPELLER_NULLABLE (*ImpellerVulkanProcAddressCallback)(
+    void* IMPELLER_NULLABLE vulkan_instance,
+    const char* IMPELLER_NONNULL vulkan_proc_name,
+    void* IMPELLER_NULLABLE user_data);
+
 //------------------------------------------------------------------------------
 // Enumerations
 // -----------------------------------------------------------------------------
@@ -562,6 +567,12 @@ typedef struct ImpellerMapping {
   ImpellerCallback IMPELLER_NULLABLE on_release;
 } ImpellerMapping;
 
+typedef struct ImpellerContextVulkanSettings {
+  void* IMPELLER_NULLABLE user_data;
+  ImpellerVulkanProcAddressCallback IMPELLER_NONNULL proc_address_callback;
+  bool enable_vulkan_validation;
+} ImpellerContextVulkanSettings;
+
 //------------------------------------------------------------------------------
 // Version
 //------------------------------------------------------------------------------
@@ -624,6 +635,14 @@ ImpellerContextCreateOpenGLESNew(
     uint32_t version,
     ImpellerProcAddressCallback IMPELLER_NONNULL gl_proc_address_callback,
     void* IMPELLER_NULLABLE gl_proc_address_callback_user_data);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerContext IMPELLER_NULLABLE
+ImpellerContextCreateMetalNew(uint32_t version);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerContext IMPELLER_NULLABLE
+ImpellerContextCreateVulkanNew(
+    uint32_t version,
+    const ImpellerContextVulkanSettings* IMPELLER_NONNULL settings);
 
 //------------------------------------------------------------------------------
 /// @brief      Retain a strong reference to the object. The object can be NULL

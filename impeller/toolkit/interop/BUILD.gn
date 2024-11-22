@@ -13,7 +13,21 @@ embed_blob("embedded_icu_data") {
   deps = []
 }
 
-impeller_component("interop") {
+# The public C/C++ Impeller API.
+impeller_component("interop_api") {
+  public = [
+    "impeller.h",
+    "impeller.hpp",
+  ]
+
+  sources = [
+    "impeller_c.c",
+    "impeller_cc.cc",
+  ]
+}
+
+# The common base used by all interop backends.
+impeller_component("interop_base") {
   sources = [
     "color_filter.cc",
     "color_filter.h",
@@ -29,11 +43,6 @@ impeller_component("interop") {
     "formats.h",
     "image_filter.cc",
     "image_filter.h",
-    "impeller.cc",
-    "impeller.h",
-    "impeller.hpp",
-    "impeller_c.c",
-    "impeller_cc.cc",
     "mask_filter.cc",
     "mask_filter.h",
     "object.cc",
@@ -59,6 +68,8 @@ impeller_component("interop") {
   ]
 
   public_deps = [
+    ":embedded_icu_data",
+    ":interop_api",
     "../../base",
     "../../display_list",
     "../../entity",
@@ -67,8 +78,13 @@ impeller_component("interop") {
     "//flutter/fml",
     "//flutter/third_party/txt",
   ]
+}
 
-  deps = [ ":embedded_icu_data" ]
+# Wires up the public API entrypoints to the appropriate backends.
+impeller_component("interop") {
+  sources = [ "impeller.cc" ]
+  public_deps = [ ":interop_base" ]
+  deps = [ "backend" ]
 }
 
 impeller_component("library") {
