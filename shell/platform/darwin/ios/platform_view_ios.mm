@@ -122,7 +122,7 @@ void PlatformViewIOS::attachView() {
 
   if (accessibility_bridge_) {
     accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
-        owner_controller_, this, owner_controller_.platformViewsController));
+        owner_controller_, this, owner_controller_.platformViewsController.instance));
   }
 }
 
@@ -173,7 +173,7 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
-        owner_controller_, this, owner_controller_.platformViewsController));
+        owner_controller_, this, owner_controller_.platformViewsController.instance));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.Clear();
   } else {
@@ -209,7 +209,10 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  owner_controller_.platformViewsController->Reset();
+  // TODO(cbracken): This is pretty sketchy -- the platformViewsController accessor was always
+  // returning a reference to a shared_ptr which means we were always just resetting the instance
+  // owned by the engine. Shouldn't this have been a unique_ptr all along?!
+  owner_controller_.platformViewsController.instance->Reset();
   [owner_controller_.restorationPlugin reset];
 }
 

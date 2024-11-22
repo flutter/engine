@@ -745,14 +745,14 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // thread.
   if (appeared) {
     [self installFirstFrameCallback];
-    self.engine.platformViewsController.instance->SetFlutterView(self.flutterView);
-    self.engine.platformViewsController.instance->SetFlutterViewController(self);
+    self.platformViewsController.instance->SetFlutterView(self.flutterView);
+    self.platformViewsController.instance->SetFlutterViewController(self);
     [self.engine iosPlatformView]->NotifyCreated();
   } else {
     self.displayingFlutterUI = NO;
     [self.engine iosPlatformView]->NotifyDestroyed();
-    self.engine.platformViewsController.instance->SetFlutterView(nullptr);
-    self.engine.platformViewsController.instance->SetFlutterViewController(nullptr);
+    self.platformViewsController.instance->SetFlutterView(nullptr);
+    self.platformViewsController.instance->SetFlutterViewController(nullptr);
   }
 }
 
@@ -2321,8 +2321,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Platform views
 
-- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
-  return self.engine.platformViewsController.instance;
+- (FlutterPlatformViewsController*)platformViewsController {
+  return self.engine.platformViewsController;
 }
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {

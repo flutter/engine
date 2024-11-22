@@ -13,6 +13,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/platform_views_controller.h"
 
 namespace flutter {
 class PlatformViewsController;
@@ -56,7 +57,8 @@ typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
  */
 @property(nonatomic, assign, readwrite) BOOL prefersStatusBarHidden;
 
-- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController;
+@property(nonatomic, readonly) FlutterPlatformViewsController* platformViewsController;
+
 - (FlutterRestorationPlugin*)restorationPlugin;
 
 // Accepts keypress events, and then calls |nextAction| if the event was not

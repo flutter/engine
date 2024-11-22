@@ -2175,11 +2175,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
 
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-    auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-    flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+    FlutterPlatformViewsController* flutterPlatformViewsController =
+        [[FlutterPlatformViewsController alloc] init];
+    flutterPlatformViewsController.instance->SetTaskRunner(thread_task_runner);
 
     OCMStub([mockFlutterViewController platformViewsController])
-        .andReturn(flutterPlatformViewsController.get());
+        .andReturn(flutterPlatformViewsController);
     platform_view->SetOwnerViewController(mockFlutterViewController);
 
     platform_view->SetSemanticsEnabled(true);

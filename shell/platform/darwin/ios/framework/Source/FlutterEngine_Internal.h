@@ -80,7 +80,6 @@ NS_ASSUME_NONNULL_BEGIN
             userData:(nullable void*)userData;
 
 @property(nonatomic, readonly) FlutterDartProject* project;
-@property(nonatomic, readonly) FlutterPlatformViewsController* platformViewsController;
 
 @end
 

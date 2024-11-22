@@ -105,6 +105,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readonly, assign) BOOL allowHeadlessExecution;
 @property(nonatomic, readonly, assign) BOOL restorationEnabled;
 
+@property(nonatomic, strong) FlutterPlatformViewsController* platformViewsController;
+
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -157,9 +159,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
-
-// Synthesize properties declared readonly.
-@synthesize platformViewsController = _platformViewsController;
 
 - (instancetype)init {
   return [self initWithName:@"FlutterEngine" project:nil allowHeadlessExecution:YES];
