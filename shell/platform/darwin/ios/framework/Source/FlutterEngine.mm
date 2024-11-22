@@ -150,7 +150,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
 
-  std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
+  FlutterPlatformViewsController* _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
@@ -264,7 +264,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)recreatePlatformViewController {
   _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-  _platformViewsController.reset(new flutter::PlatformViewsController());
+  _platformViewsController = [[FlutterPlatformViewsController alloc] init];
 }
 
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI {
@@ -452,11 +452,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _shell.reset();
   _profiler.reset();
   _threadHost.reset();
-  _platformViewsController.reset();
+  _platformViewsController = nil;
 }
 
 - (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
-  return _platformViewsController;
+  return _platformViewsController.instance;
 }
 
 - (NSURL*)observatoryUrl {
@@ -778,10 +778,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           return std::unique_ptr<flutter::PlatformViewIOS>();
         }
         [strongSelf recreatePlatformViewController];
-        strongSelf->_platformViewsController->SetTaskRunner(
+        strongSelf.platformViewsController->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, strongSelf->_renderingApi, strongSelf->_platformViewsController,
+            shell, strongSelf->_renderingApi, strongSelf.platformViewsController,
             shell.GetTaskRunners(), shell.GetConcurrentWorkerTaskRunner(),
             shell.GetIsGpuDisabledSyncSwitch());
       };
@@ -1401,10 +1401,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [result, context](flutter::Shell& shell) {
         [result recreatePlatformViewController];
-        result->_platformViewsController->SetTaskRunner(
+        result.platformViewsController->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, context, result->_platformViewsController, shell.GetTaskRunners());
+            shell, context, result.platformViewsController, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -1499,7 +1499,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  [_flutterEngine platformViewsController]->RegisterViewFactory(factory, factoryId,
+  _flutterEngine.platformViewsController->RegisterViewFactory(factory, factoryId,
                                                                 gestureRecognizersBlockingPolicy);
 }
 

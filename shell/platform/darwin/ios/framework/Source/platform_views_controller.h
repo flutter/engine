@@ -325,10 +325,10 @@ class PlatformViewsController {
 
 @interface FlutterPlatformViewsController : NSObject
 
-// TODO(cbracken): Eliminate this workaround.
-@property(nonatomic) std::shared_ptr<flutter::PlatformViewsController> instance;
-
 - (id)init NS_DESIGNATED_INITIALIZER;
+
+- (std::shared_ptr<flutter::PlatformViewsController>&)instance;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_PLATFORM_VIEWS_CONTROLLER_H_
