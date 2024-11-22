@@ -41,14 +41,14 @@ static constexpr Scalar kPrecomputedVariables[][4] = {
     {2.300, 2.50900, 0.14649, 0.13021}   //
 };
 
-static constexpr size_t NUM_RECORDS =
+static constexpr size_t kNumRecords =
     sizeof(kPrecomputedVariables) / sizeof(kPrecomputedVariables[0]);
-static constexpr Scalar MIN_RATIO = kPrecomputedVariables[0][0];
-static constexpr Scalar MAX_RATIO = kPrecomputedVariables[NUM_RECORDS - 1][0];
-static constexpr Scalar RATIO_STEP =
+static constexpr Scalar kMinRatio = kPrecomputedVariables[0][0];
+static constexpr Scalar kMaxRatio = kPrecomputedVariables[kNumRecords - 1][0];
+static constexpr Scalar kRatioStep =
     kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
-static constexpr Scalar STEP = kPi / 80;
+static constexpr Scalar kAngleStep = kPi / 80;
 
 static constexpr Scalar gap(Scalar corner_radius) {
   return 0.2924303407 * corner_radius;
@@ -85,14 +85,17 @@ static void DrawCircularArc(std::vector<Point>& output,
   const Point c = m - distance_cm * c_to_m.Normalize();
   const Scalar angle_sce = asinf(distance_sm / r) * 2;
   const Point c_to_s = start - c;
-  for (Scalar angle = 0; angle < angle_sce; angle += STEP) {
+
+  Scalar angle = 0;
+  while (angle < angle_sce) {
     output.push_back(c_to_s.Rotate(Radians(-angle)) + c);
+    angle += kAngleStep;
   }
 }
 
-static Scalar lerp(size_t item, size_t left, size_t frac) {
-  return (1 - frac) * kPrecomputedVariables[left][item] +
-         frac * kPrecomputedVariables[left + 1][item];
+static Scalar lerp(size_t column, size_t left, size_t frac) {
+  return (1 - frac) * kPrecomputedVariables[left][column] +
+         frac * kPrecomputedVariables[left + 1][column];
 }
 
 // Draws an arc representing the top 1/8 segment of a square-like rounded
@@ -141,16 +144,16 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
    *        ←------ size/2 ------→
    */
 
-  const Scalar ratio = {std::min(size / corner_radius, MAX_RATIO)};
+  const Scalar ratio = {std::min(size / corner_radius, kMaxRatio)};
   const Scalar a = ratio * corner_radius / 2;
   const Scalar s = size / 2 - a;
   const Scalar g = gap(corner_radius);
 
   // Use look up table to derive critical variables
   const Scalar steps =
-      std::clamp<Scalar>((ratio - MIN_RATIO) / RATIO_STEP, 0, NUM_RECORDS - 1);
+      std::clamp<Scalar>((ratio - kMinRatio) / kRatioStep, 0, kNumRecords - 1);
   const size_t left =
-      std::clamp<size_t>((size_t)std::floor(steps), 0, NUM_RECORDS - 2);
+      std::clamp<size_t>((size_t)std::floor(steps), 0, kNumRecords - 2);
   const Scalar frac = steps - left;
   const Scalar n = lerp(1, left, frac);
   const Scalar d = lerp(2, left, frac) * a;
@@ -171,13 +174,15 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   // Superellipsoid arc BJ (B inclusive, J exclusive)
   {
     const Scalar target_slope = yJ / xJ;
-    for (Scalar angle = 0;; angle += STEP) {
+    Scalar angle = 0;
+    while (true) {
       const Scalar x = a * pow(abs(sinf(angle)), 2 / n);
       const Scalar y = a * pow(abs(cosf(angle)), 2 / n);
       if (y <= target_slope * x) {
         break;
       }
       points.emplace_back(x + s, y + s);
+      angle += kAngleStep;
     }
   }
   // J
