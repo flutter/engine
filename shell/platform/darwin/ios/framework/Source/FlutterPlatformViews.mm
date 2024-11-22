@@ -569,6 +569,12 @@ static BOOL _preparedOnce = NO;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
       self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+
+      if (@available(iOS 18.2, *)) {
+        [self removeGestureRecognizer:self.delayingRecognizer];
+        [self addGestureRecognizer:self.delayingRecognizer];
+      }
+
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
       if (self.delayingRecognizer.touchedEndedWithoutBlocking) {
