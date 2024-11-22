@@ -309,6 +309,9 @@ class PlatformViewsController {
 // TODO(cbracken): Temporary workaround during migration to Obj-C.
 - (std::shared_ptr<flutter::PlatformViewsController>&)instance;
 
+  /// @brief Set the platform task runner used to post rendering tasks.
+- (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

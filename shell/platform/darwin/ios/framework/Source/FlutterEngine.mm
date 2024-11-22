@@ -775,8 +775,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           return std::unique_ptr<flutter::PlatformViewIOS>();
         }
         [strongSelf recreatePlatformViewController];
-        strongSelf.platformViewsController.instance->SetTaskRunner(
-            shell.GetTaskRunners().GetPlatformTaskRunner());
+        [strongSelf.platformViewsController
+            setTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()];
         return std::make_unique<flutter::PlatformViewIOS>(
             shell, strongSelf->_renderingApi, strongSelf.platformViewsController,
             shell.GetTaskRunners(), shell.GetConcurrentWorkerTaskRunner(),
@@ -1399,8 +1399,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [result, context](flutter::Shell& shell) {
         [result recreatePlatformViewController];
-        result.platformViewsController.instance->SetTaskRunner(
-            shell.GetTaskRunners().GetPlatformTaskRunner());
+        [result.platformViewsController
+            setTaskRunner:shell.GetTaskRunners().GetPlatformTaskRunner()];
         return std::make_unique<flutter::PlatformViewIOS>(
             shell, context, result.platformViewsController, shell.GetTaskRunners());
       };

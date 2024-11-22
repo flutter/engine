@@ -779,6 +779,10 @@ void PlatformViewsController::ResetFrameState() {
   return _instance;
 }
 
+- (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
+  self.instance->SetTaskRunner(platformTaskRunner);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
