@@ -280,6 +280,20 @@ TEST(SaveLayerUtilsTest,
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
 }
 
+TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOrigin) {
+  // No intersection in coverage
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(5, 5, 210, 210),  //
+      /*effect_transform=*/{},                                  //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
+      /*image_filter=*/nullptr                                  //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(5, 5, 105, 105));
+}
+
 }  // namespace testing
 }  // namespace impeller
 
