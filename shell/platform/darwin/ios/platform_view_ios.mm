@@ -44,7 +44,7 @@ void PlatformViewIOS::AccessibilityBridgeManager::Clear() {
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     const std::shared_ptr<IOSContext>& context,
-    const std::shared_ptr<PlatformViewsController>& platform_views_controller,
+    const FlutterPlatformViewsController* platform_views_controller,
     const flutter::TaskRunners& task_runners)
     : PlatformView(delegate, task_runners),
       ios_context_(context),
@@ -56,7 +56,7 @@ PlatformViewIOS::PlatformViewIOS(
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     IOSRenderingAPI rendering_api,
-    const std::shared_ptr<PlatformViewsController>& platform_views_controller,
+    const FlutterPlatformViewsController* platform_views_controller,
     const flutter::TaskRunners& task_runners,
     const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
@@ -151,7 +151,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedder() {
-  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, ios_context_);
+  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_.instance, ios_context_);
 }
 
 // |PlatformView|

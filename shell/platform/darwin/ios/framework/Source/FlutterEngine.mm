@@ -778,7 +778,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
         strongSelf.platformViewsController.instance->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, strongSelf->_renderingApi, strongSelf.platformViewsController.instance,
+            shell, strongSelf->_renderingApi, strongSelf.platformViewsController,
             shell.GetTaskRunners(), shell.GetConcurrentWorkerTaskRunner(),
             shell.GetIsGpuDisabledSyncSwitch());
       };
@@ -1401,7 +1401,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
         result.platformViewsController.instance->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, context, result.platformViewsController.instance, shell.GetTaskRunners());
+            shell, context, result.platformViewsController, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
