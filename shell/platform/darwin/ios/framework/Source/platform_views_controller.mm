@@ -889,3 +889,14 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 }  // namespace flutter
+
+@implementation FlutterPlatformViewsController
+
+- (id)init {
+  if (self = [super init]) {
+    _instance = std::make_shared<flutter::PlatformViewsController>();
+  }
+  return self;
+}
+
+@end

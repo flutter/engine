@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_PLATFORM_VIEWS_CONTROLLER_H_
 
 #include <Metal/Metal.h>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -321,5 +322,13 @@ class PlatformViewsController {
 };
 
 }  // namespace flutter
+
+@interface FlutterPlatformViewsController : NSObject
+
+// TODO(cbracken): Eliminate this workaround.
+@property(nonatomic) std::shared_ptr<flutter::PlatformViewsController> instance;
+
+- (id)init NS_DESIGNATED_INITIALIZER;
+@end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_PLATFORM_VIEWS_CONTROLLER_H_
