@@ -284,9 +284,9 @@ TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOrigin) {
   // No intersection in coverage
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(5, 5, 210, 210),  //
-      /*effect_transform=*/{},                                  //
-      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),        //
-      /*image_filter=*/nullptr                                  //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),    //
+      /*image_filter=*/nullptr                              //
   );
 
   ASSERT_TRUE(coverage.has_value());
