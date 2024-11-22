@@ -648,4 +648,9 @@ std::optional<HandleGLES> TextureGLES::GetSyncFence() const {
   return fence_;
 }
 
+void TextureGLES::SetCachedFBO(GLuint fbo) { cached_fbo_ = fbo; }
+
+GLuint TextureGLES::GetCachedFBO() const { return cached_fbo_; }
+
+
 }  // namespace impeller

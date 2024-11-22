@@ -130,9 +130,14 @@ class TextureGLES final : public Texture,
   ///
   void SetFence(HandleGLES fence);
 
-  void SetCachedFBO(GLuint fbo) { cached_fbo_ = fbo; }
+  /// Store the FBO object for recycling in the 2D renderer.
+  ///
+  /// The color0 texture used by the 2D renderer will use this texture
+  /// object to store the associated FBO the first time it is used.
+  void SetCachedFBO(GLuint fbo);
 
-  GLuint GetCachedFBO() const { return cached_fbo_; }
+  /// Retrieve the cached FBO object, or GL_NONE if there is no object.
+  GLuint GetCachedFBO() const;
 
   // Visible for testing.
   std::optional<HandleGLES> GetSyncFence() const;
