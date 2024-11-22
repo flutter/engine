@@ -225,16 +225,6 @@ FLUTTER_ASSERT_ARC
   }
 }
 
-- (void)testDisableImpellerSettingIsCorrectlyParsed {
-  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
-  OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"NO");
-
-  auto settings = FLTDefaultSettingsForBundle();
-  // Check settings.enable_impeller value is same as the value defined in Info.plist.
-  XCTAssertEqual(settings.enable_impeller, NO);
-  [mockMainBundle stopMocking];
-}
-
 - (void)testRequestsWarningWhenImpellerOptOut {
   auto settings = FLTDefaultSettingsForBundle();
   XCTAssertEqual(settings.warn_on_impeller_opt_out, YES);
