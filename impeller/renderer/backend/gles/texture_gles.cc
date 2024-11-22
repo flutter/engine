@@ -217,6 +217,9 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 // |Texture|
 TextureGLES::~TextureGLES() {
   reactor_->CollectHandle(handle_);
+  if (cached_fbo_ != GL_NONE) {
+    reactor_->GetProcTable().DeleteFramebuffers(1, &cached_fbo_);
+  }
 }
 
 // |Texture|

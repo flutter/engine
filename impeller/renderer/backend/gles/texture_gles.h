@@ -130,6 +130,10 @@ class TextureGLES final : public Texture,
   ///
   void SetFence(HandleGLES fence);
 
+  void SetCachedFBO(GLuint fbo) { cached_fbo_ = fbo; }
+
+  GLuint GetCachedFBO() const { return cached_fbo_; }
+
   // Visible for testing.
   std::optional<HandleGLES> GetSyncFence() const;
 
@@ -141,6 +145,7 @@ class TextureGLES final : public Texture,
   mutable std::bitset<6> slices_initialized_ = 0;
   const bool is_wrapped_;
   const std::optional<GLuint> wrapped_fbo_;
+  GLuint cached_fbo_ = GL_NONE;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
