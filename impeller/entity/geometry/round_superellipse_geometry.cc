@@ -119,8 +119,8 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
                                          Point center,
                                          bool flip) {
   /* Ignoring `center` and `flip`, the following figure shows the first quadrant
-   * of a square-like rounded superellipse. The target arc consists the stretch
-   * (AB), a superellipsoid arc (BJ), and a circular arc (JM).
+   * of a square-like rounded superellipse. The target arc consists of the
+   * "stretch" (AB), a superellipsoid arc (BJ), and a circular arc (JM).
    *
    * Define gap (g) as the distance between point M and the bounding box,
    * therefore point M is at (size/2 - g, size/2 - g). Assume the coordinate of
@@ -172,6 +172,7 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   // A
   points.emplace_back(0, size / 2);
   // Superellipsoid arc BJ (B inclusive, J exclusive)
+  // https://math.stackexchange.com/questions/2573746/superellipse-parametric-equation
   {
     const Scalar target_slope = yJ / xJ;
     Scalar angle = 0;
@@ -185,10 +186,10 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
       angle += kAngleStep;
     }
   }
-  // J
   // Circular arc JM (B inclusive, M exclusive)
   DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
 
+  // Apply `flip` and `center`.
   if (!flip) {
     for (const Point& point : points) {
       output.push_back(point + center);
