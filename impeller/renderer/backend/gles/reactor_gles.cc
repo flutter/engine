@@ -266,41 +266,45 @@ bool ReactorGLES::ReactOnce() {
 bool ReactorGLES::ConsolidateHandles() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   const auto& gl = GetProcTable();
-  WriterLock handles_lock(handles_mutex_);
-  std::vector<HandleGLES> handles_to_delete;
-  for (auto& handle : handles_) {
-    // Collect dead handles.
-    if (handle.second.pending_collection) {
-      // This could be false if the handle was created and collected without
-      // use. We still need to get rid of map entry.
-      if (handle.second.name.has_value()) {
-        CollectGLHandle(gl, handle.first.type, handle.second.name.value());
+  std::unordered_map<HandleGLES, GLStorage, HandleGLES::Hash, HandleGLES::Equal>
+      handles_to_delete;
+  {
+    WriterLock handles_lock(handles_mutex_);
+    for (auto& handle : handles_) {
+      // Collect dead handles.
+      if (handle.second.pending_collection && handle.second.name.has_value()) {
+        handles_to_delete[handle.first] = handle.second.name.value();
+        continue;
       }
-      handles_to_delete.push_back(handle.first);
-      continue;
+      // Create live handles.
+      if (!handle.second.name.has_value()) {
+        auto gl_handle = CreateGLHandle(gl, handle.first.type);
+        if (!gl_handle) {
+          VALIDATION_LOG << "Could not create GL handle.";
+          return false;
+        }
+        handle.second.name = gl_handle;
+      }
+      // Set pending debug labels.
+      if (handle.second.pending_debug_label.has_value() &&
+          handle.first.type != HandleType::kFence) {
+        if (gl.SetDebugLabel(ToDebugResourceType(handle.first.type),
+                             handle.second.name.value().handle,
+                             handle.second.pending_debug_label.value())) {
+          handle.second.pending_debug_label = std::nullopt;
+        }
+      }
     }
-    // Create live handles.
-    if (!handle.second.name.has_value()) {
-      auto gl_handle = CreateGLHandle(gl, handle.first.type);
-      if (!gl_handle) {
-        VALIDATION_LOG << "Could not create GL handle.";
-        return false;
-      }
-      handle.second.name = gl_handle;
-    }
-    // Set pending debug labels.
-    if (handle.second.pending_debug_label.has_value() &&
-        handle.first.type != HandleType::kFence) {
-      if (gl.SetDebugLabel(ToDebugResourceType(handle.first.type),
-                           handle.second.name.value().handle,
-                           handle.second.pending_debug_label.value())) {
-        handle.second.pending_debug_label = std::nullopt;
-      }
+    for (const auto& handle_to_delete : handles_to_delete) {
+      handles_.erase(handle_to_delete.first);
     }
   }
-  for (const auto& handle_to_delete : handles_to_delete) {
-    handles_.erase(handle_to_delete);
+  // This could be false if the handle was created and collected without
+  // use. We still need to get rid of map entry.
+  for (const auto& handle : handles_to_delete) {
+    CollectGLHandle(gl, handle.first.type, handle.second);
   }
+
   return true;
 }
 
