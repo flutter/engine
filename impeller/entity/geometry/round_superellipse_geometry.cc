@@ -77,14 +77,14 @@ static void DrawCircularArc(std::vector<Point>& output,
    *  C ⟋  ↙
    */
 
-  const Point s_to_e = end - start;
-  const Point m = (start + end) / 2;
-  const Point c_to_m = Point(-s_to_e.y, s_to_e.x);
-  const Scalar distance_sm = s_to_e.GetLength() / 2;
-  const Scalar distance_cm = sqrt(r * r - distance_sm * distance_sm);
-  const Point c = m - distance_cm * c_to_m.Normalize();
-  const Scalar angle_sce = asinf(distance_sm / r) * 2;
-  const Point c_to_s = start - c;
+  Point s_to_e = end - start;
+  Point m = (start + end) / 2;
+  Point c_to_m = Point(-s_to_e.y, s_to_e.x);
+  Scalar distance_sm = s_to_e.GetLength() / 2;
+  Scalar distance_cm = sqrt(r * r - distance_sm * distance_sm);
+  Point c = m - distance_cm * c_to_m.Normalize();
+  Scalar angle_sce = asinf(distance_sm / r) * 2;
+  Point c_to_s = start - c;
 
   Scalar angle = 0;
   while (angle < angle_sce) {
@@ -144,26 +144,26 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
    *        ←------ size/2 ------→
    */
 
-  const Scalar ratio = {std::min(size / corner_radius, kMaxRatio)};
-  const Scalar a = ratio * corner_radius / 2;
-  const Scalar s = size / 2 - a;
-  const Scalar g = gap(corner_radius);
+  Scalar ratio = {std::min(size / corner_radius, kMaxRatio)};
+  Scalar a = ratio * corner_radius / 2;
+  Scalar s = size / 2 - a;
+  Scalar g = gap(corner_radius);
 
   // Use look up table to derive critical variables
-  const Scalar steps =
+  Scalar steps =
       std::clamp<Scalar>((ratio - kMinRatio) / kRatioStep, 0, kNumRecords - 1);
-  const size_t left =
+  size_t left =
       std::clamp<size_t>((size_t)std::floor(steps), 0, kNumRecords - 2);
-  const Scalar frac = steps - left;
-  const Scalar n = lerp(1, left, frac);
-  const Scalar d = lerp(2, left, frac) * a;
-  const Scalar theta = lerp(3, left, frac);
+  Scalar frac = steps - left;
+  Scalar n = lerp(1, left, frac);
+  Scalar d = lerp(2, left, frac) * a;
+  Scalar theta = lerp(3, left, frac);
 
-  const Scalar R = (a - d - g) * sqrt(2);
-  const Scalar xJ = d + R * sin(theta);
-  const Scalar yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
+  Scalar R = (a - d - g) * sqrt(2);
+  Scalar xJ = d + R * sin(theta);
+  Scalar yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
 
-  const Point pointM{size / 2 - g, size / 2 - g};
+  Point pointM{size / 2 - g, size / 2 - g};
 
   // Points without applying `flip` and `center`.
   std::vector<Point> points;
@@ -177,8 +177,8 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
     const Scalar target_slope = yJ / xJ;
     Scalar angle = 0;
     while (true) {
-      const Scalar x = a * pow(abs(sinf(angle)), 2 / n);
-      const Scalar y = a * pow(abs(cosf(angle)), 2 / n);
+      Scalar x = a * pow(abs(sinf(angle)), 2 / n);
+      Scalar y = a * pow(abs(cosf(angle)), 2 / n);
       if (y <= target_slope * x) {
         break;
       }
@@ -221,8 +221,8 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   const Point center = bounds_.GetCenter();
 
   // The full shape is divided into 4 segments: the top and bottom edges come
-  // from two square-like rounded superellipses (width-aligned), while the left
-  // and right squircles come from another two (height-aligned).
+  // from two square-like rounded superellipses (called "width-aligned"), while
+  // the left and right squircles come from another two ("height-aligned").
   //
   // Denote the distance from the center of the square-like squircles to the
   // origin as `c`. The width-aligned square-like squircle and the
