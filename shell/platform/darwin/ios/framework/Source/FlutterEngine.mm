@@ -150,7 +150,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
 
-  FlutterPlatformViewsController* _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
   std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
@@ -158,6 +157,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
+
+// Synthesize properties declared readonly.
+@synthesize platformViewsController = _platformViewsController;
 
 - (instancetype)init {
   return [self initWithName:@"FlutterEngine" project:nil allowHeadlessExecution:YES];
@@ -455,10 +457,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsController = nil;
 }
 
-- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
-  return _platformViewsController.instance;
-}
-
 - (NSURL*)observatoryUrl {
   return self.publisher.url;
 }
@@ -635,7 +633,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [self.platformViewsChannel
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
-            weakSelf.platformViewsController->OnMethodCall(call, result);
+            weakSelf.platformViewsController.instance->OnMethodCall(call, result);
           }
         }];
 
@@ -778,10 +776,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           return std::unique_ptr<flutter::PlatformViewIOS>();
         }
         [strongSelf recreatePlatformViewController];
-        strongSelf.platformViewsController->SetTaskRunner(
+        strongSelf.platformViewsController.instance->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, strongSelf->_renderingApi, strongSelf.platformViewsController,
+            shell, strongSelf->_renderingApi, strongSelf.platformViewsController.instance,
             shell.GetTaskRunners(), shell.GetConcurrentWorkerTaskRunner(),
             shell.GetIsGpuDisabledSyncSwitch());
       };
@@ -1103,7 +1101,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // Have to check in the next run loop, because iOS requests the previous first responder to
   // resign before requesting the next view to become first responder.
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-    long platform_view_id = self.platformViewsController->FindFirstResponderPlatformViewId();
+    long platform_view_id = self.platformViewsController.instance->FindFirstResponderPlatformViewId();
     if (platform_view_id == -1) {
       return;
     }
@@ -1401,10 +1399,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [result, context](flutter::Shell& shell) {
         [result recreatePlatformViewController];
-        result.platformViewsController->SetTaskRunner(
+        result.platformViewsController.instance->SetTaskRunner(
             shell.GetTaskRunners().GetPlatformTaskRunner());
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, context, result.platformViewsController, shell.GetTaskRunners());
+            shell, context, result.platformViewsController.instance, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -1499,7 +1497,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  _flutterEngine.platformViewsController->RegisterViewFactory(factory, factoryId,
+  _flutterEngine.platformViewsController.instance->RegisterViewFactory(factory, factoryId,
                                                                 gestureRecognizersBlockingPolicy);
 }
 
