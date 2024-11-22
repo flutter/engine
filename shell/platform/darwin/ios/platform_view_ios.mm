@@ -151,7 +151,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedder() {
-  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_.instance, ios_context_);
+  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, ios_context_);
 }
 
 // |PlatformView|

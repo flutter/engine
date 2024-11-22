@@ -12,7 +12,7 @@ FLUTTER_ASSERT_ARC
 namespace flutter {
 
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
-    const std::shared_ptr<PlatformViewsController>& platform_views_controller,
+    const FlutterPlatformViewsController* platform_views_controller,
     const std::shared_ptr<IOSContext>& context)
     : platform_views_controller_(platform_views_controller), ios_context_(context) {
   FML_CHECK(ios_context_);
@@ -31,7 +31,7 @@ DlCanvas* IOSExternalViewEmbedder::GetRootCanvas() {
 void IOSExternalViewEmbedder::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CancelFrame");
   FML_CHECK(platform_views_controller_);
-  platform_views_controller_->CancelFrame();
+  platform_views_controller_.instance->CancelFrame();
 }
 
 // |ExternalViewEmbedder|
@@ -41,8 +41,8 @@ void IOSExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PrepareFlutterView(SkISize frame_size, double device_pixel_ratio) {
-  FML_CHECK(platform_views_controller_);
-  platform_views_controller_->BeginFrame(frame_size);
+  FML_CHECK(platform_views_controller_.instance);
+  platform_views_controller_.instance->BeginFrame(frame_size);
 }
 
 // |ExternalViewEmbedder|
@@ -50,16 +50,16 @@ void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PrerollCompositeEmbeddedView");
-  FML_CHECK(platform_views_controller_);
-  platform_views_controller_->PrerollCompositeEmbeddedView(view_id, std::move(params));
+  FML_CHECK(platform_views_controller_.instance);
+  platform_views_controller_.instance->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
 // |ExternalViewEmbedder|
 PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PostPrerollAction");
-  FML_CHECK(platform_views_controller_);
-  PostPrerollResult result = platform_views_controller_->PostPrerollAction(
+  FML_CHECK(platform_views_controller_.instance);
+  PostPrerollResult result = platform_views_controller_.instance->PostPrerollAction(
       raster_thread_merger, ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
   return result;
 }
@@ -67,8 +67,8 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
 // |ExternalViewEmbedder|
 DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
-  FML_CHECK(platform_views_controller_);
-  return platform_views_controller_->CompositeEmbeddedView(view_id);
+  FML_CHECK(platform_views_controller_.instance);
+  return platform_views_controller_.instance->CompositeEmbeddedView(view_id);
 }
 
 // |ExternalViewEmbedder|
@@ -82,8 +82,8 @@ void IOSExternalViewEmbedder::SubmitFlutterView(
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
-  FML_CHECK(platform_views_controller_);
-  platform_views_controller_->SubmitFrame(context, ios_context_, std::move(frame));
+  FML_CHECK(platform_views_controller_.instance);
+  platform_views_controller_.instance->SubmitFrame(context, ios_context_, std::move(frame));
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");
 }
 
@@ -92,7 +92,7 @@ void IOSExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::EndFrame");
-  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger,
+  platform_views_controller_.instance->EndFrame(should_resubmit_frame, raster_thread_merger,
                                        ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
 }
 
@@ -110,12 +110,12 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
 void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     const std::shared_ptr<DlImageFilter>& filter,
     const SkRect& filter_rect) {
-  platform_views_controller_->PushFilterToVisitedPlatformViews(filter, filter_rect);
+  platform_views_controller_.instance->PushFilterToVisitedPlatformViews(filter, filter_rect);
 }
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
-  platform_views_controller_->PushVisitedPlatformView(view_id);
+  platform_views_controller_.instance->PushVisitedPlatformView(view_id);
 }
 
 }  // namespace flutter
