@@ -63,6 +63,8 @@ class KHRSwapchainImplVK final
 
   const ISize& GetSize() const;
 
+  std::optional<ISize> GetCurrentUnderlyingSurfaceSize() const;
+
  private:
   std::weak_ptr<Context> context_;
   vk::UniqueSurfaceKHR surface_;

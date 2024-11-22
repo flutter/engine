@@ -23,10 +23,18 @@ int main(int argc, char const* argv[]) {
   [[maybe_unused]] int result = glfwInit();
   assert(result == GLFW_TRUE);
 
+  if (glfwGetPlatform() == GLFW_PLATFORM_COCOA) {
+    fprintf(stderr,
+            "OpenGL(ES) is not available on macOS. Please use Metal or Vulkan "
+            "instead.\n");
+    fflush(stderr);
+    return -1;
+  }
+
   glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 
   GLFWwindow* window =
-      glfwCreateWindow(800, 600, "Impeller Example", NULL, NULL);
+      glfwCreateWindow(800, 600, "Impeller Example (OpenGL)", NULL, NULL);
   assert(window != NULL);
 
   int framebuffer_width, framebuffer_height;
