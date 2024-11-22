@@ -165,7 +165,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -225,7 +225,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -321,7 +321,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -402,7 +402,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -483,7 +483,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -565,7 +565,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -691,7 +691,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -843,7 +843,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1138,7 +1138,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1465,7 +1465,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1530,7 +1530,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1636,7 +1636,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1716,7 +1716,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1792,7 +1792,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1867,7 +1867,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1947,7 +1947,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2047,7 +2047,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2154,7 +2154,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2278,7 +2278,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2386,7 +2386,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2511,7 +2511,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2581,7 +2581,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2708,7 +2708,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2825,7 +2825,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2893,7 +2893,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3001,7 +3001,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3077,7 +3077,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3134,7 +3134,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3202,7 +3202,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3313,7 +3313,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3509,7 +3509,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3608,7 +3608,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3695,7 +3695,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3792,7 +3792,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3912,7 +3912,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -3987,7 +3987,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -4091,7 +4091,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*io=*/GetDefaultTaskRunner());
   FlutterPlatformViewsController* flutterPlatformViewsController =
       [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.instance->SetTaskRunner(GetDefaultTaskRunner());
+  [flutterPlatformViewsController setTaskRunner:GetDefaultTaskRunner()];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
