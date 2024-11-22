@@ -266,14 +266,14 @@ bool ReactorGLES::ReactOnce() {
 bool ReactorGLES::ConsolidateHandles() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   const auto& gl = GetProcTable();
-  std::unordered_map<HandleGLES, GLStorage, HandleGLES::Hash, HandleGLES::Equal>
-      handles_to_delete;
+  std::vector<std::tuple<HandleGLES, GLStorage>> handles_to_delete;
   {
     WriterLock handles_lock(handles_mutex_);
     for (auto& handle : handles_) {
       // Collect dead handles.
       if (handle.second.pending_collection && handle.second.name.has_value()) {
-        handles_to_delete[handle.first] = handle.second.name.value();
+        handles_to_delete.push_back(
+            std::tie(handle.first, handle.second.name.value()));
         continue;
       }
       // Create live handles.
@@ -296,13 +296,13 @@ bool ReactorGLES::ConsolidateHandles() {
       }
     }
     for (const auto& handle_to_delete : handles_to_delete) {
-      handles_.erase(handle_to_delete.first);
+      handles_.erase(std::get<0>(handle_to_delete));
     }
   }
   // This could be false if the handle was created and collected without
   // use. We still need to get rid of map entry.
   for (const auto& handle : handles_to_delete) {
-    CollectGLHandle(gl, handle.first.type, handle.second);
+    CollectGLHandle(gl, std::get<0>(handle).type, std::get<1>(handle));
   }
 
   return true;
