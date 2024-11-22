@@ -42,11 +42,11 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 AccessibilityBridge::AccessibilityBridge(
     FlutterViewController* view_controller,
     PlatformViewIOS* platform_view,
-    std::shared_ptr<PlatformViewsController> platform_views_controller,
+    FlutterPlatformViewsController* platform_views_controller,
     std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),
-      platform_views_controller_(std::move(platform_views_controller)),
+      platform_views_controller_(platform_views_controller),
       last_focused_semantics_object_id_(kSemanticObjectIdInvalid),
       objects_([[NSMutableDictionary alloc] init]),
       previous_routes_({}),
@@ -274,7 +274,7 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[FlutterPlatformViewSemanticsContainer alloc]
         initWithBridge:weak_ptr
                    uid:node.id
-          platformView:weak_ptr->GetPlatformViewsController()->GetFlutterTouchInterceptingViewByID(
+          platformView:weak_ptr->GetPlatformViewsController().instance->GetFlutterTouchInterceptingViewByID(
                            node.platformViewId)];
   } else {
     return [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];

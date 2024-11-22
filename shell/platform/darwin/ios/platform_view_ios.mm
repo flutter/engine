@@ -122,7 +122,7 @@ void PlatformViewIOS::attachView() {
 
   if (accessibility_bridge_) {
     accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
-        owner_controller_, this, owner_controller_.platformViewsController.instance));
+        owner_controller_, this, owner_controller_.platformViewsController));
   }
 }
 
@@ -173,7 +173,7 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
-        owner_controller_, this, owner_controller_.platformViewsController.instance));
+        owner_controller_, this, owner_controller_.platformViewsController));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.Clear();
   } else {
