@@ -106,8 +106,25 @@ std::optional<Rect> ComputeSaveLayerCoverage(
 
   // Transform the input coverage into the global coordinate space before
   // computing the bounds limit intersection.
-  return coverage.TransformBounds(effect_transform)
-      .Intersection(coverage_limit);
+  Rect transformed_coverage = coverage.TransformBounds(effect_transform);
+  if (!transformed_coverage.Intersection(coverage_limit).has_value()) {
+    return std::nullopt;
+  }
+
+  // Sometimes a saveLayer is only slightly shifted outside of the cull rect,
+  // but is being animated in. This is common for the Android slide in page
+  // transitions. In these cases, computing a cull that is too tight can cause
+  // thrasing of the texture cache. Instead, we try to determine the
+  // intersection using only the sizing by shifting the coverage rect into the
+  // cull rect origin.
+  Point delta = coverage_limit.GetOrigin() - transformed_coverage.GetOrigin();
+  std::optional<Rect> shifted_intersected_value =
+      transformed_coverage.Shift(delta).Intersection(coverage_limit);
+
+  if (shifted_intersected_value.has_value()) {
+    return shifted_intersected_value.value().Shift(-delta);
+  }
+  return std::nullopt;
 }
 
 }  // namespace impeller
