@@ -11,7 +11,6 @@
 #include <unordered_set>
 
 #include "flutter/flow/surface.h"
-#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/thread_safety.h"
@@ -35,9 +34,6 @@ class PlatformViewsController {
   PlatformViewsController();
 
   ~PlatformViewsController() = default;
-
-  /// @brief Retrieve a weak pointer to this controller.
-  fml::WeakPtr<flutter::PlatformViewsController> GetWeakPtr();
 
   /// @brief Set the platform task runner used to post rendering tasks.
   void SetTaskRunner(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
@@ -302,9 +298,6 @@ class PlatformViewsController {
   ///
   /// Only accessed from the raster thread.
   bool had_platform_views_ = false;
-
-  // WeakPtrFactory must be the last member.
-  std::unique_ptr<fml::WeakPtrFactory<PlatformViewsController>> weak_factory_;
 };
 
 }  // namespace flutter
@@ -313,6 +306,7 @@ class PlatformViewsController {
 
 - (id)init NS_DESIGNATED_INITIALIZER;
 
+// TODO(cbracken): Temporary workaround during migration to Obj-C.
 - (std::shared_ptr<flutter::PlatformViewsController>&)instance;
 
 /// @brief Handler for platform view message channels.

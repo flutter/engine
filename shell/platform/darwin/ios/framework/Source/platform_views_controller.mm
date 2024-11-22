@@ -112,8 +112,7 @@ namespace flutter {
 BOOL canApplyBlurBackdrop = YES;
 
 PlatformViewsController::PlatformViewsController()
-    : layer_pool_(std::make_unique<OverlayLayerPool>()),
-      weak_factory_(std::make_unique<fml::WeakPtrFactory<PlatformViewsController>>(this)) {
+    : layer_pool_(std::make_unique<OverlayLayerPool>()) {
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
@@ -121,10 +120,6 @@ PlatformViewsController::PlatformViewsController()
 void PlatformViewsController::SetTaskRunner(
     const fml::RefPtr<fml::TaskRunner>& platform_task_runner) {
   platform_task_runner_ = platform_task_runner;
-}
-
-fml::WeakPtr<flutter::PlatformViewsController> PlatformViewsController::GetWeakPtr() {
-  return weak_factory_->GetWeakPtr();
 }
 
 void PlatformViewsController::SetFlutterView(UIView* flutter_view) {
