@@ -156,11 +156,6 @@ class PlatformViewsController {
 
   std::shared_ptr<OverlayLayer> GetExistingLayer();
 
-  // Runs on the platform thread.
-  void CreateLayer(GrDirectContext* gr_context,
-                   const std::shared_ptr<IOSContext>& ios_context,
-                   MTLPixelFormat pixel_format);
-
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
   void BringLayersIntoView(const LayersMap& layer_map,
@@ -428,12 +423,6 @@ std::shared_ptr<OverlayLayer> PlatformViewsController::GetExistingLayer() {
   return layer_pool_->GetNextLayer();
 }
 
-void PlatformViewsController::CreateLayer(GrDirectContext* gr_context,
-                                          const std::shared_ptr<IOSContext>& ios_context,
-                                          MTLPixelFormat pixel_format) {
-  layer_pool_->CreateLayer(gr_context, ios_context, pixel_format);
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -454,6 +443,9 @@ void PlatformViewsController::CreateLayer(GrDirectContext* gr_context,
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
+                        grContext:(GrDirectContext*)gr_context
+                      pixelFormat:(MTLPixelFormat)pixel_format;
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
       withCompositionOrder:(const std::vector<int64_t>&)composition_order;
 - (std::vector<UIView*>)viewsToDispose;
@@ -818,10 +810,9 @@ void PlatformViewsController::CreateLayer(GrDirectContext* gr_context,
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
   fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, [&]() {
     for (auto i = 0u; i < missing_layer_count; i++) {
-      self.instance->CreateLayer(gr_context,                                //
-                  ios_context,                               //
-                  ((FlutterView*)self.instance->flutter_view_).pixelFormat  //
-      );
+      [self createLayerWithIosContext:ios_context
+                            grContext:gr_context
+                          pixelFormat:((FlutterView*)self.instance->flutter_view_).pixelFormat];
     }
     latch->CountDown();
   });
@@ -1002,6 +993,12 @@ void PlatformViewsController::CreateLayer(GrDirectContext* gr_context,
   [view blockGesture];
 
   result(nil);
+}
+
+- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
+                        grContext:(GrDirectContext*)gr_context
+                      pixelFormat:(MTLPixelFormat)pixel_format {
+  self.instance->layer_pool_->CreateLayer(gr_context, ios_context, pixel_format);
 }
 
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
