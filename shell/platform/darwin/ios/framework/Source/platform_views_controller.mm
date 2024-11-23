@@ -130,9 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// This data must only be accessed on the platform thread.
-  std::unordered_map<int64_t, PlatformViewData> platform_views_;
-
   /// The composition parameters for each platform view.
   ///
   /// This state is only modified on the raster thread.
@@ -214,6 +211,10 @@ BOOL canApplyBlurBackdrop = YES;
 /// The task runner for posting tasks to the platform thread.
 @property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platform_task_runner;
 
+/// This data must only be accessed on the platform thread.
+@property(nonatomic, readonly) std::unordered_map<int64_t, PlatformViewData>& platform_views;
+
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -264,6 +265,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
+  std::unordered_map<int64_t, PlatformViewData> _platform_views;
 }
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
@@ -298,6 +300,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>&)factories {
   return _factories;
+}
+
+- (std::unordered_map<int64_t, PlatformViewData>&)platform_views {
+  return _platform_views;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
@@ -338,10 +344,10 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
-  if (self.instance->platform_views_.empty()) {
+  if (self.platform_views.empty()) {
     return nil;
   }
-  return self.instance->platform_views_[viewId].touch_interceptor;
+  return self.platform_views[viewId].touch_interceptor;
 }
 
 - (flutter::PostPrerollResult)postPrerollActionWithThreadMerger:
@@ -398,14 +404,14 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)reset {
   // Reset will only be called from the raster thread or a merged raster/platform thread.
-  // platform_views_ must only be modified on the platform thread, and any operations that
+  // _platform_views must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
   fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner,
                                     [&, composition_order = self.instance->composition_order_]() {
                                       for (int64_t view_id : self.instance->composition_order_) {
-                                        [self.instance->platform_views_[view_id].root_view removeFromSuperview];
+                                        [self.platform_views[view_id].root_view removeFromSuperview];
                                       }
-                                      self.instance->platform_views_.clear();
+                                      self.platform_views.clear();
                                     });
 
   self.instance->composition_order_.clear();
@@ -533,7 +539,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (long)firstResponderPlatformViewId {
-  for (auto const& [id, platform_view_data] : self.instance->platform_views_) {
+  for (auto const& [id, platform_view_data] : self.platform_views) {
     UIView* root_view = platform_view_data.root_view;
     if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
       return id;
@@ -565,7 +571,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
-  FlutterTouchInterceptingView* touchInterceptor = self.instance->platform_views_[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* touchInterceptor = self.platform_views[viewId].touch_interceptor;
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
   if (self.instance->non_zero_origin_views_.find(viewId) == self.instance->non_zero_origin_views_.end() &&
@@ -589,7 +595,7 @@ BOOL canApplyBlurBackdrop = YES;
   touchInterceptor.alpha = 1;
 
   const flutter::MutatorsStack& mutatorStack = params.mutatorsStack();
-  UIView* clippingView = self.instance->platform_views_[viewId].root_view;
+  UIView* clippingView = self.platform_views[viewId].root_view;
   // The frame of the clipping view should be the final bounding rect.
   // Because the translate matrix in the Mutator Stack also includes the offset,
   // when we apply the transforms matrix in |applyMutators:embeddedView:boundingRect|, we need
@@ -697,7 +703,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSString* viewTypeString = args[@"viewType"];
   std::string viewType(viewTypeString.UTF8String);
 
-  if (self.instance->platform_views_.count(viewId) != 0) {
+  if (self.platform_views.count(viewId) != 0) {
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
@@ -746,7 +752,7 @@ BOOL canApplyBlurBackdrop = YES;
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
 
-  self.instance->platform_views_.emplace(viewId, PlatformViewData{
+  self.platform_views.emplace(viewId, PlatformViewData{
                                                      .view = embedded_view,                   //
                                                      .touch_interceptor = touch_interceptor,  //
                                                      .root_view = clipping_view               //
@@ -759,7 +765,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
-  if (self.instance->platform_views_.count(viewId) == 0) {
+  if (self.platform_views.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to dispose an unknown"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
@@ -774,14 +780,14 @@ BOOL canApplyBlurBackdrop = YES;
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
-  if (self.instance->platform_views_.count(viewId) == 0) {
+  if (self.platform_views.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to set gesture state for an unknown view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
     return;
   }
 
-  FlutterTouchInterceptingView* view = self.instance->platform_views_[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* view = self.platform_views[viewId].touch_interceptor;
   [view releaseGesture];
 
   result(nil);
@@ -791,14 +797,14 @@ BOOL canApplyBlurBackdrop = YES;
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
-  if (self.instance->platform_views_.count(viewId) == 0) {
+  if (self.platform_views.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to set gesture state for an unknown view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
     return;
   }
 
-  FlutterTouchInterceptingView* view = self.instance->platform_views_[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* view = self.platform_views[viewId].touch_interceptor;
   [view blockGesture];
 
   result(nil);
@@ -943,7 +949,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
   for (int64_t platform_view_id : composition_order) {
     self.instance->previous_composition_order_.push_back(platform_view_id);
-    UIView* platform_view_root = self.instance->platform_views_[platform_view_id].root_view;
+    UIView* platform_view_root = self.platform_views[platform_view_id].root_view;
     if (platform_view_root != nil) {
       [desired_platform_subviews addObject:platform_view_root];
     }
@@ -999,7 +1005,7 @@ BOOL canApplyBlurBackdrop = YES;
   // Remove unused platform views.
   for (int64_t view_id : self.instance->previous_composition_order_) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
-      UIView* platform_view_root = self.instance->platform_views_[view_id].root_view;
+      UIView* platform_view_root = self.platform_views[view_id].root_view;
       [platform_view_root removeFromSuperview];
     }
   }
@@ -1019,11 +1025,11 @@ BOOL canApplyBlurBackdrop = YES;
       views_to_delay_dispose.insert(viewId);
       continue;
     }
-    UIView* root_view = self.instance->platform_views_[viewId].root_view;
+    UIView* root_view = self.platform_views[viewId].root_view;
     views.push_back(root_view);
     self.instance->current_composition_params_.erase(viewId);
     self.instance->views_to_recomposite_.erase(viewId);
-    self.instance->platform_views_.erase(viewId);
+    self.platform_views.erase(viewId);
   }
   self.instance->views_to_dispose_ = std::move(views_to_delay_dispose);
   return views;
