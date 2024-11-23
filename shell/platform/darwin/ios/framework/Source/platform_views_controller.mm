@@ -134,9 +134,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  // visible for testing.
-  size_t EmbeddedViewCount() const;
-
   // Visible for testing.
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
@@ -288,10 +285,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-size_t PlatformViewsController::EmbeddedViewCount() const {
-  return composition_order_.size();
-}
 
 void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   FML_DCHECK([[NSThread currentThread] isMainThread]);
@@ -954,7 +947,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (size_t)embeddedViewCount {
-  return self.instance->EmbeddedViewCount();
+  return self.instance->composition_order_.size();
 }
 
 - (UIView*)platformViewForId:(int64_t)viewId {
