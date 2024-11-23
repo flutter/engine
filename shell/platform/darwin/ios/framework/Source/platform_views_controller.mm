@@ -1023,26 +1023,23 @@ void PlatformViewsController::ResetFrameState() {
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
-- (std::unique_ptr<flutter::PlatformViewsController>&)instance;
+
+// TODO(cbracken): Migrate all fields to Obj-C properties, then delete.
+@property(nonatomic, readonly) std::unique_ptr<flutter::PlatformViewsController>& instance;
+
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 @end
 
-@implementation FlutterPlatformViewsController {
-  std::unique_ptr<flutter::PlatformViewsController> _instance;
-}
+@implementation FlutterPlatformViewsController
 
 - (id)init {
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
   }
   return self;
-}
-
-- (std::unique_ptr<flutter::PlatformViewsController>&)instance {
-  return _instance;
 }
 
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
