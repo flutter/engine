@@ -268,10 +268,6 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, PlatformViewData> _platform_views;
 }
 
-// TODO(cbracken): once implementation has been migrated, synthesize ivars.
-@dynamic layer_pool;
-@dynamic slices;
-
 - (id)init {
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
