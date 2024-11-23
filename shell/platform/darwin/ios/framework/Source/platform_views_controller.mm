@@ -139,8 +139,6 @@ class PlatformViewsController {
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
 
-  void ClipViewSetMaskView(UIView* clipView) __attribute__((cf_audited_transfer));
-
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<OverlayLayerPool> layer_pool_;
 
@@ -225,17 +223,6 @@ PlatformViewsController::PlatformViewsController()
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
 
-void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-  if (clipView.maskView) {
-    return;
-  }
-  CGRect frame =
-      CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
-                 CGRectGetWidth(flutter_view_.bounds), CGRectGetHeight(flutter_view_.bounds));
-  clipView.maskView = [mask_view_pool_ getMaskViewWithFrame:frame];
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -256,6 +243,8 @@ void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+- (void)clipViewSetMaskView:(UIView*)clipView;
 
 // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
 // `ReconstructClipViewsChain`
@@ -829,6 +818,17 @@ void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   result(nil);
 }
 
+- (void)clipViewSetMaskView:(UIView*)clipView {
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  if (clipView.maskView) {
+    return;
+  }
+  CGRect frame =
+      CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
+                 CGRectGetWidth(self.instance->flutter_view_.bounds), CGRectGetHeight(self.instance->flutter_view_.bounds));
+  clipView.maskView = [self.instance->mask_view_pool_ getMaskViewWithFrame:frame];
+}
+
 - (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
          embeddedView:(UIView*)embedded_view
          boundingRect:(const SkRect&)bounding_rect {
@@ -860,7 +860,7 @@ void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
                                                      transformMatrix)) {
           break;
         }
-        self.instance->ClipViewSetMaskView(clipView);
+        [self clipViewSetMaskView:clipView];
         [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
                                                        matrix:transformMatrix];
         break;
@@ -870,7 +870,7 @@ void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
                                                       transformMatrix)) {
           break;
         }
-        self.instance->ClipViewSetMaskView(clipView);
+        [self clipViewSetMaskView:clipView];
         [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
                                                         matrix:transformMatrix];
         break;
@@ -879,7 +879,7 @@ void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
         // TODO(cyanglaz): Find a way to pre-determine if path contains the PlatformView boudning
         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
         // https://github.com/flutter/flutter/issues/118650
-        self.instance->ClipViewSetMaskView(clipView);
+        [self clipViewSetMaskView:clipView];
         [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
                                                        matrix:transformMatrix];
         break;
