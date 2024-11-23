@@ -194,9 +194,6 @@ class PlatformViewsController {
   void BringLayersIntoView(const LayersMap& layer_map,
                            const std::vector<int64_t>& composition_order);
 
-  // Resets the state of the frame.
-  void ResetFrameState();
-
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<OverlayLayerPool> layer_pool_;
 
@@ -630,12 +627,6 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
   return views;
 }
 
-void PlatformViewsController::ResetFrameState() {
-  slices_.clear();
-  composition_order_.clear();
-  visited_platform_views_.clear();
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -647,6 +638,7 @@ void PlatformViewsController::ResetFrameState() {
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)resetFrameState;
 @end
 
 @implementation FlutterPlatformViewsController
@@ -698,12 +690,12 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
-  self.instance->ResetFrameState();
+  [self resetFrameState];
   self.instance->frame_size_ = frameSize;
 }
 
 - (void)cancelFrame {
-  self.instance->ResetFrameState();
+  [self resetFrameState];
 }
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
@@ -1084,6 +1076,12 @@ void PlatformViewsController::ResetFrameState() {
   [view blockGesture];
 
   result(nil);
+}
+
+- (void)resetFrameState {
+  self.instance->slices_.clear();
+  self.instance->composition_order_.clear();
+  self.instance->visited_platform_views_.clear();
 }
 
 @end
