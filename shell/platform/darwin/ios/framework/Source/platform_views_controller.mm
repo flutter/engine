@@ -130,12 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// The size of the current onscreen surface in physical pixels.
-  SkISize frame_size_;
-
-  /// The task runner for posting tasks to the platform thread.
-  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
-
   /// This data must only be accessed on the platform thread.
   std::unordered_map<int64_t, PlatformViewData> platform_views_;
 
@@ -214,6 +208,12 @@ BOOL canApplyBlurBackdrop = YES;
 @property(nonatomic, readonly) std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
+/// The size of the current onscreen surface in physical pixels.
+@property(nonatomic, assign) SkISize frame_size;
+
+/// The task runner for posting tasks to the platform thread.
+@property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platform_task_runner;
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -260,16 +260,13 @@ BOOL canApplyBlurBackdrop = YES;
 @end
 
 @implementation FlutterPlatformViewsController {
-  // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<flutter::OverlayLayerPool> _layer_pool;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
-  /// The task runner for posting tasks to the platform thread.
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
 }
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
-@dynamic taskRunner;
 @dynamic layer_pool;
 @dynamic slices;
 
@@ -284,11 +281,11 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (const fml::RefPtr<fml::TaskRunner>&)taskRunner {
-  return self.instance->platform_task_runner_;
+  return _platform_task_runner;
 }
 
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
-  self.instance->platform_task_runner_ = platformTaskRunner;
+  _platform_task_runner = platformTaskRunner;
 }
 
 - (flutter::OverlayLayerPool*)layer_pool {
@@ -315,7 +312,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
   [self resetFrameState];
-  self.instance->frame_size_ = frameSize;
+  self.frame_size = frameSize;
 }
 
 - (void)cancelFrame {
@@ -324,7 +321,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
                           withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params {
-  SkRect view_bounds = SkRect::Make(self.instance->frame_size_);
+  SkRect view_bounds = SkRect::Make(self.frame_size);
   std::unique_ptr<flutter::EmbedderViewSlice> view;
   view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
   self.slices.insert_or_assign(viewId, std::move(view));
@@ -403,7 +400,7 @@ BOOL canApplyBlurBackdrop = YES;
   // Reset will only be called from the raster thread or a merged raster/platform thread.
   // platform_views_ must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
-  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_,
+  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner,
                                     [&, composition_order = self.instance->composition_order_]() {
                                       for (int64_t view_id : self.instance->composition_order_) {
                                         [self.instance->platform_views_[view_id].root_view removeFromSuperview];
@@ -472,7 +469,7 @@ BOOL canApplyBlurBackdrop = YES;
       continue;
     }
 
-    std::unique_ptr<flutter::SurfaceFrame> frame = layer->surface->AcquireFrame(self.instance->frame_size_);
+    std::unique_ptr<flutter::SurfaceFrame> frame = layer->surface->AcquireFrame(self.frame_size);
     // If frame is null, AcquireFrame already printed out an error message.
     if (!frame) {
       continue;
@@ -530,7 +527,7 @@ BOOL canApplyBlurBackdrop = YES;
                    surfaceFrames:surface_frames];
   };
 
-  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, fml::MakeCopyable(std::move(task)));
+  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, fml::MakeCopyable(std::move(task)));
 
   return did_encode;
 }
@@ -621,7 +618,7 @@ BOOL canApplyBlurBackdrop = YES;
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, [&]() {
+  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [&]() {
     for (auto i = 0u; i < missing_layer_count; i++) {
       [self createLayerWithIosContext:ios_context
                             grContext:gr_context
