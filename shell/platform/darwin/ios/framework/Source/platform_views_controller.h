@@ -36,9 +36,8 @@
 /// The flutter view.
 @property(nonatomic, weak) UIView* flutterView;
 
-// TODO(cbracken): Replace with a property.
-/// @brief Set the flutter view controller.
-- (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController;
+/// @brief The flutter view controller.
+@property(nonatomic, weak) UIViewController<FlutterViewResponder>* flutterViewController;
 
 /// @brief Retrieve the view controller.
 - (UIViewController<FlutterViewResponder>*)flutterViewController;

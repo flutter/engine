@@ -132,14 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Set the flutter view controller.
-  void SetFlutterViewController(UIViewController<FlutterViewResponder>* flutter_view_controller)
-      __attribute__((cf_audited_transfer));
-
-  /// @brief Retrieve the view controller.
-  UIViewController<FlutterViewResponder>* GetFlutterViewController()
-      __attribute__((cf_audited_transfer));
-
   /// @brief set the factory used to construct embedded UI Views.
   void RegisterViewFactory(
       NSObject<FlutterPlatformViewFactory>* factory,
@@ -379,15 +371,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::SetFlutterViewController(
-    UIViewController<FlutterViewResponder>* flutter_view_controller) {
-  flutter_view_controller_ = flutter_view_controller;
-}
-
-UIViewController<FlutterViewResponder>* PlatformViewsController::GetFlutterViewController() {
-  return flutter_view_controller_;
-}
 
 void PlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
@@ -1023,6 +1006,7 @@ void PlatformViewsController::ResetFrameState() {
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
 @dynamic taskRunner;
 @dynamic flutterView;
+@dynamic flutterViewController;
 
 - (id)init {
   if (self = [super init]) {
@@ -1048,11 +1032,11 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController {
-  self.instance->SetFlutterViewController(viewController);
+  self.instance->flutter_view_controller_ = viewController;
 }
 
 - (UIViewController<FlutterViewResponder>*)flutterViewController {
-  return self.instance->GetFlutterViewController();
+  return self.instance->flutter_view_controller_;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
