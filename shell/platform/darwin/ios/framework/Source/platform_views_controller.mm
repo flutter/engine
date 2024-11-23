@@ -130,9 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  // The pool of reusable view layers. The pool allows to recycle layer in each frame.
-  std::unique_ptr<OverlayLayerPool> layer_pool_;
-
   // The platform view's |EmbedderViewSlice| keyed off the view id, which contains any subsequent
   // operation until the next platform view or the end of the last leaf node in the layer tree.
   //
@@ -215,6 +212,8 @@ BOOL canApplyBlurBackdrop = YES;
 // TODO(cbracken): Migrate all fields to Obj-C properties, then delete.
 @property(nonatomic, readonly) std::unique_ptr<flutter::PlatformViewsController>& instance;
 
+@property(nonatomic, readonly) flutter::OverlayLayerPool* layer_pool;
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -260,17 +259,21 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)resetFrameState;
 @end
 
-@implementation FlutterPlatformViewsController
+@implementation FlutterPlatformViewsController {
+  // The pool of reusable view layers. The pool allows to recycle layer in each frame.
+  std::unique_ptr<flutter::OverlayLayerPool> _layer_pool;
+}
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
 @dynamic taskRunner;
 @dynamic flutterView;
 @dynamic flutterViewController;
+@dynamic layer_pool;
 
 - (id)init {
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
-    _instance->layer_pool_ = std::make_unique<flutter::OverlayLayerPool>();
+    _layer_pool = std::make_unique<flutter::OverlayLayerPool>();
     _instance->mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
   }
@@ -299,6 +302,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (UIViewController<FlutterViewResponder>*)flutterViewController {
   return self.instance->flutter_view_controller_;
+}
+
+- (flutter::OverlayLayerPool*)layer_pool {
+  return _layer_pool.get();
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
@@ -413,7 +420,7 @@ BOOL canApplyBlurBackdrop = YES;
   self.instance->slices_.clear();
   self.instance->current_composition_params_.clear();
   self.instance->views_to_recomposite_.clear();
-  self.instance->layer_pool_->RecycleLayers();
+  self.layer_pool->RecycleLayers();
   self.instance->visited_platform_views_.clear();
 }
 
@@ -509,8 +516,8 @@ BOOL canApplyBlurBackdrop = YES;
   surface_frames.push_back(std::move(background_frame));
 
   // Mark all layers as available, so they can be used in the next frame.
-  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers = self.instance->layer_pool_->RemoveUnusedLayers();
-  self.instance->layer_pool_->RecycleLayers();
+  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers = self.layer_pool->RemoveUnusedLayers();
+  self.layer_pool->RecycleLayers();
 
   auto task = [&,                                                                        //
                platform_view_layers = std::move(platform_view_layers),                   //
@@ -611,10 +618,10 @@ BOOL canApplyBlurBackdrop = YES;
                     grContext:(GrDirectContext*)gr_context {
   TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
 
-  if (required_overlay_layers <= self.instance->layer_pool_->size()) {
+  if (required_overlay_layers <= self.layer_pool->size()) {
     return;
   }
-  auto missing_layer_count = required_overlay_layers - self.instance->layer_pool_->size();
+  auto missing_layer_count = required_overlay_layers - self.layer_pool->size();
 
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
@@ -979,13 +986,13 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool {
-  return self.instance->layer_pool_->GetNextLayer();
+  return self.layer_pool->GetNextLayer();
 }
 
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
                         grContext:(GrDirectContext*)gr_context
                       pixelFormat:(MTLPixelFormat)pixel_format {
-  self.instance->layer_pool_->CreateLayer(gr_context, ios_context, pixel_format);
+  self.layer_pool->CreateLayer(gr_context, ios_context, pixel_format);
 }
 
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
