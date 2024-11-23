@@ -134,16 +134,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Returns the platform view id if the platform view (or any of its descendant view) is
-  /// the first responder.
-  ///
-  /// Returns -1 if no such platform view is found.
-  long FindFirstResponderPlatformViewId();
-
-  /// @brief Pushes backdrop filter mutation to the mutator stack of each visited platform view.
-  void PushFilterToVisitedPlatformViews(const std::shared_ptr<DlImageFilter>& filter,
-                                        const SkRect& filter_rect);
-
   /// @brief Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
@@ -302,28 +292,8 @@ PlatformViewsController::PlatformViewsController()
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
 
-void PlatformViewsController::PushFilterToVisitedPlatformViews(
-    const std::shared_ptr<DlImageFilter>& filter,
-    const SkRect& filter_rect) {
-  for (int64_t id : visited_platform_views_) {
-    EmbeddedViewParams params = current_composition_params_[id];
-    params.PushImageFilter(filter, filter_rect);
-    current_composition_params_[id] = params;
-  }
-}
-
 size_t PlatformViewsController::EmbeddedViewCount() const {
   return composition_order_.size();
-}
-
-long PlatformViewsController::FindFirstResponderPlatformViewId() {
-  for (auto const& [id, platform_view_data] : platform_views_) {
-    UIView* root_view = platform_view_data.root_view;
-    if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
-      return id;
-    }
-  }
-  return -1;
 }
 
 void PlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
@@ -964,12 +934,22 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (long)firstResponderPlatformViewId {
-  return self.instance->FindFirstResponderPlatformViewId();
+  for (auto const& [id, platform_view_data] : self.instance->platform_views_) {
+    UIView* root_view = platform_view_data.root_view;
+    if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
+      return id;
+    }
+  }
+  return -1;
 }
 
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect {
-  return self.instance->PushFilterToVisitedPlatformViews(filter, filterRect);
+  for (int64_t id : self.instance->visited_platform_views_) {
+    flutter::EmbeddedViewParams params = self.instance->current_composition_params_[id];
+    params.PushImageFilter(filter, filterRect);
+    self.instance->current_composition_params_[id] = params;
+  }
 }
 
 - (void)pushVisitedPlatformViewId:(int64_t)viewId {
