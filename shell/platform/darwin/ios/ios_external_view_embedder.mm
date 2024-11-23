@@ -41,7 +41,7 @@ void IOSExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PrepareFlutterView(SkISize frame_size, double device_pixel_ratio) {
-  FML_CHECK(platform_views_controller_.instance);
+  FML_CHECK(platform_views_controller_);
   [platform_views_controller_ beginFrameWithSize:frame_size];
 }
 
@@ -50,7 +50,7 @@ void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PrerollCompositeEmbeddedView");
-  FML_CHECK(platform_views_controller_.instance);
+  FML_CHECK(platform_views_controller_);
   [platform_views_controller_ prerollCompositeEmbeddedView:view_id withParams:std::move(params)];
 }
 
@@ -58,7 +58,7 @@ void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
 PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PostPrerollAction");
-  FML_CHECK(platform_views_controller_.instance);
+  FML_CHECK(platform_views_controller_);
   BOOL impeller_enabled = ios_context_->GetBackend() != IOSRenderingBackend::kSkia;
   PostPrerollResult result =
       [platform_views_controller_ postPrerollActionWithThreadMerger:raster_thread_merger
@@ -69,7 +69,7 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
 // |ExternalViewEmbedder|
 DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
-  FML_CHECK(platform_views_controller_.instance);
+  FML_CHECK(platform_views_controller_);
   return [platform_views_controller_ compositeEmbeddedViewWithId:view_id];
 }
 
@@ -84,7 +84,7 @@ void IOSExternalViewEmbedder::SubmitFlutterView(
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
-  FML_CHECK(platform_views_controller_.instance);
+  FML_CHECK(platform_views_controller_);
   [platform_views_controller_ submitFrame:std::move(frame)
                            withIosContext:ios_context_
                                 grContext:context];

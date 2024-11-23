@@ -758,6 +758,7 @@ void PlatformViewsController::ResetFrameState() {
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
+- (std::shared_ptr<flutter::PlatformViewsController>&)instance;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
