@@ -139,9 +139,6 @@ class PlatformViewsController {
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
 
-  /// @brief Return all views to be disposed on the platform thread.
-  std::vector<UIView*> GetViewsToDispose();
-
   void ClipViewSetMaskView(UIView* clipView) __attribute__((cf_audited_transfer));
 
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
@@ -462,30 +459,6 @@ void PlatformViewsController::RemoveUnusedLayers(
   }
 }
 
-std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
-  std::vector<UIView*> views;
-  if (views_to_dispose_.empty()) {
-    return views;
-  }
-
-  std::unordered_set<int64_t> views_to_composite(composition_order_.begin(),
-                                                 composition_order_.end());
-  std::unordered_set<int64_t> views_to_delay_dispose;
-  for (int64_t viewId : views_to_dispose_) {
-    if (views_to_composite.count(viewId)) {
-      views_to_delay_dispose.insert(viewId);
-      continue;
-    }
-    UIView* root_view = platform_views_[viewId].root_view;
-    views.push_back(root_view);
-    current_composition_params_.erase(viewId);
-    views_to_recomposite_.erase(viewId);
-    platform_views_.erase(viewId);
-  }
-  views_to_dispose_ = std::move(views_to_delay_dispose);
-  return views;
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -506,6 +479,7 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (std::vector<UIView*>)viewsToDispose;
 - (void)resetFrameState;
 @end
 
@@ -900,7 +874,7 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
   }
 
   // Dispose unused Flutter Views.
-  for (auto& view : self.instance->GetViewsToDispose()) {
+  for (auto& view : self.viewsToDispose) {
     [view removeFromSuperview];
   }
 
@@ -1052,6 +1026,31 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 
   result(nil);
 }
+
+- (std::vector<UIView*>)viewsToDispose {
+  std::vector<UIView*> views;
+  if (self.instance->views_to_dispose_.empty()) {
+    return views;
+  }
+
+  std::unordered_set<int64_t> views_to_composite(self.instance->composition_order_.begin(),
+                                                 self.instance->composition_order_.end());
+  std::unordered_set<int64_t> views_to_delay_dispose;
+  for (int64_t viewId : self.instance->views_to_dispose_) {
+    if (views_to_composite.count(viewId)) {
+      views_to_delay_dispose.insert(viewId);
+      continue;
+    }
+    UIView* root_view = self.instance->platform_views_[viewId].root_view;
+    views.push_back(root_view);
+    self.instance->current_composition_params_.erase(viewId);
+    self.instance->views_to_recomposite_.erase(viewId);
+    self.instance->platform_views_.erase(viewId);
+  }
+  self.instance->views_to_dispose_ = std::move(views_to_delay_dispose);
+  return views;
+}
+
 
 - (void)resetFrameState {
   self.instance->slices_.clear();
