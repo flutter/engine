@@ -130,11 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// Only composite platform views in this set.
-  ///
-  /// This state is only modified on the raster thread.
-  std::unordered_set<int64_t> views_to_recomposite_;
-
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   /// A set to keep track of embedded views that do not have (0, 0) origin.
   /// An insertion triggers a warning message about non-zero origin logged on the debug console.
@@ -214,6 +209,10 @@ BOOL canApplyBlurBackdrop = YES;
 /// This state is only modified on the raster thread.
 @property(nonatomic, readonly) std::vector<int64_t>& visited_platform_views;
 
+/// Only composite platform views in this set.
+///
+/// This state is only modified on the raster thread.
+@property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_recomposite;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -270,6 +269,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_set<int64_t> _views_to_dispose;
   std::vector<int64_t> _composition_order;
   std::vector<int64_t> _visited_platform_views;
+  std::unordered_set<int64_t> _views_to_recomposite;
 }
 
 - (id)init {
@@ -322,6 +322,10 @@ BOOL canApplyBlurBackdrop = YES;
   return _visited_platform_views;
 }
 
+- (std::unordered_set<int64_t>&)views_to_recomposite {
+  return _views_to_recomposite;
+}
+
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
@@ -356,7 +360,7 @@ BOOL canApplyBlurBackdrop = YES;
     return;
   }
   self.current_composition_params[viewId] = flutter::EmbeddedViewParams(*params.get());
-  self.instance->views_to_recomposite_.insert(viewId);
+  self.views_to_recomposite.insert(viewId);
 }
 
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
@@ -432,7 +436,7 @@ BOOL canApplyBlurBackdrop = YES;
   self.composition_order.clear();
   self.slices.clear();
   self.current_composition_params.clear();
-  self.instance->views_to_recomposite_.clear();
+  self.views_to_recomposite.clear();
   self.layer_pool->RecycleLayers();
   self.visited_platform_views.clear();
 }
@@ -535,7 +539,7 @@ BOOL canApplyBlurBackdrop = YES;
   auto task = [&,                                                                        //
                platform_view_layers = std::move(platform_view_layers),                   //
                current_composition_params = self.current_composition_params,  //
-               views_to_recomposite = self.instance->views_to_recomposite_,              //
+               views_to_recomposite = self.views_to_recomposite,              //
                composition_order = self.composition_order,                    //
                unused_layers = std::move(unused_layers),                                 //
                surface_frames = std::move(surface_frames)                                //
@@ -1043,7 +1047,7 @@ BOOL canApplyBlurBackdrop = YES;
     UIView* root_view = self.platform_views[viewId].root_view;
     views.push_back(root_view);
     self.current_composition_params.erase(viewId);
-    self.instance->views_to_recomposite_.erase(viewId);
+    self.views_to_recomposite.erase(viewId);
     self.platform_views.erase(viewId);
   }
   self.views_to_dispose = std::move(views_to_delay_dispose);
