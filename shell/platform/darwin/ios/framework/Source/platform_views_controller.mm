@@ -130,8 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  UIView* flutter_view_;
-  UIViewController<FlutterViewResponder>* flutter_view_controller_;
   FlutterClippingMaskViewPool* mask_view_pool_;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> factories_;
 
@@ -268,8 +266,6 @@ BOOL canApplyBlurBackdrop = YES;
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
 @dynamic taskRunner;
-@dynamic flutterView;
-@dynamic flutterViewController;
 @dynamic layer_pool;
 @dynamic slices;
 
@@ -289,22 +285,6 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
   self.instance->platform_task_runner_ = platformTaskRunner;
-}
-
-- (UIView*)flutterView {
-  return self.instance->flutter_view_;
-}
-
-- (void)setFlutterView:(UIView*)view {
-  self.instance->flutter_view_ = view;
-}
-
-- (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController {
-  self.instance->flutter_view_controller_ = viewController;
-}
-
-- (UIViewController<FlutterViewResponder>*)flutterViewController {
-  return self.instance->flutter_view_controller_;
 }
 
 - (flutter::OverlayLayerPool*)layer_pool {
@@ -437,7 +417,7 @@ BOOL canApplyBlurBackdrop = YES;
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
-  if (self.instance->flutter_view_ == nullptr || (self.instance->composition_order_.empty() &&
+  if (self.flutterView == nil || (self.instance->composition_order_.empty() &&
     !self.instance->had_platform_views_)) {
     self.instance->had_platform_views_ = false;
     return background_frame->Submit();
@@ -637,7 +617,7 @@ BOOL canApplyBlurBackdrop = YES;
     for (auto i = 0u; i < missing_layer_count; i++) {
       [self createLayerWithIosContext:ios_context
                             grContext:gr_context
-                          pixelFormat:((FlutterView*)self.instance->flutter_view_).pixelFormat];
+                          pixelFormat:((FlutterView*)self.flutterView).pixelFormat];
     }
     latch->CountDown();
   });
@@ -659,7 +639,7 @@ BOOL canApplyBlurBackdrop = YES;
 
   // Configure Flutter overlay views.
   for (const auto& [view_id, layer_data] : platform_view_layers) {
-    layer_data.layer->UpdateViewState(self.instance->flutter_view_,         //
+    layer_data.layer->UpdateViewState(self.flutterView,      //
                                       layer_data.rect,       //
                                       layer_data.view_id,    //
                                       layer_data.overlay_id  //
@@ -827,14 +807,14 @@ BOOL canApplyBlurBackdrop = YES;
   }
   CGRect frame =
       CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
-                 CGRectGetWidth(self.instance->flutter_view_.bounds), CGRectGetHeight(self.instance->flutter_view_.bounds));
+                 CGRectGetWidth(self.flutterView.bounds), CGRectGetHeight(self.flutterView.bounds));
   clipView.maskView = [self.instance->mask_view_pool_ getMaskViewWithFrame:frame];
 }
 
 - (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
          embeddedView:(UIView*)embedded_view
          boundingRect:(const SkRect&)bounding_rect {
-  if (self.instance->flutter_view_ == nullptr) {
+  if (self.flutterView == nil) {
     return;
   }
 
@@ -905,7 +885,7 @@ BOOL canApplyBlurBackdrop = YES;
           break;
         }
         CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
-        CGRect frameInClipView = [self.instance->flutter_view_ convertRect:intersection toView:clipView];
+        CGRect frameInClipView = [self.flutterView convertRect:intersection toView:clipView];
         // sigma_x is arbitrarily chosen as the radius value because Quartz sets
         // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
         // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
@@ -952,8 +932,8 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)bringLayersIntoView:(const LayersMap&)layer_map
        withCompositionOrder:(const std::vector<int64_t>&)composition_order {
-  FML_DCHECK(self.instance->flutter_view_);
-  UIView* flutter_view = self.instance->flutter_view_;
+  FML_DCHECK(self.flutterView);
+  UIView* flutter_view = self.flutterView;
 
   self.instance->previous_composition_order_.clear();
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
