@@ -144,6 +144,13 @@ std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
                                           std::move(float_uniforms));
 }
 
+std::shared_ptr<DlImageFilter> FragmentProgram::MakeDlImageFilter(
+    std::shared_ptr<std::vector<uint8_t>> float_uniforms,
+    const std::vector<std::shared_ptr<DlColorSource>>& children) {
+  return DlImageFilter::MakeRuntimeEffect(runtime_effect_, children,
+                                          std::move(float_uniforms));
+}
+
 void FragmentProgram::Create(Dart_Handle wrapper) {
   auto res = fml::MakeRefCounted<FragmentProgram>();
   res->AssociateWithDartWrapper(wrapper);

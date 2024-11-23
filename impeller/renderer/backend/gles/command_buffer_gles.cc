@@ -39,6 +39,11 @@ bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
 }
 
 // |CommandBuffer|
+void CommandBufferGLES::OnWaitUntilCompleted() {
+  reactor_->GetProcTable().Finish();
+}
+
+// |CommandBuffer|
 void CommandBufferGLES::OnWaitUntilScheduled() {
   reactor_->GetProcTable().Flush();
 }

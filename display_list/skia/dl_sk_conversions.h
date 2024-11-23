@@ -86,8 +86,7 @@ inline sk_sp<SkShader> ToSk(const DlColorSource& source) {
 }
 
 extern sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter);
-inline sk_sp<SkImageFilter> ToSk(
-    const std::shared_ptr<const DlImageFilter>& filter) {
+inline sk_sp<SkImageFilter> ToSk(const std::shared_ptr<DlImageFilter>& filter) {
   return ToSk(filter.get());
 }
 inline sk_sp<SkImageFilter> ToSk(const DlImageFilter& filter) {
@@ -110,6 +109,13 @@ inline sk_sp<SkMaskFilter> ToSk(
 }
 inline sk_sp<SkMaskFilter> ToSk(const DlMaskFilter& filter) {
   return ToSk(&filter);
+}
+
+inline SkMatrix* ToSk(const DlMatrix* matrix, SkMatrix& scratch) {
+  return matrix ? &scratch.setAll(matrix->m[0], matrix->m[4], matrix->m[12],  //
+                                  matrix->m[1], matrix->m[5], matrix->m[13],  //
+                                  matrix->m[3], matrix->m[7], matrix->m[15])
+                : nullptr;
 }
 
 extern sk_sp<SkVertices> ToSk(const std::shared_ptr<DlVertices>& vertices);

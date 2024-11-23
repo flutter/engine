@@ -171,8 +171,40 @@ void main() async {
 
     final gpu.BufferView view1 = hostBuffer
         .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
-    expect(view1.offsetInBytes >= 4, true);
+    expect(view1.offsetInBytes,
+        equals(gpu.gpuContext.minimumUniformByteAlignment));
     expect(view1.lengthInBytes, 4);
+  }, skip: !impellerEnabled);
+
+  test('HostBuffer.reset', () async {
+    final gpu.HostBuffer hostBuffer = gpu.gpuContext.createHostBuffer();
+
+    final gpu.BufferView view0 = hostBuffer
+        .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+    expect(view0.offsetInBytes, 0);
+    expect(view0.lengthInBytes, 4);
+
+    hostBuffer.reset();
+
+    final gpu.BufferView view1 = hostBuffer
+        .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+    expect(view1.offsetInBytes, 0);
+    expect(view1.lengthInBytes, 4);
+  }, skip: !impellerEnabled);
+
+  test('HostBuffer reuses DeviceBuffers after N frames', () async {
+    final gpu.HostBuffer hostBuffer = gpu.gpuContext.createHostBuffer();
+
+    final gpu.BufferView view0 = hostBuffer
+        .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+
+    for (int i = 0; i < hostBuffer.frameCount; i++) {
+      hostBuffer.reset();
+    }
+    final gpu.BufferView view1 = hostBuffer
+        .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+
+    expect(view0.buffer, equals(view1.buffer));
   }, skip: !impellerEnabled);
 
   test('GpuContext.createDeviceBuffer', () async {
@@ -382,6 +414,29 @@ void main() async {
     } catch (e) {
       expect(e.toString(),
           contains('The stencil write mask must be in the range'));
+    }
+  }, skip: !impellerEnabled);
+
+  test('RenderPass.bindTexture throws for deviceTransient Textures', () async {
+    final state = createSimpleRenderPass();
+
+    final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+    // Although this is a non-texture uniform slot, it'll work fine for the
+    // purposes of testing this error.
+    final gpu.UniformSlot vertInfo =
+        pipeline.vertexShader.getUniformSlot('VertInfo');
+
+    final gpu.Texture texture = gpu.gpuContext
+        .createTexture(gpu.StorageMode.deviceTransient, 100, 100)!;
+
+    try {
+      state.renderPass.bindTexture(vertInfo, texture);
+      fail('Exception not thrown when binding a transient texture.');
+    } catch (e) {
+      expect(
+          e.toString(),
+          contains(
+              'Textures with StorageMode.deviceTransient cannot be bound to a RenderPass'));
     }
   }, skip: !impellerEnabled);
 
@@ -680,5 +735,79 @@ void main() async {
     final ui.Image image = state.renderTexture.asImage();
     await comparer.addGoldenImage(
         image, 'flutter_gpu_test_hexgon_line_strip.png');
+  }, skip: !impellerEnabled);
+
+  // Renders the middle part triangle using scissor.
+  test('Can render portion of the triangle using scissor', () async {
+    final state = createSimpleRenderPass();
+
+    final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+    state.renderPass.bindPipeline(pipeline);
+
+    // Configure blending with defaults (just to test the bindings).
+    state.renderPass.setColorBlendEnable(true);
+    state.renderPass.setColorBlendEquation(gpu.ColorBlendEquation());
+
+    // Set primitive type.
+    state.renderPass.setPrimitiveType(gpu.PrimitiveType.triangle);
+
+    // Set scissor.
+    state.renderPass.setScissor(gpu.Scissor(x: 25, width: 50, height: 100));
+
+    final gpu.HostBuffer transients = gpu.gpuContext.createHostBuffer();
+    final gpu.BufferView vertices = transients.emplace(float32(<double>[
+      -1.0,
+      -1.0,
+      0.0,
+      1.0,
+      1.0,
+      -1.0]));
+    final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
+      1, 0, 0, 0, // mvp
+      0, 1, 0, 0, // mvp
+      0, 0, 1, 0, // mvp
+      0, 0, 0, 1, // mvp
+      0, 1, 0, 1, // color
+    ]));
+    state.renderPass.bindVertexBuffer(vertices, 3);
+
+    final gpu.UniformSlot vertInfo =
+        pipeline.vertexShader.getUniformSlot('VertInfo');
+    state.renderPass.bindUniform(vertInfo, vertInfoData);
+    state.renderPass.draw();
+
+    state.commandBuffer.submit();
+
+    final ui.Image image = state.renderTexture.asImage();
+    await comparer.addGoldenImage(
+        image, 'flutter_gpu_test_scissor.png');
+  }, skip: !impellerEnabled);
+
+    test('RenderPass.setScissor doesnt throw for valid values',
+      () async {
+    final state = createSimpleRenderPass();
+
+    state.renderPass.setScissor(gpu.Scissor(x: 25, width: 50, height: 100));
+    state.renderPass.setScissor(gpu.Scissor(width: 50, height: 100));
+  }, skip: !impellerEnabled);
+
+  test('RenderPass.setScissor throws for invalid values', () async {
+    final state = createSimpleRenderPass();
+
+    try {
+      state.renderPass.setScissor(gpu.Scissor(x: -1, width: 50, height: 100));
+      fail('Exception not thrown for invalid scissor.');
+    } catch (e) {
+      expect(e.toString(),
+          contains('Invalid values for scissor. All values should be positive.'));
+    }
+
+    try {
+      state.renderPass.setScissor(gpu.Scissor(width: 50, height: -100));
+      fail('Exception not thrown for invalid scissor.');
+    } catch (e) {
+      expect(e.toString(),
+          contains('Invalid values for scissor. All values should be positive.'));
+    }
   }, skip: !impellerEnabled);
 }

@@ -37,18 +37,27 @@ typedef _PointerDataCallback = void Function(DomEvent event, List<ui.PointerData
 // here, we use an already very large number (30 bits).
 const int _kButtonsMask = 0x3FFFFFFF;
 
-// Intentionally set to -1 or -2 so it doesn't conflict with other device IDs.
+// Assumes the device supports at most one mouse, one touch screen, and one
+// trackpad, therefore these pointer events are assigned fixed device IDs.
 const int _mouseDeviceId = -1;
 const int _trackpadDeviceId = -2;
+// For now only one stylus is supported.
+//
+// Device may support multiple styluses, but `PointerEvent` does not
+// distinguish between them with unique identifiers. Additionally, repeated
+// touches from the same stylus will be assigned different `pointerId`s each
+// time. Since it's really hard to handle, support for multiple styluses is
+// left for when demanded.
+const int _stylusDeviceId = -4;
 
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
-const int _kMiddleMouseButton =0x4;
+const int _kMiddleMouseButton = 0x4;
 
 int _nthButton(int n) => 0x1 << n;
 
-/// Convert the `button` property of PointerEvent or MouseEvent to a bit mask of
-/// its `buttons` property.
+/// Convert the `button` property of PointerEvent to a bit mask of its `buttons`
+/// property.
 ///
 /// The `button` property is a integer describing the button changed in an event,
 /// which is sequentially 0 for LMB, 1 for MMB, 2 for RMB, 3 for backward and
@@ -262,7 +271,7 @@ class ClickDebouncer {
   /// Forwards the event to the framework, unless it is deduplicated because
   /// the corresponding pointer down/up events were recently flushed to the
   /// framework already.
-  void onClick(DomEvent click, int semanticsNodeId, bool isListening) {
+  void onClick(DomEvent click, int viewId, int semanticsNodeId, bool isListening) {
     assert(click.type == 'click');
 
     if (!isDebouncing) {
@@ -271,7 +280,7 @@ class ClickDebouncer {
       // recently and if the node is currently listening to event, forward to
       // the framework.
       if (isListening && _shouldSendClickEventToFramework(click)) {
-        _sendSemanticsTapToFramework(click, semanticsNodeId);
+        _sendSemanticsTapToFramework(click, viewId, semanticsNodeId);
       }
       return;
     }
@@ -283,7 +292,7 @@ class ClickDebouncer {
       final DebounceState state = _state!;
       _state = null;
       state.timer.cancel();
-      _sendSemanticsTapToFramework(click, semanticsNodeId);
+      _sendSemanticsTapToFramework(click, viewId, semanticsNodeId);
     } else {
       // The semantic node is not listening to taps. Flush the pointer events
       // for the framework to figure out what to do with them. It's possible
@@ -292,7 +301,11 @@ class ClickDebouncer {
     }
   }
 
-  void _sendSemanticsTapToFramework(DomEvent click, int semanticsNodeId) {
+  void _sendSemanticsTapToFramework(
+    DomEvent click,
+    int viewId,
+    int semanticsNodeId,
+  ) {
     // Tappable nodes can be nested inside other tappable nodes. If a click
     // lands on an inner element and is allowed to propagate, it will also
     // land on the ancestor tappable, leading to both the descendant and the
@@ -303,7 +316,11 @@ class ClickDebouncer {
     click.stopPropagation();
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-        semanticsNodeId, ui.SemanticsAction.tap, null);
+      viewId,
+      semanticsNodeId,
+      ui.SemanticsAction.tap,
+      null,
+    );
     reset();
   }
 
@@ -1009,21 +1026,45 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     });
 
-    // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
-    _addPointerEventListener(_globalTarget, 'pointermove', (DomPointerEvent event) {
-      final int device = _getPointerId(event);
+    // Move event listeners should be added to `_globalTarget` instead of
+    // `_viewTarget`. This is because `_viewTarget` (the root) captures pointers
+    // by default, meaning a pointer that starts within `_viewTarget` continues
+    // sending move events to its listener even when dragged outside.
+    //
+    // In contrast, `_globalTarget` (a regular <div>) stops sending move events
+    // when the pointer moves outside its bounds and resumes them only when the
+    // pointer re-enters.
+    //
+    // For demonstration, see this fiddle: https://jsfiddle.net/ditman/7towxaqp
+    //
+    // TODO(dkwingsmt): Investigate whether we can configure the behavior for
+    // `_viewTarget`. https://github.com/flutter/flutter/issues/157968
+    _addPointerEventListener(_globalTarget, 'pointermove', (DomPointerEvent moveEvent) {
+      final int device = _getPointerId(moveEvent);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final List<DomPointerEvent> expandedEvents = _expandEvents(event);
+      final List<DomPointerEvent> expandedEvents = _expandEvents(moveEvent);
       for (final DomPointerEvent event in expandedEvents) {
         final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
         if (up != null) {
-          _convertEventsToPointerData(data: pointerData, event: event, details: up);
+          _convertEventsToPointerData(
+            data: pointerData,
+            event: event,
+            details: up,
+            pointerId: device,
+            eventTarget: moveEvent.target,
+          );
         }
         final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
-        _convertEventsToPointerData(data: pointerData, event: event, details: move);
+        _convertEventsToPointerData(
+          data: pointerData,
+          event: event,
+          details: move,
+          pointerId: device,
+          eventTarget: moveEvent.target,
+        );
       }
-      _callback(event, pointerData);
+      _callback(moveEvent, pointerData);
     });
 
     _addPointerEventListener(_viewTarget, 'pointerleave', (DomPointerEvent event) {
@@ -1077,12 +1118,17 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required List<ui.PointerData> data,
     required DomPointerEvent event,
     required _SanitizedDetails details,
+    // `pointerId` and `eventTarget` are optional but useful when it's not
+    // desired to get those values from the event object. For example, when the
+    // event is a coalesced event.
+    int? pointerId,
+    DomEventTarget? eventTarget,
   }) {
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
     final num? pressure = event.pressure;
-    final ui.Offset offset = computeEventOffsetToTarget(event, _view);
+    final ui.Offset offset = computeEventOffsetToTarget(event, _view, eventTarget: eventTarget);
     _pointerDataConverter.convert(
       data,
       viewId: _view.viewId,
@@ -1090,7 +1136,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       timeStamp: timeStamp,
       kind: kind,
       signalKind: ui.PointerSignalKind.none,
-      device: _getPointerId(event),
+      device: pointerId ?? _getPointerId(event),
       physicalX: offset.dx * _view.devicePixelRatio,
       physicalY: offset.dy * _view.devicePixelRatio,
       buttons: details.buttons,
@@ -1133,12 +1179,21 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   int _getPointerId(DomPointerEvent event) {
-    // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
-    // might come before any PointerEvents, and since wheel events don't contain
-    // pointerId we always assign `device: _mouseDeviceId` to them.
-    final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
-    return kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId :
-        event.pointerId!.toInt();
+    // All mouse pointer events are given `_mouseDeviceId`, including wheel
+    // events, because wheel events might come before any other PointerEvents,
+    // and wheel PointerEvents don't contain pointerIds.
+    return switch(_pointerTypeToDeviceKind(event.pointerType!)) {
+      ui.PointerDeviceKind.mouse => _mouseDeviceId,
+
+      ui.PointerDeviceKind.stylus ||
+      ui.PointerDeviceKind.invertedStylus => _stylusDeviceId,
+
+      // Trackpad processing doesn't call this function.
+      ui.PointerDeviceKind.trackpad => throw Exception('Unreachable'),
+
+      ui.PointerDeviceKind.touch ||
+      ui.PointerDeviceKind.unknown => event.pointerId!.toInt(),
+    };
   }
 
   /// Tilt angle is -90 to + 90. Take maximum deflection and convert to radians.

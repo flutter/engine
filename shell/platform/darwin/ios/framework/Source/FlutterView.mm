@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -40,7 +40,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (MTLPixelFormat)pixelFormat {
-  if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+  if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
 // It is a known Apple bug that CAMetalLayer incorrectly reports its supported
 // SDKs. It is, in fact, available since iOS 8.
 #pragma clang diagnostic push
@@ -93,7 +93,7 @@ static void PrintWideGamutWarningOnce() {
 }
 
 - (void)layoutSubviews {
-  if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+  if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
 // It is a known Apple bug that CAMetalLayer incorrectly reports its supported
 // SDKs. It is, in fact, available since iOS 8.
 #pragma clang diagnostic push
@@ -107,9 +107,8 @@ static void PrintWideGamutWarningOnce() {
     layer.framebufferOnly = flutter::Settings::kSurfaceDataAccessible ? NO : YES;
     BOOL isWideGamutSupported = self.isWideGamutSupported;
     if (_isWideGamutEnabled && isWideGamutSupported) {
-      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      fml::CFRef<CGColorSpaceRef> srgb(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
       layer.colorspace = srgb;
-      CFRelease(srgb);
       layer.pixelFormat = MTLPixelFormatBGRA10_XR;
     } else if (_isWideGamutEnabled && !isWideGamutSupported) {
       PrintWideGamutWarningOnce();

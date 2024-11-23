@@ -110,6 +110,16 @@ struct Matrix {
     // clang-format on
   }
 
+  static constexpr Matrix MakeTranslateScale(const Vector3& s,
+                                             const Vector3& t) {
+    // clang-format off
+    return Matrix(s.x, 0.0f, 0.0f, 0.0f,
+                  0.0f, s.y, 0.0f, 0.0f,
+                  0.0f, 0.0f, s.z, 0.0f,
+                  t.x , t.y, t.z, 1.0f);
+    // clang-format on
+  }
+
   static constexpr Matrix MakeScale(const Vector2& s) {
     return MakeScale(Vector3(s.x, s.y, 1.0f));
   }
@@ -295,6 +305,8 @@ struct Matrix {
 
   Scalar GetDeterminant() const;
 
+  bool IsInvertible() const { return GetDeterminant() != 0; }
+
   constexpr Scalar GetMaxBasisLengthXY() const {
     // The full basis computation requires computing the squared scaling factor
     // for translate/scale only matrices. This substantially limits the range of
@@ -321,6 +333,11 @@ struct Matrix {
   constexpr Scalar GetDirectionScale(Vector3 direction) const {
     return 1.0f / (this->Basis().Invert() * direction.Normalize()).GetLength() *
            direction.GetLength();
+  }
+
+  constexpr bool IsFinite() const {
+    return vec[0].IsFinite() && vec[1].IsFinite() && vec[2].IsFinite() &&
+           vec[3].IsFinite();
   }
 
   constexpr bool IsAffine() const {
@@ -388,6 +405,19 @@ struct Matrix {
         m[4]  == 0.0f && m[5]  == 1.0f && m[6]  == 0.0f && m[7]  == 0.0f &&
         m[8]  == 0.0f && m[9]  == 0.0f && m[10] == 1.0f && m[11] == 0.0f &&
         m[12] == 0.0f && m[13] == 0.0f && m[14] == 0.0f && m[15] == 1.0f
+        // clang-format on
+    );
+  }
+
+  /// @brief  Returns true if the matrix has no entries other than translation
+  ///         components. Note that an identity matrix meets this criteria.
+  constexpr bool IsTranslationOnly() const {
+    return (
+        // clang-format off
+        m[0] == 1.0 && m[1]  == 0.0 && m[2]  == 0.0 && m[3]  == 0.0 &&
+        m[4] == 0.0 && m[5]  == 1.0 && m[6]  == 0.0 && m[7]  == 0.0 &&
+        m[8] == 0.0 && m[9]  == 0.0 && m[10] == 1.0 && m[11] == 0.0 &&
+                                                       m[15] == 1.0
         // clang-format on
     );
   }

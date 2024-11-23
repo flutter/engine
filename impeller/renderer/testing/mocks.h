@@ -128,6 +128,7 @@ class MockCommandBuffer : public CommandBuffer {
               OnSubmitCommands,
               (CompletionCallback callback),
               (override));
+  MOCK_METHOD(void, OnWaitUntilCompleted, (), (override));
   MOCK_METHOD(void, OnWaitUntilScheduled, (), (override));
   MOCK_METHOD(std::shared_ptr<ComputePass>,
               OnCreateComputePass,
@@ -218,6 +219,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
   MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
   MOCK_METHOD(bool, SupportsTriangleFan, (), (const override));
+  MOCK_METHOD(bool, SupportsPrimitiveRestart, (), (const override));
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));

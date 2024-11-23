@@ -9,6 +9,7 @@
 
 #include "fml/closure.h"
 #include "fml/time/time_point.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/playground/image/backends/skia/compressed_image_skia.h"
 #include "impeller/playground/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
@@ -148,6 +149,9 @@ bool Playground::IsPlaygroundEnabled() const {
 }
 
 void Playground::TeardownWindow() {
+  if (host_buffer_) {
+    host_buffer_.reset();
+  }
   if (context_) {
     context_->Shutdown();
   }
@@ -303,8 +307,13 @@ bool Playground::OpenPlaygroundHere(
         return false;
       }
       pass->SetLabel("ImGui Render Pass");
+      if (!host_buffer_) {
+        host_buffer_ = HostBuffer::Create(context_->GetResourceAllocator(),
+                                          context_->GetIdleWaiter());
+      }
 
-      ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
+      ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass,
+                                        *host_buffer_);
 
       pass->EncodeCommands();
 
@@ -388,8 +397,8 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     const std::shared_ptr<Context>& context,
     DecompressedImage& decompressed_image,
     bool enable_mipmapping) {
-  auto texture_descriptor = TextureDescriptor{};
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = decompressed_image.GetSize();
   texture_descriptor.mip_count =
@@ -463,8 +472,8 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
     images[i] = image.value();
   }
 
-  auto texture_descriptor = TextureDescriptor{};
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.type = TextureType::kTextureCube;
   texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_descriptor.size = images[0].GetSize();

@@ -8,9 +8,10 @@
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 // clang-format off
 bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b) {
@@ -36,8 +37,7 @@ bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b) {
   return true;
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -208,19 +208,6 @@ extern std::ostream& operator<<(std::ostream& os, const DlPath& path) {
             << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkMatrix& matrix) {
-  return os << "SkMatrix("
-            << "[" << matrix[0] << ", " << matrix[1] << ", " << matrix[2] << "], "
-            << "[" << matrix[3] << ", " << matrix[4] << ", " << matrix[5] << "], "
-            << "[" << matrix[6] << ", " << matrix[7] << ", " << matrix[8] << "]"
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix* matrix) {
-  if (matrix) return os << "&" << *matrix;
-  return os << "no matrix";
-}
-
 static std::ostream& operator<<(std::ostream& os, const SkRSXform& xform) {
   return os << "SkRSXform("
             << "scos: " << xform.fSCos << ", "
@@ -386,10 +373,21 @@ std::ostream& operator<<(std::ostream& os, const DlImage* image) {
   return os << "isTextureBacked: " << image->isTextureBacked() << ")";
 }
 
+std::ostream& operator<<(std::ostream& os,
+                         const flutter::DlImageFilter& filter) {
+  DisplayListStreamDispatcher(os, 0).out(filter);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const flutter::DlColorFilter& filter) {
+  DisplayListStreamDispatcher(os, 0).out(filter);
+  return os;
+}
+
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::ostream& DisplayListStreamDispatcher::startl() {
   for (int i = 0; i < cur_indent_; i++) {
@@ -613,7 +611,7 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
     case DlImageFilterType::kErode: {
       const DlErodeImageFilter* erode = filter.asErode();
       FML_DCHECK(erode);
-      os_ << "DlDilateImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
+      os_ << "DlErodeImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
       break;
     }
     case DlImageFilterType::kMatrix: {
@@ -662,6 +660,14 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       startl() << ")";
       break;
     }
+    case flutter::DlImageFilterType::kRuntimeEffect: {
+      [[maybe_unused]] const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
+      FML_DCHECK(runtime_effect);
+      os_ << "DlRuntimeEffectImageFilter(";
+      os_ << runtime_effect->samplers().size() << " samplers, ";
+      os_ << runtime_effect->uniform_data()->size() << " uniform bytes)";
+      break;
+    }
   }
 }
 void DisplayListStreamDispatcher::out(const DlImageFilter* filter) {
@@ -695,9 +701,9 @@ void DisplayListStreamDispatcher::saveLayer(const DlRect& bounds,
     os_ << "," << std::endl;
     indent(10);
     if (backdrop_id.has_value()) {
-      startl() << "backdrop: " << backdrop_id.value();
+      startl() << "backdrop: " << backdrop_id.value() << ", ";
     } else {
-      startl() << "backdrop: (no id)";
+      startl() << "backdrop: (no id), ";
     }
     out(backdrop);
     outdent(10);
@@ -971,5 +977,4 @@ void DisplayListStreamDispatcher::drawShadow(const DlPath& path,
 }
 // clang-format on
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

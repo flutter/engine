@@ -77,6 +77,9 @@ class CapabilitiesGLES final
 
   bool IsANGLE() const;
 
+  /// @brief Whether this is an ES GL variant or (if false) desktop GL.
+  bool IsES() const;
+
   // |Capabilities|
   bool SupportsOffscreenMSAA() const override;
 
@@ -111,6 +114,9 @@ class CapabilitiesGLES final
   bool SupportsTriangleFan() const override;
 
   // |Capabilities|
+  bool SupportsPrimitiveRestart() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
@@ -125,11 +131,13 @@ class CapabilitiesGLES final
   ISize GetMaximumRenderPassAttachmentSize() const override;
 
  private:
+  bool supports_texture_to_texture_blits_ = false;
   bool supports_framebuffer_fetch_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_implicit_msaa_ = false;
   bool is_angle_ = false;
+  bool is_es_ = false;
   PixelFormat default_glyph_atlas_format_ = PixelFormat::kUnknown;
 };
 

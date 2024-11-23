@@ -149,7 +149,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  auto vertex_buffer = vertex_buffer_view.buffer;
+  const DeviceBuffer* vertex_buffer = vertex_buffer_view.GetBuffer();
 
   if (!vertex_buffer) {
     return false;
@@ -165,11 +165,24 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   /// Bind the vertex attributes associated with vertex buffer.
   ///
   if (!vertex_desc_gles->BindVertexAttributes(
-          gl, buffer_index, vertex_buffer_view.range.offset)) {
+          gl, buffer_index, vertex_buffer_view.GetRange().offset)) {
     return false;
   }
 
   return true;
+}
+
+void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
+  gl.Disable(GL_SCISSOR_TEST);
+  gl.Disable(GL_DEPTH_TEST);
+  gl.Disable(GL_STENCIL_TEST);
+  gl.Disable(GL_CULL_FACE);
+  gl.Disable(GL_BLEND);
+  gl.Disable(GL_DITHER);
+  gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+  gl.DepthMask(GL_TRUE);
+  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
+  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
 }
 
 [[nodiscard]] bool EncodeCommandsInReactor(
@@ -194,13 +207,6 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   }
 
   GLuint fbo = GL_NONE;
-  fml::ScopedCleanupClosure delete_fbo([&gl, &fbo]() {
-    if (fbo != GL_NONE) {
-      gl.BindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-      gl.DeleteFramebuffers(1u, &fbo);
-    }
-  });
-
   TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
   const bool is_default_fbo = color_gles.IsWrapped();
 
@@ -211,32 +217,40 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     }
   } else {
     // Create and bind an offscreen FBO.
-    gl.GenFramebuffers(1u, &fbo);
-    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    auto cached_fbo = color_gles.GetCachedFBO();
+    if (cached_fbo != GL_NONE) {
+      fbo = cached_fbo;
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    } else {
+      gl.GenFramebuffers(1u, &fbo);
+      color_gles.SetCachedFBO(fbo);
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (!color_gles.SetAsFramebufferAttachment(
-            GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-      return false;
-    }
-
-    if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
-      if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+      if (!color_gles.SetAsFramebufferAttachment(
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
-    }
-    if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+
+      if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
+        if (!depth->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+          return false;
+        }
+      }
+      if (auto stencil =
+              TextureGLES::Cast(pass_data.stencil_attachment.get())) {
+        if (!stencil->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+          return false;
+        }
+      }
+
+      auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (status != GL_FRAMEBUFFER_COMPLETE) {
+        VALIDATION_LOG << "Could not create a complete frambuffer: "
+                       << DebugToFramebufferError(status);
         return false;
       }
-    }
-
-    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer: "
-                     << DebugToFramebufferError(status);
-      return false;
     }
   }
 
@@ -267,16 +281,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     clear_bits |= GL_STENCIL_BUFFER_BIT;
   }
 
-  gl.Disable(GL_SCISSOR_TEST);
-  gl.Disable(GL_DEPTH_TEST);
-  gl.Disable(GL_STENCIL_TEST);
-  gl.Disable(GL_CULL_FACE);
-  gl.Disable(GL_BLEND);
-  gl.Disable(GL_DITHER);
-  gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-  gl.DepthMask(GL_TRUE);
-  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
-  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
+  RenderPassGLES::ResetGLState(gl);
 
   gl.Clear(clear_bits);
 
@@ -369,8 +374,6 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
           scissor.GetWidth(),                                         // width
           scissor.GetHeight()                                         // height
       );
-    } else {
-      gl.Disable(GL_SCISSOR_TEST);
     }
 
     //--------------------------------------------------------------------------
@@ -459,7 +462,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.index_buffer;
-      auto index_buffer = index_buffer_view.buffer;
+      const DeviceBuffer* index_buffer = index_buffer_view.GetBuffer();
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
@@ -469,7 +472,7 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
                       command.element_count,            // count
                       ToIndexType(command.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                          index_buffer_view.range.offset))  // indices
+                          index_buffer_view.GetRange().offset))  // indices
       );
     }
 
@@ -489,7 +492,8 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
   }
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
+    std::array<GLenum, 3> attachments;
+    size_t attachment_count = 0;
 
     // TODO(130048): discarding stencil or depth on the default fbo causes Angle
     // to discard the entire render target. Until we know the reason, default to
@@ -497,21 +501,21 @@ static bool BindVertexBuffer(const ProcTableGLES& gl,
     bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
 
     if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_COLOR_EXT : GL_COLOR_ATTACHMENT0);
     }
     if (pass_data.discard_depth_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_DEPTH_EXT : GL_DEPTH_ATTACHMENT);
     }
 
     if (pass_data.discard_stencil_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_STENCIL_EXT : GL_STENCIL_ATTACHMENT);
     }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,     // target
+                             attachment_count,   // attachments to discard
+                             attachments.data()  // size
     );
   }
 
@@ -583,14 +587,15 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
 
   std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
   auto tracer = ContextGLES::Cast(context).GetGPUTracer();
-  return reactor_->AddOperation([pass_data,
-                                 allocator = context.GetResourceAllocator(),
-                                 render_pass = std::move(shared_this),
-                                 tracer](const auto& reactor) {
-    auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_, tracer);
-    FML_CHECK(result) << "Must be able to encode GL commands without error.";
-  });
+  return reactor_->AddOperation(
+      [pass_data, allocator = context.GetResourceAllocator(),
+       render_pass = std::move(shared_this), tracer](const auto& reactor) {
+        auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
+                                              render_pass->commands_, tracer);
+        FML_CHECK(result)
+            << "Must be able to encode GL commands without error.";
+      },
+      /*defer=*/true);
 }
 
 }  // namespace impeller

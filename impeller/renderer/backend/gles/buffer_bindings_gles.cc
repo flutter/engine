@@ -153,9 +153,15 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
                                               size_t binding,
-                                              size_t vertex_offset) const {
+                                              size_t vertex_offset) {
   if (binding >= vertex_attrib_arrays_.size()) {
     return false;
+  }
+
+  if (!gl.GetCapabilities()->IsES()) {
+    FML_DCHECK(vertex_array_object_ == 0);
+    gl.GenVertexArrays(1, &vertex_array_object_);
+    gl.BindVertexArray(vertex_array_object_);
   }
 
   for (const auto& array : vertex_attrib_arrays_[binding]) {
@@ -203,11 +209,15 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
+bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) {
   for (const auto& array : vertex_attrib_arrays_) {
     for (const auto& attribute : array) {
       gl.DisableVertexAttribArray(attribute.index);
     }
+  }
+  if (!gl.GetCapabilities()->IsES()) {
+    gl.DeleteVertexArrays(1, &vertex_array_object_);
+    vertex_array_object_ = 0;
   }
 
   return true;
@@ -266,14 +276,14 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const auto* metadata = buffer.GetMetadata();
-  auto device_buffer = buffer.resource.buffer;
+  auto device_buffer = buffer.resource.GetBuffer();
   if (!device_buffer) {
     VALIDATION_LOG << "Device buffer not found.";
     return false;
   }
   const auto& device_buffer_gles = DeviceBufferGLES::Cast(*device_buffer);
   const uint8_t* buffer_ptr =
-      device_buffer_gles.GetBufferData() + buffer.resource.range.offset;
+      device_buffer_gles.GetBufferData() + buffer.resource.GetRange().offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "

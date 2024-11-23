@@ -38,6 +38,8 @@ bool GetEGLConfigForSurface(EGLint surface_bit, EGLConfig* result) {
       EGL_GREEN_SIZE,      8,
       EGL_BLUE_SIZE,       8,
       EGL_ALPHA_SIZE,      8,
+      EGL_DEPTH_SIZE,      24,
+      EGL_STENCIL_SIZE,    8,
       EGL_NONE,
       // clang-format on
   };
@@ -95,28 +97,38 @@ TEST_F(AndroidContextGLImpellerTest, FallbackForEmulator) {
   auto display = std::make_unique<MockDisplay>();
   EXPECT_CALL(*display, IsValid).WillRepeatedly(Return(true));
   std::unique_ptr<Config> first_result;
-  auto second_result =
-      std::make_unique<Config>(ConfigDescriptor(), window_egl_config);
+  std::unique_ptr<Config> second_result;
   auto third_result =
+      std::make_unique<Config>(ConfigDescriptor(), window_egl_config);
+  auto fourth_result =
       std::make_unique<Config>(ConfigDescriptor(), pbuffer_egl_config);
   EXPECT_CALL(
       *display,
       ChooseConfig(Matcher<ConfigDescriptor>(AllOf(
+          Field(&ConfigDescriptor::api, impeller::egl::API::kOpenGLES3),
           Field(&ConfigDescriptor::samples, impeller::egl::Samples::kFour),
           Field(&ConfigDescriptor::surface_type,
                 impeller::egl::SurfaceType::kWindow)))))
       .WillOnce(Return(ByMove(std::move(first_result))));
   EXPECT_CALL(
       *display,
+      ChooseConfig(Matcher<ConfigDescriptor>(AllOf(
+          Field(&ConfigDescriptor::api, impeller::egl::API::kOpenGLES2),
+          Field(&ConfigDescriptor::samples, impeller::egl::Samples::kFour),
+          Field(&ConfigDescriptor::surface_type,
+                impeller::egl::SurfaceType::kWindow)))))
+      .WillOnce(Return(ByMove(std::move(second_result))));
+  EXPECT_CALL(
+      *display,
       ChooseConfig(Matcher<ConfigDescriptor>(
           AllOf(Field(&ConfigDescriptor::samples, impeller::egl::Samples::kOne),
                 Field(&ConfigDescriptor::surface_type,
                       impeller::egl::SurfaceType::kWindow)))))
-      .WillOnce(Return(ByMove(std::move(second_result))));
+      .WillOnce(Return(ByMove(std::move(third_result))));
   EXPECT_CALL(*display, ChooseConfig(Matcher<ConfigDescriptor>(
                             Field(&ConfigDescriptor::surface_type,
                                   impeller::egl::SurfaceType::kPBuffer))))
-      .WillOnce(Return(ByMove(std::move(third_result))));
+      .WillOnce(Return(ByMove(std::move(fourth_result))));
   ON_CALL(*display, ChooseConfig(_))
       .WillByDefault(Return(ByMove(std::unique_ptr<Config>())));
   auto context =

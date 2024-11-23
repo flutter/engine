@@ -4,9 +4,9 @@
 
 #include <unordered_map>
 
-#include "display_list/dl_tile_mode.h"
-#include "display_list/effects/dl_image_filter.h"
-#include "display_list/geometry/dl_geometry_types.h"
+#include "flutter/display_list/dl_tile_mode.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/core/formats.h"
@@ -34,20 +34,23 @@ std::unique_ptr<Canvas> CreateTestCanvas(
       context.GetContext()->GetResourceAllocator()->CreateTexture(
           onscreen_desc);
 
-  TextureDescriptor onscreen_msaa_desc = onscreen_desc;
-  onscreen_msaa_desc.sample_count = SampleCount::kCount4;
-  onscreen_msaa_desc.storage_mode = StorageMode::kDeviceTransient;
-  onscreen_msaa_desc.type = TextureType::kTexture2DMultisample;
-
-  std::shared_ptr<Texture> onscreen_msaa =
-      context.GetContext()->GetResourceAllocator()->CreateTexture(
-          onscreen_msaa_desc);
-
   ColorAttachment color0;
-  color0.resolve_texture = onscreen;
-  color0.texture = onscreen_msaa;
-  color0.store_action = StoreAction::kMultisampleResolve;
   color0.load_action = LoadAction::kClear;
+  if (context.GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    TextureDescriptor onscreen_msaa_desc = onscreen_desc;
+    onscreen_msaa_desc.sample_count = SampleCount::kCount4;
+    onscreen_msaa_desc.storage_mode = StorageMode::kDeviceTransient;
+    onscreen_msaa_desc.type = TextureType::kTexture2DMultisample;
+
+    std::shared_ptr<Texture> onscreen_msaa =
+        context.GetContext()->GetResourceAllocator()->CreateTexture(
+            onscreen_msaa_desc);
+    color0.resolve_texture = onscreen;
+    color0.texture = onscreen_msaa;
+    color0.store_action = StoreAction::kMultisampleResolve;
+  } else {
+    color0.texture = onscreen;
+  }
 
   RenderTarget render_target;
   render_target.SetColorAttachment(color0, 0);
@@ -140,7 +143,7 @@ TEST_P(AiksTest, BackdropCountDownNormal) {
   canvas->SetBackdropData({}, 3);
 
   auto blur =
-      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+      flutter::DlImageFilter::MakeBlur(4, 4, flutter::DlTileMode::kClamp);
   flutter::DlRect rect = flutter::DlRect::MakeLTRB(0, 0, 50, 50);
 
   EXPECT_TRUE(canvas->RequiresReadback());
@@ -177,7 +180,7 @@ TEST_P(AiksTest, BackdropCountDownBackdropId) {
   canvas->SetBackdropData(data, 3);
 
   auto blur =
-      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+      flutter::DlImageFilter::MakeBlur(4, 4, flutter::DlTileMode::kClamp);
 
   EXPECT_TRUE(canvas->RequiresReadback());
   canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
@@ -217,7 +220,7 @@ TEST_P(AiksTest, BackdropCountDownBackdropIdMixed) {
   canvas->SetBackdropData(data, 3);
 
   auto blur =
-      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+      flutter::DlImageFilter::MakeBlur(4, 4, flutter::DlTileMode::kClamp);
 
   EXPECT_TRUE(canvas->RequiresReadback());
   canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),
@@ -252,7 +255,7 @@ TEST_P(AiksTest, BackdropCountDownWithNestedSaveLayers) {
   canvas->SetBackdropData({}, 2);
 
   auto blur =
-      flutter::DlBlurImageFilter::Make(4, 4, flutter::DlTileMode::kClamp);
+      flutter::DlImageFilter::MakeBlur(4, 4, flutter::DlTileMode::kClamp);
 
   EXPECT_TRUE(canvas->RequiresReadback());
   canvas->DrawRect(flutter::DlRect::MakeLTRB(0, 0, 50, 50),

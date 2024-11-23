@@ -150,6 +150,18 @@ base class SamplerOptions {
   SamplerAddressMode heightAddressMode;
 }
 
+base class Scissor {
+  Scissor({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+
+  int x, y, width, height;
+
+  void _validate() {
+    if (x < 0 || y < 0 || width < 0 || height < 0) {
+      throw Exception("Invalid values for scissor. All values should be positive.");
+    }
+  }
+}
+
 base class RenderTarget {
   const RenderTarget(
       {this.colorAttachments = const <ColorAttachment>[],
@@ -250,6 +262,14 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       sampler = SamplerOptions();
     }
 
+    assert(() {
+      if (texture.storageMode == StorageMode.deviceTransient) {
+        throw Exception(
+            "Textures with StorageMode.deviceTransient cannot be bound to a RenderPass");
+      }
+      return true;
+    }());
+
     bool success = _bindTexture(
         slot.shader,
         slot.uniformName,
@@ -316,6 +336,14 @@ base class RenderPass extends NativeFieldWrapperClass1 {
         configuration.readMask,
         configuration.writeMask,
         targetFace.index);
+  }
+
+  void setScissor(Scissor scissor) {
+    assert(() {
+      scissor._validate();
+      return true;
+    }());
+    _setScissor(scissor.x, scissor.y, scissor.width, scissor.height);
   }
 
   void setCullMode(CullMode cullMode) {
@@ -396,19 +424,9 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   external void _bindVertexBufferDevice(DeviceBuffer buffer, int offsetInBytes,
       int lengthInBytes, int vertexCount);
 
-  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int)>(
-      symbol: 'InternalFlutterGpu_RenderPass_BindVertexBufferHost')
-  external void _bindVertexBufferHost(
-      HostBuffer buffer, int offsetInBytes, int lengthInBytes, int vertexCount);
-
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_BindIndexBufferDevice')
   external void _bindIndexBufferDevice(DeviceBuffer buffer, int offsetInBytes,
-      int lengthInBytes, int indexType, int indexCount);
-
-  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int, Int)>(
-      symbol: 'InternalFlutterGpu_RenderPass_BindIndexBufferHost')
-  external void _bindIndexBufferHost(HostBuffer buffer, int offsetInBytes,
       int lengthInBytes, int indexType, int indexCount);
 
   @Native<
@@ -416,12 +434,6 @@ base class RenderPass extends NativeFieldWrapperClass1 {
           Int)>(symbol: 'InternalFlutterGpu_RenderPass_BindUniformDevice')
   external bool _bindUniformDevice(Shader shader, String uniformName,
       DeviceBuffer buffer, int offsetInBytes, int lengthInBytes);
-
-  @Native<
-      Bool Function(Pointer<Void>, Pointer<Void>, Handle, Pointer<Void>, Int,
-          Int)>(symbol: 'InternalFlutterGpu_RenderPass_BindUniformHost')
-  external bool _bindUniformHost(Shader shader, String uniformName,
-      HostBuffer buffer, int offsetInBytes, int lengthInBytes);
 
   @Native<
       Bool Function(
@@ -485,6 +497,14 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int readMask,
       int writeMask,
       int target_face);
+
+  @Native<Void Function(Pointer<Void>, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetScissor')
+  external void _setScissor(
+      int x,
+      int y,
+      int width,
+      int height);
 
   @Native<Void Function(Pointer<Void>, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetCullMode')

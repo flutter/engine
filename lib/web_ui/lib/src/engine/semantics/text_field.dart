@@ -114,16 +114,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     }
     subscriptions.clear();
     lastEditingState = null;
-
-    // If the text element still has focus, remove focus from the editable
-    // element to cause the on-screen keyboard, if any, to hide (e.g. on iOS,
-    // Android).
-    // Otherwise, the keyboard stays on screen even when the user navigates to
-    // a different screen (e.g. by hitting the "back" button).
-    // Keep this consistent with how DefaultTextEditingStrategy does it. As of
-    // right now, the only difference is that semantic text fields do not
-    // participate in form autofill.
-    DefaultTextEditingStrategy.scheduleFocusFlutterView(activeDomElement, activeDomElementView);
+    EnginePlatformDispatcher.instance.viewManager.safeBlur(activeDomElement);
     domElement = null;
     activeTextField = null;
     _queuedStyle = null;
@@ -287,7 +278,7 @@ class SemanticTextField extends SemanticRole {
       // IMPORTANT: because this event listener can be triggered by either or
       // both a "focus" and a "click" DOM events, this code must be idempotent.
       EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-          semanticsObject.id, ui.SemanticsAction.focus, null);
+          viewId, semanticsObject.id, ui.SemanticsAction.focus, null);
     }));
     editableElement.addEventListener('click', createDomEventListener((DomEvent event) {
       editableElement.focusWithoutScroll();

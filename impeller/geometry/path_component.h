@@ -19,14 +19,86 @@ namespace impeller {
 ///        strip.
 class VertexWriter {
  public:
-  explicit VertexWriter(std::vector<Point>& points,
-                        std::vector<uint16_t>& indices);
+  virtual void EndContour() = 0;
 
-  ~VertexWriter() = default;
+  virtual void Write(Point point) = 0;
+};
 
-  void EndContour();
+/// @brief A vertex writer that generates a triangle fan and requires primitive
+/// restart.
+class FanVertexWriter : public VertexWriter {
+ public:
+  explicit FanVertexWriter(Point* point_buffer, uint16_t* index_buffer);
 
-  void Write(Point point);
+  ~FanVertexWriter();
+
+  size_t GetIndexCount() const;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
+
+ private:
+  size_t count_ = 0;
+  size_t index_count_ = 0;
+  Point* point_buffer_ = nullptr;
+  uint16_t* index_buffer_ = nullptr;
+};
+
+/// @brief A vertex writer that generates a triangle strip and requires
+///        primitive restart.
+class StripVertexWriter : public VertexWriter {
+ public:
+  explicit StripVertexWriter(Point* point_buffer, uint16_t* index_buffer);
+
+  ~StripVertexWriter();
+
+  size_t GetIndexCount() const;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
+
+ private:
+  size_t count_ = 0;
+  size_t index_count_ = 0;
+  size_t contour_start_ = 0;
+  Point* point_buffer_ = nullptr;
+  uint16_t* index_buffer_ = nullptr;
+};
+
+/// @brief A vertex writer that generates a line strip topology.
+class LineStripVertexWriter : public VertexWriter {
+ public:
+  explicit LineStripVertexWriter(std::vector<Point>& points);
+
+  ~LineStripVertexWriter() = default;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
+
+  std::pair<size_t, size_t> GetVertexCount() const;
+
+  const std::vector<Point>& GetOversizedBuffer() const;
+
+ private:
+  size_t offset_ = 0u;
+  std::vector<Point>& points_;
+  std::vector<Point> overflow_;
+};
+
+/// @brief A vertex writer that has no hardware requirements.
+class GLESVertexWriter : public VertexWriter {
+ public:
+  explicit GLESVertexWriter(std::vector<Point>& points,
+                            std::vector<uint16_t>& indices);
+
+  ~GLESVertexWriter() = default;
+
+  void EndContour() override;
+
+  void Write(Point point) override;
 
  private:
   bool previous_contour_odd_points_ = false;
@@ -85,6 +157,8 @@ struct QuadraticPathComponent {
 
   void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
 
+  size_t CountLinearPathComponents(Scalar scale) const;
+
   std::vector<Point> Extrema() const;
 
   bool operator==(const QuadraticPathComponent& other) const {
@@ -131,6 +205,8 @@ struct CubicPathComponent {
   void ToLinearPathComponents(Scalar scale, const PointProc& proc) const;
 
   void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
+
+  size_t CountLinearPathComponents(Scalar scale) const;
 
   CubicPathComponent Subsegment(Scalar t0, Scalar t1) const;
 

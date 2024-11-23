@@ -6,9 +6,7 @@
 
 #include <utility>
 
-#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
-#include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -511,6 +509,14 @@ bool RuntimeController::HasLivePorts() {
   return Dart_HasLivePorts();
 }
 
+bool RuntimeController::HasPendingMicrotasks() {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return false;
+  }
+  return root_isolate->HasPendingMicrotasks();
+}
+
 tonic::DartErrorHandleType RuntimeController::GetLastError() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->GetLastError() : tonic::kNoError;
@@ -522,7 +528,8 @@ bool RuntimeController::LaunchRootIsolate(
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
-    std::unique_ptr<IsolateConfiguration> isolate_configuration) {
+    std::unique_ptr<IsolateConfiguration> isolate_configuration,
+    std::shared_ptr<NativeAssetsManager> native_assets_manager) {
   if (root_isolate_.lock()) {
     FML_LOG(ERROR) << "Root isolate was already running.";
     return false;
@@ -542,7 +549,8 @@ bool RuntimeController::LaunchRootIsolate(
           dart_entrypoint_args,                           //
           std::move(isolate_configuration),               //
           context_,                                       //
-          spawning_isolate_.lock().get())                 //
+          spawning_isolate_.lock().get(),
+          std::move(native_assets_manager))  //
           .lock();
 
   if (!strong_root_isolate) {

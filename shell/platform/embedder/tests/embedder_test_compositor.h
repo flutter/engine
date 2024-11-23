@@ -29,8 +29,9 @@ class EmbedderTestCompositor {
 
   virtual ~EmbedderTestCompositor();
 
-  void SetBackingStoreProducer(
-      std::unique_ptr<EmbedderTestBackingStoreProducer> backingstore_producer);
+  virtual void SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType type,
+      FlutterSoftwarePixelFormat software_pixfmt) = 0;
 
   bool CreateBackingStore(const FlutterBackingStoreConfig* config,
                           FlutterBackingStore* backing_store_out);
@@ -43,6 +44,8 @@ class EmbedderTestCompositor {
 
   void SetPlatformViewRendererCallback(
       const PlatformViewRendererCallback& callback);
+
+  sk_sp<SkSurface> GetSurface(const FlutterBackingStore* backing_store) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Allows tests to install a callback to notify them when the
