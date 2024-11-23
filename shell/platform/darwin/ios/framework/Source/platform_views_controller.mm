@@ -132,9 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Set the flutter view.
-  void SetFlutterView(UIView* flutter_view) __attribute__((cf_audited_transfer));
-
   /// @brief Set the flutter view controller.
   void SetFlutterViewController(UIViewController<FlutterViewResponder>* flutter_view_controller)
       __attribute__((cf_audited_transfer));
@@ -382,10 +379,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::SetFlutterView(UIView* flutter_view) {
-  flutter_view_ = flutter_view;
-}
 
 void PlatformViewsController::SetFlutterViewController(
     UIViewController<FlutterViewResponder>* flutter_view_controller) {
@@ -1029,6 +1022,7 @@ void PlatformViewsController::ResetFrameState() {
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
 @dynamic taskRunner;
+@dynamic flutterView;
 
 - (id)init {
   if (self = [super init]) {
@@ -1045,8 +1039,12 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->platform_task_runner_ = platformTaskRunner;
 }
 
+- (UIView*)flutterView {
+  return self.instance->flutter_view_;
+}
+
 - (void)setFlutterView:(UIView*)view {
-  self.instance->SetFlutterView(view);
+  self.instance->flutter_view_ = view;
 }
 
 - (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController {

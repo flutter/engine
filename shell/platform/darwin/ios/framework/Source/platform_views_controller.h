@@ -33,8 +33,8 @@
 /// The platform task runner used to post rendering tasks.
 @property(nonatomic, assign) const fml::RefPtr<fml::TaskRunner>& taskRunner;
 
-/// @brief Set the flutter view.
-- (void)setFlutterView:(UIView*)view;
+/// The flutter view.
+@property(nonatomic, weak) UIView* flutterView;
 
 // TODO(cbracken): Replace with a property.
 /// @brief Set the flutter view controller.

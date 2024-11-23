@@ -295,7 +295,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
     OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
     std::string label = "some label";
-    [flutterPlatformViewsController setFlutterView:mockFlutterView];
+    flutterPlatformViewsController.flutterView = mockFlutterView;
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
     [flutterPlatformViewsController
