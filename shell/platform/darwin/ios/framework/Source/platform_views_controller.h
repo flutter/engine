@@ -116,7 +116,7 @@
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect;
 
-  /// @brief Pushes the view id of a visted platform view to the list of visied platform views.
+/// @brief Pushes the view id of a visted platform view to the list of visied platform views.
 - (void)pushVisitedPlatformViewId:(int64_t)viewId;
 
 @end

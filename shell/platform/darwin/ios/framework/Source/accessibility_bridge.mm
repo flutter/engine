@@ -39,10 +39,11 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 };
 }  // namespace
 
-AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
-                                         PlatformViewIOS* platform_view,
-                                         __weak FlutterPlatformViewsController* platform_views_controller,
-                                         std::unique_ptr<IosDelegate> ios_delegate)
+AccessibilityBridge::AccessibilityBridge(
+    FlutterViewController* view_controller,
+    PlatformViewIOS* platform_view,
+    __weak FlutterPlatformViewsController* platform_views_controller,
+    std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),

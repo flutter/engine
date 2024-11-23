@@ -141,15 +141,18 @@ BOOL canApplyBlurBackdrop = YES;
 // operation until the next platform view or the end of the last leaf node in the layer tree.
 //
 // The Slices are deleted by the PlatformViewsController.reset().
-@property(nonatomic, readonly) std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>& slices;
+@property(nonatomic, readonly)
+    std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>& slices;
 
 @property(nonatomic, readonly) FlutterClippingMaskViewPool* mask_view_pool;
 
-@property(nonatomic, readonly) std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>& factories;
+@property(nonatomic, readonly)
+    std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>& factories;
 
 // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
-@property(nonatomic, readonly) std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-      gesture_recognizers_blocking_policies;
+@property(nonatomic, readonly)
+    std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
+        gesture_recognizers_blocking_policies;
 
 /// The size of the current onscreen surface in physical pixels.
 @property(nonatomic, assign) SkISize frame_size;
@@ -163,7 +166,8 @@ BOOL canApplyBlurBackdrop = YES;
 /// The composition parameters for each platform view.
 ///
 /// This state is only modified on the raster thread.
-@property(nonatomic, readonly) std::unordered_map<int64_t, flutter::EmbeddedViewParams>& current_composition_params;
+@property(nonatomic, readonly)
+    std::unordered_map<int64_t, flutter::EmbeddedViewParams>& current_composition_params;
 
 /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
 /// the next frame.
@@ -204,11 +208,14 @@ BOOL canApplyBlurBackdrop = YES;
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
 - (void)performSubmit:(const LayersMap&)platform_view_layers
-    currentCompositionParams:(std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
-    viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
-    compositionOrder:(const std::vector<int64_t>&)composition_order
-    unusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
-    surfaceFrames:(const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames;
+    currentCompositionParams:
+        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+          viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+            compositionOrder:(const std::vector<int64_t>&)composition_order
+                unusedLayers:
+                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+               surfaceFrames:
+                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -270,7 +277,7 @@ BOOL canApplyBlurBackdrop = YES;
   if (self = [super init]) {
     _layer_pool = std::make_unique<flutter::OverlayLayerPool>();
     _mask_view_pool =
-      [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
+        [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
     _had_platform_views = NO;
   }
   return self;
@@ -300,7 +307,7 @@ BOOL canApplyBlurBackdrop = YES;
   return _platform_views;
 }
 
-- (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&) current_composition_params {
+- (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params {
   return _current_composition_params;
 }
 
@@ -530,16 +537,17 @@ BOOL canApplyBlurBackdrop = YES;
   surface_frames.push_back(std::move(background_frame));
 
   // Mark all layers as available, so they can be used in the next frame.
-  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers = self.layer_pool->RemoveUnusedLayers();
+  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers =
+      self.layer_pool->RemoveUnusedLayers();
   self.layer_pool->RecycleLayers();
 
-  auto task = [&,                                                                        //
-               platform_view_layers = std::move(platform_view_layers),                   //
+  auto task = [&,                                                             //
+               platform_view_layers = std::move(platform_view_layers),        //
                current_composition_params = self.current_composition_params,  //
                views_to_recomposite = self.views_to_recomposite,              //
                composition_order = self.composition_order,                    //
-               unused_layers = std::move(unused_layers),                                 //
-               surface_frames = std::move(surface_frames)                                //
+               unused_layers = std::move(unused_layers),                      //
+               surface_frames = std::move(surface_frames)                     //
   ]() mutable {
     [self performSubmit:platform_view_layers
         currentCompositionParams:current_composition_params
@@ -654,11 +662,14 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (void)performSubmit:(const LayersMap&)platform_view_layers
-    currentCompositionParams:(std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
-    viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
-    compositionOrder:(const std::vector<int64_t>&)composition_order
-    unusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
-    surfaceFrames:(const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames {
+    currentCompositionParams:
+        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+          viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+            compositionOrder:(const std::vector<int64_t>&)composition_order
+                unusedLayers:
+                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+               surfaceFrames:
+                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames {
   TRACE_EVENT0("flutter", "PlatformViewsController::PerformSubmit");
   FML_DCHECK([[NSThread currentThread] isMainThread]);
 
@@ -769,10 +780,10 @@ BOOL canApplyBlurBackdrop = YES;
   [clipping_view addSubview:touch_interceptor];
 
   self.platform_views.emplace(viewId, PlatformViewData{
-                                                     .view = embedded_view,                   //
-                                                     .touch_interceptor = touch_interceptor,  //
-                                                     .root_view = clipping_view               //
-                                                 });
+                                          .view = embedded_view,                   //
+                                          .touch_interceptor = touch_interceptor,  //
+                                          .root_view = clipping_view               //
+                                      });
 
   result(nil);
 }
@@ -1050,7 +1061,6 @@ BOOL canApplyBlurBackdrop = YES;
   self.views_to_dispose = std::move(views_to_delay_dispose);
   return views;
 }
-
 
 - (void)resetFrameState {
   self.slices.clear();
