@@ -337,6 +337,13 @@ class PlatformViewsController {
 /// frame.
 - (void)cancelFrame;
 
+/// @brief Record a platform view in the layer tree to be rendered, along with the positioning and
+///        mutator parameters.
+///
+/// Called from the raster thread.
+- (void)prerollCompositeEmbeddedView:(int64_t)viewId
+                          withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

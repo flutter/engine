@@ -51,7 +51,7 @@ void IOSExternalViewEmbedder::PrerollCompositeEmbeddedView(
     std::unique_ptr<EmbeddedViewParams> params) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PrerollCompositeEmbeddedView");
   FML_CHECK(platform_views_controller_.instance);
-  platform_views_controller_.instance->PrerollCompositeEmbeddedView(view_id, std::move(params));
+  [platform_views_controller_ prerollCompositeEmbeddedView:view_id withParams:std::move(params)];
 }
 
 // |ExternalViewEmbedder|

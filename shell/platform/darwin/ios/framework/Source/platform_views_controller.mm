@@ -810,6 +810,11 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->CancelFrame();
 }
 
+- (void)prerollCompositeEmbeddedView:(int64_t)viewId
+                          withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params {
+  self.instance->PrerollCompositeEmbeddedView(viewId, std::move(params));
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
