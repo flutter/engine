@@ -36,6 +36,7 @@
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/round_rect_geometry.h"
+#include "impeller/entity/geometry/round_superellipse_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
@@ -473,7 +474,9 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  RectGeometry geom(rect);
+  Scalar radius = std::min(rect.GetWidth(), rect.GetHeight()) / 3;
+  RoundSuperellipseGeometry geom(rect, radius);
+  // RectGeometry geom(rect);
   AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 

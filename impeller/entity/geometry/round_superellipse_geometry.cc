@@ -12,6 +12,43 @@
 
 namespace impeller {
 
+// Generates an index list to convert vertices from a triangle fan structure
+// into a triangle list format.
+//
+// The generated index list follows the pattern:
+//
+//   [0, 1, 2, 0, 2, 3, 0, 3, 4, ...].
+//
+// The initial portion of the index list is always the same, regardless of the
+// number of vertices, and only needs to be extended as needed. This makes
+// caching efficient, as the code can reuse the existing list and simply extract
+// the required segment.
+class TriangleFanIndices {
+ public:
+  TriangleFanIndices() {}
+  size_t Ensure(size_t contour_point_count);
+  const uint16_t* data() { return indices_.data(); }
+
+  static size_t IndexCount(size_t contour_point_count) {
+    return (contour_point_count - 1) * 3;
+  }
+
+ private:
+  std::vector<uint16_t> indices_;
+};
+
+size_t TriangleFanIndices::Ensure(size_t contour_point_count) {
+  size_t index_count = IndexCount(contour_point_count);
+  indices_.reserve(index_count);
+  for (size_t i = indices_.size(); i < index_count; i += 3) {
+    size_t start_id = i / 3 + 1;
+    indices_[i] = 0;
+    indices_[i + 1] = start_id;
+    indices_[i + 2] = start_id + 1;
+  }
+  return index_count;
+}
+
 // A look up table with precomputed variables.
 //
 // The columns represent the following variabls respectively:
@@ -229,8 +266,8 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   // height-aligned one have the same offset in different directions.
   const Scalar c = (size.width - size.height) / 2;
 
-  // Draw the first quadrant of the shape and store in `points`. It will be
-  // mirrored to other quadrants later.
+  // Draw the first quadrant of the shape and store in `points`, including both
+  // ends. It will be mirrored to other quadrants later.
   std::vector<Point> points;
   points.reserve(41);
 
@@ -240,49 +277,53 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   DrawOctantSquareLikeSquircle(points, size.height, corner_radius_, Point{c, 0},
                                true);
 
+  auto& host_buffer = renderer.GetTransientsBuffer();
+
   static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
 
-  // Reflect the 1/4 arc into the 4 quadrants and generate the tessellated mesh.
-  // The iteration order is reversed so that the trianges are continuous from
-  // quadrant to quadrant.
-  std::vector<Point> geometry;
-  geometry.reserve(1 + 4 * points.size());
-  geometry.push_back(center);
+  // Generate the point data of the tessellated mesh. The first point in the
+  // point buffer is the center. The next `contour_point_count` points are the
+  // 1/4 arc mirrored into the 4 quadrants. The point data is organized in the
+  // structure of a triangle fan.
+  size_t contour_point_count = 4 * (points.size() - 1) + 1;
+  BufferView vertex_buffer = host_buffer.Emplace(
+      nullptr, sizeof(Point) * (contour_point_count + 1), alignof(Point));
+  Point* vertex_data =
+      reinterpret_cast<Point*>(vertex_buffer.GetBuffer()->OnGetContents() +
+                               vertex_buffer.GetRange().offset);
+  *(vertex_data++) = center;
   // All arcs include the starting point and exclude the ending point.
   for (auto i = 0u; i < points.size() - 1; i++) {
-    geometry.push_back(center + (reflection[0] * points[i]));
+    *(vertex_data++) = center + (reflection[0] * points[i]);
   }
   for (auto i = points.size() - 1; i >= 1; i--) {
-    geometry.push_back(center + (reflection[1] * points[i]));
+    *(vertex_data++) = center + (reflection[1] * points[i]);
   }
   for (auto i = 0u; i < points.size() - 1; i++) {
-    geometry.push_back(center + (reflection[2] * points[i]));
+    *(vertex_data++) = center + (reflection[2] * points[i]);
   }
   for (auto i = points.size() - 1; i >= 1; i--) {
-    geometry.push_back(center + (reflection[3] * points[i]));
+    *(vertex_data++) = center + (reflection[3] * points[i]);
   }
-  geometry.push_back(center + points[0]);
+  *vertex_data = center + points[0];
 
-  std::vector<uint16_t> indices;
-  indices.reserve(geometry.size() * 3);
-  for (auto i = 2u; i < geometry.size(); i++) {
-    indices.push_back(0);
-    indices.push_back(i - 1);
-    indices.push_back(i);
-  }
+  static TriangleFanIndices indices_cache;
+  size_t index_count = indices_cache.Ensure(contour_point_count);
+  BufferView index_buffer = host_buffer.Emplace(
+      nullptr, sizeof(uint16_t) * index_count, alignof(uint16_t));
+  uint16_t* index_data =
+      reinterpret_cast<uint16_t*>(index_buffer.GetBuffer()->OnGetContents() +
+                                  index_buffer.GetRange().offset);
 
-  auto& host_buffer = renderer.GetTransientsBuffer();
+  std::memcpy(index_data, indices_cache.data(), sizeof(uint16_t) * index_count);
+
   return GeometryResult{
       .type = PrimitiveType::kTriangle,
       .vertex_buffer =
           {
-              .vertex_buffer = host_buffer.Emplace(
-                  geometry.data(), geometry.size() * sizeof(Point),
-                  alignof(Point)),
-              .index_buffer = host_buffer.Emplace(
-                  indices.data(), indices.size() * sizeof(uint16_t),
-                  alignof(uint16_t)),
-              .vertex_count = indices.size(),
+              .vertex_buffer = vertex_buffer,
+              .index_buffer = index_buffer,
+              .vertex_count = index_count,
               .index_type = IndexType::k16bit,
           },
       .transform = entity.GetShaderTransform(pass),
