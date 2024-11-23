@@ -132,14 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Mark the end of a compositor frame.
-  ///
-  /// May determine changes are required to the thread merging state.
-  /// Called from the raster thread.
-  void EndFrame(bool should_resubmit_frame,
-                const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger,
-                bool impeller_enabled);
-
   /// @brief Returns the Canvas for the overlay slice for the given platform view.
   ///
   /// Called from the raster thread.
@@ -327,20 +319,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::EndFrame(
-    bool should_resubmit_frame,
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger,
-    bool impeller_enabled) {
-#if FML_OS_IOS_SIMULATOR
-  bool run_check = true;
-#else
-  bool run_check = !impeller_enabled;
-#endif  // FML_OS_IOS_SIMULATOR
-  if (run_check && should_resubmit_frame) {
-    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
-  }
-}
 
 void PlatformViewsController::PushFilterToVisitedPlatformViews(
     const std::shared_ptr<DlImageFilter>& filter,
@@ -992,7 +970,14 @@ void PlatformViewsController::ResetFrameState() {
 - (void)endFrameWithResubmit:(BOOL)shouldResubmitFrame
                 threadMerger:(const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
              impellerEnabled:(BOOL)impellerEnabled {
-  self.instance->EndFrame(shouldResubmitFrame, rasterThreadMerger, impellerEnabled);
+#if FML_OS_IOS_SIMULATOR
+  BOOL runCheck = YES;
+#else
+  BOOL runCheck = !impellerEnabled;
+#endif  // FML_OS_IOS_SIMULATOR
+  if (runCheck && shouldResubmitFrame) {
+    rasterThreadMerger->MergeWithLease(kDefaultMergedLeaseDuration);
+  }
 }
 
 - (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId {
