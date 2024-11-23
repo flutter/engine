@@ -383,6 +383,9 @@ class PlatformViewsController {
      withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
           grContext:(GrDirectContext*)grContext;
 
+/// @brief Handler for platform view message channels.
+- (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
 /// @brief Returns the platform view id if the platform view (or any of its descendant view) is
 /// the first responder.
 ///
@@ -396,10 +399,12 @@ class PlatformViewsController {
   /// @brief Pushes the view id of a visted platform view to the list of visied platform views.
 - (void)pushVisitedPlatformViewId:(int64_t)viewId;
 
-// visible for testing.
+@end
+
+@interface FlutterPlatformViewsController (Testing)
+
 - (size_t)embeddedViewCount;
 
-// visible for testing.
 // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
 //
 // If the `PlatformViewsController` does not contain any `FlutterPlatformView` object or
@@ -407,8 +412,7 @@ class PlatformViewsController {
 // returns nil.
 - (UIView*)platformViewForId:(int64_t)viewId;
 
-/// @brief Handler for platform view message channels.
-- (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params;
 
 @end
 
