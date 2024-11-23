@@ -132,12 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Returns the`FlutterTouchInterceptingView` with the provided view_id.
-  ///
-  /// Returns nil if there is no platform view with the provided id. Called
-  /// from the platform thread.
-  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
-
   /// @brief Mark the end of a compositor frame.
   ///
   /// May determine changes are required to the thread merging state.
@@ -360,14 +354,6 @@ void PlatformViewsController::PushFilterToVisitedPlatformViews(
 
 size_t PlatformViewsController::EmbeddedViewCount() const {
   return composition_order_.size();
-}
-
-FlutterTouchInterceptingView* PlatformViewsController::GetFlutterTouchInterceptingViewByID(
-    int64_t view_id) {
-  if (platform_views_.empty()) {
-    return nil;
-  }
-  return platform_views_[view_id].touch_interceptor;
 }
 
 long PlatformViewsController::FindFirstResponderPlatformViewId() {
@@ -962,7 +948,10 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
-  return self.instance->GetFlutterTouchInterceptingViewByID(viewId);
+  if (self.instance->platform_views_.empty()) {
+    return nil;
+  }
+  return self.instance->platform_views_[viewId].touch_interceptor;
 }
 
 - (flutter::PostPrerollResult)postPrerollActionWithThreadMerger:
@@ -1038,7 +1027,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (UIView*)platformViewForId:(int64_t)viewId {
-  return [self.instance->GetFlutterTouchInterceptingViewByID(viewId) embeddedView];
+  return [self flutterTouchInterceptingViewForId:viewId].embeddedView;
 }
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
