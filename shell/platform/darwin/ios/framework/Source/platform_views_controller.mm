@@ -130,8 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> factories_;
-
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies_;
@@ -214,6 +212,8 @@ BOOL canApplyBlurBackdrop = YES;
 
 @property(nonatomic, readonly) FlutterClippingMaskViewPool* mask_view_pool;
 
+@property(nonatomic, readonly) std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>& factories;
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -263,6 +263,9 @@ BOOL canApplyBlurBackdrop = YES;
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<flutter::OverlayLayerPool> _layer_pool;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
+  std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
+  /// The task runner for posting tasks to the platform thread.
+  fml::RefPtr<fml::TaskRunner> _platform_task_runner;
 }
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
@@ -296,13 +299,17 @@ BOOL canApplyBlurBackdrop = YES;
   return _slices;
 }
 
+- (std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>&)factories {
+  return _factories;
+}
+
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizerBlockingPolicy {
   std::string idString([factoryId UTF8String]);
-  FML_CHECK(self.instance->factories_.count(idString) == 0);
-  self.instance->factories_[idString] = factory;
+  FML_CHECK(self.factories.count(idString) == 0);
+  self.factories[idString] = factory;
   self.instance->gesture_recognizers_blocking_policies_[idString] = gestureRecognizerBlockingPolicy;
 }
 
@@ -700,7 +707,7 @@ BOOL canApplyBlurBackdrop = YES;
     return;
   }
 
-  NSObject<FlutterPlatformViewFactory>* factory = self.instance->factories_[viewType];
+  NSObject<FlutterPlatformViewFactory>* factory = self.factories[viewType];
   if (factory == nil) {
     result([FlutterError
         errorWithCode:@"unregistered_view_type"
