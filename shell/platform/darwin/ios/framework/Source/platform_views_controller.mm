@@ -132,11 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Returns the Canvas for the overlay slice for the given platform view.
-  ///
-  /// Called from the raster thread.
-  DlCanvas* CompositeEmbeddedView(int64_t view_id);
-
   /// @brief Discards all platform views instances and auxiliary resources.
   ///
   /// Called from the raster thread.
@@ -521,10 +516,6 @@ void PlatformViewsController::CompositeWithParams(int64_t view_id,
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
   ApplyMutators(mutatorStack, touchInterceptor, rect);
-}
-
-DlCanvas* PlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
-  return slices_[view_id]->canvas();
 }
 
 void PlatformViewsController::Reset() {
@@ -981,7 +972,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId {
-  return self.instance->CompositeEmbeddedView(viewId);
+  return self.instance->slices_[viewId]->canvas();
 }
 
 - (void)reset {
