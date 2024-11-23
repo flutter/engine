@@ -161,11 +161,6 @@ class PlatformViewsController {
                    const std::shared_ptr<IOSContext>& ios_context,
                    MTLPixelFormat pixel_format);
 
-  // Removes overlay views and platform views that aren't needed in the current frame.
-  // Must run on the platform thread.
-  void RemoveUnusedLayers(const std::vector<std::shared_ptr<OverlayLayer>>& unused_layers,
-                          const std::vector<int64_t>& composition_order);
-
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
   void BringLayersIntoView(const LayersMap& layer_map,
@@ -439,26 +434,6 @@ void PlatformViewsController::CreateLayer(GrDirectContext* gr_context,
   layer_pool_->CreateLayer(gr_context, ios_context, pixel_format);
 }
 
-void PlatformViewsController::RemoveUnusedLayers(
-    const std::vector<std::shared_ptr<OverlayLayer>>& unused_layers,
-    const std::vector<int64_t>& composition_order) {
-  for (const std::shared_ptr<OverlayLayer>& layer : unused_layers) {
-    [layer->overlay_view_wrapper removeFromSuperview];
-  }
-
-  std::unordered_set<int64_t> composition_order_set;
-  for (int64_t view_id : composition_order) {
-    composition_order_set.insert(view_id);
-  }
-  // Remove unused platform views.
-  for (int64_t view_id : previous_composition_order_) {
-    if (composition_order_set.find(view_id) == composition_order_set.end()) {
-      UIView* platform_view_root = platform_views_[view_id].root_view;
-      [platform_view_root removeFromSuperview];
-    }
-  }
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -479,6 +454,8 @@ void PlatformViewsController::RemoveUnusedLayers(
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+      withCompositionOrder:(const std::vector<int64_t>&)composition_order;
 - (std::vector<UIView*>)viewsToDispose;
 - (void)resetFrameState;
 @end
@@ -890,7 +867,7 @@ void PlatformViewsController::RemoveUnusedLayers(
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
-  self.instance->RemoveUnusedLayers(unused_layers, composition_order);
+  [self removeUnusedLayers:unused_layers withCompositionOrder:composition_order];
 
   // Organize the layers by their z indexes.
   self.instance->BringLayersIntoView(platform_view_layers, composition_order);
@@ -1025,6 +1002,25 @@ void PlatformViewsController::RemoveUnusedLayers(
   [view blockGesture];
 
   result(nil);
+}
+
+- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+      withCompositionOrder:(const std::vector<int64_t>&)composition_order {
+  for (const std::shared_ptr<flutter::OverlayLayer>& layer : unused_layers) {
+    [layer->overlay_view_wrapper removeFromSuperview];
+  }
+
+  std::unordered_set<int64_t> composition_order_set;
+  for (int64_t view_id : composition_order) {
+    composition_order_set.insert(view_id);
+  }
+  // Remove unused platform views.
+  for (int64_t view_id : self.instance->previous_composition_order_) {
+    if (composition_order_set.find(view_id) == composition_order_set.end()) {
+      UIView* platform_view_root = self.instance->platform_views_[view_id].root_view;
+      [platform_view_root removeFromSuperview];
+    }
+  }
 }
 
 - (std::vector<UIView*>)viewsToDispose {
