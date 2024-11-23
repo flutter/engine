@@ -375,6 +375,14 @@ class PlatformViewsController {
 /// Called from the raster thread.
 - (void)reset;
 
+/// @brief Encode rendering for the Flutter overlay views and queue up perform platform view
+/// mutations.
+///
+/// Called from the raster thread.
+- (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)frame
+     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+          grContext:(GrDirectContext*)grContext;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

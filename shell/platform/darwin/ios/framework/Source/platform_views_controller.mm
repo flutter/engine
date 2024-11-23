@@ -839,6 +839,12 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->Reset();
 }
 
+- (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)frame
+     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+          grContext:(GrDirectContext*)grContext {
+  return self.instance->SubmitFrame(grContext, iosContext, std::move(frame));
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

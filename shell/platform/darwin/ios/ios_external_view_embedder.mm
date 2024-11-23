@@ -85,7 +85,9 @@ void IOSExternalViewEmbedder::SubmitFlutterView(
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   FML_CHECK(platform_views_controller_.instance);
-  platform_views_controller_.instance->SubmitFrame(context, ios_context_, std::move(frame));
+  [platform_views_controller_ submitFrame:std::move(frame)
+                           withIosContext:ios_context_
+                                grContext:context];
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");
 }
 
