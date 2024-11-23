@@ -208,9 +208,6 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  // TODO(cbracken): This is pretty sketchy -- the platformViewsController accessor was always
-  // returning a reference to a shared_ptr which means we were always just resetting the instance
-  // owned by the engine. Shouldn't this have been a unique_ptr all along?!
   [owner_controller_.platformViewsController reset];
   [owner_controller_.restorationPlugin reset];
 }
