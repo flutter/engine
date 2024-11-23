@@ -130,7 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  FlutterClippingMaskViewPool* mask_view_pool_;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> factories_;
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
@@ -213,6 +212,8 @@ BOOL canApplyBlurBackdrop = YES;
 // The Slices are deleted by the PlatformViewsController.reset().
 @property(nonatomic, readonly) std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>& slices;
 
+@property(nonatomic, readonly) FlutterClippingMaskViewPool* mask_view_pool;
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -273,7 +274,7 @@ BOOL canApplyBlurBackdrop = YES;
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
     _layer_pool = std::make_unique<flutter::OverlayLayerPool>();
-    _instance->mask_view_pool_ =
+    _mask_view_pool =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
   }
   return self;
@@ -808,7 +809,7 @@ BOOL canApplyBlurBackdrop = YES;
   CGRect frame =
       CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
                  CGRectGetWidth(self.flutterView.bounds), CGRectGetHeight(self.flutterView.bounds));
-  clipView.maskView = [self.instance->mask_view_pool_ getMaskViewWithFrame:frame];
+  clipView.maskView = [self.mask_view_pool getMaskViewWithFrame:frame];
 }
 
 - (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
@@ -826,7 +827,7 @@ BOOL canApplyBlurBackdrop = YES;
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
   if (clipView.maskView) {
-    [self.instance->mask_view_pool_ insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
+    [self.mask_view_pool insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
