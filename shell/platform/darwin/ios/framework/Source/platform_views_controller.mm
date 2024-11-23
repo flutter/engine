@@ -802,6 +802,10 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->RegisterViewFactory(factory, factoryId, gestureRecognizerBlockingPolicy);
 }
 
+- (void)beginFrameWithSize:(SkISize)frameSize {
+  self.instance->BeginFrame(frameSize);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

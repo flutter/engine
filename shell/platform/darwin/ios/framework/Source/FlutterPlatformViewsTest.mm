@@ -1581,7 +1581,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   auto embeddedViewParams =
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
 
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(0, 0));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(0, 0)];
   flutterPlatformViewsController.instance->PrerollCompositeEmbeddedView(
       2, std::move(embeddedViewParams));
   flutterPlatformViewsController.instance->PushVisitedPlatformView(2);
@@ -1616,7 +1616,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   // New frame, with no filter pushed.
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(screenScaleMatrix, SkSize::Make(10, 10), stack);
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(0, 0));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(0, 0)];
   flutterPlatformViewsController.instance->PrerollCompositeEmbeddedView(
       2, std::move(embeddedViewParams2));
   flutterPlatformViewsController.instance->CompositeWithParams(
@@ -3190,7 +3190,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
             result:result];
 
   // First frame, |EmbeddedViewCount| is not empty after composite.
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
   auto embeddedViewParams1 =
@@ -3203,7 +3203,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 1UL);
 
   // Second frame, |EmbeddedViewCount| should be empty at the start
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 0UL);
 
   auto embeddedViewParams2 =
@@ -3268,7 +3268,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
             result:result];
   UIView* view2 = gMockPlatformView;
 
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
   auto embeddedViewParams1 =
@@ -3302,7 +3302,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                 @"The first clipping view should be added before the second clipping view.");
 
   // Need to recreate these params since they are `std::move`ed.
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   // Process the second frame in the opposite order.
   embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
@@ -3380,7 +3380,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
             result:result];
   UIView* view2 = gMockPlatformView;
 
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
   auto embeddedViewParams1 =
@@ -3414,7 +3414,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                 @"The first clipping view should be added before the second clipping view.");
 
   // Need to recreate these params since they are `std::move`ed.
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   // Process the second frame in the same order.
   embeddedViewParams1 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
@@ -3589,7 +3589,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   XCTAssertNotNil(maskView1);
 
   // Composite a new frame.
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(100, 100));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(100, 100)];
   flutter::MutatorsStack stack2;
   auto embeddedViewParams2 = std::make_unique<flutter::EmbeddedViewParams>(
       screenScaleMatrix, SkSize::Make(10, 10), stack2);
@@ -3863,7 +3863,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   {
     // **** First frame, view id 0, 1 in the composition_order_, disposing view 0 is called. **** //
     // No view should be disposed, or removed from the composition order.
-    flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+    [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
     flutter::MutatorsStack stack;
     SkMatrix finalMatrix;
     auto embeddedViewParams0 =
@@ -3908,7 +3908,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   {
     // **** Second frame, view id 1 in the composition_order_, no disposing view is called,  **** //
     // View 0 is removed from the composition order in this frame, hence also disposed.
-    flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+    [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
     flutter::MutatorsStack stack;
     SkMatrix finalMatrix;
     auto embeddedViewParams1 =
@@ -4163,7 +4163,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                      }]
             result:result];
 
-  flutterPlatformViewsController.instance->BeginFrame(SkISize::Make(300, 300));
+  [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
   auto embeddedViewParams1 =

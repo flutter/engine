@@ -42,7 +42,7 @@ void IOSExternalViewEmbedder::BeginFrame(
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PrepareFlutterView(SkISize frame_size, double device_pixel_ratio) {
   FML_CHECK(platform_views_controller_.instance);
-  platform_views_controller_.instance->BeginFrame(frame_size);
+  [platform_views_controller_ beginFrameWithSize:frame_size];
 }
 
 // |ExternalViewEmbedder|

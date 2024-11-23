@@ -328,6 +328,9 @@ class PlatformViewsController {
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizerBlockingPolicy;
 
+/// @brief Mark the beginning of a frame and record the size of the onscreen.
+- (void)beginFrameWithSize:(SkISize)frameSize;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
