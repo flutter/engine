@@ -130,11 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// view IDs in composition order.
-  ///
-  /// This state is only modified on the raster thread.
-  std::vector<int64_t> composition_order_;
-
   /// platform view IDs visited during layer tree composition.
   ///
   /// This state is only modified on the raster thread.
@@ -214,6 +209,10 @@ BOOL canApplyBlurBackdrop = YES;
 /// This state is modified on both the platform and raster thread.
 @property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_dispose;
 
+/// view IDs in composition order.
+///
+/// This state is only modified on the raster thread.
+@property(nonatomic, readonly) std::vector<int64_t>& composition_order;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -268,6 +267,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, PlatformViewData> _platform_views;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
   std::unordered_set<int64_t> _views_to_dispose;
+  std::vector<int64_t> _composition_order;
 }
 
 - (id)init {
@@ -312,6 +312,10 @@ BOOL canApplyBlurBackdrop = YES;
   return _views_to_dispose;
 }
 
+- (std::vector<int64_t>&)composition_order {
+  return _composition_order;
+}
+
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
@@ -338,7 +342,7 @@ BOOL canApplyBlurBackdrop = YES;
   view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
   self.slices.insert_or_assign(viewId, std::move(view));
 
-  self.instance->composition_order_.push_back(viewId);
+  self.composition_order.push_back(viewId);
 
   if (self.current_composition_params.count(viewId) == 1 &&
       self.current_composition_params[viewId] == *params.get()) {
@@ -367,7 +371,7 @@ BOOL canApplyBlurBackdrop = YES;
 #endif  // FML_OS_IOS_SIMULATOR
 
   if (mergeThreads) {
-    if (self.instance->composition_order_.empty()) {
+    if (self.composition_order.empty()) {
       return flutter::PostPrerollResult::kSuccess;
     }
     if (!rasterThreadMerger->IsMerged()) {
@@ -412,15 +416,14 @@ BOOL canApplyBlurBackdrop = YES;
   // Reset will only be called from the raster thread or a merged raster/platform thread.
   // _platform_views must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
-  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner,
-                                    [&, composition_order = self.instance->composition_order_]() {
-                                      for (int64_t view_id : self.instance->composition_order_) {
-                                        [self.platform_views[view_id].root_view removeFromSuperview];
-                                      }
-                                      self.platform_views.clear();
-                                    });
+  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [self]() {
+    for (int64_t view_id : self.composition_order) {
+      [self.platform_views[view_id].root_view removeFromSuperview];
+    }
+    self.platform_views.clear();
+  });
 
-  self.instance->composition_order_.clear();
+  self.composition_order.clear();
   self.slices.clear();
   self.current_composition_params.clear();
   self.instance->views_to_recomposite_.clear();
@@ -434,28 +437,28 @@ BOOL canApplyBlurBackdrop = YES;
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
-  if (self.flutterView == nil || (self.instance->composition_order_.empty() &&
+  if (self.flutterView == nil || (self.composition_order.empty() &&
     !self.instance->had_platform_views_)) {
     self.instance->had_platform_views_ = false;
     return background_frame->Submit();
   }
-  self.instance->had_platform_views_ = !self.instance->composition_order_.empty();
+  self.instance->had_platform_views_ = !self.composition_order.empty();
 
   bool did_encode = true;
   LayersMap platform_view_layers;
   std::vector<std::unique_ptr<flutter::SurfaceFrame>> surface_frames;
-  surface_frames.reserve(self.instance->composition_order_.size());
+  surface_frames.reserve(self.composition_order.size());
   std::unordered_map<int64_t, SkRect> view_rects;
 
-  for (int64_t view_id : self.instance->composition_order_) {
+  for (int64_t view_id : self.composition_order) {
     view_rects[view_id] = self.current_composition_params[view_id].finalBoundingRect();
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
-      SliceViews(background_frame->Canvas(), self.instance->composition_order_, self.slices, view_rects);
+      SliceViews(background_frame->Canvas(), self.composition_order, self.slices, view_rects);
 
   size_t required_overlay_layers = 0;
-  for (int64_t view_id : self.instance->composition_order_) {
+  for (int64_t view_id : self.composition_order) {
     std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
     if (overlay == overlay_layers.end()) {
       continue;
@@ -471,7 +474,7 @@ BOOL canApplyBlurBackdrop = YES;
                     grContext:gr_context];
 
   int64_t overlay_id = 0;
-  for (int64_t view_id : self.instance->composition_order_) {
+  for (int64_t view_id : self.composition_order) {
     std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
     if (overlay == overlay_layers.end()) {
       continue;
@@ -527,7 +530,7 @@ BOOL canApplyBlurBackdrop = YES;
                platform_view_layers = std::move(platform_view_layers),                   //
                current_composition_params = self.current_composition_params,  //
                views_to_recomposite = self.instance->views_to_recomposite_,              //
-               composition_order = self.instance->composition_order_,                    //
+               composition_order = self.composition_order,                    //
                unused_layers = std::move(unused_layers),                                 //
                surface_frames = std::move(surface_frames)                                //
   ]() mutable {
@@ -568,7 +571,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (size_t)embeddedViewCount {
-  return self.instance->composition_order_.size();
+  return self.composition_order.size();
 }
 
 - (UIView*)platformViewForId:(int64_t)viewId {
@@ -1023,8 +1026,8 @@ BOOL canApplyBlurBackdrop = YES;
     return views;
   }
 
-  std::unordered_set<int64_t> views_to_composite(self.instance->composition_order_.begin(),
-                                                 self.instance->composition_order_.end());
+  std::unordered_set<int64_t> views_to_composite(self.composition_order.begin(),
+                                                 self.composition_order.end());
   std::unordered_set<int64_t> views_to_delay_dispose;
   for (int64_t viewId : self.views_to_dispose) {
     if (views_to_composite.count(viewId)) {
@@ -1044,7 +1047,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)resetFrameState {
   self.slices.clear();
-  self.instance->composition_order_.clear();
+  self.composition_order.clear();
   self.instance->visited_platform_views_.clear();
 }
 
