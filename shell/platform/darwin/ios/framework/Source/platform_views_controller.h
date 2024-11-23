@@ -370,6 +370,11 @@ class PlatformViewsController {
 /// Called from the raster thread.
 - (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId;
 
+/// @brief Discards all platform views instances and auxiliary resources.
+///
+/// Called from the raster thread.
+- (void)reset;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

@@ -835,6 +835,10 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->CompositeEmbeddedView(viewId);
 }
 
+- (void)reset {
+  self.instance->Reset();
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

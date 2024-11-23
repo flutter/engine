@@ -326,7 +326,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     flutter::CustomAccessibilityActionUpdates actions;
     bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
     XCTAssertNotNil(gMockPlatformView);
-    flutterPlatformViewsController.instance->Reset();
+    [flutterPlatformViewsController reset];
   }
   XCTAssertNil(gMockPlatformView);
 }
@@ -378,7 +378,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*platform_views_controller=*/flutterPlatformViewsController);
 
     XCTAssertNotNil(gMockPlatformView);
-    flutterPlatformViewsController.instance->Reset();
+    [flutterPlatformViewsController reset];
     platform_view->NotifyDestroyed();
   }
   XCTAssertNil(gMockPlatformView);

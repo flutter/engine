@@ -213,7 +213,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
 }
 
 - (void)testCanCreatePlatformViewWithoutFlutterView {
@@ -2716,7 +2716,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     OCMReject([flutterViewController touchesEnded:touches5 withEvent:event5]);
   }
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
 }
 
 - (void)
@@ -2834,7 +2834,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   OCMVerify([flutterViewController2 touchesEnded:touches8 withEvent:event8]);
   OCMReject([flutterViewController touchesEnded:touches8 withEvent:event8]);
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
 }
 
 - (void)testFlutterPlatformViewTouchesCancelledEventAreForcedToBeCancelled {
@@ -2902,7 +2902,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   [forwardGectureRecognizer touchesCancelled:touches1 withEvent:event1];
   OCMVerify([flutterViewController forceTouchesCancelled:touches1]);
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
 }
 
 - (void)testFlutterPlatformViewTouchesEndedOrTouchesCancelledEventDoesNotFailTheGestureRecognizer {
@@ -3010,7 +3010,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   });
   [self waitForExpectationsWithTimeout:30 handler:nil];
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
 }
 
 - (void)testFlutterPlatformViewControllerSubmitFrameWithoutFlutterViewNotCrashing {
@@ -3143,7 +3143,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     // are not added to flutter_view_.
 
     XCTAssertNotNil(gMockPlatformView);
-    flutterPlatformViewsController.instance->Reset();
+    [flutterPlatformViewsController reset];
   }
   XCTAssertNil(gMockPlatformView);
 }
@@ -4004,7 +4004,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   UIView* someView = [[UIView alloc] init];
   [flutterView addSubview:someView];
 
-  flutterPlatformViewsController.instance->Reset();
+  [flutterPlatformViewsController reset];
   XCTAssertEqual(flutterView.subviews.count, 1u);
   XCTAssertEqual(flutterView.subviews.firstObject, someView);
 }
