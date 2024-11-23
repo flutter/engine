@@ -104,6 +104,13 @@ bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
   return transformed_rrect.contains(platformview_boundingrect);
 }
 
+struct LayerData {
+  SkRect rect;
+  int64_t view_id;
+  int64_t overlay_id;
+  std::shared_ptr<flutter::OverlayLayer> layer;
+};
+
 /// Each of the following structs stores part of the platform view hierarchy according to its
 /// ID.
 ///
@@ -237,13 +244,6 @@ class PlatformViewsController {
   // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
-
-  struct LayerData {
-    SkRect rect;
-    int64_t view_id;
-    int64_t overlay_id;
-    std::shared_ptr<OverlayLayer> layer;
-  };
 
   using LayersMap = std::unordered_map<int64_t, LayerData>;
 
