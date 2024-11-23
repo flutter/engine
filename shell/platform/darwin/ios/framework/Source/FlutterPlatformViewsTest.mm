@@ -3911,8 +3911,8 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 2UL);
-    XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(0));
-    XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(1));
+    XCTAssertNotNil([flutterPlatformViewsController platformViewForId:0]);
+    XCTAssertNotNil([flutterPlatformViewsController platformViewForId:1]);
   }
 
   {
@@ -3941,8 +3941,8 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
     XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
-    XCTAssertNil(flutterPlatformViewsController.instance->GetPlatformViewByID(0));
-    XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(1));
+    XCTAssertNil([flutterPlatformViewsController platformViewForId:0]);
+    XCTAssertNotNil([flutterPlatformViewsController platformViewForId:1]);
   }
 }
 - (void)testOnlyPlatformViewsAreRemovedWhenReset {

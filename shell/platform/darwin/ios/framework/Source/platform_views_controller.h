@@ -399,6 +399,14 @@ class PlatformViewsController {
 // visible for testing.
 - (size_t)embeddedViewCount;
 
+// visible for testing.
+// Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
+//
+// If the `PlatformViewsController` does not contain any `FlutterPlatformView` object or
+// a `FlutterPlatformView` object associated with the view_id cannot be found, the method
+// returns nil.
+- (UIView*)platformViewForId:(int64_t)viewId;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
