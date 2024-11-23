@@ -152,13 +152,6 @@ class PlatformViewsController {
                      const std::vector<std::shared_ptr<OverlayLayer>>& unused_layers,
                      const std::vector<std::unique_ptr<SurfaceFrame>>& surface_frames);
 
-  /// @brief Populate any missing overlay layers.
-  ///
-  /// This requires posting a task to the platform thread and blocking on its completion.
-  void CreateMissingOverlays(GrDirectContext* gr_context,
-                             const std::shared_ptr<IOSContext>& ios_context,
-                             size_t required_overlay_layers);
-
   /// @brief Return all views to be disposed on the platform thread.
   std::vector<UIView*> GetViewsToDispose();
 
@@ -457,33 +450,6 @@ void PlatformViewsController::CompositeWithParams(int64_t view_id,
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
-void PlatformViewsController::CreateMissingOverlays(GrDirectContext* gr_context,
-                                                    const std::shared_ptr<IOSContext>& ios_context,
-                                                    size_t required_overlay_layers) {
-  TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
-
-  if (required_overlay_layers <= layer_pool_->size()) {
-    return;
-  }
-  auto missing_layer_count = required_overlay_layers - layer_pool_->size();
-
-  // If the raster thread isn't merged, create layers on the platform thread and block until
-  // complete.
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, [&]() {
-    for (auto i = 0u; i < missing_layer_count; i++) {
-      CreateLayer(gr_context,                                //
-                  ios_context,                               //
-                  ((FlutterView*)flutter_view_).pixelFormat  //
-      );
-    }
-    latch->CountDown();
-  });
-  if (![[NSThread currentThread] isMainThread]) {
-    latch->Wait();
-  }
-}
-
 /// Update the buffers and mutate the platform views in CATransaction on the platform thread.
 void PlatformViewsController::PerformSubmit(
     const LayersMap& platform_view_layers,
@@ -634,6 +600,9 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 // TODO(cbracken): Migrate all fields to Obj-C properties, then delete.
 @property(nonatomic, readonly) std::unique_ptr<flutter::PlatformViewsController>& instance;
 
+- (void)createMissingOverlays:(size_t)requiredOverlayLayers
+               withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+                    grContext:(GrDirectContext*)grContext;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -833,7 +802,9 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
   // If there are not sufficient overlay layers, we must construct them on the platform
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
-  self.instance->CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
+  [self createMissingOverlays:required_overlay_layers
+               withIosContext:ios_context
+                    grContext:gr_context];
 
   int64_t overlay_id = 0;
   for (int64_t view_id : self.instance->composition_order_) {
@@ -947,6 +918,33 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
   return self.instance->current_composition_params_.find(viewId)->second;
+}
+
+- (void)createMissingOverlays:(size_t)required_overlay_layers
+               withIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
+                    grContext:(GrDirectContext*)gr_context {
+  TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
+
+  if (required_overlay_layers <= self.instance->layer_pool_->size()) {
+    return;
+  }
+  auto missing_layer_count = required_overlay_layers - self.instance->layer_pool_->size();
+
+  // If the raster thread isn't merged, create layers on the platform thread and block until
+  // complete.
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
+  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, [&]() {
+    for (auto i = 0u; i < missing_layer_count; i++) {
+      self.instance->CreateLayer(gr_context,                                //
+                  ios_context,                               //
+                  ((FlutterView*)self.instance->flutter_view_).pixelFormat  //
+      );
+    }
+    latch->CountDown();
+  });
+  if (![[NSThread currentThread] isMainThread]) {
+    latch->Wait();
+  }
 }
 
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
