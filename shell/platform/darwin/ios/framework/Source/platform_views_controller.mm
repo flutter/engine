@@ -1030,7 +1030,7 @@ void PlatformViewsController::ResetFrameState() {
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
-- (std::shared_ptr<flutter::PlatformViewsController>&)instance;
+- (std::unique_ptr<flutter::PlatformViewsController>&)instance;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -1038,17 +1038,17 @@ void PlatformViewsController::ResetFrameState() {
 @end
 
 @implementation FlutterPlatformViewsController {
-  std::shared_ptr<flutter::PlatformViewsController> _instance;
+  std::unique_ptr<flutter::PlatformViewsController> _instance;
 }
 
 - (id)init {
   if (self = [super init]) {
-    _instance = std::make_shared<flutter::PlatformViewsController>();
+    _instance = std::make_unique<flutter::PlatformViewsController>();
   }
   return self;
 }
 
-- (std::shared_ptr<flutter::PlatformViewsController>&)instance {
+- (std::unique_ptr<flutter::PlatformViewsController>&)instance {
   return _instance;
 }
 
