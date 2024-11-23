@@ -203,7 +203,6 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   if (new_handle.IsDead()) {
     return HandleGLES::DeadHandle();
   }
-  WriterLock handles_lock(handles_mutex_);
 
   std::optional<ReactorGLES::GLStorage> gl_handle;
   if (external_handle != GL_NONE) {
@@ -211,6 +210,8 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   } else if (CanReactOnCurrentThread()) {
     gl_handle = CreateGLHandle(GetProcTable(), type);
   }
+
+  WriterLock handles_lock(handles_mutex_);
   handles_[new_handle] = LiveHandle{gl_handle};
   return new_handle;
 }
