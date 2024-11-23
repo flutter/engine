@@ -134,9 +134,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Pushes the view id of a visted platform view to the list of visied platform views.
-  void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
-
   // visible for testing.
   size_t EmbeddedViewCount() const;
 
@@ -953,7 +950,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)pushVisitedPlatformViewId:(int64_t)viewId {
-  return self.instance->PushVisitedPlatformView(viewId);
+  self.instance->visited_platform_views_.push_back(viewId);
 }
 
 - (size_t)embeddedViewCount {
