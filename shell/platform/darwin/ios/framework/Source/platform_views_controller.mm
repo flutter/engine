@@ -104,6 +104,16 @@ bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
   return transformed_rrect.contains(platformview_boundingrect);
 }
 
+/// Each of the following structs stores part of the platform view hierarchy according to its
+/// ID.
+///
+/// This data must only be accessed on the platform thread.
+struct PlatformViewData {
+  NSObject<FlutterPlatformView>* view;
+  FlutterTouchInterceptingView* touch_interceptor;
+  UIView* root_view;
+};
+
 }  // namespace
 
 namespace flutter {
@@ -315,16 +325,6 @@ class PlatformViewsController {
 
   /// The task runner for posting tasks to the platform thread.
   fml::RefPtr<fml::TaskRunner> platform_task_runner_;
-
-  /// Each of the following structs stores part of the platform view hierarchy according to its
-  /// ID.
-  ///
-  /// This data must only be accessed on the platform thread.
-  struct PlatformViewData {
-    NSObject<FlutterPlatformView>* view;
-    FlutterTouchInterceptingView* touch_interceptor;
-    UIView* root_view;
-  };
 
   /// This data must only be accessed on the platform thread.
   std::unordered_map<int64_t, PlatformViewData> platform_views_;
@@ -1211,7 +1211,7 @@ void PlatformViewsController::ResetFrameState() {
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
 
-  self.instance->platform_views_.emplace(viewId, flutter::PlatformViewsController::PlatformViewData{
+  self.instance->platform_views_.emplace(viewId, PlatformViewData{
                                                      .view = embedded_view,                   //
                                                      .touch_interceptor = touch_interceptor,  //
                                                      .root_view = clipping_view               //
