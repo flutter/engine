@@ -132,13 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Record a platform view in the layer tree to be rendered, along with the positioning and
-  ///        mutator parameters.
-  ///
-  /// Called from the raster thread.
-  void PrerollCompositeEmbeddedView(int64_t view_id,
-                                    std::unique_ptr<flutter::EmbeddedViewParams> params);
-
   /// @brief Returns the`FlutterTouchInterceptingView` with the provided view_id.
   ///
   /// Returns nil if there is no platform view with the provided id. Called
@@ -371,25 +364,6 @@ void PlatformViewsController::PushFilterToVisitedPlatformViews(
     params.PushImageFilter(filter, filter_rect);
     current_composition_params_[id] = params;
   }
-}
-
-void PlatformViewsController::PrerollCompositeEmbeddedView(
-    int64_t view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {
-  SkRect view_bounds = SkRect::Make(frame_size_);
-  std::unique_ptr<EmbedderViewSlice> view;
-  view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
-  slices_.insert_or_assign(view_id, std::move(view));
-
-  composition_order_.push_back(view_id);
-
-  if (current_composition_params_.count(view_id) == 1 &&
-      current_composition_params_[view_id] == *params.get()) {
-    // Do nothing if the params didn't change.
-    return;
-  }
-  current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
-  views_to_recomposite_.insert(view_id);
 }
 
 size_t PlatformViewsController::EmbeddedViewCount() const {
@@ -983,7 +957,20 @@ void PlatformViewsController::ResetFrameState() {
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
                           withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params {
-  self.instance->PrerollCompositeEmbeddedView(viewId, std::move(params));
+  SkRect view_bounds = SkRect::Make(self.instance->frame_size_);
+  std::unique_ptr<flutter::EmbedderViewSlice> view;
+  view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
+  self.instance->slices_.insert_or_assign(viewId, std::move(view));
+
+  self.instance->composition_order_.push_back(viewId);
+
+  if (self.instance->current_composition_params_.count(viewId) == 1 &&
+      self.instance->current_composition_params_[viewId] == *params.get()) {
+    // Do nothing if the params didn't change.
+    return;
+  }
+  self.instance->current_composition_params_[viewId] = flutter::EmbeddedViewParams(*params.get());
+  self.instance->views_to_recomposite_.insert(viewId);
 }
 
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
