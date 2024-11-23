@@ -130,11 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// platform view IDs visited during layer tree composition.
-  ///
-  /// This state is only modified on the raster thread.
-  std::vector<int64_t> visited_platform_views_;
-
   /// Only composite platform views in this set.
   ///
   /// This state is only modified on the raster thread.
@@ -214,6 +209,12 @@ BOOL canApplyBlurBackdrop = YES;
 /// This state is only modified on the raster thread.
 @property(nonatomic, readonly) std::vector<int64_t>& composition_order;
 
+/// platform view IDs visited during layer tree composition.
+///
+/// This state is only modified on the raster thread.
+@property(nonatomic, readonly) std::vector<int64_t>& visited_platform_views;
+
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -268,6 +269,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
   std::unordered_set<int64_t> _views_to_dispose;
   std::vector<int64_t> _composition_order;
+  std::vector<int64_t> _visited_platform_views;
 }
 
 - (id)init {
@@ -314,6 +316,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (std::vector<int64_t>&)composition_order {
   return _composition_order;
+}
+
+- (std::vector<int64_t>&)visited_platform_views {
+  return _visited_platform_views;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
@@ -428,7 +434,7 @@ BOOL canApplyBlurBackdrop = YES;
   self.current_composition_params.clear();
   self.instance->views_to_recomposite_.clear();
   self.layer_pool->RecycleLayers();
-  self.instance->visited_platform_views_.clear();
+  self.visited_platform_views.clear();
 }
 
 - (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)background_frame
@@ -559,7 +565,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect {
-  for (int64_t id : self.instance->visited_platform_views_) {
+  for (int64_t id : self.visited_platform_views) {
     flutter::EmbeddedViewParams params = self.current_composition_params[id];
     params.PushImageFilter(filter, filterRect);
     self.current_composition_params[id] = params;
@@ -567,7 +573,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (void)pushVisitedPlatformViewId:(int64_t)viewId {
-  self.instance->visited_platform_views_.push_back(viewId);
+  self.visited_platform_views.push_back(viewId);
 }
 
 - (size_t)embeddedViewCount {
@@ -1048,7 +1054,7 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)resetFrameState {
   self.slices.clear();
   self.composition_order.clear();
-  self.instance->visited_platform_views_.clear();
+  self.visited_platform_views.clear();
 }
 
 @end
