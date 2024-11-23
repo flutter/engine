@@ -111,6 +111,8 @@ struct LayerData {
   std::shared_ptr<flutter::OverlayLayer> layer;
 };
 
+using LayersMap = std::unordered_map<int64_t, LayerData>;
+
 /// Each of the following structs stores part of the platform view hierarchy according to its
 /// ID.
 ///
@@ -131,14 +133,6 @@ class PlatformViewsController {
   PlatformViewsController();
 
   ~PlatformViewsController() = default;
-
-  /// @brief Encode rendering for the Flutter overlay views and queue up perform platform view
-  /// mutations.
-  ///
-  /// Called from the raster thread.
-  bool SubmitFrame(GrDirectContext* gr_context,
-                   const std::shared_ptr<IOSContext>& ios_context,
-                   std::unique_ptr<SurfaceFrame> frame);
 
   /// @brief Returns the platform view id if the platform view (or any of its descendant view) is
   /// the first responder.
@@ -168,8 +162,6 @@ class PlatformViewsController {
   // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
-
-  using LayersMap = std::unordered_map<int64_t, LayerData>;
 
   // Update the buffers and mutate the platform views in CATransaction.
   //
@@ -511,120 +503,6 @@ void PlatformViewsController::CompositeWithParams(int64_t view_id,
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
   ApplyMutators(mutatorStack, touchInterceptor, rect);
-}
-
-bool PlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
-                                          const std::shared_ptr<IOSContext>& ios_context,
-                                          std::unique_ptr<SurfaceFrame> background_frame) {
-  TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
-
-  // No platform views to render; we're done.
-  if (flutter_view_ == nullptr || (composition_order_.empty() && !had_platform_views_)) {
-    had_platform_views_ = false;
-    return background_frame->Submit();
-  }
-  had_platform_views_ = !composition_order_.empty();
-
-  bool did_encode = true;
-  LayersMap platform_view_layers;
-  std::vector<std::unique_ptr<SurfaceFrame>> surface_frames;
-  surface_frames.reserve(composition_order_.size());
-  std::unordered_map<int64_t, SkRect> view_rects;
-
-  for (int64_t view_id : composition_order_) {
-    view_rects[view_id] = current_composition_params_[view_id].finalBoundingRect();
-  }
-
-  std::unordered_map<int64_t, SkRect> overlay_layers =
-      SliceViews(background_frame->Canvas(), composition_order_, slices_, view_rects);
-
-  size_t required_overlay_layers = 0;
-  for (int64_t view_id : composition_order_) {
-    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
-    if (overlay == overlay_layers.end()) {
-      continue;
-    }
-    required_overlay_layers++;
-  }
-
-  // If there are not sufficient overlay layers, we must construct them on the platform
-  // thread, at least until we've refactored iOS surface creation to use IOSurfaces
-  // instead of CALayers.
-  CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
-
-  int64_t overlay_id = 0;
-  for (int64_t view_id : composition_order_) {
-    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
-    if (overlay == overlay_layers.end()) {
-      continue;
-    }
-    std::shared_ptr<OverlayLayer> layer = GetExistingLayer();
-    if (!layer) {
-      continue;
-    }
-
-    std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
-    // If frame is null, AcquireFrame already printed out an error message.
-    if (!frame) {
-      continue;
-    }
-    DlCanvas* overlay_canvas = frame->Canvas();
-    int restore_count = overlay_canvas->GetSaveCount();
-    overlay_canvas->Save();
-    overlay_canvas->ClipRect(overlay->second);
-    overlay_canvas->Clear(DlColor::kTransparent());
-    slices_[view_id]->render_into(overlay_canvas);
-    overlay_canvas->RestoreToCount(restore_count);
-
-    // This flutter view is never the last in a frame, since we always submit the
-    // underlay view last.
-    frame->set_submit_info({.frame_boundary = false, .present_with_transaction = true});
-    layer->did_submit_last_frame = frame->Encode();
-
-    did_encode &= layer->did_submit_last_frame;
-    platform_view_layers[view_id] = LayerData{
-        .rect = overlay->second,   //
-        .view_id = view_id,        //
-        .overlay_id = overlay_id,  //
-        .layer = layer             //
-    };
-    surface_frames.push_back(std::move(frame));
-    overlay_id++;
-  }
-
-  auto previous_submit_info = background_frame->submit_info();
-  background_frame->set_submit_info({
-      .frame_damage = previous_submit_info.frame_damage,
-      .buffer_damage = previous_submit_info.buffer_damage,
-      .present_with_transaction = true,
-  });
-  background_frame->Encode();
-  surface_frames.push_back(std::move(background_frame));
-
-  // Mark all layers as available, so they can be used in the next frame.
-  std::vector<std::shared_ptr<OverlayLayer>> unused_layers = layer_pool_->RemoveUnusedLayers();
-  layer_pool_->RecycleLayers();
-
-  auto task = [&,                                                         //
-               platform_view_layers = std::move(platform_view_layers),    //
-               current_composition_params = current_composition_params_,  //
-               views_to_recomposite = views_to_recomposite_,              //
-               composition_order = composition_order_,                    //
-               unused_layers = std::move(unused_layers),                  //
-               surface_frames = std::move(surface_frames)                 //
-  ]() mutable {
-    PerformSubmit(platform_view_layers,        //
-                  current_composition_params,  //
-                  views_to_recomposite,        //
-                  composition_order,           //
-                  unused_layers,               //
-                  surface_frames               //
-    );
-  };
-
-  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_, fml::MakeCopyable(std::move(task)));
-
-  return did_encode;
 }
 
 void PlatformViewsController::CreateMissingOverlays(GrDirectContext* gr_context,
@@ -970,10 +848,119 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->visited_platform_views_.clear();
 }
 
-- (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)frame
-     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
-          grContext:(GrDirectContext*)grContext {
-  return self.instance->SubmitFrame(grContext, iosContext, std::move(frame));
+- (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)background_frame
+     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
+          grContext:(GrDirectContext*)gr_context {
+  TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
+
+  // No platform views to render; we're done.
+  if (self.instance->flutter_view_ == nullptr || (self.instance->composition_order_.empty() &&
+    !self.instance->had_platform_views_)) {
+    self.instance->had_platform_views_ = false;
+    return background_frame->Submit();
+  }
+  self.instance->had_platform_views_ = !self.instance->composition_order_.empty();
+
+  bool did_encode = true;
+  LayersMap platform_view_layers;
+  std::vector<std::unique_ptr<flutter::SurfaceFrame>> surface_frames;
+  surface_frames.reserve(self.instance->composition_order_.size());
+  std::unordered_map<int64_t, SkRect> view_rects;
+
+  for (int64_t view_id : self.instance->composition_order_) {
+    view_rects[view_id] = self.instance->current_composition_params_[view_id].finalBoundingRect();
+  }
+
+  std::unordered_map<int64_t, SkRect> overlay_layers =
+      SliceViews(background_frame->Canvas(), self.instance->composition_order_, self.instance->slices_, view_rects);
+
+  size_t required_overlay_layers = 0;
+  for (int64_t view_id : self.instance->composition_order_) {
+    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
+    if (overlay == overlay_layers.end()) {
+      continue;
+    }
+    required_overlay_layers++;
+  }
+
+  // If there are not sufficient overlay layers, we must construct them on the platform
+  // thread, at least until we've refactored iOS surface creation to use IOSurfaces
+  // instead of CALayers.
+  self.instance->CreateMissingOverlays(gr_context, ios_context, required_overlay_layers);
+
+  int64_t overlay_id = 0;
+  for (int64_t view_id : self.instance->composition_order_) {
+    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
+    if (overlay == overlay_layers.end()) {
+      continue;
+    }
+    std::shared_ptr<flutter::OverlayLayer> layer = self.instance->GetExistingLayer();
+    if (!layer) {
+      continue;
+    }
+
+    std::unique_ptr<flutter::SurfaceFrame> frame = layer->surface->AcquireFrame(self.instance->frame_size_);
+    // If frame is null, AcquireFrame already printed out an error message.
+    if (!frame) {
+      continue;
+    }
+    flutter::DlCanvas* overlay_canvas = frame->Canvas();
+    int restore_count = overlay_canvas->GetSaveCount();
+    overlay_canvas->Save();
+    overlay_canvas->ClipRect(overlay->second);
+    overlay_canvas->Clear(flutter::DlColor::kTransparent());
+    self.instance->slices_[view_id]->render_into(overlay_canvas);
+    overlay_canvas->RestoreToCount(restore_count);
+
+    // This flutter view is never the last in a frame, since we always submit the
+    // underlay view last.
+    frame->set_submit_info({.frame_boundary = false, .present_with_transaction = true});
+    layer->did_submit_last_frame = frame->Encode();
+
+    did_encode &= layer->did_submit_last_frame;
+    platform_view_layers[view_id] = LayerData{
+        .rect = overlay->second,   //
+        .view_id = view_id,        //
+        .overlay_id = overlay_id,  //
+        .layer = layer             //
+    };
+    surface_frames.push_back(std::move(frame));
+    overlay_id++;
+  }
+
+  auto previous_submit_info = background_frame->submit_info();
+  background_frame->set_submit_info({
+      .frame_damage = previous_submit_info.frame_damage,
+      .buffer_damage = previous_submit_info.buffer_damage,
+      .present_with_transaction = true,
+  });
+  background_frame->Encode();
+  surface_frames.push_back(std::move(background_frame));
+
+  // Mark all layers as available, so they can be used in the next frame.
+  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers = self.instance->layer_pool_->RemoveUnusedLayers();
+  self.instance->layer_pool_->RecycleLayers();
+
+  auto task = [&,                                                         //
+               platform_view_layers = std::move(platform_view_layers),    //
+               current_composition_params = self.instance->current_composition_params_,  //
+               views_to_recomposite = self.instance->views_to_recomposite_,              //
+               composition_order = self.instance->composition_order_,                    //
+               unused_layers = std::move(unused_layers),                  //
+               surface_frames = std::move(surface_frames)                 //
+  ]() mutable {
+    self.instance->PerformSubmit(platform_view_layers,        //
+                  current_composition_params,  //
+                  views_to_recomposite,        //
+                  composition_order,           //
+                  unused_layers,               //
+                  surface_frames               //
+    );
+  };
+
+  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, fml::MakeCopyable(std::move(task)));
+
+  return did_encode;
 }
 
 - (long)firstResponderPlatformViewId {
