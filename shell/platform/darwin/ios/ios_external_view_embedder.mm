@@ -121,7 +121,7 @@ void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
-  platform_views_controller_.instance->PushVisitedPlatformView(view_id);
+  [platform_views_controller_ pushVisitedPlatformViewId:view_id];
 }
 
 }  // namespace flutter

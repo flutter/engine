@@ -854,6 +854,10 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->PushFilterToVisitedPlatformViews(filter, filterRect);
 }
 
+- (void)pushVisitedPlatformViewId:(int64_t)viewId {
+  return self.instance->PushVisitedPlatformView(viewId);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
