@@ -825,6 +825,12 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->PostPrerollAction(rasterThreadMerger, impellerEnabled);
 }
 
+- (void)endFrameWithResubmit:(BOOL)shouldResubmitFrame
+                threadMerger:(const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
+             impellerEnabled:(BOOL)impellerEnabled {
+  self.instance->EndFrame(shouldResubmitFrame, rasterThreadMerger, impellerEnabled);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

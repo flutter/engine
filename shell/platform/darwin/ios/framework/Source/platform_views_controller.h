@@ -357,6 +357,14 @@ class PlatformViewsController {
                                   (const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
                                                 impellerEnabled:(BOOL)impellerEnabled;
 
+/// @brief Mark the end of a compositor frame.
+///
+/// May determine changes are required to the thread merging state.
+/// Called from the raster thread.
+- (void)endFrameWithResubmit:(BOOL)shouldResubmitFrame
+                threadMerger:(const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
+             impellerEnabled:(BOOL)impellerEnabled;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
