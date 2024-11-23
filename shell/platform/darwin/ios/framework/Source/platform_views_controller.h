@@ -309,7 +309,7 @@ class PlatformViewsController {
 // TODO(cbracken): Temporary workaround during migration to Obj-C.
 - (std::shared_ptr<flutter::PlatformViewsController>&)instance;
 
-  /// @brief Set the platform task runner used to post rendering tasks.
+/// @brief Set the platform task runner used to post rendering tasks.
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner;
 
 /// @brief Set the flutter view.
@@ -321,6 +321,12 @@ class PlatformViewsController {
 
 /// @brief Retrieve the view controller.
 - (UIViewController<FlutterViewResponder>*)flutterViewController;
+
+/// @brief set the factory used to construct embedded UI Views.
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizerBlockingPolicy;
 
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;

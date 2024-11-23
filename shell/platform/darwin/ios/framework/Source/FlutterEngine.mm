@@ -1497,8 +1497,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  _flutterEngine.platformViewsController.instance->RegisterViewFactory(
-      factory, factoryId, gestureRecognizersBlockingPolicy);
+  [_flutterEngine.platformViewsController registerViewFactory:factory
+                                                       withId:factoryId
+                             gestureRecognizersBlockingPolicy:gestureRecognizersBlockingPolicy];
 }
 
 @end

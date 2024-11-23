@@ -795,6 +795,13 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->GetFlutterViewController();
 }
 
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizerBlockingPolicy {
+  self.instance->RegisterViewFactory(factory, factoryId, gestureRecognizerBlockingPolicy);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

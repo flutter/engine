@@ -298,9 +298,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     [flutterPlatformViewsController setFlutterView:mockFlutterView];
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
-    flutterPlatformViewsController.instance->RegisterViewFactory(
-        factory, @"MockFlutterPlatformView",
-        FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+    [flutterPlatformViewsController
+                     registerViewFactory:factory
+                                  withId:@"MockFlutterPlatformView"
+        gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
     FlutterResult result = ^(id result) {
     };
     [flutterPlatformViewsController
@@ -357,9 +358,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
-    flutterPlatformViewsController.instance->RegisterViewFactory(
-        factory, @"MockFlutterPlatformView",
-        FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+    [flutterPlatformViewsController
+                     registerViewFactory:factory
+                                  withId:@"MockFlutterPlatformView"
+        gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
     FlutterResult result = ^(id result) {
     };
     [flutterPlatformViewsController
