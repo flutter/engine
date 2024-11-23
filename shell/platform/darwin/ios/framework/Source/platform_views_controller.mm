@@ -180,14 +180,6 @@ class PlatformViewsController {
   // visible for testing.
   size_t EmbeddedViewCount() const;
 
-  // visible for testing.
-  // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
-  //
-  // If the `PlatformViewsController` does not contain any `FlutterPlatformView` object or
-  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
-  // returns nil.
-  UIView* GetPlatformViewByID(int64_t view_id);
-
   // Visible for testing.
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
@@ -368,10 +360,6 @@ void PlatformViewsController::PushFilterToVisitedPlatformViews(
 
 size_t PlatformViewsController::EmbeddedViewCount() const {
   return composition_order_.size();
-}
-
-UIView* PlatformViewsController::GetPlatformViewByID(int64_t view_id) {
-  return [GetFlutterTouchInterceptingViewByID(view_id) embeddedView];
 }
 
 FlutterTouchInterceptingView* PlatformViewsController::GetFlutterTouchInterceptingViewByID(
@@ -1050,7 +1038,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (UIView*)platformViewForId:(int64_t)viewId {
-  return self.instance->GetPlatformViewByID(viewId);
+  return [self.instance->GetFlutterTouchInterceptingViewByID(viewId) embeddedView];
 }
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
