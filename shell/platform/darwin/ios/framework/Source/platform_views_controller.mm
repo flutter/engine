@@ -154,8 +154,6 @@ class PlatformViewsController {
                      UIView* embedded_view,
                      const SkRect& bounding_rect) __attribute__((cf_audited_transfer));
 
-  std::shared_ptr<OverlayLayer> GetExistingLayer();
-
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
   void BringLayersIntoView(const LayersMap& layer_map,
@@ -419,10 +417,6 @@ void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
   }
 }
 
-std::shared_ptr<OverlayLayer> PlatformViewsController::GetExistingLayer() {
-  return layer_pool_->GetNextLayer();
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -443,6 +437,8 @@ std::shared_ptr<OverlayLayer> PlatformViewsController::GetExistingLayer() {
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+- (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
                         grContext:(GrDirectContext*)gr_context
                       pixelFormat:(MTLPixelFormat)pixel_format;
@@ -654,7 +650,7 @@ std::shared_ptr<OverlayLayer> PlatformViewsController::GetExistingLayer() {
     if (overlay == overlay_layers.end()) {
       continue;
     }
-    std::shared_ptr<flutter::OverlayLayer> layer = self.instance->GetExistingLayer();
+    std::shared_ptr<flutter::OverlayLayer> layer = self.nextLayerInPool;
     if (!layer) {
       continue;
     }
@@ -993,6 +989,10 @@ std::shared_ptr<OverlayLayer> PlatformViewsController::GetExistingLayer() {
   [view blockGesture];
 
   result(nil);
+}
+
+- (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool {
+  return self.instance->layer_pool_->GetNextLayer();
 }
 
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
