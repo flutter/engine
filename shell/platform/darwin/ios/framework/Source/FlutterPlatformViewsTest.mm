@@ -2566,7 +2566,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   // Set flutter view controller allows events to be dispatched.
   NSSet* touches2 = [[NSSet alloc] init];
   id event2 = OCMClassMock([UIEvent class]);
-  flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+  flutterPlatformViewsController.flutterViewController = flutterViewController;
   [forwardGectureRecognizer touchesBegan:touches2 withEvent:event2];
   OCMVerify([flutterViewController touchesBegan:touches2 withEvent:event2]);
 }
@@ -2628,14 +2628,14 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   id flutterViewController = OCMClassMock([FlutterViewController class]);
   {
     // ***** Sequence 1, finishing touch event with touchEnded ***** //
-    flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+    flutterPlatformViewsController.flutterViewController = flutterViewController;
 
     NSSet* touches1 = [[NSSet alloc] init];
     id event1 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
     OCMVerify([flutterViewController touchesBegan:touches1 withEvent:event1]);
 
-    flutterPlatformViewsController.instance->SetFlutterViewController(nil);
+    flutterPlatformViewsController.flutterViewController = nil;
 
     // Allow the touch events to finish
     NSSet* touches2 = [[NSSet alloc] init];
@@ -2662,14 +2662,14 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   {
     // ***** Sequence 2, finishing touch event with touchCancelled ***** //
-    flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+    flutterPlatformViewsController.flutterViewController = flutterViewController;
 
     NSSet* touches1 = [[NSSet alloc] init];
     id event1 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
     OCMVerify([flutterViewController touchesBegan:touches1 withEvent:event1]);
 
-    flutterPlatformViewsController.instance->SetFlutterViewController(nil);
+    flutterPlatformViewsController.flutterViewController = nil;
 
     // Allow the touch events to finish
     NSSet* touches2 = [[NSSet alloc] init];
@@ -2753,8 +2753,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
   }
   id flutterViewController = OCMClassMock([FlutterViewController class]);
-
-  flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+  flutterPlatformViewsController.flutterViewController = flutterViewController;
 
   // The touches in this sequence requires 1 touch object, we always create the NSSet with one item.
   NSSet* touches1 = [NSSet setWithObject:@1];
@@ -2763,7 +2762,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   OCMVerify([flutterViewController touchesBegan:touches1 withEvent:event1]);
 
   FlutterViewController* flutterViewController2 = OCMClassMock([FlutterViewController class]);
-  flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController2);
+  flutterPlatformViewsController.flutterViewController = flutterViewController2;
 
   // Touch events should still send to the old FlutterViewController if FlutterViewController
   // is updated in between.
@@ -2870,8 +2869,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
   }
   id flutterViewController = OCMClassMock([FlutterViewController class]);
-
-  flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+  flutterPlatformViewsController.flutterViewController = flutterViewController;
 
   NSSet* touches1 = [NSSet setWithObject:@1];
   id event1 = OCMClassMock([UIEvent class]);
@@ -2938,8 +2936,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
   }
   id flutterViewController = OCMClassMock([FlutterViewController class]);
-
-  flutterPlatformViewsController.instance->SetFlutterViewController(flutterViewController);
+  flutterPlatformViewsController.flutterViewController = flutterViewController;
 
   NSSet* touches1 = [NSSet setWithObject:@1];
   id event1 = OCMClassMock([UIEvent class]);
