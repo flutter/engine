@@ -132,12 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Cancel the current frame, indicating that no platform views are composited.
-  ///
-  /// Additionally, reverts the composition order to its original state at the beginning of the
-  /// frame.
-  void CancelFrame();
-
   /// @brief Record a platform view in the layer tree to be rendered, along with the positioning and
   ///        mutator parameters.
   ///
@@ -354,10 +348,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::CancelFrame() {
-  ResetFrameState();
-}
 
 void PlatformViewsController::EndFrame(
     bool should_resubmit_frame,
@@ -988,7 +978,7 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)cancelFrame {
-  self.instance->CancelFrame();
+  self.instance->ResetFrameState();
 }
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
@@ -1023,7 +1013,7 @@ void PlatformViewsController::ResetFrameState() {
       //
       // Eventually, the frame is submitted once this method returns `kSuccess`.
       // At that point, the raster tasks are handled on the platform thread.
-      self.instance->CancelFrame();
+      [self cancelFrame];
       return flutter::PostPrerollResult::kSkipAndRetryFrame;
     }
     // If the post preroll action is successful, we will display platform views in the current
