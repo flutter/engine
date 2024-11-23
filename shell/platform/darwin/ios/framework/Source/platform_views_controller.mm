@@ -130,13 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  /// A set to keep track of embedded views that do not have (0, 0) origin.
-  /// An insertion triggers a warning message about non-zero origin logged on the debug console.
-  /// See https://github.com/flutter/flutter/issues/109700 for details.
-  std::unordered_set<int64_t> non_zero_origin_views_;
-#endif
-
   /// @brief The composition order from the previous thread.
   ///
   /// Only accessed from the platform thread.
@@ -270,6 +263,13 @@ BOOL canApplyBlurBackdrop = YES;
   std::vector<int64_t> _composition_order;
   std::vector<int64_t> _visited_platform_views;
   std::unordered_set<int64_t> _views_to_recomposite;
+
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  /// A set to keep track of embedded views that do not have (0, 0) origin.
+  /// An insertion triggers a warning message about non-zero origin logged on the debug console.
+  /// See https://github.com/flutter/flutter/issues/109700 for details.
+  std::unordered_set<int64_t> _non_zero_origin_views;
+#endif
 }
 
 - (id)init {
@@ -592,10 +592,9 @@ BOOL canApplyBlurBackdrop = YES;
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = self.platform_views[viewId].touch_interceptor;
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
-  if (self.instance->non_zero_origin_views_.find(viewId) == self.instance->non_zero_origin_views_.end() &&
+  if (_non_zero_origin_views.find(viewId) == _non_zero_origin_views.end() &&
       !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
-    self.instance->non_zero_origin_views_.insert(viewId);
+    _non_zero_origin_views.insert(viewId);
     NSLog(
         @"A Embedded PlatformView's origin is not CGPointZero.\n"
          "  View id: %@\n"
@@ -608,6 +607,7 @@ BOOL canApplyBlurBackdrop = YES;
          "please leave a comment at https://github.com/flutter/flutter/issues/109700 with details.",
         @(viewId), [touchInterceptor embeddedView]);
   }
+  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
 #endif
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
