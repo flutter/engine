@@ -134,9 +134,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  // Visible for testing.
-  void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
-
   // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
   // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
@@ -391,53 +388,6 @@ void PlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
   embedded_view.layer.transform = GetCATransform3DFromSkMatrix(transformMatrix);
-}
-
-// Composite the PlatformView with `view_id`.
-//
-// Every frame, during the paint traversal of the layer tree, this method is called for all
-// the PlatformViews in `views_to_recomposite_`.
-//
-// Note that `views_to_recomposite_` does not represent all the views in the view hierarchy,
-// if a PlatformView does not change its composition parameter from last frame, it is not
-// included in the `views_to_recomposite_`.
-void PlatformViewsController::CompositeWithParams(int64_t view_id,
-                                                  const EmbeddedViewParams& params) {
-  CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
-  FlutterTouchInterceptingView* touchInterceptor = platform_views_[view_id].touch_interceptor;
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
-  if (non_zero_origin_views_.find(view_id) == non_zero_origin_views_.end() &&
-      !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
-    non_zero_origin_views_.insert(view_id);
-    NSLog(
-        @"A Embedded PlatformView's origin is not CGPointZero.\n"
-         "  View id: %@\n"
-         "  View info: \n %@ \n"
-         "A non-zero origin might cause undefined behavior.\n"
-         "See https://github.com/flutter/flutter/issues/109700 for more details.\n"
-         "If you are the author of the PlatformView, please update the implementation of the "
-         "PlatformView to have a (0, 0) origin.\n"
-         "If you have a valid case of using a non-zero origin, "
-         "please leave a comment at https://github.com/flutter/flutter/issues/109700 with details.",
-        @(view_id), [touchInterceptor embeddedView]);
-  }
-#endif
-  touchInterceptor.layer.transform = CATransform3DIdentity;
-  touchInterceptor.frame = frame;
-  touchInterceptor.alpha = 1;
-
-  const MutatorsStack& mutatorStack = params.mutatorsStack();
-  UIView* clippingView = platform_views_[view_id].root_view;
-  // The frame of the clipping view should be the final bounding rect.
-  // Because the translate matrix in the Mutator Stack also includes the offset,
-  // when we apply the transforms matrix in |ApplyMutators|, we need
-  // to remember to do a reverse translate.
-  const SkRect& rect = params.finalBoundingRect();
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-  clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
-                                  rect.width() / screenScale, rect.height() / screenScale);
-  ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
 void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
@@ -861,7 +811,41 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 }
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
-  return self.instance->CompositeWithParams(viewId, params);
+  CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
+  FlutterTouchInterceptingView* touchInterceptor = self.instance->platform_views_[viewId].touch_interceptor;
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
+  if (self.instance->non_zero_origin_views_.find(viewId) == self.instance->non_zero_origin_views_.end() &&
+      !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
+    self.instance->non_zero_origin_views_.insert(viewId);
+    NSLog(
+        @"A Embedded PlatformView's origin is not CGPointZero.\n"
+         "  View id: %@\n"
+         "  View info: \n %@ \n"
+         "A non-zero origin might cause undefined behavior.\n"
+         "See https://github.com/flutter/flutter/issues/109700 for more details.\n"
+         "If you are the author of the PlatformView, please update the implementation of the "
+         "PlatformView to have a (0, 0) origin.\n"
+         "If you have a valid case of using a non-zero origin, "
+         "please leave a comment at https://github.com/flutter/flutter/issues/109700 with details.",
+        @(viewId), [touchInterceptor embeddedView]);
+  }
+#endif
+  touchInterceptor.layer.transform = CATransform3DIdentity;
+  touchInterceptor.frame = frame;
+  touchInterceptor.alpha = 1;
+
+  const flutter::MutatorsStack& mutatorStack = params.mutatorsStack();
+  UIView* clippingView = self.instance->platform_views_[viewId].root_view;
+  // The frame of the clipping view should be the final bounding rect.
+  // Because the translate matrix in the Mutator Stack also includes the offset,
+  // when we apply the transforms matrix in |ApplyMutators|, we need
+  // to remember to do a reverse translate.
+  const SkRect& rect = params.finalBoundingRect();
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
+                                  rect.width() / screenScale, rect.height() / screenScale);
+  self.instance->ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
@@ -922,7 +906,7 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 
   // Composite Platform Views.
   for (int64_t view_id : views_to_recomposite) {
-    self.instance->CompositeWithParams(view_id, current_composition_params[view_id]);
+    [self compositeView:view_id withParams:current_composition_params[view_id]];
   }
 
   // Present callbacks.
