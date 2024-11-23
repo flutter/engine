@@ -132,11 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Discards all platform views instances and auxiliary resources.
-  ///
-  /// Called from the raster thread.
-  void Reset();
-
   /// @brief Encode rendering for the Flutter overlay views and queue up perform platform view
   /// mutations.
   ///
@@ -516,26 +511,6 @@ void PlatformViewsController::CompositeWithParams(int64_t view_id,
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
   ApplyMutators(mutatorStack, touchInterceptor, rect);
-}
-
-void PlatformViewsController::Reset() {
-  // Reset will only be called from the raster thread or a merged raster/platform thread.
-  // platform_views_ must only be modified on the platform thread, and any operations that
-  // read or modify platform views should occur there.
-  fml::TaskRunner::RunNowOrPostTask(platform_task_runner_,
-                                    [&, composition_order = composition_order_]() {
-                                      for (int64_t view_id : composition_order_) {
-                                        [platform_views_[view_id].root_view removeFromSuperview];
-                                      }
-                                      platform_views_.clear();
-                                    });
-
-  composition_order_.clear();
-  slices_.clear();
-  current_composition_params_.clear();
-  views_to_recomposite_.clear();
-  layer_pool_->RecycleLayers();
-  visited_platform_views_.clear();
 }
 
 bool PlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
@@ -976,7 +951,23 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)reset {
-  self.instance->Reset();
+  // Reset will only be called from the raster thread or a merged raster/platform thread.
+  // platform_views_ must only be modified on the platform thread, and any operations that
+  // read or modify platform views should occur there.
+  fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_,
+                                    [&, composition_order = self.instance->composition_order_]() {
+                                      for (int64_t view_id : self.instance->composition_order_) {
+                                        [self.instance->platform_views_[view_id].root_view removeFromSuperview];
+                                      }
+                                      self.instance->platform_views_.clear();
+                                    });
+
+  self.instance->composition_order_.clear();
+  self.instance->slices_.clear();
+  self.instance->current_composition_params_.clear();
+  self.instance->views_to_recomposite_.clear();
+  self.instance->layer_pool_->RecycleLayers();
+  self.instance->visited_platform_views_.clear();
 }
 
 - (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)frame
