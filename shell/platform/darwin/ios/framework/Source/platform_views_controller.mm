@@ -208,9 +208,6 @@ class PlatformViewsController {
   size_t EmbeddedViewCount() const;
 
   // visible for testing.
-  size_t LayerPoolSize() const;
-
-  // visible for testing.
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `PlatformViewsController` does not contain any `FlutterPlatformView` object or
@@ -506,10 +503,6 @@ void PlatformViewsController::PrerollCompositeEmbeddedView(
 
 size_t PlatformViewsController::EmbeddedViewCount() const {
   return composition_order_.size();
-}
-
-size_t PlatformViewsController::LayerPoolSize() const {
-  return layer_pool_->size();
 }
 
 UIView* PlatformViewsController::GetPlatformViewByID(int64_t view_id) {
