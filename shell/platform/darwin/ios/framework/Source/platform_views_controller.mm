@@ -154,11 +154,6 @@ class PlatformViewsController {
                      UIView* embedded_view,
                      const SkRect& bounding_rect) __attribute__((cf_audited_transfer));
 
-  // Appends the overlay views and platform view and sets their z index based on the composition
-  // order.
-  void BringLayersIntoView(const LayersMap& layer_map,
-                           const std::vector<int64_t>& composition_order);
-
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<OverlayLayerPool> layer_pool_;
 
@@ -375,48 +370,6 @@ void PlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
   embedded_view.layer.transform = GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
-void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
-                                                  const std::vector<int64_t>& composition_order) {
-  FML_DCHECK(flutter_view_);
-  UIView* flutter_view = flutter_view_;
-
-  previous_composition_order_.clear();
-  NSMutableArray* desired_platform_subviews = [NSMutableArray array];
-  for (int64_t platform_view_id : composition_order) {
-    previous_composition_order_.push_back(platform_view_id);
-    UIView* platform_view_root = platform_views_[platform_view_id].root_view;
-    if (platform_view_root != nil) {
-      [desired_platform_subviews addObject:platform_view_root];
-    }
-
-    auto maybe_layer_data = layer_map.find(platform_view_id);
-    if (maybe_layer_data != layer_map.end()) {
-      auto view = maybe_layer_data->second.layer->overlay_view_wrapper;
-      if (view != nil) {
-        [desired_platform_subviews addObject:view];
-      }
-    }
-  }
-
-  NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
-  NSArray* existing_platform_subviews = [flutter_view.subviews
-      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object,
-                                                                        NSDictionary* bindings) {
-        return [desired_platform_subviews_set containsObject:object];
-      }]];
-
-  // Manipulate view hierarchy only if needed, to address a performance issue where
-  // `BringLayersIntoView` is called even when view hierarchy stays the same.
-  // See: https://github.com/flutter/flutter/issues/121833
-  // TODO(hellohuanlin): investigate if it is possible to skip unnecessary BringLayersIntoView.
-  if (![desired_platform_subviews isEqualToArray:existing_platform_subviews]) {
-    for (UIView* subview in desired_platform_subviews) {
-      // `addSubview` will automatically reorder subview if it is already added.
-      [flutter_view addSubview:subview];
-    }
-  }
-}
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -438,6 +391,10 @@ void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
 
+// Appends the overlay views and platform view and sets their z index based on the composition
+// order.
+- (void)bringLayersIntoView:(const LayersMap&)layer_map
+       withCompositionOrder:(const std::vector<int64_t>&)composition_order;
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
                         grContext:(GrDirectContext*)gr_context
@@ -857,7 +814,7 @@ void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
   [self removeUnusedLayers:unused_layers withCompositionOrder:composition_order];
 
   // Organize the layers by their z indexes.
-  self.instance->BringLayersIntoView(platform_view_layers, composition_order);
+  [self bringLayersIntoView:platform_view_layers withCompositionOrder:composition_order];
 
   [CATransaction commit];
 }
@@ -989,6 +946,48 @@ void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
   [view blockGesture];
 
   result(nil);
+}
+
+- (void)bringLayersIntoView:(const LayersMap&)layer_map
+       withCompositionOrder:(const std::vector<int64_t>&)composition_order {
+  FML_DCHECK(self.instance->flutter_view_);
+  UIView* flutter_view = self.instance->flutter_view_;
+
+  self.instance->previous_composition_order_.clear();
+  NSMutableArray* desired_platform_subviews = [NSMutableArray array];
+  for (int64_t platform_view_id : composition_order) {
+    self.instance->previous_composition_order_.push_back(platform_view_id);
+    UIView* platform_view_root = self.instance->platform_views_[platform_view_id].root_view;
+    if (platform_view_root != nil) {
+      [desired_platform_subviews addObject:platform_view_root];
+    }
+
+    auto maybe_layer_data = layer_map.find(platform_view_id);
+    if (maybe_layer_data != layer_map.end()) {
+      auto view = maybe_layer_data->second.layer->overlay_view_wrapper;
+      if (view != nil) {
+        [desired_platform_subviews addObject:view];
+      }
+    }
+  }
+
+  NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
+  NSArray* existing_platform_subviews = [flutter_view.subviews
+      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object,
+                                                                        NSDictionary* bindings) {
+        return [desired_platform_subviews_set containsObject:object];
+      }]];
+
+  // Manipulate view hierarchy only if needed, to address a performance issue where
+  // this method is called even when view hierarchy stays the same.
+  // See: https://github.com/flutter/flutter/issues/121833
+  // TODO(hellohuanlin): investigate if it is possible to skip unnecessary bringLayersIntoView.
+  if (![desired_platform_subviews isEqualToArray:existing_platform_subviews]) {
+    for (UIView* subview in desired_platform_subviews) {
+      // `addSubview` will automatically reorder subview if it is already added.
+      [flutter_view addSubview:subview];
+    }
+  }
 }
 
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool {
