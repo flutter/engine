@@ -350,6 +350,13 @@ class PlatformViewsController {
 /// from the platform thread.
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId;
 
+/// @brief Determine if thread merging is required after prerolling platform views.
+///
+/// Called from the raster thread.
+- (flutter::PostPrerollResult)postPrerollActionWithThreadMerger:
+                                  (const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
+                                                impellerEnabled:(BOOL)impellerEnabled;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

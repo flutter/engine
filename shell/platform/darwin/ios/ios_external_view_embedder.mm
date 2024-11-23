@@ -59,8 +59,10 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::PostPrerollAction");
   FML_CHECK(platform_views_controller_.instance);
-  PostPrerollResult result = platform_views_controller_.instance->PostPrerollAction(
-      raster_thread_merger, ios_context_->GetBackend() != IOSRenderingBackend::kSkia);
+  BOOL impeller_enabled = ios_context_->GetBackend() != IOSRenderingBackend::kSkia;
+  PostPrerollResult result =
+      [platform_views_controller_ postPrerollActionWithThreadMerger:raster_thread_merger
+                                                    impellerEnabled:impeller_enabled];
   return result;
 }
 

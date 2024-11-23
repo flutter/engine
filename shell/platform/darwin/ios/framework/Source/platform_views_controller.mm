@@ -819,6 +819,12 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->GetFlutterTouchInterceptingViewByID(viewId);
 }
 
+- (flutter::PostPrerollResult)postPrerollActionWithThreadMerger:
+                                  (const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
+                                                impellerEnabled:(BOOL)impellerEnabled {
+  return self.instance->PostPrerollAction(rasterThreadMerger, impellerEnabled);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
