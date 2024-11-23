@@ -130,12 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
-  /// the next frame.
-  ///
-  /// This state is modified on both the platform and raster thread.
-  std::unordered_set<int64_t> views_to_dispose_;
-
   /// view IDs in composition order.
   ///
   /// This state is only modified on the raster thread.
@@ -214,6 +208,13 @@ BOOL canApplyBlurBackdrop = YES;
 /// This state is only modified on the raster thread.
 @property(nonatomic, readonly) std::unordered_map<int64_t, flutter::EmbeddedViewParams>& current_composition_params;
 
+/// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
+/// the next frame.
+///
+/// This state is modified on both the platform and raster thread.
+@property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_dispose;
+
+
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
@@ -266,6 +267,7 @@ BOOL canApplyBlurBackdrop = YES;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
   std::unordered_map<int64_t, PlatformViewData> _platform_views;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
+  std::unordered_set<int64_t> _views_to_dispose;
 }
 
 - (id)init {
@@ -304,6 +306,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&) current_composition_params {
   return _current_composition_params;
+}
+
+- (std::unordered_set<int64_t>&)views_to_dispose {
+  return _views_to_dispose;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
@@ -772,7 +778,7 @@ BOOL canApplyBlurBackdrop = YES;
     return;
   }
   // We wait for next submitFrame to dispose views.
-  self.instance->views_to_dispose_.insert(viewId);
+  self.views_to_dispose.insert(viewId);
   result(nil);
 }
 
@@ -1013,14 +1019,14 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (std::vector<UIView*>)viewsToDispose {
   std::vector<UIView*> views;
-  if (self.instance->views_to_dispose_.empty()) {
+  if (self.views_to_dispose.empty()) {
     return views;
   }
 
   std::unordered_set<int64_t> views_to_composite(self.instance->composition_order_.begin(),
                                                  self.instance->composition_order_.end());
   std::unordered_set<int64_t> views_to_delay_dispose;
-  for (int64_t viewId : self.instance->views_to_dispose_) {
+  for (int64_t viewId : self.views_to_dispose) {
     if (views_to_composite.count(viewId)) {
       views_to_delay_dispose.insert(viewId);
       continue;
@@ -1031,7 +1037,7 @@ BOOL canApplyBlurBackdrop = YES;
     self.instance->views_to_recomposite_.erase(viewId);
     self.platform_views.erase(viewId);
   }
-  self.instance->views_to_dispose_ = std::move(views_to_delay_dispose);
+  self.views_to_dispose = std::move(views_to_delay_dispose);
   return views;
 }
 
