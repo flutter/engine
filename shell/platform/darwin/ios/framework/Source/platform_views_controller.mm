@@ -130,11 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  /// The composition parameters for each platform view.
-  ///
-  /// This state is only modified on the raster thread.
-  std::unordered_map<int64_t, EmbeddedViewParams> current_composition_params_;
-
   /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
   /// the next frame.
   ///
@@ -214,6 +209,10 @@ BOOL canApplyBlurBackdrop = YES;
 /// This data must only be accessed on the platform thread.
 @property(nonatomic, readonly) std::unordered_map<int64_t, PlatformViewData>& platform_views;
 
+/// The composition parameters for each platform view.
+///
+/// This state is only modified on the raster thread.
+@property(nonatomic, readonly) std::unordered_map<int64_t, flutter::EmbeddedViewParams>& current_composition_params;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -266,6 +265,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
   std::unordered_map<int64_t, PlatformViewData> _platform_views;
+  std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
 }
 
 - (id)init {
@@ -302,6 +302,10 @@ BOOL canApplyBlurBackdrop = YES;
   return _platform_views;
 }
 
+- (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&) current_composition_params {
+  return _current_composition_params;
+}
+
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
@@ -330,12 +334,12 @@ BOOL canApplyBlurBackdrop = YES;
 
   self.instance->composition_order_.push_back(viewId);
 
-  if (self.instance->current_composition_params_.count(viewId) == 1 &&
-      self.instance->current_composition_params_[viewId] == *params.get()) {
+  if (self.current_composition_params.count(viewId) == 1 &&
+      self.current_composition_params[viewId] == *params.get()) {
     // Do nothing if the params didn't change.
     return;
   }
-  self.instance->current_composition_params_[viewId] = flutter::EmbeddedViewParams(*params.get());
+  self.current_composition_params[viewId] = flutter::EmbeddedViewParams(*params.get());
   self.instance->views_to_recomposite_.insert(viewId);
 }
 
@@ -412,7 +416,7 @@ BOOL canApplyBlurBackdrop = YES;
 
   self.instance->composition_order_.clear();
   self.slices.clear();
-  self.instance->current_composition_params_.clear();
+  self.current_composition_params.clear();
   self.instance->views_to_recomposite_.clear();
   self.layer_pool->RecycleLayers();
   self.instance->visited_platform_views_.clear();
@@ -438,7 +442,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, SkRect> view_rects;
 
   for (int64_t view_id : self.instance->composition_order_) {
-    view_rects[view_id] = self.instance->current_composition_params_[view_id].finalBoundingRect();
+    view_rects[view_id] = self.current_composition_params[view_id].finalBoundingRect();
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
@@ -515,7 +519,7 @@ BOOL canApplyBlurBackdrop = YES;
 
   auto task = [&,                                                                        //
                platform_view_layers = std::move(platform_view_layers),                   //
-               current_composition_params = self.instance->current_composition_params_,  //
+               current_composition_params = self.current_composition_params,  //
                views_to_recomposite = self.instance->views_to_recomposite_,              //
                composition_order = self.instance->composition_order_,                    //
                unused_layers = std::move(unused_layers),                                 //
@@ -547,9 +551,9 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect {
   for (int64_t id : self.instance->visited_platform_views_) {
-    flutter::EmbeddedViewParams params = self.instance->current_composition_params_[id];
+    flutter::EmbeddedViewParams params = self.current_composition_params[id];
     params.PushImageFilter(filter, filterRect);
-    self.instance->current_composition_params_[id] = params;
+    self.current_composition_params[id] = params;
   }
 }
 
@@ -604,7 +608,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
-  return self.instance->current_composition_params_.find(viewId)->second;
+  return self.current_composition_params.find(viewId)->second;
 }
 
 - (void)createMissingOverlays:(size_t)required_overlay_layers
@@ -1023,7 +1027,7 @@ BOOL canApplyBlurBackdrop = YES;
     }
     UIView* root_view = self.platform_views[viewId].root_view;
     views.push_back(root_view);
-    self.instance->current_composition_params_.erase(viewId);
+    self.current_composition_params.erase(viewId);
     self.instance->views_to_recomposite_.erase(viewId);
     self.platform_views.erase(viewId);
   }
