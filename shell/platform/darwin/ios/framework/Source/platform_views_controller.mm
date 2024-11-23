@@ -130,15 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  PlatformViewsController();
-
-  ~PlatformViewsController() = default;
-
-  // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
-  // private:
-  PlatformViewsController(const PlatformViewsController&) = delete;
-  PlatformViewsController& operator=(const PlatformViewsController&) = delete;
-
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<OverlayLayerPool> layer_pool_;
 
@@ -217,12 +208,6 @@ class PlatformViewsController {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
-PlatformViewsController::PlatformViewsController()
-    : layer_pool_(std::make_unique<OverlayLayerPool>()) {
-  mask_view_pool_ =
-      [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
-};
-
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
@@ -285,6 +270,9 @@ PlatformViewsController::PlatformViewsController()
 - (id)init {
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
+    _instance->layer_pool_ = std::make_unique<flutter::OverlayLayerPool>();
+    _instance->mask_view_pool_ =
+      [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
   }
   return self;
 }
