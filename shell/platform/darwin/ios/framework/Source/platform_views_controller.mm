@@ -858,6 +858,10 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->PushVisitedPlatformView(viewId);
 }
 
+- (size_t)embeddedViewCount {
+  return self.instance->EmbeddedViewCount();
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

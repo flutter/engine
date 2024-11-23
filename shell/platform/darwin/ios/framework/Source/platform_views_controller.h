@@ -396,6 +396,9 @@ class PlatformViewsController {
   /// @brief Pushes the view id of a visted platform view to the list of visied platform views.
 - (void)pushVisitedPlatformViewId:(int64_t)viewId;
 
+// visible for testing.
+- (size_t)embeddedViewCount;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

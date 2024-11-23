@@ -3192,7 +3192,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                      }]
             result:result];
 
-  // First frame, |EmbeddedViewCount| is not empty after composite.
+  // First frame, |embeddedViewCount| is not empty after composite.
   [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
@@ -3203,11 +3203,11 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   flutterPlatformViewsController.instance->CompositeWithParams(
       0, flutterPlatformViewsController.instance->GetCompositionParams(0));
 
-  XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 1UL);
+  XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
 
-  // Second frame, |EmbeddedViewCount| should be empty at the start
+  // Second frame, |embeddedViewCount| should be empty at the start
   [flutterPlatformViewsController beginFrameWithSize:SkISize::Make(300, 300)];
-  XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 0UL);
+  XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 0UL);
 
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
@@ -3216,7 +3216,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
   flutterPlatformViewsController.instance->CompositeWithParams(
       0, flutterPlatformViewsController.instance->GetCompositionParams(0));
 
-  XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 1UL);
+  XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
 }
 
 - (void)
@@ -3884,7 +3884,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     [flutterPlatformViewsController prerollCompositeEmbeddedView:1
                                                       withParams:std::move(embeddedViewParams1)];
 
-    XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 2UL);
+    XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 2UL);
 
     XCTestExpectation* expectation = [self expectationWithDescription:@"dispose call ended."];
     FlutterResult disposeResult = ^(id result) {
@@ -3910,7 +3910,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     grContext:nil]);
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
-    XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 2UL);
+    XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 2UL);
     XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(0));
     XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(1));
   }
@@ -3940,7 +3940,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     grContext:nil]);
 
     // Disposing won't remove embedded views until the view is removed from the composition_order_
-    XCTAssertEqual(flutterPlatformViewsController.instance->EmbeddedViewCount(), 1UL);
+    XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
     XCTAssertNil(flutterPlatformViewsController.instance->GetPlatformViewByID(0));
     XCTAssertNotNil(flutterPlatformViewsController.instance->GetPlatformViewByID(1));
   }
