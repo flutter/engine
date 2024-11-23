@@ -41,7 +41,7 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 
 AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
                                          PlatformViewIOS* platform_view,
-                                         FlutterPlatformViewsController* platform_views_controller,
+                                         __weak FlutterPlatformViewsController* platform_views_controller,
                                          std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),

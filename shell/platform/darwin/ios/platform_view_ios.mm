@@ -43,7 +43,7 @@ void PlatformViewIOS::AccessibilityBridgeManager::Clear() {
 
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  const std::shared_ptr<IOSContext>& context,
-                                 const FlutterPlatformViewsController* platform_views_controller,
+                                 __weak FlutterPlatformViewsController* platform_views_controller,
                                  const flutter::TaskRunners& task_runners)
     : PlatformView(delegate, task_runners),
       ios_context_(context),
@@ -55,7 +55,7 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     IOSRenderingAPI rendering_api,
-    const FlutterPlatformViewsController* platform_views_controller,
+    __weak FlutterPlatformViewsController* platform_views_controller,
     const flutter::TaskRunners& task_runners,
     const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
