@@ -787,6 +787,14 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->SetFlutterView(view);
 }
 
+- (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController {
+  self.instance->SetFlutterViewController(viewController);
+}
+
+- (UIViewController<FlutterViewResponder>*)flutterViewController {
+  return self.instance->GetFlutterViewController();
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

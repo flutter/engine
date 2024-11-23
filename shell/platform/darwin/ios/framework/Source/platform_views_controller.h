@@ -315,6 +315,13 @@ class PlatformViewsController {
 /// @brief Set the flutter view.
 - (void)setFlutterView:(UIView*)view;
 
+// TODO(cbracken): Replace with a property.
+/// @brief Set the flutter view controller.
+- (void)setFlutterViewController:(UIViewController<FlutterViewResponder>*)viewController;
+
+/// @brief Retrieve the view controller.
+- (UIViewController<FlutterViewResponder>*)flutterViewController;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
