@@ -132,9 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Mark the beginning of a frame and record the size of the onscreen.
-  void BeginFrame(SkISize frame_size);
-
   /// @brief Cancel the current frame, indicating that no platform views are composited.
   ///
   /// Additionally, reverts the composition order to its original state at the beginning of the
@@ -364,11 +361,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::BeginFrame(SkISize frame_size) {
-  ResetFrameState();
-  frame_size_ = frame_size;
-}
 
 void PlatformViewsController::CancelFrame() {
   ResetFrameState();
@@ -1033,7 +1025,8 @@ void PlatformViewsController::ResetFrameState() {
 }
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
-  self.instance->BeginFrame(frameSize);
+  self.instance->ResetFrameState();
+  self.instance->frame_size_ = frameSize;
 }
 
 - (void)cancelFrame {
