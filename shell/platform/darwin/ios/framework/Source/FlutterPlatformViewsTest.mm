@@ -1586,8 +1586,9 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   flutterPlatformViewsController.instance->PushVisitedPlatformView(2);
   auto filter = flutter::DlBlurImageFilter::Make(5, 2, flutter::DlTileMode::kClamp);
-  flutterPlatformViewsController.instance->PushFilterToVisitedPlatformViews(
-      filter, SkRect::MakeXYWH(0, 0, screenScale * 10, screenScale * 10));
+  [flutterPlatformViewsController
+      pushFilterToVisitedPlatformViews:filter
+                              withRect:SkRect::MakeXYWH(0, 0, screenScale * 10, screenScale * 10)];
   flutterPlatformViewsController.instance->CompositeWithParams(
       2, flutterPlatformViewsController.instance->GetCompositionParams(2));
 

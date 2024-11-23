@@ -849,6 +849,11 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->FindFirstResponderPlatformViewId();
 }
 
+- (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
+                                withRect:(const SkRect&)filterRect {
+  return self.instance->PushFilterToVisitedPlatformViews(filter, filterRect);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

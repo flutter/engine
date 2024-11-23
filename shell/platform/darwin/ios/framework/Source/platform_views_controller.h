@@ -389,6 +389,10 @@ class PlatformViewsController {
 /// Returns -1 if no such platform view is found.
 - (long)firstResponderPlatformViewId;
 
+/// @brief Pushes backdrop filter mutation to the mutator stack of each visited platform view.
+- (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
+                                withRect:(const SkRect&)filterRect;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
