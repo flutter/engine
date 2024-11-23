@@ -130,12 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  // The platform view's |EmbedderViewSlice| keyed off the view id, which contains any subsequent
-  // operation until the next platform view or the end of the last leaf node in the layer tree.
-  //
-  // The Slices are deleted by the PlatformViewsController.reset().
-  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
-
   UIView* flutter_view_;
   UIViewController<FlutterViewResponder>* flutter_view_controller_;
   FlutterClippingMaskViewPool* mask_view_pool_;
@@ -212,7 +206,14 @@ BOOL canApplyBlurBackdrop = YES;
 // TODO(cbracken): Migrate all fields to Obj-C properties, then delete.
 @property(nonatomic, readonly) std::unique_ptr<flutter::PlatformViewsController>& instance;
 
+// The pool of reusable view layers. The pool allows to recycle layer in each frame.
 @property(nonatomic, readonly) flutter::OverlayLayerPool* layer_pool;
+
+// The platform view's |EmbedderViewSlice| keyed off the view id, which contains any subsequent
+// operation until the next platform view or the end of the last leaf node in the layer tree.
+//
+// The Slices are deleted by the PlatformViewsController.reset().
+@property(nonatomic, readonly) std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>& slices;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -262,6 +263,7 @@ BOOL canApplyBlurBackdrop = YES;
 @implementation FlutterPlatformViewsController {
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<flutter::OverlayLayerPool> _layer_pool;
+  std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
 }
 
 // TODO(cbracken): once implementation has been migrated, synthesize ivars.
@@ -269,6 +271,7 @@ BOOL canApplyBlurBackdrop = YES;
 @dynamic flutterView;
 @dynamic flutterViewController;
 @dynamic layer_pool;
+@dynamic slices;
 
 - (id)init {
   if (self = [super init]) {
@@ -308,6 +311,10 @@ BOOL canApplyBlurBackdrop = YES;
   return _layer_pool.get();
 }
 
+- (std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>&)slices {
+  return _slices;
+}
+
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
@@ -332,7 +339,7 @@ BOOL canApplyBlurBackdrop = YES;
   SkRect view_bounds = SkRect::Make(self.instance->frame_size_);
   std::unique_ptr<flutter::EmbedderViewSlice> view;
   view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
-  self.instance->slices_.insert_or_assign(viewId, std::move(view));
+  self.slices.insert_or_assign(viewId, std::move(view));
 
   self.instance->composition_order_.push_back(viewId);
 
@@ -401,7 +408,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId {
-  return self.instance->slices_[viewId]->canvas();
+  return self.slices[viewId]->canvas();
 }
 
 - (void)reset {
@@ -417,7 +424,7 @@ BOOL canApplyBlurBackdrop = YES;
                                     });
 
   self.instance->composition_order_.clear();
-  self.instance->slices_.clear();
+  self.slices.clear();
   self.instance->current_composition_params_.clear();
   self.instance->views_to_recomposite_.clear();
   self.layer_pool->RecycleLayers();
@@ -448,7 +455,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
-      SliceViews(background_frame->Canvas(), self.instance->composition_order_, self.instance->slices_, view_rects);
+      SliceViews(background_frame->Canvas(), self.instance->composition_order_, self.slices, view_rects);
 
   size_t required_overlay_layers = 0;
   for (int64_t view_id : self.instance->composition_order_) {
@@ -487,7 +494,7 @@ BOOL canApplyBlurBackdrop = YES;
     overlay_canvas->Save();
     overlay_canvas->ClipRect(overlay->second);
     overlay_canvas->Clear(flutter::DlColor::kTransparent());
-    self.instance->slices_[view_id]->render_into(overlay_canvas);
+    self.slices[view_id]->render_into(overlay_canvas);
     overlay_canvas->RestoreToCount(restore_count);
 
     // This flutter view is never the last in a frame, since we always submit the
@@ -1040,7 +1047,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 
 - (void)resetFrameState {
-  self.instance->slices_.clear();
+  self.slices.clear();
   self.instance->composition_order_.clear();
   self.instance->visited_platform_views_.clear();
 }
