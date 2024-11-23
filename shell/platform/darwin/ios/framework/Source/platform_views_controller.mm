@@ -845,6 +845,10 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->SubmitFrame(grContext, iosContext, std::move(frame));
 }
 
+- (long)firstResponderPlatformViewId {
+  return self.instance->FindFirstResponderPlatformViewId();
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

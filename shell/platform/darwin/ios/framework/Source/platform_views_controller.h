@@ -383,6 +383,12 @@ class PlatformViewsController {
      withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
           grContext:(GrDirectContext*)grContext;
 
+/// @brief Returns the platform view id if the platform view (or any of its descendant view) is
+/// the first responder.
+///
+/// Returns -1 if no such platform view is found.
+- (long)firstResponderPlatformViewId;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

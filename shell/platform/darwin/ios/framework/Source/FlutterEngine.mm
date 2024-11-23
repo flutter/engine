@@ -1100,8 +1100,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // Have to check in the next run loop, because iOS requests the previous first responder to
   // resign before requesting the next view to become first responder.
   dispatch_async(dispatch_get_main_queue(), ^(void) {
-    long platform_view_id =
-        self.platformViewsController.instance->FindFirstResponderPlatformViewId();
+    long platform_view_id = self.platformViewsController.firstResponderPlatformViewId;
     if (platform_view_id == -1) {
       return;
     }
