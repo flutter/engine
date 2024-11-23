@@ -132,9 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief Set the platform task runner used to post rendering tasks.
-  void SetTaskRunner(const fml::RefPtr<fml::TaskRunner>& platform_task_runner);
-
   /// @brief Set the flutter view.
   void SetFlutterView(UIView* flutter_view) __attribute__((cf_audited_transfer));
 
@@ -385,11 +382,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::SetTaskRunner(
-    const fml::RefPtr<fml::TaskRunner>& platform_task_runner) {
-  platform_task_runner_ = platform_task_runner;
-}
 
 void PlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_ = flutter_view;
@@ -1035,6 +1027,9 @@ void PlatformViewsController::ResetFrameState() {
 
 @implementation FlutterPlatformViewsController
 
+// TODO(cbracken): once implementation has been migrated, synthesize ivars.
+@dynamic taskRunner;
+
 - (id)init {
   if (self = [super init]) {
     _instance = std::make_unique<flutter::PlatformViewsController>();
@@ -1042,8 +1037,12 @@ void PlatformViewsController::ResetFrameState() {
   return self;
 }
 
+- (const fml::RefPtr<fml::TaskRunner>&)taskRunner {
+  return self.instance->platform_task_runner_;
+}
+
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
-  self.instance->SetTaskRunner(platformTaskRunner);
+  self.instance->platform_task_runner_ = platformTaskRunner;
 }
 
 - (void)setFlutterView:(UIView*)view {

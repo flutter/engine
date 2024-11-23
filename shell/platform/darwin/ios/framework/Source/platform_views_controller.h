@@ -30,8 +30,8 @@
 
 - (id)init NS_DESIGNATED_INITIALIZER;
 
-/// @brief Set the platform task runner used to post rendering tasks.
-- (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner;
+/// The platform task runner used to post rendering tasks.
+@property(nonatomic, assign) const fml::RefPtr<fml::TaskRunner>& taskRunner;
 
 /// @brief Set the flutter view.
 - (void)setFlutterView:(UIView*)view;
