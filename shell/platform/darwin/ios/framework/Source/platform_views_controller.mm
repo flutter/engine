@@ -806,6 +806,10 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->BeginFrame(frameSize);
 }
 
+- (void)cancelFrame {
+  self.instance->CancelFrame();
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

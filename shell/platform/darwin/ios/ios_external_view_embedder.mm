@@ -31,7 +31,7 @@ DlCanvas* IOSExternalViewEmbedder::GetRootCanvas() {
 void IOSExternalViewEmbedder::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CancelFrame");
   FML_CHECK(platform_views_controller_);
-  platform_views_controller_.instance->CancelFrame();
+  [platform_views_controller_ cancelFrame];
 }
 
 // |ExternalViewEmbedder|

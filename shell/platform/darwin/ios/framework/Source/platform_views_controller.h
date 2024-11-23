@@ -331,6 +331,12 @@ class PlatformViewsController {
 /// @brief Mark the beginning of a frame and record the size of the onscreen.
 - (void)beginFrameWithSize:(SkISize)frameSize;
 
+/// @brief Cancel the current frame, indicating that no platform views are composited.
+///
+/// Additionally, reverts the composition order to its original state at the beginning of the
+/// frame.
+- (void)cancelFrame;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
