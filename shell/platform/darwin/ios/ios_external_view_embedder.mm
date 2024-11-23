@@ -70,7 +70,7 @@ PostPrerollResult IOSExternalViewEmbedder::PostPrerollAction(
 DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
   FML_CHECK(platform_views_controller_.instance);
-  return platform_views_controller_.instance->CompositeEmbeddedView(view_id);
+  return [platform_views_controller_ compositeEmbeddedViewWithId:view_id];
 }
 
 // |ExternalViewEmbedder|

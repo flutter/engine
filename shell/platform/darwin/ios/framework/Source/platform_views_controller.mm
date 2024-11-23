@@ -831,6 +831,10 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->EndFrame(shouldResubmitFrame, rasterThreadMerger, impellerEnabled);
 }
 
+- (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId {
+  return self.instance->CompositeEmbeddedView(viewId);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

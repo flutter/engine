@@ -365,6 +365,11 @@ class PlatformViewsController {
                 threadMerger:(const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
              impellerEnabled:(BOOL)impellerEnabled;
 
+/// @brief Returns the Canvas for the overlay slice for the given platform view.
+///
+/// Called from the raster thread.
+- (flutter::DlCanvas*)compositeEmbeddedViewWithId:(int64_t)viewId;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
