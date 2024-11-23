@@ -344,6 +344,12 @@ class PlatformViewsController {
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
                           withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params;
 
+/// @brief Returns the`FlutterTouchInterceptingView` with the provided view_id.
+///
+/// Returns nil if there is no platform view with the provided id. Called
+/// from the platform thread.
+- (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId;
+
 /// @brief Handler for platform view message channels.
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

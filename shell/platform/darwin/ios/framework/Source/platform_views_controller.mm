@@ -815,6 +815,10 @@ void PlatformViewsController::ResetFrameState() {
   self.instance->PrerollCompositeEmbeddedView(viewId, std::move(params));
 }
 
+- (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
+  return self.instance->GetFlutterTouchInterceptingViewByID(viewId);
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];

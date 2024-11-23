@@ -270,11 +270,13 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
     return [[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
   } else if (node.IsPlatformViewNode()) {
-    return [[FlutterPlatformViewSemanticsContainer alloc]
-        initWithBridge:weak_ptr
-                   uid:node.id
-          platformView:weak_ptr->GetPlatformViewsController()
-                           .instance->GetFlutterTouchInterceptingViewByID(node.platformViewId)];
+    FlutterPlatformViewsController* platformViewsController =
+        weak_ptr->GetPlatformViewsController();
+    FlutterTouchInterceptingView* touchInterceptingView =
+        [platformViewsController flutterTouchInterceptingViewForId:node.platformViewId];
+    return [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
+                                                                     uid:node.id
+                                                            platformView:touchInterceptingView];
   } else {
     return [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
   }
