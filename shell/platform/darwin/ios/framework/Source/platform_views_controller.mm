@@ -142,16 +142,6 @@ class PlatformViewsController {
   PlatformViewsController(const PlatformViewsController&) = delete;
   PlatformViewsController& operator=(const PlatformViewsController&) = delete;
 
-  // Update the buffers and mutate the platform views in CATransaction.
-  //
-  // Runs on the platform thread.
-  void PerformSubmit(const LayersMap& platform_view_layers,
-                     std::unordered_map<int64_t, EmbeddedViewParams>& current_composition_params,
-                     const std::unordered_set<int64_t>& views_to_recomposite,
-                     const std::vector<int64_t>& composition_order,
-                     const std::vector<std::shared_ptr<OverlayLayer>>& unused_layers,
-                     const std::vector<std::unique_ptr<SurfaceFrame>>& surface_frames);
-
   /// @brief Return all views to be disposed on the platform thread.
   std::vector<UIView*> GetViewsToDispose();
 
@@ -450,53 +440,6 @@ void PlatformViewsController::CompositeWithParams(int64_t view_id,
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
-/// Update the buffers and mutate the platform views in CATransaction on the platform thread.
-void PlatformViewsController::PerformSubmit(
-    const LayersMap& platform_view_layers,
-    std::unordered_map<int64_t, EmbeddedViewParams>& current_composition_params,
-    const std::unordered_set<int64_t>& views_to_recomposite,
-    const std::vector<int64_t>& composition_order,
-    const std::vector<std::shared_ptr<OverlayLayer>>& unused_layers,
-    const std::vector<std::unique_ptr<SurfaceFrame>>& surface_frames) {
-  TRACE_EVENT0("flutter", "PlatformViewsController::PerformSubmit");
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-
-  [CATransaction begin];
-
-  // Configure Flutter overlay views.
-  for (const auto& [view_id, layer_data] : platform_view_layers) {
-    layer_data.layer->UpdateViewState(flutter_view_,         //
-                                      layer_data.rect,       //
-                                      layer_data.view_id,    //
-                                      layer_data.overlay_id  //
-    );
-  }
-
-  // Dispose unused Flutter Views.
-  for (auto& view : GetViewsToDispose()) {
-    [view removeFromSuperview];
-  }
-
-  // Composite Platform Views.
-  for (int64_t view_id : views_to_recomposite) {
-    CompositeWithParams(view_id, current_composition_params[view_id]);
-  }
-
-  // Present callbacks.
-  for (const auto& frame : surface_frames) {
-    frame->Submit();
-  }
-
-  // If a layer was allocated in the previous frame, but it's not used in the current frame,
-  // then it can be removed from the scene.
-  RemoveUnusedLayers(unused_layers, composition_order);
-
-  // Organize the layers by their z indexes.
-  BringLayersIntoView(platform_view_layers, composition_order);
-
-  [CATransaction commit];
-}
-
 void PlatformViewsController::BringLayersIntoView(const LayersMap& layer_map,
                                                   const std::vector<int64_t>& composition_order) {
   FML_DCHECK(flutter_view_);
@@ -603,6 +546,12 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
+- (void)performSubmit:(const LayersMap&)platform_view_layers
+    currentCompositionParams:(std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+    viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+    compositionOrder:(const std::vector<int64_t>&)composition_order
+    unusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+    surfaceFrames:(const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -859,21 +808,20 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
   std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers = self.instance->layer_pool_->RemoveUnusedLayers();
   self.instance->layer_pool_->RecycleLayers();
 
-  auto task = [&,                                                         //
-               platform_view_layers = std::move(platform_view_layers),    //
+  auto task = [&,                                                                        //
+               platform_view_layers = std::move(platform_view_layers),                   //
                current_composition_params = self.instance->current_composition_params_,  //
                views_to_recomposite = self.instance->views_to_recomposite_,              //
                composition_order = self.instance->composition_order_,                    //
-               unused_layers = std::move(unused_layers),                  //
-               surface_frames = std::move(surface_frames)                 //
+               unused_layers = std::move(unused_layers),                                 //
+               surface_frames = std::move(surface_frames)                                //
   ]() mutable {
-    self.instance->PerformSubmit(platform_view_layers,        //
-                  current_composition_params,  //
-                  views_to_recomposite,        //
-                  composition_order,           //
-                  unused_layers,               //
-                  surface_frames               //
-    );
+    [self performSubmit:platform_view_layers
+        currentCompositionParams:current_composition_params
+              viewsToRecomposite:views_to_recomposite
+                compositionOrder:composition_order
+                    unusedLayers:unused_layers
+                   surfaceFrames:surface_frames];
   };
 
   fml::TaskRunner::RunNowOrPostTask(self.instance->platform_task_runner_, fml::MakeCopyable(std::move(task)));
@@ -945,6 +893,51 @@ std::vector<UIView*> PlatformViewsController::GetViewsToDispose() {
   if (![[NSThread currentThread] isMainThread]) {
     latch->Wait();
   }
+}
+
+- (void)performSubmit:(const LayersMap&)platform_view_layers
+    currentCompositionParams:(std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+    viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+    compositionOrder:(const std::vector<int64_t>&)composition_order
+    unusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+    surfaceFrames:(const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames {
+  TRACE_EVENT0("flutter", "PlatformViewsController::PerformSubmit");
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+
+  [CATransaction begin];
+
+  // Configure Flutter overlay views.
+  for (const auto& [view_id, layer_data] : platform_view_layers) {
+    layer_data.layer->UpdateViewState(self.instance->flutter_view_,         //
+                                      layer_data.rect,       //
+                                      layer_data.view_id,    //
+                                      layer_data.overlay_id  //
+    );
+  }
+
+  // Dispose unused Flutter Views.
+  for (auto& view : self.instance->GetViewsToDispose()) {
+    [view removeFromSuperview];
+  }
+
+  // Composite Platform Views.
+  for (int64_t view_id : views_to_recomposite) {
+    self.instance->CompositeWithParams(view_id, current_composition_params[view_id]);
+  }
+
+  // Present callbacks.
+  for (const auto& frame : surface_frames) {
+    frame->Submit();
+  }
+
+  // If a layer was allocated in the previous frame, but it's not used in the current frame,
+  // then it can be removed from the scene.
+  self.instance->RemoveUnusedLayers(unused_layers, composition_order);
+
+  // Organize the layers by their z indexes.
+  self.instance->BringLayersIntoView(platform_view_layers, composition_order);
+
+  [CATransaction commit];
 }
 
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
