@@ -371,7 +371,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -454,7 +454,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -539,7 +539,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -621,7 +621,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -662,7 +662,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -752,7 +752,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -791,7 +791,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -834,7 +834,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -908,7 +908,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -955,7 +955,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1012,7 +1012,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1067,7 +1067,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1119,7 +1119,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1207,7 +1207,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -1251,7 +1251,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1294,7 +1294,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1337,7 +1337,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1374,7 +1374,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   [flutterView setNeedsLayout];
   [flutterView layoutIfNeeded];
@@ -1542,7 +1542,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   CGRect platformViewRectInFlutterView = [gMockPlatformView convertRect:gMockPlatformView.bounds
                                                                  toView:flutterView];
@@ -1610,7 +1610,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                               withRect:SkRect::MakeXYWH(0, 0, screenScale * 10, screenScale * 10)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
@@ -1642,7 +1642,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams2)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:[ChildClippingView class]]);
 
@@ -1720,7 +1720,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   CGRect platformViewRectInFlutterView = [gMockPlatformView convertRect:gMockPlatformView.bounds
                                                                  toView:flutterView];
@@ -1807,7 +1807,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -1883,7 +1883,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -1954,7 +1954,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2039,7 +2039,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2138,7 +2138,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2250,7 +2250,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2374,7 +2374,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -2487,7 +2487,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   gMockPlatformView.backgroundColor = UIColor.redColor;
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
@@ -3094,7 +3094,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams_1)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
@@ -3112,7 +3112,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams_2)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   auto mock_surface_submit_true = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
@@ -3234,7 +3234,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams1)];
   [flutterPlatformViewsController
       compositeView:0
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(0)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:0]];
 
   XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
 
@@ -3248,7 +3248,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams2)];
   [flutterPlatformViewsController
       compositeView:0
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(0)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:0]];
 
   XCTAssertEqual(flutterPlatformViewsController.embeddedViewCount, 1UL);
 }
@@ -3625,7 +3625,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams1)];
   [flutterPlatformViewsController
       compositeView:1
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(1)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:1]];
 
   UIView* childClippingView1 = gMockPlatformView.superview.superview;
   UIView* maskView1 = childClippingView1.maskView;
@@ -3642,7 +3642,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams3)];
   [flutterPlatformViewsController
       compositeView:1
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(1)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:1]];
 
   childClippingView1 = gMockPlatformView.superview.superview;
 
@@ -3661,7 +3661,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams4)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   UIView* childClippingView2 = gMockPlatformView.superview.superview;
 
@@ -3745,7 +3745,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams1)];
   [flutterPlatformViewsController
       compositeView:1
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(1)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:1]];
 
   UIView* childClippingView1 = view1.superview.superview;
 
@@ -3753,7 +3753,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams2)];
   [flutterPlatformViewsController
       compositeView:2
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(2)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:2]];
 
   UIView* childClippingView2 = view2.superview.superview;
   UIView* maskView1 = childClippingView1.maskView;
@@ -3824,7 +3824,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                                     withParams:std::move(embeddedViewParams1)];
   [flutterPlatformViewsController
       compositeView:1
-         withParams:flutterPlatformViewsController.instance->GetCompositionParams(1)];
+         withParams:[flutterPlatformViewsController compositionParamsForView:1]];
 
   UIView* childClippingView = gMockPlatformView.superview.superview;
 

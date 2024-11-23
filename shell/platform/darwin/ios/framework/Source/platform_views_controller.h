@@ -414,6 +414,8 @@ class PlatformViewsController {
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params;
 
+- (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_PLATFORM_VIEWS_CONTROLLER_H_

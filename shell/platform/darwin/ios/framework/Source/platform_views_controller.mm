@@ -870,6 +870,10 @@ void PlatformViewsController::ResetFrameState() {
   return self.instance->CompositeWithParams(viewId, params);
 }
 
+- (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
+  return self.instance->current_composition_params_.find(viewId)->second;
+}
+
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     [self onCreate:call result:result];
