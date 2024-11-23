@@ -137,11 +137,6 @@ class PlatformViewsController {
   // Visible for testing.
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
-  // Visible for testing.
-  const EmbeddedViewParams& GetCompositionParams(int64_t view_id) const {
-    return current_composition_params_.find(view_id)->second;
-  }
-
   // TODO(cbracken): Hack to make contents visible to Obj-C wrapper.
   // private:
   PlatformViewsController(const PlatformViewsController&) = delete;
