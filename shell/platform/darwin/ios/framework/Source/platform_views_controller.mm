@@ -130,10 +130,6 @@ namespace flutter {
 /// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
 class PlatformViewsController {
  public:
-  // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
-  std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-      gesture_recognizers_blocking_policies_;
-
   /// The size of the current onscreen surface in physical pixels.
   SkISize frame_size_;
 
@@ -213,6 +209,10 @@ BOOL canApplyBlurBackdrop = YES;
 @property(nonatomic, readonly) FlutterClippingMaskViewPool* mask_view_pool;
 
 @property(nonatomic, readonly) std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>& factories;
+
+// The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
+@property(nonatomic, readonly) std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
+      gesture_recognizers_blocking_policies;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -310,7 +310,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::string idString([factoryId UTF8String]);
   FML_CHECK(self.factories.count(idString) == 0);
   self.factories[idString] = factory;
-  self.instance->gesture_recognizers_blocking_policies_[idString] = gestureRecognizerBlockingPolicy;
+  self.gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
@@ -744,8 +744,7 @@ BOOL canApplyBlurBackdrop = YES;
   FlutterTouchInterceptingView* touch_interceptor = [[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:platform_view
                platformViewsController:self
-      gestureRecognizersBlockingPolicy:self.instance
-                                           ->gesture_recognizers_blocking_policies_[viewType]];
+      gestureRecognizersBlockingPolicy:self.gesture_recognizers_blocking_policies[viewType]];
 
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
