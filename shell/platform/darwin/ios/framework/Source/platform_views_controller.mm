@@ -132,13 +132,6 @@ class PlatformViewsController {
 
   ~PlatformViewsController() = default;
 
-  /// @brief set the factory used to construct embedded UI Views.
-  void RegisterViewFactory(
-      NSObject<FlutterPlatformViewFactory>* factory,
-      NSString* factoryId,
-      FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy)
-      __attribute__((cf_audited_transfer));
-
   /// @brief Mark the beginning of a frame and record the size of the onscreen.
   void BeginFrame(SkISize frame_size);
 
@@ -371,16 +364,6 @@ PlatformViewsController::PlatformViewsController()
   mask_view_pool_ =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
 };
-
-void PlatformViewsController::RegisterViewFactory(
-    NSObject<FlutterPlatformViewFactory>* factory,
-    NSString* factoryId,
-    FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy) {
-  std::string idString([factoryId UTF8String]);
-  FML_CHECK(factories_.count(idString) == 0);
-  factories_[idString] = factory;
-  gesture_recognizers_blocking_policies_[idString] = gestureRecognizerBlockingPolicy;
-}
 
 void PlatformViewsController::BeginFrame(SkISize frame_size) {
   ResetFrameState();
@@ -1043,7 +1026,10 @@ void PlatformViewsController::ResetFrameState() {
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizerBlockingPolicy {
-  self.instance->RegisterViewFactory(factory, factoryId, gestureRecognizerBlockingPolicy);
+  std::string idString([factoryId UTF8String]);
+  FML_CHECK(self.instance->factories_.count(idString) == 0);
+  self.instance->factories_[idString] = factory;
+  self.instance->gesture_recognizers_blocking_policies_[idString] = gestureRecognizerBlockingPolicy;
 }
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
