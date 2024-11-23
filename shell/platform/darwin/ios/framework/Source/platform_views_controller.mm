@@ -127,33 +127,12 @@ struct PlatformViewData {
 
 namespace flutter {
 
-/// @brief Composites Flutter UI and overlay layers alongside embedded UIViews.
-class PlatformViewsController {
- public:
-  /// @brief The composition order from the previous thread.
-  ///
-  /// Only accessed from the platform thread.
-  std::vector<int64_t> previous_composition_order_;
-
-  /// Whether the previous frame had any platform views in active composition order.
-  ///
-  /// This state is tracked so that the first frame after removing the last platform view
-  /// runs through the platform view rendering code path, giving us a chance to remove the
-  /// platform view from the UIView hierarchy.
-  ///
-  /// Only accessed from the raster thread.
-  bool had_platform_views_ = false;
-};
-
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
 }  // namespace flutter
 
 @interface FlutterPlatformViewsController ()
-
-// TODO(cbracken): Migrate all fields to Obj-C properties, then delete.
-@property(nonatomic, readonly) std::unique_ptr<flutter::PlatformViewsController>& instance;
 
 // The pool of reusable view layers. The pool allows to recycle layer in each frame.
 @property(nonatomic, readonly) flutter::OverlayLayerPool* layer_pool;
@@ -206,6 +185,20 @@ BOOL canApplyBlurBackdrop = YES;
 ///
 /// This state is only modified on the raster thread.
 @property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_recomposite;
+
+/// @brief The composition order from the previous thread.
+///
+/// Only accessed from the platform thread.
+@property(nonatomic, readonly) std::vector<int64_t>& previous_composition_order;
+
+/// Whether the previous frame had any platform views in active composition order.
+///
+/// This state is tracked so that the first frame after removing the last platform view
+/// runs through the platform view rendering code path, giving us a chance to remove the
+/// platform view from the UIView hierarchy.
+///
+/// Only accessed from the raster thread.
+@property(nonatomic, assign) BOOL had_platform_views;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -263,6 +256,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::vector<int64_t> _composition_order;
   std::vector<int64_t> _visited_platform_views;
   std::unordered_set<int64_t> _views_to_recomposite;
+  std::vector<int64_t> _previous_composition_order;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   /// A set to keep track of embedded views that do not have (0, 0) origin.
@@ -274,10 +268,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (id)init {
   if (self = [super init]) {
-    _instance = std::make_unique<flutter::PlatformViewsController>();
     _layer_pool = std::make_unique<flutter::OverlayLayerPool>();
     _mask_view_pool =
       [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
+    _had_platform_views = NO;
   }
   return self;
 }
@@ -324,6 +318,10 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (std::unordered_set<int64_t>&)views_to_recomposite {
   return _views_to_recomposite;
+}
+
+- (std::vector<int64_t>&)previous_composition_order {
+  return _previous_composition_order;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
@@ -447,12 +445,11 @@ BOOL canApplyBlurBackdrop = YES;
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
-  if (self.flutterView == nil || (self.composition_order.empty() &&
-    !self.instance->had_platform_views_)) {
-    self.instance->had_platform_views_ = false;
+  if (self.flutterView == nil || (self.composition_order.empty() && !self.had_platform_views)) {
+    self.had_platform_views = NO;
     return background_frame->Submit();
   }
-  self.instance->had_platform_views_ = !self.composition_order.empty();
+  self.had_platform_views = !self.composition_order.empty();
 
   bool did_encode = true;
   LayersMap platform_view_layers;
@@ -964,10 +961,10 @@ BOOL canApplyBlurBackdrop = YES;
   FML_DCHECK(self.flutterView);
   UIView* flutter_view = self.flutterView;
 
-  self.instance->previous_composition_order_.clear();
+  self.previous_composition_order.clear();
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
   for (int64_t platform_view_id : composition_order) {
-    self.instance->previous_composition_order_.push_back(platform_view_id);
+    self.previous_composition_order.push_back(platform_view_id);
     UIView* platform_view_root = self.platform_views[platform_view_id].root_view;
     if (platform_view_root != nil) {
       [desired_platform_subviews addObject:platform_view_root];
@@ -1022,7 +1019,7 @@ BOOL canApplyBlurBackdrop = YES;
     composition_order_set.insert(view_id);
   }
   // Remove unused platform views.
-  for (int64_t view_id : self.instance->previous_composition_order_) {
+  for (int64_t view_id : self.previous_composition_order) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
       UIView* platform_view_root = self.platform_views[view_id].root_view;
       [platform_view_root removeFromSuperview];
