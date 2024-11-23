@@ -151,13 +151,6 @@ class PlatformViewsController {
   /// from the platform thread.
   FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
 
-  /// @brief Determine if thread merging is required after prerolling platform views.
-  ///
-  /// Called from the raster thread.
-  PostPrerollResult PostPrerollAction(
-      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger,
-      bool impeller_enabled);
-
   /// @brief Mark the end of a compositor frame.
   ///
   /// May determine changes are required to the thread merging state.
@@ -364,41 +357,6 @@ PlatformViewsController::PlatformViewsController()
 
 void PlatformViewsController::CancelFrame() {
   ResetFrameState();
-}
-
-PostPrerollResult PlatformViewsController::PostPrerollAction(
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger,
-    bool impeller_enabled) {
-  // TODO(jonahwilliams): remove this once Software backend is removed for iOS Sim.
-#ifdef FML_OS_IOS_SIMULATOR
-  const bool merge_threads = true;
-#else
-  const bool merge_threads = !impeller_enabled;
-#endif  // FML_OS_IOS_SIMULATOR
-
-  if (merge_threads) {
-    if (composition_order_.empty()) {
-      return PostPrerollResult::kSuccess;
-    }
-    if (!raster_thread_merger->IsMerged()) {
-      // The raster thread merger may be disabled if the rasterizer is being
-      // created or teared down.
-      //
-      // In such cases, the current frame is dropped, and a new frame is attempted
-      // with the same layer tree.
-      //
-      // Eventually, the frame is submitted once this method returns `kSuccess`.
-      // At that point, the raster tasks are handled on the platform thread.
-      CancelFrame();
-      return PostPrerollResult::kSkipAndRetryFrame;
-    }
-    // If the post preroll action is successful, we will display platform views in the current
-    // frame. In order to sync the rendering of the platform views (quartz) with skia's rendering,
-    // We need to begin an explicit CATransaction. This transaction needs to be submitted
-    // after the current frame is submitted.
-    raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
-  }
-  return PostPrerollResult::kSuccess;
 }
 
 void PlatformViewsController::EndFrame(
@@ -1045,7 +1003,36 @@ void PlatformViewsController::ResetFrameState() {
 - (flutter::PostPrerollResult)postPrerollActionWithThreadMerger:
                                   (const fml::RefPtr<fml::RasterThreadMerger>&)rasterThreadMerger
                                                 impellerEnabled:(BOOL)impellerEnabled {
-  return self.instance->PostPrerollAction(rasterThreadMerger, impellerEnabled);
+  // TODO(jonahwilliams): remove this once Software backend is removed for iOS Sim.
+#ifdef FML_OS_IOS_SIMULATOR
+  const bool mergeThreads = true;
+#else
+  const bool mergeThreads = !impellerEnabled;
+#endif  // FML_OS_IOS_SIMULATOR
+
+  if (mergeThreads) {
+    if (self.instance->composition_order_.empty()) {
+      return flutter::PostPrerollResult::kSuccess;
+    }
+    if (!rasterThreadMerger->IsMerged()) {
+      // The raster thread merger may be disabled if the rasterizer is being
+      // created or teared down.
+      //
+      // In such cases, the current frame is dropped, and a new frame is attempted
+      // with the same layer tree.
+      //
+      // Eventually, the frame is submitted once this method returns `kSuccess`.
+      // At that point, the raster tasks are handled on the platform thread.
+      self.instance->CancelFrame();
+      return flutter::PostPrerollResult::kSkipAndRetryFrame;
+    }
+    // If the post preroll action is successful, we will display platform views in the current
+    // frame. In order to sync the rendering of the platform views (quartz) with skia's rendering,
+    // We need to begin an explicit CATransaction. This transaction needs to be submitted
+    // after the current frame is submitted.
+    rasterThreadMerger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
+  }
+  return flutter::PostPrerollResult::kSuccess;
 }
 
 - (void)endFrameWithResubmit:(BOOL)shouldResubmitFrame
