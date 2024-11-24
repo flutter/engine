@@ -148,7 +148,7 @@ struct PlatformViewData {
         gestureRecognizersBlockingPolicies;
 
 /// The size of the current onscreen surface in physical pixels.
-@property(nonatomic, assign) SkISize frame_size;
+@property(nonatomic, assign) SkISize frameSize;
 
 /// The task runner for posting tasks to the platform thread.
 @property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platform_task_runner;
@@ -432,7 +432,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
   [self resetFrameState];
-  self.frame_size = frameSize;
+  self.frameSize = frameSize;
 }
 
 - (void)cancelFrame {
@@ -498,7 +498,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
                           withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params {
-  SkRect view_bounds = SkRect::Make(self.frame_size);
+  SkRect view_bounds = SkRect::Make(self.frameSize);
   std::unique_ptr<flutter::EmbedderViewSlice> view;
   view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
   self.slices.insert_or_assign(viewId, std::move(view));
@@ -786,7 +786,7 @@ BOOL canApplyBlurBackdrop = YES;
       continue;
     }
 
-    std::unique_ptr<flutter::SurfaceFrame> frame = layer->surface->AcquireFrame(self.frame_size);
+    std::unique_ptr<flutter::SurfaceFrame> frame = layer->surface->AcquireFrame(self.frameSize);
     // If frame is null, AcquireFrame already printed out an error message.
     if (!frame) {
       continue;
