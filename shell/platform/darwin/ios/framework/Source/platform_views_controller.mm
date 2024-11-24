@@ -359,13 +359,13 @@ BOOL canApplyBlurBackdrop = YES;
                platformViewsController:self
       gestureRecognizersBlockingPolicy:self.gestureRecognizersBlockingPolicies[viewType]];
 
-  ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
-  [clipping_view addSubview:touchInterceptor];
+  ChildClippingView* clippingView = [[ChildClippingView alloc] initWithFrame:CGRectZero];
+  [clippingView addSubview:touchInterceptor];
 
   self.platformViews.emplace(viewId, PlatformViewData{
                                           .view = embeddedView,                   //
                                           .touch_interceptor = touchInterceptor,  //
-                                          .root_view = clipping_view               //
+                                          .root_view = clippingView               //
                                       });
 
   result(nil);
@@ -498,9 +498,9 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)prerollCompositeEmbeddedView:(int64_t)viewId
                           withParams:(std::unique_ptr<flutter::EmbeddedViewParams>)params {
-  SkRect view_bounds = SkRect::Make(self.frameSize);
+  SkRect viewBounds = SkRect::Make(self.frameSize);
   std::unique_ptr<flutter::EmbedderViewSlice> view;
-  view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
+  view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(viewBounds);
   self.slices.insert_or_assign(viewId, std::move(view));
 
   self.compositionOrder.push_back(viewId);
@@ -534,9 +534,9 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (long)firstResponderPlatformViewId {
-  for (auto const& [id, platform_view_data] : self.platformViews) {
-    UIView* root_view = platform_view_data.root_view;
-    if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
+  for (auto const& [id, platformViewData] : self.platformViews) {
+    UIView* rootView = platformViewData.root_view;
+    if (rootView.flt_hasFirstResponderInViewHierarchySubtree) {
       return id;
     }
   }
@@ -621,7 +621,7 @@ BOOL canApplyBlurBackdrop = YES;
         // `filterRect` is in global coordinates. We need to convert to local space.
         filterRect = CGRectApplyAffineTransform(
             filterRect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
-        // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
+        // `filterRect` reprents the rect that should be filtered inside the `_flutterView`.
         // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
         // filtered.
         if (CGRectIsNull(CGRectIntersection(filterRect, clipView.frame))) {
@@ -667,7 +667,7 @@ BOOL canApplyBlurBackdrop = YES;
   // offset.
   //
   // Note that the transforms are not applied to the clipping paths because clipping paths happen on
-  // the mask view, whose origin is always (0,0) to the flutter_view.
+  // the mask view, whose origin is always (0,0) to the _flutterView.
   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
   embeddedView.layer.transform = GetCATransform3DFromSkMatrix(transformMatrix);
@@ -720,8 +720,8 @@ BOOL canApplyBlurBackdrop = YES;
   // _platformViews must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
   fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [self]() {
-    for (int64_t view_id : self.compositionOrder) {
-      [self.platformViews[view_id].root_view removeFromSuperview];
+    for (int64_t viewId : self.compositionOrder) {
+      [self.platformViews[viewId].root_view removeFromSuperview];
     }
     self.platformViews.clear();
   });
@@ -746,39 +746,39 @@ BOOL canApplyBlurBackdrop = YES;
   }
   self.hadPlatformViews = !self.compositionOrder.empty();
 
-  bool did_encode = true;
+  bool didEncode = true;
   LayersMap platformViewLayers;
   std::vector<std::unique_ptr<flutter::SurfaceFrame>> surfaceFrames;
   surfaceFrames.reserve(self.compositionOrder.size());
-  std::unordered_map<int64_t, SkRect> view_rects;
+  std::unordered_map<int64_t, SkRect> viewRects;
 
-  for (int64_t view_id : self.compositionOrder) {
-    view_rects[view_id] = self.currentCompositionParams[view_id].finalBoundingRect();
+  for (int64_t viewId : self.compositionOrder) {
+    viewRects[viewId] = self.currentCompositionParams[viewId].finalBoundingRect();
   }
 
-  std::unordered_map<int64_t, SkRect> overlay_layers =
-      SliceViews(background_frame->Canvas(), self.compositionOrder, self.slices, view_rects);
+  std::unordered_map<int64_t, SkRect> overlayLayers =
+      SliceViews(background_frame->Canvas(), self.compositionOrder, self.slices, viewRects);
 
-  size_t required_overlay_layers = 0;
-  for (int64_t view_id : self.compositionOrder) {
-    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
-    if (overlay == overlay_layers.end()) {
+  size_t requiredOverlayLayers = 0;
+  for (int64_t viewId : self.compositionOrder) {
+    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlayLayers.find(viewId);
+    if (overlay == overlayLayers.end()) {
       continue;
     }
-    required_overlay_layers++;
+    requiredOverlayLayers++;
   }
 
   // If there are not sufficient overlay layers, we must construct them on the platform
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
-  [self createMissingOverlays:required_overlay_layers
+  [self createMissingOverlays:requiredOverlayLayers
                withIosContext:iosContext
                     grContext:grContext];
 
-  int64_t overlay_id = 0;
-  for (int64_t view_id : self.compositionOrder) {
-    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
-    if (overlay == overlay_layers.end()) {
+  int64_t overlayId = 0;
+  for (int64_t viewId : self.compositionOrder) {
+    std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlayLayers.find(viewId);
+    if (overlay == overlayLayers.end()) {
       continue;
     }
     std::shared_ptr<flutter::OverlayLayer> layer = self.nextLayerInPool;
@@ -791,34 +791,34 @@ BOOL canApplyBlurBackdrop = YES;
     if (!frame) {
       continue;
     }
-    flutter::DlCanvas* overlay_canvas = frame->Canvas();
-    int restore_count = overlay_canvas->GetSaveCount();
-    overlay_canvas->Save();
-    overlay_canvas->ClipRect(overlay->second);
-    overlay_canvas->Clear(flutter::DlColor::kTransparent());
-    self.slices[view_id]->render_into(overlay_canvas);
-    overlay_canvas->RestoreToCount(restore_count);
+    flutter::DlCanvas* overlayCanvas = frame->Canvas();
+    int restoreCount = overlayCanvas->GetSaveCount();
+    overlayCanvas->Save();
+    overlayCanvas->ClipRect(overlay->second);
+    overlayCanvas->Clear(flutter::DlColor::kTransparent());
+    self.slices[viewId]->render_into(overlayCanvas);
+    overlayCanvas->RestoreToCount(restoreCount);
 
     // This flutter view is never the last in a frame, since we always submit the
     // underlay view last.
     frame->set_submit_info({.frame_boundary = false, .present_with_transaction = true});
     layer->did_submit_last_frame = frame->Encode();
 
-    did_encode &= layer->did_submit_last_frame;
-    platformViewLayers[view_id] = LayerData{
+    didEncode &= layer->did_submit_last_frame;
+    platformViewLayers[viewId] = LayerData{
         .rect = overlay->second,   //
-        .view_id = view_id,        //
-        .overlay_id = overlay_id,  //
+        .view_id = viewId,        //
+        .overlay_id = overlayId,  //
         .layer = layer             //
     };
     surfaceFrames.push_back(std::move(frame));
-    overlay_id++;
+    overlayId++;
   }
 
-  auto previous_submit_info = background_frame->submit_info();
+  auto previousSubmitInfo = background_frame->submit_info();
   background_frame->set_submit_info({
-      .frame_damage = previous_submit_info.frame_damage,
-      .buffer_damage = previous_submit_info.buffer_damage,
+      .frame_damage = previousSubmitInfo.frame_damage,
+      .buffer_damage = previousSubmitInfo.buffer_damage,
       .present_with_transaction = true,
   });
   background_frame->Encode();
@@ -847,24 +847,24 @@ BOOL canApplyBlurBackdrop = YES;
 
   fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, fml::MakeCopyable(std::move(task)));
 
-  return did_encode;
+  return didEncode;
 }
 
-- (void)createMissingOverlays:(size_t)required_overlay_layers
+- (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext {
   TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
 
-  if (required_overlay_layers <= self.layerPool->size()) {
+  if (requiredOverlayLayers <= self.layerPool->size()) {
     return;
   }
-  auto missing_layer_count = required_overlay_layers - self.layerPool->size();
+  auto missingLayerCount = requiredOverlayLayers - self.layerPool->size();
 
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
   fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [&]() {
-    for (auto i = 0u; i < missing_layer_count; i++) {
+    for (auto i = 0u; i < missingLayerCount; i++) {
       [self createLayerWithIosContext:iosContext
                             grContext:grContext
                           pixelFormat:((FlutterView*)self.flutterView).pixelFormat];
@@ -891,11 +891,11 @@ BOOL canApplyBlurBackdrop = YES;
   [CATransaction begin];
 
   // Configure Flutter overlay views.
-  for (const auto& [view_id, layer_data] : platformViewLayers) {
-    layer_data.layer->UpdateViewState(self.flutterView,      //
-                                      layer_data.rect,       //
-                                      layer_data.view_id,    //
-                                      layer_data.overlay_id  //
+  for (const auto& [viewId, layerData] : platformViewLayers) {
+    layerData.layer->UpdateViewState(self.flutterView,      //
+                                      layerData.rect,       //
+                                      layerData.view_id,    //
+                                      layerData.overlay_id  //
     );
   }
 
@@ -905,8 +905,8 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   // Composite Platform Views.
-  for (int64_t view_id : viewsToRecomposite) {
-    [self compositeView:view_id withParams:currentCompositionParams[view_id]];
+  for (int64_t viewId : viewsToRecomposite) {
+    [self compositeView:viewId withParams:currentCompositionParams[viewId]];
   }
 
   // Present callbacks.
@@ -927,41 +927,41 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)bringLayersIntoView:(const LayersMap&)layerMap
        withCompositionOrder:(const std::vector<int64_t>&)compositionOrder {
   FML_DCHECK(self.flutterView);
-  UIView* flutter_view = self.flutterView;
+  UIView* flutterView = self.flutterView;
 
   self.previousCompositionOrder.clear();
-  NSMutableArray* desired_platform_subviews = [NSMutableArray array];
-  for (int64_t platform_view_id : compositionOrder) {
-    self.previousCompositionOrder.push_back(platform_view_id);
-    UIView* platform_view_root = self.platformViews[platform_view_id].root_view;
-    if (platform_view_root != nil) {
-      [desired_platform_subviews addObject:platform_view_root];
+  NSMutableArray* desiredPlatformSubviews = [NSMutableArray array];
+  for (int64_t platformViewId : compositionOrder) {
+    self.previousCompositionOrder.push_back(platformViewId);
+    UIView* platformViewRoot = self.platformViews[platformViewId].root_view;
+    if (platformViewRoot != nil) {
+      [desiredPlatformSubviews addObject:platformViewRoot];
     }
 
-    auto maybe_layer_data = layerMap.find(platform_view_id);
-    if (maybe_layer_data != layerMap.end()) {
-      auto view = maybe_layer_data->second.layer->overlay_view_wrapper;
+    auto maybeLayerData = layerMap.find(platformViewId);
+    if (maybeLayerData != layerMap.end()) {
+      auto view = maybeLayerData->second.layer->overlay_view_wrapper;
       if (view != nil) {
-        [desired_platform_subviews addObject:view];
+        [desiredPlatformSubviews addObject:view];
       }
     }
   }
 
-  NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
-  NSArray* existing_platform_subviews = [flutter_view.subviews
+  NSSet* desiredPlatformSubviewsSet = [NSSet setWithArray:desiredPlatformSubviews];
+  NSArray* existingPlatformSubviews = [flutterView.subviews
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object,
                                                                         NSDictionary* bindings) {
-        return [desired_platform_subviews_set containsObject:object];
+        return [desiredPlatformSubviewsSet containsObject:object];
       }]];
 
   // Manipulate view hierarchy only if needed, to address a performance issue where
   // this method is called even when view hierarchy stays the same.
   // See: https://github.com/flutter/flutter/issues/121833
   // TODO(hellohuanlin): investigate if it is possible to skip unnecessary bringLayersIntoView.
-  if (![desired_platform_subviews isEqualToArray:existing_platform_subviews]) {
-    for (UIView* subview in desired_platform_subviews) {
+  if (![desiredPlatformSubviews isEqualToArray:existingPlatformSubviews]) {
+    for (UIView* subview in desiredPlatformSubviews) {
       // `addSubview` will automatically reorder subview if it is already added.
-      [flutter_view addSubview:subview];
+      [flutterView addSubview:subview];
     }
   }
 }
@@ -983,14 +983,14 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   std::unordered_set<int64_t> compositionOrderSet;
-  for (int64_t view_id : compositionOrder) {
-    compositionOrderSet.insert(view_id);
+  for (int64_t viewId : compositionOrder) {
+    compositionOrderSet.insert(viewId);
   }
   // Remove unused platform views.
-  for (int64_t view_id : self.previousCompositionOrder) {
-    if (compositionOrderSet.find(view_id) == compositionOrderSet.end()) {
-      UIView* platform_view_root = self.platformViews[view_id].root_view;
-      [platform_view_root removeFromSuperview];
+  for (int64_t viewId : self.previousCompositionOrder) {
+    if (compositionOrderSet.find(viewId) == compositionOrderSet.end()) {
+      UIView* platformViewRoot = self.platformViews[viewId].root_view;
+      [platformViewRoot removeFromSuperview];
     }
   }
 }
@@ -1001,21 +1001,21 @@ BOOL canApplyBlurBackdrop = YES;
     return views;
   }
 
-  std::unordered_set<int64_t> views_to_composite(self.compositionOrder.begin(),
+  std::unordered_set<int64_t> viewsToComposite(self.compositionOrder.begin(),
                                                  self.compositionOrder.end());
-  std::unordered_set<int64_t> views_to_delay_dispose;
+  std::unordered_set<int64_t> viewsToDelayDispose;
   for (int64_t viewId : self.viewsToDispose) {
-    if (views_to_composite.count(viewId)) {
-      views_to_delay_dispose.insert(viewId);
+    if (viewsToComposite.count(viewId)) {
+      viewsToDelayDispose.insert(viewId);
       continue;
     }
-    UIView* root_view = self.platformViews[viewId].root_view;
-    views.push_back(root_view);
+    UIView* rootView = self.platformViews[viewId].root_view;
+    views.push_back(rootView);
     self.currentCompositionParams.erase(viewId);
     self.viewsToRecomposite.erase(viewId);
     self.platformViews.erase(viewId);
   }
-  self.viewsToDispose = std::move(views_to_delay_dispose);
+  self.viewsToDispose = std::move(viewsToDelayDispose);
   return views;
 }
 
