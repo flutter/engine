@@ -247,6 +247,7 @@ struct PlatformViewData {
 
 namespace flutter {
 
+// TODO(cbracken): Eliminate the use of globals.
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
