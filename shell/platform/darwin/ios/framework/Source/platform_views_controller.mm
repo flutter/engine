@@ -176,7 +176,7 @@ struct PlatformViewData {
 /// platform view IDs visited during layer tree composition.
 ///
 /// This state is only modified on the raster thread.
-@property(nonatomic, readonly) std::vector<int64_t>& visited_platform_views;
+@property(nonatomic, readonly) std::vector<int64_t>& visitedPlatformViews;
 
 /// Only composite platform views in this set.
 ///
@@ -262,7 +262,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _currentCompositionParams;
   std::unordered_set<int64_t> _viewsToDispose;
   std::vector<int64_t> _compositionOrder;
-  std::vector<int64_t> _visited_platform_views;
+  std::vector<int64_t> _visitedPlatformViews;
   std::unordered_set<int64_t> _viewsToRecomposite;
   std::vector<int64_t> _previousCompositionOrder;
 
@@ -489,7 +489,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect {
-  for (int64_t id : self.visited_platform_views) {
+  for (int64_t id : self.visitedPlatformViews) {
     flutter::EmbeddedViewParams params = self.currentCompositionParams[id];
     params.PushImageFilter(filter, filterRect);
     self.currentCompositionParams[id] = params;
@@ -731,7 +731,7 @@ BOOL canApplyBlurBackdrop = YES;
   self.currentCompositionParams.clear();
   self.viewsToRecomposite.clear();
   self.layerPool->RecycleLayers();
-  self.visited_platform_views.clear();
+  self.visitedPlatformViews.clear();
 }
 
 - (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)background_frame
@@ -1022,11 +1022,11 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)resetFrameState {
   self.slices.clear();
   self.compositionOrder.clear();
-  self.visited_platform_views.clear();
+  self.visitedPlatformViews.clear();
 }
 
 - (void)pushVisitedPlatformViewId:(int64_t)viewId {
-  self.visited_platform_views.push_back(viewId);
+  self.visitedPlatformViews.push_back(viewId);
 }
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
@@ -1063,8 +1063,8 @@ BOOL canApplyBlurBackdrop = YES;
   return _compositionOrder;
 }
 
-- (std::vector<int64_t>&)visited_platform_views {
-  return _visited_platform_views;
+- (std::vector<int64_t>&)visitedPlatformViews {
+  return _visitedPlatformViews;
 }
 
 - (std::unordered_set<int64_t>&)viewsToRecomposite {
