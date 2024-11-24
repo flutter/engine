@@ -12,8 +12,6 @@ import static org.mockito.Mockito.*;
 import android.app.Presentation;
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.graphics.SurfaceTexture;
-import android.media.Image;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -22,7 +20,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
@@ -36,7 +33,8 @@ import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorView;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
-import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel22.PlatformViewTouch;
+import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel2;
+import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel2.PlatformViewTouch;
 import io.flutter.embedding.engine.systemchannels.ScribeChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -44,7 +42,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.common.StandardMethodCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
-import io.flutter.view.TextureRegistry;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -206,9 +203,7 @@ public class PlatformViewsController2Test {
     MotionEvent resolvedEvent =
         PlatformViewsController2.toMotionEvent(
             1, // density
-            frameWorkTouch,
-            false // usingVirtualDisplays
-            );
+            frameWorkTouch);
     assertEquals(resolvedEvent.getAction(), original.getAction());
     assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
   }
@@ -590,7 +585,6 @@ public class PlatformViewsController2Test {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void reattachToFlutterView() {
     PlatformViewsController2 PlatformViewsController2 = new PlatformViewsController2();
-    PlatformViewsController2.setSoftwareRendering(true);
 
     int platformViewId = 100;
     assertNull(PlatformViewsController2.getPlatformViewById(platformViewId));
@@ -715,98 +709,7 @@ public class PlatformViewsController2Test {
     executor.onAttachedToJNI();
 
     final Context context = ApplicationProvider.getApplicationContext();
-    final TextureRegistry registry =
-        new TextureRegistry() {
-          public void TextureRegistry() {}
-
-          @NonNull
-          @Override
-          public SurfaceTextureEntry createSurfaceTexture() {
-            return registerSurfaceTexture(mock(SurfaceTexture.class));
-          }
-
-          @NonNull
-          @Override
-          public SurfaceTextureEntry registerSurfaceTexture(
-              @NonNull SurfaceTexture surfaceTexture) {
-            return new SurfaceTextureEntry() {
-              @NonNull
-              @Override
-              public SurfaceTexture surfaceTexture() {
-                return mock(SurfaceTexture.class);
-              }
-
-              @Override
-              public long id() {
-                return 0;
-              }
-
-              @Override
-              public void release() {}
-            };
-          }
-
-          @NonNull
-          @Override
-          public ImageTextureEntry createImageTexture() {
-            return new ImageTextureEntry() {
-              @Override
-              public long id() {
-                return 0;
-              }
-
-              @Override
-              public void release() {}
-
-              @Override
-              public void pushImage(Image image) {}
-            };
-          }
-
-          @NonNull
-          @Override
-          public SurfaceProducer createSurfaceProducer() {
-            return new SurfaceProducer() {
-              @Override
-              public void setCallback(SurfaceProducer.Callback cb) {}
-
-              @Override
-              public long id() {
-                return 0;
-              }
-
-              @Override
-              public void release() {}
-
-              @Override
-              public int getWidth() {
-                return 0;
-              }
-
-              @Override
-              public int getHeight() {
-                return 0;
-              }
-
-              @Override
-              public void setSize(int width, int height) {}
-
-              @Override
-              public Surface getSurface() {
-                return null;
-              }
-
-              @Override
-              public boolean handlesCropAndRotation() {
-                return false;
-              }
-
-              public void scheduleFrame() {}
-            };
-          }
-        };
-
-    PlatformViewsController2.attach(context, registry, executor);
+    PlatformViewsController2.attach(context, executor);
 
     final FlutterEngine engine = mock(FlutterEngine.class);
     when(engine.getRenderer()).thenReturn(new FlutterRenderer(jni));

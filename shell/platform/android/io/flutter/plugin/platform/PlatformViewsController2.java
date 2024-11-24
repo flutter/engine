@@ -68,7 +68,6 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
     platformViewParent = new SparseArray<>();
     pendingTransactions = new ArrayList<>();
     activeTransactions = new ArrayList<>();
-
     motionEventTracker = MotionEventTracker.getInstance();
   }
 
@@ -77,7 +76,7 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
     return false;
   }
 
-  public PlatformView createPlatformView(
+  public PlatformView createFlutterPlatformView(
       @NonNull PlatformViewsChannel2.PlatformViewCreationRequest request) {
     final PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
     if (viewFactory == null) {
@@ -489,6 +488,10 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
       int viewWidth,
       int viewHeight,
       @NonNull FlutterMutatorsStack mutatorsStack) {
+    if (!initializePlatformViewIfNeeded(viewId)) {
+      return;
+    }
+
     final FlutterMutatorView parentView = platformViewParent.get(viewId);
     parentView.readyToDisplay(mutatorsStack, x, y, width, height);
     parentView.setVisibility(View.VISIBLE);
@@ -503,6 +506,8 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
     }
   }
 
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   public void onEndFrame() {
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     for (int i = 0; i < activeTransactions.size(); i++) {
@@ -523,6 +528,8 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
   }
 
   // NOT called from UI thread.
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   public SurfaceControl.Transaction createTransaction() {
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     pendingTransactions.add(tx);
@@ -530,6 +537,8 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
   }
 
   // NOT called from UI thread.
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   public void applyTransactions() {
     SurfaceControl.Transaction tx = new SurfaceControl.Transaction();
     for (int i = 0; i < pendingTransactions.size(); i++) {
@@ -539,20 +548,21 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
     pendingTransactions.clear();
   }
 
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
   public FlutterOverlaySurface createOverlaySurface() {
     if (overlayerSurface == null) {
-      final SurfaceControl.Builder scb = new SurfaceControl.Builder();
-      scb.setBufferSize(flutterView.getWidth(), flutterView.getHeight());
-      scb.setFormat(PixelFormat.RGBA_8888);
-      scb.setName("Flutter Overlay Surface");
-      scb.setHidden(false);
-      scb.setOpaque(false);
-      final SurfaceControl sc = scb.build();
+      final SurfaceControl.Builder surfaceControlBuilder = new SurfaceControl.Builder();
+      surfaceControlBuilder.setBufferSize(flutterView.getWidth(), flutterView.getHeight());
+      surfaceControlBuilder.setFormat(PixelFormat.RGBA_8888);
+      surfaceControlBuilder.setName("Flutter Overlay Surface");
+      surfaceControlBuilder.setOpaque(false);
+      final SurfaceControl surfaceControl = surfaceControlBuilder.build();
       final SurfaceControl.Transaction tx =
-          flutterView.getRootSurfaceControl().buildReparentTransaction(sc);
+          flutterView.getRootSurfaceControl().buildReparentTransaction(surfaceControl);
       tx.setLayer(sc, 1000);
       tx.apply();
-      overlayerSurface = new Surface(sc);
+      overlayerSurface = new Surface(surfaceControl);
     }
 
     return new FlutterOverlaySurface(0, overlayerSurface);
@@ -577,7 +587,7 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
                     + Build.VERSION.SDK_INT
                     + ", required API level is 34.");
           }
-          createPlatformView(request);
+          createFlutterPlatformView(request);
         }
 
         @Override
