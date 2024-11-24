@@ -4,6 +4,9 @@
 
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Build;
@@ -18,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
