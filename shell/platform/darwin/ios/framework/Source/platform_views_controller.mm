@@ -137,7 +137,7 @@ struct PlatformViewData {
 @property(nonatomic, readonly)
     std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>& slices;
 
-@property(nonatomic, readonly) FlutterClippingMaskViewPool* mask_view_pool;
+@property(nonatomic, readonly) FlutterClippingMaskViewPool* maskViewPool;
 
 @property(nonatomic, readonly)
     std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*>& factories;
@@ -145,7 +145,7 @@ struct PlatformViewData {
 // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
 @property(nonatomic, readonly)
     std::unordered_map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-        gesture_recognizers_blocking_policies;
+        gestureRecognizersBlockingPolicies;
 
 /// The size of the current onscreen surface in physical pixels.
 @property(nonatomic, assign) SkISize frame_size;
@@ -277,7 +277,7 @@ BOOL canApplyBlurBackdrop = YES;
 - (id)init {
   if (self = [super init]) {
     _layerPool = std::make_unique<flutter::OverlayLayerPool>();
-    _mask_view_pool =
+    _maskViewPool =
         [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
     _had_platform_views = NO;
   }
@@ -357,7 +357,7 @@ BOOL canApplyBlurBackdrop = YES;
   FlutterTouchInterceptingView* touch_interceptor = [[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:platform_view
                platformViewsController:self
-      gestureRecognizersBlockingPolicy:self.gesture_recognizers_blocking_policies[viewType]];
+      gestureRecognizersBlockingPolicy:self.gestureRecognizersBlockingPolicies[viewType]];
 
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
@@ -427,7 +427,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::string idString([factoryId UTF8String]);
   FML_CHECK(self.factories.count(idString) == 0);
   self.factories[idString] = factory;
-  self.gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
+  self.gestureRecognizersBlockingPolicies[idString] = gestureRecognizerBlockingPolicy;
 }
 
 - (void)beginFrameWithSize:(SkISize)frameSize {
@@ -551,7 +551,7 @@ BOOL canApplyBlurBackdrop = YES;
   CGRect frame =
       CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
                  CGRectGetWidth(self.flutterView.bounds), CGRectGetHeight(self.flutterView.bounds));
-  clipView.maskView = [self.mask_view_pool getMaskViewWithFrame:frame];
+  clipView.maskView = [self.maskViewPool getMaskViewWithFrame:frame];
 }
 
 - (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
@@ -569,7 +569,7 @@ BOOL canApplyBlurBackdrop = YES;
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
   if (clipView.maskView) {
-    [self.mask_view_pool insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
+    [self.maskViewPool insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
