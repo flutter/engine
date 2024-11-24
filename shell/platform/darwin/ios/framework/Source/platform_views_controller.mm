@@ -200,15 +200,15 @@ struct PlatformViewData {
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
-- (void)performSubmit:(const LayersMap&)platform_view_layers
+- (void)performSubmit:(const LayersMap&)platformViewLayers
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)viewsToRecomposite
             compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
-                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
                surfaceFrames:
-                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames;
+                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surfaceFrames;
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -236,10 +236,10 @@ struct PlatformViewData {
 - (void)bringLayersIntoView:(const LayersMap&)layer_map
        withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
-- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
-                        grContext:(GrDirectContext*)gr_context
-                      pixelFormat:(MTLPixelFormat)pixel_format;
-- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+                        grContext:(GrDirectContext*)grContext
+                      pixelFormat:(MTLPixelFormat)pixelFormat;
+- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
 - (std::vector<UIView*>)uiViewsToDispose;
 - (void)resetFrameState;
@@ -735,8 +735,8 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (BOOL)submitFrame:(std::unique_ptr<flutter::SurfaceFrame>)background_frame
-     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
-          grContext:(GrDirectContext*)gr_context {
+     withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+          grContext:(GrDirectContext*)grContext {
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
@@ -747,9 +747,9 @@ BOOL canApplyBlurBackdrop = YES;
   self.hadPlatformViews = !self.compositionOrder.empty();
 
   bool did_encode = true;
-  LayersMap platform_view_layers;
-  std::vector<std::unique_ptr<flutter::SurfaceFrame>> surface_frames;
-  surface_frames.reserve(self.compositionOrder.size());
+  LayersMap platformViewLayers;
+  std::vector<std::unique_ptr<flutter::SurfaceFrame>> surfaceFrames;
+  surfaceFrames.reserve(self.compositionOrder.size());
   std::unordered_map<int64_t, SkRect> view_rects;
 
   for (int64_t view_id : self.compositionOrder) {
@@ -772,8 +772,8 @@ BOOL canApplyBlurBackdrop = YES;
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
   [self createMissingOverlays:required_overlay_layers
-               withIosContext:ios_context
-                    grContext:gr_context];
+               withIosContext:iosContext
+                    grContext:grContext];
 
   int64_t overlay_id = 0;
   for (int64_t view_id : self.compositionOrder) {
@@ -805,13 +805,13 @@ BOOL canApplyBlurBackdrop = YES;
     layer->did_submit_last_frame = frame->Encode();
 
     did_encode &= layer->did_submit_last_frame;
-    platform_view_layers[view_id] = LayerData{
+    platformViewLayers[view_id] = LayerData{
         .rect = overlay->second,   //
         .view_id = view_id,        //
         .overlay_id = overlay_id,  //
         .layer = layer             //
     };
-    surface_frames.push_back(std::move(frame));
+    surfaceFrames.push_back(std::move(frame));
     overlay_id++;
   }
 
@@ -822,27 +822,27 @@ BOOL canApplyBlurBackdrop = YES;
       .present_with_transaction = true,
   });
   background_frame->Encode();
-  surface_frames.push_back(std::move(background_frame));
+  surfaceFrames.push_back(std::move(background_frame));
 
   // Mark all layers as available, so they can be used in the next frame.
-  std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers =
+  std::vector<std::shared_ptr<flutter::OverlayLayer>> unusedLayers =
       self.layerPool->RemoveUnusedLayers();
   self.layerPool->RecycleLayers();
 
   auto task = [&,                                                             //
-               platform_view_layers = std::move(platform_view_layers),        //
+               platformViewLayers = std::move(platformViewLayers),        //
                currentCompositionParams = self.currentCompositionParams,  //
                viewsToRecomposite = self.viewsToRecomposite,              //
                compositionOrder = self.compositionOrder,                    //
-               unused_layers = std::move(unused_layers),                      //
-               surface_frames = std::move(surface_frames)                     //
+               unusedLayers = std::move(unusedLayers),                      //
+               surfaceFrames = std::move(surfaceFrames)                     //
   ]() mutable {
-    [self performSubmit:platform_view_layers
+    [self performSubmit:platformViewLayers
         currentCompositionParams:currentCompositionParams
               viewsToRecomposite:viewsToRecomposite
                 compositionOrder:compositionOrder
-                    unusedLayers:unused_layers
-                   surfaceFrames:surface_frames];
+                    unusedLayers:unusedLayers
+                   surfaceFrames:surfaceFrames];
   };
 
   fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, fml::MakeCopyable(std::move(task)));
@@ -851,8 +851,8 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (void)createMissingOverlays:(size_t)required_overlay_layers
-               withIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
-                    grContext:(GrDirectContext*)gr_context {
+               withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+                    grContext:(GrDirectContext*)grContext {
   TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
 
   if (required_overlay_layers <= self.layerPool->size()) {
@@ -865,8 +865,8 @@ BOOL canApplyBlurBackdrop = YES;
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
   fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [&]() {
     for (auto i = 0u; i < missing_layer_count; i++) {
-      [self createLayerWithIosContext:ios_context
-                            grContext:gr_context
+      [self createLayerWithIosContext:iosContext
+                            grContext:grContext
                           pixelFormat:((FlutterView*)self.flutterView).pixelFormat];
     }
     latch->CountDown();
@@ -876,22 +876,22 @@ BOOL canApplyBlurBackdrop = YES;
   }
 }
 
-- (void)performSubmit:(const LayersMap&)platform_view_layers
+- (void)performSubmit:(const LayersMap&)platformViewLayers
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)viewsToRecomposite
             compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
-                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+                    (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
                surfaceFrames:
-                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surface_frames {
+                   (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surfaceFrames {
   TRACE_EVENT0("flutter", "PlatformViewsController::PerformSubmit");
   FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   [CATransaction begin];
 
   // Configure Flutter overlay views.
-  for (const auto& [view_id, layer_data] : platform_view_layers) {
+  for (const auto& [view_id, layer_data] : platformViewLayers) {
     layer_data.layer->UpdateViewState(self.flutterView,      //
                                       layer_data.rect,       //
                                       layer_data.view_id,    //
@@ -910,16 +910,16 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   // Present callbacks.
-  for (const auto& frame : surface_frames) {
+  for (const auto& frame : surfaceFrames) {
     frame->Submit();
   }
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
-  [self removeUnusedLayers:unused_layers withCompositionOrder:compositionOrder];
+  [self removeUnusedLayers:unusedLayers withCompositionOrder:compositionOrder];
 
   // Organize the layers by their z indexes.
-  [self bringLayersIntoView:platform_view_layers withCompositionOrder:compositionOrder];
+  [self bringLayersIntoView:platformViewLayers withCompositionOrder:compositionOrder];
 
   [CATransaction commit];
 }
@@ -970,15 +970,15 @@ BOOL canApplyBlurBackdrop = YES;
   return self.layerPool->GetNextLayer();
 }
 
-- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
-                        grContext:(GrDirectContext*)gr_context
-                      pixelFormat:(MTLPixelFormat)pixel_format {
-  self.layerPool->CreateLayer(gr_context, ios_context, pixel_format);
+- (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
+                        grContext:(GrDirectContext*)grContext
+                      pixelFormat:(MTLPixelFormat)pixelFormat {
+  self.layerPool->CreateLayer(grContext, iosContext, pixelFormat);
 }
 
-- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
+- (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder {
-  for (const std::shared_ptr<flutter::OverlayLayer>& layer : unused_layers) {
+  for (const std::shared_ptr<flutter::OverlayLayer>& layer : unusedLayers) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
 
