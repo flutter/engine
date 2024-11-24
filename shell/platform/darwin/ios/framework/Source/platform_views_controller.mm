@@ -181,7 +181,7 @@ struct PlatformViewData {
 /// Only composite platform views in this set.
 ///
 /// This state is only modified on the raster thread.
-@property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_recomposite;
+@property(nonatomic, readonly) std::unordered_set<int64_t>& viewsToRecomposite;
 
 /// @brief The composition order from the previous thread.
 ///
@@ -203,7 +203,7 @@ struct PlatformViewData {
 - (void)performSubmit:(const LayersMap&)platform_view_layers
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
-          viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+          viewsToRecomposite:(const std::unordered_set<int64_t>&)viewsToRecomposite
             compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
                     (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
@@ -263,7 +263,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_set<int64_t> _viewsToDispose;
   std::vector<int64_t> _compositionOrder;
   std::vector<int64_t> _visited_platform_views;
-  std::unordered_set<int64_t> _views_to_recomposite;
+  std::unordered_set<int64_t> _viewsToRecomposite;
   std::vector<int64_t> _previousCompositionOrder;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -511,7 +511,7 @@ BOOL canApplyBlurBackdrop = YES;
     return;
   }
   self.currentCompositionParams[viewId] = flutter::EmbeddedViewParams(*params.get());
-  self.views_to_recomposite.insert(viewId);
+  self.viewsToRecomposite.insert(viewId);
 }
 
 - (size_t)embeddedViewCount {
@@ -729,7 +729,7 @@ BOOL canApplyBlurBackdrop = YES;
   self.compositionOrder.clear();
   self.slices.clear();
   self.currentCompositionParams.clear();
-  self.views_to_recomposite.clear();
+  self.viewsToRecomposite.clear();
   self.layerPool->RecycleLayers();
   self.visited_platform_views.clear();
 }
@@ -832,14 +832,14 @@ BOOL canApplyBlurBackdrop = YES;
   auto task = [&,                                                             //
                platform_view_layers = std::move(platform_view_layers),        //
                currentCompositionParams = self.currentCompositionParams,  //
-               views_to_recomposite = self.views_to_recomposite,              //
+               viewsToRecomposite = self.viewsToRecomposite,              //
                compositionOrder = self.compositionOrder,                    //
                unused_layers = std::move(unused_layers),                      //
                surface_frames = std::move(surface_frames)                     //
   ]() mutable {
     [self performSubmit:platform_view_layers
         currentCompositionParams:currentCompositionParams
-              viewsToRecomposite:views_to_recomposite
+              viewsToRecomposite:viewsToRecomposite
                 compositionOrder:compositionOrder
                     unusedLayers:unused_layers
                    surfaceFrames:surface_frames];
@@ -879,7 +879,7 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)performSubmit:(const LayersMap&)platform_view_layers
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
-          viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
+          viewsToRecomposite:(const std::unordered_set<int64_t>&)viewsToRecomposite
             compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
                     (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
@@ -905,7 +905,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   // Composite Platform Views.
-  for (int64_t view_id : views_to_recomposite) {
+  for (int64_t view_id : viewsToRecomposite) {
     [self compositeView:view_id withParams:currentCompositionParams[view_id]];
   }
 
@@ -1012,7 +1012,7 @@ BOOL canApplyBlurBackdrop = YES;
     UIView* root_view = self.platformViews[viewId].root_view;
     views.push_back(root_view);
     self.currentCompositionParams.erase(viewId);
-    self.views_to_recomposite.erase(viewId);
+    self.viewsToRecomposite.erase(viewId);
     self.platformViews.erase(viewId);
   }
   self.viewsToDispose = std::move(views_to_delay_dispose);
@@ -1067,8 +1067,8 @@ BOOL canApplyBlurBackdrop = YES;
   return _visited_platform_views;
 }
 
-- (std::unordered_set<int64_t>&)views_to_recomposite {
-  return _views_to_recomposite;
+- (std::unordered_set<int64_t>&)viewsToRecomposite {
+  return _viewsToRecomposite;
 }
 
 - (std::vector<int64_t>&)previousCompositionOrder {
