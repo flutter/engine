@@ -151,7 +151,7 @@ struct PlatformViewData {
 @property(nonatomic, assign) SkISize frameSize;
 
 /// The task runner for posting tasks to the platform thread.
-@property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platform_task_runner;
+@property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platformTaskRunner;
 
 /// This data must only be accessed on the platform thread.
 @property(nonatomic, readonly) std::unordered_map<int64_t, PlatformViewData>& platformViews;
@@ -195,7 +195,7 @@ struct PlatformViewData {
 /// platform view from the UIView hierarchy.
 ///
 /// Only accessed from the raster thread.
-@property(nonatomic, assign) BOOL had_platform_views;
+@property(nonatomic, assign) BOOL hadPlatformViews;
 
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -257,7 +257,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unique_ptr<flutter::OverlayLayerPool> _layerPool;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
-  fml::RefPtr<fml::TaskRunner> _platform_task_runner;
+  fml::RefPtr<fml::TaskRunner> _platformTaskRunner;
   std::unordered_map<int64_t, PlatformViewData> _platformViews;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _currentCompositionParams;
   std::unordered_set<int64_t> _viewsToDispose;
@@ -279,17 +279,17 @@ BOOL canApplyBlurBackdrop = YES;
     _layerPool = std::make_unique<flutter::OverlayLayerPool>();
     _maskViewPool =
         [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
-    _had_platform_views = NO;
+    _hadPlatformViews = NO;
   }
   return self;
 }
 
 - (const fml::RefPtr<fml::TaskRunner>&)taskRunner {
-  return _platform_task_runner;
+  return _platformTaskRunner;
 }
 
 - (void)setTaskRunner:(const fml::RefPtr<fml::TaskRunner>&)platformTaskRunner {
-  _platform_task_runner = platformTaskRunner;
+  _platformTaskRunner = platformTaskRunner;
 }
 
 - (void)onMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -719,7 +719,7 @@ BOOL canApplyBlurBackdrop = YES;
   // Reset will only be called from the raster thread or a merged raster/platform thread.
   // _platformViews must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
-  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [self]() {
+  fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [self]() {
     for (int64_t view_id : self.compositionOrder) {
       [self.platformViews[view_id].root_view removeFromSuperview];
     }
@@ -740,11 +740,11 @@ BOOL canApplyBlurBackdrop = YES;
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
-  if (self.flutterView == nil || (self.compositionOrder.empty() && !self.had_platform_views)) {
-    self.had_platform_views = NO;
+  if (self.flutterView == nil || (self.compositionOrder.empty() && !self.hadPlatformViews)) {
+    self.hadPlatformViews = NO;
     return background_frame->Submit();
   }
-  self.had_platform_views = !self.compositionOrder.empty();
+  self.hadPlatformViews = !self.compositionOrder.empty();
 
   bool did_encode = true;
   LayersMap platform_view_layers;
@@ -845,7 +845,7 @@ BOOL canApplyBlurBackdrop = YES;
                    surfaceFrames:surface_frames];
   };
 
-  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, fml::MakeCopyable(std::move(task)));
+  fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, fml::MakeCopyable(std::move(task)));
 
   return did_encode;
 }
@@ -863,7 +863,7 @@ BOOL canApplyBlurBackdrop = YES;
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [&]() {
+  fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [&]() {
     for (auto i = 0u; i < missing_layer_count; i++) {
       [self createLayerWithIosContext:ios_context
                             grContext:gr_context
