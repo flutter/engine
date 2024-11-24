@@ -349,22 +349,22 @@ BOOL canApplyBlurBackdrop = YES;
   NSObject<FlutterPlatformView>* embeddedView = [factory createWithFrame:CGRectZero
                                                            viewIdentifier:viewId
                                                                 arguments:params];
-  UIView* platform_view = [embeddedView view];
+  UIView* platformView = [embeddedView view];
   // Set a unique view identifier, so the platform view can be identified in unit tests.
-  platform_view.accessibilityIdentifier =
+  platformView.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld]", viewId];
 
-  FlutterTouchInterceptingView* touch_interceptor = [[FlutterTouchInterceptingView alloc]
-                  initWithEmbeddedView:platform_view
+  FlutterTouchInterceptingView* touchInterceptor = [[FlutterTouchInterceptingView alloc]
+                  initWithEmbeddedView:platformView
                platformViewsController:self
       gestureRecognizersBlockingPolicy:self.gestureRecognizersBlockingPolicies[viewType]];
 
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
-  [clipping_view addSubview:touch_interceptor];
+  [clipping_view addSubview:touchInterceptor];
 
   self.platformViews.emplace(viewId, PlatformViewData{
                                           .view = embeddedView,                   //
-                                          .touch_interceptor = touch_interceptor,  //
+                                          .touch_interceptor = touchInterceptor,  //
                                           .root_view = clipping_view               //
                                       });
 
