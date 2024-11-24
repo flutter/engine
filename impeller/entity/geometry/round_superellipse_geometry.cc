@@ -213,15 +213,15 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   {
     const Scalar target_slope = yJ / xJ;
     Scalar angle = 0;
-    Scalar x;
-    Scalar y;
-    // Do-while works here because at least one point (B) is added.
-    do {
-      x = a * pow(abs(sinf(angle)), 2 / n);
-      y = a * pow(abs(cosf(angle)), 2 / n);
+    while (true) {
+      Scalar x = a * pow(abs(sinf(angle)), 2 / n);
+      Scalar y = a * pow(abs(cosf(angle)), 2 / n);
+      if (y <= target_slope * x) {
+        break;
+      }
       points.emplace_back(x + s, y + s);
       angle += kAngleStep;
-    } while (y > target_slope * x);
+    }
   }
   // Circular arc JM (B inclusive, M exclusive)
   DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
@@ -306,6 +306,18 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     *(vertex_data++) = center + (reflection[3] * points[i]);
   }
   *vertex_data = center + points[0];
+
+  if (renderer.GetDeviceCapabilities().SupportsTriangleFan()) {
+    return GeometryResult{
+        .type = PrimitiveType::kTriangleFan,
+        .vertex_buffer =
+            {
+                .vertex_buffer = vertex_buffer,
+                .index_type = IndexType::kNone,
+            },
+        .transform = entity.GetShaderTransform(pass),
+    };
+  }
 
   static TriangleFanIndices indices_cache;
   size_t index_count = indices_cache.Ensure(contour_point_count);
