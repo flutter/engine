@@ -233,7 +233,7 @@ struct PlatformViewData {
          boundingRect:(const SkRect&)boundingRect;
 // Appends the overlay views and platform view and sets their z index based on the composition
 // order.
-- (void)bringLayersIntoView:(const LayersMap&)layer_map
+- (void)bringLayersIntoView:(const LayersMap&)layerMap
        withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
@@ -924,7 +924,7 @@ BOOL canApplyBlurBackdrop = YES;
   [CATransaction commit];
 }
 
-- (void)bringLayersIntoView:(const LayersMap&)layer_map
+- (void)bringLayersIntoView:(const LayersMap&)layerMap
        withCompositionOrder:(const std::vector<int64_t>&)compositionOrder {
   FML_DCHECK(self.flutterView);
   UIView* flutter_view = self.flutterView;
@@ -938,8 +938,8 @@ BOOL canApplyBlurBackdrop = YES;
       [desired_platform_subviews addObject:platform_view_root];
     }
 
-    auto maybe_layer_data = layer_map.find(platform_view_id);
-    if (maybe_layer_data != layer_map.end()) {
+    auto maybe_layer_data = layerMap.find(platform_view_id);
+    if (maybe_layer_data != layerMap.end()) {
       auto view = maybe_layer_data->second.layer->overlay_view_wrapper;
       if (view != nil) {
         [desired_platform_subviews addObject:view];
