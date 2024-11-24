@@ -160,7 +160,7 @@ struct PlatformViewData {
 ///
 /// This state is only modified on the raster thread.
 @property(nonatomic, readonly)
-    std::unordered_map<int64_t, flutter::EmbeddedViewParams>& current_composition_params;
+    std::unordered_map<int64_t, flutter::EmbeddedViewParams>& currentCompositionParams;
 
 /// Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
 /// the next frame.
@@ -202,7 +202,7 @@ struct PlatformViewData {
                     grContext:(GrDirectContext*)grContext;
 - (void)performSubmit:(const LayersMap&)platform_view_layers
     currentCompositionParams:
-        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
             compositionOrder:(const std::vector<int64_t>&)composition_order
                 unusedLayers:
@@ -258,7 +258,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
   std::unordered_map<int64_t, PlatformViewData> _platformViews;
-  std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
+  std::unordered_map<int64_t, flutter::EmbeddedViewParams> _currentCompositionParams;
   std::unordered_set<int64_t> _views_to_dispose;
   std::vector<int64_t> _composition_order;
   std::vector<int64_t> _visited_platform_views;
@@ -489,9 +489,9 @@ BOOL canApplyBlurBackdrop = YES;
 - (void)pushFilterToVisitedPlatformViews:(const std::shared_ptr<flutter::DlImageFilter>&)filter
                                 withRect:(const SkRect&)filterRect {
   for (int64_t id : self.visited_platform_views) {
-    flutter::EmbeddedViewParams params = self.current_composition_params[id];
+    flutter::EmbeddedViewParams params = self.currentCompositionParams[id];
     params.PushImageFilter(filter, filterRect);
-    self.current_composition_params[id] = params;
+    self.currentCompositionParams[id] = params;
   }
 }
 
@@ -504,12 +504,12 @@ BOOL canApplyBlurBackdrop = YES;
 
   self.composition_order.push_back(viewId);
 
-  if (self.current_composition_params.count(viewId) == 1 &&
-      self.current_composition_params[viewId] == *params.get()) {
+  if (self.currentCompositionParams.count(viewId) == 1 &&
+      self.currentCompositionParams[viewId] == *params.get()) {
     // Do nothing if the params didn't change.
     return;
   }
-  self.current_composition_params[viewId] = flutter::EmbeddedViewParams(*params.get());
+  self.currentCompositionParams[viewId] = flutter::EmbeddedViewParams(*params.get());
   self.views_to_recomposite.insert(viewId);
 }
 
@@ -727,7 +727,7 @@ BOOL canApplyBlurBackdrop = YES;
 
   self.composition_order.clear();
   self.slices.clear();
-  self.current_composition_params.clear();
+  self.currentCompositionParams.clear();
   self.views_to_recomposite.clear();
   self.layerPool->RecycleLayers();
   self.visited_platform_views.clear();
@@ -752,7 +752,7 @@ BOOL canApplyBlurBackdrop = YES;
   std::unordered_map<int64_t, SkRect> view_rects;
 
   for (int64_t view_id : self.composition_order) {
-    view_rects[view_id] = self.current_composition_params[view_id].finalBoundingRect();
+    view_rects[view_id] = self.currentCompositionParams[view_id].finalBoundingRect();
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
@@ -830,14 +830,14 @@ BOOL canApplyBlurBackdrop = YES;
 
   auto task = [&,                                                             //
                platform_view_layers = std::move(platform_view_layers),        //
-               current_composition_params = self.current_composition_params,  //
+               currentCompositionParams = self.currentCompositionParams,  //
                views_to_recomposite = self.views_to_recomposite,              //
                composition_order = self.composition_order,                    //
                unused_layers = std::move(unused_layers),                      //
                surface_frames = std::move(surface_frames)                     //
   ]() mutable {
     [self performSubmit:platform_view_layers
-        currentCompositionParams:current_composition_params
+        currentCompositionParams:currentCompositionParams
               viewsToRecomposite:views_to_recomposite
                 compositionOrder:composition_order
                     unusedLayers:unused_layers
@@ -877,7 +877,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)performSubmit:(const LayersMap&)platform_view_layers
     currentCompositionParams:
-        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params
+        (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
             compositionOrder:(const std::vector<int64_t>&)composition_order
                 unusedLayers:
@@ -905,7 +905,7 @@ BOOL canApplyBlurBackdrop = YES;
 
   // Composite Platform Views.
   for (int64_t view_id : views_to_recomposite) {
-    [self compositeView:view_id withParams:current_composition_params[view_id]];
+    [self compositeView:view_id withParams:currentCompositionParams[view_id]];
   }
 
   // Present callbacks.
@@ -1010,7 +1010,7 @@ BOOL canApplyBlurBackdrop = YES;
     }
     UIView* root_view = self.platformViews[viewId].root_view;
     views.push_back(root_view);
-    self.current_composition_params.erase(viewId);
+    self.currentCompositionParams.erase(viewId);
     self.views_to_recomposite.erase(viewId);
     self.platformViews.erase(viewId);
   }
@@ -1029,7 +1029,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId {
-  return self.current_composition_params.find(viewId)->second;
+  return self.currentCompositionParams.find(viewId)->second;
 }
 
 #pragma mark - Properties
@@ -1050,8 +1050,8 @@ BOOL canApplyBlurBackdrop = YES;
   return _platformViews;
 }
 
-- (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params {
-  return _current_composition_params;
+- (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams {
+  return _currentCompositionParams;
 }
 
 - (std::unordered_set<int64_t>&)views_to_dispose {
