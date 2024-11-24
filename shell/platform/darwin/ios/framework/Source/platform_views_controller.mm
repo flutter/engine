@@ -166,12 +166,12 @@ struct PlatformViewData {
 /// the next frame.
 ///
 /// This state is modified on both the platform and raster thread.
-@property(nonatomic, readonly) std::unordered_set<int64_t>& views_to_dispose;
+@property(nonatomic, readonly) std::unordered_set<int64_t>& viewsToDispose;
 
 /// view IDs in composition order.
 ///
 /// This state is only modified on the raster thread.
-@property(nonatomic, readonly) std::vector<int64_t>& composition_order;
+@property(nonatomic, readonly) std::vector<int64_t>& compositionOrder;
 
 /// platform view IDs visited during layer tree composition.
 ///
@@ -186,7 +186,7 @@ struct PlatformViewData {
 /// @brief The composition order from the previous thread.
 ///
 /// Only accessed from the platform thread.
-@property(nonatomic, readonly) std::vector<int64_t>& previous_composition_order;
+@property(nonatomic, readonly) std::vector<int64_t>& previousCompositionOrder;
 
 /// Whether the previous frame had any platform views in active composition order.
 ///
@@ -204,7 +204,7 @@ struct PlatformViewData {
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
-            compositionOrder:(const std::vector<int64_t>&)composition_order
+            compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
                     (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
                surfaceFrames:
@@ -234,14 +234,14 @@ struct PlatformViewData {
 // Appends the overlay views and platform view and sets their z index based on the composition
 // order.
 - (void)bringLayersIntoView:(const LayersMap&)layer_map
-       withCompositionOrder:(const std::vector<int64_t>&)composition_order;
+       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
                         grContext:(GrDirectContext*)gr_context
                       pixelFormat:(MTLPixelFormat)pixel_format;
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
-      withCompositionOrder:(const std::vector<int64_t>&)composition_order;
-- (std::vector<UIView*>)viewsToDispose;
+      withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
+- (std::vector<UIView*>)uiViewsToDispose;
 - (void)resetFrameState;
 @end
 
@@ -260,11 +260,11 @@ BOOL canApplyBlurBackdrop = YES;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
   std::unordered_map<int64_t, PlatformViewData> _platformViews;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _currentCompositionParams;
-  std::unordered_set<int64_t> _views_to_dispose;
-  std::vector<int64_t> _composition_order;
+  std::unordered_set<int64_t> _viewsToDispose;
+  std::vector<int64_t> _compositionOrder;
   std::vector<int64_t> _visited_platform_views;
   std::unordered_set<int64_t> _views_to_recomposite;
-  std::vector<int64_t> _previous_composition_order;
+  std::vector<int64_t> _previousCompositionOrder;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   /// A set to keep track of embedded views that do not have (0, 0) origin.
@@ -382,7 +382,7 @@ BOOL canApplyBlurBackdrop = YES;
     return;
   }
   // We wait for next submitFrame to dispose views.
-  self.views_to_dispose.insert(viewId);
+  self.viewsToDispose.insert(viewId);
   result(nil);
 }
 
@@ -450,7 +450,7 @@ BOOL canApplyBlurBackdrop = YES;
 #endif  // FML_OS_IOS_SIMULATOR
 
   if (mergeThreads) {
-    if (self.composition_order.empty()) {
+    if (self.compositionOrder.empty()) {
       return flutter::PostPrerollResult::kSuccess;
     }
     if (!rasterThreadMerger->IsMerged()) {
@@ -503,7 +503,7 @@ BOOL canApplyBlurBackdrop = YES;
   view = std::make_unique<flutter::DisplayListEmbedderViewSlice>(view_bounds);
   self.slices.insert_or_assign(viewId, std::move(view));
 
-  self.composition_order.push_back(viewId);
+  self.compositionOrder.push_back(viewId);
 
   if (self.currentCompositionParams.count(viewId) == 1 &&
       self.currentCompositionParams[viewId] == *params.get()) {
@@ -515,7 +515,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (size_t)embeddedViewCount {
-  return self.composition_order.size();
+  return self.compositionOrder.size();
 }
 
 - (size_t)layerPoolSize {
@@ -720,13 +720,13 @@ BOOL canApplyBlurBackdrop = YES;
   // _platformViews must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
   fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [self]() {
-    for (int64_t view_id : self.composition_order) {
+    for (int64_t view_id : self.compositionOrder) {
       [self.platformViews[view_id].root_view removeFromSuperview];
     }
     self.platformViews.clear();
   });
 
-  self.composition_order.clear();
+  self.compositionOrder.clear();
   self.slices.clear();
   self.currentCompositionParams.clear();
   self.views_to_recomposite.clear();
@@ -740,27 +740,27 @@ BOOL canApplyBlurBackdrop = YES;
   TRACE_EVENT0("flutter", "PlatformViewsController::SubmitFrame");
 
   // No platform views to render; we're done.
-  if (self.flutterView == nil || (self.composition_order.empty() && !self.had_platform_views)) {
+  if (self.flutterView == nil || (self.compositionOrder.empty() && !self.had_platform_views)) {
     self.had_platform_views = NO;
     return background_frame->Submit();
   }
-  self.had_platform_views = !self.composition_order.empty();
+  self.had_platform_views = !self.compositionOrder.empty();
 
   bool did_encode = true;
   LayersMap platform_view_layers;
   std::vector<std::unique_ptr<flutter::SurfaceFrame>> surface_frames;
-  surface_frames.reserve(self.composition_order.size());
+  surface_frames.reserve(self.compositionOrder.size());
   std::unordered_map<int64_t, SkRect> view_rects;
 
-  for (int64_t view_id : self.composition_order) {
+  for (int64_t view_id : self.compositionOrder) {
     view_rects[view_id] = self.currentCompositionParams[view_id].finalBoundingRect();
   }
 
   std::unordered_map<int64_t, SkRect> overlay_layers =
-      SliceViews(background_frame->Canvas(), self.composition_order, self.slices, view_rects);
+      SliceViews(background_frame->Canvas(), self.compositionOrder, self.slices, view_rects);
 
   size_t required_overlay_layers = 0;
-  for (int64_t view_id : self.composition_order) {
+  for (int64_t view_id : self.compositionOrder) {
     std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
     if (overlay == overlay_layers.end()) {
       continue;
@@ -776,7 +776,7 @@ BOOL canApplyBlurBackdrop = YES;
                     grContext:gr_context];
 
   int64_t overlay_id = 0;
-  for (int64_t view_id : self.composition_order) {
+  for (int64_t view_id : self.compositionOrder) {
     std::unordered_map<int64_t, SkRect>::const_iterator overlay = overlay_layers.find(view_id);
     if (overlay == overlay_layers.end()) {
       continue;
@@ -833,14 +833,14 @@ BOOL canApplyBlurBackdrop = YES;
                platform_view_layers = std::move(platform_view_layers),        //
                currentCompositionParams = self.currentCompositionParams,  //
                views_to_recomposite = self.views_to_recomposite,              //
-               composition_order = self.composition_order,                    //
+               compositionOrder = self.compositionOrder,                    //
                unused_layers = std::move(unused_layers),                      //
                surface_frames = std::move(surface_frames)                     //
   ]() mutable {
     [self performSubmit:platform_view_layers
         currentCompositionParams:currentCompositionParams
               viewsToRecomposite:views_to_recomposite
-                compositionOrder:composition_order
+                compositionOrder:compositionOrder
                     unusedLayers:unused_layers
                    surfaceFrames:surface_frames];
   };
@@ -880,7 +880,7 @@ BOOL canApplyBlurBackdrop = YES;
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
           viewsToRecomposite:(const std::unordered_set<int64_t>&)views_to_recomposite
-            compositionOrder:(const std::vector<int64_t>&)composition_order
+            compositionOrder:(const std::vector<int64_t>&)compositionOrder
                 unusedLayers:
                     (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
                surfaceFrames:
@@ -900,7 +900,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   // Dispose unused Flutter Views.
-  for (auto& view : self.viewsToDispose) {
+  for (auto& view : self.uiViewsToDispose) {
     [view removeFromSuperview];
   }
 
@@ -916,23 +916,23 @@ BOOL canApplyBlurBackdrop = YES;
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
-  [self removeUnusedLayers:unused_layers withCompositionOrder:composition_order];
+  [self removeUnusedLayers:unused_layers withCompositionOrder:compositionOrder];
 
   // Organize the layers by their z indexes.
-  [self bringLayersIntoView:platform_view_layers withCompositionOrder:composition_order];
+  [self bringLayersIntoView:platform_view_layers withCompositionOrder:compositionOrder];
 
   [CATransaction commit];
 }
 
 - (void)bringLayersIntoView:(const LayersMap&)layer_map
-       withCompositionOrder:(const std::vector<int64_t>&)composition_order {
+       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder {
   FML_DCHECK(self.flutterView);
   UIView* flutter_view = self.flutterView;
 
-  self.previous_composition_order.clear();
+  self.previousCompositionOrder.clear();
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
-  for (int64_t platform_view_id : composition_order) {
-    self.previous_composition_order.push_back(platform_view_id);
+  for (int64_t platform_view_id : compositionOrder) {
+    self.previousCompositionOrder.push_back(platform_view_id);
     UIView* platform_view_root = self.platformViews[platform_view_id].root_view;
     if (platform_view_root != nil) {
       [desired_platform_subviews addObject:platform_view_root];
@@ -977,34 +977,34 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
-      withCompositionOrder:(const std::vector<int64_t>&)composition_order {
+      withCompositionOrder:(const std::vector<int64_t>&)compositionOrder {
   for (const std::shared_ptr<flutter::OverlayLayer>& layer : unused_layers) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
 
-  std::unordered_set<int64_t> composition_order_set;
-  for (int64_t view_id : composition_order) {
-    composition_order_set.insert(view_id);
+  std::unordered_set<int64_t> compositionOrderSet;
+  for (int64_t view_id : compositionOrder) {
+    compositionOrderSet.insert(view_id);
   }
   // Remove unused platform views.
-  for (int64_t view_id : self.previous_composition_order) {
-    if (composition_order_set.find(view_id) == composition_order_set.end()) {
+  for (int64_t view_id : self.previousCompositionOrder) {
+    if (compositionOrderSet.find(view_id) == compositionOrderSet.end()) {
       UIView* platform_view_root = self.platformViews[view_id].root_view;
       [platform_view_root removeFromSuperview];
     }
   }
 }
 
-- (std::vector<UIView*>)viewsToDispose {
+- (std::vector<UIView*>)uiViewsToDispose {
   std::vector<UIView*> views;
-  if (self.views_to_dispose.empty()) {
+  if (self.viewsToDispose.empty()) {
     return views;
   }
 
-  std::unordered_set<int64_t> views_to_composite(self.composition_order.begin(),
-                                                 self.composition_order.end());
+  std::unordered_set<int64_t> views_to_composite(self.compositionOrder.begin(),
+                                                 self.compositionOrder.end());
   std::unordered_set<int64_t> views_to_delay_dispose;
-  for (int64_t viewId : self.views_to_dispose) {
+  for (int64_t viewId : self.viewsToDispose) {
     if (views_to_composite.count(viewId)) {
       views_to_delay_dispose.insert(viewId);
       continue;
@@ -1015,13 +1015,13 @@ BOOL canApplyBlurBackdrop = YES;
     self.views_to_recomposite.erase(viewId);
     self.platformViews.erase(viewId);
   }
-  self.views_to_dispose = std::move(views_to_delay_dispose);
+  self.viewsToDispose = std::move(views_to_delay_dispose);
   return views;
 }
 
 - (void)resetFrameState {
   self.slices.clear();
-  self.composition_order.clear();
+  self.compositionOrder.clear();
   self.visited_platform_views.clear();
 }
 
@@ -1055,12 +1055,12 @@ BOOL canApplyBlurBackdrop = YES;
   return _currentCompositionParams;
 }
 
-- (std::unordered_set<int64_t>&)views_to_dispose {
-  return _views_to_dispose;
+- (std::unordered_set<int64_t>&)viewsToDispose {
+  return _viewsToDispose;
 }
 
-- (std::vector<int64_t>&)composition_order {
-  return _composition_order;
+- (std::vector<int64_t>&)compositionOrder {
+  return _compositionOrder;
 }
 
 - (std::vector<int64_t>&)visited_platform_views {
@@ -1071,8 +1071,8 @@ BOOL canApplyBlurBackdrop = YES;
   return _views_to_recomposite;
 }
 
-- (std::vector<int64_t>&)previous_composition_order {
-  return _previous_composition_order;
+- (std::vector<int64_t>&)previousCompositionOrder {
+  return _previousCompositionOrder;
 }
 
 @end
