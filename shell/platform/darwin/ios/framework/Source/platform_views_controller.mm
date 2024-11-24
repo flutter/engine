@@ -216,21 +216,21 @@ struct PlatformViewData {
 
 - (void)clipViewSetMaskView:(UIView*)clipView;
 
-// Applies the mutators in the mutators_stack to the UIView chain that was constructed by
+// Applies the mutators in the mutatorsStack to the UIView chain that was constructed by
 // `ReconstructClipViewsChain`
 //
-// Clips are applied to the `embedded_view`'s super view(|ChildClippingView|) using a
-// |FlutterClippingMaskView|. Transforms are applied to `embedded_view`
+// Clips are applied to the `embeddedView`'s super view(|ChildClippingView|) using a
+// |FlutterClippingMaskView|. Transforms are applied to `embeddedView`
 //
-// The `bounding_rect` is the final bounding rect of the PlatformView
+// The `boundingRect` is the final bounding rect of the PlatformView
 // (EmbeddedViewParams::finalBoundingRect). If a clip mutator's rect contains the final bounding
 // rect of the PlatformView, the clip mutator is not applied for performance optimization.
 //
-// This method is only called when the `embedded_view` needs to be re-composited at the current
+// This method is only called when the `embeddedView` needs to be re-composited at the current
 // frame. See: `compositeView:withParams:` for details.
-- (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
-         embeddedView:(UIView*)embedded_view
-         boundingRect:(const SkRect&)bounding_rect;
+- (void)applyMutators:(const flutter::MutatorsStack&)mutatorsStack
+         embeddedView:(UIView*)embeddedView
+         boundingRect:(const SkRect&)boundingRect;
 // Appends the overlay views and platform view and sets their z index based on the composition
 // order.
 - (void)bringLayersIntoView:(const LayersMap&)layer_map
@@ -346,10 +346,10 @@ BOOL canApplyBlurBackdrop = YES;
     }
   }
 
-  NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
+  NSObject<FlutterPlatformView>* embeddedView = [factory createWithFrame:CGRectZero
                                                            viewIdentifier:viewId
                                                                 arguments:params];
-  UIView* platform_view = [embedded_view view];
+  UIView* platform_view = [embeddedView view];
   // Set a unique view identifier, so the platform view can be identified in unit tests.
   platform_view.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld]", viewId];
@@ -363,7 +363,7 @@ BOOL canApplyBlurBackdrop = YES;
   [clipping_view addSubview:touch_interceptor];
 
   self.platformViews.emplace(viewId, PlatformViewData{
-                                          .view = embedded_view,                   //
+                                          .view = embeddedView,                   //
                                           .touch_interceptor = touch_interceptor,  //
                                           .root_view = clipping_view               //
                                       });
@@ -554,15 +554,15 @@ BOOL canApplyBlurBackdrop = YES;
   clipView.maskView = [self.maskViewPool getMaskViewWithFrame:frame];
 }
 
-- (void)applyMutators:(const flutter::MutatorsStack&)mutators_stack
-         embeddedView:(UIView*)embedded_view
-         boundingRect:(const SkRect&)bounding_rect {
+- (void)applyMutators:(const flutter::MutatorsStack&)mutatorsStack
+         embeddedView:(UIView*)embeddedView
+         boundingRect:(const SkRect&)boundingRect {
   if (self.flutterView == nil) {
     return;
   }
 
-  ResetAnchor(embedded_view.layer);
-  ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
+  ResetAnchor(embeddedView.layer);
+  ChildClippingView* clipView = (ChildClippingView*)embeddedView.superview;
 
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[NSMutableArray alloc] init];
@@ -573,15 +573,15 @@ BOOL canApplyBlurBackdrop = YES;
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
-  auto iter = mutators_stack.Begin();
-  while (iter != mutators_stack.End()) {
+  auto iter = mutatorsStack.Begin();
+  while (iter != mutatorsStack.End()) {
     switch ((*iter)->GetType()) {
       case flutter::kTransform: {
         transformMatrix.preConcat((*iter)->GetMatrix());
         break;
       }
       case flutter::kClipRect: {
-        if (ClipRectContainsPlatformViewBoundingRect((*iter)->GetRect(), bounding_rect,
+        if (ClipRectContainsPlatformViewBoundingRect((*iter)->GetRect(), boundingRect,
                                                      transformMatrix)) {
           break;
         }
@@ -591,7 +591,7 @@ BOOL canApplyBlurBackdrop = YES;
         break;
       }
       case flutter::kClipRRect: {
-        if (ClipRRectContainsPlatformViewBoundingRect((*iter)->GetRRect(), bounding_rect,
+        if (ClipRRectContainsPlatformViewBoundingRect((*iter)->GetRRect(), boundingRect,
                                                       transformMatrix)) {
           break;
         }
@@ -610,7 +610,7 @@ BOOL canApplyBlurBackdrop = YES;
         break;
       }
       case flutter::kOpacity:
-        embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
+        embeddedView.alpha = (*iter)->GetAlphaFloat() * embeddedView.alpha;
         break;
       case flutter::kBackdropFilter: {
         // Only support DlBlurImageFilter for BackdropFilter.
@@ -670,7 +670,7 @@ BOOL canApplyBlurBackdrop = YES;
   // the mask view, whose origin is always (0,0) to the flutter_view.
   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
-  embedded_view.layer.transform = GetCATransform3DFromSkMatrix(transformMatrix);
+  embeddedView.layer.transform = GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
