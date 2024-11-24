@@ -347,12 +347,11 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   NSObject<FlutterPlatformView>* embeddedView = [factory createWithFrame:CGRectZero
-                                                           viewIdentifier:viewId
-                                                                arguments:params];
+                                                          viewIdentifier:viewId
+                                                               arguments:params];
   UIView* platformView = [embeddedView view];
   // Set a unique view identifier, so the platform view can be identified in unit tests.
-  platformView.accessibilityIdentifier =
-      [NSString stringWithFormat:@"platform_view[%lld]", viewId];
+  platformView.accessibilityIdentifier = [NSString stringWithFormat:@"platform_view[%lld]", viewId];
 
   FlutterTouchInterceptingView* touchInterceptor = [[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:platformView
@@ -363,10 +362,10 @@ BOOL canApplyBlurBackdrop = YES;
   [clippingView addSubview:touchInterceptor];
 
   self.platformViews.emplace(viewId, PlatformViewData{
-                                          .view = embeddedView,                   //
-                                          .touch_interceptor = touchInterceptor,  //
-                                          .root_view = clippingView               //
-                                      });
+                                         .view = embeddedView,                   //
+                                         .touch_interceptor = touchInterceptor,  //
+                                         .root_view = clippingView               //
+                                     });
 
   result(nil);
 }
@@ -771,9 +770,7 @@ BOOL canApplyBlurBackdrop = YES;
   // If there are not sufficient overlay layers, we must construct them on the platform
   // thread, at least until we've refactored iOS surface creation to use IOSurfaces
   // instead of CALayers.
-  [self createMissingOverlays:requiredOverlayLayers
-               withIosContext:iosContext
-                    grContext:grContext];
+  [self createMissingOverlays:requiredOverlayLayers withIosContext:iosContext grContext:grContext];
 
   int64_t overlayId = 0;
   for (int64_t viewId : self.compositionOrder) {
@@ -806,10 +803,10 @@ BOOL canApplyBlurBackdrop = YES;
 
     didEncode &= layer->did_submit_last_frame;
     platformViewLayers[viewId] = LayerData{
-        .rect = overlay->second,   //
+        .rect = overlay->second,  //
         .view_id = viewId,        //
         .overlay_id = overlayId,  //
-        .layer = layer             //
+        .layer = layer            //
     };
     surfaceFrames.push_back(std::move(frame));
     overlayId++;
@@ -829,13 +826,13 @@ BOOL canApplyBlurBackdrop = YES;
       self.layerPool->RemoveUnusedLayers();
   self.layerPool->RecycleLayers();
 
-  auto task = [&,                                                             //
+  auto task = [&,                                                         //
                platformViewLayers = std::move(platformViewLayers),        //
                currentCompositionParams = self.currentCompositionParams,  //
                viewsToRecomposite = self.viewsToRecomposite,              //
-               compositionOrder = self.compositionOrder,                    //
-               unusedLayers = std::move(unusedLayers),                      //
-               surfaceFrames = std::move(surfaceFrames)                     //
+               compositionOrder = self.compositionOrder,                  //
+               unusedLayers = std::move(unusedLayers),                    //
+               surfaceFrames = std::move(surfaceFrames)                   //
   ]() mutable {
     [self performSubmit:platformViewLayers
         currentCompositionParams:currentCompositionParams
@@ -892,10 +889,10 @@ BOOL canApplyBlurBackdrop = YES;
 
   // Configure Flutter overlay views.
   for (const auto& [viewId, layerData] : platformViewLayers) {
-    layerData.layer->UpdateViewState(self.flutterView,      //
-                                      layerData.rect,       //
-                                      layerData.view_id,    //
-                                      layerData.overlay_id  //
+    layerData.layer->UpdateViewState(self.flutterView,     //
+                                     layerData.rect,       //
+                                     layerData.view_id,    //
+                                     layerData.overlay_id  //
     );
   }
 
@@ -949,10 +946,10 @@ BOOL canApplyBlurBackdrop = YES;
 
   NSSet* desiredPlatformSubviewsSet = [NSSet setWithArray:desiredPlatformSubviews];
   NSArray* existingPlatformSubviews = [flutterView.subviews
-      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object,
-                                                                        NSDictionary* bindings) {
-        return [desiredPlatformSubviewsSet containsObject:object];
-      }]];
+      filteredArrayUsingPredicate:[NSPredicate
+                                      predicateWithBlock:^BOOL(id object, NSDictionary* bindings) {
+                                        return [desiredPlatformSubviewsSet containsObject:object];
+                                      }]];
 
   // Manipulate view hierarchy only if needed, to address a performance issue where
   // this method is called even when view hierarchy stays the same.
@@ -1002,7 +999,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   std::unordered_set<int64_t> viewsToComposite(self.compositionOrder.begin(),
-                                                 self.compositionOrder.end());
+                                               self.compositionOrder.end());
   std::unordered_set<int64_t> viewsToDelayDispose;
   for (int64_t viewId : self.viewsToDispose) {
     if (viewsToComposite.count(viewId)) {
