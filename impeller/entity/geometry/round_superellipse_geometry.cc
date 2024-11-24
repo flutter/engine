@@ -213,15 +213,16 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   {
     const Scalar target_slope = yJ / xJ;
     Scalar angle = 0;
-    while (true) {
-      Scalar x = a * pow(abs(sinf(angle)), 2 / n);
-      Scalar y = a * pow(abs(cosf(angle)), 2 / n);
-      if (y <= target_slope * x) {
-        break;
-      }
+    // The first point, B, should always be added, which happens to work well
+    // with do-while.
+    Scalar x = 0;
+    Scalar y = a;
+    do {
       points.emplace_back(x + s, y + s);
       angle += kAngleStep;
-    }
+      x = a * pow(abs(sinf(angle)), 2 / n);
+      y = a * pow(abs(cosf(angle)), 2 / n);
+    } while(y > target_slope * x);
   }
   // Circular arc JM (B inclusive, M exclusive)
   DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
