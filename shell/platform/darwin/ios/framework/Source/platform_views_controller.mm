@@ -270,7 +270,7 @@ BOOL canApplyBlurBackdrop = YES;
   /// A set to keep track of embedded views that do not have (0, 0) origin.
   /// An insertion triggers a warning message about non-zero origin logged on the debug console.
   /// See https://github.com/flutter/flutter/issues/109700 for details.
-  std::unordered_set<int64_t> _non_zero_origin_views;
+  std::unordered_set<int64_t> _nonzeroOriginViews;
 #endif
 }
 
@@ -677,9 +677,9 @@ BOOL canApplyBlurBackdrop = YES;
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = self.platformViews[viewId].touch_interceptor;
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  if (_non_zero_origin_views.find(viewId) == _non_zero_origin_views.end() &&
+  if (_nonzeroOriginViews.find(viewId) == _nonzeroOriginViews.end() &&
       !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
-    _non_zero_origin_views.insert(viewId);
+    _nonzeroOriginViews.insert(viewId);
     NSLog(
         @"A Embedded PlatformView's origin is not CGPointZero.\n"
          "  View id: %@\n"
