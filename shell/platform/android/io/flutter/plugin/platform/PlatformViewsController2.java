@@ -564,7 +564,7 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
       final SurfaceControl surfaceControl = surfaceControlBuilder.build();
       final SurfaceControl.Transaction tx =
           flutterView.getRootSurfaceControl().buildReparentTransaction(surfaceControl);
-      tx.setLayer(sc, 1000);
+      tx.setLayer(surfaceControl, 1000);
       tx.apply();
       overlayerSurface = new Surface(surfaceControl);
     }
