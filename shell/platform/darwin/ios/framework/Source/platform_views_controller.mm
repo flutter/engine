@@ -128,7 +128,7 @@ struct PlatformViewData {
 @interface FlutterPlatformViewsController ()
 
 // The pool of reusable view layers. The pool allows to recycle layer in each frame.
-@property(nonatomic, readonly) flutter::OverlayLayerPool* layer_pool;
+@property(nonatomic, readonly) flutter::OverlayLayerPool* layerPool;
 
 // The platform view's |EmbedderViewSlice| keyed off the view id, which contains any subsequent
 // operation until the next platform view or the end of the last leaf node in the layer tree.
@@ -154,7 +154,7 @@ struct PlatformViewData {
 @property(nonatomic, readonly) const fml::RefPtr<fml::TaskRunner>& platform_task_runner;
 
 /// This data must only be accessed on the platform thread.
-@property(nonatomic, readonly) std::unordered_map<int64_t, PlatformViewData>& platform_views;
+@property(nonatomic, readonly) std::unordered_map<int64_t, PlatformViewData>& platformViews;
 
 /// The composition parameters for each platform view.
 ///
@@ -253,11 +253,11 @@ BOOL canApplyBlurBackdrop = YES;
 }  // namespace flutter
 
 @implementation FlutterPlatformViewsController {
-  std::unique_ptr<flutter::OverlayLayerPool> _layer_pool;
+  std::unique_ptr<flutter::OverlayLayerPool> _layerPool;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
   fml::RefPtr<fml::TaskRunner> _platform_task_runner;
-  std::unordered_map<int64_t, PlatformViewData> _platform_views;
+  std::unordered_map<int64_t, PlatformViewData> _platformViews;
   std::unordered_map<int64_t, flutter::EmbeddedViewParams> _current_composition_params;
   std::unordered_set<int64_t> _views_to_dispose;
   std::vector<int64_t> _composition_order;
@@ -275,7 +275,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (id)init {
   if (self = [super init]) {
-    _layer_pool = std::make_unique<flutter::OverlayLayerPool>();
+    _layerPool = std::make_unique<flutter::OverlayLayerPool>();
     _mask_view_pool =
         [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
     _had_platform_views = NO;
@@ -312,7 +312,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSString* viewTypeString = args[@"viewType"];
   std::string viewType(viewTypeString.UTF8String);
 
-  if (self.platform_views.count(viewId) != 0) {
+  if (self.platformViews.count(viewId) != 0) {
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
@@ -361,7 +361,7 @@ BOOL canApplyBlurBackdrop = YES;
   ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
   [clipping_view addSubview:touch_interceptor];
 
-  self.platform_views.emplace(viewId, PlatformViewData{
+  self.platformViews.emplace(viewId, PlatformViewData{
                                           .view = embedded_view,                   //
                                           .touch_interceptor = touch_interceptor,  //
                                           .root_view = clipping_view               //
@@ -374,7 +374,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
-  if (self.platform_views.count(viewId) == 0) {
+  if (self.platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to dispose an unknown"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
@@ -389,14 +389,14 @@ BOOL canApplyBlurBackdrop = YES;
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
-  if (self.platform_views.count(viewId) == 0) {
+  if (self.platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to set gesture state for an unknown view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
     return;
   }
 
-  FlutterTouchInterceptingView* view = self.platform_views[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* view = self.platformViews[viewId].touch_interceptor;
   [view releaseGesture];
 
   result(nil);
@@ -406,14 +406,14 @@ BOOL canApplyBlurBackdrop = YES;
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
-  if (self.platform_views.count(viewId) == 0) {
+  if (self.platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to set gesture state for an unknown view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
     return;
   }
 
-  FlutterTouchInterceptingView* view = self.platform_views[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* view = self.platformViews[viewId].touch_interceptor;
   [view blockGesture];
 
   result(nil);
@@ -518,7 +518,7 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (size_t)layerPoolSize {
-  return self.layer_pool->size();
+  return self.layerPool->size();
 }
 
 - (UIView*)platformViewForId:(int64_t)viewId {
@@ -526,14 +526,14 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (FlutterTouchInterceptingView*)flutterTouchInterceptingViewForId:(int64_t)viewId {
-  if (self.platform_views.empty()) {
+  if (self.platformViews.empty()) {
     return nil;
   }
-  return self.platform_views[viewId].touch_interceptor;
+  return self.platformViews[viewId].touch_interceptor;
 }
 
 - (long)firstResponderPlatformViewId {
-  for (auto const& [id, platform_view_data] : self.platform_views) {
+  for (auto const& [id, platform_view_data] : self.platformViews) {
     UIView* root_view = platform_view_data.root_view;
     if (root_view.flt_hasFirstResponderInViewHierarchySubtree) {
       return id;
@@ -674,7 +674,7 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
-  FlutterTouchInterceptingView* touchInterceptor = self.platform_views[viewId].touch_interceptor;
+  FlutterTouchInterceptingView* touchInterceptor = self.platformViews[viewId].touch_interceptor;
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   if (_non_zero_origin_views.find(viewId) == _non_zero_origin_views.end() &&
       !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
@@ -698,7 +698,7 @@ BOOL canApplyBlurBackdrop = YES;
   touchInterceptor.alpha = 1;
 
   const flutter::MutatorsStack& mutatorStack = params.mutatorsStack();
-  UIView* clippingView = self.platform_views[viewId].root_view;
+  UIView* clippingView = self.platformViews[viewId].root_view;
   // The frame of the clipping view should be the final bounding rect.
   // Because the translate matrix in the Mutator Stack also includes the offset,
   // when we apply the transforms matrix in |applyMutators:embeddedView:boundingRect|, we need
@@ -716,20 +716,20 @@ BOOL canApplyBlurBackdrop = YES;
 
 - (void)reset {
   // Reset will only be called from the raster thread or a merged raster/platform thread.
-  // _platform_views must only be modified on the platform thread, and any operations that
+  // _platformViews must only be modified on the platform thread, and any operations that
   // read or modify platform views should occur there.
   fml::TaskRunner::RunNowOrPostTask(self.platform_task_runner, [self]() {
     for (int64_t view_id : self.composition_order) {
-      [self.platform_views[view_id].root_view removeFromSuperview];
+      [self.platformViews[view_id].root_view removeFromSuperview];
     }
-    self.platform_views.clear();
+    self.platformViews.clear();
   });
 
   self.composition_order.clear();
   self.slices.clear();
   self.current_composition_params.clear();
   self.views_to_recomposite.clear();
-  self.layer_pool->RecycleLayers();
+  self.layerPool->RecycleLayers();
   self.visited_platform_views.clear();
 }
 
@@ -825,8 +825,8 @@ BOOL canApplyBlurBackdrop = YES;
 
   // Mark all layers as available, so they can be used in the next frame.
   std::vector<std::shared_ptr<flutter::OverlayLayer>> unused_layers =
-      self.layer_pool->RemoveUnusedLayers();
-  self.layer_pool->RecycleLayers();
+      self.layerPool->RemoveUnusedLayers();
+  self.layerPool->RecycleLayers();
 
   auto task = [&,                                                             //
                platform_view_layers = std::move(platform_view_layers),        //
@@ -854,10 +854,10 @@ BOOL canApplyBlurBackdrop = YES;
                     grContext:(GrDirectContext*)gr_context {
   TRACE_EVENT0("flutter", "PlatformViewsController::CreateMissingLayers");
 
-  if (required_overlay_layers <= self.layer_pool->size()) {
+  if (required_overlay_layers <= self.layerPool->size()) {
     return;
   }
-  auto missing_layer_count = required_overlay_layers - self.layer_pool->size();
+  auto missing_layer_count = required_overlay_layers - self.layerPool->size();
 
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
@@ -932,7 +932,7 @@ BOOL canApplyBlurBackdrop = YES;
   NSMutableArray* desired_platform_subviews = [NSMutableArray array];
   for (int64_t platform_view_id : composition_order) {
     self.previous_composition_order.push_back(platform_view_id);
-    UIView* platform_view_root = self.platform_views[platform_view_id].root_view;
+    UIView* platform_view_root = self.platformViews[platform_view_id].root_view;
     if (platform_view_root != nil) {
       [desired_platform_subviews addObject:platform_view_root];
     }
@@ -966,13 +966,13 @@ BOOL canApplyBlurBackdrop = YES;
 }
 
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool {
-  return self.layer_pool->GetNextLayer();
+  return self.layerPool->GetNextLayer();
 }
 
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)ios_context
                         grContext:(GrDirectContext*)gr_context
                       pixelFormat:(MTLPixelFormat)pixel_format {
-  self.layer_pool->CreateLayer(gr_context, ios_context, pixel_format);
+  self.layerPool->CreateLayer(gr_context, ios_context, pixel_format);
 }
 
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unused_layers
@@ -988,7 +988,7 @@ BOOL canApplyBlurBackdrop = YES;
   // Remove unused platform views.
   for (int64_t view_id : self.previous_composition_order) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
-      UIView* platform_view_root = self.platform_views[view_id].root_view;
+      UIView* platform_view_root = self.platformViews[view_id].root_view;
       [platform_view_root removeFromSuperview];
     }
   }
@@ -1008,11 +1008,11 @@ BOOL canApplyBlurBackdrop = YES;
       views_to_delay_dispose.insert(viewId);
       continue;
     }
-    UIView* root_view = self.platform_views[viewId].root_view;
+    UIView* root_view = self.platformViews[viewId].root_view;
     views.push_back(root_view);
     self.current_composition_params.erase(viewId);
     self.views_to_recomposite.erase(viewId);
-    self.platform_views.erase(viewId);
+    self.platformViews.erase(viewId);
   }
   self.views_to_dispose = std::move(views_to_delay_dispose);
   return views;
@@ -1034,8 +1034,8 @@ BOOL canApplyBlurBackdrop = YES;
 
 #pragma mark - Properties
 
-- (flutter::OverlayLayerPool*)layer_pool {
-  return _layer_pool.get();
+- (flutter::OverlayLayerPool*)layerPool {
+  return _layerPool.get();
 }
 
 - (std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>>&)slices {
@@ -1046,8 +1046,8 @@ BOOL canApplyBlurBackdrop = YES;
   return _factories;
 }
 
-- (std::unordered_map<int64_t, PlatformViewData>&)platform_views {
-  return _platform_views;
+- (std::unordered_map<int64_t, PlatformViewData>&)platformViews {
+  return _platformViews;
 }
 
 - (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)current_composition_params {
