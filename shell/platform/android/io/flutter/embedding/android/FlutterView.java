@@ -1129,7 +1129,8 @@ public class FlutterView extends FrameLayout
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getScribeChannel(),
-            this.flutterEngine.getPlatformViewsController());
+            this.flutterEngine.getPlatformViewsController(),
+            this.flutterEngine.getPlatformViewsController2());
 
     try {
       textServicesManager =
@@ -1226,9 +1227,11 @@ public class FlutterView extends FrameLayout
     getContext().getContentResolver().unregisterContentObserver(systemSettingsObserver);
 
     flutterEngine.getPlatformViewsController().detachFromView();
+    flutterEngine.getPlatformViewsController2().detachFromView();
 
     // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
     flutterEngine.getPlatformViewsController().detachAccessibilityBridge();
+    flutterEngine.getPlatformViewsController2().detachAccessibilityBridge();
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();

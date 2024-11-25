@@ -573,8 +573,10 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
   }
 
   public void destroyOverlaySurface() {
-    overlayerSurface.release();
-    overlayerSurface = null;
+    if (overlayerSurface != null) {
+      overlayerSurface.release();
+      overlayerSurface = null;
+    }
   }
 
   //// Message Handler ///////

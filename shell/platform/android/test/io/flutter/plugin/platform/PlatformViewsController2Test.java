@@ -621,7 +621,7 @@ public class PlatformViewsController2Test {
     final MethodCall platformCreateMethodCall = new MethodCall("create", args);
 
     jni.handlePlatformMessage(
-        "flutter/platform_views",
+        "flutter/platform_views_2",
         encodeMethodCall(platformCreateMethodCall),
         /*replyId=*/ 0,
         /*messageData=*/ 0);
@@ -639,7 +639,7 @@ public class PlatformViewsController2Test {
     final MethodCall platformSetDirectionMethodCall = new MethodCall("setDirection", args);
 
     jni.handlePlatformMessage(
-        "flutter/platform_views",
+        "flutter/platform_views_2",
         encodeMethodCall(platformSetDirectionMethodCall),
         /*replyId=*/ 0,
         /*messageData=*/ 0);
@@ -654,7 +654,7 @@ public class PlatformViewsController2Test {
     final MethodCall platformDisposeMethodCall = new MethodCall("dispose", args);
 
     jni.handlePlatformMessage(
-        "flutter/platform_views",
+        "flutter/platform_views_2",
         encodeMethodCall(platformDisposeMethodCall),
         /*replyId=*/ 0,
         /*messageData=*/ 0);
@@ -666,7 +666,7 @@ public class PlatformViewsController2Test {
     final MethodCall convertMethodCall = new MethodCall("synchronizeToNativeViewHierarchy", yes);
 
     jni.handlePlatformMessage(
-        "flutter/platform_views",
+        "flutter/platform_views_2",
         encodeMethodCall(convertMethodCall),
         /*replyId=*/ 0,
         /*messageData=*/ 0);
@@ -696,6 +696,8 @@ public class PlatformViewsController2Test {
     final Context context = ApplicationProvider.getApplicationContext();
     PlatformViewsController2.attach(context, executor);
 
+    PlatformViewsController oldController = new PlatformViewsController();
+
     final FlutterEngine engine = mock(FlutterEngine.class);
     when(engine.getRenderer()).thenReturn(new FlutterRenderer(jni));
     when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
@@ -703,6 +705,7 @@ public class PlatformViewsController2Test {
     when(engine.getSettingsChannel()).thenReturn(new SettingsChannel(executor));
     when(engine.getScribeChannel()).thenReturn(mock(ScribeChannel.class));
     when(engine.getPlatformViewsController2()).thenReturn(PlatformViewsController2);
+    when(engine.getPlatformViewsController()).thenReturn(oldController);
     when(engine.getLocalizationPlugin()).thenReturn(mock(LocalizationPlugin.class));
     when(engine.getAccessibilityChannel()).thenReturn(mock(AccessibilityChannel.class));
     when(engine.getDartExecutor()).thenReturn(executor);
