@@ -136,14 +136,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorSource",
        {
-           {0, 96, 0, [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
-           {0, 152, 0,
+           {0, 104, 0,
+            [](DlOpReceiver& r) { r.setColorSource(kTestSource1.get()); }},
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 160, 0,
+           {0, 184, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
 
            // Reset attribute to default as last entry
@@ -177,15 +178,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter2); }},
            {0, 24, 0,
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter3); }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter1);
             }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter2);
             }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter3);
             }},
@@ -209,7 +210,7 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) {
               r.setImageFilter(
                   kTestBlurImageFilter1
-                      .makeWithLocalMatrix(SkMatrix::Translate(2, 2))
+                      .makeWithLocalMatrix(DlMatrix::MakeTranslation({2, 2}))
                       .get());
             }},
 

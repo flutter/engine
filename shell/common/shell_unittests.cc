@@ -5,11 +5,9 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <algorithm>
-#include <chrono>
 #include <ctime>
 #include <future>
 #include <memory>
-#include <strstream>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -21,6 +19,7 @@
 #include "assets/asset_resolver.h"
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -29,7 +28,6 @@
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -316,7 +314,8 @@ class ThreadCheckingAssetResolver : public AssetResolver {
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
-    if (asset_name == "FontManifest.json") {
+    if (asset_name == "FontManifest.json" ||
+        asset_name == "NativeAssetsManifest.json") {
       // This file is loaded directly by the engine.
       return nullptr;
     }
@@ -501,13 +500,13 @@ TEST_F(ShellTest,
         // vsync mechanism. We should have better DI in the tests.
         const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
         return ShellTestPlatformView::Create(
-            shell, shell.GetTaskRunners(), vsync_clock,
+            ShellTestPlatformView::DefaultBackendType(), shell,
+            shell.GetTaskRunners(), vsync_clock,
             [task_runners = shell.GetTaskRunners()]() {
               return static_cast<std::unique_ptr<VsyncWaiter>>(
                   std::make_unique<VsyncWaiterFallback>(task_runners));
             },
-            ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
-            shell.GetIsGpuDisabledSyncSwitch());
+            nullptr, shell.GetIsGpuDisabledSyncSwitch());
       },
       [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   ASSERT_TRUE(ValidateShell(shell.get()));
@@ -990,7 +989,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
     auto clip_rect_layer = std::make_shared<ClipRectLayer>(
         SkRect::MakeLTRB(0, 0, 30, 30), Clip::kHardEdge);
     transform_layer->Add(clip_rect_layer);
-    auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+    auto filter = DlImageFilter::MakeBlur(5, 5, DlTileMode::kClamp);
     auto backdrop_filter_layer =
         std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
     clip_rect_layer->Add(backdrop_filter_layer);
@@ -1005,10 +1004,10 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   ASSERT_TRUE(stack_75.is_empty());
   ASSERT_FALSE(stack_50.is_empty());
 
-  auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
+  auto filter = DlImageFilter::MakeBlur(5, 5, DlTileMode::kClamp);
   auto mutator = *stack_50.Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
-  ASSERT_EQ(mutator->GetFilterMutation().GetFilter(), filter);
+  ASSERT_EQ(mutator->GetFilterMutation().GetFilter(), *filter);
   // Make sure the filterRect is in global coordinates (contains the (1,1)
   // translation).
   ASSERT_EQ(mutator->GetFilterMutation().GetFilterRect(),
