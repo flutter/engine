@@ -119,7 +119,7 @@ public class PlatformViewsController2Test {
     final PlatformViewsChannel2.PlatformViewCreationRequest request =
         new PlatformViewsChannel2.PlatformViewCreationRequest(
             viewId, CountingPlatformView.VIEW_TYPE_ID, 128, 128, View.LAYOUT_DIRECTION_LTR, null);
-    PlatformView pView = PlatformViewsController2.createPlatformView(request, true);
+    PlatformView pView = PlatformViewsController2.createFlutterPlatformView(request);
     assertTrue(pView instanceof CountingPlatformView);
     CountingPlatformView cpv = (CountingPlatformView) pView;
 
@@ -152,7 +152,7 @@ public class PlatformViewsController2Test {
         new PlatformViewsChannel2.PlatformViewCreationRequest(
             viewId, CountingPlatformView.VIEW_TYPE_ID, 128, 128, View.LAYOUT_DIRECTION_LTR, null);
 
-    PlatformView pView = PlatformViewsController2.createPlatformView(request, true);
+    PlatformView pView = PlatformViewsController2.createFlutterPlatformView(request);
     assertTrue(pView instanceof CountingPlatformView);
     CountingPlatformView cpv = (CountingPlatformView) pView;
     assertEquals(1, cpv.attachCalls);
@@ -277,7 +277,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
 
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
@@ -305,7 +305,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
     verify(viewFactory, times(1)).create(any(), eq(platformViewId), any());
   }
 
@@ -330,7 +330,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType");
     verify(androidView, times(1)).setLayoutDirection(0);
   }
 
@@ -355,7 +355,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType");
 
     ArgumentCaptor<FrameLayout.LayoutParams> layoutParamsCaptor =
         ArgumentCaptor.forClass(FrameLayout.LayoutParams.class);
@@ -387,7 +387,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType");
     verify(androidView, times(1))
         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
   }
@@ -411,7 +411,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType",);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     assertFalse(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
@@ -436,7 +436,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     assertFalse(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
@@ -494,7 +494,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     // Simulate set direction call from the framework.
@@ -530,7 +530,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
@@ -542,7 +542,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ true);
+        jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
@@ -571,7 +571,7 @@ public class PlatformViewsController2Test {
 
     // Simulate create call from the framework.
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     when(platformView.getView()).thenReturn(null);
@@ -601,7 +601,7 @@ public class PlatformViewsController2Test {
     attachToFlutterView(jni, PlatformViewsController2, initFlutterView);
 
     createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType", /* hybrid=*/ false);
+        jni, PlatformViewsController2, platformViewId, "testType");
     verify(initFlutterView, times(1)).addView(any(PlatformViewWrapper.class));
 
     PlatformViewsController2.detachFromView();
@@ -622,10 +622,8 @@ public class PlatformViewsController2Test {
       FlutterJNI jni,
       PlatformViewsController2 PlatformViewsController2,
       int platformViewId,
-      String viewType,
-      boolean hybrid) {
+      String viewType) {
     final Map<String, Object> args = new HashMap<>();
-    args.put("hybrid", hybrid);
     args.put("id", platformViewId);
     args.put("viewType", viewType);
     args.put("direction", 0);
@@ -663,7 +661,6 @@ public class PlatformViewsController2Test {
       FlutterJNI jni, PlatformViewsController2 PlatformViewsController2, int platformViewId) {
 
     final Map<String, Object> args = new HashMap<>();
-    args.put("hybrid", true);
     args.put("id", platformViewId);
 
     final MethodCall platformDisposeMethodCall = new MethodCall("dispose", args);
