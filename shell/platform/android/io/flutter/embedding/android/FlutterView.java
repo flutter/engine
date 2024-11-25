@@ -1169,6 +1169,10 @@ public class FlutterView extends FrameLayout
     this.flutterEngine
         .getPlatformViewsController()
         .attachToFlutterRenderer(this.flutterEngine.getRenderer());
+    this.flutterEngine.getPlatformViewsController2().attachAccessibilityBridge(accessibilityBridge);
+    this.flutterEngine
+        .getPlatformViewsController2()
+        .attachToFlutterRenderer(this.flutterEngine.getRenderer());
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.
@@ -1187,6 +1191,7 @@ public class FlutterView extends FrameLayout
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
+    flutterEngine.getPlatformViewsController2().attachToView(this);
 
     // Notify engine attachment listeners of the attachment.
     for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {

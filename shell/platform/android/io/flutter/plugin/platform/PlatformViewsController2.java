@@ -9,7 +9,6 @@ import static io.flutter.Build.API_LEVELS;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.PixelFormat;
-import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.MotionEvent.PointerCoords;
@@ -587,12 +586,6 @@ public class PlatformViewsController2 implements PlatformViewsAccessibilityDeleg
         @Override
         public void createPlatformView(
             @NonNull PlatformViewsChannel2.PlatformViewCreationRequest request) {
-          if (Build.VERSION.SDK_INT < 34) {
-            throw new IllegalStateException(
-                "Trying to use platform views with API "
-                    + Build.VERSION.SDK_INT
-                    + ", required API level is 34.");
-          }
           createFlutterPlatformView(request);
         }
 
