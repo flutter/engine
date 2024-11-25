@@ -426,8 +426,7 @@ TypographerContextSkia::CollectNewGlyphs(
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
 
-      auto rounded_scale =
-          TextFrame::RoundScaledFontSize(frame->GetScale(), metrics.point_size);
+      auto rounded_scale = TextFrame::RoundScaledFontSize(frame->GetScale());
       ScaledFont scaled_font{.font = run.GetFont(), .scale = rounded_scale};
 
       FontGlyphAtlas* font_glyph_atlas =

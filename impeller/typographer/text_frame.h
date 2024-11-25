@@ -32,7 +32,7 @@ class TextFrame {
       Point offset,
       Scalar scale);
 
-  static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
+  static Scalar RoundScaledFontSize(Scalar scale);
 
   //----------------------------------------------------------------------------
   /// @brief      The conservative bounding box for this text frame.
