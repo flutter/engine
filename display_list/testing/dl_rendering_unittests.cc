@@ -8,6 +8,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/effects/color_filters/dl_matrix_color_filter.h"
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
@@ -4131,12 +4132,17 @@ TEST_F(DisplayListRendering, MatrixColorFilterModifyTransparencyCheck) {
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     float original_value = matrix[element];
     matrix[element] = value;
-    auto filter = DlColorFilter::MakeMatrix(matrix);
+    // Here we instantiate a DlMatrixColorFilter directly so that it is
+    // not affected by the "NOP" detection in the factory. We sould not
+    // need to do this if we tested by just rendering the filter color
+    // over the source color with the filter blend mode instead of
+    // rendering via a ColorFilter, but this test is more "black box".
+    DlMatrixColorFilter filter(matrix);
     auto dl_filter = DlColorFilter::MakeMatrix(matrix);
     bool is_identity = (dl_filter == nullptr || original_value == value);
 
     DlPaint paint(DlColor(0x7f7f7f7f));
-    DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
+    DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
     builder1.Translate(kTestCenter.fX, kTestCenter.fY);
@@ -4166,7 +4172,7 @@ TEST_F(DisplayListRendering, MatrixColorFilterModifyTransparencyCheck) {
       int modified_transparent_pixels =
           CanvasCompareTester::countModifiedTransparentPixels(results1.get(),
                                                               results2.get());
-      EXPECT_EQ(filter->modifies_transparent_black(),
+      EXPECT_EQ(filter.modifies_transparent_black(),
                 modified_transparent_pixels != 0)
           << desc;
     }
