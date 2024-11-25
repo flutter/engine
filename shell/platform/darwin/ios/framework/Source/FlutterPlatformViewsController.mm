@@ -254,8 +254,11 @@ struct PlatformViewData {
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
 
-/// Return all views to be disposed on the platform thread.
-- (std::vector<UIView*>)uiViewsToDispose;
+/// Computes and returns all views to be disposed on the platform thread, removes them from
+/// self.platformViews, self.viewsToRecomposite, and self.currentCompositionParams. Any views that
+/// still require compositing are not returned, but instead added to `viewsToDelayDispose` for
+/// disposal on the next call.
+- (std::vector<UIView*>)computeViewsToDispose;
 
 /// Resets the state of the frame.
 - (void)resetFrameState;
@@ -891,7 +894,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 
   // Dispose unused Flutter Views.
-  for (auto& view : self.uiViewsToDispose) {
+  for (auto& view : [self computeViewsToDispose]) {
     [view removeFromSuperview];
   }
 
@@ -986,7 +989,7 @@ BOOL canApplyBlurBackdrop = YES;
   }
 }
 
-- (std::vector<UIView*>)uiViewsToDispose {
+- (std::vector<UIView*>)computeViewsToDispose {
   std::vector<UIView*> views;
   if (self.viewsToDispose.empty()) {
     return views;
