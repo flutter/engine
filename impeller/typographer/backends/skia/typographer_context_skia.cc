@@ -415,10 +415,6 @@ TypographerContextSkia::CollectNewGlyphs(
   std::vector<Rect> glyph_sizes;
   size_t generation_id = atlas->GetAtlasGeneration();
   for (const auto& frame : text_frames) {
-    // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
-    // we could probably guarantee that a text frame that is complete does not
-    // need to be processed unless the scale or properties changed. I'm leaving
-    // this as a future optimization.
     if (frame->IsFrameComplete() &&
         frame->GetAtlasGeneration() == generation_id &&
         !frame->GetFrameBounds(0).is_placeholder) {
