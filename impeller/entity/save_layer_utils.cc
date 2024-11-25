@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/save_layer_utils.h"
+#include "impeller/geometry/scalar.h"
 
 namespace impeller {
 
@@ -107,7 +108,9 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // Transform the input coverage into the global coordinate space before
   // computing the bounds limit intersection.
   Rect transformed_coverage = coverage.TransformBounds(effect_transform);
-  if (!transformed_coverage.Intersection(coverage_limit).has_value()) {
+  std::optional<Rect> intersection =
+      transformed_coverage.Intersection(coverage_limit);
+  if (!intersection.has_value()) {
     return std::nullopt;
   }
 
@@ -118,13 +121,20 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // intersection using only the sizing by shifting the coverage rect into the
   // cull rect origin.
   Point delta = coverage_limit.GetOrigin() - transformed_coverage.GetOrigin();
-  std::optional<Rect> shifted_intersected_value =
-      transformed_coverage.Shift(delta).Intersection(coverage_limit);
+  if (ScalarNearlyEqual(delta.y, 0) || ScalarNearlyEqual(delta.x, 0)) {
+    Scalar threshold = std::max(std::abs(delta.x / coverage_limit.GetWidth()),
+                                std::abs(delta.y / coverage_limit.GetHeight()));
+    if (threshold < 0.3) {
+      std::optional<Rect> shifted_intersected_value =
+          transformed_coverage.Shift(delta).Intersection(coverage_limit);
 
-  if (shifted_intersected_value.has_value()) {
-    return shifted_intersected_value.value().Shift(-delta);
+      if (shifted_intersected_value.has_value()) {
+        return shifted_intersected_value.value().Shift(-delta);
+      }
+    }
   }
-  return std::nullopt;
+
+  return intersection;
 }
 
 }  // namespace impeller

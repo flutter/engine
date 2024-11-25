@@ -280,8 +280,38 @@ TEST(SaveLayerUtilsTest,
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
 }
 
-TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOrigin) {
-  // No intersection in coverage
+TEST(SaveLayerUtilsTest,
+     PartiallyIntersectingCoverageIgnoresOriginWithSlideSemanticsX) {
+  // X varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(5, 0, 210, 210),  //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),    //
+      /*image_filter=*/nullptr                              //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(5, 0, 105, 100));
+}
+
+TEST(SaveLayerUtilsTest,
+     PartiallyIntersectingCoverageIgnoresOriginWithSlideSemanticsY) {
+  // Y varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 5, 210, 210),  //
+      /*effect_transform=*/{},                              //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),    //
+      /*image_filter=*/nullptr                              //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 5, 100, 105));
+}
+
+TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOriginBothXAndY) {
+  // Both X and Y vary, no transation is performed.
   auto coverage = ComputeSaveLayerCoverage(
       /*content_coverage=*/Rect::MakeLTRB(5, 5, 210, 210),  //
       /*effect_transform=*/{},                              //
@@ -290,8 +320,7 @@ TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOrigin) {
   );
 
   ASSERT_TRUE(coverage.has_value());
-  // Size that matches coverage limit
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(5, 5, 105, 105));
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(5, 5, 100, 100));
 }
 
 }  // namespace testing
