@@ -276,8 +276,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
 
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
@@ -304,8 +303,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     verify(viewFactory, times(1)).create(any(), eq(platformViewId), any());
   }
 
@@ -329,8 +327,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     verify(androidView, times(1)).setLayoutDirection(0);
   }
 
@@ -354,8 +351,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
 
     ArgumentCaptor<FrameLayout.LayoutParams> layoutParamsCaptor =
         ArgumentCaptor.forClass(FrameLayout.LayoutParams.class);
@@ -386,8 +382,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     verify(androidView, times(1))
         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
   }
@@ -410,8 +405,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType",);
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     assertFalse(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
@@ -435,8 +429,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     assertFalse(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
@@ -493,8 +486,7 @@ public class PlatformViewsController2Test {
     verify(androidView, never()).setLayoutDirection(anyInt());
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     // Simulate set direction call from the framework.
@@ -529,8 +521,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
@@ -541,8 +532,7 @@ public class PlatformViewsController2Test {
     assertNull(androidView.getParent());
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     assertNotNull(androidView.getParent());
@@ -570,8 +560,7 @@ public class PlatformViewsController2Test {
     attach(jni, PlatformViewsController2);
 
     // Simulate create call from the framework.
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     assertTrue(PlatformViewsController2.initializePlatformViewIfNeeded(platformViewId));
 
     when(platformView.getView()).thenReturn(null);
@@ -600,8 +589,7 @@ public class PlatformViewsController2Test {
     FlutterView initFlutterView = mock(FlutterView.class);
     attachToFlutterView(jni, PlatformViewsController2, initFlutterView);
 
-    createPlatformView(
-        jni, PlatformViewsController2, platformViewId, "testType");
+    createPlatformView(jni, PlatformViewsController2, platformViewId, "testType");
     verify(initFlutterView, times(1)).addView(any(PlatformViewWrapper.class));
 
     PlatformViewsController2.detachFromView();
