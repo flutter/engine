@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "GLES3/gl3.h"
+#include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
@@ -126,7 +127,6 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
-  std::shared_ptr<Texture> resolve_attachment;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -191,6 +191,8 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
+  TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
+
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
@@ -205,13 +207,6 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   }
 
   GLuint fbo = GL_NONE;
-  fml::ScopedCleanupClosure delete_fbo([&gl, &fbo]() {
-    if (fbo != GL_NONE) {
-      gl.BindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-      gl.DeleteFramebuffers(1u, &fbo);
-    }
-  });
-
   TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
   const bool is_default_fbo = color_gles.IsWrapped();
 
@@ -222,32 +217,40 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   } else {
     // Create and bind an offscreen FBO.
-    gl.GenFramebuffers(1u, &fbo);
-    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    auto cached_fbo = color_gles.GetCachedFBO();
+    if (cached_fbo != GL_NONE) {
+      fbo = cached_fbo;
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    } else {
+      gl.GenFramebuffers(1u, &fbo);
+      color_gles.SetCachedFBO(fbo);
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (!color_gles.SetAsFramebufferAttachment(
-            GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-      return false;
-    }
-
-    if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
-      if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+      if (!color_gles.SetAsFramebufferAttachment(
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
-    }
-    if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+
+      if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
+        if (!depth->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+          return false;
+        }
+      }
+      if (auto stencil =
+              TextureGLES::Cast(pass_data.stencil_attachment.get())) {
+        if (!stencil->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+          return false;
+        }
+      }
+
+      auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (status != GL_FRAMEBUFFER_COMPLETE) {
+        VALIDATION_LOG << "Could not create a complete frambuffer: "
+                       << DebugToFramebufferError(status);
         return false;
       }
-    }
-
-    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer: "
-                     << DebugToFramebufferError(status);
-      return false;
     }
   }
 
@@ -488,57 +491,9 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   }
 
-  if (pass_data.resolve_attachment &&
-      !gl.GetCapabilities()->SupportsImplicitResolvingMSAA() &&
-      !is_default_fbo) {
-    FML_DCHECK(pass_data.resolve_attachment != pass_data.color_attachment);
-    // Perform multisample resolve via blit.
-    // Create and bind a resolve FBO.
-    GLuint resolve_fbo;
-    gl.GenFramebuffers(1u, &resolve_fbo);
-    gl.BindFramebuffer(GL_FRAMEBUFFER, resolve_fbo);
-
-    if (!TextureGLES::Cast(*pass_data.resolve_attachment)
-             .SetAsFramebufferAttachment(
-                 GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-      return false;
-    }
-
-    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer: "
-                     << DebugToFramebufferError(status);
-      return false;
-    }
-
-    // Bind MSAA renderbuffer to read framebuffer.
-    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, resolve_fbo);
-
-    RenderPassGLES::ResetGLState(gl);
-    auto size = pass_data.color_attachment->GetSize();
-
-    gl.BlitFramebuffer(0,                    // srcX0
-                       0,                    // srcY0
-                       size.width,           // srcX1
-                       size.height,          // srcY1
-                       0,                    // dstX0
-                       0,                    // dstY0
-                       size.width,           // dstX1
-                       size.height,          // dstY1
-                       GL_COLOR_BUFFER_BIT,  // mask
-                       GL_NEAREST            // filter
-    );
-
-    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, GL_NONE);
-    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, GL_NONE);
-    gl.DeleteFramebuffers(1u, &resolve_fbo);
-    // Rebind the original FBO so that we can discard it below.
-    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
-  }
-
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
+    std::array<GLenum, 3> attachments;
+    size_t attachment_count = 0;
 
     // TODO(130048): discarding stencil or depth on the default fbo causes Angle
     // to discard the entire render target. Until we know the reason, default to
@@ -546,21 +501,21 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
 
     if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_COLOR_EXT : GL_COLOR_ATTACHMENT0);
     }
     if (pass_data.discard_depth_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_DEPTH_EXT : GL_DEPTH_ATTACHMENT);
     }
 
     if (pass_data.discard_stencil_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_STENCIL_EXT : GL_STENCIL_ATTACHMENT);
     }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,     // target
+                             attachment_count,   // attachments to discard
+                             attachments.data()  // size
     );
   }
 
@@ -594,7 +549,6 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   /// Setup color data.
   ///
   pass_data->color_attachment = color0.texture;
-  pass_data->resolve_attachment = color0.resolve_texture;
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
@@ -604,9 +558,8 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   // resolved when we bind the texture to the framebuffer. We don't need to
   // discard the attachment when we are done.
   if (color0.resolve_texture) {
-    pass_data->discard_color_attachment =
-        pass_data->discard_color_attachment &&
-        !context.GetCapabilities()->SupportsImplicitResolvingMSAA();
+    FML_DCHECK(context.GetCapabilities()->SupportsImplicitResolvingMSAA());
+    pass_data->discard_color_attachment = false;
   }
 
   //----------------------------------------------------------------------------

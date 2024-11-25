@@ -777,8 +777,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         static_cast<Entity::TileMode>(image_color_source->vertical_tile_mode());
     auto sampler_descriptor =
         skia_conversions::ToSamplerDescriptor(image_color_source->sampling());
-    auto effect_transform =
-        skia_conversions::ToMatrix(image_color_source->matrix());
+    auto effect_transform = image_color_source->matrix();
 
     auto contents = std::make_shared<VerticesSimpleBlendContents>();
     contents->SetBlendMode(blend_mode);
@@ -1667,15 +1666,10 @@ bool Canvas::BlitToOnscreen() {
   auto offscreen_target = render_passes_.back()
                               .inline_pass_context->GetPassTarget()
                               .GetRenderTarget();
-  // Unlike other backends the blit to restore the onscreen fails for GLES
-  // if the src is a multisample framebuffer, even if we specifically target
-  // the non-multisampled resolve of the dst.
-  bool is_gles_and_must_skip_blit = renderer_.GetContext()->GetBackendType() ==
-                                    Context::BackendType::kOpenGLES;
+
   if (renderer_.GetContext()
           ->GetCapabilities()
-          ->SupportsTextureToTextureBlits() &&
-      !is_gles_and_must_skip_blit) {
+          ->SupportsTextureToTextureBlits()) {
     auto blit_pass = command_buffer->CreateBlitPass();
     blit_pass->AddCopy(offscreen_target.GetRenderTargetTexture(),
                        render_target_.GetRenderTargetTexture());
