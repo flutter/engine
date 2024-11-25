@@ -273,6 +273,13 @@ BOOL canApplyBlurBackdrop = YES;
 }  // namespace flutter
 
 @implementation FlutterPlatformViewsController {
+  // TODO(cbracken): Replace with Obj-C types and use @property declarations to automatically
+  // synthesize the ivars.
+  //
+  // These ivars are required because we're transitioning the previous C++ implementation to Obj-C.
+  // We require ivars to declare the concrete types and then wrap with @property declarations that
+  // return a reference to the ivar, allowing for use like `self.layerPool` and
+  // `self.slices[viewId] = x`.
   std::unique_ptr<flutter::OverlayLayerPool> _layerPool;
   std::unordered_map<int64_t, std::unique_ptr<flutter::EmbedderViewSlice>> _slices;
   std::unordered_map<std::string, NSObject<FlutterPlatformViewFactory>*> _factories;
