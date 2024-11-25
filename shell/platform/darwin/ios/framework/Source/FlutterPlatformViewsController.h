@@ -135,6 +135,14 @@
 // returns nil.
 - (UIView*)platformViewForId:(int64_t)viewId;
 
+// Composite the PlatformView with `viewId`.
+//
+// Every frame, during the paint traversal of the layer tree, this method is called for all
+// the PlatformViews in `_viewsToRecomposite`.
+//
+// Note that `_viewsToRecomposite` does not represent all the views in the view hierarchy,
+// if a PlatformView does not change its composition parameter from last frame, it is not
+// included in the `views_to_recomposite_`.
 - (void)compositeView:(int64_t)viewId withParams:(const flutter::EmbeddedViewParams&)params;
 
 - (const flutter::EmbeddedViewParams&)compositionParamsForView:(int64_t)viewId;

@@ -196,9 +196,14 @@ struct PlatformViewData {
 /// Only accessed from the raster thread.
 @property(nonatomic, assign) BOOL hadPlatformViews;
 
+/// Populate any missing overlay layers.
+///
+/// This requires posting a task to the platform thread and blocking on its completion.
 - (void)createMissingOverlays:(size_t)requiredOverlayLayers
                withIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                     grContext:(GrDirectContext*)grContext;
+
+/// Update the buffers and mutate the platform views in CATransaction on the platform thread.
 - (void)performSubmit:(const LayersMap&)platformViewLayers
     currentCompositionParams:
         (std::unordered_map<int64_t, flutter::EmbeddedViewParams>&)currentCompositionParams
@@ -208,6 +213,7 @@ struct PlatformViewData {
                     (const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
                surfaceFrames:
                    (const std::vector<std::unique_ptr<flutter::SurfaceFrame>>&)surfaceFrames;
+
 - (void)onCreate:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onDispose:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)onAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -230,17 +236,28 @@ struct PlatformViewData {
 - (void)applyMutators:(const flutter::MutatorsStack&)mutatorsStack
          embeddedView:(UIView*)embeddedView
          boundingRect:(const SkRect&)boundingRect;
+
 // Appends the overlay views and platform view and sets their z index based on the composition
 // order.
 - (void)bringLayersIntoView:(const LayersMap&)layerMap
        withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
+
 - (std::shared_ptr<flutter::OverlayLayer>)nextLayerInPool;
+
+/// Runs on the platform thread.
 - (void)createLayerWithIosContext:(const std::shared_ptr<flutter::IOSContext>&)iosContext
                         grContext:(GrDirectContext*)grContext
                       pixelFormat:(MTLPixelFormat)pixelFormat;
+
+/// Removes overlay views and platform views that aren't needed in the current frame.
+/// Must run on the platform thread.
 - (void)removeUnusedLayers:(const std::vector<std::shared_ptr<flutter::OverlayLayer>>&)unusedLayers
       withCompositionOrder:(const std::vector<int64_t>&)compositionOrder;
+
+/// Return all views to be disposed on the platform thread.
 - (std::vector<UIView*>)uiViewsToDispose;
+
+/// Resets the state of the frame.
 - (void)resetFrameState;
 @end
 
