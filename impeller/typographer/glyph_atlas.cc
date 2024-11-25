@@ -65,6 +65,14 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
   texture_ = std::move(texture);
 }
 
+size_t GlyphAtlas::GetAtlasGeneration() const {
+  return generation_;
+}
+
+void GlyphAtlas::SetAtlasGeneration(size_t value) {
+  generation_ = value;
+}
+
 void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
                                                    Rect position,
                                                    Rect bounds) {

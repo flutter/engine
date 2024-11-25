@@ -525,6 +525,58 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
   EXPECT_FALSE(frame->GetFrameBounds(0).is_placeholder);
 }
 
+TEST_P(TypographerTest, TextFrameAtlasGenerationTracksState) {
+  SkFont font = flutter::testing::CreateTestFontOfSize(12);
+  auto blob = SkTextBlob::MakeFromString(
+      "the quick brown fox jumped over the lazy dog.", font);
+  ASSERT_TRUE(blob);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+
+  EXPECT_FALSE(frame->IsFrameComplete());
+
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
+                                        GetContext()->GetIdleWaiter());
+
+  auto atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                                GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                                atlas_context, frame);
+
+  // The glyph position in the atlas was not known when this value
+  // was recorded. It is marked as a placeholder.
+  EXPECT_TRUE(frame->IsFrameComplete());
+  EXPECT_TRUE(frame->GetFrameBounds(0).is_placeholder);
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    // OpenGLES must always increase the atlas backend if the texture grows.
+    EXPECT_EQ(frame->GetAtlasGeneration(), 1u);
+  } else {
+    EXPECT_EQ(frame->GetAtlasGeneration(), 0u);
+  }
+
+  atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                           GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
+                           frame);
+
+  // The second time the glyph is rendered, the bounds are correcly known.
+  EXPECT_TRUE(frame->IsFrameComplete());
+  EXPECT_FALSE(frame->GetFrameBounds(0).is_placeholder);
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    EXPECT_EQ(frame->GetAtlasGeneration(), 1u);
+  } else {
+    EXPECT_EQ(frame->GetAtlasGeneration(), 0u);
+  }
+
+  // Force increase the generation.
+  atlas_context->GetGlyphAtlas()->SetAtlasGeneration(2u);
+  atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                           GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
+                           frame);
+
+  EXPECT_EQ(frame->GetAtlasGeneration(), 2u);
+}
+
 }  // namespace testing
 }  // namespace impeller
 

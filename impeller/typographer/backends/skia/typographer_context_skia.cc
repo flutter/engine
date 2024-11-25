@@ -413,12 +413,19 @@ TypographerContextSkia::CollectNewGlyphs(
     const std::vector<std::shared_ptr<TextFrame>>& text_frames) {
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> glyph_sizes;
+  size_t generation_id = atlas->GetAtlasGeneration();
   for (const auto& frame : text_frames) {
     // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
     // we could probably guarantee that a text frame that is complete does not
     // need to be processed unless the scale or properties changed. I'm leaving
     // this as a future optimization.
+    if (frame->IsFrameComplete() &&
+        frame->GetAtlasGeneration() == generation_id &&
+        !frame->GetFrameBounds(0).is_placeholder) {
+      continue;
+    }
     frame->ClearFrameBounds();
+    frame->SetAtlasGeneration(generation_id);
 
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
@@ -567,6 +574,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
     new_atlas = std::make_shared<GlyphAtlas>(type);
+    new_atlas->SetAtlasGeneration(last_atlas->GetAtlasGeneration() + 1);
 
     auto [update_glyphs, update_sizes] =
         CollectNewGlyphs(new_atlas, text_frames);
@@ -580,6 +588,10 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     height_adjustment = 0;
     atlas_context->UpdateRectPacker(nullptr);
     atlas_context->UpdateGlyphAtlas(new_atlas, {0, 0}, 0);
+  } else {
+    // If any part of the old atlas is reused the atlas generation can be
+    // treated the same as existing glyphs will not be moved.
+    new_atlas->SetAtlasGeneration(last_atlas->GetAtlasGeneration());
   }
 
   // A new glyph atlas must be created.

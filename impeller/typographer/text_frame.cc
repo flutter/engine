@@ -121,7 +121,15 @@ bool TextFrame::IsFrameComplete() const {
 }
 
 const FrameBounds& TextFrame::GetFrameBounds(size_t index) const {
-  return bound_values_.at(index);
+  return bound_values_[index];
+}
+
+size_t TextFrame::GetAtlasGeneration() const {
+  return generation_;
+}
+
+void TextFrame::SetAtlasGeneration(size_t value) {
+  generation_ = value;
 }
 
 }  // namespace impeller
