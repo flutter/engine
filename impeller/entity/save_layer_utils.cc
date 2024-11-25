@@ -117,14 +117,21 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // Sometimes a saveLayer is only slightly shifted outside of the cull rect,
   // but is being animated in. This is common for the Android slide in page
   // transitions. In these cases, computing a cull that is too tight can cause
-  // thrasing of the texture cache. Instead, we try to determine the
+  // thrashing of the texture cache. Instead, we try to determine the
   // intersection using only the sizing by shifting the coverage rect into the
   // cull rect origin.
   Point delta = coverage_limit.GetOrigin() - transformed_coverage.GetOrigin();
+
+  // This herustic is limited to perfectly vertical or horizontal transitions
+  // that slide in, limited to a fixed threshold of ~30%. This value is based on
+  // the Android slide in page transition which experimental has threshold
+  // values of up to 28%.
+  static constexpr Scalar kThresholdLimit = 0.3;
+
   if (ScalarNearlyEqual(delta.y, 0) || ScalarNearlyEqual(delta.x, 0)) {
     Scalar threshold = std::max(std::abs(delta.x / coverage_limit.GetWidth()),
                                 std::abs(delta.y / coverage_limit.GetHeight()));
-    if (threshold < 0.3) {
+    if (threshold < kThresholdLimit) {
       std::optional<Rect> shifted_intersected_value =
           transformed_coverage.Shift(delta).Intersection(coverage_limit);
 

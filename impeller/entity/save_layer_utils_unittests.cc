@@ -323,6 +323,36 @@ TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageIgnoresOriginBothXAndY) {
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(5, 5, 100, 100));
 }
 
+TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageWithOveriszedThresholdY) {
+  // Y varies, translation is not performed on coverage because it is too far
+  // offscreen.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 80, 200, 200),  //
+      /*effect_transform=*/{},                               //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),     //
+      /*image_filter=*/nullptr                               //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 80, 100, 100));
+}
+
+TEST(SaveLayerUtilsTest, PartiallyIntersectingCoverageWithOveriszedThresholdX) {
+  // X varies, translation is not performed on coverage because it is too far
+  // offscreen.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(80, 0, 200, 200),  //
+      /*effect_transform=*/{},                               //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),     //
+      /*image_filter=*/nullptr                               //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(80, 0, 100, 100));
+}
+
 }  // namespace testing
 }  // namespace impeller
 
