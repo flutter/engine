@@ -12,43 +12,7 @@
 
 namespace impeller {
 
-// Generates an index list to convert vertices from a triangle fan structure
-// into a triangle list format.
-//
-// The generated index list follows the pattern:
-//
-//   [0, 1, 2, 0, 2, 3, 0, 3, 4, ...].
-//
-// The initial portion of the index list is always the same, regardless of the
-// number of vertices, and only needs to be extended as needed. This makes
-// caching efficient, as the code can reuse the existing list and simply extract
-// the required segment.
-class TriangleFanIndices {
- public:
-  TriangleFanIndices() {}
-  size_t Ensure(size_t contour_point_count);
-  const uint16_t* data() { return indices_.data(); }
-
-  static size_t IndexCount(size_t contour_point_count) {
-    return (contour_point_count - 1) * 3;
-  }
-
- private:
-  std::vector<uint16_t> indices_;
-};
-
-size_t TriangleFanIndices::Ensure(size_t contour_point_count) {
-  size_t index_count = IndexCount(contour_point_count);
-  indices_.reserve(index_count);
-  for (size_t i = indices_.size(); i < index_count; i += 3) {
-    size_t start_id = i / 3 + 1;
-    indices_[i] = 0;
-    indices_[i + 1] = start_id;
-    indices_[i + 2] = start_id + 1;
-  }
-  return index_count;
-}
-
+namespace {
 // A look up table with precomputed variables.
 //
 // The columns represent the following variabls respectively:
@@ -59,7 +23,7 @@ size_t TriangleFanIndices::Ensure(size_t contour_point_count) {
 //  * theta
 //
 // For definition of the variables, see DrawOctantSquareLikeSquircle.
-static constexpr Scalar kPrecomputedVariables[][4] = {
+constexpr Scalar kPrecomputedVariables[][4] = {
     {2.000, 2.00000, 0.00000, 0.26000},  //
     {2.020, 2.03300, 0.01441, 0.23845},  //
     {2.040, 2.06500, 0.02568, 0.20310},  //
@@ -78,16 +42,16 @@ static constexpr Scalar kPrecomputedVariables[][4] = {
     {2.300, 2.50900, 0.14649, 0.13021}   //
 };
 
-static constexpr size_t kNumRecords =
+constexpr size_t kNumRecords =
     sizeof(kPrecomputedVariables) / sizeof(kPrecomputedVariables[0]);
-static constexpr Scalar kMinRatio = kPrecomputedVariables[0][0];
-static constexpr Scalar kMaxRatio = kPrecomputedVariables[kNumRecords - 1][0];
-static constexpr Scalar kRatioStep =
+constexpr Scalar kMinRatio = kPrecomputedVariables[0][0];
+constexpr Scalar kMaxRatio = kPrecomputedVariables[kNumRecords - 1][0];
+constexpr Scalar kRatioStep =
     kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
-static constexpr Scalar kAngleStep = kPi / 80;
+constexpr Scalar kAngleStep = kPi / 80;
 
-static constexpr Scalar gap(Scalar corner_radius) {
+constexpr Scalar gap(Scalar corner_radius) {
   return 0.2924303407 * corner_radius;
 }
 
@@ -98,10 +62,10 @@ static constexpr Scalar gap(Scalar corner_radius) {
 //
 // The resulting points are appended to `output` and include the starting point
 // but exclude the ending point.
-static void DrawCircularArc(std::vector<Point>& output,
-                            Point start,
-                            Point end,
-                            Scalar r) {
+void DrawCircularArc(std::vector<Point>& output,
+                     Point start,
+                     Point end,
+                     Scalar r) {
   /* Denote the middle point of S and E as M. The key is to find the center of
    * the circle.
    *         S --__
@@ -130,7 +94,7 @@ static void DrawCircularArc(std::vector<Point>& output,
   }
 }
 
-static Scalar lerp(size_t column, size_t left, size_t frac) {
+Scalar lerp(size_t column, size_t left, size_t frac) {
   return (1 - frac) * kPrecomputedVariables[left][column] +
          frac * kPrecomputedVariables[left + 1][column];
 }
@@ -150,11 +114,11 @@ static Scalar lerp(size_t column, size_t left, size_t frac) {
 //
 // The list of the resulting points is appended to `output`, and includes the
 // starting point but exclude the ending point.
-static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
-                                         Scalar size,
-                                         Scalar corner_radius,
-                                         Point center,
-                                         bool flip) {
+void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
+                                  Scalar size,
+                                  Scalar corner_radius,
+                                  Point center,
+                                  bool flip) {
   /* Ignoring `center` and `flip`, the following figure shows the first quadrant
    * of a square-like rounded superellipse. The target arc consists of the
    * "stretch" (AB), a superellipsoid arc (BJ), and a circular arc (JM).
@@ -222,7 +186,7 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
       angle += kAngleStep;
       x = a * pow(abs(sinf(angle)), 2 / n);
       y = a * pow(abs(cosf(angle)), 2 / n);
-    } while(y > target_slope * x);
+    } while (y > target_slope * x);
   }
   // Circular arc JM (B inclusive, M exclusive)
   DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
@@ -240,10 +204,63 @@ static void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   }
 }
 
-static Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
+Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
   return std::min(corner_radius,
                   std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
 }
+
+class TriangleStripArranger {
+ public:
+  TriangleStripArranger(const Point* quad, size_t quad_length)
+      : quad_(quad), quad_length_(quad_length) {}
+
+  void Output(Point* output, const Point& center) {
+    size_t index_count = 0;
+
+    output[index_count++] = GetPoint(0) + center;
+
+    size_t a = 1;
+    size_t b = quad_length_ * 4 - 1;
+    while (a < b) {
+      output[index_count++] = GetPoint(a) + center;
+      output[index_count++] = GetPoint(b) + center;
+      a++;
+      b--;
+    }
+    if (a == b) {
+      output[index_count++] = GetPoint(b) + center;
+    }
+  }
+
+ private:
+  const Point* quad_;
+  const size_t quad_length_;
+
+  Point GetPoint(size_t i) {
+    if (i < quad_length_) {
+      return quad_[i];
+    }
+    i = i - quad_length_;
+    if (i < quad_length_) {
+      return quad_[quad_length_ - i] * reflection[1];
+    }
+    i = i - quad_length_;
+    if (i < quad_length_) {
+      return quad_[i] * reflection[2];
+    }
+    i = i - quad_length_;
+    if (i < quad_length_) {
+      return quad_[quad_length_ - i] * reflection[3];
+    } else {
+      // Unreachable
+      return Point();
+    }
+  }
+
+  static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+};
+
+}  // namespace
 
 RoundSuperellipseGeometry::RoundSuperellipseGeometry(const Rect& bounds,
                                                      Scalar corner_radius)
@@ -278,66 +295,27 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   DrawOctantSquareLikeSquircle(points, size.height, corner_radius_, Point{c, 0},
                                true);
 
-  auto& host_buffer = renderer.GetTransientsBuffer();
+  // Mirror the arc into 4 quadrants while rearranging the points.
 
-  static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
-
-  // Generate the point data of the tessellated mesh. The first point in the
-  // point buffer is the center. The next `contour_point_count` points are the
-  // 1/4 arc mirrored into the 4 quadrants. The point data is organized in the
-  // structure of a triangle fan.
-  size_t contour_point_count = 4 * (points.size() - 1) + 1;
-  BufferView vertex_buffer = host_buffer.Emplace(
-      nullptr, sizeof(Point) * (contour_point_count + 1), alignof(Point));
+  // The `contour_point_count` include all points on the border. The "-1" comes
+  // from duplicate ends from the mirrored arcs.
+  size_t contour_point_count = 4 * (points.size() - 1);
+  BufferView vertex_buffer = renderer.GetTransientsBuffer().Emplace(
+      nullptr, sizeof(Point) * contour_point_count, alignof(Point));
   Point* vertex_data =
       reinterpret_cast<Point*>(vertex_buffer.GetBuffer()->OnGetContents() +
                                vertex_buffer.GetRange().offset);
-  *(vertex_data++) = center;
-  // All arcs include the starting point and exclude the ending point.
-  for (auto i = 0u; i < points.size() - 1; i++) {
-    *(vertex_data++) = center + (reflection[0] * points[i]);
-  }
-  for (auto i = points.size() - 1; i >= 1; i--) {
-    *(vertex_data++) = center + (reflection[1] * points[i]);
-  }
-  for (auto i = 0u; i < points.size() - 1; i++) {
-    *(vertex_data++) = center + (reflection[2] * points[i]);
-  }
-  for (auto i = points.size() - 1; i >= 1; i--) {
-    *(vertex_data++) = center + (reflection[3] * points[i]);
-  }
-  *vertex_data = center + points[0];
 
-  if (renderer.GetDeviceCapabilities().SupportsTriangleFan()) {
-    return GeometryResult{
-        .type = PrimitiveType::kTriangleFan,
-        .vertex_buffer =
-            {
-                .vertex_buffer = vertex_buffer,
-                .index_type = IndexType::kNone,
-            },
-        .transform = entity.GetShaderTransform(pass),
-    };
-  }
-
-  static TriangleFanIndices indices_cache;
-  size_t index_count = indices_cache.Ensure(contour_point_count);
-  BufferView index_buffer = host_buffer.Emplace(
-      nullptr, sizeof(uint16_t) * index_count, alignof(uint16_t));
-  uint16_t* index_data =
-      reinterpret_cast<uint16_t*>(index_buffer.GetBuffer()->OnGetContents() +
-                                  index_buffer.GetRange().offset);
-
-  std::memcpy(index_data, indices_cache.data(), sizeof(uint16_t) * index_count);
+  TriangleStripArranger arranger(points.data(), points.size() - 1);
+  arranger.Output(vertex_data, center);
 
   return GeometryResult{
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = vertex_buffer,
-              .index_buffer = index_buffer,
-              .vertex_count = index_count,
-              .index_type = IndexType::k16bit,
+              .vertex_count = contour_point_count,
+              .index_type = IndexType::kNone,
           },
       .transform = entity.GetShaderTransform(pass),
   };
