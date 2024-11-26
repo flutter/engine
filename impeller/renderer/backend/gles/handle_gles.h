@@ -109,8 +109,9 @@ inline std::ostream& operator<<(std::ostream& out,
   if (handle.IsDead()) {
     out << "DEAD";
   } else {
-    if (handle.GetName().has_value()) {
-      out << handle.GetName().value().id;
+    const std::optional<impeller::UniqueID>& name = handle.GetName();
+    if (name.has_value()) {
+      out << name.value().id;
     } else {
       out << "UNNAMED";
     }
