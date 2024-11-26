@@ -72,6 +72,37 @@ void TextContents::SetTextProperties(Color color,
   }
 }
 
+static Point VertexPositionForGlyph(const Matrix& entity_transform,
+                                    const Point& glyph_position,
+                                    const Point& unit_glyph_offset,
+                                    const Rect& glyph_bounds,
+                                    const Point& subpixel_adjustment) {
+  const Point screen_offset = (entity_transform * Point());
+  const Point glyph_offset =
+      entity_transform.Basis() * ((glyph_position + glyph_bounds.GetLeftTop()) +
+                                  (unit_glyph_offset * glyph_bounds.GetSize()));
+  return (screen_offset + glyph_offset + subpixel_adjustment).Floor();
+}
+
+static constexpr Point GetSubpixelAdjustment(AxisAlignment alignment) {
+  Point subpixel_adjustment(0.5, 0.5);
+  switch (alignment) {
+    case AxisAlignment::kNone:
+      break;
+    case AxisAlignment::kX:
+      subpixel_adjustment.x = 0.125;
+      break;
+    case AxisAlignment::kY:
+      subpixel_adjustment.y = 0.125;
+      break;
+    case AxisAlignment::kAll:
+      subpixel_adjustment.x = 0.125;
+      subpixel_adjustment.y = 0.125;
+      break;
+  }
+  return subpixel_adjustment;
+}
+
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
@@ -110,7 +141,6 @@ bool TextContents::Render(const ContentContext& renderer,
   ISize atlas_size = atlas->GetTexture()->GetSize();
   bool is_translation_scale = entity.GetTransform().IsTranslationScaleOnly();
   Matrix entity_transform = entity.GetTransform();
-  Matrix basis_transform = entity_transform.Basis();
 
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -163,7 +193,7 @@ bool TextContents::Render(const ContentContext& renderer,
   for (const auto& run : frame_->GetRuns()) {
     vertex_count += run.GetGlyphPositions().size();
   }
-  vertex_count *= 6;
+  vertex_count *= unit_points.size();
 
   BufferView buffer_view = host_buffer.Emplace(
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
@@ -181,23 +211,9 @@ bool TextContents::Render(const ContentContext& renderer,
 
           // Adjust glyph position based on the subpixel rounding
           // used by the font.
-          Point subpixel_adjustment(0.5, 0.5);
-          switch (font.GetAxisAlignment()) {
-            case AxisAlignment::kNone:
-              break;
-            case AxisAlignment::kX:
-              subpixel_adjustment.x = 0.125;
-              break;
-            case AxisAlignment::kY:
-              subpixel_adjustment.y = 0.125;
-              break;
-            case AxisAlignment::kAll:
-              subpixel_adjustment.x = 0.125;
-              subpixel_adjustment.y = 0.125;
-              break;
-          }
+          const Point subpixel_adjustment =
+              GetSubpixelAdjustment(font.GetAxisAlignment());
 
-          Point screen_offset = (entity_transform * Point(0, 0));
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
             const FrameBounds& frame_bounds =
@@ -220,9 +236,12 @@ bool TextContents::Render(const ContentContext& renderer,
                 VALIDATION_LOG << "Could not find font in the atlas.";
                 continue;
               }
-              // Note: uses unrounded scale for more accurate subpixel position.
-              Point subpixel = TextFrame::ComputeSubpixelPosition(
-                  glyph_position, font.GetAxisAlignment(), offset_, scale_);
+              const Point subpixel = TextFrame::ComputeSubpixelPosition(
+                  glyph_position,           //
+                  font.GetAxisAlignment(),  //
+                  offset_,                  //
+                  rounded_scale             //
+              );
 
               std::optional<FrameBounds> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{
@@ -244,26 +263,21 @@ bool TextContents::Render(const ContentContext& renderer,
             // glyph bounds are used to compute UVs in cases where the
             // destination and source sizes may differ due to clamping the sizes
             // of large glyphs.
-            Point uv_origin =
+            const Point uv_origin =
                 (atlas_glyph_bounds.GetLeftTop() - Point(0.5, 0.5)) /
                 atlas_size;
-            Point uv_size =
+            const Point uv_size =
                 (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
-
-            Point unrounded_glyph_position =
-                basis_transform *
-                (glyph_position.position + scaled_bounds.GetLeftTop());
-
-            Point screen_glyph_position =
-                (screen_offset + unrounded_glyph_position + subpixel_adjustment)
-                    .Floor();
 
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
-                position = (screen_glyph_position +
-                            (basis_transform * point * scaled_bounds.GetSize()))
-                               .Round();
+                position = VertexPositionForGlyph(entity_transform,         //
+                                                  glyph_position.position,  //
+                                                  point,                    //
+                                                  scaled_bounds,            //
+                                                  subpixel_adjustment       //
+                );
               } else {
                 position = entity_transform * (glyph_position.position +
                                                scaled_bounds.GetLeftTop() +
