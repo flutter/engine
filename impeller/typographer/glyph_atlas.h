@@ -58,8 +58,9 @@ class GlyphAtlas {
   /// @brief      Create an empty glyph atlas.
   ///
   /// @param[in]  type  How the glyphs are represented in the texture.
+  /// @param[in]  initial_generation the atlas generation.
   ///
-  explicit GlyphAtlas(Type type);
+  GlyphAtlas(Type type, size_t initial_generation);
 
   ~GlyphAtlas();
 

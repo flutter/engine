@@ -568,8 +568,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (atlas_context->GetAtlasSize().height >= max_texture_height ||
       context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
-    new_atlas = std::make_shared<GlyphAtlas>(type);
-    new_atlas->SetAtlasGeneration(last_atlas->GetAtlasGeneration() + 1);
+    new_atlas = std::make_shared<GlyphAtlas>(
+        type, /*initial_generation=*/last_atlas->GetAtlasGeneration() + 1);
 
     auto [update_glyphs, update_sizes] =
         CollectNewGlyphs(new_atlas, text_frames);
