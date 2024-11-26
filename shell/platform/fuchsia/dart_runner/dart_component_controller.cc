@@ -210,33 +210,34 @@ bool DartComponentController::CreateAndBindNamespace() {
   dart_outgoing_dir_request_ = dart_outgoing_dir_ptr_.NewRequest();
 
   fuchsia::io::DirectoryHandle dart_public_dir;
-  // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
-  // flutter_public_dir is only accessed once we receive OnOpen Event.
-  // That will prevent FL-175 for public directory
-  fdio_service_connect_at(dart_outgoing_dir_ptr_.channel().get(), "svc",
-                          dart_public_dir.NewRequest().TakeChannel().release());
-                          
+  {
+    auto request = dart_public_dir.NewRequest().TakeChannel();
+    const zx_status_t status =
+        fdio_open3_at(dart_outgoing_dir_ptr_.channel().get(), "svc",
+                      uint64_t{fuchsia::io::PERM_READABLE}, request.release());
+    if (status != ZX_OK) {
+      FML_LOG(ERROR) << "Failed to open /svc in outgoing directory: "
+                     << zx_status_get_string(status);
+      return false;
+    }
+  }
+
   auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
   composed_service_dir->set_fallback(std::move(dart_public_dir));
 
-  // Clone and check if client is servicing the directory.
-  dart_outgoing_dir_ptr_->Clone(
-      fuchsia::io::OpenFlags::DESCRIBE |
-          fuchsia::io::OpenFlags::CLONE_SAME_RIGHTS,
-      dart_outgoing_dir_ptr_to_check_on_open_.NewRequest());
+  // Request an event from the directory to ensure it is servicing requests.
+  dart_outgoing_dir_ptr_->Open3(
+      ".",
+      fuchsia::io::Flags::PROTOCOL_NODE |
+          fuchsia::io::Flags::FLAG_SEND_REPRESENTATION,
+      {}, dart_outgoing_dir_ptr_to_check_on_open_.NewRequest().TakeChannel());
 
   // Collect our standard set of directories.
   std::vector<std::string> other_dirs = {"debug", "ctrl"};
 
-  dart_outgoing_dir_ptr_to_check_on_open_.events().OnOpen =
-      [this, other_dirs](zx_status_t status, auto unused) {
+  dart_outgoing_dir_ptr_to_check_on_open_.events().OnRepresentation =
+      [this, other_dirs](auto unused) {
         dart_outgoing_dir_ptr_to_check_on_open_.Unbind();
-        if (status != ZX_OK) {
-          FML_LOG(ERROR) << "could not bind out directory for dart component("
-                         << label_ << "): " << zx_status_get_string(status);
-          return;
-        }
-
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
           fuchsia::io::DirectoryHandle dir;
