@@ -235,18 +235,20 @@ ComponentV2::ComponentV2(
 
   // ComponentStartInfo::runtime_dir (optional).
   if (start_info.has_runtime_dir()) {
-    runtime_dir_->Serve(fuchsia::io::OpenFlags::RIGHT_READABLE |
-                            fuchsia::io::OpenFlags::RIGHT_WRITABLE |
-                            fuchsia::io::OpenFlags::DIRECTORY,
-                        start_info.mutable_runtime_dir()->TakeChannel());
+    fidl::ServerEnd<fuchsia_io::Directory> server_end{
+        start_info.mutable_runtime_dir()->TakeChannel()};
+    runtime_dir_->Serve(
+        fuchsia_io::wire::kPermReadable | fuchsia_io::wire::kPermWritable,
+        std::move(server_end));
   }
 
   // ComponentStartInfo::outgoing_dir (optional).
   if (start_info.has_outgoing_dir()) {
-    outgoing_dir_->Serve(fuchsia::io::OpenFlags::RIGHT_READABLE |
-                             fuchsia::io::OpenFlags::RIGHT_WRITABLE |
-                             fuchsia::io::OpenFlags::DIRECTORY,
-                         start_info.mutable_outgoing_dir()->TakeChannel());
+    fidl::ServerEnd<fuchsia_io::Directory> server_end{
+        start_info.mutable_outgoing_dir()->TakeChannel()};
+    outgoing_dir_->Serve(
+        fuchsia_io::wire::kPermReadable | fuchsia_io::wire::kPermWritable,
+        std::move(server_end));
   }
 
   directory_request_ = directory_ptr_.NewRequest();

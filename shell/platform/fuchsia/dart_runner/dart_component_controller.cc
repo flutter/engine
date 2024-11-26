@@ -283,11 +283,11 @@ bool DartComponentController::CreateAndBindNamespace() {
   dart_outgoing_dir_->AddEntry("svc", std::move(composed_service_dir));
 
   if (start_info_.has_outgoing_dir()) {
+    fidl::ServerEnd<fuchsia_io::Directory> server_end{
+        start_info_.mutable_outgoing_dir()->TakeChannel()};
     dart_outgoing_dir_->Serve(
-        fuchsia::io::OpenFlags::RIGHT_READABLE |
-            fuchsia::io::OpenFlags::RIGHT_WRITABLE |
-            fuchsia::io::OpenFlags::DIRECTORY,
-        start_info_.mutable_outgoing_dir()->TakeChannel());
+        fuchsia_io::wire::kPermReadable | fuchsia_io::wire::kPermWritable,
+        std::move(server_end));
   }
 
   return true;
