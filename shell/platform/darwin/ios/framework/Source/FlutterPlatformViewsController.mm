@@ -192,6 +192,11 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
 /// Only accessed from the raster thread.
 @property(nonatomic, assign) BOOL hadPlatformViews;
 
+/// Whether blurred backdrop filters can be applied.
+///
+/// Defaults to YES, but becomes NO if blurred backdrop filters cannot be applied.
+@property(nonatomic, assign) BOOL canApplyBlurBackdrop;
+
 /// Populate any missing overlay layers.
 ///
 /// This requires posting a task to the platform thread and blocking on its completion.
@@ -289,6 +294,7 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
     _maskViewPool =
         [[FlutterClippingMaskViewPool alloc] initWithCapacity:kFlutterClippingMaskViewPoolCapacity];
     _hadPlatformViews = NO;
+    _canApplyBlurBackdrop = YES;
   }
   return self;
 }
@@ -561,9 +567,6 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
 - (void)applyMutators:(const flutter::MutatorsStack&)mutatorsStack
          embeddedView:(UIView*)embeddedView
          boundingRect:(const SkRect&)boundingRect {
-  // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
-  static BOOL sCanApplyBlurBackdrop = YES;
-
   if (self.flutterView == nil) {
     return;
   }
@@ -621,7 +624,7 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
         break;
       case flutter::kBackdropFilter: {
         // Only support DlBlurImageFilter for BackdropFilter.
-        if (!sCanApplyBlurBackdrop || !(*iter)->GetFilterMutation().GetFilter().asBlur()) {
+        if (!self.canApplyBlurBackdrop || !(*iter)->GetFilterMutation().GetFilter().asBlur()) {
           break;
         }
         CGRect filterRect = GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
@@ -647,7 +650,7 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
                                                                     blurRadius:blurRadius
                                                               visualEffectView:visualEffectView];
         if (!filter) {
-          sCanApplyBlurBackdrop = NO;
+          self.canApplyBlurBackdrop = NO;
         } else {
           [blurFilters addObject:filter];
         }
@@ -657,7 +660,7 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
     ++iter;
   }
 
-  if (sCanApplyBlurBackdrop) {
+  if (self.canApplyBlurBackdrop) {
     [clipView applyBlurBackdropFilters:blurFilters];
   }
 
