@@ -583,10 +583,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     height_adjustment = 0;
     atlas_context->UpdateRectPacker(nullptr);
     atlas_context->UpdateGlyphAtlas(new_atlas, {0, 0}, 0);
-  } else {
-    // If any part of the old atlas is reused the atlas generation can be
-    // treated the same as existing glyphs will not be moved.
-    new_atlas->SetAtlasGeneration(last_atlas->GetAtlasGeneration());
   }
 
   // A new glyph atlas must be created.

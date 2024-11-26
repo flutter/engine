@@ -508,7 +508,7 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
                                         GetContext()->GetIdleWaiter());
 
   auto atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                                GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                                GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
                                 atlas_context, frame);
 
   // The glyph position in the atlas was not known when this value
@@ -517,8 +517,8 @@ TEST_P(TypographerTest, TextFrameInitialBoundsArePlaceholder) {
   EXPECT_TRUE(frame->GetFrameBounds(0).is_placeholder);
 
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                           GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                           frame);
+                           GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
+                           atlas_context, frame);
 
   // The second time the glyph is rendered, the bounds are correcly known.
   EXPECT_TRUE(frame->IsFrameComplete());
@@ -541,7 +541,7 @@ TEST_P(TypographerTest, TextFrameInvalidationWithScale) {
                                         GetContext()->GetIdleWaiter());
 
   auto atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                                GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                                GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
                                 atlas_context, frame);
 
   // The glyph position in the atlas was not known when this value
@@ -552,8 +552,8 @@ TEST_P(TypographerTest, TextFrameInvalidationWithScale) {
   // Change the scale and the glyph data will still be a placeholder, as the
   // old data is no longer valid.
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                           GlyphAtlas::Type::kAlphaBitmap, 2.0f, atlas_context,
-                           frame);
+                           GlyphAtlas::Type::kAlphaBitmap, /*scale=*/2.0f,
+                           atlas_context, frame);
 
   // The second time the glyph is rendered, the bounds are correcly known.
   EXPECT_TRUE(frame->IsFrameComplete());
@@ -576,7 +576,7 @@ TEST_P(TypographerTest, TextFrameAtlasGenerationTracksState) {
                                         GetContext()->GetIdleWaiter());
 
   auto atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                                GlyphAtlas::Type::kAlphaBitmap, 1.0f,
+                                GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
                                 atlas_context, frame);
 
   // The glyph position in the atlas was not known when this value
@@ -591,8 +591,8 @@ TEST_P(TypographerTest, TextFrameAtlasGenerationTracksState) {
   }
 
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                           GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                           frame);
+                           GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
+                           atlas_context, frame);
 
   // The second time the glyph is rendered, the bounds are correcly known.
   EXPECT_TRUE(frame->IsFrameComplete());
@@ -606,8 +606,8 @@ TEST_P(TypographerTest, TextFrameAtlasGenerationTracksState) {
   // Force increase the generation.
   atlas_context->GetGlyphAtlas()->SetAtlasGeneration(2u);
   atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                           GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                           frame);
+                           GlyphAtlas::Type::kAlphaBitmap, /*scale=*/1.0f,
+                           atlas_context, frame);
 
   EXPECT_EQ(frame->GetAtlasGeneration(), 2u);
 }
