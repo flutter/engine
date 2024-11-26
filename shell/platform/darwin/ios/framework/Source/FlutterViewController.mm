@@ -79,6 +79,9 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
+// Internal state backing override of UIView.prefersStatusBarHidden.
+@property(nonatomic, assign) BOOL flutterPrefersStatusBarHidden;
+
 @property(nonatomic, strong) NSMutableSet<NSNumber*>* ongoingTouches;
 // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
 // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
@@ -153,14 +156,17 @@ typedef struct MouseState {
 @end
 
 @implementation FlutterViewController {
-  FlutterEngine* _engine;
   flutter::ViewportMetrics _viewportMetrics;
   MouseState _mouseState;
 }
 
+// Synthesize properties with an overridden getter/setter.
 @synthesize viewOpaque = _viewOpaque;
 @synthesize displayingFlutterUI = _displayingFlutterUI;
-@synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
+
+// TODO(dkwingsmt): https://github.com/flutter/flutter/issues/138168
+// No backing ivar is currently required; when multiple views are supported, we'll need to
+// synthesize the ivar and store the view identifier.
 @dynamic viewIdentifier;
 
 #pragma mark - Manage and override all designated initializers
@@ -300,10 +306,6 @@ typedef struct MouseState {
   // TODO(cbracken): https://github.com/flutter/flutter/issues/157140
   // Eliminate method calls in initializers and dealloc.
   [self setUpNotificationCenterObservers];
-}
-
-- (FlutterEngine*)engine {
-  return _engine;
 }
 
 - (void)setUpNotificationCenterObservers {
@@ -743,14 +745,14 @@ static void SendFakeTouchEvent(UIScreen* screen,
   // thread.
   if (appeared) {
     [self installFirstFrameCallback];
-    [self.engine platformViewsController]->SetFlutterView(self.flutterView);
-    [self.engine platformViewsController]->SetFlutterViewController(self);
+    self.platformViewsController.flutterView = self.flutterView;
+    self.platformViewsController.flutterViewController = self;
     [self.engine iosPlatformView]->NotifyCreated();
   } else {
     self.displayingFlutterUI = NO;
     [self.engine iosPlatformView]->NotifyDestroyed();
-    [self.engine platformViewsController]->SetFlutterView(nullptr);
-    [self.engine platformViewsController]->SetFlutterViewController(nullptr);
+    self.platformViewsController.flutterView = nil;
+    self.platformViewsController.flutterViewController = nil;
   }
 }
 
@@ -2307,19 +2309,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setPrefersStatusBarHidden:(BOOL)hidden {
-  if (hidden != _flutterPrefersStatusBarHidden) {
-    _flutterPrefersStatusBarHidden = hidden;
+  if (hidden != self.flutterPrefersStatusBarHidden) {
+    self.flutterPrefersStatusBarHidden = hidden;
     [self setNeedsStatusBarAppearanceUpdate];
   }
 }
 
 - (BOOL)prefersStatusBarHidden {
-  return _flutterPrefersStatusBarHidden;
+  return self.flutterPrefersStatusBarHidden;
 }
 
 #pragma mark - Platform views
 
-- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
+- (FlutterPlatformViewsController*)platformViewsController {
   return self.engine.platformViewsController;
 }
 

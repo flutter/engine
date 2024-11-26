@@ -1,4 +1,4 @@
-Signature: 95b572829da63a0a7b2a5aa5a2ead691
+Signature: faaf55b8b68a4e5e8506d792d9db0364
 
 ====================================================================================================
 LIBRARY: dart
@@ -2084,7 +2084,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../flutter/third_party/dart/runtime/bin/address_sanitizer.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/dart_io_api_impl.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/observatory_assets_empty.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/include/bin/dart_io_api.h + ../../../flutter/third_party/dart/LICENSE
@@ -2163,7 +2162,6 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/js/_js_annotations.dart + ../.
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/vmservice/asset.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/vmservice/vmservice.dart + ../../../flutter/third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/third_party/dart/runtime/bin/address_sanitizer.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/dart_io_api_impl.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/observatory_assets_empty.cc
 FILE: ../../../flutter/third_party/dart/runtime/include/bin/dart_io_api.h
@@ -4805,7 +4803,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/b62dadb14d82fcbb63d45812818249832cfa1cf7
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/4b49546a1dfa3a01801193d7d4b3f7a11278de25
 /third_party/fallback_root_certificates/
 
 ====================================================================================================

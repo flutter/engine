@@ -510,46 +510,6 @@ static BOOL _preparedOnce = NO;
 }
 @end
 
-// This recognizer delays touch events from being dispatched to the responder chain until it failed
-// recognizing a gesture.
-//
-// We only fail this recognizer when asked to do so by the Flutter framework (which does so by
-// invoking an acceptGesture method on the platform_views channel). And this is how we allow the
-// Flutter framework to delay or prevent the embedded view from getting a touch sequence.
-@interface FlutterDelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-
-// Indicates that if the `FlutterDelayingGestureRecognizer`'s state should be set to
-// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
-@property(nonatomic) BOOL shouldEndInNextTouchesEnded;
-
-// Indicates that the `FlutterDelayingGestureRecognizer`'s `touchesEnded` has been invoked without
-// setting the state to `UIGestureRecognizerStateEnded`.
-@property(nonatomic) BOOL touchedEndedWithoutBlocking;
-
-@property(nonatomic) UIGestureRecognizer* forwardingRecognizer;
-
-- (instancetype)initWithTarget:(id)target
-                        action:(SEL)action
-          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
-@end
-
-// While the FlutterDelayingGestureRecognizer is preventing touches from hitting the responder chain
-// the touch events are not arriving to the FlutterView (and thus not arriving to the Flutter
-// framework). We use this gesture recognizer to dispatch the events directly to the FlutterView
-// while during this phase.
-//
-// If the Flutter framework decides to dispatch events to the embedded view, we fail the
-// FlutterDelayingGestureRecognizer which sends the events up the responder chain. But since the
-// events are handled by the embedded view they are not delivered to the Flutter framework in this
-// phase as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
-// directly to the FlutterView.
-@interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-- (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
-- (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target;
-@end
-
 @interface FlutterTouchInterceptingView ()
 @property(nonatomic, weak, readonly) UIView* embeddedView;
 @property(nonatomic, readonly) FlutterDelayingGestureRecognizer* delayingRecognizer;
@@ -558,8 +518,7 @@ static BOOL _preparedOnce = NO;
 
 @implementation FlutterTouchInterceptingView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-             platformViewsController:
-                 (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController
+             platformViewsController:(FlutterPlatformViewsController*)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
@@ -707,7 +666,7 @@ static BOOL _preparedOnce = NO;
   // outlives the FlutterViewController. And ForwardingGestureRecognizer is owned by a subview of
   // FlutterView, so the ForwardingGestureRecognizer never out lives FlutterViewController.
   // Therefore, `_platformViewsController` should never be nullptr.
-  fml::WeakPtr<flutter::PlatformViewsController> _platformViewsController;
+  __weak FlutterPlatformViewsController* _platformViewsController;
   // Counting the pointers that has started in one touch sequence.
   NSInteger _currentTouchPointersCount;
   // We can't dispatch events to the framework without this back pointer.
@@ -718,13 +677,12 @@ static BOOL _preparedOnce = NO;
 }
 
 - (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController {
+       platformViewsController:(FlutterPlatformViewsController*)platformViewsController {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    FML_DCHECK(platformViewsController.get() != nullptr);
-    _platformViewsController = std::move(platformViewsController);
+    FML_DCHECK(platformViewsController);
+    _platformViewsController = platformViewsController;
     _currentTouchPointersCount = 0;
   }
   return self;
@@ -732,7 +690,7 @@ static BOOL _preparedOnce = NO;
 
 - (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target {
   return [[ForwardingGestureRecognizer alloc] initWithTarget:target
-                                     platformViewsController:std::move(_platformViewsController)];
+                                     platformViewsController:_platformViewsController];
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
@@ -741,7 +699,7 @@ static BOOL _preparedOnce = NO;
     // At the start of each gesture sequence, we reset the `_flutterViewController`,
     // so that all the touch events in the same sequence are forwarded to the same
     // `_flutterViewController`.
-    _flutterViewController = _platformViewsController->GetFlutterViewController();
+    _flutterViewController = _platformViewsController.flutterViewController;
   }
   [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;

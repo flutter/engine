@@ -7,6 +7,7 @@
 
 #include <bitset>
 
+#include "fml/logging.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -121,13 +122,35 @@ class TextureGLES final : public Texture,
 
   bool IsSliceInitialized(size_t slice) const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Attach a sync fence to this texture that will be waited on
+  ///             before encoding a rendering operation that references it.
+  ///
+  /// @param[in]  fence  A handle to a sync fence.
+  ///
+  void SetFence(HandleGLES fence);
+
+  /// Store the FBO object for recycling in the 2D renderer.
+  ///
+  /// The color0 texture used by the 2D renderer will use this texture
+  /// object to store the associated FBO the first time it is used.
+  void SetCachedFBO(GLuint fbo);
+
+  /// Retrieve the cached FBO object, or GL_NONE if there is no object.
+  GLuint GetCachedFBO() const;
+
+  // Visible for testing.
+  std::optional<HandleGLES> GetSyncFence() const;
+
  private:
   ReactorGLES::Ref reactor_;
   const Type type_;
   HandleGLES handle_;
+  mutable std::optional<HandleGLES> fence_ = std::nullopt;
   mutable std::bitset<6> slices_initialized_ = 0;
   const bool is_wrapped_;
   const std::optional<GLuint> wrapped_fbo_;
+  GLuint cached_fbo_ = GL_NONE;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
