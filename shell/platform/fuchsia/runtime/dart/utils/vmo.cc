@@ -64,17 +64,21 @@ bool VmoFromFilenameAt(int dirfd,
                        const std::string& filename,
                        bool executable,
                        fuchsia::mem::Buffer* buffer) {
-  auto flags = fuchsia::io::OpenFlags::RIGHT_READABLE;
+  fuchsia::io::Flags flags = fuchsia::io::PERM_READABLE;
   if (executable) {
-    flags |= fuchsia::io::OpenFlags::RIGHT_EXECUTABLE;
+    flags |= fuchsia::io::PERM_EXECUTABLE;
   }
-
+  // fdio_open3_fd_at only allows relative paths
+  const char* path = filename.c_str();
+  if (path && path[0] == '/') {
+    ++path;
+  }
   int fd;
-  const zx_status_t status = fdio_open_fd_at(dirfd, filename.c_str(),
-                                             static_cast<uint32_t>(flags), &fd);
+  const zx_status_t status =
+      fdio_open3_fd_at(dirfd, path, uint64_t{flags}, &fd);
   if (status != ZX_OK) {
-    FML_LOG(ERROR) << "fdio_open_fd_at(" << dirfd << ", \"" << filename
-                   << "\", " << std::hex << static_cast<uint32_t>(flags)
+    FML_LOG(ERROR) << "fdio_open3_fd_at(" << dirfd << ", \"" << filename
+                   << "\", " << std::hex << uint64_t{flags}
                    << ") failed: " << zx_status_get_string(status);
     return false;
   }

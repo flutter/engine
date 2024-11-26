@@ -246,10 +246,10 @@ bool DartComponentController::CreateAndBindNamespace() {
         for (auto& dir_str : other_dirs) {
           fuchsia::io::DirectoryHandle dir;
           auto request = dir.NewRequest().TakeChannel();
-          auto status = fdio_open_at(
+          const zx_status_t status = fdio_open3_at(
               dart_outgoing_dir_ptr_.channel().get(), dir_str.c_str(),
-              static_cast<uint32_t>(fuchsia::io::OpenFlags::DIRECTORY |
-                                    fuchsia::io::OpenFlags::RIGHT_READABLE),
+              uint64_t{fuchsia::io::Flags::PROTOCOL_DIRECTORY |
+                       fuchsia::io::PERM_READABLE},
               request.release());
           if (status == ZX_OK) {
             dart_outgoing_dir_->AddEntry(
