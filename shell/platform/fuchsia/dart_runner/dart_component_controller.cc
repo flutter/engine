@@ -215,14 +215,9 @@ bool DartComponentController::CreateAndBindNamespace() {
   // That will prevent FL-175 for public directory
   fdio_service_connect_at(dart_outgoing_dir_ptr_.channel().get(), "svc",
                           dart_public_dir.NewRequest().TakeChannel().release());
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
+                          
   auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
   composed_service_dir->set_fallback(std::move(dart_public_dir));
-
-#pragma clang diagnostic pop
 
   // Clone and check if client is servicing the directory.
   dart_outgoing_dir_ptr_->Clone(
