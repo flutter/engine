@@ -57,26 +57,7 @@ namespace dart_utils {
 bool VmoFromFilename(const std::string& filename,
                      bool executable,
                      fuchsia::mem::Buffer* buffer) {
-  // Note: the implementation here cannot be shared with VmoFromFilenameAt
-  // because fdio_open_fd_at does not aim to provide POSIX compatibility, and
-  // thus does not handle AT_FDCWD as dirfd.
-  auto flags = fuchsia::io::OpenFlags::RIGHT_READABLE;
-  if (executable) {
-    flags |= fuchsia::io::OpenFlags::RIGHT_EXECUTABLE;
-  }
-
-  int fd;
-  const zx_status_t status =
-      fdio_open_fd(filename.c_str(), static_cast<uint32_t>(flags), &fd);
-  if (status != ZX_OK) {
-    FML_LOG(ERROR) << "fdio_open_fd(\"" << filename << "\", " << std::hex
-                   << static_cast<uint32_t>(flags)
-                   << ") failed: " << zx_status_get_string(status);
-    return false;
-  }
-  bool result = VmoFromFd(fd, executable, buffer);
-  close(fd);
-  return result;
+  return VmoFromFilenameAt(AT_FDCWD, filename, executable, buffer);
 }
 
 bool VmoFromFilenameAt(int dirfd,
