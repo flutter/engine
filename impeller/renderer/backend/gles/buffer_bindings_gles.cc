@@ -296,6 +296,8 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
   }
 
   const std::vector<GLint>& locations = ComputeUniformLocations(metadata);
+  std::unique_ptr<uint8_t[]> array_element_buffer;
+  size_t array_element_buffer_size = 0;
   for (size_t i = 0u; i < metadata->members.size(); i++) {
     const ShaderStructMemberMetadata& member = metadata->members[i];
     GLint location = locations[i];
@@ -312,10 +314,12 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     // When binding uniform arrays, the elements must be contiguous. Copy
     // the uniforms to a temp buffer to eliminate any padding needed by the
     // other backends if the array elements have padding.
-    std::unique_ptr<uint8_t[]> array_element_buffer;
     if (element_count > 1 && element_stride != member.size) {
-      array_element_buffer =
-          std::make_unique<uint8_t[]>(member.size * element_count);
+      size_t array_size = member.size * element_count;
+      if (array_size > array_element_buffer_size) {
+        array_element_buffer = std::make_unique<uint8_t[]>(array_size);
+        array_element_buffer_size = array_size;
+      }
       for (size_t element_i = 0; element_i < element_count; element_i++) {
         std::memcpy(array_element_buffer.get() + element_i * member.size,
                     reinterpret_cast<const char*>(buffer_data) +
