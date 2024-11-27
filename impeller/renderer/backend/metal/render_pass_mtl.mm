@@ -391,11 +391,12 @@ bool RenderPassMTL::BindResource(ShaderStage stage,
 }
 
 // |RenderPass|
-bool RenderPassMTL::BindResource(ShaderStage stage,
-                                 DescriptorType type,
-                                 const ShaderUniformSlot& slot,
-                                 const ShaderMetadata& metadata,
-                                 BufferView view) {
+bool RenderPassMTL::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const ShaderUniformSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    BufferView view) {
   return Bind(pass_bindings_, stage, slot.ext_res_0, view);
 }
 
@@ -413,11 +414,11 @@ bool RenderPassMTL::BindResource(
   return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
 }
 
-bool RenderPassMTL::BindResource(
+bool RenderPassMTL::BindDynamicResource(
     ShaderStage stage,
     DescriptorType type,
     const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
+    std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
   if (!texture) {

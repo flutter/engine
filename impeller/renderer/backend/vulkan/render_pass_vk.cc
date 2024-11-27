@@ -549,11 +549,11 @@ bool RenderPassVK::BindResource(ShaderStage stage,
   return BindResource(slot.binding, type, view);
 }
 
-bool RenderPassVK::BindResource(ShaderStage stage,
-                                DescriptorType type,
-                                const ShaderUniformSlot& slot,
-                                const ShaderMetadata& metadata,
-                                BufferView view) {
+bool RenderPassVK::BindDynamicResource(ShaderStage stage,
+                                       DescriptorType type,
+                                       const ShaderUniformSlot& slot,
+                                       std::unique_ptr<ShaderMetadata> metadata,
+                                       BufferView view) {
   return BindResource(slot.binding, type, view);
 }
 
@@ -592,12 +592,13 @@ bool RenderPassVK::BindResource(size_t binding,
   return true;
 }
 
-bool RenderPassVK::BindResource(ShaderStage stage,
-                                DescriptorType type,
-                                const SampledImageSlot& slot,
-                                const ShaderMetadata& metadata,
-                                std::shared_ptr<const Texture> texture,
-                                const std::unique_ptr<const Sampler>& sampler) {
+bool RenderPassVK::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
   return BindResource(stage, type, slot, nullptr, texture, sampler);
 }
 
