@@ -80,14 +80,16 @@ TEST(BufferBindingsGLESTest, BindUniformDataMicro) {
   for (int32_t i = 0; i < count; ++i) {
     bindings.BindUniformData(mock_gl->GetProcTable(), allocator,
                              vertex_bindings, fragment_bindings);
-    if (i%100 == 0) {
+    if (i % 100 == 0) {
       mock_gl->GetCapturedCalls();
     }
   }
   auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-  std::cout << "Execution time: " << duration/static_cast<double>(count) << " microseconds" << std::endl;
-
+  auto duration =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count();
+  std::cout << "Execution time: " << duration / static_cast<double>(count)
+            << " microseconds" << std::endl;
 }
 
 }  // namespace testing
