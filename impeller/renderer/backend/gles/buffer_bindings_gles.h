@@ -12,11 +12,13 @@
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/command.h"
+#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 
 namespace impeller {
 
 namespace testing {
 FML_TEST_CLASS(BufferBindingsGLESTest, BindUniformData);
+FML_TEST_CLASS(BufferBindingsGLESTest, BindUniformDataMicro);
 }
 
 //------------------------------------------------------------------------------
@@ -49,6 +51,7 @@ class BufferBindingsGLES {
 
  private:
   FML_FRIEND_TEST(testing::BufferBindingsGLESTest, BindUniformData);
+  FML_FRIEND_TEST(testing::BufferBindingsGLESTest, BindUniformDataMicro);
   //----------------------------------------------------------------------------
   /// @brief      The arguments to glVertexAttribPointer.
   ///
@@ -62,9 +65,9 @@ class BufferBindingsGLES {
   };
   std::vector<std::vector<VertexAttribPointer>> vertex_attrib_arrays_;
 
-  std::unordered_map<std::string, GLint> uniform_locations_;
+  absl::flat_hash_map<std::string, GLint> uniform_locations_;
 
-  using BindingMap = std::unordered_map<std::string, std::vector<GLint>>;
+  using BindingMap = absl::flat_hash_map<std::string, std::vector<GLint>>;
   BindingMap binding_map_ = {};
   GLuint vertex_array_object_ = 0;
 
@@ -88,7 +91,7 @@ class BufferBindingsGLES {
 
   // For testing.
   void SetUniformBindings(
-      std::unordered_map<std::string, GLint> uniform_locations) {
+      absl::flat_hash_map<std::string, GLint> uniform_locations) {
     uniform_locations_ = std::move(uniform_locations);
   }
 };

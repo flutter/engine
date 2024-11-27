@@ -262,7 +262,7 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
     size_t element_count = member.array_elements.value_or(1);
     const std::string member_key =
         CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
-    const std::unordered_map<std::string, GLint>::iterator computed_location =
+    const absl::flat_hash_map<std::string, GLint>::iterator computed_location =
         uniform_locations_.find(member_key);
     if (computed_location == uniform_locations_.end()) {
       // Uniform was not active.
