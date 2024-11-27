@@ -282,7 +282,7 @@ std::string RenderTarget::ToString() const {
 }
 
 RenderTargetConfig RenderTarget::ToConfig() const {
-  if (color0_.has_value()) {
+  if (!color0_.has_value()) {
     return RenderTargetConfig{};
   }
   const auto& color_attachment = color0_.value();
