@@ -8,8 +8,8 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
+#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"
@@ -160,11 +160,11 @@ class GlyphAtlas {
   std::shared_ptr<Texture> texture_;
   size_t generation_ = 0;
 
-  std::unordered_map<ScaledFont,
-                     FontGlyphAtlas,
-                     ScaledFont::Hash,
-                     ScaledFont::Equal>
-      font_atlas_map_;
+  using FontAtlasMap = absl::flat_hash_map<ScaledFont,
+                                           FontGlyphAtlas,
+                                           ScaledFont::Hash,
+                                           ScaledFont::Equal>;
+  FontAtlasMap font_atlas_map_;
 
   GlyphAtlas(const GlyphAtlas&) = delete;
 
@@ -228,6 +228,7 @@ class GlyphAtlasContext {
 class FontGlyphAtlas {
  public:
   FontGlyphAtlas() = default;
+  FontGlyphAtlas(FontGlyphAtlas&&) = default;
 
   //----------------------------------------------------------------------------
   /// @brief      Find the location of a glyph in the atlas.
@@ -249,10 +250,10 @@ class FontGlyphAtlas {
  private:
   friend class GlyphAtlas;
 
-  std::unordered_map<SubpixelGlyph,
-                     FrameBounds,
-                     SubpixelGlyph::Hash,
-                     SubpixelGlyph::Equal>
+  absl::flat_hash_map<SubpixelGlyph,
+                      FrameBounds,
+                      SubpixelGlyph::Hash,
+                      SubpixelGlyph::Equal>
       positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
