@@ -830,7 +830,7 @@ BOOL canApplyBlurBackdrop = YES;
       self.layerPool->RemoveUnusedLayers();
   self.layerPool->RecycleLayers();
 
-  auto task = [&,                                                         //
+  auto task = [self,                                                      //
                platformViewLayers = std::move(platformViewLayers),        //
                currentCompositionParams = self.currentCompositionParams,  //
                viewsToRecomposite = self.viewsToRecomposite,              //
@@ -864,14 +864,15 @@ BOOL canApplyBlurBackdrop = YES;
   // If the raster thread isn't merged, create layers on the platform thread and block until
   // complete.
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  fml::TaskRunner::RunNowOrPostTask(self.platformTaskRunner, [&]() {
-    for (auto i = 0u; i < missingLayerCount; i++) {
-      [self createLayerWithIosContext:iosContext
-                            grContext:grContext
-                          pixelFormat:((FlutterView*)self.flutterView).pixelFormat];
-    }
-    latch->CountDown();
-  });
+  fml::TaskRunner::RunNowOrPostTask(
+      self.platformTaskRunner, [self, missingLayerCount, iosContext, grContext, latch]() {
+        for (auto i = 0u; i < missingLayerCount; i++) {
+          [self createLayerWithIosContext:iosContext
+                                grContext:grContext
+                              pixelFormat:((FlutterView*)self.flutterView).pixelFormat];
+        }
+        latch->CountDown();
+      });
   if (![[NSThread currentThread] isMainThread]) {
     latch->Wait();
   }
