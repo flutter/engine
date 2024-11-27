@@ -15,6 +15,10 @@
 
 namespace impeller {
 
+namespace testing {
+FML_TEST_CLASS(BufferBindingsGLESTest, BindUniformData);
+}
+
 //------------------------------------------------------------------------------
 /// @brief      Sets up stage bindings for single draw call in the OpenGLES
 ///             backend.
@@ -44,6 +48,7 @@ class BufferBindingsGLES {
   bool UnbindVertexAttributes(const ProcTableGLES& gl);
 
  private:
+  FML_FRIEND_TEST(testing::BufferBindingsGLESTest, BindUniformData);
   //----------------------------------------------------------------------------
   /// @brief      The arguments to glVertexAttribPointer.
   ///
@@ -80,6 +85,12 @@ class BufferBindingsGLES {
   BufferBindingsGLES(const BufferBindingsGLES&) = delete;
 
   BufferBindingsGLES& operator=(const BufferBindingsGLES&) = delete;
+
+  // For testing.
+  void SetUniformBindings(
+      std::unordered_map<std::string, GLint> uniform_locations) {
+    uniform_locations_ = std::move(uniform_locations);
+  }
 };
 
 }  // namespace impeller
