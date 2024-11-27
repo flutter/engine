@@ -14,7 +14,7 @@ namespace testing {
 
 TEST(BufferBindingsGLESTest, BindUniformData) {
   BufferBindingsGLES bindings;
-  std::unordered_map<std::string, GLint> uniform_bindings;
+  absl::flat_hash_map<std::string, GLint> uniform_bindings;
   uniform_bindings["SHADERMETADATA.FOOBAR"] = 1;
   bindings.SetUniformBindings(std::move(uniform_bindings));
   std::shared_ptr<MockGLES> mock_gl = MockGLES::Init();
@@ -45,6 +45,49 @@ TEST(BufferBindingsGLESTest, BindUniformData) {
   std::vector<std::string> captured_calls = mock_gl->GetCapturedCalls();
   EXPECT_TRUE(std::find(captured_calls.begin(), captured_calls.end(),
                         "glUniform1fv") != captured_calls.end());
+}
+
+TEST(BufferBindingsGLESTest, BindUniformDataMicro) {
+  BufferBindingsGLES bindings;
+  absl::flat_hash_map<std::string, GLint> uniform_bindings;
+  uniform_bindings["SHADERMETADATA.FOOBAR"] = 1;
+  bindings.SetUniformBindings(std::move(uniform_bindings));
+  std::shared_ptr<MockGLES> mock_gl = MockGLES::Init();
+  MockAllocator allocator;
+  Bindings vertex_bindings;
+
+  ShaderMetadata shader_metadata = {
+      .name = "shader_metadata",
+      .members = {ShaderStructMemberMetadata{.type = ShaderType::kFloat,
+                                             .name = "foobar",
+                                             .offset = 0,
+                                             .size = sizeof(float),
+                                             .byte_length = sizeof(float)}}};
+  std::shared_ptr<ReactorGLES> reactor;
+  std::shared_ptr<Allocation> backing_store = std::make_shared<Allocation>();
+  ASSERT_TRUE(backing_store->Truncate(Bytes{sizeof(float)}));
+  DeviceBufferGLES device_buffer(DeviceBufferDescriptor{.size = sizeof(float)},
+                                 reactor, backing_store);
+  BufferView buffer_view(&device_buffer, Range(0, sizeof(float)));
+  vertex_bindings.buffers.push_back(BufferAndUniformSlot{
+      .slot =
+          ShaderUniformSlot{
+              .name = "foobar", .ext_res_0 = 0, .set = 0, .binding = 0},
+      .view = BufferResource(&shader_metadata, buffer_view)});
+  Bindings fragment_bindings;
+  int32_t count = 5'000'000;
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int32_t i = 0; i < count; ++i) {
+    bindings.BindUniformData(mock_gl->GetProcTable(), allocator,
+                             vertex_bindings, fragment_bindings);
+    if (i%100 == 0) {
+      mock_gl->GetCapturedCalls();
+    }
+  }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+  std::cout << "Execution time: " << duration/static_cast<double>(count) << " microseconds" << std::endl;
+
 }
 
 }  // namespace testing
