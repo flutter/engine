@@ -109,6 +109,8 @@ class RenderTarget final {
 
   size_t GetMaxColorAttacmentBindIndex() const;
 
+  ColorAttachment GetColor0() const;
+
   const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
 
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
@@ -122,19 +124,13 @@ class RenderTarget final {
 
   std::string ToString() const;
 
-  RenderTargetConfig ToConfig() const {
-    auto& color_attachment = GetColorAttachments().find(0)->second;
-    return RenderTargetConfig{
-        .size = color_attachment.texture->GetSize(),
-        .mip_count = color_attachment.texture->GetMipCount(),
-        .has_msaa = color_attachment.resolve_texture != nullptr,
-        .has_depth_stencil = depth_.has_value() && stencil_.has_value()};
-  }
+  RenderTargetConfig ToConfig() const;
 
  private:
-  std::map<size_t, ColorAttachment> colors_;
+  std::optional<ColorAttachment> color0_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
+  std::map<size_t, ColorAttachment> colors_;
 };
 
 /// @brief a wrapper around the impeller [Allocator] instance that can be used

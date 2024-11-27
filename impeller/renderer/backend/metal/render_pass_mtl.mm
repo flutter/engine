@@ -104,8 +104,13 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
     const RenderTarget& desc) {
   auto result = [MTLRenderPassDescriptor renderPassDescriptor];
 
-  const auto& colors = desc.GetColorAttachments();
+  const ColorAttachment& color0 = desc.GetColor0();
+  if (!ConfigureColorAttachment(color0, result.colorAttachments[0u])) {
+    VALIDATION_LOG << "Could not configure color attachment at index 0";
+    return nil;
+  }
 
+  const auto& colors = desc.GetColorAttachments();
   for (const auto& color : colors) {
     if (!ConfigureColorAttachment(color.second,
                                   result.colorAttachments[color.first])) {

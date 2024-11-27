@@ -40,9 +40,9 @@ TEST(RenderPassBuilder, RenderPassWithLoadOpUsesCurrentLayout) {
 
   EXPECT_TRUE(!!render_pass);
 
-  auto maybe_color = builder.GetColorAttachments().find(0u);
-  ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
-  auto color = maybe_color->second;
+  auto maybe_color = builder.GetColor0();
+  ASSERT_TRUE(maybe_color.has_value());
+  auto color = maybe_color.value();
 
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eColorAttachmentOptimal);
   EXPECT_EQ(color.finalLayout, vk::ImageLayout::eGeneral);
@@ -66,9 +66,9 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
 
   EXPECT_TRUE(!!render_pass);
 
-  auto maybe_color = builder.GetColorAttachments().find(0u);
-  ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
-  auto color = maybe_color->second;
+  auto maybe_color = builder.GetColor0();
+  ASSERT_TRUE(maybe_color.has_value());
+  auto color = maybe_color.value();
 
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eUndefined);
   EXPECT_EQ(color.finalLayout, vk::ImageLayout::eGeneral);
@@ -135,9 +135,9 @@ TEST(RenderPassBuilder, CreatesMSAAResolveWithCorrectStore) {
 
   EXPECT_TRUE(!!render_pass);
 
-  auto maybe_color = builder.GetColorAttachments().find(0u);
-  ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
-  auto color = maybe_color->second;
+  auto maybe_color = builder.GetColor0();
+  ASSERT_TRUE(maybe_color.has_value());
+  auto color = maybe_color.value();
 
   // MSAA Texture.
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eUndefined);
