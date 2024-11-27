@@ -42,6 +42,9 @@ TEST(RenderPassBuilder, RenderPassWithLoadOpUsesCurrentLayout) {
 
   auto maybe_color = builder.GetColor0();
   ASSERT_TRUE(maybe_color.has_value());
+  if (!maybe_color.has_value()) {
+    return;
+  }
   auto color = maybe_color.value();
 
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eColorAttachmentOptimal);
@@ -68,6 +71,9 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
 
   auto maybe_color = builder.GetColor0();
   ASSERT_TRUE(maybe_color.has_value());
+  if (!maybe_color.has_value()) {
+    return;
+  }
   auto color = maybe_color.value();
 
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eUndefined);
@@ -137,6 +143,9 @@ TEST(RenderPassBuilder, CreatesMSAAResolveWithCorrectStore) {
 
   auto maybe_color = builder.GetColor0();
   ASSERT_TRUE(maybe_color.has_value());
+  if (!maybe_color.has_value()) {
+    return;
+  }
   auto color = maybe_color.value();
 
   // MSAA Texture.
