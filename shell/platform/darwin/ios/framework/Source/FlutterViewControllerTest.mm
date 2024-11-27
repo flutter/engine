@@ -535,7 +535,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   };
   CFTimeInterval startTime = CACurrentMediaTime();
   [viewController setUpKeyboardAnimationVsyncClient:callback];
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  [self waitForExpectations:@[ expectation ]];
   XCTAssertTrue(fulfillTime - startTime > delayTime);
 }
 
@@ -759,7 +759,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [viewControllerMock handleKeyboardNotification:notification];
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 320 * screen.scale);
   OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  [self waitForExpectations:@[ expectation ]];
 }
 
 - (void)testEnsureBottomInsetIsZeroWhenKeyboardDismissed {
@@ -1666,7 +1666,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     XCTAssertNotNil(realVC);
     realVC = nil;
   }
-  [self waitForExpectations:@[ expectation ] timeout:1.0];
+  [self waitForExpectations:@[ expectation ]];
 }
 
 - (void)testReleasesKeyboardManagerOnDealloc {
@@ -1948,7 +1948,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                    OCMVerify([mockVC goToApplicationLifecycle:@"AppLifecycleState.resumed"]);
                    [flutterViewController deregisterNotifications];
                  });
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  [self waitForExpectations:@[ timeoutApplicationLifeCycle ]];
 }
 
 - (void)testLifeCycleNotificationWillResignActive {
@@ -2093,7 +2093,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                    [timeoutApplicationLifeCycle fulfill];
                    [flutterViewController deregisterNotifications];
                  });
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  [self waitForExpectations:@[ timeoutApplicationLifeCycle ]];
 }
 
 - (void)testSetupKeyboardAnimationVsyncClientWillCreateNewVsyncClientForFlutterViewController {
