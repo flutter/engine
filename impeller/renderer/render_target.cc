@@ -261,7 +261,7 @@ std::string RenderTarget::ToString() const {
   std::stringstream stream;
 
   if (color0_.has_value()) {
-    stream << SPrintF("Color[%zu]=(%s)", 0ul,
+    stream << SPrintF("Color[%d]=(%s)", 0,
                       ColorAttachmentToString(color0_.value()).c_str());
   }
   for (const auto& [index, color] : colors_) {
