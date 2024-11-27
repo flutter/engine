@@ -29,7 +29,7 @@ class StandardMessageCodec {
   static const int _valueMap = 13;
   static const int _valueFloat32List = 14;
 
-  // Encode the message.
+  /// Encode the message.
   ByteData? encodeMessage(Object? message) {
     if (message == null) {
       return null;
