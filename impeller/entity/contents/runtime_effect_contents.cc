@@ -50,11 +50,11 @@ static ShaderType GetShaderType(RuntimeUniformType type) {
   }
 }
 
-static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
+static ShaderMetadata MakeShaderMetadata(
     const RuntimeUniformDescription& uniform) {
-  auto metadata = std::make_shared<ShaderMetadata>();
-  metadata->name = uniform.name;
-  metadata->members.emplace_back(ShaderStructMemberMetadata{
+  ShaderMetadata metadata;
+  metadata.name = uniform.name;
+  metadata.members.emplace_back(ShaderStructMemberMetadata{
       .type = GetShaderType(uniform.type),
       .size = uniform.GetSize(),
       .byte_length = uniform.bit_width / 8,
@@ -206,7 +206,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     size_t buffer_offset = 0;
 
     for (const auto& uniform : runtime_stage_->GetUniforms()) {
-      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+      ShaderMetadata metadata = MakeShaderMetadata(uniform);
       switch (uniform.type) {
         case kSampledImage: {
           // Sampler uniforms are ordered in the IPLR according to their
@@ -274,14 +274,14 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
               sizeof(float) * uniform_buffer.size(), alignment);
           pass.BindResource(ShaderStage::kFragment,
                             DescriptorType::kUniformBuffer, uniform_slot,
-                            ShaderMetadata{}, std::move(buffer_view));
+                            nullptr, std::move(buffer_view));
         }
       }
     }
 
     size_t sampler_index = 0;
     for (const auto& uniform : runtime_stage_->GetUniforms()) {
-      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+      ShaderMetadata metadata = MakeShaderMetadata(uniform);
 
       switch (uniform.type) {
         case kSampledImage: {
@@ -297,8 +297,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           image_slot.binding = uniform.binding;
           image_slot.texture_index = uniform.location - minimum_sampler_index;
           pass.BindResource(ShaderStage::kFragment,
-                            DescriptorType::kSampledImage, image_slot,
-                            *metadata, input.texture, sampler);
+                            DescriptorType::kSampledImage, image_slot, metadata,
+                            input.texture, sampler);
 
           sampler_index++;
           break;

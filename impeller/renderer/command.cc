@@ -29,7 +29,7 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
 bool Command::BindResource(ShaderStage stage,
                            DescriptorType type,
                            const ShaderUniformSlot& slot,
-                           const ShaderMetadata& metadata,
+                           const ShaderMetadata* metadata,
                            BufferView view) {
   FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
   if (!view) {
@@ -54,12 +54,11 @@ bool Command::BindResource(ShaderStage stage,
   return false;
 }
 
-bool Command::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
-    BufferView view) {
+bool Command::BindResource(ShaderStage stage,
+                           DescriptorType type,
+                           const ShaderUniformSlot& slot,
+                           const ShaderMetadata& metadata,
+                           BufferView view) {
   FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
   if (!view) {
     return false;
@@ -68,11 +67,50 @@ bool Command::BindResource(
   switch (stage) {
     case ShaderStage::kVertex:
       vertex_bindings.buffers.emplace_back(BufferAndUniformSlot{
-          .slot = slot, .view = BufferResource(*metadata, std::move(view))});
+          .slot = slot,
+          .view = BufferResource::MakeDynamic(metadata, std::move(view))});
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.buffers.emplace_back(BufferAndUniformSlot{
-          .slot = slot, .view = BufferResource(*metadata, std::move(view))});
+          .slot = slot,
+          .view = BufferResource::MakeDynamic(metadata, std::move(view))});
+      return true;
+    case ShaderStage::kCompute:
+      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
+    case ShaderStage::kUnknown:
+      return false;
+  }
+
+  return false;
+}
+
+bool Command::BindResource(ShaderStage stage,
+                           DescriptorType type,
+                           const SampledImageSlot& slot,
+                           const ShaderMetadata* metadata,
+                           std::shared_ptr<const Texture> texture,
+                           const std::unique_ptr<const Sampler>& sampler) {
+  if (!sampler) {
+    return false;
+  }
+  if (!texture || !texture->IsValid()) {
+    return false;
+  }
+
+  switch (stage) {
+    case ShaderStage::kVertex:
+      vertex_bindings.sampled_images.emplace_back(TextureAndSampler{
+          .slot = slot,
+          .texture = TextureResource(metadata, std::move(texture)),
+          .sampler = &sampler,
+      });
+      return true;
+    case ShaderStage::kFragment:
+      fragment_bindings.sampled_images.emplace_back(TextureAndSampler{
+          .slot = slot,
+          .texture = TextureResource(metadata, std::move(texture)),
+          .sampler = &sampler,
+      });
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
@@ -100,14 +138,14 @@ bool Command::BindResource(ShaderStage stage,
     case ShaderStage::kVertex:
       vertex_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
-          .texture = TextureResource(metadata, std::move(texture)),
+          .texture = TextureResource::MakeDynamic(metadata, std::move(texture)),
           .sampler = &sampler,
       });
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
-          .texture = TextureResource(metadata, std::move(texture)),
+          .texture = TextureResource::MakeDynamic(metadata, std::move(texture)),
           .sampler = &sampler,
       });
       return true;
