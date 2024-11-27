@@ -998,17 +998,31 @@ class AccessibilityFeatures {
 
 /// Describes the contrast of a theme or color palette.
 enum Brightness {
+  /// {@template dart.ui.window.brightness.dark}
   /// The color is dark and will require a light text color to achieve readable
   /// contrast.
   ///
   /// For example, the color might be dark grey, requiring white text.
+  /// {@endtemplate}
   dark,
 
+  /// {@template dart.ui.window.brightness.light}
   /// The color is light and will require a dark text color to achieve readable
   /// contrast.
   ///
   /// For example, the color might be bright white, requiring black text.
-  light,
+  /// {@endtemplate}
+  light;
+
+  /// Checks if the brightness is [Brightness.dark].
+  ///
+  /// {@macro dart.ui.window.brightness.dark}
+  bool get isDark => this == Brightness.dark;
+
+  /// Checks if the brightness is [Brightness.light].
+  ///
+  /// {@macro dart.ui.window.brightness.light}
+  bool get isLight => this == Brightness.light;
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
