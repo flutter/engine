@@ -78,6 +78,7 @@ static NSString* const kAutofillEditingValue = @"editingValue";
 static NSString* const kAutofillHints = @"hints";
 
 static NSString* const kAutocorrectionType = @"autocorrect";
+static NSString* const kEnableSuggestions = @"enableSuggestions";
 
 #pragma mark - Static Functions
 
@@ -934,8 +935,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   bool autocorrectIsDisabled = autocorrect && ![autocorrect boolValue];
   self.autocorrectionType =
       autocorrectIsDisabled ? UITextAutocorrectionTypeNo : UITextAutocorrectionTypeDefault;
+  NSString* enableSuggestions = configuration[kEnableSuggestions];
+  bool disableSuggestions = enableSuggestions && ![enableSuggestions boolValue];
   self.spellCheckingType =
-      autocorrectIsDisabled ? UITextSpellCheckingTypeNo : UITextSpellCheckingTypeDefault;
+      disableSuggestions ? UITextSpellCheckingTypeNo : UITextSpellCheckingTypeDefault;
   self.autofillId = AutofillIdFromDictionary(configuration);
   if (autofill == nil) {
     self.textContentType = @"";
