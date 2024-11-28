@@ -10,6 +10,7 @@
 #include <optional>
 
 #include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
+#include "flutter/third_party/abseil-cpp/absl/hash/hash.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"
@@ -162,7 +163,7 @@ class GlyphAtlas {
 
   using FontAtlasMap = absl::flat_hash_map<ScaledFont,
                                            FontGlyphAtlas,
-                                           ScaledFont::Hash,
+                                           absl::Hash<ScaledFont>,
                                            ScaledFont::Equal>;
   FontAtlasMap font_atlas_map_;
 
@@ -252,7 +253,7 @@ class FontGlyphAtlas {
 
   absl::flat_hash_map<SubpixelGlyph,
                       FrameBounds,
-                      SubpixelGlyph::Hash,
+                      absl::Hash<SubpixelGlyph>,
                       SubpixelGlyph::Equal>
       positions_;
 
