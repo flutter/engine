@@ -577,7 +577,7 @@ void fl_renderer_setup(FlRenderer* self) {
   // Note: NVIDIA and Vivante are temporarily disabled due to
   // https://github.com/flutter/flutter/issues/152099
   priv->has_gl_framebuffer_blit =
-      !is_nvidia() && !is_vivante() && 
+      !is_nvidia() && !is_vivante() &&
       (epoxy_gl_version() >= 30 ||
        epoxy_has_gl_extension("GL_EXT_framebuffer_blit"));
 
