@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/fl_touch_manager.h"
+#include "flutter/shell/platform/linux/fl_engine_private.h"
 
 static const int kMinTouchDeviceId = 0;
 static const int kMaxTouchDeviceId = 128;
@@ -10,7 +11,9 @@ static const int kMaxTouchDeviceId = 128;
 struct _FlTouchManager {
   GObject parent_instance;
 
-  GWeakRef view_delegate;
+  GWeakRef engine;
+
+  FlutterViewId view_id;
 
   // Generates touch point IDs for touch events.
   flutter::SequentialIdGenerator* touch_id_generator;
@@ -21,7 +24,7 @@ G_DEFINE_TYPE(FlTouchManager, fl_touch_manager, G_TYPE_OBJECT);
 static void fl_touch_manager_dispose(GObject* object) {
   FlTouchManager* self = FL_TOUCH_MANAGER(object);
 
-  g_weak_ref_clear(&self->view_delegate);
+  g_weak_ref_clear(&self->engine);
 
   G_OBJECT_CLASS(fl_touch_manager_parent_class)->dispose(object);
 }
@@ -32,13 +35,14 @@ static void fl_touch_manager_class_init(FlTouchManagerClass* klass) {
 
 static void fl_touch_manager_init(FlTouchManager* self) {}
 
-FlTouchManager* fl_touch_manager_new(FlTouchViewDelegate* view_delegate) {
-  g_return_val_if_fail(FL_IS_TOUCH_VIEW_DELEGATE(view_delegate), nullptr);
+FlTouchManager* fl_touch_manager_new(FlEngine* engine, FlutterViewId view_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(engine), nullptr);
 
   FlTouchManager* self =
       FL_TOUCH_MANAGER(g_object_new(fl_touch_manager_get_type(), nullptr));
 
-  g_weak_ref_init(&self->view_delegate, view_delegate);
+  g_weak_ref_init(&self->engine, engine);
+  self->view_id = view_id;
 
   self->touch_id_generator =
       new flutter::SequentialIdGenerator(kMinTouchDeviceId, kMaxTouchDeviceId);
@@ -50,9 +54,9 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
                                          GdkEventTouch* event,
                                          gint scale_factor) {
   g_return_if_fail(FL_IS_TOUCH_MANAGER(self));
-  g_autoptr(FlTouchViewDelegate) view_delegate =
-      FL_TOUCH_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
-  if (view_delegate == nullptr) {
+
+  g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine == nullptr) {
     return;
   }
 
@@ -83,18 +87,18 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
   switch (touch_event_type) {
     case GDK_TOUCH_BEGIN:
       event_data.phase = FlutterPointerPhase::kDown;
-      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
+      fl_engine_send_pointer_event(engine, self->view_id, event_data);
       break;
     case GDK_TOUCH_UPDATE:
       event_data.phase = FlutterPointerPhase::kMove;
-      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
+      fl_engine_send_pointer_event(engine, self->view_id, event_data);
       break;
     case GDK_TOUCH_END:
       event_data.phase = FlutterPointerPhase::kUp;
-      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
+      fl_engine_send_pointer_event(engine, self->view_id, event_data);
 
       event_data.phase = FlutterPointerPhase::kRemove;
-      fl_touch_view_delegate_send_pointer_event(view_delegate, event_data);
+      fl_engine_send_pointer_event(engine, self->view_id, event_data);
       self->touch_id_generator->ReleaseNumber(id);
       break;
     default:
