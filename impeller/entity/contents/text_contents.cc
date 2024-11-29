@@ -175,7 +175,8 @@ bool TextContents::Render(const ContentContext& renderer,
         size_t bounds_offset = 0u;
         for (const TextRun& run : frame_->GetRuns()) {
           const Font& font = run.GetFont();
-          Scalar rounded_scale = TextFrame::RoundScaledFontSize(scale_);
+          Scalar rounded_scale = TextFrame::RoundScaledFontSize(
+              scale_, font.GetMetrics().point_size);
           FontGlyphAtlas* font_atlas = nullptr;
 
           // Adjust glyph position based on the subpixel rounding
@@ -219,9 +220,9 @@ bool TextContents::Render(const ContentContext& renderer,
                 VALIDATION_LOG << "Could not find font in the atlas.";
                 continue;
               }
+              // Note: uses unrounded scale for more accurate subpixel position.
               Point subpixel = TextFrame::ComputeSubpixelPosition(
-                  glyph_position, font.GetAxisAlignment(), offset_,
-                  rounded_scale);
+                  glyph_position, font.GetAxisAlignment(), offset_, scale_);
 
               std::optional<FrameBounds> maybe_atlas_glyph_bounds =
                   font_atlas->FindGlyphBounds(SubpixelGlyph{

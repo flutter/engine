@@ -12,8 +12,7 @@
 namespace impeller {
 
 GlyphAtlasContext::GlyphAtlasContext(GlyphAtlas::Type type)
-    : atlas_(std::make_shared<GlyphAtlas>(type, /*initial_generation=*/0)),
-      atlas_size_(ISize(0, 0)) {}
+    : atlas_(std::make_shared<GlyphAtlas>(type)), atlas_size_(ISize(0, 0)) {}
 
 GlyphAtlasContext::~GlyphAtlasContext() {}
 
@@ -46,8 +45,7 @@ void GlyphAtlasContext::UpdateRectPacker(
   rect_packer_ = std::move(rect_packer);
 }
 
-GlyphAtlas::GlyphAtlas(Type type, size_t initial_generation)
-    : type_(type), generation_(initial_generation) {}
+GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
 
 GlyphAtlas::~GlyphAtlas() = default;
 
@@ -65,14 +63,6 @@ const std::shared_ptr<Texture>& GlyphAtlas::GetTexture() const {
 
 void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
   texture_ = std::move(texture);
-}
-
-size_t GlyphAtlas::GetAtlasGeneration() const {
-  return generation_;
-}
-
-void GlyphAtlas::SetAtlasGeneration(size_t generation) {
-  generation_ = generation;
 }
 
 void GlyphAtlas::AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,

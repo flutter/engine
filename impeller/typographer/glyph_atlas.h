@@ -58,9 +58,8 @@ class GlyphAtlas {
   /// @brief      Create an empty glyph atlas.
   ///
   /// @param[in]  type  How the glyphs are represented in the texture.
-  /// @param[in]  initial_generation the atlas generation.
   ///
-  GlyphAtlas(Type type, size_t initial_generation);
+  explicit GlyphAtlas(Type type);
 
   ~GlyphAtlas();
 
@@ -143,22 +142,9 @@ class GlyphAtlas {
   ///
   FontGlyphAtlas* GetOrCreateFontGlyphAtlas(const ScaledFont& scaled_font);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Retrieve the generation id for this glyph atlas.
-  ///
-  ///             The generation id is used to match with a TextFrame to
-  ///             determine if the frame is guaranteed to already be populated
-  ///             in the atlas.
-  size_t GetAtlasGeneration() const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Update the atlas generation.
-  void SetAtlasGeneration(size_t value);
-
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;
-  size_t generation_ = 0;
 
   std::unordered_map<ScaledFont,
                      FontGlyphAtlas,

@@ -413,20 +413,18 @@ TypographerContextSkia::CollectNewGlyphs(
     const std::vector<std::shared_ptr<TextFrame>>& text_frames) {
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> glyph_sizes;
-  size_t generation_id = atlas->GetAtlasGeneration();
   for (const auto& frame : text_frames) {
-    if (frame->IsFrameComplete() &&
-        frame->GetAtlasGeneration() == generation_id &&
-        !frame->GetFrameBounds(0).is_placeholder) {
-      continue;
-    }
+    // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
+    // we could probably guarantee that a text frame that is complete does not
+    // need to be processed unless the scale or properties changed. I'm leaving
+    // this as a future optimization.
     frame->ClearFrameBounds();
-    frame->SetAtlasGeneration(generation_id);
 
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
 
-      auto rounded_scale = TextFrame::RoundScaledFontSize(frame->GetScale());
+      auto rounded_scale =
+          TextFrame::RoundScaledFontSize(frame->GetScale(), metrics.point_size);
       ScaledFont scaled_font{.font = run.GetFont(), .scale = rounded_scale};
 
       FontGlyphAtlas* font_glyph_atlas =
@@ -568,8 +566,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (atlas_context->GetAtlasSize().height >= max_texture_height ||
       context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
-    new_atlas = std::make_shared<GlyphAtlas>(
-        type, /*initial_generation=*/last_atlas->GetAtlasGeneration() + 1);
+    new_atlas = std::make_shared<GlyphAtlas>(type);
 
     auto [update_glyphs, update_sizes] =
         CollectNewGlyphs(new_atlas, text_frames);

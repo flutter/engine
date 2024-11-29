@@ -20,17 +20,6 @@ struct GlyphProperties {
   Join stroke_join = Join::kMiter;
   Scalar stroke_miter = 4.0;
   bool stroke = false;
-
-  struct Equal {
-    constexpr bool operator()(const impeller::GlyphProperties& lhs,
-                              const impeller::GlyphProperties& rhs) const {
-      return lhs.color.ToARGB() == rhs.color.ToARGB() &&
-             lhs.stroke == rhs.stroke && lhs.stroke_cap == rhs.stroke_cap &&
-             lhs.stroke_join == rhs.stroke_join &&
-             lhs.stroke_miter == rhs.stroke_miter &&
-             lhs.stroke_width == rhs.stroke_width;
-    }
-  };
 };
 
 //------------------------------------------------------------------------------
@@ -96,8 +85,12 @@ struct SubpixelGlyph {
              lhs.glyph.type == rhs.glyph.type &&
              lhs.subpixel_offset == rhs.subpixel_offset &&
              lhs.properties.has_value() && rhs.properties.has_value() &&
-             GlyphProperties::Equal{}(lhs.properties.value(),
-                                      rhs.properties.value());
+             lhs.properties->color.ToARGB() == rhs.properties->color.ToARGB() &&
+             lhs.properties->stroke == rhs.properties->stroke &&
+             lhs.properties->stroke_cap == rhs.properties->stroke_cap &&
+             lhs.properties->stroke_join == rhs.properties->stroke_join &&
+             lhs.properties->stroke_miter == rhs.properties->stroke_miter &&
+             lhs.properties->stroke_width == rhs.properties->stroke_width;
     }
   };
 };

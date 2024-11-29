@@ -1105,9 +1105,8 @@ void FirstPassDispatcher::drawTextFrame(
     // we do not double-apply the alpha.
     properties.color = paint_.color.WithAlpha(1.0);
   }
-  auto scale = TextFrame::RoundScaledFontSize(
-      (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY());
-
+  auto scale =
+      (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
   renderer_.GetLazyGlyphAtlas()->AddTextFrame(
       text_frame,                                       //
       scale,                                            //
