@@ -24,7 +24,6 @@
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_touch_manager.h"
-#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -97,9 +96,6 @@ static void fl_view_keyboard_delegate_iface_init(
 static void fl_view_text_input_delegate_iface_init(
     FlTextInputViewDelegateInterface* iface);
 
-static void fl_view_touch_delegate_iface_init(
-    FlTouchViewDelegateInterface* iface);
-
 G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
@@ -110,9 +106,7 @@ G_DEFINE_TYPE_WITH_CODE(
             G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
                                   fl_view_keyboard_delegate_iface_init)
                 G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init)
-                    G_IMPLEMENT_INTERFACE(fl_touch_view_delegate_get_type(),
-                                          fl_view_touch_delegate_iface_init))
+                                      fl_view_text_input_delegate_iface_init))
 
 // Emit the first frame signal in the main thread.
 static gboolean first_frame_idle_cb(gpointer user_data) {
@@ -159,7 +153,7 @@ static void init_scrolling(FlView* self) {
 
 static void init_touch(FlView* self) {
   g_clear_object(&self->touch_manager);
-  self->touch_manager = fl_touch_manager_new(FL_TOUCH_VIEW_DELEGATE(self));
+  self->touch_manager = fl_touch_manager_new(self->engine, self->view_id);
 }
 
 static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
@@ -332,17 +326,6 @@ static void fl_view_keyboard_delegate_iface_init(
     FlView* self = FL_VIEW(view_delegate);
     return fl_text_input_handler_filter_keypress(self->text_input_handler,
                                                  event);
-  };
-}
-
-static void fl_view_touch_delegate_iface_init(
-    FlTouchViewDelegateInterface* iface) {
-  iface->send_pointer_event = [](FlTouchViewDelegate* view_delegate,
-                                 const FlutterPointerEvent& event_data) {
-    FlView* self = FL_VIEW(view_delegate);
-    if (self->engine != nullptr) {
-      fl_engine_send_pointer_event(self->engine, self->view_id, event_data);
-    }
   };
 }
 

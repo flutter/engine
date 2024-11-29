@@ -7,7 +7,8 @@
 
 #include <gdk/gdk.h>
 
-#include "flutter/shell/platform/linux/fl_touch_view_delegate.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/sequential_id_generator.h"
 
 G_BEGIN_DECLS
@@ -20,14 +21,14 @@ G_DECLARE_FINAL_TYPE(FlTouchManager,
 
 /**
  * fl_touch_manager_new:
- * @view_delegate: An interface that the manager requires to communicate with
- * the platform. Usually implemented by FlView.
+ * @engine: an #FlEngine.
+ * @view_id: the view being managed.
  *
  * Create a new #FlTouchManager.
  *
  * Returns: a new #FlTouchManager.
  */
-FlTouchManager* fl_touch_manager_new(FlTouchViewDelegate* view_delegate);
+FlTouchManager* fl_touch_manager_new(FlEngine* engine, FlutterViewId view_id);
 
 /**
  * fl_touch_manager_handle_touch_event:
