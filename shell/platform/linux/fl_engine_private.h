@@ -252,17 +252,45 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
-/**
- * fl_engine_send_pointer_event:
- * @engine: an #FlEngine.
- * @view_id: the view that the event occured on.
- * @event_data: pointer event data.
- *
- * Sends a pointer event to the engine.
- */
-void fl_engine_send_pointer_event(FlEngine* engine,
-                                  FlutterViewId view_id,
-                                  const FlutterPointerEvent& event_data);
+void fl_engine_send_touch_up_event(FlEngine* engine,
+                                   FlutterViewId view_id,
+                                   size_t timestamp,
+                                   double x,
+                                   double y,
+                                   FlutterPointerDeviceKind device_kind,
+                                   int32_t device);
+
+void fl_engine_send_touch_down_event(FlEngine* engine,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     FlutterPointerDeviceKind device_kind,
+                                     int32_t device);
+
+void fl_engine_send_touch_move_event(FlEngine* engine,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     FlutterPointerDeviceKind device_kind,
+                                     int32_t device);
+
+void fl_engine_send_touch_add_event(FlEngine* engine,
+                                    FlutterViewId view_id,
+                                    size_t timestamp,
+                                    double x,
+                                    double y,
+                                    FlutterPointerDeviceKind device_kind,
+                                    int32_t device);
+
+void fl_engine_send_touch_remove_event(FlEngine* engine,
+                                       FlutterViewId view_id,
+                                       size_t timestamp,
+                                       double x,
+                                       double y,
+                                       FlutterPointerDeviceKind device_kind,
+                                       int32_t device);
 
 /**
  * fl_engine_send_pointer_pan_zoom_event:
