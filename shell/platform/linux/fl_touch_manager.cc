@@ -77,28 +77,25 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
   GdkEventType touch_event_type =
       gdk_event_get_event_type(reinterpret_cast<GdkEvent*>(event));
 
-  FlutterPointerEvent event_data = {};
-  event_data.x = x;
-  event_data.y = y;
-  event_data.device_kind = kFlutterPointerDeviceKindTouch;
-  event_data.device = touch_id;
-  event_data.struct_size = sizeof(event_data);
-
   switch (touch_event_type) {
     case GDK_TOUCH_BEGIN:
-      event_data.phase = FlutterPointerPhase::kDown;
-      fl_engine_send_pointer_event(engine, self->view_id, event_data);
+      fl_engine_send_touch_down_event(engine, self->view_id, g_get_real_time(),
+                                      x, y, kFlutterPointerDeviceKindTouch,
+                                      touch_id);
       break;
     case GDK_TOUCH_UPDATE:
-      event_data.phase = FlutterPointerPhase::kMove;
-      fl_engine_send_pointer_event(engine, self->view_id, event_data);
+      fl_engine_send_touch_move_event(engine, self->view_id, g_get_real_time(),
+                                      x, y, kFlutterPointerDeviceKindTouch,
+                                      touch_id);
       break;
     case GDK_TOUCH_END:
-      event_data.phase = FlutterPointerPhase::kUp;
-      fl_engine_send_pointer_event(engine, self->view_id, event_data);
+      fl_engine_send_touch_up_event(engine, self->view_id, g_get_real_time(), x,
+                                    y, kFlutterPointerDeviceKindTouch,
+                                    touch_id);
 
-      event_data.phase = FlutterPointerPhase::kRemove;
-      fl_engine_send_pointer_event(engine, self->view_id, event_data);
+      fl_engine_send_touch_remove_event(
+          engine, self->view_id, g_get_real_time(), x, y,
+          kFlutterPointerDeviceKindTouch, touch_id);
       self->touch_id_generator->ReleaseNumber(id);
       break;
     default:
