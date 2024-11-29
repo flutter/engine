@@ -762,9 +762,8 @@ static void fl_view_init(FlView* self) {
                            G_CALLBACK(gesture_rotation_update_cb), self);
   g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
                            self);
-
-  g_signal_connect_swapped(self->event_box, "touch-event",
-                           G_CALLBACK(touch_event_cb), self);
+  g_signal_connect_swapped(event_box, "touch-event", G_CALLBACK(touch_event_cb),
+                           self);
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
   gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
