@@ -180,16 +180,15 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
 }
 
 bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
-                                         Allocator& transients_allocator,
                                          const Bindings& vertex_bindings,
                                          const Bindings& fragment_bindings) {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
@@ -275,7 +274,6 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const ShaderMetadata* metadata = buffer.GetMetadata();
   const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
