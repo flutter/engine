@@ -533,7 +533,7 @@ static void fl_engine_init(FlEngine* self) {
   self->texture_registrar = fl_texture_registrar_new(self);
 
   self->pointer_states =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, g_free);
 }
 
 FlEngine* fl_engine_new_with_renderer(FlDartProject* project,
