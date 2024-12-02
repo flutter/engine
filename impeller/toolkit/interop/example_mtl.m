@@ -85,6 +85,8 @@ int main(int argc, char const* argv[]) {
 
   while (!glfwWindowShouldClose(window)) {
     glfwWaitEvents();
+    // For each new frame, wrap the layers next drawable as an ImpellerSurface.
+    // When Impeller is done writing to that surface, present it.
     layer.drawableSize = layer.bounds.size;
     id<MTLDrawable> drawable = layer.nextDrawable;
     ImpellerSurface surface = ImpellerSurfaceCreateWrappedMetalDrawableNew(
