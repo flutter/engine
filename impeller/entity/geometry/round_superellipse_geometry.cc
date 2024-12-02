@@ -333,7 +333,20 @@ std::optional<Rect> RoundSuperellipseGeometry::GetCoverage(
 
 bool RoundSuperellipseGeometry::CoversArea(const Matrix& transform,
                                            const Rect& rect) const {
-  return false;
+  if (!transform.IsTranslationScaleOnly()) {
+    return false;
+  }
+  // Use the rectangle formed by the four 45deg points (point M) as a
+  // conservative estimate of the inner rectangle. The distance from M to either
+  // closer edge of the bounding box is `gap`.
+  Scalar g = gap(corner_radius_);
+  Rect coverage = Rect::MakeLTRB(
+    bounds_.GetLeft() + g,
+    bounds_.GetTop() + g,
+    bounds_.GetRight() - g,
+    bounds_.GetBottom() - g
+  ).TransformBounds(transform);
+  return coverage.Contains(rect);
 }
 
 bool RoundSuperellipseGeometry::IsAxisAlignedRect() const {
