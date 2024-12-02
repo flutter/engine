@@ -43,6 +43,24 @@ class ContextGLES final : public Context,
 
   std::shared_ptr<GPUTracerGLES> GetGPUTracer() const { return gpu_tracer_; }
 
+  std::optional<Viewport> GetStashedViewport() const {
+    return stashed_viewport_;
+  }
+
+  std::optional<ISize> GetStashedTargetSize() const {
+    return stashed_target_size_;
+  }
+
+  GLint GetStashedFBO() const { return stashed_fbo_; }
+
+  void SetStashedData(std::optional<Viewport> viewport,
+                      std::optional<ISize> size,
+                      GLint fbo) const {
+    stashed_viewport_ = viewport;
+    stashed_target_size_ = size;
+    stashed_fbo_ = fbo;
+  }
+
  private:
   ReactorGLES::Ref reactor_;
   std::shared_ptr<ShaderLibraryGLES> shader_library_;
@@ -51,6 +69,11 @@ class ContextGLES final : public Context,
   std::shared_ptr<AllocatorGLES> resource_allocator_;
   std::shared_ptr<CommandQueue> command_queue_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
+
+  // Stashed
+  mutable std::optional<Viewport> stashed_viewport_ = std::nullopt;
+  mutable std::optional<ISize> stashed_target_size_ = std::nullopt;
+  mutable GLint stashed_fbo_ = GL_NONE;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
   // in order to satisfy the Context::GetCapabilities signature which returns

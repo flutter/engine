@@ -179,17 +179,68 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
   return true;
 }
 
+bool BufferBindingsGLES::BindUniformDataDirect(
+    const ProcTableGLES& gl,
+    TextureAndSampler sampled_images[],
+    size_t sampled_image_count,
+    BufferAndUniformSlot buffers[],
+    size_t buffer_count) {
+  for (auto i = 0u; i < buffer_count; i++) {
+    if (!BindUniformBuffer(gl, buffers[i].view)) {
+      return false;
+    }
+  }
+  // Doesn't support vertex fragment bindings but this isn't used at all
+  // in the 2D renderer.
+  for (auto i = 0u; i < sampled_image_count; i++) {
+    const auto& data = sampled_images[i];
+    const auto& texture_gles = TextureGLES::Cast(*data.texture.resource);
+    if (data.texture.GetMetadata() == nullptr) {
+      VALIDATION_LOG << "No metadata found for texture binding.";
+      return false;
+    }
+
+    auto location = ComputeTextureLocation(data.texture.GetMetadata());
+    if (location == -1) {
+      return false;
+    }
+
+    gl.ActiveTexture(GL_TEXTURE0 + i);
+
+    //--------------------------------------------------------------------------
+    /// Bind the texture.
+    ///
+    if (!texture_gles.Bind()) {
+      return false;
+    }
+
+    //--------------------------------------------------------------------------
+    /// If there is a sampler for the texture at the same index, configure the
+    /// bound texture using that sampler.
+    ///
+    const auto& sampler_gles = SamplerGLES::Cast(**data.sampler);
+    if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
+      return false;
+    }
+
+    //--------------------------------------------------------------------------
+    /// Set the texture uniform location.
+    ///
+    gl.Uniform1i(location, i);
+  }
+  return true;
+}
+
 bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
-                                         Allocator& transients_allocator,
                                          const Bindings& vertex_bindings,
                                          const Bindings& fragment_bindings) {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
@@ -275,7 +326,6 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const ShaderMetadata* metadata = buffer.GetMetadata();
   const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();

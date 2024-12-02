@@ -242,6 +242,8 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(FenceSync);                         \
   PROC(DeleteSync);                        \
   PROC(WaitSync);                          \
+  PROC(MapBufferRange);                    \
+  PROC(UnmapBuffer);                       \
   PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \

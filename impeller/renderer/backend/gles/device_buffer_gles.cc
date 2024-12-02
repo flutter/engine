@@ -84,15 +84,17 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
     return false;
   }
 
-  auto buffer = reactor_->GetGLHandle(handle_);
-  if (!buffer.has_value()) {
+  if (!id_.has_value()) {
+    id_ = reactor_->GetGLHandle(handle_);
+  }
+  if (!id_.has_value()) {
     return false;
   }
 
   const auto target_type = ToTarget(type);
   const auto& gl = reactor_->GetProcTable();
 
-  gl.BindBuffer(target_type, buffer.value());
+  gl.BindBuffer(target_type, id_.value());
   if (!initialized_) {
     gl.BufferData(target_type, backing_store_->GetLength().GetByteSize(),
                   nullptr, GL_DYNAMIC_DRAW);
@@ -101,8 +103,16 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
   if (dirty_range_.has_value()) {
     auto range = dirty_range_.value();
-    gl.BufferSubData(target_type, range.offset, range.length,
-                     backing_store_->GetBuffer() + range.offset);
+    if (gl.MapBufferRange.IsAvailable()) {
+      void* data =
+          gl.MapBufferRange(target_type, range.offset, range.length,
+                            GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+      ::memcpy(data, backing_store_->GetBuffer() + range.offset, range.length);
+      gl.UnmapBuffer(target_type);
+    } else {
+      gl.BufferSubData(target_type, range.offset, range.length,
+                       backing_store_->GetBuffer() + range.offset);
+    }
     dirty_range_ = std::nullopt;
   }
 

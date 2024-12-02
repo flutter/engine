@@ -37,9 +37,18 @@ class BufferBindingsGLES {
                             size_t vertex_offset);
 
   bool BindUniformData(const ProcTableGLES& gl,
-                       Allocator& transients_allocator,
                        const Bindings& vertex_bindings,
                        const Bindings& fragment_bindings);
+
+  bool BindUniformDataDirect(const ProcTableGLES& gl,
+                             TextureAndSampler sampled_images[],
+                             size_t sampled_image_count,
+                             BufferAndUniformSlot buffers[],
+                             size_t buffer_count);
+
+  bool BindFragmentData(const ProcTableGLES& gl,
+                        const Bindings& vertex_bindings,
+                        const Bindings& fragment_bindings);
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl);
 
@@ -68,9 +77,7 @@ class BufferBindingsGLES {
 
   GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
-  bool BindUniformBuffer(const ProcTableGLES& gl,
-                         Allocator& transients_allocator,
-                         const BufferResource& buffer);
+  bool BindUniformBuffer(const ProcTableGLES& gl, const BufferResource& buffer);
 
   std::optional<size_t> BindTextures(const ProcTableGLES& gl,
                                      const Bindings& bindings,

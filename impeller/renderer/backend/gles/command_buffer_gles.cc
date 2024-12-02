@@ -6,7 +6,9 @@
 
 #include "impeller/base/config.h"
 #include "impeller/renderer/backend/gles/blit_pass_gles.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
+#include "impeller/renderer/backend/gles/render_pass_gles3.h"
 
 namespace impeller {
 
@@ -58,12 +60,23 @@ std::shared_ptr<RenderPass> CommandBufferGLES::OnCreateRenderPass(
   if (!context) {
     return nullptr;
   }
-  auto pass = std::shared_ptr<RenderPassGLES>(
-      new RenderPassGLES(context, target, reactor_));
-  if (!pass->IsValid()) {
+  std::shared_ptr<RenderPass> render_pass;
+  if (ContextGLES::Cast(*context)
+          .GetReactor()
+          ->GetProcTable()
+          .GetDescription()
+          ->GetGlVersion()
+          .IsAtLeast(Version{3, 0, 0})) {
+    render_pass = std::shared_ptr<RenderPassGLES3>(
+        new RenderPassGLES3(context, target, reactor_));
+  } else {
+    render_pass = std::shared_ptr<RenderPassGLES>(
+        new RenderPassGLES(context, target, reactor_));
+  }
+  if (!render_pass->IsValid()) {
     return nullptr;
   }
-  return pass;
+  return render_pass;
 }
 
 // |CommandBuffer|
