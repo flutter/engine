@@ -170,7 +170,7 @@ canvaskit_wasm_lib("canvaskit") {
     "-sFILESYSTEM=0",
     "-sMODULARIZE",
     "-sNO_EXIT_RUNTIME=1",
-    "-sINITIAL_MEMORY=128MB",
+    "-sINITIAL_MEMORY=64MB",
     "-sWASM",
     "-sSTRICT=1",
   ]
