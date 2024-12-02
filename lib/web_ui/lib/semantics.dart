@@ -294,6 +294,7 @@ class SemanticsUpdateBuilder {
     required Int32List additionalActions,
     int headingLevel = 0,
     String? linkUrl,
+    SemanticsRole role = SemanticsRole.none,
   }) {
     if (transform.length != 16) {
       throw ArgumentError('transform argument must have 16 entries.');
@@ -334,6 +335,7 @@ class SemanticsUpdateBuilder {
       platformViewId: platformViewId,
       headingLevel: headingLevel,
       linkUrl: linkUrl,
+      role: role,
     ));
   }
 
