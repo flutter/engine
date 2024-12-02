@@ -201,6 +201,23 @@ class SemanticsFlag {
   String toString() => 'SemanticsFlag.$name';
 }
 
+/// A enum to describe the role for a semantics node.
+///
+/// The roles are translated into native accessibility roles in each platform.
+enum SemanticsRole {
+  /// Does not represent any role.
+  none,
+
+  /// A tab button.
+  tab,
+
+  /// The container that contains multiple tab buttons.
+  tabBar,
+
+  /// The main desplay for a tab.
+  tabPanel,
+}
+
 // When adding a new StringAttributeType, the classes in these file must be
 // updated as well.
 //  * engine/src/flutter/lib/ui/semantics.dart
