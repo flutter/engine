@@ -1816,56 +1816,6 @@ TEST_P(EntityTest, RuntimeEffectCanPrecache) {
   EXPECT_TRUE(contents->BootstrapShader(*GetContentContext()));
 }
 
-TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
-  if (GetBackend() != PlaygroundBackend::kVulkan) {
-    GTEST_SKIP() << "Test only applies to Vulkan";
-  }
-
-  auto runtime_stages =
-      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
-  auto runtime_stage =
-      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
-  ASSERT_TRUE(runtime_stage);
-  ASSERT_TRUE(runtime_stage->IsDirty());
-
-  auto contents = std::make_shared<RuntimeEffectContents>();
-  auto geom = Geometry::MakeCover();
-  contents->SetGeometry(geom.get());
-  contents->SetRuntimeStage(runtime_stage);
-
-  struct FragUniforms {
-    Vector2 iResolution;
-    Scalar iTime;
-  } frag_uniforms = {
-      .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
-      .iTime = static_cast<Scalar>(GetSecondsElapsed()),
-  };
-  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
-  uniform_data->resize(sizeof(FragUniforms));
-  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
-  contents->SetUniformData(uniform_data);
-
-  Entity entity;
-  entity.SetContents(contents);
-
-  auto context = GetContentContext();
-  RenderTarget target = context->GetRenderTargetCache()->CreateOffscreen(
-      *context->GetContext(), {1, 1}, 1u);
-
-  testing::MockRenderPass pass(GetContext(), target);
-  ASSERT_TRUE(contents->Render(*context, entity, pass));
-  ASSERT_EQ(pass.GetCommands().size(), 1u);
-  const auto& command = pass.GetCommands()[0];
-  ASSERT_EQ(command.fragment_bindings.buffers.size(), 1u);
-  // 16 bytes:
-  //   8 bytes for iResolution
-  //   4 bytes for iTime
-  //   4 bytes padding
-  EXPECT_EQ(
-      command.fragment_bindings.buffers[0].view.resource.GetRange().length,
-      16u);
-}
-
 TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
   auto image = CreateTextureForFixture("boston.jpg");
   auto filter = ColorFilterContents::MakeBlend(
