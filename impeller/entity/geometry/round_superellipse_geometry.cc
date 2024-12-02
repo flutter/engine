@@ -112,8 +112,9 @@ Scalar lerp(size_t column, size_t left, size_t frac) {
 // from pi/4 to pi/8. Technically, the X and Y coordinates of the arc points
 // are swapped before applying `center`, and their order is reversed as well.
 //
-// The list of the resulting points is appended to `output`, and includes the
-// starting point but exclude the ending point.
+// The resulting arc, which includes the starting point (the middle of the flat
+// side) and excludes the ending point (the x=y point), is applied with `flip`,
+// and then appended to `output`.
 void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
                                   Scalar size,
                                   Scalar corner_radius,
@@ -130,7 +131,7 @@ void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
    *     straight   superelipse
    *          ↓     ↓
    *        A    B      J     circular arc
-   *        ---------...._↙
+   *        ---------...._   ↙
    *        |    |      /  `⟍ M
    *        |    |     /    ⟋ ⟍
    *        |    |    /θ ⟋     \
@@ -139,7 +140,7 @@ void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
    *        |    | /  D          |
    *    ↑   +----+               |
    *    s   |    |               |
-   *    ↓   +----+---------------|
+   *    ↓   +----+---------------| A'
    *       O     S
    *        ← s →
    *        ←------ size/2 ------→
@@ -209,56 +210,63 @@ Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
                   std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
 }
 
-class TriangleStripArranger {
- public:
-  TriangleStripArranger(const Point* quad, size_t quad_length)
-      : quad_(quad), quad_length_(quad_length) {}
+constexpr Point kReflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
 
-  void Output(Point* output, const Point& center) {
-    size_t index_count = 0;
-
-    output[index_count++] = GetPoint(0) + center;
-
-    size_t a = 1;
-    size_t b = quad_length_ * 4 - 1;
-    while (a < b) {
-      output[index_count++] = GetPoint(a) + center;
-      output[index_count++] = GetPoint(b) + center;
-      a++;
-      b--;
+// Mirror the point list `quad` into other quadrants and output as a triangle
+// strip.
+//
+// The input arc `quad` should reside in the first quadrant, starting at
+// positive Y axis and ending at positive X axis (both ends inclusive), for a
+// total of `quad_length` points. This function mirrors the arc into 4
+// quadrants, offset the result by `center`, and rearrange it as a triangle
+// strip, which is appended to `output`.
+//
+// A total of (quad_length - 1) * 4 points will be appended, and `output` must
+// have sufficient memory allocated before this call.
+void MirrorIntoTriangleStrip(const Point* quad,
+                             size_t quad_length,
+                             const Point& center,
+                             Point* output) {
+  // The length of 1/4 arc including the starting point but excluding the
+  // ending point.
+  const size_t arc_length = quad_length - 1;
+  auto GetPoint = [quad, arc_length](size_t i) -> Point {
+    if (i < arc_length) {
+      return quad[i];
     }
-    if (a == b) {
-      output[index_count++] = GetPoint(b) + center;
+    i = i - arc_length;
+    if (i < arc_length) {
+      return quad[arc_length - i] * kReflection[1];
     }
-  }
-
- private:
-  const Point* quad_;
-  const size_t quad_length_;
-
-  Point GetPoint(size_t i) {
-    if (i < quad_length_) {
-      return quad_[i];
+    i = i - arc_length;
+    if (i < arc_length) {
+      return quad[i] * kReflection[2];
     }
-    i = i - quad_length_;
-    if (i < quad_length_) {
-      return quad_[quad_length_ - i] * reflection[1];
-    }
-    i = i - quad_length_;
-    if (i < quad_length_) {
-      return quad_[i] * reflection[2];
-    }
-    i = i - quad_length_;
-    if (i < quad_length_) {
-      return quad_[quad_length_ - i] * reflection[3];
+    i = i - arc_length;
+    if (i < arc_length) {
+      return quad[arc_length - i] * kReflection[3];
     } else {
       // Unreachable
       return Point();
     }
-  }
+  };
 
-  static constexpr Point reflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
-};
+  size_t index_count = 0;
+
+  output[index_count++] = GetPoint(0) + center;
+
+  size_t a = 1;
+  size_t b = arc_length * 4 - 1;
+  while (a < b) {
+    output[index_count++] = GetPoint(a) + center;
+    output[index_count++] = GetPoint(b) + center;
+    a++;
+    b--;
+  }
+  if (a == b) {
+    output[index_count++] = GetPoint(b) + center;
+  }
+}
 
 }  // namespace
 
@@ -295,26 +303,23 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   DrawOctantSquareLikeSquircle(points, size.height, corner_radius_, Point{c, 0},
                                true);
 
-  // Mirror the arc into 4 quadrants while rearranging the points.
-
   // The `contour_point_count` include all points on the border. The "-1" comes
   // from duplicate ends from the mirrored arcs.
-  size_t contour_point_count = 4 * (points.size() - 1);
+  size_t contour_length = 4 * (points.size() - 1);
   BufferView vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      nullptr, sizeof(Point) * contour_point_count, alignof(Point));
+      nullptr, sizeof(Point) * contour_length, alignof(Point));
   Point* vertex_data =
       reinterpret_cast<Point*>(vertex_buffer.GetBuffer()->OnGetContents() +
                                vertex_buffer.GetRange().offset);
 
-  TriangleStripArranger arranger(points.data(), points.size() - 1);
-  arranger.Output(vertex_data, center);
+  MirrorIntoTriangleStrip(points.data(), points.size(), center, vertex_data);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = vertex_buffer,
-              .vertex_count = contour_point_count,
+              .vertex_count = contour_length,
               .index_type = IndexType::kNone,
           },
       .transform = entity.GetShaderTransform(pass),
