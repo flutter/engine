@@ -198,7 +198,10 @@ G_MODULE_EXPORT FlMethodResponse* fl_method_channel_invoke_method_finish(
 
   GTask* task = G_TASK(result);
   g_autoptr(GAsyncResult) r =
-      G_ASYNC_RESULT(g_task_propagate_pointer(task, nullptr));
+      G_ASYNC_RESULT(g_task_propagate_pointer(task, error));
+  if (r == nullptr) {
+    return nullptr;
+  }
 
   g_autoptr(GBytes) response =
       fl_binary_messenger_send_on_channel_finish(self->messenger, r, error);
