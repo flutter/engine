@@ -9,7 +9,9 @@
 #include <memory>
 #include <optional>
 
+#if !defined(OS_FUCHSIA)
 #include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
+#endif
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"
@@ -250,12 +252,21 @@ class FontGlyphAtlas {
  private:
   friend class GlyphAtlas;
 
-  absl::flat_hash_map<SubpixelGlyph,
-                      FrameBounds,
-                      absl::Hash<SubpixelGlyph>,
-                      SubpixelGlyph::Equal>
-      positions_;
+#if defined(OS_FUCHSIA)
+  // TODO(gaaclarke): Migrate to use absl. I couldn't get it working since absl
+  // has special logic in its GN files for Fuchsia that I couldn't sort out.
+  using PositionsMap = absl::flat_hash_map<SubpixelGlyph,
+                                           FrameBounds,
+                                           absl::Hash<SubpixelGlyph>,
+                                           SubpixelGlyph::Equal>;
+#else
+  using PositionsMap = absl::flat_hash_map<SubpixelGlyph,
+                                           FrameBounds,
+                                           absl::Hash<SubpixelGlyph>,
+                                           SubpixelGlyph::Equal>;
+#endif
 
+  PositionsMap positions_;
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 };
 
