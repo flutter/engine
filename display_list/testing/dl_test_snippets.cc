@@ -136,14 +136,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorSource",
        {
-           {0, 96, 0, [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
-           {0, 152, 0,
+           {0, 104, 0,
+            [](DlOpReceiver& r) { r.setColorSource(kTestSource1.get()); }},
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 160, 0,
+           {0, 184, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
 
            // Reset attribute to default as last entry
@@ -219,26 +220,32 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
       {"SetColorFilter",
        {
            {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter1); }},
-           {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter2); }},
-           {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter3); }},
-           {0, 96, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter1);
+              r.setColorFilter(kTestBlendColorFilter1.get());
+            }},
+           {0, 40, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestBlendColorFilter2.get());
+            }},
+           {0, 40, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestBlendColorFilter3.get());
             }},
            {0, 96, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter2);
+              r.setColorFilter(kTestMatrixColorFilter1.get());
+            }},
+           {0, 96, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestMatrixColorFilter2.get());
             }},
            {0, 16, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlSrgbToLinearGammaColorFilter::kInstance.get());
+              r.setColorFilter(DlColorFilter::MakeSrgbToLinearGamma().get());
             }},
            {0, 16, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlLinearToSrgbGammaColorFilter::kInstance.get());
+              r.setColorFilter(DlColorFilter::MakeLinearToSrgbGamma().get());
             }},
 
            // Reset attribute to default as last entry

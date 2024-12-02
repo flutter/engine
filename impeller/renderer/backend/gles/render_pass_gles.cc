@@ -207,13 +207,6 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   }
 
   GLuint fbo = GL_NONE;
-  fml::ScopedCleanupClosure delete_fbo([&gl, &fbo]() {
-    if (fbo != GL_NONE) {
-      gl.BindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
-      gl.DeleteFramebuffers(1u, &fbo);
-    }
-  });
-
   TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
   const bool is_default_fbo = color_gles.IsWrapped();
 
@@ -224,32 +217,40 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   } else {
     // Create and bind an offscreen FBO.
-    gl.GenFramebuffers(1u, &fbo);
-    gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    auto cached_fbo = color_gles.GetCachedFBO();
+    if (cached_fbo != GL_NONE) {
+      fbo = cached_fbo;
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    } else {
+      gl.GenFramebuffers(1u, &fbo);
+      color_gles.SetCachedFBO(fbo);
+      gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (!color_gles.SetAsFramebufferAttachment(
-            GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-      return false;
-    }
-
-    if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
-      if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+      if (!color_gles.SetAsFramebufferAttachment(
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
-    }
-    if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+
+      if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
+        if (!depth->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
+          return false;
+        }
+      }
+      if (auto stencil =
+              TextureGLES::Cast(pass_data.stencil_attachment.get())) {
+        if (!stencil->SetAsFramebufferAttachment(
+                GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
+          return false;
+        }
+      }
+
+      auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (status != GL_FRAMEBUFFER_COMPLETE) {
+        VALIDATION_LOG << "Could not create a complete frambuffer: "
+                       << DebugToFramebufferError(status);
         return false;
       }
-    }
-
-    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer: "
-                     << DebugToFramebufferError(status);
-      return false;
     }
   }
 
@@ -491,7 +492,8 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   }
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
+    std::array<GLenum, 3> attachments;
+    size_t attachment_count = 0;
 
     // TODO(130048): discarding stencil or depth on the default fbo causes Angle
     // to discard the entire render target. Until we know the reason, default to
@@ -499,21 +501,21 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
 
     if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_COLOR_EXT : GL_COLOR_ATTACHMENT0);
     }
     if (pass_data.discard_depth_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_DEPTH_EXT : GL_DEPTH_ATTACHMENT);
     }
 
     if (pass_data.discard_stencil_attachment && angle_safe) {
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
+      attachments[attachment_count++] =
+          (is_default_fbo ? GL_STENCIL_EXT : GL_STENCIL_ATTACHMENT);
     }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,     // target
+                             attachment_count,   // attachments to discard
+                             attachments.data()  // size
     );
   }
 

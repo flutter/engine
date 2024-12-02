@@ -278,12 +278,13 @@ class ReactorGLES {
 
   // Make sure the container is one where erasing items during iteration doesn't
   // invalidate other iterators.
-  using LiveHandles = std::unordered_map<HandleGLES,
+  using LiveHandles = std::unordered_map<const HandleGLES,
                                          LiveHandle,
                                          HandleGLES::Hash,
                                          HandleGLES::Equal>;
   mutable RWMutex handles_mutex_;
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
+  int32_t handles_to_collect_count_ IPLR_GUARDED_BY(handles_mutex_) = 0;
 
   mutable Mutex workers_mutex_;
   mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(

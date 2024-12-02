@@ -24,6 +24,7 @@
 ../../../flutter/Doxyfile
 ../../../flutter/README.md
 ../../../flutter/analysis_options.yaml
+../../../flutter/assets/native_assets_unittests.cc
 ../../../flutter/build
 ../../../flutter/build_overrides
 ../../../flutter/buildtools
@@ -3297,6 +3298,7 @@
 ../../../fuchsia/sdk/linux/bind/fuchsia.gpio/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.i2c/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.khadas.platform/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia.mailbox/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.nxp.platform/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.pci/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.platform/meta.json

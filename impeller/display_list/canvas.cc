@@ -55,9 +55,7 @@ static bool UseColorSourceContents(
   if (vertices->HasVertexColors()) {
     return false;
   }
-  if (vertices->HasTextureCoordinates() &&
-      (!paint.color_source ||
-       paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
+  if (vertices->HasTextureCoordinates() && !paint.color_source) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -315,8 +313,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
     return false;
   }
 
-  if (paint.color_source &&
-      paint.color_source->type() != flutter::DlColorSourceType::kColor) {
+  if (paint.color_source) {
     return false;
   }
 
@@ -739,8 +736,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   // Override the blend mode with kDestination in order to match the behavior
   // of Skia's SK_LEGACY_IGNORE_DRAW_VERTICES_BLEND_WITH_NO_SHADER flag, which
   // is enabled when the Flutter engine builds Skia.
-  if (!paint.color_source ||
-      paint.color_source->type() == flutter::DlColorSourceType::kColor) {
+  if (!paint.color_source) {
     blend_mode = BlendMode::kDestination;
   }
 
@@ -780,8 +776,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
         static_cast<Entity::TileMode>(image_color_source->vertical_tile_mode());
     auto sampler_descriptor =
         skia_conversions::ToSamplerDescriptor(image_color_source->sampling());
-    auto effect_transform =
-        skia_conversions::ToMatrix(image_color_source->matrix());
+    auto effect_transform = image_color_source->matrix();
 
     auto contents = std::make_shared<VerticesSimpleBlendContents>();
     contents->SetBlendMode(blend_mode);
@@ -790,6 +785,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetEffectTransform(effect_transform);
     contents->SetTexture(texture);
     contents->SetTileMode(x_tile_mode, y_tile_mode);
+    contents->SetSamplerDescriptor(sampler_descriptor);
 
     entity.SetContents(paint.WithFilters(std::move(contents)));
     AddRenderEntityToCurrentPass(entity);
