@@ -1,4 +1,4 @@
-Signature: e5f6e6cde730351da6a171a16b422c57
+Signature: 240abbdd3b863a5c4422fa3d3ab342e0
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -14666,6 +14666,7 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/availability_levels.inc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/availability_levels.inc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/availability_levels.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.mailbox/fuchsia.mailbox.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.regulator/fuchsia.regulator.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.spmi/fuchsia.spmi.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.bredr/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14765,6 +14766,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/availability_levels.inc
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/availability_levels.inc
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/availability_levels.inc
+FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.mailbox/fuchsia.mailbox.bind
 FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.regulator/fuchsia.regulator.bind
 FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.spmi/fuchsia.spmi.bind
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.bredr/overview.fidl

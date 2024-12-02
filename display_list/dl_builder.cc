@@ -8,6 +8,7 @@
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/dl_op_records.h"
+#include "flutter/display_list/effects/dl_color_filters.h"
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_image_filters.h"
 #include "flutter/display_list/utils/dl_accumulation_rect.h"
@@ -200,12 +201,6 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
     current_.setColorSource(source->shared());
     is_ui_thread_safe_ = is_ui_thread_safe_ && source->isUIThreadSafe();
     switch (source->type()) {
-      case DlColorSourceType::kColor: {
-        const DlColorColorSource* color_source = source->asColor();
-        current_.setColorSource(nullptr);
-        setColor(color_source->color());
-        break;
-      }
       case DlColorSourceType::kImage: {
         const DlImageColorSource* image_source = source->asImage();
         FML_DCHECK(image_source);
@@ -1952,11 +1947,9 @@ DlColor DisplayListBuilder::GetEffectiveColor(const DlPaint& paint,
   if (flags.applies_color()) {
     const DlColorSource* source = paint.getColorSourcePtr();
     if (source) {
-      if (source->asColor()) {
-        color = source->asColor()->color();
-      } else {
-        color = source->is_opaque() ? DlColor::kBlack() : kAnyColor;
-      }
+      // Suspecting that we need to modulate the ColorSource color by the
+      // color property, see https://github.com/flutter/flutter/issues/159507
+      color = source->is_opaque() ? DlColor::kBlack() : kAnyColor;
     } else {
       color = paint.getColor();
     }
