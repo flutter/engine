@@ -62,10 +62,9 @@ constexpr Scalar gap(Scalar corner_radius) {
 //
 // The resulting points are appended to `output` and include the starting point
 // but exclude the ending point.
-void DrawCircularArc(std::vector<Point>& output,
-                     Point start,
-                     Point end,
-                     Scalar r) {
+//
+// Returns the number of the
+size_t DrawCircularArc(Point* output, Point start, Point end, Scalar r) {
   /* Denote the middle point of S and E as M. The key is to find the center of
    * the circle.
    *         S --__
@@ -87,11 +86,13 @@ void DrawCircularArc(std::vector<Point>& output,
   Scalar angle_sce = asinf(distance_sm / r) * 2;
   Point c_to_s = start - c;
 
+  Point* next = output;
   Scalar angle = 0;
   while (angle < angle_sce) {
-    output.push_back(c_to_s.Rotate(Radians(-angle)) + c);
+    *(next++) = c_to_s.Rotate(Radians(-angle)) + c;
     angle += kAngleStep;
   }
+  return next - output;
 }
 
 Scalar lerp(size_t column, size_t left, size_t frac) {
@@ -100,29 +101,25 @@ Scalar lerp(size_t column, size_t left, size_t frac) {
 }
 
 // Draws an arc representing the top 1/8 segment of a square-like rounded
-// superellipse. The arc spans from 0 to pi/4, moving clockwise starting from
-// the positive Y-axis.
+// superellipse.
+//
+// The resulting arc centers at the origin, spanning from 0 to pi/4, moving
+// clockwise starting from the positive Y-axis, and includes the starting point
+// (the middle of the top flat side) while excluding the ending point (the x=y
+// point).
 //
 // The full square-like rounded superellipse has a width and height specified by
-// `size`. It is centered at `center` and features rounded corners determined by
-// `corner_radius`. The `corner_radius` corresponds to the `cornerRadius`
-// parameter in SwiftUI, rather than the literal radius of corner circles.
+// `size` and features rounded corners determined by `corner_radius`. The
+// `corner_radius` corresponds to the `cornerRadius` parameter in SwiftUI,
+// rather than the literal radius of corner circles.
 //
-// If `flip` is true, the function instead produces the next 1/8 arc, spanning
-// from pi/4 to pi/8. Technically, the X and Y coordinates of the arc points
-// are swapped before applying `center`, and their order is reversed as well.
-//
-// The resulting arc, which includes the starting point (the middle of the flat
-// side) and excludes the ending point (the x=y point), is applied with `flip`,
-// and then appended to `output`.
-void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
-                                  Scalar size,
-                                  Scalar corner_radius,
-                                  Point center,
-                                  bool flip) {
-  /* Ignoring `center` and `flip`, the following figure shows the first quadrant
-   * of a square-like rounded superellipse. The target arc consists of the
-   * "stretch" (AB), a superellipsoid arc (BJ), and a circular arc (JM).
+// Returns the number of points generated.
+size_t DrawOctantSquareLikeSquircle(Point* output,
+                                    Scalar size,
+                                    Scalar corner_radius) {
+  /* The following figure shows the first quadrant of a square-like rounded
+   * superellipse. The target arc consists of the "stretch" (AB), a
+   * superellipsoid arc (BJ), and a circular arc (JM).
    *
    * Define gap (g) as the distance between point M and the bounding box,
    * therefore point M is at (size/2 - g, size/2 - g). Assume the coordinate of
@@ -165,14 +162,11 @@ void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
   Scalar xJ = d + R * sin(theta);
   Scalar yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
 
-  Point pointM{size / 2 - g, size / 2 - g};
+  Point pointM(size / 2 - g, size / 2 - g);
 
-  // Points without applying `flip` and `center`.
-  std::vector<Point> points;
-  points.reserve(21);
-
+  Point* next = output;
   // A
-  points.emplace_back(0, size / 2);
+  *(next++) = Point(0, size / 2);
   // Superellipsoid arc BJ (B inclusive, J exclusive)
   // https://math.stackexchange.com/questions/2573746/superellipse-parametric-equation
   {
@@ -183,28 +177,45 @@ void DrawOctantSquareLikeSquircle(std::vector<Point>& output,
     Scalar x = 0;
     Scalar y = a;
     do {
-      points.emplace_back(x + s, y + s);
+      *(next++) = Point(x + s, y + s);
       angle += kAngleStep;
       x = a * pow(abs(sinf(angle)), 2 / n);
       y = a * pow(abs(cosf(angle)), 2 / n);
     } while (y > target_slope * x);
   }
   // Circular arc JM (B inclusive, M exclusive)
-  DrawCircularArc(points, {xJ + s, yJ + s}, pointM, R);
-
-  // Apply `flip` and `center`.
-  if (!flip) {
-    for (const Point& point : points) {
-      output.push_back(point + center);
-    }
-  } else {
-    for (size_t i = 0; i < points.size(); i++) {
-      const Point& point = points[points.size() - i - 1];
-      output.emplace_back(point.y + center.x, point.x + center.y);
-    }
-  }
+  next += DrawCircularArc(next, {xJ + s, yJ + s}, pointM, R);
+  return next - output;
 }
 
+// Optionally `flip` the input points before offsetting it by `center`, and
+// append the result to `output`.
+//
+// If `flip` is true, then the entire input list is reversed, and the x and y
+// coordinate of each point is swapped as well. This effectively mirrors the
+// input point list by the y=x line.
+size_t FlipAndOffset(Point* output,
+                     const Point* input,
+                     size_t input_length,
+                     bool flip,
+                     const Point& center) {
+  if (!flip) {
+    for (size_t i = 0; i < input_length; i++) {
+      output[i] = input[i] + center;
+    }
+  } else {
+    for (size_t i = 0; i < input_length; i++) {
+      const Point& point = input[input_length - i - 1];
+      output[i] = Point(point.y + center.x, point.x + center.y);
+    }
+  }
+  return input_length;
+}
+
+// Return the shortest of `corner_radius`, height/2, and width/2.
+//
+// Corner radii longer than 1/2 of the side length does not make sense, and will
+// be limited to the longest possible.
 Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
   return std::min(corner_radius,
                   std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
@@ -292,27 +303,48 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   // height-aligned one have the same offset in different directions.
   const Scalar c = (size.width - size.height) / 2;
 
-  // Draw the first quadrant of the shape and store in `points`, including both
-  // ends. It will be mirrored to other quadrants later.
-  std::vector<Point> points;
-  points.reserve(41);
+  // The cache is allocated as follows:
+  //
+  //  * The first chunk stores the first quadrant arc.
+  //  * The second chunk stores an octant arc before flipping and translation.
+  Point* cache = renderer.GetTessellator().GetStrokePointCache().data();
 
-  DrawOctantSquareLikeSquircle(points, size.width, corner_radius_, Point{0, -c},
-                               false);
-  points.push_back(Point(size / 2) - gap(corner_radius_));  // Point M
-  DrawOctantSquareLikeSquircle(points, size.height, corner_radius_, Point{c, 0},
-                               true);
+  // Draw the first quadrant of the shape and store in `quadrant`, including
+  // both ends. It will be mirrored to other quadrants later.
+  Point* quadrant = cache;
+  size_t quadrant_length;
+  {
+    Point* next = quadrant;
+    constexpr size_t kMaxQuadrantLength = kPointArenaSize / 4;
+
+    Point* octant_cache = cache + kMaxQuadrantLength;
+    size_t octant_length;
+
+    octant_length =
+        DrawOctantSquareLikeSquircle(octant_cache, size.width, corner_radius_);
+    next += FlipAndOffset(next, octant_cache, octant_length, /*flip=*/false,
+                          Point(0, -c));
+
+    *(next++) = Point(size / 2) - gap(corner_radius_);  // Point M
+
+    octant_length =
+        DrawOctantSquareLikeSquircle(octant_cache, size.height, corner_radius_);
+    next += FlipAndOffset(next, octant_cache, octant_length, /*flip=*/true,
+                          Point(c, 0));
+
+    quadrant_length = next - quadrant;
+  }
 
   // The `contour_point_count` include all points on the border. The "-1" comes
   // from duplicate ends from the mirrored arcs.
-  size_t contour_length = 4 * (points.size() - 1);
+  size_t contour_length = 4 * (quadrant_length - 1);
   BufferView vertex_buffer = renderer.GetTransientsBuffer().Emplace(
       nullptr, sizeof(Point) * contour_length, alignof(Point));
   Point* vertex_data =
       reinterpret_cast<Point*>(vertex_buffer.GetBuffer()->OnGetContents() +
                                vertex_buffer.GetRange().offset);
 
-  MirrorIntoTriangleStrip(points.data(), points.size(), center, vertex_data);
+  MirrorIntoTriangleStrip(quadrant, quadrant_length, center, vertex_data);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -340,12 +372,10 @@ bool RoundSuperellipseGeometry::CoversArea(const Matrix& transform,
   // conservative estimate of the inner rectangle. The distance from M to either
   // closer edge of the bounding box is `gap`.
   Scalar g = gap(corner_radius_);
-  Rect coverage = Rect::MakeLTRB(
-    bounds_.GetLeft() + g,
-    bounds_.GetTop() + g,
-    bounds_.GetRight() - g,
-    bounds_.GetBottom() - g
-  ).TransformBounds(transform);
+  Rect coverage =
+      Rect::MakeLTRB(bounds_.GetLeft() + g, bounds_.GetTop() + g,
+                     bounds_.GetRight() - g, bounds_.GetBottom() - g)
+          .TransformBounds(transform);
   return coverage.Contains(rect);
 }
 
