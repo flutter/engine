@@ -8,6 +8,7 @@
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_color_filters.h"
 #include "flutter/display_list/effects/dl_color_sources.h"
 #include "flutter/display_list/effects/dl_image_filters.h"
 
@@ -443,12 +444,6 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
   }
   startl() << "setColorSource(";
   switch (source->type()) {
-    case DlColorSourceType::kColor: {
-      const DlColorColorSource* color_src = source->asColor();
-      FML_DCHECK(color_src);
-      os_ << "DlColorColorSource(" << color_src->color() << ")";
-      break;
-    }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_src = source->asImage();
       FML_DCHECK(image_src);

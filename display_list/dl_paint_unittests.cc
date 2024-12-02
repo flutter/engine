@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/dl_paint.h"
 
+#include "flutter/display_list/testing/dl_test_equality.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
 
@@ -55,11 +56,21 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_NE(paint, DlPaint().setStrokeWidth(6));
   EXPECT_NE(paint, DlPaint().setStrokeMiter(7));
 
-  auto color_source = DlColorSource::MakeColor(DlColor::kMagenta());
+  DlColor colors[2] = {
+      DlColor::kGreen(),
+      DlColor::kBlue(),
+  };
+  float stops[2] = {
+      0.0f,
+      1.0f,
+  };
+  auto color_source = DlColorSource::MakeLinear({0, 0}, {10, 10}, 2, colors,
+                                                stops, DlTileMode::kClamp);
   EXPECT_NE(paint, DlPaint().setColorSource(color_source));
 
-  DlBlendColorFilter color_filter(DlColor::kYellow(), DlBlendMode::kDstIn);
-  EXPECT_NE(paint, DlPaint().setColorFilter(color_filter.shared()));
+  auto color_filter =
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kDstATop);
+  EXPECT_NE(paint, DlPaint().setColorFilter(color_filter));
 
   auto image_filter = DlImageFilter::MakeBlur(1.3, 4.7, DlTileMode::kClamp);
   EXPECT_NE(paint, DlPaint().setImageFilter(image_filter));
@@ -93,22 +104,30 @@ TEST(DisplayListPaint, NullSharedPointerSetGet) {
 }
 
 TEST(DisplayListPaint, ChainingConstructor) {
+  DlColor colors[2] = {
+      DlColor::kGreen(),
+      DlColor::kBlue(),
+  };
+  float stops[2] = {
+      0.0f,
+      1.0f,
+  };
   DlPaint paint =
-      DlPaint()                                                           //
-          .setAntiAlias(true)                                             //
-          .setInvertColors(true)                                          //
-          .setColor(DlColor::kGreen())                                    //
-          .setAlpha(0x7F)                                                 //
-          .setBlendMode(DlBlendMode::kLuminosity)                         //
-          .setDrawStyle(DlDrawStyle::kStrokeAndFill)                      //
-          .setStrokeCap(DlStrokeCap::kSquare)                             //
-          .setStrokeJoin(DlStrokeJoin::kBevel)                            //
-          .setStrokeWidth(42)                                             //
-          .setStrokeMiter(1.5)                                            //
-          .setColorSource(DlColorSource::MakeColor(DlColor::kMagenta()))  //
+      DlPaint()                                                         //
+          .setAntiAlias(true)                                           //
+          .setInvertColors(true)                                        //
+          .setColor(DlColor::kGreen())                                  //
+          .setAlpha(0x7F)                                               //
+          .setBlendMode(DlBlendMode::kLuminosity)                       //
+          .setDrawStyle(DlDrawStyle::kStrokeAndFill)                    //
+          .setStrokeCap(DlStrokeCap::kSquare)                           //
+          .setStrokeJoin(DlStrokeJoin::kBevel)                          //
+          .setStrokeWidth(42)                                           //
+          .setStrokeMiter(1.5)                                          //
+          .setColorSource(DlColorSource::MakeLinear(                    //
+              {0, 0}, {10, 10}, 2, colors, stops, DlTileMode::kClamp))  //
           .setColorFilter(
-              DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn)
-                  .shared())
+              DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kDstIn))
           .setImageFilter(DlImageFilter::MakeBlur(1.3, 4.7, DlTileMode::kClamp))
           .setMaskFilter(DlBlurMaskFilter(DlBlurStyle::kInner, 3.14).shared());
   EXPECT_TRUE(paint.isAntiAlias());
@@ -122,9 +141,11 @@ TEST(DisplayListPaint, ChainingConstructor) {
   EXPECT_EQ(paint.getStrokeWidth(), 42);
   EXPECT_EQ(paint.getStrokeMiter(), 1.5);
   EXPECT_TRUE(Equals(paint.getColorSource(),
-                     DlColorSource::MakeColor(DlColor::kMagenta())));
-  EXPECT_EQ(*paint.getColorFilter(),
-            DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn));
+                     DlColorSource::MakeLinear({0, 0}, {10, 10}, 2, colors,
+                                               stops, DlTileMode::kClamp)));
+  EXPECT_TRUE(Equals(
+      paint.getColorFilter(),
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kDstIn)));
   EXPECT_TRUE(Equals(paint.getImageFilter(),
                      DlImageFilter::MakeBlur(1.3, 4.7, DlTileMode::kClamp)));
   EXPECT_EQ(*paint.getMaskFilter(),
