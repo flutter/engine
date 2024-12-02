@@ -27,6 +27,9 @@ static void fl_touch_manager_dispose(GObject* object) {
 
   g_weak_ref_clear(&self->engine);
 
+  delete self->touch_id_generator;
+  self->touch_id_generator = nullptr;
+
   G_OBJECT_CLASS(fl_touch_manager_parent_class)->dispose(object);
 }
 
