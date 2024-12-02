@@ -324,7 +324,6 @@ enum SemanticsRole {
 
   /// The main desplay for a tab.
   tabPanel,
-
 }
 
 /// A Boolean value that can be associated with a semantics node.
