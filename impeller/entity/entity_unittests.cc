@@ -2340,15 +2340,15 @@ TEST_P(EntityTest, DrawRoundSuperEllipse) {
     static float center_y = 100;
     static float width = 900;
     static float height = 900;
-    static float corner_radius = 391.30;
+    static float corner_radius = 300;
     static Color color = Color::Red();
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Center X", &center_x, 0, 1000);
     ImGui::SliderFloat("Center Y", &center_y, 0, 1000);
-    ImGui::SliderFloat("Width", &width, 1, 800);
-    ImGui::SliderFloat("Height", &height, 1, 800);
-    ImGui::SliderFloat("Corner radius", &corner_radius, 1, 500);
+    ImGui::SliderFloat("Width", &width, 0, 1000);
+    ImGui::SliderFloat("Height", &height, 0, 1000);
+    ImGui::SliderFloat("Corner radius", &corner_radius, 0, 500);
     ImGui::End();
 
     auto contents = std::make_shared<SolidColorContents>();

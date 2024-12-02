@@ -49,9 +49,26 @@ constexpr Scalar kMaxRatio = kPrecomputedVariables[kNumRecords - 1][0];
 constexpr Scalar kRatioStep =
     kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
+Scalar lerp(size_t column, size_t left, size_t frac) {
+  return (1 - frac) * kPrecomputedVariables[left][column] +
+         frac * kPrecomputedVariables[left + 1][column];
+}
+
+// Return the shortest of `corner_radius`, height/2, and width/2.
+//
+// Corner radii longer than 1/2 of the side length does not make sense, and will
+// be limited to the longest possible.
+Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
+  return std::min(corner_radius,
+                  std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
+}
+
 constexpr Scalar kAngleStep = kPi / 80;
 
+// The distance from point M (the 45deg point) to either side of the closer
+// bounding box is defined as `gap`.
 constexpr Scalar gap(Scalar corner_radius) {
+  // Heuristic formula derived from experimentation.
   return 0.2924303407 * corner_radius;
 }
 
@@ -93,11 +110,6 @@ size_t DrawCircularArc(Point* output, Point start, Point end, Scalar r) {
     angle += kAngleStep;
   }
   return next - output;
-}
-
-Scalar lerp(size_t column, size_t left, size_t frac) {
-  return (1 - frac) * kPrecomputedVariables[left][column] +
-         frac * kPrecomputedVariables[left + 1][column];
 }
 
 // Draws an arc representing the top 1/8 segment of a square-like rounded
@@ -210,15 +222,6 @@ size_t FlipAndOffset(Point* output,
     }
   }
   return input_length;
-}
-
-// Return the shortest of `corner_radius`, height/2, and width/2.
-//
-// Corner radii longer than 1/2 of the side length does not make sense, and will
-// be limited to the longest possible.
-Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
-  return std::min(corner_radius,
-                  std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
 }
 
 constexpr Point kReflection[4] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
