@@ -12,8 +12,9 @@ namespace {
 template <typename T>
 void Remove(uint32_t key, T* first, T* second) {
   auto iter = first->find(key);
-  if (iter == first->end())
+  if (iter == first->end()) {
     return;
+  }
 
   uint32_t second_key = iter->second;
   first->erase(iter);
@@ -31,8 +32,9 @@ SequentialIdGenerator::~SequentialIdGenerator() {}
 
 uint32_t SequentialIdGenerator::GetGeneratedId(uint32_t number) {
   auto it = number_to_id_.find(number);
-  if (it != number_to_id_.end())
+  if (it != number_to_id_.end()) {
     return it->second;
+  }
 
   auto id = GetNextAvailableId();
   number_to_id_.emplace(number, id);
@@ -63,8 +65,9 @@ uint32_t SequentialIdGenerator::GetNextAvailableId() {
          min_available_id_ < max_id_) {
     ++min_available_id_;
   }
-  if (min_available_id_ >= max_id_)
+  if (min_available_id_ >= max_id_) {
     min_available_id_ = min_id_;
+  }
   return min_available_id_;
 }
 
