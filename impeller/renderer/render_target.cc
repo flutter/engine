@@ -221,6 +221,10 @@ ColorAttachment RenderTarget::GetColor0() const {
   return ColorAttachment{};
 }
 
+bool RenderTarget::HasColor0() const {
+  return color0_.has_value();
+}
+
 const std::map<size_t, ColorAttachment>& RenderTarget::GetColorAttachments()
     const {
   return colors_;

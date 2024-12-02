@@ -105,6 +105,10 @@ RenderPass::GetOrCreatePipeline() {
 
   pipeline_desc.SetSampleCount(render_target_.GetSampleCount());
 
+  if (render_target_.HasColor0()) {
+    auto& color = GetColorAttachmentDescriptor(0);
+    color.format = render_target_.GetRenderTargetPixelFormat();
+  }
   for (const auto& it : render_target_.GetColorAttachments()) {
     auto& color = GetColorAttachmentDescriptor(it.first);
     color.format = render_target_.GetRenderTargetPixelFormat();

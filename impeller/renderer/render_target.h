@@ -111,6 +111,8 @@ class RenderTarget final {
 
   ColorAttachment GetColor0() const;
 
+  bool HasColor0() const;
+
   const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
 
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
