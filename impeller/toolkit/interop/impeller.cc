@@ -32,14 +32,17 @@
 
 #if IMPELLER_ENABLE_OPENGLES
 #include "impeller/toolkit/interop/backend/gles/context_gles.h"
+#include "impeller/toolkit/interop/backend/gles/surface_gles.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
 #if IMPELLER_ENABLE_METAL
 #include "impeller/toolkit/interop/backend/metal/context_mtl.h"
+#include "impeller/toolkit/interop/backend/metal/surface_mtl.h"
 #endif  // IMPELLER_ENABLE_METAL
 
 #if IMPELLER_ENABLE_VULKAN
 #include "impeller/toolkit/interop/backend/vulkan/context_vk.h"
+#include "impeller/toolkit/interop/backend/vulkan/surface_vk.h"
 #endif  // IMPELLER_ENABLE_VULKAN
 
 namespace impeller::interop {
@@ -669,15 +672,39 @@ ImpellerSurface ImpellerSurfaceCreateWrappedFBONew(ImpellerContext context,
                                                    uint64_t fbo,
                                                    ImpellerPixelFormat format,
                                                    const ImpellerISize* size) {
-  return Surface::WrapFBO(*GetPeer(context),       //
-                          fbo,                     //
-                          ToImpellerType(format),  //
-                          ToImpellerType(*size))   //
+#if IMPELLER_ENABLE_OPENGLES
+  if (!GetPeer(context)->IsGL()) {
+    VALIDATION_LOG << "Context is not OpenGL.";
+    return nullptr;
+  }
+  return Create<SurfaceGLES>(*GetPeer(context),       //
+                             fbo,                     //
+                             ToImpellerType(format),  //
+                             ToImpellerType(*size))   //
       .Leak();
+#else   // IMPELLER_ENABLE_OPENGLES
+  VALIDATION_LOG << "OpenGL unavailable.";
+  return nullptr;
+#endif  // IMPELLER_ENABLE_OPENGLES
 }
 
 IMPELLER_EXTERN_C
-void ImpellerSurfaceRetain(ImpellerSurface surface) {
+ImpellerSurface ImpellerSurfaceCreateWrappedMetalDrawableNew(
+    ImpellerContext context,
+    void* metal_drawable) {
+#if IMPELLER_ENABLE_METAL
+  if (!GetPeer(context)->IsMetal()) {
+    VALIDATION_LOG << "Context is not Metal.";
+    return nullptr;
+  }
+  return Create<SurfaceMTL>(*GetPeer(context), metal_drawable).Leak();
+#else   // IMPELLER_ENABLE_METAL
+  VALIDATION_LOG << "Metal unavailable.";
+  return nullptr;
+#endif  // IMPELLER_ENABLE_METAL
+}
+
+IMPELLER_EXTERN_C void ImpellerSurfaceRetain(ImpellerSurface surface) {
   ObjectBase::SafeRetain(surface);
 }
 

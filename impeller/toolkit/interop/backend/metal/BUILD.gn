@@ -9,5 +9,7 @@ impeller_component("metal") {
   sources = [
     "context_mtl.h",
     "context_mtl.mm",
+    "surface_mtl.h",
+    "surface_mtl.mm",
   ]
 }

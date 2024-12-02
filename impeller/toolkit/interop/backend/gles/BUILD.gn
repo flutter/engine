@@ -11,5 +11,7 @@ impeller_component("gles") {
     "context_gles.h",
     "reactor_worker_gles.cc",
     "reactor_worker_gles.h",
+    "surface_gles.cc",
+    "surface_gles.h",
   ]
 }

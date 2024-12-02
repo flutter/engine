@@ -681,10 +681,15 @@ void ImpellerContextRelease(ImpellerContext IMPELLER_NULLABLE context);
 /// @return     The surface if once can be created, NULL otherwise.
 ///
 IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
-ImpellerSurfaceCreateWrappedFBONew(ImpellerContext IMPELLER_NULLABLE context,
+ImpellerSurfaceCreateWrappedFBONew(ImpellerContext IMPELLER_NONNULL context,
                                    uint64_t fbo,
                                    ImpellerPixelFormat format,
-                                   const ImpellerISize* IMPELLER_NULLABLE size);
+                                   const ImpellerISize* IMPELLER_NONNULL size);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
+ImpellerSurfaceCreateWrappedMetalDrawableNew(
+    ImpellerContext IMPELLER_NONNULL context,
+    void* IMPELLER_NONNULL metal_drawable);
 
 //------------------------------------------------------------------------------
 /// @brief      Retain a strong reference to the object. The object can be NULL

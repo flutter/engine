@@ -95,17 +95,60 @@ impeller_component("library") {
   deps = [ ":interop" ]
 }
 
-impeller_component("example") {
+impeller_component("example_gl") {
   target_type = "executable"
 
-  output_name = "impeller_interop_example"
+  output_name = "impeller_interop_example_gl"
 
-  sources = [ "example.c" ]
+  sources = [ "example_gl.c" ]
 
   deps = [
     ":interop",
     "//flutter/third_party/glfw",
   ]
+}
+
+impeller_component("example_mtl") {
+  target_type = "executable"
+
+  output_name = "impeller_interop_example_mtl"
+
+  sources = [ "example_mtl.m" ]
+
+  deps = [
+    ":interop",
+    "//flutter/third_party/glfw",
+  ]
+
+  frameworks = [ "QuartzCore.framework" ]
+}
+
+impeller_component("example_vk") {
+  target_type = "executable"
+
+  output_name = "impeller_interop_example_vk"
+
+  sources = [ "example_vk.c" ]
+
+  deps = [
+    ":interop",
+    "//flutter/third_party/glfw",
+  ]
+}
+
+group("example") {
+  deps = []
+  if (impeller_enable_opengles) {
+    deps += [ ":example_gl" ]
+  }
+
+  if (impeller_enable_metal) {
+    deps += [ ":example_mtl" ]
+  }
+
+  if (impeller_enable_vulkan) {
+    deps += [ ":example_vk" ]
+  }
 }
 
 impeller_component("interop_unittests") {

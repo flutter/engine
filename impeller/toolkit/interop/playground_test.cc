@@ -89,13 +89,14 @@ bool PlaygroundTest::OpenPlaygroundHere(InteropPlaygroundCallback callback) {
     return false;
   }
   return Playground::OpenPlaygroundHere([&](RenderTarget& target) -> bool {
-    auto impeller_surface = std::make_shared<impeller::Surface>(target);
-    auto surface = Create<Surface>(*interop_context.Get(), impeller_surface);
-    if (!surface) {
-      VALIDATION_LOG << "Could not wrap test surface as an interop surface.";
-      return false;
-    }
-    return callback(interop_context, surface);
+    return false;
+    // auto impeller_surface = std::make_shared<impeller::Surface>(target);
+    // auto surface = Create<Surface>(*interop_context.Get(), impeller_surface);
+    // if (!surface) {
+    //   VALIDATION_LOG << "Could not wrap test surface as an interop surface.";
+    //   return false;
+    // }
+    // return callback(interop_context, surface);
   });
 }
 

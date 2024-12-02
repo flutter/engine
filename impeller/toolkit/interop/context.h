@@ -27,6 +27,14 @@ class Context
 
   AiksContext& GetAiksContext();
 
+  bool IsBackend(impeller::Context::BackendType type) const;
+
+  bool IsGL() const;
+
+  bool IsMetal() const;
+
+  bool IsVulkan() const;
+
  protected:
   explicit Context(std::shared_ptr<impeller::Context> context);
 
