@@ -10,7 +10,6 @@
 #include <optional>
 
 #include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
-#include "flutter/third_party/abseil-cpp/absl/hash/hash.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"

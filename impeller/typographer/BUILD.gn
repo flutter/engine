@@ -33,7 +33,6 @@ impeller_component("typographer") {
     "../geometry",
     "../renderer",
     "//flutter/third_party/abseil-cpp/absl/container:flat_hash_map",
-    "//flutter/third_party/abseil-cpp/absl/hash:hash",
   ]
 
   deps = [ "//flutter/fml" ]
