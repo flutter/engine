@@ -65,7 +65,7 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
   // get sequence id from GdkEvent
   GdkEventSequence* seq = gdk_event_get_event_sequence(event);
   // cast pointer to int to get unique id
-  uint32_t id = reinterpret_cast<long>(seq);
+  uint32_t id = reinterpret_cast<uint64_t>(seq);
   // generate touch id from unique id
   auto touch_id = self->touch_id_generator->GetGeneratedId(id);
 
