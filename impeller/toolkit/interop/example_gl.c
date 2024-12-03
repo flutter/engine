@@ -25,7 +25,8 @@ int main(int argc, char const* argv[]) {
 
   if (glfwGetPlatform() == GLFW_PLATFORM_COCOA) {
     fprintf(stderr,
-            "OpenGL(ES) is not available on macOS. Please use Metal instead.");
+            "OpenGL(ES) is not available on macOS. Please use Metal or Vulkan "
+            "instead.\n");
     fflush(stderr);
     return -1;
   }
