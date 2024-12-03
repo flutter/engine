@@ -20,26 +20,26 @@ namespace {
 //  * ratio = size / a
 //  * n
 //  * d / a
-//  * theta
+//  * thetaJ
 //
 // For definition of the variables, see DrawOctantSquareLikeSquircle.
 constexpr Scalar kPrecomputedVariables[][4] = {
-    {2.000, 2.00000, 0.00000, 0.26000},  //
-    {2.020, 2.03300, 0.01441, 0.23845},  //
-    {2.040, 2.06500, 0.02568, 0.20310},  //
-    {2.060, 2.09800, 0.03655, 0.18593},  //
-    {2.080, 2.13200, 0.04701, 0.17341},  //
-    {2.100, 2.17800, 0.05596, 0.14049},  //
-    {2.120, 2.19300, 0.06805, 0.17417},  //
-    {2.140, 2.23000, 0.07733, 0.16145},  //
-    {2.160, 2.26400, 0.08677, 0.15649},  //
-    {2.180, 2.30500, 0.09529, 0.14374},  //
-    {2.200, 2.32900, 0.10530, 0.15212},  //
-    {2.220, 2.38300, 0.11230, 0.12974},  //
-    {2.240, 2.39800, 0.12257, 0.14433},  //
-    {2.260, 2.41800, 0.13236, 0.15439},  //
-    {2.280, 2.47200, 0.13867, 0.13431},  //
-    {2.300, 2.50900, 0.14649, 0.13021}   //
+    {2.000, 2.00000, 0.00000, 0.24040},  //
+    {2.020, 2.03340, 0.01447, 0.24040},  //
+    {2.040, 2.06540, 0.02575, 0.21167},  //
+    {2.060, 2.09800, 0.03668, 0.20118},  //
+    {2.080, 2.13160, 0.04719, 0.19367},  //
+    {2.100, 2.17840, 0.05603, 0.16233},  //
+    {2.120, 2.19310, 0.06816, 0.20020},  //
+    {2.140, 2.22990, 0.07746, 0.19131},  //
+    {2.160, 2.26360, 0.08693, 0.19008},  //
+    {2.180, 2.30540, 0.09536, 0.17935},  //
+    {2.200, 2.32900, 0.10541, 0.19136},  //
+    {2.220, 2.38330, 0.11237, 0.17130},  //
+    {2.240, 2.39770, 0.12271, 0.18956},  //
+    {2.260, 2.41770, 0.13251, 0.20254},  //
+    {2.280, 2.47180, 0.13879, 0.18454},  //
+    {2.300, 2.50910, 0.14658, 0.18261}   //
 };
 
 constexpr size_t kNumRecords =
@@ -69,7 +69,7 @@ constexpr Scalar kAngleStep = kPi / 80;
 // bounding box is defined as `gap`.
 constexpr Scalar gap(Scalar corner_radius) {
   // Heuristic formula derived from experimentation.
-  return 0.2924303407 * corner_radius;
+  return 0.2924066406 * corner_radius;
 }
 
 // Draw a circular arc from `start` to `end` with a radius of `r`.
@@ -91,7 +91,7 @@ size_t DrawCircularArc(Point* output, Point start, Point end, Scalar r) {
    *       /     ⟋   ↗
    *      /   ⟋
    *     / ⟋    r
-   *  C ⟋  ↙
+   *  C ᜱ  ↙
    */
 
   Point s_to_e = end - start;
@@ -133,26 +133,32 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
    * superellipse. The target arc consists of the "stretch" (AB), a
    * superellipsoid arc (BJ), and a circular arc (JM).
    *
-   * Define gap (g) as the distance between point M and the bounding box,
-   * therefore point M is at (size/2 - g, size/2 - g). Assume the coordinate of
-   * J is (xJ, yJ).
-   *
    *     straight   superelipse
    *          ↓     ↓
-   *        A    B      J     circular arc
+   *        A    B       J    circular arc
    *        ---------...._   ↙
    *        |    |      /  `⟍ M
    *        |    |     /    ⟋ ⟍
-   *        |    |    /θ ⟋     \
-   *        |    |   /◝⟋        |
-   *        |    |  ᜱ           |
-   *        |    | /  D          |
+   *        |    |    /  ⟋     \
+   *        |    |   / ⟋        |
+   *        |    |  ᜱD          |
+   *        |    | /             |
    *    ↑   +----+               |
    *    s   |    |               |
    *    ↓   +----+---------------| A'
    *       O     S
    *        ← s →
    *        ←------ size/2 ------→
+   *
+   * Define gap (g) as the distance between point M and the bounding box,
+   * therefore point M is at (size/2 - g, size/2 - g).
+   *
+   * The superellipsoid curve can be drawn with an implicit parameter θ:
+   *   x = a * sinθ ^ (2/n)
+   *   y = a * cosθ ^ (2/n)
+   * https://math.stackexchange.com/questions/2573746/superellipse-parametric-equation
+   *
+   * Define thetaJ as the θ at point J.
    */
 
   Scalar ratio = {std::min(size / corner_radius, kMaxRatio)};
@@ -168,11 +174,9 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
   Scalar frac = steps - left;
   Scalar n = lerp(1, left, frac);
   Scalar d = lerp(2, left, frac) * a;
-  Scalar theta = lerp(3, left, frac);
+  Scalar thetaJ = lerp(3, left, frac);
 
   Scalar R = (a - d - g) * sqrt(2);
-  Scalar xJ = d + R * sin(theta);
-  Scalar yJ = pow(pow(a, n) - pow(xJ, n), 1 / n);
 
   Point pointM(size / 2 - g, size / 2 - g);
 
@@ -180,21 +184,18 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
   // A
   *(next++) = Point(0, size / 2);
   // Superellipsoid arc BJ (B inclusive, J exclusive)
-  // https://math.stackexchange.com/questions/2573746/superellipse-parametric-equation
   {
-    const Scalar target_slope = yJ / xJ;
     Scalar angle = 0;
-    // The first point, B, should always be added, which happens to work well
-    // with do-while.
-    Scalar x = 0;
-    Scalar y = a;
-    do {
+    while (angle < thetaJ) {
+      Scalar x = a * pow(abs(sinf(angle)), 2 / n);
+      Scalar y = a * pow(abs(cosf(angle)), 2 / n);
       *(next++) = Point(x + s, y + s);
       angle += kAngleStep;
-      x = a * pow(abs(sinf(angle)), 2 / n);
-      y = a * pow(abs(cosf(angle)), 2 / n);
-    } while (y > target_slope * x);
+    }
   }
+
+  Scalar xJ = a * pow(abs(sinf(thetaJ)), 2 / n);
+  Scalar yJ = a * pow(abs(cosf(thetaJ)), 2 / n);
   // Circular arc JM (B inclusive, M exclusive)
   next += DrawCircularArc(next, {xJ + s, yJ + s}, pointM, R);
   return next - output;
@@ -372,8 +373,7 @@ bool RoundSuperellipseGeometry::CoversArea(const Matrix& transform,
     return false;
   }
   // Use the rectangle formed by the four 45deg points (point M) as a
-  // conservative estimate of the inner rectangle. The distance from M to either
-  // closer edge of the bounding box is `gap`.
+  // conservative estimate of the inner rectangle.
   Scalar g = gap(corner_radius_);
   Rect coverage =
       Rect::MakeLTRB(bounds_.GetLeft() + g, bounds_.GetTop() + g,
