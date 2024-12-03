@@ -63,7 +63,8 @@ Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
                   std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
 }
 
-// The max angular step that the algorithm will traverse a quadrant of the curve.
+// The max angular step that the algorithm will traverse a quadrant of the
+// curve.
 //
 // This limits the max number of points of the curve.
 constexpr Scalar kMaxQuadrantSteps = 40;
@@ -227,9 +228,7 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
 
   // Circular arc JM (B inclusive, M exclusive)
   next += DrawCircularArc(next, {xJ + s, yJ + s}, pointM, R);
-  size_t number = next - output;
-  printf("Total number of points: %zu\n", number);
-  return number;
+  return next - output;
 }
 
 // Optionally `flip` the input points before offsetting it by `center`, and
@@ -340,9 +339,16 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
 
   // The cache is allocated as follows:
   //
-  //  * The first chunk stores the first quadrant arc.
+  //  * The first chunk stores the quadrant arc.
   //  * The second chunk stores an octant arc before flipping and translation.
   Point* cache = renderer.GetTessellator().GetStrokePointCache().data();
+
+  // The memory size (in units of Points) allocated to store the first chunk.
+  constexpr size_t kMaxQuadrantLength = kPointArenaSize / 4;
+  // Since the curve is traversed in steps bounded by kMaxQuadrantSteps, the
+  // curving part will have fewer points than kMaxQuadrantSteps. Multiply it by
+  // 2 for storing other sporatic points (an extremely conservative estimate).
+  static_assert(kMaxQuadrantLength > 2 * kMaxQuadrantSteps);
 
   // Draw the first quadrant of the shape and store in `quadrant`, including
   // both ends. It will be mirrored to other quadrants later.
@@ -350,7 +356,6 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
   size_t quadrant_length;
   {
     Point* next = quadrant;
-    constexpr size_t kMaxQuadrantLength = kPointArenaSize / 4;
 
     Point* octant_cache = cache + kMaxQuadrantLength;
     size_t octant_length;

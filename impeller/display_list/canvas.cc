@@ -471,9 +471,7 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  Scalar radius = std::min(rect.GetWidth(), rect.GetHeight()) / 3;
-  RoundSuperellipseGeometry geom(rect, radius);
-  // RectGeometry geom(rect);
+  RectGeometry geom(rect);
   AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
 }
 
