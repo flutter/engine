@@ -634,10 +634,9 @@ public class FlutterActivity extends Activity
 
     super.onCreate(savedInstanceState);
 
-    if (savedInstanceState != null
-        && savedInstanceState.getBoolean(
-            FlutterActivityAndFragmentDelegate.ON_BACK_CALLBACK_ENABLED_KEY)) {
-      setFrameworkHandlesBack(true);
+    if (savedInstanceState != null) {
+      boolean frameworkHandlesBack = savedInstanceState.getBoolean(FlutterActivityAndFragmentDelegate.ON_BACK_CALLBACK_ENABLED_KEY);
+      setFrameworkHandlesBack(frameworkHandlesBack);
     }
 
     delegate = new FlutterActivityAndFragmentDelegate(this);
