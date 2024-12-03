@@ -11,7 +11,7 @@ namespace impeller::interop {
 
 class SurfaceVK final : public Surface {
  public:
-  SurfaceVK();
+  SurfaceVK(Context& context, std::shared_ptr<impeller::Surface> surface);
 
   ~SurfaceVK();
 

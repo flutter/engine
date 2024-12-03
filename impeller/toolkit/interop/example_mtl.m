@@ -38,7 +38,7 @@ int main(int argc, char const* argv[]) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   GLFWwindow* window =
-      glfwCreateWindow(800, 600, "Impeller Example", NULL, NULL);
+      glfwCreateWindow(800, 600, "Impeller Example (Metal)", NULL, NULL);
   assert(window != NULL);
 
   int framebuffer_width, framebuffer_height;

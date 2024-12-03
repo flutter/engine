@@ -6,7 +6,9 @@
 
 namespace impeller::interop {
 
-SurfaceVK::SurfaceVK() = default;
+SurfaceVK::SurfaceVK(Context& context,
+                     std::shared_ptr<impeller::Surface> surface)
+    : Surface(context, std::move(surface)) {}
 
 SurfaceVK::~SurfaceVK() = default;
 

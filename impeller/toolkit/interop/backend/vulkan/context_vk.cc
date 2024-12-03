@@ -84,6 +84,23 @@ ContextVK::Settings::Settings(const ImpellerContextVulkanSettings& settings)
   };
 }
 
+bool ContextVK::GetInfo(ImpellerContextVulkanInfo& info) const {
+  if (!IsValid()) {
+    return false;
+  }
+  const auto& context = impeller::ContextVK::Cast(*GetContext());
+
+  info.vk_instance = reinterpret_cast<void*>(VkInstance(context.GetInstance()));
+  info.vk_physical_device =
+      reinterpret_cast<void*>(VkPhysicalDevice(context.GetPhysicalDevice()));
+  info.vk_logical_device =
+      reinterpret_cast<void*>(VkDevice(context.GetDevice()));
+  info.graphics_queue_family_index =
+      context.GetGraphicsQueue()->GetIndex().family;
+  info.graphics_queue_index = context.GetGraphicsQueue()->GetIndex().index;
+  return true;
+}
+
 bool ContextVK::Settings::IsValid() const {
   return !!instance_proc_address_callback;
 }

@@ -43,6 +43,7 @@
 #if IMPELLER_ENABLE_VULKAN
 #include "impeller/toolkit/interop/backend/vulkan/context_vk.h"
 #include "impeller/toolkit/interop/backend/vulkan/surface_vk.h"
+#include "impeller/toolkit/interop/backend/vulkan/swapchain_vk.h"
 #endif  // IMPELLER_ENABLE_VULKAN
 
 namespace impeller::interop {
@@ -66,6 +67,7 @@ DEFINE_PEER_GETTER(ParagraphStyle, ImpellerParagraphStyle);
 DEFINE_PEER_GETTER(Path, ImpellerPath);
 DEFINE_PEER_GETTER(PathBuilder, ImpellerPathBuilder);
 DEFINE_PEER_GETTER(Surface, ImpellerSurface);
+DEFINE_PEER_GETTER(SwapchainVK, ImpellerVulkanSwapchain);
 DEFINE_PEER_GETTER(Texture, ImpellerTexture);
 DEFINE_PEER_GETTER(TypographyContext, ImpellerTypographyContext);
 
@@ -168,7 +170,56 @@ void ImpellerContextRelease(ImpellerContext context) {
 }
 
 IMPELLER_EXTERN_C
-ImpellerDisplayListBuilder ImpellerDisplayListBuilderNew(
+bool ImpellerContextGetVulkanInfo(ImpellerContext IMPELLER_NONNULL context,
+                                  ImpellerContextVulkanInfo* out_vulkan_info) {
+#if IMPELLER_ENABLE_VULKAN
+  if (!GetPeer(context)->IsVulkan()) {
+    VALIDATION_LOG << "Not a Vulkan context.";
+    return false;
+  }
+  return reinterpret_cast<ContextVK*>(GetPeer(context))
+      ->GetInfo(*out_vulkan_info);
+#else   // IMPELLER_ENABLE_VULKAN
+  VALIDATION_LOG << "Vulkan not available.";
+  return nullptr;
+#endif  // IMPELLER_ENABLE_VULKAN
+}
+
+IMPELLER_EXTERN_C
+ImpellerVulkanSwapchain ImpellerVulkanSwapchainCreateNew(
+    ImpellerContext context,
+    void* vulkan_surface_khr,
+    const ImpellerISize* surface_size) {
+#if IMPELLER_ENABLE_VULKAN
+  return Create<SwapchainVK>(
+             *GetPeer(context),                                   //
+             reinterpret_cast<VkSurfaceKHR>(vulkan_surface_khr),  //
+             ToImpellerType(*surface_size)                        //
+             )
+      .Leak();
+#else   // IMPELLER_ENABLE_VULKAN
+  VALIDATION_LOG << "Vulkan not available.";
+  return nullptr;
+#endif  // IMPELLER_ENABLE_VULKAN
+}
+
+IMPELLER_EXTERN_C
+void ImpellerVulkanSwapchainRetain(ImpellerVulkanSwapchain swapchain) {
+  ObjectBase::SafeRetain(swapchain);
+}
+
+IMPELLER_EXTERN_C
+void ImpellerVulkanSwapchainRelease(ImpellerVulkanSwapchain swapchain) {
+  ObjectBase::SafeRelease(swapchain);
+}
+
+IMPELLER_EXTERN_C
+ImpellerSurface ImpellerVulkanSwapchainAcquireNextSurfaceNew(
+    ImpellerVulkanSwapchain swapchain) {
+  return GetPeer(swapchain)->AcquireNextSurface().Leak();
+}
+
+IMPELLER_EXTERN_C ImpellerDisplayListBuilder ImpellerDisplayListBuilderNew(
     const ImpellerRect* cull_rect) {
   return Create<DisplayListBuilder>(cull_rect).Leak();
 }
@@ -717,6 +768,11 @@ IMPELLER_EXTERN_C
 bool ImpellerSurfaceDrawDisplayList(ImpellerSurface surface,
                                     ImpellerDisplayList display_list) {
   return GetPeer(surface)->DrawDisplayList(*GetPeer(display_list));
+}
+
+IMPELLER_EXTERN_C
+bool ImpellerSurfacePresent(ImpellerSurface surface) {
+  return GetPeer(surface)->Present();
 }
 
 IMPELLER_EXTERN_C

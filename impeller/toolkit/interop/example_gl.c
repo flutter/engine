@@ -33,7 +33,7 @@ int main(int argc, char const* argv[]) {
   glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 
   GLFWwindow* window =
-      glfwCreateWindow(800, 600, "Impeller Example", NULL, NULL);
+      glfwCreateWindow(800, 600, "Impeller Example (OpenGL)", NULL, NULL);
   assert(window != NULL);
 
   int framebuffer_width, framebuffer_height;

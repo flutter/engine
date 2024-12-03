@@ -42,4 +42,11 @@ bool Surface::DrawDisplayList(const DisplayList& dl) const {
   return result;
 }
 
+bool Surface::Present() const {
+  if (!IsValid()) {
+    return false;
+  }
+  return surface_->Present();
+}
+
 }  // namespace impeller::interop

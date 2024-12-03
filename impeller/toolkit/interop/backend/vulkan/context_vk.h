@@ -32,6 +32,8 @@ class ContextVK final : public Context {
 
   ContextVK& operator=(const ContextVK&) = delete;
 
+  bool GetInfo(ImpellerContextVulkanInfo& info) const;
+
  private:
   ContextVK(std::shared_ptr<impeller::Context> context);
 };

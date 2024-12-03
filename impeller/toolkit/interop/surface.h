@@ -28,6 +28,8 @@ class Surface
 
   bool DrawDisplayList(const DisplayList& dl) const;
 
+  bool Present() const;
+
  protected:
   explicit Surface(Context& context,
                    std::shared_ptr<impeller::Surface> surface);

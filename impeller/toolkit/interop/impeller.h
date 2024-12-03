@@ -288,6 +288,8 @@ IMPELLER_DEFINE_HANDLE(ImpellerSurface);
 ///
 IMPELLER_DEFINE_HANDLE(ImpellerTexture);
 
+IMPELLER_DEFINE_HANDLE(ImpellerVulkanSwapchain);
+
 //------------------------------------------------------------------------------
 // Signatures
 //------------------------------------------------------------------------------
@@ -573,6 +575,14 @@ typedef struct ImpellerContextVulkanSettings {
   bool enable_vulkan_validation;
 } ImpellerContextVulkanSettings;
 
+typedef struct ImpellerContextVulkanInfo {
+  void* IMPELLER_NULLABLE vk_instance;
+  void* IMPELLER_NULLABLE vk_physical_device;
+  void* IMPELLER_NULLABLE vk_logical_device;
+  uint32_t graphics_queue_family_index;
+  uint32_t graphics_queue_index;
+} ImpellerContextVulkanInfo;
+
 //------------------------------------------------------------------------------
 // Version
 //------------------------------------------------------------------------------
@@ -662,6 +672,45 @@ void ImpellerContextRetain(ImpellerContext IMPELLER_NULLABLE context);
 IMPELLER_EXPORT
 void ImpellerContextRelease(ImpellerContext IMPELLER_NULLABLE context);
 
+IMPELLER_EXPORT
+bool ImpellerContextGetVulkanInfo(
+    ImpellerContext IMPELLER_NONNULL context,
+    ImpellerContextVulkanInfo* IMPELLER_NONNULL out_vulkan_info);
+
+//------------------------------------------------------------------------------
+// Vulkan Swapchain
+//------------------------------------------------------------------------------
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerVulkanSwapchain IMPELLER_NULLABLE
+ImpellerVulkanSwapchainCreateNew(
+    ImpellerContext IMPELLER_NONNULL context,
+    void* IMPELLER_NONNULL vulkan_surface_khr,
+    const ImpellerISize* IMPELLER_NONNULL surface_size);
+
+//------------------------------------------------------------------------------
+/// @brief      Retain a strong reference to the object. The object can be NULL
+///             in which case this method is a no-op.
+///
+/// @param[in]  swapchain  The swapchain.
+///
+IMPELLER_EXPORT
+void ImpellerVulkanSwapchainRetain(
+    ImpellerVulkanSwapchain IMPELLER_NULLABLE swapchain);
+
+//------------------------------------------------------------------------------
+/// @brief      Release a previously retained reference to the object. The
+///             object can be NULL in which case this method is a no-op.
+///
+/// @param[in]  swapchain  The swapchain.
+///
+IMPELLER_EXPORT
+void ImpellerVulkanSwapchainRelease(
+    ImpellerVulkanSwapchain IMPELLER_NULLABLE swapchain);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
+ImpellerVulkanSwapchainAcquireNextSurfaceNew(
+    ImpellerVulkanSwapchain IMPELLER_NONNULL swapchain);
+
 //------------------------------------------------------------------------------
 // Surface
 //------------------------------------------------------------------------------
@@ -728,8 +777,11 @@ void ImpellerSurfaceRelease(ImpellerSurface IMPELLER_NULLABLE surface);
 ///
 IMPELLER_EXPORT
 bool ImpellerSurfaceDrawDisplayList(
-    ImpellerSurface IMPELLER_NULLABLE surface,
+    ImpellerSurface IMPELLER_NONNULL surface,
     ImpellerDisplayList IMPELLER_NONNULL display_list);
+
+IMPELLER_EXPORT
+bool ImpellerSurfacePresent(ImpellerSurface IMPELLER_NONNULL surface);
 
 //------------------------------------------------------------------------------
 // Path

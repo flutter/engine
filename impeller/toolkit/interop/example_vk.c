@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "impeller.h"
 
@@ -14,8 +15,10 @@ void GLFWErrorCallback(int error, const char* description) {
   fflush(stderr);
 }
 
-void* ProcAddressCallback(const char* proc_name, void* user_data) {
-  return glfwGetProcAddress(proc_name);
+void* ProcAddressCallback(void* vulkan_instance,
+                          const char* vulkan_proc_name,
+                          void* user_data) {
+  return glfwGetInstanceProcAddress(vulkan_instance, vulkan_proc_name);
 }
 
 int main(int argc, char const* argv[]) {
@@ -23,36 +26,54 @@ int main(int argc, char const* argv[]) {
   [[maybe_unused]] int result = glfwInit();
   assert(result == GLFW_TRUE);
 
-  if (glfwGetPlatform() == GLFW_PLATFORM_COCOA) {
-    fprintf(stderr,
-            "OpenGL(ES) is not available on macOS. Please use Metal instead.");
+  if (!glfwVulkanSupported()) {
+    fprintf(stderr, "Vulkan is not supported on this platform.\n");
     fflush(stderr);
     return -1;
   }
 
-  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   GLFWwindow* window =
-      glfwCreateWindow(800, 600, "Impeller Example", NULL, NULL);
+      glfwCreateWindow(800, 600, "Impeller Example (Vulkan)", NULL, NULL);
   assert(window != NULL);
+
+  ImpellerContextVulkanSettings vulkan_settings = {};
+  vulkan_settings.proc_address_callback = &ProcAddressCallback;
+  vulkan_settings.enable_vulkan_validation = true;
+  ImpellerContext context =
+      ImpellerContextCreateVulkanNew(IMPELLER_VERSION, &vulkan_settings);
+  assert(context != NULL);
+
+  ImpellerContextVulkanInfo info = {};
+  bool info_result = ImpellerContextGetVulkanInfo(context, &info);
+  assert(!!info_result);
+
+  if (glfwGetPhysicalDevicePresentationSupport(
+          info.vk_instance, info.vk_physical_device,
+          info.graphics_queue_family_index) != GLFW_TRUE) {
+    fprintf(stderr, "Queue does not support presentation.\n");
+    fflush(stderr);
+    return -1;
+  }
+
+  VkSurfaceKHR vulkan_surface_khr;
+  VkResult error = glfwCreateWindowSurface(info.vk_instance, window, NULL,
+                                           &vulkan_surface_khr);
+  if (error) {
+    fprintf(stderr, "Could not create Vulkan surface for presentation.\n");
+    fflush(stderr);
+    return -1;
+  }
 
   int framebuffer_width, framebuffer_height;
   glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-
-  // The GL context must be current on the calling thread.
-  glfwMakeContextCurrent(window);
-
-  ImpellerContext context = ImpellerContextCreateOpenGLESNew(
-      IMPELLER_VERSION, ProcAddressCallback, NULL);
-  assert(context != NULL);
-
   ImpellerISize surface_size = {};
   surface_size.width = framebuffer_width;
   surface_size.height = framebuffer_height;
-
-  ImpellerSurface surface = ImpellerSurfaceCreateWrappedFBONew(
-      context, 0u, kImpellerPixelFormatRGBA8888, &surface_size);
-  assert(surface != NULL);
+  ImpellerVulkanSwapchain swapchain = ImpellerVulkanSwapchainCreateNew(
+      context, vulkan_surface_khr, &surface_size);
+  assert(swapchain != NULL);
 
   ImpellerDisplayList dl = NULL;
 
@@ -81,12 +102,17 @@ int main(int argc, char const* argv[]) {
 
   while (!glfwWindowShouldClose(window)) {
     glfwWaitEvents();
+
+    ImpellerSurface surface =
+        ImpellerVulkanSwapchainAcquireNextSurfaceNew(swapchain);
+    assert(surface != NULL);
     ImpellerSurfaceDrawDisplayList(surface, dl);
-    glfwSwapBuffers(window);
+    ImpellerSurfacePresent(surface);
+    ImpellerSurfaceRelease(surface);
   }
 
   ImpellerDisplayListRelease(dl);
-  ImpellerSurfaceRelease(surface);
+  ImpellerVulkanSwapchainRelease(swapchain);
   ImpellerContextRelease(context);
 
   glfwMakeContextCurrent(NULL);
