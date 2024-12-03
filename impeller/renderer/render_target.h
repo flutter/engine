@@ -138,6 +138,9 @@ class RenderTarget final {
   std::optional<ColorAttachment> color0_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
+  // Note: color0 is stored in the color0_ field above and not in this map,
+  // to avoid heap allocations for the commonly created render target formats
+  // in Flutter.
   std::map<size_t, ColorAttachment> colors_;
 };
 
