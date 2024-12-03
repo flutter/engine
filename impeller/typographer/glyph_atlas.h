@@ -9,9 +9,14 @@
 #include <memory>
 #include <optional>
 
-#if !defined(OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
+// TODO(gaaclarke): Migrate to use absl. I couldn't get it working since absl
+// has special logic in its GN files for Fuchsia that I couldn't sort out.
+#define IMPELLER_TYPOGRAPHER_USE_STD_HASH
+#else
 #include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #endif
+
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/typographer/font_glyph_pair.h"
@@ -20,6 +25,30 @@
 namespace impeller {
 
 class FontGlyphAtlas;
+
+/// Helper for AbslHashAdapter. Tallies a hash value with fml::HashCombine.
+template <typename T>
+struct AbslHashAdapterCombiner {
+  std::size_t value = 0;
+
+  template <typename... Args>
+  static AbslHashAdapterCombiner combine(AbslHashAdapterCombiner combiner,
+                                         const Args&... args) {
+    combiner.value = fml::HashCombine(combiner.value, args...);
+    return combiner;
+  }
+};
+
+/// Adapts AbslHashValue functions to be used with std::unordered_map and the
+/// fml hash functions.
+template <typename T>
+struct AbslHashAdapter {
+  constexpr std::size_t operator()(const T& element) const {
+    AbslHashAdapterCombiner<T> combiner;
+    combiner = AbslHashValue(std::move(combiner), element);
+    return combiner.value;
+  }
+};
 
 struct FrameBounds {
   /// The bounds of the glyph within the glyph atlas.
@@ -162,10 +191,18 @@ class GlyphAtlas {
   std::shared_ptr<Texture> texture_;
   size_t generation_ = 0;
 
+#if defined(IMPELLER_TYPOGRAPHER_USE_STD_HASH)
+  using FontAtlasMap = std::unordered_map<ScaledFont,
+                                          FontGlyphAtlas,
+                                          AbslHashAdapter<ScaledFont>,
+                                          ScaledFont::Equal>;
+#else
   using FontAtlasMap = absl::flat_hash_map<ScaledFont,
                                            FontGlyphAtlas,
                                            absl::Hash<ScaledFont>,
                                            ScaledFont::Equal>;
+#endif
+
   FontAtlasMap font_atlas_map_;
 
   GlyphAtlas(const GlyphAtlas&) = delete;
@@ -252,13 +289,11 @@ class FontGlyphAtlas {
  private:
   friend class GlyphAtlas;
 
-#if defined(OS_FUCHSIA)
-  // TODO(gaaclarke): Migrate to use absl. I couldn't get it working since absl
-  // has special logic in its GN files for Fuchsia that I couldn't sort out.
-  using PositionsMap = absl::flat_hash_map<SubpixelGlyph,
-                                           FrameBounds,
-                                           absl::Hash<SubpixelGlyph>,
-                                           SubpixelGlyph::Equal>;
+#if defined(IMPELLER_TYPOGRAPHER_USE_STD_HASH)
+  using PositionsMap = std::unordered_map<SubpixelGlyph,
+                                          FrameBounds,
+                                          AbslHashAdapter<SubpixelGlyph>,
+                                          SubpixelGlyph::Equal>;
 #else
   using PositionsMap = absl::flat_hash_map<SubpixelGlyph,
                                            FrameBounds,
