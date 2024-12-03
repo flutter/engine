@@ -318,7 +318,7 @@ void PipelineLibraryGLES::RemovePipelinesWithEntryPoint(
 PipelineLibraryGLES::~PipelineLibraryGLES() {
   if (reactor_) {
     for (const auto& [key, value] : programs_) {
-      reactor_->GetProcTable().DeleteShader(value);
+      reactor_->GetProcTable().DeleteProgram(value);
     }
   }
 }
