@@ -3,5 +3,5 @@
 # found in the LICENSE file.
 
 group("boringssl") {
-  public_deps = [ "//flutter/third_party/boringssl" ]
+  public_deps = [ "//flutter/third_party/dart/third_party/boringssl" ]
 }
