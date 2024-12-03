@@ -22,6 +22,9 @@ static constexpr char kUnicodeScalarValuesKey[] = "unicodeScalarValues";
 static constexpr char kGtkToolkit[] = "gtk";
 static constexpr char kLinuxKeymap[] = "linux";
 
+static constexpr int64_t kUnicodeScalarValuesUnset = 0;
+static constexpr int64_t kSpecifiedLogicalKeyUnset = 0;
+
 struct _FlKeyEventChannel {
   GObject parent_instance;
 
@@ -90,11 +93,11 @@ void fl_key_event_channel_send(FlKeyEventChannel* self,
                            fl_value_new_string(kGtkToolkit));
   fl_value_set_string_take(message, kKeyCodeKey, fl_value_new_int(key_code));
   fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(modifiers));
-  if (unicode_scalar_values != 0) {
+  if (unicode_scalar_values != kUnicodeScalarValuesUnset) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicode_scalar_values));
   }
-  if (specified_logical_key != 0) {
+  if (specified_logical_key != kSpecifiedLogicalKeyUnset) {
     fl_value_set_string_take(message, kSpecifiedLogicalKey,
                              fl_value_new_int(specified_logical_key));
   }
