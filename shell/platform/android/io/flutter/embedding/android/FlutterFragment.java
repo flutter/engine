@@ -1073,7 +1073,9 @@ public class FlutterFragment extends Fragment
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     if (savedInstanceState != null) {
-      boolean frameworkHandlesBack = savedInstanceState.getBoolean(FlutterActivityAndFragmentDelegate.ON_BACK_CALLBACK_ENABLED_KEY);
+      boolean frameworkHandlesBack =
+          savedInstanceState.getBoolean(
+              FlutterActivityAndFragmentDelegate.ON_BACK_CALLBACK_ENABLED_KEY);
       onBackPressedCallback.setEnabled(frameworkHandlesBack);
     }
     delegate.onRestoreInstanceState(savedInstanceState);
