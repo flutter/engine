@@ -50,9 +50,13 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
           GetDescriptor().GetVertexDescriptor()->GetStageLayouts())) {
     return false;
   }
-  if (!vtx_desc->ReadUniformsBindings(gl, program)) {
+  if (!vtx_desc->ReadUniformsBindings3(gl, program)) {
     return false;
   }
+  // TODO
+  // if (!vtx_desc->ReadUniformsBindings(gl, program)) {
+  //   return false;
+  // }
   buffer_bindings_ = std::move(vtx_desc);
   return true;
 }

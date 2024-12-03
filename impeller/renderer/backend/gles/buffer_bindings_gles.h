@@ -30,7 +30,11 @@ class BufferBindingsGLES {
       const std::vector<ShaderStageIOSlot>& inputs,
       const std::vector<ShaderStageBufferLayout>& layouts);
 
-  bool ReadUniformsBindings(const ProcTableGLES& gl, GLuint program);
+  bool ReadUniformsBindings(const ProcTableGLES& gl,
+                            GLuint program,
+                            bool sampler_only = false);
+
+  bool ReadUniformsBindings3(const ProcTableGLES& gl, GLuint program);
 
   bool BindVertexAttributes(const ProcTableGLES& gl,
                             size_t binding,
@@ -64,12 +68,14 @@ class BufferBindingsGLES {
     GLsizei stride = 0u;
     GLsizei offset = 0u;
   };
-  std::vector<std::vector<VertexAttribPointer>> vertex_attrib_arrays_;
 
+  std::vector<std::vector<VertexAttribPointer>> vertex_attrib_arrays_;
   std::unordered_map<std::string, GLint> uniform_locations_;
+  std::unordered_map<std::string, std::pair<GLint, GLuint>> ubo_locations_;
 
   using BindingMap = std::unordered_map<std::string, std::vector<GLint>>;
   BindingMap binding_map_ = {};
+  GLuint program_ = GL_NONE;
   GLuint vertex_array_object_ = 0;
 
   const std::vector<GLint>& ComputeUniformLocations(
@@ -78,6 +84,9 @@ class BufferBindingsGLES {
   GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
   bool BindUniformBuffer(const ProcTableGLES& gl, const BufferResource& buffer);
+
+  bool BindUniformBuffer3(const ProcTableGLES& gl,
+                          const BufferResource& buffer);
 
   std::optional<size_t> BindTextures(const ProcTableGLES& gl,
                                      const Bindings& bindings,

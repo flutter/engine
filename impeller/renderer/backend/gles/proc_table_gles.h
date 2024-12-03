@@ -244,6 +244,12 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(WaitSync);                          \
   PROC(MapBufferRange);                    \
   PROC(UnmapBuffer);                       \
+  PROC(GetUniformBlockIndex);              \
+  PROC(GetActiveUniformBlockiv);           \
+  PROC(UniformBlockBinding);               \
+  PROC(GetActiveUniformBlockName);         \
+  PROC(BindBufferBase);                    \
+  PROC(BindBufferRange);                   \
   PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \

@@ -12,6 +12,7 @@ impeller_shaders("entity_shaders") {
   }
 
   use_half_textures = true
+  gles_language_version = 300
 
   shaders = [
     "shaders/blending/advanced_blend.vert",
