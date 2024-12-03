@@ -117,6 +117,10 @@ void runSemanticsTests() {
   group('link', () {
     _testLink();
   });
+
+  group('tabs', () {
+    _testTabs();
+  });
 }
 
 void _testSemanticRole() {
@@ -3805,6 +3809,50 @@ void _testLink() {
     final SemanticsObject object = pumpSemantics();
     expect(object.element.tagName.toLowerCase(), 'a');
     expect(object.element.getAttribute('href'), 'https://flutter.dev');
+  });
+}
+
+void _testTabs() {
+  test('nodes with tab role', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        role: ui.SemanticsRole.tab,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.semanticRole?.kind, SemanticRoleKind.tab);
+    expect(object.element.getAttribute('role'), 'tab');
+  });
+
+  test('nodes with tab panel role', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        role: ui.SemanticsRole.tabPanel,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.semanticRole?.kind, SemanticRoleKind.tabPanel);
+    expect(object.element.getAttribute('role'), 'tabpanel');
   });
 }
 
