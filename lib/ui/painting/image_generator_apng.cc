@@ -110,6 +110,15 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
                     << ") of APNG due to the frame missing data (frame_info).";
     return false;
   }
+  if (frame.x_offset + frame_info.width() >
+          static_cast<unsigned int>(info.width()) ||
+      frame.y_offset + frame_info.height() >
+          static_cast<unsigned int>(info.height())) {
+    FML_DLOG(ERROR) << "Decoded image at index " << image_index
+                    << " (frame index: " << frame_index
+                    << ") rejected because it doesn't fit into the canvas.";
+    return false;
+  }
 
   //----------------------------------------------------------------------------
   /// 3. Composite the frame onto the canvas.
