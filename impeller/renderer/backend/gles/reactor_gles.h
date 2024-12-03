@@ -174,6 +174,8 @@ class ReactorGLES {
   ///
   HandleGLES CreateHandle(HandleType type, GLuint external_handle = GL_NONE);
 
+  HandleGLES CreateUntrackedHandle(HandleType type);
+
   //----------------------------------------------------------------------------
   /// @brief      Collect a reactor handle.
   ///
@@ -255,8 +257,10 @@ class ReactorGLES {
     union {
       GLuint handle;
       GLsync sync;
+      uint64_t integer;
     };
   };
+  static_assert(sizeof(GLStorage) == sizeof(uint64_t));
 
   struct LiveHandle {
     std::optional<GLStorage> name;
