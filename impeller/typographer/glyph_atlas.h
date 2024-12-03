@@ -9,6 +9,8 @@
 #include <memory>
 #include <optional>
 
+#include "flutter/fml/build_config.h"
+
 #if defined(OS_FUCHSIA)
 // TODO(gaaclarke): Migrate to use absl. I couldn't get it working since absl
 // has special logic in its GN files for Fuchsia that I couldn't sort out.
