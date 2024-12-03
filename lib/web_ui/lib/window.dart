@@ -123,12 +123,7 @@ abstract class AccessibilityFeatures {
 
 /// Describes the contrast of a theme or color palette.
 enum Brightness {
-  /// {@template dart.ui.window.brightness.dark}
-  /// The color is dark and will require a light text color to achieve readable
-  /// contrast.
-  ///
-  /// For example, the color might be dark grey, requiring white text.
-  /// {@endtemplate}
+  /// {@macro dart.ui.window.brightness.dark}
   dark,
 
   /// {@template dart.ui.window.brightness.light}
