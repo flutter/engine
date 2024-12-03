@@ -538,7 +538,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   if (!render_target.HasColorAttachment(0u)) {
     return false;
   }
-  const ColorAttachment& color0 = render_target.GetColor0();
+  const ColorAttachment& color0 = render_target.GetColorAttachment(0);
   const std::optional<DepthAttachment>& depth0 =
       render_target.GetDepthAttachment();
   const std::optional<StencilAttachment>& stencil0 =

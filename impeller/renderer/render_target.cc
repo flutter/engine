@@ -93,6 +93,22 @@ bool RenderTarget::IsValid() const {
   return true;
 }
 
+bool RenderTarget::IterateAllColorAttachments(
+    const std::function<bool(size_t index, const ColorAttachment& attachment)>&
+        iterator) const {
+  if (color0_.has_value()) {
+    if (!iterator(0, color0_.value())) {
+      return false;
+    }
+  }
+  for (const auto& [index, attachment] : colors_) {
+    if (!iterator(index, attachment)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void RenderTarget::IterateAllAttachments(
     const std::function<bool(const Attachment& attachment)>& iterator) const {
   if (color0_.has_value()) {
@@ -214,20 +230,18 @@ RenderTarget& RenderTarget::SetStencilAttachment(
   return *this;
 }
 
-ColorAttachment RenderTarget::GetColor0() const {
-  if (color0_.has_value()) {
-    return color0_.value();
+ColorAttachment RenderTarget::GetColorAttachment(size_t index) const {
+  if (index == 0) {
+    if (color0_.has_value()) {
+      return color0_.value();
+    }
+    return ColorAttachment{};
+  }
+  std::map<size_t, ColorAttachment>::const_iterator it = colors_.find(index);
+  if (it != colors_.end()) {
+    return it->second;
   }
   return ColorAttachment{};
-}
-
-bool RenderTarget::HasColor0() const {
-  return color0_.has_value();
-}
-
-const std::map<size_t, ColorAttachment>& RenderTarget::GetColorAttachments()
-    const {
-  return colors_;
 }
 
 const std::optional<DepthAttachment>& RenderTarget::GetDepthAttachment() const {

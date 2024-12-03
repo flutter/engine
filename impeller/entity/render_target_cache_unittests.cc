@@ -105,8 +105,8 @@ TEST_P(RenderTargetCacheTest, CachedTextureGetsNewAttachmentConfig) {
       *GetContext(), {100, 100}, 1, "Offscreen2", color_attachment_config);
   render_target_cache.End();
 
-  ColorAttachment color1 = target1.GetColor0();
-  ColorAttachment color2 = target2.GetColor0();
+  ColorAttachment color1 = target1.GetColorAttachment(0);
+  ColorAttachment color2 = target2.GetColorAttachment(0);
   // The second color attachment should reuse the first attachment's texture
   // but with attributes from the second AttachmentConfig.
   EXPECT_EQ(color2.texture, color1.texture);

@@ -56,18 +56,14 @@ static std::vector<vk::ClearValue> GetVKClearValues(
     const RenderTarget& target) {
   std::vector<vk::ClearValue> clears;
 
-  const ColorAttachment& color0 = target.GetColor0();
-  clears.emplace_back(VKClearValueFromColor(color0.clear_color));
-  if (color0.resolve_texture) {
-    clears.emplace_back(VKClearValueFromColor(color0.clear_color));
-  }
-
-  for (const auto& [_, color] : target.GetColorAttachments()) {
-    clears.emplace_back(VKClearValueFromColor(color.clear_color));
-    if (color.resolve_texture) {
-      clears.emplace_back(VKClearValueFromColor(color.clear_color));
-    }
-  }
+  target.IterateAllColorAttachments(
+      [&clears](size_t index, const ColorAttachment& attachment) -> bool {
+        clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+        if (attachment.resolve_texture) {
+          clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+        }
+        return true;
+      });
 
   const auto& depth = target.GetDepthAttachment();
   const auto& stencil = target.GetStencilAttachment();
@@ -89,38 +85,24 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
   RenderPassBuilderVK builder;
 
-  const ColorAttachment& color0 = render_target_.GetColor0();
-  builder.SetColorAttachment(
-      0u,                                                   //
-      color0.texture->GetTextureDescriptor().format,        //
-      color0.texture->GetTextureDescriptor().sample_count,  //
-      color0.load_action,                                   //
-      color0.store_action,                                  //
-      TextureVK::Cast(*color0.texture).GetLayout()          //
-  );
-  TextureVK::Cast(*color0.texture)
-      .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-  if (color0.resolve_texture) {
-    TextureVK::Cast(*color0.resolve_texture)
-        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-  }
-
-  for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    builder.SetColorAttachment(
-        bind_point,                                          //
-        color.texture->GetTextureDescriptor().format,        //
-        color.texture->GetTextureDescriptor().sample_count,  //
-        color.load_action,                                   //
-        color.store_action,                                  //
-        TextureVK::Cast(*color.texture).GetLayout()          //
-    );
-    TextureVK::Cast(*color.texture)
-        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-    if (color.resolve_texture) {
-      TextureVK::Cast(*color.resolve_texture)
-          .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-    }
-  }
+  render_target_.IterateAllColorAttachments(
+      [&](size_t bind_point, const ColorAttachment& attachment) -> bool {
+        builder.SetColorAttachment(
+            bind_point,                                               //
+            attachment.texture->GetTextureDescriptor().format,        //
+            attachment.texture->GetTextureDescriptor().sample_count,  //
+            attachment.load_action,                                   //
+            attachment.store_action,                                  //
+            TextureVK::Cast(*attachment.texture).GetLayout()          //
+        );
+        TextureVK::Cast(*attachment.texture)
+            .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+        if (attachment.resolve_texture) {
+          TextureVK::Cast(*attachment.resolve_texture)
+              .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+        }
+        return true;
+      });
 
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
     builder.SetDepthStencilAttachment(
@@ -159,8 +141,9 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
                            const RenderTarget& target,
                            std::shared_ptr<CommandBufferVK> command_buffer)
     : RenderPass(context, target), command_buffer_(std::move(command_buffer)) {
-  color_image_vk_ = render_target_.GetColor0().texture;
-  resolve_image_vk_ = render_target_.GetColor0().resolve_texture;
+  const ColorAttachment& color0 = render_target_.GetColorAttachment(0);
+  color_image_vk_ = color0.texture;
+  resolve_image_vk_ = color0.resolve_texture;
 
   const auto& vk_context = ContextVK::Cast(*context);
   command_buffer_vk_ = command_buffer_->GetCommandBuffer();
@@ -274,24 +257,19 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   // This bit must be consistent to ensure compatibility with the pass created
   // earlier. Follow this order: Color attachments, then depth-stencil, then
   // stencil.
-  const ColorAttachment color0 = render_target_.GetColor0();
-  attachments.emplace_back(
-      TextureVK::Cast(*color0.texture).GetRenderTargetView());
-  if (color0.resolve_texture) {
-    attachments.emplace_back(
-        TextureVK::Cast(*color0.resolve_texture).GetRenderTargetView());
-  }
+  render_target_.IterateAllColorAttachments(
+      [&attachments](size_t index, const ColorAttachment& attachment) -> bool {
+        // The bind point doesn't matter here since that information is present
+        // in the render pass.
+        attachments.emplace_back(
+            TextureVK::Cast(*attachment.texture).GetRenderTargetView());
+        if (attachment.resolve_texture) {
+          attachments.emplace_back(TextureVK::Cast(*attachment.resolve_texture)
+                                       .GetRenderTargetView());
+        }
+        return true;
+      });
 
-  for (const auto& [_, color] : render_target_.GetColorAttachments()) {
-    // The bind point doesn't matter here since that information is present in
-    // the render pass.
-    attachments.emplace_back(
-        TextureVK::Cast(*color.texture).GetRenderTargetView());
-    if (color.resolve_texture) {
-      attachments.emplace_back(
-          TextureVK::Cast(*color.resolve_texture).GetRenderTargetView());
-    }
-  }
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
     attachments.emplace_back(
         TextureVK::Cast(*depth->texture).GetRenderTargetView());

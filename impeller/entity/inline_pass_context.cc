@@ -91,7 +91,8 @@ const std::shared_ptr<RenderPass>& InlinePassContext::GetRenderPass() {
   {
     // If the pass target has a resolve texture, then we're using MSAA.
     bool is_msaa =
-        pass_target_.GetRenderTarget().GetColor0().resolve_texture != nullptr;
+        pass_target_.GetRenderTarget().GetColorAttachment(0).resolve_texture !=
+        nullptr;
     if (pass_count_ > 0 && is_msaa) {
       pass_target_.Flip(renderer_);
     }
@@ -99,7 +100,7 @@ const std::shared_ptr<RenderPass>& InlinePassContext::GetRenderPass() {
 
   // Find the color attachment a second time, since the target may have just
   // flipped.
-  ColorAttachment color0 = pass_target_.GetRenderTarget().GetColor0();
+  ColorAttachment color0 = pass_target_.GetRenderTarget().GetColorAttachment(0);
   bool is_msaa = color0.resolve_texture != nullptr;
 
   if (pass_count_ > 0) {

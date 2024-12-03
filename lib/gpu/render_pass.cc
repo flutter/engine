@@ -105,14 +105,13 @@ RenderPass::GetOrCreatePipeline() {
 
   pipeline_desc.SetSampleCount(render_target_.GetSampleCount());
 
-  if (render_target_.HasColor0()) {
-    auto& color = GetColorAttachmentDescriptor(0);
-    color.format = render_target_.GetRenderTargetPixelFormat();
-  }
-  for (const auto& it : render_target_.GetColorAttachments()) {
-    auto& color = GetColorAttachmentDescriptor(it.first);
-    color.format = render_target_.GetRenderTargetPixelFormat();
-  }
+  render_target_.IterateAllColorAttachments(
+      [&](size_t index, const impeller::ColorAttachment& attachment) -> bool {
+        auto& color = GetColorAttachmentDescriptor(index);
+        color.format = render_target_.GetRenderTargetPixelFormat();
+        return true;
+      });
+
   pipeline_desc.SetColorAttachmentDescriptors(color_descriptors_);
 
   {

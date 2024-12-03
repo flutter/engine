@@ -284,7 +284,7 @@ bool Playground::OpenPlaygroundHere(
       }
       buffer->SetLabel("ImGui Command Buffer");
 
-      auto color0 = render_target.GetColor0();
+      auto color0 = render_target.GetColorAttachment(0);
       color0.load_action = LoadAction::kLoad;
       if (color0.resolve_texture) {
         color0.texture = color0.resolve_texture;

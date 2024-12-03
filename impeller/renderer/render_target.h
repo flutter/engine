@@ -102,6 +102,13 @@ class RenderTarget final {
   RenderTarget& SetColorAttachment(const ColorAttachment& attachment,
                                    size_t index);
 
+  /// @brief Get the color attachment at [index].
+  ///
+  /// This function does not validate whether or not the attachment was
+  /// previously defined and will return a default constructed attachment
+  /// if none is set.
+  ColorAttachment GetColorAttachment(size_t index) const;
+
   RenderTarget& SetDepthAttachment(std::optional<DepthAttachment> attachment);
 
   RenderTarget& SetStencilAttachment(
@@ -109,17 +116,16 @@ class RenderTarget final {
 
   size_t GetMaxColorAttacmentBindIndex() const;
 
-  ColorAttachment GetColor0() const;
-
-  bool HasColor0() const;
-
-  const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
-
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
 
   const std::optional<StencilAttachment>& GetStencilAttachment() const;
 
   size_t GetTotalAttachmentCount() const;
+
+  bool IterateAllColorAttachments(
+      const std::function<bool(size_t index,
+                               const ColorAttachment& attachment)>& iterator)
+      const;
 
   void IterateAllAttachments(
       const std::function<bool(const Attachment& attachment)>& iterator) const;
