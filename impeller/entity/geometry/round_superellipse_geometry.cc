@@ -53,7 +53,7 @@ constexpr Scalar kRatioStep =
 // corresponds to the 2nd element of each row, etc.
 //
 // The `ratio` corresponds to column 0, on which the lerp is calculated.
-Scalar lerpPrecomputedVariable(size_t column, Scalar ratio) {
+Scalar LerpPrecomputedVariable(size_t column, Scalar ratio) {
   Scalar steps =
       std::clamp<Scalar>((ratio - kMinRatio) / kRatioStep, 0, kNumRecords - 1);
   size_t left =
@@ -102,8 +102,8 @@ Scalar CalculateStep(Scalar minDimension, Scalar fullAngle) {
 }
 
 // The distance from point M (the 45deg point) to either side of the closer
-// bounding box is defined as `gap`.
-constexpr Scalar gap(Scalar corner_radius) {
+// bounding box is defined as `CalculateGap`.
+constexpr Scalar CalculateGap(Scalar corner_radius) {
   // Heuristic formula derived from experimentation.
   return 0.2924066406 * corner_radius;
 }
@@ -188,7 +188,7 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
    *        ← s →
    *        ←------ size/2 ------→
    *
-   * Define gap (g) as the distance between point M and the bounding box,
+   * Define CalculateGap (g) as the distance between point M and the bounding box,
    * therefore point M is at (size/2 - g, size/2 - g).
    *
    * The superellipsoid curve can be drawn with an implicit parameter θ:
@@ -202,11 +202,11 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
   Scalar ratio = {std::min(size / corner_radius, kMaxRatio)};
   Scalar a = ratio * corner_radius / 2;
   Scalar s = size / 2 - a;
-  Scalar g = gap(corner_radius);
+  Scalar g = CalculateGap(corner_radius);
 
-  Scalar n = lerpPrecomputedVariable(1, ratio);
-  Scalar d = lerpPrecomputedVariable(2, ratio) * a;
-  Scalar thetaJ = lerpPrecomputedVariable(3, ratio);
+  Scalar n = LerpPrecomputedVariable(1, ratio);
+  Scalar d = LerpPrecomputedVariable(2, ratio) * a;
+  Scalar thetaJ = LerpPrecomputedVariable(3, ratio);
 
   Scalar R = (a - d - g) * sqrt(2);
 
@@ -369,7 +369,7 @@ GeometryResult RoundSuperellipseGeometry::GetPositionBuffer(
     next += FlipAndOffset(next, octant_cache, octant_length, /*flip=*/false,
                           Point(0, -c));
 
-    *(next++) = Point(size / 2) - gap(corner_radius_);  // Point M
+    *(next++) = Point(size / 2) - CalculateGap(corner_radius_);  // Point M
 
     octant_length =
         DrawOctantSquareLikeSquircle(octant_cache, size.height, corner_radius_);
@@ -414,7 +414,7 @@ bool RoundSuperellipseGeometry::CoversArea(const Matrix& transform,
   }
   // Use the rectangle formed by the four 45deg points (point M) as a
   // conservative estimate of the inner rectangle.
-  Scalar g = gap(corner_radius_);
+  Scalar g = CalculateGap(corner_radius_);
   Rect coverage =
       Rect::MakeLTRB(bounds_.GetLeft() + g, bounds_.GetTop() + g,
                      bounds_.GetRight() - g, bounds_.GetBottom() - g)
