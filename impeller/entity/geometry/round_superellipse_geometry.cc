@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #include <cmath>
-#include <ranges>
-#include <vector>
 
 #include "flutter/impeller/entity/geometry/round_superellipse_geometry.h"
 
