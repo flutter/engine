@@ -150,7 +150,6 @@ vars = {
   "upstream_angle": "https://github.com/google/angle.git",
   "upstream_archive": "https://github.com/brendan-duncan/archive.git",
   "upstream_benchmark": "https://github.com/google/benchmark.git",
-  "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_brotli": "https://github.com/google/brotli.git",
   "upstream_buildroot": "https://github.com/flutter/buildroot.git",
@@ -294,9 +293,6 @@ deps = {
 
   'src/flutter/third_party/googletest':
    Var('chromium_git') + '/external/github.com/google/googletest' + '@' + '7f036c5563af7d0329f20e8bb42effb04629f0c0',
-
-  'src/flutter/third_party/boringssl':
-   Var('dart_git') + '/boringssl_gen.git' + '@' + Var('dart_boringssl_gen_rev'),
 
   'src/flutter/third_party/brotli':
    Var('skia_git') + '/external/github.com/google/brotli.git' + '@' + '350100a5bb9d9671aca85213b2ec7a70a361b0cd',
