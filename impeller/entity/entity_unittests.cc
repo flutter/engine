@@ -1816,6 +1816,45 @@ TEST_P(EntityTest, RuntimeEffectCanPrecache) {
   EXPECT_TRUE(contents->BootstrapShader(*GetContentContext()));
 }
 
+TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
+  if (GetBackend() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Test only applies to Vulkan";
+  }
+
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  auto contents = std::make_shared<RuntimeEffectContents>();
+  auto geom = Geometry::MakeCover();
+  contents->SetGeometry(geom.get());
+  contents->SetRuntimeStage(runtime_stage);
+
+  struct FragUniforms {
+    Vector2 iResolution;
+    Scalar iTime;
+  } frag_uniforms = {
+      .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+      .iTime = static_cast<Scalar>(GetSecondsElapsed()),
+  };
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(FragUniforms));
+  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+
+  auto buffer_view = RuntimeEffectContents::EmplaceVulkanUniform(
+      *uniform_data.get(), GetContentContext()->GetTransientsBuffer(),
+      runtime_stage->GetUniforms()[0]);
+
+  // 16 bytes:
+  //   8 bytes for iResolution
+  //   4 bytes for iTime
+  //   4 bytes padding
+  EXPECT_EQ(buffer_view.GetRange().length, 16u);
+}
+
 TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
   auto image = CreateTextureForFixture("boston.jpg");
   auto filter = ColorFilterContents::MakeBlend(
