@@ -11,7 +11,6 @@
 #include "flutter/fml/hash_combine.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
-#include "impeller/renderer/backend/gles/unique_handle_gles.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/shader_function.h"
 
@@ -82,10 +81,8 @@ class PipelineLibraryGLES final
     };
   };
 
-  using ProgramMap = std::unordered_map<ProgramKey,
-                                        std::shared_ptr<UniqueHandleGLES>,
-                                        ProgramKey::Hash,
-                                        ProgramKey::Equal>;
+  using ProgramMap = std::
+      unordered_map<ProgramKey, GLint, ProgramKey::Hash, ProgramKey::Equal>;
 
   ReactorGLES::Ref reactor_;
   PipelineMap pipelines_;
@@ -121,10 +118,9 @@ class PipelineLibraryGLES final
       const std::shared_ptr<const ShaderFunction>& vert_shader,
       const std::shared_ptr<const ShaderFunction>& frag_shader);
 
-  std::shared_ptr<UniqueHandleGLES> GetProgramForKey(const ProgramKey& key);
+  GLint GetProgramForKey(const ProgramKey& key);
 
-  void SetProgramForKey(const ProgramKey& key,
-                        std::shared_ptr<UniqueHandleGLES> program);
+  void SetProgramForKey(const ProgramKey& key, GLint program);
 };
 
 }  // namespace impeller

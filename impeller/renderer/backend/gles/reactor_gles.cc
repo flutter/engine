@@ -361,6 +361,15 @@ void ReactorGLES::SetupDebugGroups() {
   }
 }
 
+void ReactorGLES::SetDirectDebugLabel(GLint handle,
+                                      DebugResourceType type,
+                                      std::string_view label) {
+  if (!can_set_debug_labels_) {
+    return;
+  }
+  GetProcTable().SetDebugLabel(type, handle, label.data());
+}
+
 void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
                                 std::string_view label) {
   if (!can_set_debug_labels_) {

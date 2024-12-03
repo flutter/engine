@@ -25,6 +25,7 @@ TEST_P(PipelineLibraryGLESTest, ProgramHandlesAreReused) {
   auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
   auto new_desc = desc;
+
   // Changing the sample counts should not result in a new program object.
   new_desc->SetSampleCount(SampleCount::kCount4);
   // Make sure we don't hit the top-level descriptor cache. This will cause
@@ -35,11 +36,12 @@ TEST_P(PipelineLibraryGLESTest, ProgramHandlesAreReused) {
   ASSERT_TRUE(new_pipeline && new_pipeline->IsValid());
   const auto& pipeline_gles = PipelineGLES::Cast(*pipeline);
   const auto& new_pipeline_gles = PipelineGLES::Cast(*new_pipeline);
+
   // The program handles should be live and equal.
-  ASSERT_FALSE(pipeline_gles.GetProgramHandle().IsDead());
-  ASSERT_FALSE(new_pipeline_gles.GetProgramHandle().IsDead());
-  ASSERT_EQ(pipeline_gles.GetProgramHandle().GetName().value(),
-            new_pipeline_gles.GetProgramHandle().GetName().value());
+  ASSERT_NE(pipeline_gles.GetProgramHandle(), GL_NONE);
+  ASSERT_NE(new_pipeline_gles.GetProgramHandle(), GL_NONE);
+  ASSERT_EQ(pipeline_gles.GetProgramHandle(),
+            new_pipeline_gles.GetProgramHandle());
 }
 
 TEST_P(PipelineLibraryGLESTest, ChangingSpecConstantsCausesNewProgramObject) {
@@ -53,6 +55,7 @@ TEST_P(PipelineLibraryGLESTest, ChangingSpecConstantsCausesNewProgramObject) {
   auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
   auto new_desc = desc;
+
   // Changing the spec. constants should result in a new program object.
   new_desc->SetSpecializationConstants({4.0f});
   auto new_pipeline =
@@ -60,11 +63,12 @@ TEST_P(PipelineLibraryGLESTest, ChangingSpecConstantsCausesNewProgramObject) {
   ASSERT_TRUE(new_pipeline && new_pipeline->IsValid());
   const auto& pipeline_gles = PipelineGLES::Cast(*pipeline);
   const auto& new_pipeline_gles = PipelineGLES::Cast(*new_pipeline);
-  // The program handles should be live and equal.
-  ASSERT_FALSE(pipeline_gles.GetProgramHandle().IsDead());
-  ASSERT_FALSE(new_pipeline_gles.GetProgramHandle().IsDead());
-  ASSERT_FALSE(pipeline_gles.GetProgramHandle().GetName().value() ==
-               new_pipeline_gles.GetProgramHandle().GetName().value());
+
+  // The program handles should be live and un-equal.
+  ASSERT_NE(pipeline_gles.GetProgramHandle(), GL_NONE);
+  ASSERT_NE(new_pipeline_gles.GetProgramHandle(), GL_NONE);
+  ASSERT_NE(pipeline_gles.GetProgramHandle(),
+            new_pipeline_gles.GetProgramHandle());
 }
 // NOLINTEND(bugprone-unchecked-optional-access)
 

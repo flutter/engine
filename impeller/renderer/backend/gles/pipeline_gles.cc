@@ -3,20 +3,20 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
 
 PipelineGLES::PipelineGLES(ReactorGLES::Ref reactor,
                            std::weak_ptr<PipelineLibrary> library,
                            const PipelineDescriptor& desc,
-                           std::shared_ptr<UniqueHandleGLES> handle)
+                           GLint program_handle)
     : Pipeline(std::move(library), desc),
       reactor_(std::move(reactor)),
-      handle_(std::move(handle)),
-      is_valid_(handle_->IsValid()) {
-  if (is_valid_) {
-    reactor_->SetDebugLabel(handle_->Get(), GetDescriptor().GetLabel());
-  }
+      program_handle_(program_handle),
+      is_valid_(program_handle != GL_NONE) {
+  reactor_->SetDirectDebugLabel(program_handle_, DebugResourceType::kProgram,
+                                GetDescriptor().GetLabel());
 }
 
 // |Pipeline|
@@ -27,12 +27,8 @@ bool PipelineGLES::IsValid() const {
   return is_valid_;
 }
 
-const HandleGLES& PipelineGLES::GetProgramHandle() const {
-  return handle_->Get();
-}
-
-const std::shared_ptr<UniqueHandleGLES> PipelineGLES::GetSharedHandle() const {
-  return handle_;
+GLint PipelineGLES::GetProgramHandle() const {
+  return program_handle_;
 }
 
 BufferBindingsGLES* PipelineGLES::GetBufferBindings() const {
@@ -58,14 +54,10 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
 }
 
 [[nodiscard]] bool PipelineGLES::BindProgram() const {
-  if (!handle_->IsValid()) {
+  if (program_handle_ == GL_NONE) {
     return false;
   }
-  auto handle = reactor_->GetGLHandle(handle_->Get());
-  if (!handle.has_value()) {
-    return false;
-  }
-  reactor_->GetProcTable().UseProgram(handle.value());
+  reactor_->GetProcTable().UseProgram(program_handle_);
   return true;
 }
 

@@ -25,7 +25,7 @@ static std::string GetShaderInfoLog(const ProcTableGLES& gl, GLuint shader) {
   if (log_length == 0) {
     return "";
   }
-  auto log_buffer =
+  char* log_buffer =
       reinterpret_cast<char*>(std::calloc(log_length, sizeof(char)));
   gl.GetShaderInfoLog(shader, log_length, &log_length, log_buffer);
   auto log_string = std::string(log_buffer, log_length);
@@ -134,40 +134,36 @@ static bool LinkProgram(
     return false;
   }
 
-  auto program = reactor.GetGLHandle(pipeline->GetProgramHandle());
-  if (!program.has_value()) {
-    VALIDATION_LOG << "Could not get program handle from reactor.";
-    return false;
-  }
+  GLint program_handle = pipeline->GetProgramHandle();
 
-  gl.AttachShader(*program, vert_shader);
-  gl.AttachShader(*program, frag_shader);
+  gl.AttachShader(program_handle, vert_shader);
+  gl.AttachShader(program_handle, frag_shader);
 
   fml::ScopedCleanupClosure detach_vert_shader(
-      [&gl, program = *program, vert_shader]() {
+      [&gl, program = program_handle, vert_shader]() {
         gl.DetachShader(program, vert_shader);
       });
   fml::ScopedCleanupClosure detach_frag_shader(
-      [&gl, program = *program, frag_shader]() {
+      [&gl, program = program_handle, frag_shader]() {
         gl.DetachShader(program, frag_shader);
       });
 
   for (const auto& stage_input :
        descriptor.GetVertexDescriptor()->GetStageInputs()) {
-    gl.BindAttribLocation(*program,                                   //
+    gl.BindAttribLocation(program_handle,                             //
                           static_cast<GLuint>(stage_input.location),  //
                           stage_input.name                            //
     );
   }
 
-  gl.LinkProgram(*program);
+  gl.LinkProgram(program_handle);
 
   GLint link_status = GL_FALSE;
-  gl.GetProgramiv(*program, GL_LINK_STATUS, &link_status);
+  gl.GetProgramiv(program_handle, GL_LINK_STATUS, &link_status);
 
   if (link_status != GL_TRUE) {
     VALIDATION_LOG << "Could not link shader program: "
-                   << gl.GetProgramInfoLogString(*program);
+                   << gl.GetProgramInfoLogString(program_handle);
     return false;
   }
   return true;
@@ -204,22 +200,20 @@ std::shared_ptr<PipelineGLES> PipelineLibraryGLES::CreatePipeline(
 
   auto cached_program = library.GetProgramForKey(program_key);
 
-  const auto has_cached_program = !!cached_program;
-
-  auto pipeline = std::shared_ptr<PipelineGLES>(new PipelineGLES(
-      reactor,       //
-      weak_library,  //
-      desc,          //
-      has_cached_program
-          ? std::move(cached_program)
-          : std::make_shared<UniqueHandleGLES>(reactor, HandleType::kProgram)));
-
-  auto program = reactor->GetGLHandle(pipeline->GetProgramHandle());
-
-  if (!program.has_value()) {
-    VALIDATION_LOG << "Could not obtain program handle.";
-    return nullptr;
+  const auto has_cached_program = cached_program != GL_NONE;
+  GLint program_handle = GL_NONE;
+  if (has_cached_program) {
+    program_handle = cached_program;
+  } else {
+    program_handle = reactor->GetProcTable().CreateProgram();
   }
+
+  auto pipeline =
+      std::shared_ptr<PipelineGLES>(new PipelineGLES(reactor,        //
+                                                     weak_library,   //
+                                                     desc,           //
+                                                     program_handle  //
+                                                     ));
 
   const auto link_result = !has_cached_program ? LinkProgram(*reactor,       //
                                                              pipeline,       //
@@ -234,7 +228,7 @@ std::shared_ptr<PipelineGLES> PipelineLibraryGLES::CreatePipeline(
   }
 
   if (!pipeline->BuildVertexDescriptor(reactor->GetProcTable(),
-                                       program.value())) {
+                                       program_handle)) {
     VALIDATION_LOG << "Could not build pipeline vertex descriptors.";
     return nullptr;
   }
@@ -245,7 +239,7 @@ std::shared_ptr<PipelineGLES> PipelineLibraryGLES::CreatePipeline(
   }
 
   if (!has_cached_program) {
-    library.SetProgramForKey(program_key, pipeline->GetSharedHandle());
+    library.SetProgramForKey(program_key, program_handle);
   }
 
   return pipeline;
@@ -321,27 +315,31 @@ void PipelineLibraryGLES::RemovePipelinesWithEntryPoint(
 }
 
 // |PipelineLibrary|
-PipelineLibraryGLES::~PipelineLibraryGLES() = default;
+PipelineLibraryGLES::~PipelineLibraryGLES() {
+  if (reactor_) {
+    for (const auto& [key, value] : programs_) {
+      reactor_->GetProcTable().DeleteShader(value);
+    }
+  }
+}
 
 const ReactorGLES::Ref& PipelineLibraryGLES::GetReactor() const {
   return reactor_;
 }
 
-std::shared_ptr<UniqueHandleGLES> PipelineLibraryGLES::GetProgramForKey(
-    const ProgramKey& key) {
+GLint PipelineLibraryGLES::GetProgramForKey(const ProgramKey& key) {
   Lock lock(programs_mutex_);
   auto found = programs_.find(key);
   if (found != programs_.end()) {
     return found->second;
   }
-  return nullptr;
+  return GL_NONE;
 }
 
-void PipelineLibraryGLES::SetProgramForKey(
-    const ProgramKey& key,
-    std::shared_ptr<UniqueHandleGLES> program) {
+void PipelineLibraryGLES::SetProgramForKey(const ProgramKey& key,
+                                           GLint program) {
   Lock lock(programs_mutex_);
-  programs_[key] = std::move(program);
+  programs_[key] = program;
 }
 
 }  // namespace impeller

@@ -197,6 +197,22 @@ class ReactorGLES {
   void SetDebugLabel(const HandleGLES& handle, std::string_view label);
 
   //----------------------------------------------------------------------------
+  /// @brief      Set the debug label on a GL handle.
+  ///
+  ///             This call requires that the handle has already been created
+  ///             and is called on a valid thread. This function will no-op
+  ///             in release modes or if the debug labeling extension is not
+  ///             available.
+  ///
+  /// @param[in]  handle  The handle
+  /// @param[in]  type    The type.
+  /// @param[in]  label   The label
+  ///
+  void SetDirectDebugLabel(GLint handle,
+                           DebugResourceType type,
+                           std::string_view label);
+
+  //----------------------------------------------------------------------------
   /// @brief      Whether the device is capable of writing debug labels.
   ///
   ///             This function is useful for short circuiting expensive debug
