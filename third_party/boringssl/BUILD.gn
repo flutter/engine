@@ -22,6 +22,8 @@ config("component_config") {
   visibility = [ ":*" ]
   configs = [ ":internal_config" ]
   defines = [ "BORINGSSL_IMPLEMENTATION" ]
+
+  cflags_c = [ "-std=c17" ]
 }
 
 # This config is used by anything that consumes internal headers. Tests consume
