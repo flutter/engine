@@ -171,6 +171,16 @@ void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
   RecordGLCall("glUniform1fv");
 }
 
+void mockGenTextures(GLsizei n, GLuint* textures) {
+  RecordGLCall("glGenTextures");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->next_texture_.has_value()) {
+      textures[0] = mock_gles->next_texture_.value();
+      mock_gles->next_texture_ = std::nullopt;
+    }
+  }
+}
+
 static_assert(CheckSameSignature<decltype(mockUniform1fv),  //
                                  decltype(glUniform1fv)>::value);
 
@@ -217,6 +227,8 @@ const ProcTableGLES::Resolver kMockResolverGLES = [](const char* name) {
     return reinterpret_cast<void*>(mockGetQueryObjectuivEXT);
   } else if (strcmp(name, "glUniform1fv") == 0) {
     return reinterpret_cast<void*>(mockUniform1fv);
+  } else if (strcmp(name, "glGenTextures") == 0) {
+    return reinterpret_cast<void*>(mockGenTextures);
   } else {
     return reinterpret_cast<void*>(&doNothing);
   }
