@@ -113,14 +113,13 @@ static void handle_response(GObject* object,
 
   g_autoptr(GError) error = nullptr;
   FlBasicMessageChannel* messageChannel = FL_BASIC_MESSAGE_CHANNEL(object);
-  FlValue* message =
+  g_autoptr(FlValue) message =
       fl_basic_message_channel_send_finish(messageChannel, result, &error);
   bool handled = false;
   if (error != nullptr) {
     g_warning("Unable to retrieve framework response: %s", error->message);
   } else {
-    g_autoptr(FlValue) handled_value =
-        fl_value_lookup_string(message, "handled");
+    FlValue* handled_value = fl_value_lookup_string(message, "handled");
     handled = fl_value_get_bool(handled_value);
   }
 
