@@ -188,8 +188,8 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
    *        ← s →
    *        ←------ size/2 ------→
    *
-   * Define CalculateGap (g) as the distance between point M and the bounding
-   * box, therefore point M is at (size/2 - g, size/2 - g).
+   * Define gap (g) as the distance between point M and the bounding box,
+   * therefore point M is at (size/2 - g, size/2 - g).
    *
    * The superellipsoid curve can be drawn with an implicit parameter θ:
    *   x = a * sinθ ^ (2/n)
