@@ -62,7 +62,7 @@ void fl_key_event_channel_send(FlKeyEventChannel* self,
                                int64_t scan_code,
                                int64_t key_code,
                                int64_t modifiers,
-                               int64_t unicode_scarlar_values,
+                               int64_t unicode_scalar_values,
                                int64_t specified_logical_key,
                                GCancellable* cancellable,
                                GAsyncReadyCallback callback,
@@ -90,9 +90,9 @@ void fl_key_event_channel_send(FlKeyEventChannel* self,
                            fl_value_new_string(kGtkToolkit));
   fl_value_set_string_take(message, kKeyCodeKey, fl_value_new_int(key_code));
   fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(modifiers));
-  if (unicode_scarlar_values != 0) {
+  if (unicode_scalar_values != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
-                             fl_value_new_int(unicode_scarlar_values));
+                             fl_value_new_int(unicode_scalar_values));
   }
   if (specified_logical_key != 0) {
     fl_value_set_string_take(message, kSpecifiedLogicalKey,

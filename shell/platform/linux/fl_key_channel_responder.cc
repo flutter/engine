@@ -149,7 +149,7 @@ void fl_key_channel_responder_handle_event(
                             ? FL_KEY_EVENT_TYPE_KEYDOWN
                             : FL_KEY_EVENT_TYPE_KEYUP;
   int64_t scan_code = fl_key_event_get_keycode(event);
-  int64_t unicode_scarlar_values =
+  int64_t unicode_scalar_values =
       gdk_keyval_to_unicode(fl_key_event_get_keyval(event));
 
   // For most modifier keys, GTK keeps track of the "pressed" state of the
@@ -202,6 +202,6 @@ void fl_key_channel_responder_handle_event(
       fl_key_channel_user_data_new(self, callback, user_data);
   fl_key_event_channel_send(self->channel, type, scan_code,
                             fl_key_event_get_keyval(event), state,
-                            unicode_scarlar_values, specified_logical_key,
+                            unicode_scalar_values, specified_logical_key,
                             nullptr, handle_response, data);
 }
