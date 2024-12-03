@@ -1017,7 +1017,7 @@ enum Brightness {
   /// Checks if the brightness is [Brightness.dark].
   ///
   /// {@macro dart.ui.window.brightness.dark}
-  bool get isDark => this == Brightness.dark;
+  bool get isDark => this == dark;
 
   /// Checks if the brightness is [Brightness.light].
   ///
