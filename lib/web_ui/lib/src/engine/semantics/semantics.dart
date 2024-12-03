@@ -1234,7 +1234,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The role of this node.
-  ui.SemanticsRole role;
+  late ui.SemanticsRole role;
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
