@@ -63,7 +63,32 @@ Scalar LimitRadius(Scalar corner_radius, const Rect& bounds) {
                   std::min(bounds.GetWidth() / 2, bounds.GetHeight() / 2));
 }
 
-constexpr Scalar kAngleStep = kPi / 80;
+// The max angular step that the algorithm will traverse a quadrant of the curve.
+//
+// This limits the max number of points of the curve.
+constexpr Scalar kMaxQuadrantSteps = 40;
+
+// Calculates the angular step size for a smooth curve.
+//
+// Returns the angular step needed to ensure a curve appears smooth
+// based on the smallest dimension of a shape. Smaller dimensions require
+// larger steps as less detail is needed for smoothness.
+//
+// The `minDimension` is the smallest dimension (e.g., width or height) of the
+// shape.
+//
+// The `fullAngle` is the total angular range to traverse.
+Scalar CalculateStep(Scalar minDimension, Scalar fullAngle) {
+  constexpr Scalar kMinAngleStep = kPiOver2 / kMaxQuadrantSteps;
+
+  // Assumes at least 1 point is needed per pixel to achieve sufficient
+  // smoothness.
+  constexpr Scalar pointsPerPixel = 1.0;
+  size_t pointsByDimension = (size_t)std::ceil(minDimension * pointsPerPixel);
+  Scalar angleByDimension = fullAngle / pointsByDimension;
+
+  return std::min(kMinAngleStep, angleByDimension);
+}
 
 // The distance from point M (the 45deg point) to either side of the closer
 // bounding box is defined as `gap`.
@@ -103,11 +128,13 @@ size_t DrawCircularArc(Point* output, Point start, Point end, Scalar r) {
   Scalar angle_sce = asinf(distance_sm / r) * 2;
   Point c_to_s = start - c;
 
+  Scalar step = CalculateStep(std::abs(s_to_e.y), angle_sce);
+
   Point* next = output;
   Scalar angle = 0;
   while (angle < angle_sce) {
     *(next++) = c_to_s.Rotate(Radians(-angle)) + c;
-    angle += kAngleStep;
+    angle += step;
   }
   return next - output;
 }
@@ -180,25 +207,29 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
 
   Point pointM(size / 2 - g, size / 2 - g);
 
+  Scalar xJ = a * pow(abs(sinf(thetaJ)), 2 / n);
+  Scalar yJ = a * pow(abs(cosf(thetaJ)), 2 / n);
+
   Point* next = output;
   // A
   *(next++) = Point(0, size / 2);
   // Superellipsoid arc BJ (B inclusive, J exclusive)
   {
+    Scalar step = CalculateStep(a - yJ, thetaJ);
     Scalar angle = 0;
     while (angle < thetaJ) {
       Scalar x = a * pow(abs(sinf(angle)), 2 / n);
       Scalar y = a * pow(abs(cosf(angle)), 2 / n);
       *(next++) = Point(x + s, y + s);
-      angle += kAngleStep;
+      angle += step;
     }
   }
 
-  Scalar xJ = a * pow(abs(sinf(thetaJ)), 2 / n);
-  Scalar yJ = a * pow(abs(cosf(thetaJ)), 2 / n);
   // Circular arc JM (B inclusive, M exclusive)
   next += DrawCircularArc(next, {xJ + s, yJ + s}, pointM, R);
-  return next - output;
+  size_t number = next - output;
+  printf("Total number of points: %zu\n", number);
+  return number;
 }
 
 // Optionally `flip` the input points before offsetting it by `center`, and
