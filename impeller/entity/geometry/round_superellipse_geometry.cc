@@ -47,7 +47,19 @@ constexpr Scalar kMaxRatio = kPrecomputedVariables[kNumRecords - 1][0];
 constexpr Scalar kRatioStep =
     kPrecomputedVariables[1][0] - kPrecomputedVariables[0][0];
 
-Scalar lerp(size_t column, size_t left, size_t frac) {
+// Linear interpolation for `kPrecomputedVariables`.
+//
+// The `column` is a 0-based index that decides the target variable, where 1
+// corresponds to the 2nd element of each row, etc.
+//
+// The `ratio` corresponds to column 0, on which the lerp is calculated.
+Scalar lerpPrecomputedVariable(size_t column, Scalar ratio) {
+  Scalar steps =
+      std::clamp<Scalar>((ratio - kMinRatio) / kRatioStep, 0, kNumRecords - 1);
+  size_t left =
+      std::clamp<size_t>((size_t)std::floor(steps), 0, kNumRecords - 2);
+  Scalar frac = steps - left;
+
   return (1 - frac) * kPrecomputedVariables[left][column] +
          frac * kPrecomputedVariables[left + 1][column];
 }
@@ -192,15 +204,9 @@ size_t DrawOctantSquareLikeSquircle(Point* output,
   Scalar s = size / 2 - a;
   Scalar g = gap(corner_radius);
 
-  // Use look up table to derive critical variables
-  Scalar steps =
-      std::clamp<Scalar>((ratio - kMinRatio) / kRatioStep, 0, kNumRecords - 1);
-  size_t left =
-      std::clamp<size_t>((size_t)std::floor(steps), 0, kNumRecords - 2);
-  Scalar frac = steps - left;
-  Scalar n = lerp(1, left, frac);
-  Scalar d = lerp(2, left, frac) * a;
-  Scalar thetaJ = lerp(3, left, frac);
+  Scalar n = lerpPrecomputedVariable(1, ratio);
+  Scalar d = lerpPrecomputedVariable(2, ratio) * a;
+  Scalar thetaJ = lerpPrecomputedVariable(3, ratio);
 
   Scalar R = (a - d - g) * sqrt(2);
 
