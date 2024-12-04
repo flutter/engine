@@ -43,10 +43,19 @@ public class SensitiveContentPlugin
       @NonNull MethodChannel.Result result) {
     final View flutterView = mflutterActivity.findViewById(flutterViewId);
     if (flutterView == null) {
-      result.error("error", "Requested Flutter View to set content sensitivty of not found.");
+      result.error("error", "Requested Flutter View to set content sensitivty of not found.", null);
     }
 
     flutterView.setContentSensitivity(contentSensitivity);
     result.success(null);
+  }
+
+  /**
+   * Releases all resources held by this {@code SensitiveContentPlugin}.
+   *
+   * <p>Do not invoke any methods on a {@code SensitiveContentPlugin} after invoking this method.
+   */
+  public void destroy() {
+    this.mSensitiveContentChannel.setSensitiveContentMethodHandler(null);
   }
 }

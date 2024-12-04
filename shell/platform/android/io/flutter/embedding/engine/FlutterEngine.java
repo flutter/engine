@@ -342,6 +342,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
     processTextChannel = new ProcessTextChannel(dartExecutor, context.getPackageManager());
     restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     scribeChannel = new ScribeChannel(dartExecutor);
+    sensitiveContentChannel = new SensitiveContentChannel(dartExecutor);
     settingsChannel = new SettingsChannel(dartExecutor);
     spellCheckChannel = new SpellCheckChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
@@ -624,7 +625,7 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
   /** System channel that handles setting content sensitivity. */
   @NonNull
   public SensitiveContentChannel getSensitiveContentChannel() {
-    return SensitiveContentChannel;
+    return sensitiveContentChannel;
   }
 
   /** System channel that sends and receives spell check requests and results. */

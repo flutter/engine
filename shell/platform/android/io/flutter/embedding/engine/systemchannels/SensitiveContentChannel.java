@@ -11,6 +11,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
+import java.util.ArrayList;
 
 /**
  * {@link SensitiveContentChannel} is a platform channel that is used by the framework to set the
@@ -38,9 +39,9 @@ public class SensitiveContentChannel {
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "SensitiveContent.setContentSensitivity":
-              final ArrayList<String> argumentList = (ArrayList<String>) args;
-              final int flutterViewId = argumentList.get(0);
-              final int contentSensitivityLevel = argumentList.get(1);
+              final ArrayList<Object> argumentList = (ArrayList<Object>) args;
+              final int flutterViewId = (int) argumentList.get(0);
+              final int contentSensitivityLevel = (int) argumentList.get(1);
               try {
                 sensitiveContentMethodHandler.setContentSensitivity(
                     flutterViewId, contentSensitivityLevel, result);
@@ -73,7 +74,7 @@ public class SensitiveContentChannel {
   public interface SensitiveContentMethodHandler {
     /**
      * Requests that content being marked with the requested {@code contentSensitivity} mode for the
-     * native Flutter Android {@code View} whose ID matches {@Long flutterViewId}.
+     * native Flutter Android {@code View} whose ID matches {@code flutterViewId}.
      */
     void setContentSensitivity(
         @NonNull int flutterViewId,
