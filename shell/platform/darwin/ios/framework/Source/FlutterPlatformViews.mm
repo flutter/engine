@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#import <WebKit/WebKit.h>
+
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -579,8 +581,10 @@ static BOOL _preparedOnce = NO;
       // FlutterPlatformViewGestureRecognizersBlockingPolicyEager, but we should try it if a similar
       // issue arises for the other policy.
       if (@available(iOS 18.2, *)) {
-        [self removeGestureRecognizer:self.delayingRecognizer];
-        [self addGestureRecognizer:self.delayingRecognizer];
+        if ([self.embeddedView isKindOfClass:[WKWebView class]]) {
+          [self removeGestureRecognizer:self.delayingRecognizer];
+          [self addGestureRecognizer:self.delayingRecognizer];
+        }
       }
 
       break;
