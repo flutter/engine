@@ -301,6 +301,7 @@ bool ReactorGLES::ConsolidateHandles() {
     WriterLock handles_lock(handles_mutex_);
     handles_to_delete.reserve(handles_to_collect_count_);
     handles_to_collect_count_ = 0;
+    std::swap(handles_to_name, handles_to_name_);
     for (auto& handle : handles_) {
       // Collect dead handles.
       if (handle.second.pending_collection) {
@@ -386,6 +387,7 @@ void ReactorGLES::SetupDebugGroups() {
 
 void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
                                 std::string_view label) {
+  FML_DCHECK(handle.GetType() != HandleType::kFence);
   if (!can_set_debug_labels_) {
     return;
   }
@@ -393,8 +395,14 @@ void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
     return;
   }
   WriterLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_debug_label = label;
+  if (handle.untracked_id_.has_value()) {
+    handles_to_name_.emplace_back(
+        std::make_tuple(ToDebugResourceType(handle.GetType()),
+                        handle.untracked_id_.value(), std::string(label)));
+  } else {
+    if (auto found = handles_.find(handle); found != handles_.end()) {
+      found->second.pending_debug_label = label;
+    }
   }
 }
 

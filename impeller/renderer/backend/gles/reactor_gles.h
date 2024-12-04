@@ -296,6 +296,9 @@ class ReactorGLES {
   mutable RWMutex handles_mutex_;
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
   int32_t handles_to_collect_count_ IPLR_GUARDED_BY(handles_mutex_) = 0;
+  std::vector<
+      std::tuple<DebugResourceType, GLint, std::string>> handles_to_name_
+      IPLR_GUARDED_BY(handles_mutex_);
 
   mutable Mutex workers_mutex_;
   mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(
