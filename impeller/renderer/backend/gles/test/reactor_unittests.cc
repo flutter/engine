@@ -76,7 +76,7 @@ TEST(ReactorGLES, UntrackedHandle) {
   std::optional<GLuint> glint = reactor->GetGLHandle(handle);
   EXPECT_TRUE(glint.has_value());
   if (glint.has_value()) {
-    EXPECT_EQ(1234u, *reactor->GetGLHandle(handle));
+    EXPECT_EQ(1234u, *glint);
   }
   mock_gles->GetCapturedCalls();
   reactor->CollectHandle(handle);
