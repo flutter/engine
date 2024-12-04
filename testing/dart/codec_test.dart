@@ -259,12 +259,14 @@ void main() {
     final Uint8List data = File(
       path.join('flutter', 'lib', 'ui', 'fixtures', 'out_of_bounds.apng'),
     ).readAsBytesSync();
-    final ui.Codec codec = await ui.instantiateImageCodec(data);
 
-    // First frame is transparent black
-    final ui.Image image = (await codec.getNextFrame()).image;
-    final ByteData imageData = (await image.toByteData())!;
-    expect(imageData.getUint32(0), 0xFF000000);
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+    try {
+      await codec.getNextFrame();
+      fail('exception not thrown');
+    } on Exception catch (e) {
+      expect(e.toString(), contains('Codec failed to produce an image'));
+    }
   });
 }
 
