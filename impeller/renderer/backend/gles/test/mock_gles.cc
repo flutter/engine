@@ -174,9 +174,10 @@ void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
 void mockGenTextures(GLsizei n, GLuint* textures) {
   RecordGLCall("glGenTextures");
   if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->next_texture_.has_value()) {
-      textures[0] = mock_gles->next_texture_.value();
-      mock_gles->next_texture_ = std::nullopt;
+    std::optional<uint64_t> next_texture;
+    std::swap(mock_gles->next_texture_, next_texture);
+    if (next_texture.has_value()) {
+      textures[0] = next_texture.value();
     }
   }
 }

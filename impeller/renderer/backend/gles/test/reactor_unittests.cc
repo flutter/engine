@@ -73,7 +73,11 @@ TEST(ReactorGLES, UntrackedHandle) {
   mock_gles->SetNextTexture(1234u);
   HandleGLES handle = reactor->CreateUntrackedHandle(HandleType::kTexture);
   EXPECT_FALSE(handle.IsDead());
-  EXPECT_EQ(1234u, *reactor->GetGLHandle(handle));
+  std::optional<GLuint> glint = reactor->GetGLHandle(handle);
+  EXPECT_TRUE(glint.has_value());
+  if (glint.has_value()) {
+    EXPECT_EQ(1234u, *reactor->GetGLHandle(handle));
+  }
   mock_gles->GetCapturedCalls();
   reactor->CollectHandle(handle);
   std::vector<std::string> calls = mock_gles->GetCapturedCalls();
