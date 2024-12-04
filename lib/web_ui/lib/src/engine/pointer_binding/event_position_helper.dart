@@ -41,12 +41,12 @@ ui.Offset computeEventOffsetToTarget(
   if (isInput) {
     final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
     if (inputGeometry != null) {
-      return _computeOffsetForInputs(event, inputGeometry);
+      return _computeOffsetForInputs(event, eventTarget, inputGeometry);
     }
   }
 
   // On another DOM Element (normally a platform view)
-  final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
+  final bool isTargetOutsideOfShadowDOM = eventTarget != actualTarget;
   if (isTargetOutsideOfShadowDOM) {
     final DomRect origin = actualTarget.getBoundingClientRect();
     // event.clientX/Y and origin.x/y are relative **to the viewport**.
@@ -70,8 +70,12 @@ ui.Offset computeEventOffsetToTarget(
 /// sent from the framework, which includes information on how to transform the
 /// underlying input element. We transform the `event.offset` points we receive
 /// using the values from the input's transform matrix.
-ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inputGeometry) {
-  final DomElement targetElement = event.target! as DomHTMLElement;
+ui.Offset _computeOffsetForInputs(
+  DomMouseEvent event,
+  DomEventTarget eventTarget,
+  EditableTextGeometry inputGeometry,
+) {
+  final DomElement targetElement = eventTarget as DomElement;
   final DomHTMLElement domElement = textEditing.strategy.activeDomElement;
   assert(targetElement == domElement, 'The targeted input element must be the active input element');
   final Float32List transformValues = inputGeometry.globalTransform;
