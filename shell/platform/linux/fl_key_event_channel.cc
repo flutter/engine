@@ -115,7 +115,7 @@ gboolean fl_key_event_channel_send_finish(GObject* object,
     return FALSE;
   }
 
-  g_autoptr(FlValue) handled_value = fl_value_lookup_string(message, "handled");
+  FlValue* handled_value = fl_value_lookup_string(message, "handled");
   *handled = fl_value_get_bool(handled_value);
 
   return TRUE;
