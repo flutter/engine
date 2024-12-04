@@ -165,9 +165,9 @@ TEST_P(DlGoldenTest, ShimmerTest) {
                       DlImageSampling::kLinear, &paint);
 
     SkRect save_layer_bounds = SkRect::MakeLTRB(0, 0, 1024, 768);
-    DlBlurImageFilter blur(sigma, sigma, DlTileMode::kDecal);
+    auto blur = DlImageFilter::MakeBlur(sigma, sigma, DlTileMode::kDecal);
     canvas->ClipRect(SkRect::MakeLTRB(11.125, 10.3737, 911.25, 755.3333));
-    canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &blur);
+    canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, blur.get());
     canvas->Restore();
   };
 

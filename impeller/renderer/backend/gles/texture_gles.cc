@@ -159,7 +159,7 @@ std::shared_ptr<TextureGLES> TextureGLES::WrapTexture(
     VALIDATION_LOG << "Cannot wrap a dead handle.";
     return nullptr;
   }
-  if (external_handle.type != HandleType::kTexture) {
+  if (external_handle.GetType() != HandleType::kTexture) {
     VALIDATION_LOG << "Cannot wrap a non-texture handle.";
     return nullptr;
   }
@@ -217,6 +217,9 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 // |Texture|
 TextureGLES::~TextureGLES() {
   reactor_->CollectHandle(handle_);
+  if (cached_fbo_ != GL_NONE) {
+    reactor_->GetProcTable().DeleteFramebuffers(1, &cached_fbo_);
+  }
 }
 
 // |Texture|
@@ -643,6 +646,14 @@ void TextureGLES::SetFence(HandleGLES fence) {
 // Visible for testing.
 std::optional<HandleGLES> TextureGLES::GetSyncFence() const {
   return fence_;
+}
+
+void TextureGLES::SetCachedFBO(GLuint fbo) {
+  cached_fbo_ = fbo;
+}
+
+GLuint TextureGLES::GetCachedFBO() const {
+  return cached_fbo_;
 }
 
 }  // namespace impeller

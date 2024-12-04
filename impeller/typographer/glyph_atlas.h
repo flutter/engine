@@ -8,7 +8,16 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <unordered_map>
+
+#include "flutter/fml/build_config.h"
+
+#if defined(OS_FUCHSIA)
+// TODO(gaaclarke): Migrate to use absl. I couldn't get it working since absl
+// has special logic in its GN files for Fuchsia that I couldn't sort out.
+#define IMPELLER_TYPOGRAPHER_USE_STD_HASH
+#else
+#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
+#endif
 
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
@@ -18,6 +27,30 @@
 namespace impeller {
 
 class FontGlyphAtlas;
+
+/// Helper for AbslHashAdapter. Tallies a hash value with fml::HashCombine.
+template <typename T>
+struct AbslHashAdapterCombiner {
+  std::size_t value = 0;
+
+  template <typename... Args>
+  static AbslHashAdapterCombiner combine(AbslHashAdapterCombiner combiner,
+                                         const Args&... args) {
+    combiner.value = fml::HashCombine(combiner.value, args...);
+    return combiner;
+  }
+};
+
+/// Adapts AbslHashValue functions to be used with std::unordered_map and the
+/// fml hash functions.
+template <typename T>
+struct AbslHashAdapter {
+  constexpr std::size_t operator()(const T& element) const {
+    AbslHashAdapterCombiner<T> combiner;
+    combiner = AbslHashValue(std::move(combiner), element);
+    return combiner.value;
+  }
+};
 
 struct FrameBounds {
   /// The bounds of the glyph within the glyph atlas.
@@ -58,8 +91,9 @@ class GlyphAtlas {
   /// @brief      Create an empty glyph atlas.
   ///
   /// @param[in]  type  How the glyphs are represented in the texture.
+  /// @param[in]  initial_generation the atlas generation.
   ///
-  explicit GlyphAtlas(Type type);
+  GlyphAtlas(Type type, size_t initial_generation);
 
   ~GlyphAtlas();
 
@@ -142,15 +176,36 @@ class GlyphAtlas {
   ///
   FontGlyphAtlas* GetOrCreateFontGlyphAtlas(const ScaledFont& scaled_font);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the generation id for this glyph atlas.
+  ///
+  ///             The generation id is used to match with a TextFrame to
+  ///             determine if the frame is guaranteed to already be populated
+  ///             in the atlas.
+  size_t GetAtlasGeneration() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the atlas generation.
+  void SetAtlasGeneration(size_t value);
+
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;
+  size_t generation_ = 0;
 
-  std::unordered_map<ScaledFont,
-                     FontGlyphAtlas,
-                     ScaledFont::Hash,
-                     ScaledFont::Equal>
-      font_atlas_map_;
+#if defined(IMPELLER_TYPOGRAPHER_USE_STD_HASH)
+  using FontAtlasMap = std::unordered_map<ScaledFont,
+                                          FontGlyphAtlas,
+                                          AbslHashAdapter<ScaledFont>,
+                                          ScaledFont::Equal>;
+#else
+  using FontAtlasMap = absl::flat_hash_map<ScaledFont,
+                                           FontGlyphAtlas,
+                                           absl::Hash<ScaledFont>,
+                                           ScaledFont::Equal>;
+#endif
+
+  FontAtlasMap font_atlas_map_;
 
   GlyphAtlas(const GlyphAtlas&) = delete;
 
@@ -214,6 +269,7 @@ class GlyphAtlasContext {
 class FontGlyphAtlas {
  public:
   FontGlyphAtlas() = default;
+  FontGlyphAtlas(FontGlyphAtlas&&) = default;
 
   //----------------------------------------------------------------------------
   /// @brief      Find the location of a glyph in the atlas.
@@ -235,12 +291,19 @@ class FontGlyphAtlas {
  private:
   friend class GlyphAtlas;
 
-  std::unordered_map<SubpixelGlyph,
-                     FrameBounds,
-                     SubpixelGlyph::Hash,
-                     SubpixelGlyph::Equal>
-      positions_;
+#if defined(IMPELLER_TYPOGRAPHER_USE_STD_HASH)
+  using PositionsMap = std::unordered_map<SubpixelGlyph,
+                                          FrameBounds,
+                                          AbslHashAdapter<SubpixelGlyph>,
+                                          SubpixelGlyph::Equal>;
+#else
+  using PositionsMap = absl::flat_hash_map<SubpixelGlyph,
+                                           FrameBounds,
+                                           absl::Hash<SubpixelGlyph>,
+                                           SubpixelGlyph::Equal>;
+#endif
 
+  PositionsMap positions_;
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 };
 

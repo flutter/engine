@@ -63,15 +63,6 @@ bool RenderPass::AddCommand(Command&& command) {
     return false;
   }
 
-  if (command.scissor.has_value()) {
-    auto target_rect = IRect::MakeSize(render_target_.GetRenderTargetSize());
-    if (!target_rect.Contains(command.scissor.value())) {
-      VALIDATION_LOG << "Cannot apply a scissor that lies outside the bounds "
-                        "of the render target.";
-      return false;
-    }
-  }
-
   if (command.element_count == 0u || command.instance_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
@@ -216,29 +207,40 @@ fml::Status RenderPass::Draw() {
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const ShaderUniformSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               BufferView view) {
   return pending_.BindResource(stage, type, slot, metadata, view);
-}
-
-bool RenderPass::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
-    BufferView view) {
-  return pending_.BindResource(stage, type, slot, metadata, std::move(view));
 }
 
 // |ResourceBinder|
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const SampledImageSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               std::shared_ptr<const Texture> texture,
                               const std::unique_ptr<const Sampler>& sampler) {
   return pending_.BindResource(stage, type, slot, metadata, std::move(texture),
                                sampler);
+}
+
+bool RenderPass::BindDynamicResource(ShaderStage stage,
+                                     DescriptorType type,
+                                     const ShaderUniformSlot& slot,
+                                     std::unique_ptr<ShaderMetadata> metadata,
+                                     BufferView view) {
+  return pending_.BindDynamicResource(stage, type, slot, std::move(metadata),
+                                      std::move(view));
+}
+
+bool RenderPass::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  return pending_.BindDynamicResource(stage, type, slot, std::move(metadata),
+                                      std::move(texture), sampler);
 }
 
 }  // namespace impeller

@@ -177,28 +177,34 @@ bool RenderPass::Draw() {
   render_pass_->SetPipeline(GetOrCreatePipeline());
 
   for (const auto& [_, buffer] : vertex_uniform_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kVertex,
-                               impeller::DescriptorType::kUniformBuffer,
-                               buffer.slot, *buffer.view.GetMetadata(),
-                               buffer.view.resource);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kVertex,
+        impeller::DescriptorType::kUniformBuffer, buffer.slot,
+        std::make_unique<impeller::ShaderMetadata>(*buffer.view.GetMetadata()),
+        buffer.view.resource);
   }
   for (const auto& [_, texture] : vertex_texture_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kVertex,
-                               impeller::DescriptorType::kSampledImage,
-                               texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, *texture.sampler);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kVertex, impeller::DescriptorType::kSampledImage,
+        texture.slot,
+        std::make_unique<impeller::ShaderMetadata>(
+            *texture.texture.GetMetadata()),
+        texture.texture.resource, *texture.sampler);
   }
   for (const auto& [_, buffer] : fragment_uniform_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kFragment,
-                               impeller::DescriptorType::kUniformBuffer,
-                               buffer.slot, *buffer.view.GetMetadata(),
-                               buffer.view.resource);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kFragment,
+        impeller::DescriptorType::kUniformBuffer, buffer.slot,
+        std::make_unique<impeller::ShaderMetadata>(*buffer.view.GetMetadata()),
+        buffer.view.resource);
   }
   for (const auto& [_, texture] : fragment_texture_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kFragment,
-                               impeller::DescriptorType::kSampledImage,
-                               texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, *texture.sampler);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kFragment,
+        impeller::DescriptorType::kSampledImage, texture.slot,
+        std::make_unique<impeller::ShaderMetadata>(
+            *texture.texture.GetMetadata()),
+        texture.texture.resource, *texture.sampler);
   }
 
   render_pass_->SetVertexBuffer(vertex_buffer);
@@ -206,6 +212,10 @@ bool RenderPass::Draw() {
   render_pass_->SetElementCount(element_count);
 
   render_pass_->SetStencilReference(stencil_reference);
+
+  if (scissor.has_value()) {
+    render_pass_->SetScissor(scissor.value());
+  }
 
   bool result = render_pass_->Draw().ok();
 
@@ -534,6 +544,14 @@ void InternalFlutterGpu_RenderPass_SetStencilReference(
     flutter::gpu::RenderPass* wrapper,
     int stencil_reference) {
   wrapper->stencil_reference = static_cast<uint32_t>(stencil_reference);
+}
+
+void InternalFlutterGpu_RenderPass_SetScissor(flutter::gpu::RenderPass* wrapper,
+                                              int x,
+                                              int y,
+                                              int width,
+                                              int height) {
+  wrapper->scissor = impeller::TRect<int64_t>::MakeXYWH(x, y, width, height);
 }
 
 void InternalFlutterGpu_RenderPass_SetStencilConfig(
