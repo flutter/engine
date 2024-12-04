@@ -265,7 +265,11 @@ void main() {
       await codec.getNextFrame();
       fail('exception not thrown');
     } on Exception catch (e) {
-      expect(e.toString(), contains('Codec failed to produce an image'));
+      if (impellerEnabled) {
+        expect(e.toString(), contains('Could not decompress image.'));
+      } else {
+        expect(e.toString(), contains('Codec failed'));
+      }
     }
   });
 }
