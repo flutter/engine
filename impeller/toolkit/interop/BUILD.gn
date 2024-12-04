@@ -192,6 +192,18 @@ zip_bundle("sdk") {
       source = "impeller.hpp"
       destination = "include/impeller.hpp"
     },
+    {
+      source = "example_gl.c"
+      destination = "examples/example_gl.c"
+    },
+    {
+      source = "example_vk.c"
+      destination = "examples/example_vk.c"
+    },
+    {
+      source = "example_mtl.m"
+      destination = "examples/example_mtl.m"
+    },
   ]
 
   if (is_mac) {
