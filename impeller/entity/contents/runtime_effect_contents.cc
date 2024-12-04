@@ -26,7 +26,7 @@ namespace impeller {
 
 // static
 BufferView RuntimeEffectContents::EmplaceVulkanUniform(
-    std::vector<uint8_t>& input_data,
+    const std::shared_ptr<std::vector<uint8_t>>& input_data,
     HostBuffer& host_buffer,
     const RuntimeUniformDescription& uniform) {
   // TODO(jonahwilliams): rewrite this to emplace directly into
@@ -39,7 +39,7 @@ BufferView RuntimeEffectContents::EmplaceVulkanUniform(
       uniform_buffer.push_back(0.f);
     } else if (byte_type == 1) {
       uniform_buffer.push_back(
-          reinterpret_cast<float*>(input_data.data())[uniform_byte_index++]);
+          reinterpret_cast<float*>(input_data->data())[uniform_byte_index++]);
     } else {
       FML_UNREACHABLE();
     }
@@ -282,7 +282,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           pass.BindResource(
               ShaderStage::kFragment, DescriptorType::kUniformBuffer,
               uniform_slot, nullptr,
-              EmplaceVulkanUniform(*uniform_data_.get(),
+              EmplaceVulkanUniform(uniform_data_,
                                    renderer.GetTransientsBuffer(), uniform));
         }
       }

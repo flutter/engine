@@ -63,12 +63,6 @@ struct TextureAndSampler {
   const std::unique_ptr<const Sampler>* sampler;
 };
 
-/// @brief combines the buffer resource and its uniform slot information.
-struct BufferAndUniformSlot {
-  ShaderUniformSlot slot;
-  BufferResource view;
-};
-
 //------------------------------------------------------------------------------
 /// @brief      An object used to specify work to the GPU along with references
 ///             to resources the GPU will used when doing said work.
@@ -91,10 +85,8 @@ struct Command {
 
   /// An offset into render pass storage where bound buffers/texture metadata is
   /// stored.
-  size_t bound_buffer_offset = 0u;
-  size_t bound_buffer_length = 0u;
-  size_t bound_texture_offset = 0u;
-  size_t bound_texture_length = 0u;
+  Range bound_buffers = Range{0, 0};
+  Range bound_textures = Range{0, 0};
 
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------

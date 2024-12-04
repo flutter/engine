@@ -183,23 +183,21 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
 bool BufferBindingsGLES::BindUniformData(
     const ProcTableGLES& gl,
     const std::vector<TextureAndSampler>& bound_textures,
-    const std::vector<BufferAndUniformSlot>& bound_buffers,
-    size_t texture_offset,
-    size_t texture_length,
-    size_t buffer_offset,
-    size_t buffer_length) {
-  for (auto i = 0u; i < buffer_length; i++) {
-    if (!BindUniformBuffer(gl, bound_buffers[buffer_offset + i].view)) {
+    const std::vector<BufferResource>& bound_buffers,
+    Range texture_range,
+    Range buffer_range) {
+  for (auto i = 0u; i < buffer_range.length; i++) {
+    if (!BindUniformBuffer(gl, bound_buffers[buffer_range.offset + i])) {
       return false;
     }
   }
-  std::optional<size_t> next_unit_index = BindTextures(
-      gl, bound_textures, texture_offset, texture_length, ShaderStage::kVertex);
+  std::optional<size_t> next_unit_index =
+      BindTextures(gl, bound_textures, texture_range, ShaderStage::kVertex);
   if (!next_unit_index.has_value()) {
     return false;
   }
-  if (!BindTextures(gl, bound_textures, texture_offset, texture_length,
-                    ShaderStage::kFragment, *next_unit_index)
+  if (!BindTextures(gl, bound_textures, texture_range, ShaderStage::kFragment,
+                    *next_unit_index)
            .has_value()) {
     return false;
   }
@@ -389,13 +387,12 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
     const std::vector<TextureAndSampler>& bound_textures,
-    size_t texture_offset,
-    size_t texture_size,
+    Range texture_range,
     ShaderStage stage,
     size_t unit_start_index) {
   size_t active_index = unit_start_index;
-  for (auto i = 0u; i < texture_size; i++) {
-    const TextureAndSampler& data = bound_textures[texture_offset + i];
+  for (auto i = 0u; i < texture_range.length; i++) {
+    const TextureAndSampler& data = bound_textures[texture_range.offset + i];
     if (data.stage != stage) {
       continue;
     }

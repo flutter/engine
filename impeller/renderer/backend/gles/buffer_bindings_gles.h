@@ -43,11 +43,9 @@ class BufferBindingsGLES {
 
   bool BindUniformData(const ProcTableGLES& gl,
                        const std::vector<TextureAndSampler>& bound_textures,
-                       const std::vector<BufferAndUniformSlot>& bound_buffers,
-                       size_t texture_offset,
-                       size_t texture_length,
-                       size_t buffer_offset,
-                       size_t buffer_length);
+                       const std::vector<BufferResource>& bound_buffers,
+                       Range texture_range,
+                       Range buffer_range);
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl);
 
@@ -82,8 +80,7 @@ class BufferBindingsGLES {
   std::optional<size_t> BindTextures(
       const ProcTableGLES& gl,
       const std::vector<TextureAndSampler>& bound_textures,
-      size_t texture_offset,
-      size_t texture_length,
+      Range texture_range,
       ShaderStage stage,
       size_t unit_start_index = 0);
 

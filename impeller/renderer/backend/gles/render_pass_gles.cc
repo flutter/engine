@@ -191,7 +191,7 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
     const std::vector<TextureAndSampler>& bound_textures,
-    const std::vector<BufferAndUniformSlot>& bound_buffers,
+    const std::vector<BufferResource>& bound_buffers,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
@@ -437,13 +437,11 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     /// Bind uniform data.
     ///
     if (!vertex_desc_gles->BindUniformData(
-            gl,                                               //
-            bound_textures,                                   //
-            bound_buffers,                                    //
-            /*texture_offset=*/command.bound_texture_offset,  //
-            /*texture_length=*/command.bound_texture_length,  //
-            /*buffer_offset=*/command.bound_buffer_offset,    //
-            /*buffer_length=*/command.bound_buffer_length     //
+            gl,                                        //
+            bound_textures,                            //
+            bound_buffers,                             //
+            /*texture_range=*/command.bound_textures,  //
+            /*buffer_range=*/command.bound_buffers     //
             )) {
       return false;
     }

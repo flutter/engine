@@ -38,7 +38,7 @@ class RuntimeEffectContents final : public ColorSourceContents {
 
   // Visible for testing
   static BufferView EmplaceVulkanUniform(
-      std::vector<uint8_t>& input_data,
+      const std::shared_ptr<std::vector<uint8_t>>& input_data,
       HostBuffer& host_buffer,
       const RuntimeUniformDescription& uniform);
 

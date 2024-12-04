@@ -203,8 +203,8 @@ bool RenderPass::ValidateIndexBuffer(const BufferView& index_buffer,
 }
 
 fml::Status RenderPass::Draw() {
-  pending_.bound_buffer_offset = bound_buffers_start_.value_or(0u);
-  pending_.bound_texture_offset = bound_textures_start_.value_or(0u);
+  pending_.bound_buffers.offset = bound_buffers_start_.value_or(0u);
+  pending_.bound_textures.offset = bound_textures_start_.value_or(0u);
   auto result = AddCommand(std::move(pending_));
   pending_ = Command{};
   bound_textures_start_ = std::nullopt;
@@ -283,13 +283,12 @@ bool RenderPass::BindDynamicResource(
 bool RenderPass::BindBuffer(ShaderStage stage,
                             const ShaderUniformSlot& slot,
                             BufferResource resource) {
-  BufferAndUniformSlot data = BufferAndUniformSlot{.view = std::move(resource)};
   if (!bound_buffers_start_.has_value()) {
     bound_buffers_start_ = bound_buffers_.size();
   }
 
-  pending_.bound_buffer_length++;
-  bound_buffers_.push_back(std::move(data));
+  pending_.bound_buffers.length++;
+  bound_buffers_.push_back(std::move(resource));
   return true;
 }
 
@@ -307,7 +306,7 @@ bool RenderPass::BindTexture(ShaderStage stage,
     bound_textures_start_ = bound_textures_.size();
   }
 
-  pending_.bound_texture_length++;
+  pending_.bound_textures.length++;
   bound_textures_.push_back(std::move(data));
   return true;
 }

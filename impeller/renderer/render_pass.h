@@ -244,7 +244,7 @@ class RenderPass : public ResourceBinder {
   const ISize render_target_size_;
   const RenderTarget render_target_;
   std::vector<Command> commands_;
-  std::vector<BufferAndUniformSlot> bound_buffers_;
+  std::vector<BufferResource> bound_buffers_;
   std::vector<TextureAndSampler> bound_textures_;
   const Matrix orthographic_;
 

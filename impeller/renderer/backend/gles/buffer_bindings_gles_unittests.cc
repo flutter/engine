@@ -18,7 +18,7 @@ TEST(BufferBindingsGLESTest, BindUniformData) {
   uniform_bindings["SHADERMETADATA.FOOBAR"] = 1;
   bindings.SetUniformBindings(std::move(uniform_bindings));
   std::shared_ptr<MockGLES> mock_gl = MockGLES::Init();
-  std::vector<BufferAndUniformSlot> bound_buffers;
+  std::vector<BufferResource> bound_buffers;
   std::vector<TextureAndSampler> bound_textures;
 
   ShaderMetadata shader_metadata = {
@@ -34,11 +34,11 @@ TEST(BufferBindingsGLESTest, BindUniformData) {
   DeviceBufferGLES device_buffer(DeviceBufferDescriptor{.size = sizeof(float)},
                                  reactor, backing_store);
   BufferView buffer_view(&device_buffer, Range(0, sizeof(float)));
-  bound_buffers.push_back(BufferAndUniformSlot{
-      .view = BufferResource(&shader_metadata, buffer_view)});
+  bound_buffers.push_back(BufferResource(&shader_metadata, buffer_view));
 
   EXPECT_TRUE(bindings.BindUniformData(mock_gl->GetProcTable(), bound_textures,
-                                       bound_buffers, 0, 0, 0, 1));
+                                       bound_buffers, Range{0, 0},
+                                       Range{0, 1}));
   std::vector<std::string> captured_calls = mock_gl->GetCapturedCalls();
   EXPECT_TRUE(std::find(captured_calls.begin(), captured_calls.end(),
                         "glUniform1fv") != captured_calls.end());
