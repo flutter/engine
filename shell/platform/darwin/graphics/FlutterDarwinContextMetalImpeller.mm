@@ -25,14 +25,8 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
       std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
                                              impeller_framebuffer_blend_shaders_length),
   };
-  auto context = impeller::ContextMTL::Create(shader_mappings, is_gpu_disabled_sync_switch,
-                                              "Impeller Library");
-  if (!context) {
-    FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
-    return nullptr;
-  }
-
-  return context;
+  return impeller::ContextMTL::Create(shader_mappings, is_gpu_disabled_sync_switch,
+                                      "Impeller Library");
 }
 
 @implementation FlutterDarwinContextMetalImpeller
@@ -41,9 +35,13 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
   self = [super init];
   if (self != nil) {
     _context = CreateImpellerContext(is_gpu_disabled_sync_switch);
+    if (!_context) {
+      FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
+      return nil;
+    }
     id<MTLDevice> device = _context->GetMTLDevice();
     if (!device) {
-      FML_DLOG(ERROR) << "Could not acquire Metal device.";
+      FML_LOG(ERROR) << "Could not acquire Metal device.";
       return nil;
     }
 
