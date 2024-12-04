@@ -252,6 +252,20 @@ void main() {
     imageData = (await image.toByteData())!;
     expect(imageData.getUint32(imageData.lengthInBytes - 4), 0x00000000);
   });
+
+  test(
+      'Animated apng frame decode does not crash with invalid destination region',
+      () async {
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'out_of_bounds.apng'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // First frame is transparent black
+    final ui.Image image = (await codec.getNextFrame()).image;
+    final ByteData imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(0), 0xFF000000);
+  });
 }
 
 /// Returns a File handle to a file in the skia/resources directory.
