@@ -260,7 +260,7 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  @Config(sdk = Build.API_LEVELS.API_34)
+  @Config(minSdk = Build.API_LEVELS.API_34)
   @TargetApi(Build.API_LEVELS.API_34)
   public void whenUsingCachedEngine_predictiveBackStateIsSaved() {
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
@@ -300,7 +300,7 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  @Config(sdk = Build.API_LEVELS.API_34)
+  @Config(minSdk = Build.API_LEVELS.API_34)
   @TargetApi(Build.API_LEVELS.API_34)
   public void whenNotUsingCachedEngine_predictiveBackStateIsNotSaved() {
     ActivityScenario<FlutterActivity> flutterActivityScenario =
