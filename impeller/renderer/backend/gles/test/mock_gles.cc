@@ -83,6 +83,9 @@ void mockGetIntegerv(GLenum name, int* value) {
     case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
       *value = 8;
       break;
+    case GL_MAX_LABEL_LENGTH_KHR:
+      *value = 64;
+      break;
     default:
       *value = 0;
       break;
@@ -167,6 +170,35 @@ void mockDeleteTextures(GLsizei size, const GLuint* queries) {
 static_assert(CheckSameSignature<decltype(mockDeleteQueriesEXT),  //
                                  decltype(glDeleteQueriesEXT)>::value);
 
+void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
+  RecordGLCall("glUniform1fv");
+}
+static_assert(CheckSameSignature<decltype(mockUniform1fv),  //
+                                 decltype(glUniform1fv)>::value);
+
+void mockGenTextures(GLsizei n, GLuint* textures) {
+  RecordGLCall("glGenTextures");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    std::optional<uint64_t> next_texture;
+    std::swap(mock_gles->next_texture_, next_texture);
+    if (next_texture.has_value()) {
+      textures[0] = next_texture.value();
+    }
+  }
+}
+
+static_assert(CheckSameSignature<decltype(mockGenTextures),  //
+                                 decltype(glGenTextures)>::value);
+
+void mockObjectLabelKHR(GLenum identifier,
+                        GLuint name,
+                        GLsizei length,
+                        const GLchar* label) {
+  RecordGLCall("glObjectLabelKHR");
+}
+static_assert(CheckSameSignature<decltype(mockObjectLabelKHR),  //
+                                 decltype(glObjectLabelKHR)>::value);
+
 std::shared_ptr<MockGLES> MockGLES::Init(
     const std::optional<std::vector<const unsigned char*>>& extensions,
     const char* version_string,
@@ -208,6 +240,12 @@ const ProcTableGLES::Resolver kMockResolverGLES = [](const char* name) {
     return reinterpret_cast<void*>(mockGetQueryObjectui64vEXT);
   } else if (strcmp(name, "glGetQueryObjectuivEXT") == 0) {
     return reinterpret_cast<void*>(mockGetQueryObjectuivEXT);
+  } else if (strcmp(name, "glUniform1fv") == 0) {
+    return reinterpret_cast<void*>(mockUniform1fv);
+  } else if (strcmp(name, "glGenTextures") == 0) {
+    return reinterpret_cast<void*>(mockGenTextures);
+  } else if (strcmp(name, "glObjectLabelKHR") == 0) {
+    return reinterpret_cast<void*>(mockObjectLabelKHR);
   } else {
     return reinterpret_cast<void*>(&doNothing);
   }
