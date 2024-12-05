@@ -329,7 +329,12 @@ bool BufferBindingsGLES::BindUniformBufferV3(const ProcTableGLES& gl,
   const DeviceBufferGLES& device_buffer_gles =
       DeviceBufferGLES::Cast(*device_buffer);
 
-  const auto& [block_index, binding_point] = ubo_locations_[metadata->name];
+  absl::flat_hash_map<std::string, std::pair<GLint, GLuint>>::iterator it =
+      ubo_locations_.find(metadata->name);
+  if (it == ubo_locations_.end()) {
+    return false;
+  }
+  const auto& [block_index, binding_point] = it->second;
   gl.UniformBlockBinding(program_handle_, block_index, binding_point);
 
   if (!device_buffer_gles.BindAndUploadDataIfNecessary(
