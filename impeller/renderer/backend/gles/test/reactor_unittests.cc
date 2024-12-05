@@ -103,9 +103,6 @@ TEST(ReactorGLES, NameUntrackedHandle) {
   HandleGLES handle = reactor->CreateUntrackedHandle(HandleType::kTexture);
   mock_gles->GetCapturedCalls();
   reactor->SetDebugLabel(handle, "hello, joe!");
-  // Without an operation nothing is cleaned up.
-  EXPECT_TRUE(reactor->AddOperation([&](const ReactorGLES&) {}));
-  EXPECT_TRUE(reactor->React());
   std::vector<std::string> calls = mock_gles->GetCapturedCalls();
   EXPECT_TRUE(std::find(calls.begin(), calls.end(), "glObjectLabelKHR") !=
               calls.end());
