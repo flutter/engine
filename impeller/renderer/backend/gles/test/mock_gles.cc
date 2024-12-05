@@ -38,6 +38,17 @@ auto const kExtensions = std::vector<const char*>{
     "GL_KHR_debug"  //
 };
 
+namespace {
+template <typename Func, typename... Args>
+void CallMockMethod(Func func, Args&&... args) {
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      (mock_gles->GetImpl()->*func)(std::forward<Args>(args)...);
+    }
+  }
+}
+}  // namespace
+
 const unsigned char* mockGetString(GLenum name) {
   switch (name) {
     case GL_VENDOR:
@@ -108,95 +119,59 @@ static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
 
 void mockGenQueriesEXT(GLsizei n, GLuint* ids) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->GenQueriesEXT(n, ids);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::GenQueriesEXT, n, ids);
 }
 
 static_assert(CheckSameSignature<decltype(mockGenQueriesEXT),  //
                                  decltype(glGenQueriesEXT)>::value);
 
 void mockBeginQueryEXT(GLenum target, GLuint id) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->BeginQueryEXT(target, id);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::BeginQueryEXT, target, id);
 }
 
 static_assert(CheckSameSignature<decltype(mockBeginQueryEXT),  //
                                  decltype(glBeginQueryEXT)>::value);
 
 void mockEndQueryEXT(GLuint id) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->EndQueryEXT(id);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::EndQueryEXT, id);
 }
 
 static_assert(CheckSameSignature<decltype(mockEndQueryEXT),  //
                                  decltype(glEndQueryEXT)>::value);
 
 void mockGetQueryObjectuivEXT(GLuint id, GLenum target, GLuint* result) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->GetQueryObjectuivEXT(id, target, result);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::GetQueryObjectuivEXT, id, target, result);
 }
 
 static_assert(CheckSameSignature<decltype(mockGetQueryObjectuivEXT),  //
                                  decltype(glGetQueryObjectuivEXT)>::value);
 
 void mockGetQueryObjectui64vEXT(GLuint id, GLenum target, GLuint64* result) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->GetQueryObjectui64vEXT(id, target, result);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::GetQueryObjectui64vEXT, id, target, result);
 }
 
 static_assert(CheckSameSignature<decltype(mockGetQueryObjectui64vEXT),  //
                                  decltype(glGetQueryObjectui64vEXT)>::value);
 
 void mockDeleteQueriesEXT(GLsizei size, const GLuint* queries) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->DeleteQueriesEXT(size, queries);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::DeleteQueriesEXT, size, queries);
 }
 
 void mockDeleteTextures(GLsizei size, const GLuint* queries) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->DeleteTextures(size, queries);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::DeleteTextures, size, queries);
 }
 
 static_assert(CheckSameSignature<decltype(mockDeleteQueriesEXT),  //
                                  decltype(glDeleteQueriesEXT)>::value);
 
 void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->Uniform1fv(location, count, value);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::Uniform1fv, location, count, value);
 }
 static_assert(CheckSameSignature<decltype(mockUniform1fv),  //
                                  decltype(glUniform1fv)>::value);
 
 void mockGenTextures(GLsizei n, GLuint* textures) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->GenTextures(n, textures);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::GenTextures, n, textures);
 }
 
 static_assert(CheckSameSignature<decltype(mockGenTextures),  //
@@ -206,11 +181,8 @@ void mockObjectLabelKHR(GLenum identifier,
                         GLuint name,
                         GLsizei length,
                         const GLchar* label) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    if (mock_gles->GetImpl()) {
-      mock_gles->GetImpl()->ObjectLabelKHR(identifier, name, length, label);
-    }
-  }
+  CallMockMethod(&IMockGLESImpl::ObjectLabelKHR, identifier, name, length,
+                 label);
 }
 static_assert(CheckSameSignature<decltype(mockObjectLabelKHR),  //
                                  decltype(glObjectLabelKHR)>::value);
