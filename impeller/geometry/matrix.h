@@ -110,6 +110,16 @@ struct Matrix {
     // clang-format on
   }
 
+  static constexpr Matrix MakeTranslateScale(const Vector3& s,
+                                             const Vector3& t) {
+    // clang-format off
+    return Matrix(s.x, 0.0f, 0.0f, 0.0f,
+                  0.0f, s.y, 0.0f, 0.0f,
+                  0.0f, 0.0f, s.z, 0.0f,
+                  t.x , t.y, t.z, 1.0f);
+    // clang-format on
+  }
+
   static constexpr Matrix MakeScale(const Vector2& s) {
     return MakeScale(Vector3(s.x, s.y, 1.0f));
   }
@@ -245,7 +255,7 @@ struct Matrix {
                   m[0] * t.x + m[4] * t.y + m[8]  * t.z + m[12],
                   m[1] * t.x + m[5] * t.y + m[9]  * t.z + m[13],
                   m[2] * t.x + m[6] * t.y + m[10] * t.z + m[14],
-                  m[15]);
+                  m[3] * t.x + m[7] * t.y + m[11] * t.z + m[15]);
     // clang-format on
   }
 
@@ -295,7 +305,7 @@ struct Matrix {
 
   Scalar GetDeterminant() const;
 
-  Scalar GetMaxBasisLength() const;
+  bool IsInvertible() const { return GetDeterminant() != 0; }
 
   constexpr Scalar GetMaxBasisLengthXY() const {
     // The full basis computation requires computing the squared scaling factor
@@ -323,6 +333,11 @@ struct Matrix {
   constexpr Scalar GetDirectionScale(Vector3 direction) const {
     return 1.0f / (this->Basis().Invert() * direction.Normalize()).GetLength() *
            direction.GetLength();
+  }
+
+  constexpr bool IsFinite() const {
+    return vec[0].IsFinite() && vec[1].IsFinite() && vec[2].IsFinite() &&
+           vec[3].IsFinite();
   }
 
   constexpr bool IsAffine() const {
@@ -394,6 +409,19 @@ struct Matrix {
     );
   }
 
+  /// @brief  Returns true if the matrix has no entries other than translation
+  ///         components. Note that an identity matrix meets this criteria.
+  constexpr bool IsTranslationOnly() const {
+    return (
+        // clang-format off
+        m[0] == 1.0 && m[1]  == 0.0 && m[2]  == 0.0 && m[3]  == 0.0 &&
+        m[4] == 0.0 && m[5]  == 1.0 && m[6]  == 0.0 && m[7]  == 0.0 &&
+        m[8] == 0.0 && m[9]  == 0.0 && m[10] == 1.0 && m[11] == 0.0 &&
+                                                       m[15] == 1.0
+        // clang-format on
+    );
+  }
+
   /// @brief  Returns true if the matrix has a scale-only basis and is
   ///         non-projective. Note that an identity matrix meets this criteria.
   constexpr bool IsTranslationScaleOnly() const {
@@ -408,6 +436,27 @@ struct Matrix {
   }
 
   std::optional<MatrixDecomposition> Decompose() const;
+
+  bool Equals(const Matrix& matrix, Scalar epsilon = 1e-5f) const {
+    const Scalar* a = m;
+    const Scalar* b = matrix.m;
+    return ScalarNearlyEqual(a[0], b[0], epsilon) &&
+           ScalarNearlyEqual(a[1], b[1], epsilon) &&
+           ScalarNearlyEqual(a[2], b[2], epsilon) &&
+           ScalarNearlyEqual(a[3], b[3], epsilon) &&
+           ScalarNearlyEqual(a[4], b[4], epsilon) &&
+           ScalarNearlyEqual(a[5], b[5], epsilon) &&
+           ScalarNearlyEqual(a[6], b[6], epsilon) &&
+           ScalarNearlyEqual(a[7], b[7], epsilon) &&
+           ScalarNearlyEqual(a[8], b[8], epsilon) &&
+           ScalarNearlyEqual(a[9], b[9], epsilon) &&
+           ScalarNearlyEqual(a[10], b[10], epsilon) &&
+           ScalarNearlyEqual(a[11], b[11], epsilon) &&
+           ScalarNearlyEqual(a[12], b[12], epsilon) &&
+           ScalarNearlyEqual(a[13], b[13], epsilon) &&
+           ScalarNearlyEqual(a[14], b[14], epsilon) &&
+           ScalarNearlyEqual(a[15], b[15], epsilon);
+  }
 
   constexpr bool operator==(const Matrix& m) const {
     // clang-format off

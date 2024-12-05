@@ -4,22 +4,19 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
-import android.graphics.RectF;
-import android.os.CancellationSignal;
-import android.view.inputmethod.DeleteGesture;
-import android.view.inputmethod.DeleteRangeGesture;
-import android.view.inputmethod.HandwritingGesture;
-import android.view.inputmethod.PreviewableHandwritingGesture;
-import android.view.inputmethod.SelectGesture;
-import android.view.inputmethod.SelectRangeGesture;
+import static io.flutter.Build.API_LEVELS;
+
+import android.annotation.TargetApi;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StandardMethodCodec;
-import java.util.HashMap;
 
 /**
  * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate the
@@ -27,6 +24,16 @@ import java.util.HashMap;
  */
 public class ScribeChannel {
   private static final String TAG = "ScribeChannel";
+
+  @VisibleForTesting
+  public static final String METHOD_IS_FEATURE_AVAILABLE = "Scribe.isFeatureAvailable";
+
+  @VisibleForTesting
+  public static final String METHOD_IS_STYLUS_HANDWRITING_AVAILABLE =
+      "Scribe.isStylusHandwritingAvailable";
+
+  @VisibleForTesting
+  public static final String METHOD_START_STYLUS_HANDWRITING = "Scribe.startStylusHandwriting";
 
   public final MethodChannel channel;
   private ScribeMethodHandler scribeMethodHandler;
@@ -37,20 +44,20 @@ public class ScribeChannel {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           if (scribeMethodHandler == null) {
-            Log.v(TAG, "No ScribeMethodHandler registered, call not forwarded to spell check API.");
+            Log.v(TAG, "No ScribeMethodHandler registered. Scribe call not handled.");
             return;
           }
           String method = call.method;
-          Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
-            case "Scribe.startStylusHandwriting":
-              try {
-                scribeMethodHandler.startStylusHandwriting();
-                result.success(null);
-              } catch (IllegalStateException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
+            case METHOD_IS_FEATURE_AVAILABLE:
+              isFeatureAvailable(call, result);
+              break;
+            case METHOD_IS_STYLUS_HANDWRITING_AVAILABLE:
+              isStylusHandwritingAvailable(call, result);
+              break;
+            case METHOD_START_STYLUS_HANDWRITING:
+              startStylusHandwriting(call, result);
               break;
             default:
               result.notImplemented();
@@ -59,8 +66,47 @@ public class ScribeChannel {
         }
       };
 
+  private void isFeatureAvailable(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    try {
+      final boolean isAvailable = scribeMethodHandler.isFeatureAvailable();
+      result.success(isAvailable);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
+
+  private void isStylusHandwritingAvailable(
+      @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_34) {
+      result.error("error", "Requires API level 34 or higher.", null);
+      return;
+    }
+
+    try {
+      final boolean isAvailable = scribeMethodHandler.isStylusHandwritingAvailable();
+      result.success(isAvailable);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
+
+  private void startStylusHandwriting(
+      @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_33) {
+      result.error("error", "Requires API level 33 or higher.", null);
+      return;
+    }
+
+    try {
+      scribeMethodHandler.startStylusHandwriting();
+      result.success(null);
+    } catch (IllegalStateException exception) {
+      result.error("error", exception.getMessage(), null);
+    }
+  }
+
   public ScribeChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, "flutter/scribe", StandardMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/scribe", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
   }
 
@@ -74,13 +120,30 @@ public class ScribeChannel {
 
   public interface ScribeMethodHandler {
     /**
+     * Responds to the {@code result} with success and a boolean indicating whether or not stylus
+     * handwriting is available.
+     */
+    boolean isFeatureAvailable();
+
+    /**
+     * Responds to the {@code result} with success and a boolean indicating whether or not stylus
+     * handwriting is available.
+     */
+    @TargetApi(API_LEVELS.API_34)
+    @RequiresApi(API_LEVELS.API_34)
+    boolean isStylusHandwritingAvailable();
+
+    /**
      * Requests to start Scribe stylus handwriting, which will respond to the {@code result} with
      * either success if handwriting input has started or error otherwise.
      */
+    @TargetApi(API_LEVELS.API_33)
+    @RequiresApi(API_LEVELS.API_33)
     void startStylusHandwriting();
   }
 
-  public void previewHandwritingGesture(PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
+  public void previewHandwritingGesture(
+      PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
     System.out.println("justin sending previewHandwritingGesture for gesture: " + gesture);
     final HashMap<Object, Object> gestureMap = new HashMap<>();
     if (gesture instanceof DeleteGesture) {
@@ -129,7 +192,8 @@ public class ScribeChannel {
       gestureMap.put("granularity", deleteGesture.getGranularity());
       gestureMap.put("deletionArea", deletionAreaMap);
     }
-    // TODO(justinmc): All other gestures. https://developer.android.com/reference/android/view/inputmethod/HandwritingGesture#public-methods
+    // TODO(justinmc): All other gestures.
+    // https://developer.android.com/reference/android/view/inputmethod/HandwritingGesture#public-methods
 
     channel.invokeMethod("ScribeClient.performHandwritingGesture", gestureMap, result);
   }

@@ -7,8 +7,6 @@
 #include <gmodule.h>
 
 #include <cstring>
-#include <string>
-#include <vector>
 
 #include "flutter/common/constants.h"
 #include "flutter/shell/platform/common/engine_switches.h"
@@ -17,6 +15,7 @@
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
+#include "flutter/shell/platform/linux/fl_platform_handler.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
@@ -40,14 +39,38 @@ struct _FlEngine {
   // Thread the GLib main loop is running on.
   GThread* thread;
 
+  // The project this engine is running.
   FlDartProject* project;
+
+  // Renders the Flutter app.
   FlRenderer* renderer;
+
+  // Messenger used to send and receive platform messages.
   FlBinaryMessenger* binary_messenger;
+
+  // Implements the flutter/settings channel.
   FlSettingsHandler* settings_handler;
+
+  // Implements the flutter/platform channel.
+  FlPlatformHandler* platform_handler;
+
+  // Implements the flutter/mousecursor channel.
+  FlMouseCursorHandler* mouse_cursor_handler;
+
+  // Manages textures rendered by native code.
   FlTextureRegistrar* texture_registrar;
+
+  // Schedules tasks to be run on the appropriate thread.
   FlTaskRunner* task_runner;
+
+  // Ahead of time data used to make engine run faster.
   FlutterEngineAOTData aot_data;
+
+  // The Flutter engine.
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
+
+  // Function table for engine API, used to intercept engine calls for testing
+  // purposes.
   FlutterEngineProcTable embedder_api;
 
   // Next ID to use for a view.
@@ -69,9 +92,9 @@ G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 static void fl_engine_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
 
-enum { kSignalOnPreEngineRestart, kSignalLastSignal };
+enum { SIGNAL_ON_PRE_ENGINE_RESTART, LAST_SIGNAL };
 
-static guint fl_engine_signals[kSignalLastSignal];
+static guint fl_engine_signals[LAST_SIGNAL];
 
 G_DEFINE_TYPE_WITH_CODE(
     FlEngine,
@@ -80,7 +103,7 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_engine_plugin_registry_iface_init))
 
-enum { kProp0, kPropBinaryMessenger, kPropLast };
+enum { PROP_0, PROP_BINARY_MESSENGER, PROP_LAST };
 
 // Parse a locale into its components.
 static void parse_locale(const gchar* locale,
@@ -129,9 +152,8 @@ static void parse_locale(const gchar* locale,
 static void view_added_cb(const FlutterAddViewResult* result) {
   g_autoptr(GTask) task = G_TASK(result->user_data);
 
-  FlutterViewId view_id = GPOINTER_TO_INT(g_task_get_task_data(task));
   if (result->added) {
-    g_task_return_int(task, view_id);
+    g_task_return_boolean(task, TRUE);
   } else {
     g_task_return_new_error(task, fl_engine_error_quark(),
                             FL_ENGINE_ERROR_FAILED, "Failed to add view");
@@ -364,7 +386,7 @@ static void fl_engine_update_semantics_cb(const FlutterSemanticsUpdate2* update,
 static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
   FlEngine* self = FL_ENGINE(user_data);
 
-  g_signal_emit(self, fl_engine_signals[kSignalOnPreEngineRestart], 0);
+  g_signal_emit(self, fl_engine_signals[SIGNAL_ON_PRE_ENGINE_RESTART], 0);
 }
 
 // Called when a response to a sent platform message is received from the
@@ -398,7 +420,7 @@ static void fl_engine_set_property(GObject* object,
                                    GParamSpec* pspec) {
   FlEngine* self = FL_ENGINE(object);
   switch (prop_id) {
-    case kPropBinaryMessenger:
+    case PROP_BINARY_MESSENGER:
       g_set_object(&self->binary_messenger,
                    FL_BINARY_MESSENGER(g_value_get_object(value)));
       break;
@@ -429,6 +451,8 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->texture_registrar);
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_handler);
+  g_clear_object(&self->platform_handler);
+  g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -453,14 +477,14 @@ static void fl_engine_class_init(FlEngineClass* klass) {
   G_OBJECT_CLASS(klass)->set_property = fl_engine_set_property;
 
   g_object_class_install_property(
-      G_OBJECT_CLASS(klass), kPropBinaryMessenger,
+      G_OBJECT_CLASS(klass), PROP_BINARY_MESSENGER,
       g_param_spec_object(
           "binary-messenger", "messenger", "Binary messenger",
           fl_binary_messenger_get_type(),
           static_cast<GParamFlags>(G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
                                    G_PARAM_STATIC_STRINGS)));
 
-  fl_engine_signals[kSignalOnPreEngineRestart] = g_signal_new(
+  fl_engine_signals[SIGNAL_ON_PRE_ENGINE_RESTART] = g_signal_new(
       "on-pre-engine-restart", fl_engine_get_type(), G_SIGNAL_RUN_LAST, 0,
       nullptr, nullptr, nullptr, G_TYPE_NONE, 0);
 }
@@ -537,11 +561,12 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.platform_task_runner = &platform_task_runner;
   custom_task_runners.render_task_runner = &platform_task_runner;
 
-  g_autoptr(GPtrArray) command_line_args = fl_engine_get_switches(self);
-  // FlutterProjectArgs expects a full argv, so when processing it for flags
-  // the first item is treated as the executable and ignored. Add a dummy value
-  // so that all switches are used.
+  g_autoptr(GPtrArray) command_line_args =
+      g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
+  for (const auto& env_switch : flutter::GetSwitchesFromEnvironment()) {
+    g_ptr_array_add(command_line_args, g_strdup(env_switch.c_str()));
+  }
 
   gchar** dart_entrypoint_args =
       fl_dart_project_get_dart_entrypoint_arguments(self->project);
@@ -607,6 +632,10 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   self->settings_handler = fl_settings_handler_new(self);
   fl_settings_handler_start(self->settings_handler, settings);
 
+  self->platform_handler = fl_platform_handler_new(self->binary_messenger);
+  self->mouse_cursor_handler =
+      fl_mouse_cursor_handler_new(self->binary_messenger);
+
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
     g_warning("Failed to enable accessibility features on Flutter engine");
@@ -624,10 +653,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   display.single_display = true;
   display.refresh_rate = refresh_rate;
 
-  std::vector displays = {display};
   result = self->embedder_api.NotifyDisplayUpdate(
-      self->engine, kFlutterEngineDisplaysUpdateTypeStartup, displays.data(),
-      displays.size());
+      self->engine, kFlutterEngineDisplaysUpdateTypeStartup, &display, 1);
   if (result != kSuccess) {
     g_warning("Failed to notify display update to Flutter engine: %d", result);
   }
@@ -639,20 +666,19 @@ FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* self) {
   return &(self->embedder_api);
 }
 
-void fl_engine_add_view(FlEngine* self,
-                        size_t width,
-                        size_t height,
-                        double pixel_ratio,
-                        GCancellable* cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer user_data) {
-  g_return_if_fail(FL_IS_ENGINE(self));
+FlutterViewId fl_engine_add_view(FlEngine* self,
+                                 size_t width,
+                                 size_t height,
+                                 double pixel_ratio,
+                                 GCancellable* cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), -1);
 
   g_autoptr(GTask) task = g_task_new(self, cancellable, callback, user_data);
 
   FlutterViewId view_id = self->next_view_id;
   self->next_view_id++;
-  g_task_set_task_data(task, GINT_TO_POINTER(view_id), nullptr);
 
   FlutterWindowMetricsEvent metrics;
   metrics.struct_size = sizeof(FlutterWindowMetricsEvent);
@@ -674,13 +700,15 @@ void fl_engine_add_view(FlEngine* self,
     // This would have been done in the callback, but that won't occur now.
     g_object_unref(task);
   }
+
+  return view_id;
 }
 
-FlutterViewId fl_engine_add_view_finish(FlEngine* self,
-                                        GAsyncResult* result,
-                                        GError** error) {
+gboolean fl_engine_add_view_finish(FlEngine* self,
+                                   GAsyncResult* result,
+                                   GError** error) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
-  return g_task_propagate_int(G_TASK(result), error);
+  return g_task_propagate_boolean(G_TASK(result), error);
 }
 
 void fl_engine_remove_view(FlEngine* self,
@@ -1025,10 +1053,12 @@ void fl_engine_update_accessibility_features(FlEngine* self, int32_t flags) {
       self->engine, static_cast<FlutterAccessibilityFeature>(flags));
 }
 
-GPtrArray* fl_engine_get_switches(FlEngine* self) {
-  GPtrArray* switches = g_ptr_array_new_with_free_func(g_free);
-  for (const auto& env_switch : flutter::GetSwitchesFromEnvironment()) {
-    g_ptr_array_add(switches, g_strdup(env_switch.c_str()));
-  }
-  return switches;
+void fl_engine_request_app_exit(FlEngine* self) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+  fl_platform_handler_request_app_exit(self->platform_handler);
+}
+
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->mouse_cursor_handler;
 }

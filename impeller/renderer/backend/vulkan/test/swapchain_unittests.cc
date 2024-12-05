@@ -72,7 +72,7 @@ TEST(SwapchainTest, CachesRenderPassOnSwapchainImage) {
   std::vector<std::shared_ptr<Texture>> depth_stencil_textures;
   for (auto i = 0u; i < 3u; i++) {
     auto drawable = swapchain->AcquireNextDrawable();
-    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = drawable->GetRenderTarget();
 
     auto texture = render_target.GetRenderTargetTexture();
     auto& texture_vk = TextureVK::Cast(*texture);
@@ -86,8 +86,7 @@ TEST(SwapchainTest, CachesRenderPassOnSwapchainImage) {
     auto& depth = render_target.GetDepthAttachment();
     depth_stencil_textures.push_back(depth.has_value() ? depth->texture
                                                        : nullptr);
-    msaa_textures.push_back(
-        render_target.GetColorAttachments().find(0u)->second.texture);
+    msaa_textures.push_back(render_target.GetColorAttachment(0).texture);
   }
 
   for (auto i = 1; i < 3; i++) {
@@ -102,7 +101,7 @@ TEST(SwapchainTest, CachesRenderPassOnSwapchainImage) {
   std::vector<SharedHandleVK<vk::RenderPass>> render_passes;
   for (auto i = 0u; i < 3u; i++) {
     auto drawable = swapchain->AcquireNextDrawable();
-    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = drawable->GetRenderTarget();
 
     auto texture = render_target.GetRenderTargetTexture();
     auto& texture_vk = TextureVK::Cast(*texture);
@@ -117,7 +116,7 @@ TEST(SwapchainTest, CachesRenderPassOnSwapchainImage) {
   // unchanged.
   for (auto i = 0u; i < 3u; i++) {
     auto drawable = swapchain->AcquireNextDrawable();
-    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+    RenderTarget render_target = drawable->GetRenderTarget();
 
     auto texture = render_target.GetRenderTargetTexture();
     auto& texture_vk = TextureVK::Cast(*texture);

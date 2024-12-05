@@ -8,7 +8,7 @@
 #include "display_list/effects/dl_color_filter.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
@@ -94,7 +94,7 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
   // Overlay the gradient with 25% green. This should appear as the entire
   // rectangle being drawn with 25% green, including the border area outside the
   // decal gradient.
-  paint.setColorFilter(DlBlendColorFilter::Make(DlColor::kGreen().withAlpha(64),
+  paint.setColorFilter(DlColorFilter::MakeBlend(DlColor::kGreen().withAlpha(64),
                                                 DlBlendMode::kSrcOver));
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
@@ -214,6 +214,123 @@ void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
 // Only clamp is necessary. All tile modes are the same output.
 TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStopsClamp) {
   CanRenderLinearGradientWithOverlappingStops(this, DlTileMode::kClamp);
+}
+
+namespace {
+void CanRenderGradientWithIncompleteStops(AiksTest* aiks_test,
+                                          DlColorSourceType type) {
+  const DlTileMode tile_modes[4] = {
+      DlTileMode::kClamp,
+      DlTileMode::kRepeat,
+      DlTileMode::kMirror,
+      DlTileMode::kDecal,
+  };
+  const DlScalar test_size = 250;
+  const DlScalar test_border = 25;
+  const DlScalar gradient_size = 50;
+  const DlScalar quadrant_size = test_size + test_border * 2;
+
+  DisplayListBuilder builder;
+  builder.DrawRect(DlRect::MakeWH(quadrant_size * 2, quadrant_size * 2),
+                   DlPaint().setColor(DlColor::kDarkGrey()));
+
+  for (int quadrant = 0; quadrant < 4; quadrant++) {
+    builder.Save();
+    builder.Translate((quadrant & 1) * quadrant_size + test_border,
+                      (quadrant >> 1) * quadrant_size + test_border);
+
+    if (type == DlColorSourceType::kLinearGradient) {
+      // Alignment lines for the gradient edges/repeats/mirrors/etc.
+      // (rendered under the gradient so as not to obscure it)
+      DlPoint center = DlPoint(test_size, test_size) * 0.5;
+      DlScalar ten_percent = gradient_size * 0.1;
+      for (int i = gradient_size / 2; i <= test_size / 2; i += gradient_size) {
+        auto draw_at = [=](DlCanvas& canvas, DlScalar offset, DlColor color) {
+          DlPaint line_paint;
+          line_paint.setColor(color);
+          // strokewidth of 2 straddles the dividing line
+          line_paint.setStrokeWidth(2.0f);
+          line_paint.setDrawStyle(DlDrawStyle::kStroke);
+
+          DlPoint along(offset, offset);
+          DlScalar across_distance = test_size / 2 + 10 - offset;
+          DlPoint across(across_distance, -across_distance);
+
+          canvas.DrawLine(center - along - across,  //
+                          center - along + across,  //
+                          line_paint);
+          canvas.DrawLine(center + along - across,  //
+                          center + along + across,  //
+                          line_paint);
+        };
+        // White line is at the edge of the gradient
+        // Grey lines are where the 0.1 and 0.9 color stops land
+        draw_at(builder, i - ten_percent, DlColor::kMidGrey());
+        draw_at(builder, i, DlColor::kWhite());
+        draw_at(builder, i + ten_percent, DlColor::kMidGrey());
+      }
+    }
+
+    std::vector<DlColor> colors = {
+        DlColor::kGreen(),
+        DlColor::kPurple(),
+        DlColor::kOrange(),
+        DlColor::kBlue(),
+    };
+    std::vector<Scalar> stops = {0.1, 0.3, 0.7, 0.9};
+
+    DlPaint paint;
+    switch (type) {
+      case DlColorSourceType::kLinearGradient:
+        paint.setColorSource(DlColorSource::MakeLinear(
+            {test_size / 2 - gradient_size / 2,
+             test_size / 2 - gradient_size / 2},
+            {test_size / 2 + gradient_size / 2,
+             test_size / 2 + gradient_size / 2},
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
+        break;
+      case DlColorSourceType::kRadialGradient:
+        paint.setColorSource(DlColorSource::MakeRadial(
+            {test_size / 2, test_size / 2}, gradient_size,  //
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
+        break;
+      case DlColorSourceType::kConicalGradient:
+        paint.setColorSource(DlColorSource::MakeConical(
+            {test_size / 2, test_size / 2}, 0,
+            {test_size / 2 + 20, test_size / 2 - 10}, gradient_size,
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
+        break;
+      case DlColorSourceType::kSweepGradient:
+        paint.setColorSource(DlColorSource::MakeSweep(
+            {test_size / 2, test_size / 2}, 0, 45,  //
+            stops.size(), colors.data(), stops.data(), tile_modes[quadrant]));
+        break;
+      default:
+        FML_UNREACHABLE();
+    }
+
+    builder.DrawRect(SkRect::MakeXYWH(0, 0, test_size, test_size), paint);
+    builder.Restore();
+  }
+
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
+}
+}  // namespace
+
+TEST_P(AiksTest, CanRenderLinearGradientWithIncompleteStops) {
+  CanRenderGradientWithIncompleteStops(this,
+                                       DlColorSourceType::kLinearGradient);
+}
+TEST_P(AiksTest, CanRenderRadialGradientWithIncompleteStops) {
+  CanRenderGradientWithIncompleteStops(this,
+                                       DlColorSourceType::kRadialGradient);
+}
+TEST_P(AiksTest, CanRenderConicalGradientWithIncompleteStops) {
+  CanRenderGradientWithIncompleteStops(this,
+                                       DlColorSourceType::kConicalGradient);
+}
+TEST_P(AiksTest, CanRenderSweepGradientWithIncompleteStops) {
+  CanRenderGradientWithIncompleteStops(this, DlColorSourceType::kSweepGradient);
 }
 
 namespace {
@@ -362,7 +479,7 @@ TEST_P(AiksTest, CanRenderLinearGradientMaskBlur) {
       DlTileMode::kClamp));
   paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
 
-  builder.DrawCircle({300, 300}, 200, paint);
+  builder.DrawCircle(SkPoint{300, 300}, 200, paint);
   builder.DrawRect(SkRect::MakeLTRB(100, 300, 500, 600), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -559,23 +676,23 @@ TEST_P(AiksTest, CanRenderConicalGradient) {
       DlColor(Color::MakeRGBA8(0x4c, 0xAF, 0x50, 0xFF).ToARGB()),
       DlColor(Color::MakeRGBA8(0x21, 0x96, 0xF3, 0xFF).ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.f / 3.f, 2.f / 3.f, 1.0};
-  std::array<std::tuple<SkPoint, float, SkPoint, float>, 8> array{
-      std::make_tuple(SkPoint::Make(size / 2.f, size / 2.f), 0.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 2.f),
-      std::make_tuple(SkPoint::Make(size / 2.f, size / 2.f), size / 4.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 2.f),
-      std::make_tuple(SkPoint::Make(size / 4.f, size / 4.f), 0.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 2.f),
-      std::make_tuple(SkPoint::Make(size / 4.f, size / 4.f), size / 2.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), 0),
-      std::make_tuple(SkPoint::Make(size / 4.f, size / 4.f), size / 4.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 2.f),
-      std::make_tuple(SkPoint::Make(size / 4.f, size / 4.f), size / 16.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 8.f),
-      std::make_tuple(SkPoint::Make(size / 4.f, size / 4.f), size / 8.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 16.f),
-      std::make_tuple(SkPoint::Make(size / 8.f, size / 8.f), size / 8.f,
-                      SkPoint::Make(size / 2.f, size / 2.f), size / 8.f),
+  std::array<std::tuple<DlPoint, float, DlPoint, float>, 8> array{
+      std::make_tuple(DlPoint(size / 2.f, size / 2.f), 0.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 2.f),
+      std::make_tuple(DlPoint(size / 2.f, size / 2.f), size / 4.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 2.f),
+      std::make_tuple(DlPoint(size / 4.f, size / 4.f), 0.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 2.f),
+      std::make_tuple(DlPoint(size / 4.f, size / 4.f), size / 2.f,
+                      DlPoint(size / 2.f, size / 2.f), 0),
+      std::make_tuple(DlPoint(size / 4.f, size / 4.f), size / 4.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 2.f),
+      std::make_tuple(DlPoint(size / 4.f, size / 4.f), size / 16.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 8.f),
+      std::make_tuple(DlPoint(size / 4.f, size / 4.f), size / 8.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 16.f),
+      std::make_tuple(DlPoint(size / 8.f, size / 8.f), size / 8.f,
+                      DlPoint(size / 2.f, size / 2.f), size / 8.f),
   };
   for (int i = 0; i < 8; i++) {
     builder.Save();

@@ -284,7 +284,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean previewHandwritingGesture(
       PreviewableHandwritingGesture gesture, CancellationSignal cancellationSignal) {
-    System.out.println("justin previewHandwritingGesture gesture: " + gesture + ", " + cancellationSignal);
+    System.out.println(
+        "justin previewHandwritingGesture gesture: " + gesture + ", " + cancellationSignal);
 
     scribeChannel.previewHandwritingGesture(gesture, cancellationSignal);
     return true;
@@ -312,7 +313,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
             executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_UNSUPPORTED));
           }
           // TODO(justinmc): There are a few other HANDWRITING_GESTURE_RESULTs
-          // that may be useful, see https://developer.android.com/reference/android/view/inputmethod/InputConnection
+          // that may be useful, see
+          // https://developer.android.com/reference/android/view/inputmethod/InputConnection
         };
 
     scribeChannel.performHandwritingGesture((HandwritingGesture) gesture, result);

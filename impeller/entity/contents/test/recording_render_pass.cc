@@ -6,7 +6,7 @@
 
 #include <utility>
 
-namespace impeller {
+namespace impeller::testing {
 
 RecordingRenderPass::RecordingRenderPass(
     std::shared_ptr<RenderPass> delegate,
@@ -74,7 +74,7 @@ void RecordingRenderPass::SetInstanceCount(size_t count) {
 
 // |RenderPass|
 bool RecordingRenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  pending_.vertex_buffer = buffer;
+  pending_.BindVertices(buffer);
   if (delegate_) {
     return delegate_->SetVertexBuffer(buffer);
   }
@@ -92,7 +92,7 @@ fml::Status RecordingRenderPass::Draw() {
 }
 
 // |RenderPass|
-void RecordingRenderPass::OnSetLabel(std::string label) {
+void RecordingRenderPass::OnSetLabel(std::string_view label) {
   return;
 }
 
@@ -108,9 +108,8 @@ bool RecordingRenderPass::OnEncodeCommands(const Context& context) const {
 bool RecordingRenderPass::BindResource(ShaderStage stage,
                                        DescriptorType type,
                                        const ShaderUniformSlot& slot,
-                                       const ShaderMetadata& metadata,
+                                       const ShaderMetadata* metadata,
                                        BufferView view) {
-  pending_.BindResource(stage, type, slot, metadata, view);
   if (delegate_) {
     return delegate_->BindResource(stage, type, slot, metadata, view);
   }
@@ -118,28 +117,41 @@ bool RecordingRenderPass::BindResource(ShaderStage stage,
 }
 
 // |RenderPass|
-bool RecordingRenderPass::BindResource(
+bool RecordingRenderPass::BindDynamicResource(
     ShaderStage stage,
     DescriptorType type,
     const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
+    std::unique_ptr<ShaderMetadata> metadata,
     BufferView view) {
-  pending_.BindResource(stage, type, slot, metadata, view);
   if (delegate_) {
-    return delegate_->BindResource(stage, type, slot, metadata, view);
+    return delegate_->BindDynamicResource(stage, type, slot,
+                                          std::move(metadata), view);
   }
   return true;
 }
 
 // |RenderPass|
+bool RecordingRenderPass::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  if (delegate_) {
+    return delegate_->BindDynamicResource(
+        stage, type, slot, std::move(metadata), texture, sampler);
+  }
+  return true;
+}
+
 bool RecordingRenderPass::BindResource(
     ShaderStage stage,
     DescriptorType type,
     const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
+    const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
-  pending_.BindResource(stage, type, slot, metadata, texture, sampler);
   if (delegate_) {
     return delegate_->BindResource(stage, type, slot, metadata, texture,
                                    sampler);
@@ -147,4 +159,4 @@ bool RecordingRenderPass::BindResource(
   return true;
 }
 
-}  // namespace impeller
+}  // namespace impeller::testing

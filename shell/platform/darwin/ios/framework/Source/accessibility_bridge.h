@@ -14,7 +14,6 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
@@ -51,7 +50,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   AccessibilityBridge(FlutterViewController* view_controller,
                       PlatformViewIOS* platform_view,
-                      std::shared_ptr<PlatformViewsController> platform_views_controller,
+                      __weak FlutterPlatformViewsController* platform_views_controller,
                       std::unique_ptr<IosDelegate> ios_delegate = nullptr);
   ~AccessibilityBridge();
 
@@ -73,7 +72,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const override {
+  FlutterPlatformViewsController* GetPlatformViewsController() const override {
     return platform_views_controller_;
   };
 
@@ -92,13 +91,14 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   FlutterViewController* view_controller_;
   PlatformViewIOS* platform_view_;
-  const std::shared_ptr<PlatformViewsController> platform_views_controller_;
+  __weak FlutterPlatformViewsController* platform_views_controller_;
   // If the this id is kSemanticObjectIdInvalid, it means either nothing has
   // been focused or the focus is currently outside of the flutter application
   // (i.e. the status bar or keyboard)
   int32_t last_focused_semantics_object_id_;
-  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
+
+  NSMutableDictionary<NSNumber*, SemanticsObject*>* objects_;
+  FlutterBasicMessageChannel* accessibility_channel_;
   int32_t previous_route_id_ = 0;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;

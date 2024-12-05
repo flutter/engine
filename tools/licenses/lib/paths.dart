@@ -50,6 +50,15 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'flutter/third_party/boringssl/src/rust', // rust-related code is not shipped
   r'flutter/third_party/boringssl/src/util', // code generators, not shipped
+  r'flutter/third_party/brotli/csharp', // C# code, not shipped.
+  r'flutter/third_party/brotli/docs', // Docs, not shipped.
+  r'flutter/third_party/brotli/go', // Go code, not shipped.
+  r'flutter/third_party/brotli/java', // Java code, not shipped.
+  r'flutter/third_party/brotli/js', // JavaScript code, not shipped.
+  r'flutter/third_party/brotli/python', // Python code, not shipped.
+  r'flutter/third_party/brotli/research', // Research tools, not shipped.
+  r'flutter/third_party/brotli/scripts', // Scripts, not shipped.
+  r'flutter/third_party/brotli/tests', // Tests, not shipped.
   r'flutter/third_party/dart/benchmarks', // not shipped in binary
   r'flutter/third_party/dart/build', // not shipped in binary
   r'flutter/third_party/dart/docs', // not shipped in binary
@@ -144,7 +153,6 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/pkg/flutter_packages',
   r'flutter/third_party/pkg/gcloud',
   r'flutter/third_party/pkg/googleapis',
-  r'flutter/third_party/pkg/platform',
   r'flutter/third_party/pkg/process',
   r'flutter/third_party/pkg/process_runner',
   r'flutter/third_party/pkg/vector_math',

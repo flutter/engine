@@ -25,6 +25,9 @@ EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.
 DomElement get platformViewsHost =>
     EnginePlatformDispatcher.instance.implicitView!.dom.platformViewsHost;
 
+DomElement get flutterViewRoot =>
+    EnginePlatformDispatcher.instance.implicitView!.dom.rootElement;
+
 void main() {
   internalBootstrapBrowserTest(() {
     return testMain;
@@ -77,6 +80,9 @@ void runSemanticsTests() {
   });
   group('checkboxes, radio buttons and switches', () {
     _testCheckables();
+  });
+  group('selectables', () {
+    _testSelectables();
   });
   group('tappable', () {
     _testTappable();
@@ -736,7 +742,7 @@ class MockSemanticsEnabler implements SemanticsEnabler {
 }
 
 void _testHeader() {
-  test('renders heading role for headers', () {
+  test('renders an empty labeled header as a heading with a label and uses a sized span for label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -751,20 +757,32 @@ void _testHeader() {
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem role="heading">Header of the page</sem>
-''');
+    expectSemanticsTree(owner(), '<h2>Header of the page</span></h2>');
 
     semantics().semanticsEnabled = false;
   });
 
-  // When a header has child elements, role="heading" prevents AT from reaching
-  // child elements. To fix that role="group" is used, even though that causes
-  // the heading to not be announced as a heading. If the app really needs the
-  // heading to be announced as a heading, the developer can restructure the UI
-  // such that the heading is not a parent node, but a side-note, e.g. preceding
-  // the child list.
-  test('uses group role for headers when children are present', () {
+  // This is a useless case, but we should at least not crash if it happens.
+  test('renders an empty unlabeled header', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      flags: 0 | ui.SemanticsFlag.isHeader.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '<header></header>');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('renders a header with children and uses aria-label', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -788,7 +806,7 @@ void _testHeader() {
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="group" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
+<header aria-label="Header of the page"><sem-c><sem></sem></sem-c></header>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -2291,6 +2309,114 @@ void _testCheckables() {
   });
 }
 
+void _testSelectables() {
+  test('renders and updates non-selectable, selected, and unselected nodes', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          isSelectable: false,
+          rect: const ui.Rect.fromLTRB(0, 0, 100, 20),
+        ),
+        tester.updateNode(
+          id: 2,
+          isSelectable: true,
+          isSelected: false,
+          rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+        ),
+        tester.updateNode(
+          id: 3,
+          isSelectable: true,
+          isSelected: true,
+          rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="false"></sem>
+    <sem aria-selected="true"></sem>
+  </sem-c>
+</sem>
+''');
+
+    // Missing attributes cannot be expressed using HTML patterns, so check directly.
+    final nonSelectable = owner().debugSemanticsTree![1]!.element;
+    expect(nonSelectable.getAttribute('aria-selected'), isNull);
+
+    // Flip the values and check that that ARIA attribute is updated.
+    tester.updateNode(
+      id: 2,
+      isSelectable: true,
+      isSelected: true,
+      rect: const ui.Rect.fromLTRB(0, 20, 100, 40),
+    );
+    tester.updateNode(
+      id: 3,
+      isSelectable: true,
+      isSelected: false,
+      rect: const ui.Rect.fromLTRB(0, 40, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem></sem>
+    <sem aria-selected="true"></sem>
+    <sem aria-selected="false"></sem>
+  </sem-c>
+</sem>
+''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('Checkable takes precedence over selectable', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      isSelectable: true,
+      isSelected: true,
+      hasCheckedState: true,
+      isChecked: true,
+      hasTap: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 60),
+    );
+    tester.apply();
+
+    expectSemanticsTree(
+      owner(),
+      '<sem flt-tappable role="checkbox" aria-checked="true"></sem>',
+    );
+
+    final node = owner().debugSemanticsTree![0]!;
+    expect(node.semanticRole!.kind, SemanticRoleKind.checkable);
+    expect(
+      node.semanticRole!.debugSemanticBehaviorTypes,
+      isNot(contains(Selectable)),
+    );
+    expect(node.element.getAttribute('aria-selected'), isNull);
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
 void _testTappable() {
   test('renders an enabled tappable widget', () async {
     semantics()
@@ -3456,7 +3582,7 @@ void _testRoute() {
     tester.apply();
 
     expect(capturedActions, isEmpty);
-    expect(domDocument.activeElement, domDocument.body);
+    expect(domDocument.activeElement, flutterViewRoot);
 
     semantics().semanticsEnabled = false;
   });

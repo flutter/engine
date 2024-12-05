@@ -43,6 +43,7 @@ enum class SemanticsAction : int32_t {
   kMoveCursorBackwardByWord = 1 << 20,
   kSetText = 1 << 21,
   kFocus = 1 << 22,
+  kScrollToOffset = 1 << 23,
 };
 
 const int kVerticalScrollSemanticsActions =
@@ -91,6 +92,7 @@ enum class SemanticsFlags : int32_t {
   kIsCheckStateMixed = 1 << 25,
   kHasExpandedState = 1 << 26,
   kIsExpanded = 1 << 27,
+  kHasSelectedState = 1 << 28,
 };
 
 const int kScrollableSemanticsFlags =

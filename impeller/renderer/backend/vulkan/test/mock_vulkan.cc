@@ -494,6 +494,7 @@ VkResult vkCreateFence(VkDevice device,
                        const VkAllocationCallbacks* pAllocator,
                        VkFence* pFence) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkCreateFence");
   *pFence = reinterpret_cast<VkFence>(new MockFence());
   return VK_SUCCESS;
 }
@@ -927,6 +928,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   g_instance_layers = instance_layers_;
   g_format_properties_callback = format_properties_callback_;
   g_physical_device_properties_callback = physical_properties_callback_;
+  settings.embedder_data = embedder_data_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
   return result;
 }

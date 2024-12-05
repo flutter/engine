@@ -56,10 +56,15 @@ std::unique_ptr<IOSContext> IOSContext::Create(
 }
 
 IOSRenderingBackend IOSContext::GetBackend() const {
+  // Overridden by Impeller subclasses.
   return IOSRenderingBackend::kSkia;
 }
 
 std::shared_ptr<impeller::Context> IOSContext::GetImpellerContext() const {
+  return nullptr;
+}
+
+std::shared_ptr<impeller::AiksContext> IOSContext::GetAiksContext() const {
   return nullptr;
 }
 

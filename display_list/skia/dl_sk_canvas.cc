@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 
+#include "flutter/display_list/effects/image_filters/dl_blur_image_filter.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/fml/trace_event.h"
@@ -40,8 +41,8 @@ void DlSkCanvasAdapter::set_canvas(SkCanvas* canvas) {
   delegate_ = canvas;
 }
 
-SkISize DlSkCanvasAdapter::GetBaseLayerSize() const {
-  return delegate_->getBaseLayerSize();
+DlISize DlSkCanvasAdapter::GetBaseLayerDimensions() const {
+  return ToDlISize(delegate_->getBaseLayerSize());
 }
 
 SkImageInfo DlSkCanvasAdapter::GetImageInfo() const {
@@ -52,14 +53,19 @@ void DlSkCanvasAdapter::Save() {
   delegate_->save();
 }
 
-void DlSkCanvasAdapter::SaveLayer(const SkRect* bounds,
+void DlSkCanvasAdapter::SaveLayer(const std::optional<DlRect>& bounds,
                                   const DlPaint* paint,
-                                  const DlImageFilter* backdrop) {
+                                  const DlImageFilter* backdrop,
+                                  std::optional<int64_t> backdrop_id) {
   sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
   SkOptionalPaint sk_paint(paint);
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
-  delegate_->saveLayer(
-      SkCanvas::SaveLayerRec{bounds, sk_paint(), sk_backdrop.get(), 0});
+  SkCanvas::SaveLayerRec params(ToSkRect(bounds), sk_paint(), sk_backdrop.get(),
+                                0);
+  if (sk_backdrop && backdrop->asBlur()) {
+    params.fBackdropTileMode = ToSk(backdrop->asBlur()->tile_mode());
+  }
+  delegate_->saveLayer(params);
 }
 
 void DlSkCanvasAdapter::Restore() {
@@ -117,79 +123,66 @@ void DlSkCanvasAdapter::TransformReset() {
   delegate_->resetMatrix();
 }
 
-void DlSkCanvasAdapter::Transform(const SkMatrix* matrix) {
-  delegate_->concat(*matrix);
+void DlSkCanvasAdapter::Transform(const DlMatrix& matrix) {
+  delegate_->concat(ToSkM44(matrix));
 }
 
-void DlSkCanvasAdapter::Transform(const SkM44* matrix44) {
-  delegate_->concat(*matrix44);
-}
-
-void DlSkCanvasAdapter::SetTransform(const SkMatrix* matrix) {
-  delegate_->setMatrix(*matrix);
-}
-
-void DlSkCanvasAdapter::SetTransform(const SkM44* matrix44) {
-  delegate_->setMatrix(*matrix44);
+void DlSkCanvasAdapter::SetTransform(const DlMatrix& matrix) {
+  delegate_->setMatrix(ToSkM44(matrix));
 }
 
 /// Returns the 4x4 full perspective transform representing all transform
 /// operations executed so far in this DisplayList within the enclosing
 /// save stack.
-SkM44 DlSkCanvasAdapter::GetTransformFullPerspective() const {
-  return delegate_->getLocalToDevice();
+DlMatrix DlSkCanvasAdapter::GetMatrix() const {
+  return ToDlMatrix(delegate_->getLocalToDevice());
 }
 
-/// Returns the 3x3 partial perspective transform representing all transform
-/// operations executed so far in this DisplayList within the enclosing
-/// save stack.
-SkMatrix DlSkCanvasAdapter::GetTransform() const {
-  return delegate_->getTotalMatrix();
-}
-
-void DlSkCanvasAdapter::ClipRect(const SkRect& rect,
+void DlSkCanvasAdapter::ClipRect(const DlRect& rect,
                                  ClipOp clip_op,
                                  bool is_aa) {
-  delegate_->clipRect(rect, ToSk(clip_op), is_aa);
+  delegate_->clipRect(ToSkRect(rect), ToSk(clip_op), is_aa);
 }
 
-void DlSkCanvasAdapter::ClipOval(const SkRect& bounds,
+void DlSkCanvasAdapter::ClipOval(const DlRect& bounds,
                                  ClipOp clip_op,
                                  bool is_aa) {
-  delegate_->clipRRect(SkRRect::MakeOval(bounds), ToSk(clip_op), is_aa);
+  delegate_->clipRRect(SkRRect::MakeOval(ToSkRect(bounds)), ToSk(clip_op),
+                       is_aa);
 }
 
-void DlSkCanvasAdapter::ClipRRect(const SkRRect& rrect,
-                                  ClipOp clip_op,
-                                  bool is_aa) {
-  delegate_->clipRRect(rrect, ToSk(clip_op), is_aa);
+void DlSkCanvasAdapter::ClipRoundRect(const DlRoundRect& rrect,
+                                      ClipOp clip_op,
+                                      bool is_aa) {
+  delegate_->clipRRect(ToSkRRect(rrect), ToSk(clip_op), is_aa);
 }
 
-void DlSkCanvasAdapter::ClipPath(const SkPath& path,
+void DlSkCanvasAdapter::ClipPath(const DlPath& path,
                                  ClipOp clip_op,
                                  bool is_aa) {
-  delegate_->clipPath(path, ToSk(clip_op), is_aa);
+  path.WillRenderSkPath();
+  delegate_->clipPath(path.GetSkPath(), ToSk(clip_op), is_aa);
 }
 
 /// Conservative estimate of the bounds of all outstanding clip operations
 /// measured in the coordinate space within which this DisplayList will
 /// be rendered.
-SkRect DlSkCanvasAdapter::GetDestinationClipBounds() const {
-  return SkRect::Make(delegate_->getDeviceClipBounds());
+DlRect DlSkCanvasAdapter::GetDestinationClipCoverage() const {
+  return ToDlRect(delegate_->getDeviceClipBounds());
 }
 
 /// Conservative estimate of the bounds of all outstanding clip operations
 /// transformed into the local coordinate space in which currently
 /// recorded rendering operations are interpreted.
-SkRect DlSkCanvasAdapter::GetLocalClipBounds() const {
-  return delegate_->getLocalClipBounds();
+DlRect DlSkCanvasAdapter::GetLocalClipCoverage() const {
+  return ToDlRect(delegate_->getLocalClipBounds());
 }
 
 /// Return true iff the supplied bounds are easily shown to be outside
 /// of the current clip bounds. This method may conservatively return
 /// false if it cannot make the determination.
-bool DlSkCanvasAdapter::QuickReject(const SkRect& bounds) const {
-  return delegate_->quickReject(bounds);
+bool DlSkCanvasAdapter::QuickReject(const DlRect& bounds) const {
+  return delegate_->quickReject(ToSkRect(bounds));
 }
 
 void DlSkCanvasAdapter::DrawPaint(const DlPaint& paint) {
@@ -200,10 +193,10 @@ void DlSkCanvasAdapter::DrawColor(DlColor color, DlBlendMode mode) {
   delegate_->drawColor(ToSk(color), ToSk(mode));
 }
 
-void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
-                                 const SkPoint& p1,
+void DlSkCanvasAdapter::DrawLine(const DlPoint& p0,
+                                 const DlPoint& p1,
                                  const DlPaint& paint) {
-  delegate_->drawLine(p0, p1, ToStrokedSk(paint));
+  delegate_->drawLine(ToSkPoint(p0), ToSkPoint(p1), ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawDashedLine(const DlPoint& p0,
@@ -217,47 +210,49 @@ void DlSkCanvasAdapter::DrawDashedLine(const DlPoint& p0,
   delegate_->drawLine(ToSkPoint(p0), ToSkPoint(p1), dashed_paint);
 }
 
-void DlSkCanvasAdapter::DrawRect(const SkRect& rect, const DlPaint& paint) {
-  delegate_->drawRect(rect, ToSk(paint));
+void DlSkCanvasAdapter::DrawRect(const DlRect& rect, const DlPaint& paint) {
+  delegate_->drawRect(ToSkRect(rect), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawOval(const SkRect& bounds, const DlPaint& paint) {
-  delegate_->drawOval(bounds, ToSk(paint));
+void DlSkCanvasAdapter::DrawOval(const DlRect& bounds, const DlPaint& paint) {
+  delegate_->drawOval(ToSkRect(bounds), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawCircle(const SkPoint& center,
+void DlSkCanvasAdapter::DrawCircle(const DlPoint& center,
                                    SkScalar radius,
                                    const DlPaint& paint) {
-  delegate_->drawCircle(center, radius, ToSk(paint));
+  delegate_->drawCircle(ToSkPoint(center), radius, ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawRRect(const SkRRect& rrect, const DlPaint& paint) {
-  delegate_->drawRRect(rrect, ToSk(paint));
+void DlSkCanvasAdapter::DrawRoundRect(const DlRoundRect& rrect,
+                                      const DlPaint& paint) {
+  delegate_->drawRRect(ToSkRRect(rrect), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawDRRect(const SkRRect& outer,
-                                   const SkRRect& inner,
-                                   const DlPaint& paint) {
-  delegate_->drawDRRect(outer, inner, ToSk(paint));
+void DlSkCanvasAdapter::DrawDiffRoundRect(const DlRoundRect& outer,
+                                          const DlRoundRect& inner,
+                                          const DlPaint& paint) {
+  delegate_->drawDRRect(ToSkRRect(outer), ToSkRRect(inner), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawPath(const SkPath& path, const DlPaint& paint) {
-  delegate_->drawPath(path, ToSk(paint));
+void DlSkCanvasAdapter::DrawPath(const DlPath& path, const DlPaint& paint) {
+  path.WillRenderSkPath();
+  delegate_->drawPath(path.GetSkPath(), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawArc(const SkRect& bounds,
-                                SkScalar start,
-                                SkScalar sweep,
+void DlSkCanvasAdapter::DrawArc(const DlRect& bounds,
+                                DlScalar start,
+                                DlScalar sweep,
                                 bool useCenter,
                                 const DlPaint& paint) {
-  delegate_->drawArc(bounds, start, sweep, useCenter, ToSk(paint));
+  delegate_->drawArc(ToSkRect(bounds), start, sweep, useCenter, ToSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawPoints(PointMode mode,
                                    uint32_t count,
-                                   const SkPoint pts[],
+                                   const DlPoint pts[],
                                    const DlPaint& paint) {
-  delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
+  delegate_->drawPoints(ToSk(mode), count, ToSkPoints(pts), ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawVertices(
@@ -268,46 +263,46 @@ void DlSkCanvasAdapter::DrawVertices(
 }
 
 void DlSkCanvasAdapter::DrawImage(const sk_sp<DlImage>& image,
-                                  const SkPoint& point,
+                                  const DlPoint& point,
                                   DlImageSampling sampling,
                                   const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
-  delegate_->drawImage(sk_image.get(), point.fX, point.fY, ToSk(sampling),
+  delegate_->drawImage(sk_image.get(), point.x, point.y, ToSk(sampling),
                        sk_paint());
 }
 
 void DlSkCanvasAdapter::DrawImageRect(const sk_sp<DlImage>& image,
-                                      const SkRect& src,
-                                      const SkRect& dst,
+                                      const DlRect& src,
+                                      const DlRect& dst,
                                       DlImageSampling sampling,
                                       const DlPaint* paint,
                                       SrcRectConstraint constraint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
-  delegate_->drawImageRect(sk_image.get(), src, dst, ToSk(sampling), sk_paint(),
-                           ToSk(constraint));
+  delegate_->drawImageRect(sk_image.get(), ToSkRect(src), ToSkRect(dst),
+                           ToSk(sampling), sk_paint(), ToSk(constraint));
 }
 
 void DlSkCanvasAdapter::DrawImageNine(const sk_sp<DlImage>& image,
-                                      const SkIRect& center,
-                                      const SkRect& dst,
+                                      const DlIRect& center,
+                                      const DlRect& dst,
                                       DlFilterMode filter,
                                       const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
-  delegate_->drawImageNine(sk_image.get(), center, dst, ToSk(filter),
-                           sk_paint());
+  delegate_->drawImageNine(sk_image.get(), ToSkIRect(center), ToSkRect(dst),
+                           ToSk(filter), sk_paint());
 }
 
 void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
                                   const SkRSXform xform[],
-                                  const SkRect tex[],
+                                  const DlRect tex[],
                                   const DlColor colors[],
                                   int count,
                                   DlBlendMode mode,
                                   DlImageSampling sampling,
-                                  const SkRect* cullRect,
+                                  const DlRect* cullRect,
                                   const DlPaint* paint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = atlas->skia_image();
@@ -316,8 +311,9 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
   for (int i = 0; i < count; ++i) {
     sk_colors.push_back(colors[i].argb());
   }
-  delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors.data(), count,
-                       ToSk(mode), ToSk(sampling), cullRect, sk_paint());
+  delegate_->drawAtlas(sk_image.get(), xform, ToSkRects(tex), sk_colors.data(),
+                       count, ToSk(mode), ToSk(sampling), ToSkRect(cullRect),
+                       sk_paint());
 }
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
@@ -359,13 +355,14 @@ void DlSkCanvasAdapter::DrawTextFrame(
   FML_CHECK(false);
 }
 
-void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
+void DlSkCanvasAdapter::DrawShadow(const DlPath& path,
                                    const DlColor color,
                                    const SkScalar elevation,
                                    bool transparent_occluder,
                                    SkScalar dpr) {
-  DlSkCanvasDispatcher::DrawShadow(delegate_, path, color, elevation,
-                                   transparent_occluder, dpr);
+  path.WillRenderSkPath();
+  DlSkCanvasDispatcher::DrawShadow(delegate_, path.GetSkPath(), color,
+                                   elevation, transparent_occluder, dpr);
 }
 
 void DlSkCanvasAdapter::Flush() {

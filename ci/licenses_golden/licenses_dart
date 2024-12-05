@@ -1,7 +1,8 @@
-Signature: 3b452843d7646ce65b2142c1d2aa36ec
+Signature: e8ded71d356b24956e436610bedf344b
 
 ====================================================================================================
 LIBRARY: dart
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/profile.proto
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/common/builtin_clock.proto
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/clock_snapshot.proto
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/interned_data/interned_data.proto
@@ -15,6 +16,7 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutte
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/track_event/track_descriptor.proto
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/track_event/track_event.proto
 TYPE: LicenseType.apache
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/profile.proto
 FILE: ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/common/builtin_clock.proto
 FILE: ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/clock_snapshot.proto
 FILE: ../../../flutter/third_party/dart/runtime/vm/protos/perfetto/trace/interned_data/interned_data.proto
@@ -1924,16 +1926,19 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/metrics.cc + ../../../flutt
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/metrics.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/object_graph.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/object_graph.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_ir.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_ir.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_ast.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_ast.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_parser.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_parser.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_ir.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_ir.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_ast.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_ast.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_parser.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_parser.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow-inl.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/report.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/report.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/ring_buffer.h + ../../../flutter/third_party/dart/LICENSE
@@ -1942,9 +1947,6 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_arm64.cc + ../../
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_arm64.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/stack_frame_arm64.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/tags.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/unibrow-inl.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/unibrow.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/unibrow.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/d8.js + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/jsshell.js + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/linked_hash_map.dart + ../../../flutter/third_party/dart/LICENSE
@@ -2016,16 +2018,19 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/metrics.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/metrics.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/object_graph.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/object_graph.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_ir.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_ir.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_ast.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_ast.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_parser.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_parser.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_ir.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_ir.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_ast.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_ast.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_parser.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_parser.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow-inl.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/unibrow.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/report.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/report.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/ring_buffer.h
@@ -2034,9 +2039,6 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_arm64.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_arm64.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/stack_frame_arm64.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/tags.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/unibrow-inl.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/unibrow.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/unibrow.h
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/d8.js
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/jsshell.js
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/linked_hash_map.dart
@@ -2082,7 +2084,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../flutter/third_party/dart/runtime/bin/address_sanitizer.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/dart_io_api_impl.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/observatory_assets_empty.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/include/bin/dart_io_api.h + ../../../flutter/third_party/dart/LICENSE
@@ -2116,12 +2117,12 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/profiler_service.cc + ../..
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/profiler_service.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/program_visitor.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/program_visitor.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode_inl.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_bytecodes.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_interpreter.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp_interpreter.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode_inl.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_bytecodes.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_interpreter.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_interpreter.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/scope_timer.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/service_event.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/service_event.h + ../../../flutter/third_party/dart/LICENSE
@@ -2161,7 +2162,6 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/js/_js_annotations.dart + ../.
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/vmservice/asset.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/vmservice/vmservice.dart + ../../../flutter/third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/third_party/dart/runtime/bin/address_sanitizer.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/dart_io_api_impl.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/observatory_assets_empty.cc
 FILE: ../../../flutter/third_party/dart/runtime/include/bin/dart_io_api.h
@@ -2195,12 +2195,12 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/profiler_service.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/profiler_service.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/program_visitor.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/program_visitor.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_assembler_bytecode_inl.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_bytecodes.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_interpreter.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/regexp_interpreter.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_assembler_bytecode_inl.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_bytecodes.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_interpreter.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/regexp/regexp_interpreter.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/scope_timer.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/service_event.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/service_event.h
@@ -3840,8 +3840,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../flutter/third_party/dart/runtime/bin/dart_precompiled_runtime_test_component.cml + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/dart_test_component.cml + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/bin/dartaotruntime_test_component.cml + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/main_impl.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/run_vm_tests_test_component.cml + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/lib/ffi_dynamic_library.h + ../../../flutter/third_party/dart/LICENSE
@@ -3895,7 +3895,6 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/boxed_int_to_string.dart + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/int_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_buffer_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart + ../../../flutter/third_party/dart/LICENSE
@@ -3903,8 +3902,8 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/async/future_extensions.dart +
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/js_interop/js_interop.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/js_interop_unsafe/js_interop_unsafe.dart + ../../../flutter/third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/third_party/dart/runtime/bin/dart_precompiled_runtime_test_component.cml
 FILE: ../../../flutter/third_party/dart/runtime/bin/dart_test_component.cml
+FILE: ../../../flutter/third_party/dart/runtime/bin/dartaotruntime_test_component.cml
 FILE: ../../../flutter/third_party/dart/runtime/bin/main_impl.h
 FILE: ../../../flutter/third_party/dart/runtime/bin/run_vm_tests_test_component.cml
 FILE: ../../../flutter/third_party/dart/runtime/lib/ffi_dynamic_library.h
@@ -3958,7 +3957,6 @@ FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.da
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/boxed_int_to_string.dart
-FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/int_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_buffer_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/string_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart
@@ -4068,12 +4066,19 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/bin/uri.cc + ../../../flutter/
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/uri.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/lib/concurrent.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/platform/no_tsan.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/platform/no_tsan.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/platform/synchronization.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/platform/synchronization_absl.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/platform/synchronization_posix.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/platform/synchronization_win.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/platform/threads.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/tools/profiling/bin/convert_allocation_profile.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/tools/profiling/bin/set_uprobe.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/elf_utils.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/perf/perf_data.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/symbols.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/bytecode_reader.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/bytecode_reader.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.cc + ../../../flutter/third_party/dart/LICENSE
@@ -4087,6 +4092,7 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/interpreter.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/interpreter.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/os.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/simulator_memory.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/stack_frame_kbc.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custom_hash_set.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart + ../../../flutter/third_party/dart/LICENSE
@@ -4097,6 +4103,7 @@ ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synce
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_time_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/bin/resident_compiler_utils.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart + ../../../flutter/third_party/dart/LICENSE
@@ -4114,12 +4121,19 @@ FILE: ../../../flutter/third_party/dart/runtime/bin/uri.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/uri.h
 FILE: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h
 FILE: ../../../flutter/third_party/dart/runtime/lib/concurrent.cc
+FILE: ../../../flutter/third_party/dart/runtime/platform/no_tsan.cc
+FILE: ../../../flutter/third_party/dart/runtime/platform/no_tsan.h
 FILE: ../../../flutter/third_party/dart/runtime/platform/synchronization.h
 FILE: ../../../flutter/third_party/dart/runtime/platform/synchronization_absl.cc
 FILE: ../../../flutter/third_party/dart/runtime/platform/synchronization_posix.cc
 FILE: ../../../flutter/third_party/dart/runtime/platform/synchronization_win.cc
 FILE: ../../../flutter/third_party/dart/runtime/platform/threads.h
 FILE: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/bin/convert_allocation_profile.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/bin/set_uprobe.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/elf_utils.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/perf/perf_data.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/symbols.dart
 FILE: ../../../flutter/third_party/dart/runtime/vm/bytecode_reader.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/bytecode_reader.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.cc
@@ -4133,6 +4147,7 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/interpreter.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/interpreter.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/os.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/simulator_memory.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/stack_frame_kbc.h
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custom_hash_set.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart
@@ -4143,6 +4158,7 @@ FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_time_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/synced/async_status_codes.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/bin/resident_compiler_utils.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/vm/lib/concurrent_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/ffi_patch.dart
@@ -4366,11 +4382,15 @@ FILE: ../../../flutter/third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../flutter/third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../flutter/third_party/dart/runtime/observatory/web/timeline.html
 FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/dart.plist
-FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime.plist
-FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime_product.plist
+FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/dartaotruntime.plist
+FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/dartaotruntime_product.plist
 FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/gen_snapshot.plist
 FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/gen_snapshot_product.plist
 FILE: ../../../flutter/third_party/dart/runtime/tools/entitlements/run_vm_tests.plist
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/generated/profile.pb.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/generated/profile.pbenum.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/generated/profile.pbjson.dart
+FILE: ../../../flutter/third_party/dart/runtime/tools/profiling/lib/src/pprof/generated/profile.pbserver.dart
 FILE: ../../../flutter/third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../flutter/third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../flutter/third_party/dart/runtime/tools/wiki/templates/page.html
@@ -4787,7 +4807,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/79863e31de870a21f451196bce373607e71932fd
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/56bbedca60f93176335183129230b9552fc33183
 /third_party/fallback_root_certificates/
 
 ====================================================================================================

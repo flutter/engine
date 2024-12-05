@@ -23,7 +23,7 @@ import subprocess
 # Explicitly import the parts of sys that are needed. This is to avoid using
 # sys.stdout and sys.stderr directly. Instead, only the logger defined below
 # should be used for output.
-from sys import exit as sys_exit, platform as sys_platform, path as sys_path
+from sys import exit as sys_exit, platform as sys_platform, path as sys_path, stdout as sys_stdout
 import tempfile
 import time
 import typing
@@ -45,7 +45,8 @@ ENCODING = 'UTF-8'
 
 LOG_FILE = os.path.join(OUT_DIR, 'run_tests.log')
 logger = logging.getLogger(__name__)
-console_logger_handler = logging.StreamHandler()
+# Write console logs to stdout (by default StreamHandler uses stderr)
+console_logger_handler = logging.StreamHandler(sys_stdout)
 file_logger_handler = logging.FileHandler(LOG_FILE)
 
 
@@ -130,8 +131,9 @@ def run_cmd( # pylint: disable=too-many-arguments
 
   for forbidden_string in forbidden_output:
     if forbidden_string in output:
+      matches = [x.group(0) for x in re.findall(f'^.*{forbidden_string}.*$', output)]
       raise RuntimeError(
-          'command "%s" contained forbidden string "%s"' % (command_string, forbidden_string)
+          f'command "{command_string}" contained forbidden string "{forbidden_string}": {matches}'
       )
 
   print_divider('<')
@@ -416,6 +418,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     return (name, flags, extra_env)
 
   unittests = [
+      make_test('assets_unittests'),
       make_test('client_wrapper_glfw_unittests'),
       make_test('client_wrapper_unittests'),
       make_test('common_cpp_core_unittests'),
@@ -427,7 +430,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
       make_test('fml_unittests'),
-      make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
       make_test('testing_unittests'),
@@ -553,7 +555,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
             '--enable_vulkan_validation',
             '--enable_playground',
             '--playground_timeout_ms=4000',
-            '--gtest_filter="*ColorWheel/Vulkan"',
+            '--gtest_filter="*ColorWheel*"',
         ],
         coverage=coverage,
         extra_env=extra_env,
@@ -1350,9 +1352,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     assert not is_windows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
-      logger.wraning(
+      logger.warning(
           'Can only filter JUnit4 tests by single entire class name, '
-          'eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter
+          'eg "io.flutter.SmokeTest". Ignoring filter=%s', java_filter
       )
       java_filter = None
     run_java_tests(java_filter, args.android_variant)

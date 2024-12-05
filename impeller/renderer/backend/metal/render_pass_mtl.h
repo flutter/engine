@@ -49,13 +49,10 @@ class RenderPassMTL final : public RenderPass {
                 id<MTLCommandBuffer> buffer);
 
   // |RenderPass|
-  void ReserveCommands(size_t command_count) override {}
-
-  // |RenderPass|
   bool IsValid() const override;
 
   // |RenderPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;
@@ -80,10 +77,17 @@ class RenderPassMTL final : public RenderPass {
   void SetScissor(IRect scissor) override;
 
   // |RenderPass|
+  void SetElementCount(size_t count) override;
+
+  // |RenderPass|
   void SetInstanceCount(size_t count) override;
 
   // |RenderPass|
-  bool SetVertexBuffer(VertexBuffer buffer) override;
+  bool SetVertexBuffer(BufferView vertex_buffers[],
+                       size_t vertex_buffer_count) override;
+
+  // |RenderPass|
+  bool SetIndexBuffer(BufferView index_buffer, IndexType index_type) override;
 
   // |RenderPass|
   fml::Status Draw() override;
@@ -92,23 +96,32 @@ class RenderPassMTL final : public RenderPass {
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
-                    BufferView view) override;
-
-  // |RenderPass|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const ShaderUniformSlot& slot,
-                    const std::shared_ptr<const ShaderMetadata>& metadata,
+                    const ShaderMetadata* metadata,
                     BufferView view) override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
+                    const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
                     const std::unique_ptr<const Sampler>& sampler) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const ShaderUniformSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           BufferView view) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      std::unique_ptr<ShaderMetadata> metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
 
   RenderPassMTL(const RenderPassMTL&) = delete;
 

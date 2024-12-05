@@ -65,7 +65,8 @@ DisplayListMetalComplexityCalculator::MetalHelper::BatchedComplexity() {
 void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
     const DlRect& bounds,
     const SaveLayerOptions options,
-    const DlImageFilter* backdrop) {
+    const DlImageFilter* backdrop,
+    std::optional<int64_t> backdrop_id) {
   if (IsComplex()) {
     return;
   }
@@ -241,21 +242,20 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
-    const SkRRect& rrect) {
+void DisplayListMetalComplexityCalculator::MetalHelper::drawRoundRect(
+    const DlRoundRect& rrect) {
   if (IsComplex()) {
     return;
   }
   // RRects scale linearly with the area of the bounding rect.
-  unsigned int area = rrect.width() * rrect.height();
+  unsigned int area = rrect.GetBounds().Area();
 
   // Drawing RRects is split into two performance tiers; an expensive
   // one and a less expensive one. Both scale linearly with area.
   //
   // Expensive: All filled style, symmetric w/AA.
-  bool expensive =
-      (DrawStyle() == DlDrawStyle::kFill) ||
-      ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased());
+  bool expensive = (DrawStyle() == DlDrawStyle::kFill) ||
+                   (rrect.GetRadii().AreAllCornersSame() && IsAntiAliased());
 
   unsigned int complexity;
 
@@ -277,9 +277,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
-    const SkRRect& outer,
-    const SkRRect& inner) {
+void DisplayListMetalComplexityCalculator::MetalHelper::drawDiffRoundRect(
+    const DlRoundRect& outer,
+    const DlRoundRect& inner) {
   if (IsComplex()) {
     return;
   }
@@ -292,7 +292,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   // a) and c) scale linearly with the area, b) and d) scale linearly with
   // a single dimension (length). In all cases, the dimensions refer to
   // the outer RRect.
-  unsigned int length = (outer.width() + outer.height()) / 2;
+  unsigned int length =
+      (outer.GetBounds().GetWidth() + outer.GetBounds().GetHeight()) / 2;
 
   unsigned int complexity;
 
@@ -303,8 +304,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
   if (DrawStyle() == DlDrawStyle::kFill) {
-    unsigned int area = outer.width() * outer.height();
-    if (outer.getType() == SkRRect::Type::kComplex_Type) {
+    unsigned int area = outer.GetBounds().Area();
+    if (!outer.GetRadii().AreAllCornersSame()) {
       // m = 1/1000
       // c = 1
       complexity = (area + 1000) / 10;
@@ -571,7 +572,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
   MetalHelper helper(Ceiling() - CurrentComplexityScore());
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
     auto bounds = display_list->GetBounds();
-    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr);
+    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr,
+                     /*backdrop_id=*/-1);
   }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());

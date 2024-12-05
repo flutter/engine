@@ -262,7 +262,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     } else if (type.type == TextInputChannel.TextInputType.EMAIL_ADDRESS) {
       textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-    } else if (type.type == TextInputChannel.TextInputType.URL) {
+    } else if (type.type == TextInputChannel.TextInputType.URL
+        || type.type == TextInputChannel.TextInputType.WEB_SEARCH) {
       textType |= InputType.TYPE_TEXT_VARIATION_URI;
     } else if (type.type == TextInputChannel.TextInputType.VISIBLE_PASSWORD) {
       textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
@@ -356,6 +357,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
     }
 
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    }
+
     EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
     outAttrs.setSupportedHandwritingGestures(
         Arrays.asList(
@@ -377,8 +382,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            // TODO(justinmc): scribeChannel could be part of textInputChannel
-            // instead of adding a new parameter here.
             view,
             inputTarget.id,
             textInputChannel,

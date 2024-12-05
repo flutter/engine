@@ -83,6 +83,14 @@ class StandardCapabilities final : public Capabilities {
     return default_glyph_atlas_format_;
   }
 
+  // |Capabilities|
+  ISize GetMaximumRenderPassAttachmentSize() const override {
+    return default_maximum_render_pass_attachment_size_;
+  }
+
+  // |Capabilities|
+  bool SupportsPrimitiveRestart() const override { return true; }
+
  private:
   StandardCapabilities(bool supports_offscreen_msaa,
                        bool supports_ssbo,
@@ -97,7 +105,8 @@ class StandardCapabilities final : public Capabilities {
                        PixelFormat default_color_format,
                        PixelFormat default_stencil_format,
                        PixelFormat default_depth_stencil_format,
-                       PixelFormat default_glyph_atlas_format)
+                       PixelFormat default_glyph_atlas_format,
+                       ISize default_maximum_render_pass_attachment_size)
       : supports_offscreen_msaa_(supports_offscreen_msaa),
         supports_ssbo_(supports_ssbo),
         supports_texture_to_texture_blits_(supports_texture_to_texture_blits),
@@ -112,7 +121,9 @@ class StandardCapabilities final : public Capabilities {
         default_color_format_(default_color_format),
         default_stencil_format_(default_stencil_format),
         default_depth_stencil_format_(default_depth_stencil_format),
-        default_glyph_atlas_format_(default_glyph_atlas_format) {}
+        default_glyph_atlas_format_(default_glyph_atlas_format),
+        default_maximum_render_pass_attachment_size_(
+            default_maximum_render_pass_attachment_size) {}
 
   friend class CapabilitiesBuilder;
 
@@ -130,6 +141,7 @@ class StandardCapabilities final : public Capabilities {
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
   PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
   PixelFormat default_glyph_atlas_format_ = PixelFormat::kUnknown;
+  ISize default_maximum_render_pass_attachment_size_ = ISize(1, 1);
 
   StandardCapabilities(const StandardCapabilities&) = delete;
 
@@ -220,6 +232,12 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsTriangleFan(bool value) {
   return *this;
 }
 
+CapabilitiesBuilder& CapabilitiesBuilder::SetMaximumRenderPassAttachmentSize(
+    ISize size) {
+  default_maximum_render_pass_attachment_size_ = size;
+  return *this;
+}
+
 std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
   return std::unique_ptr<StandardCapabilities>(new StandardCapabilities(  //
       supports_offscreen_msaa_,                                           //
@@ -235,7 +253,8 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       default_color_format_.value_or(PixelFormat::kUnknown),              //
       default_stencil_format_.value_or(PixelFormat::kUnknown),            //
       default_depth_stencil_format_.value_or(PixelFormat::kUnknown),      //
-      default_glyph_atlas_format_.value_or(PixelFormat::kUnknown)         //
+      default_glyph_atlas_format_.value_or(PixelFormat::kUnknown),        //
+      default_maximum_render_pass_attachment_size_.value_or(ISize{1, 1})  //
       ));
 }
 

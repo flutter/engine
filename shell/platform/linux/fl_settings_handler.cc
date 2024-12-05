@@ -8,35 +8,27 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
-
-static constexpr char kChannelName[] = "flutter/settings";
-static constexpr char kTextScaleFactorKey[] = "textScaleFactor";
-static constexpr char kAlwaysUse24HourFormatKey[] = "alwaysUse24HourFormat";
-static constexpr char kPlatformBrightnessKey[] = "platformBrightness";
-static constexpr char kPlatformBrightnessLight[] = "light";
-static constexpr char kPlatformBrightnessDark[] = "dark";
+#include "flutter/shell/platform/linux/fl_settings_channel.h"
 
 struct _FlSettingsHandler {
   GObject parent_instance;
 
-  FlBasicMessageChannel* channel;
-  FlEngine* engine;
+  FlSettingsChannel* channel;
+  GWeakRef engine;
   FlSettings* settings;
 };
 
 G_DEFINE_TYPE(FlSettingsHandler, fl_settings_handler, G_TYPE_OBJECT)
 
-static const gchar* to_platform_brightness(FlColorScheme color_scheme) {
+static FlSettingsChannelPlatformBrightness to_platform_brightness(
+    FlColorScheme color_scheme) {
   switch (color_scheme) {
     case FL_COLOR_SCHEME_LIGHT:
-      return kPlatformBrightnessLight;
+      return FL_SETTINGS_CHANNEL_PLATFORM_BRIGHTNESS_LIGHT;
     case FL_COLOR_SCHEME_DARK:
-      return kPlatformBrightnessDark;
+      return FL_SETTINGS_CHANNEL_PLATFORM_BRIGHTNESS_DARK;
     default:
-      g_return_val_if_reached(nullptr);
+      g_assert_not_reached();
   }
 }
 
@@ -46,19 +38,12 @@ static void update_settings(FlSettingsHandler* self) {
   FlColorScheme color_scheme = fl_settings_get_color_scheme(self->settings);
   gdouble scaling_factor = fl_settings_get_text_scaling_factor(self->settings);
 
-  g_autoptr(FlValue) message = fl_value_new_map();
-  fl_value_set_string_take(message, kTextScaleFactorKey,
-                           fl_value_new_float(scaling_factor));
-  fl_value_set_string_take(
-      message, kAlwaysUse24HourFormatKey,
-      fl_value_new_bool(clock_format == FL_CLOCK_FORMAT_24H));
-  fl_value_set_string_take(
-      message, kPlatformBrightnessKey,
-      fl_value_new_string(to_platform_brightness(color_scheme)));
-  fl_basic_message_channel_send(self->channel, message, nullptr, nullptr,
-                                nullptr);
+  fl_settings_channel_send(self->channel, scaling_factor,
+                           clock_format == FL_CLOCK_FORMAT_24H,
+                           to_platform_brightness(color_scheme));
 
-  if (self->engine != nullptr) {
+  g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine != nullptr) {
     int32_t flags = 0;
     if (!fl_settings_get_enable_animations(self->settings)) {
       flags |= kFlutterAccessibilityFeatureDisableAnimations;
@@ -66,7 +51,7 @@ static void update_settings(FlSettingsHandler* self) {
     if (fl_settings_get_high_contrast(self->settings)) {
       flags |= kFlutterAccessibilityFeatureHighContrast;
     }
-    fl_engine_update_accessibility_features(self->engine, flags);
+    fl_engine_update_accessibility_features(engine, flags);
   }
 }
 
@@ -75,12 +60,7 @@ static void fl_settings_handler_dispose(GObject* object) {
 
   g_clear_object(&self->channel);
   g_clear_object(&self->settings);
-
-  if (self->engine != nullptr) {
-    g_object_remove_weak_pointer(G_OBJECT(self),
-                                 reinterpret_cast<gpointer*>(&(self->engine)));
-    self->engine = nullptr;
-  }
+  g_weak_ref_clear(&self->engine);
 
   G_OBJECT_CLASS(fl_settings_handler_parent_class)->dispose(object);
 }
@@ -97,14 +77,10 @@ FlSettingsHandler* fl_settings_handler_new(FlEngine* engine) {
   FlSettingsHandler* self = FL_SETTINGS_HANDLER(
       g_object_new(fl_settings_handler_get_type(), nullptr));
 
-  self->engine = engine;
-  g_object_add_weak_pointer(G_OBJECT(self),
-                            reinterpret_cast<gpointer*>(&(self->engine)));
+  g_weak_ref_init(&self->engine, engine);
 
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(engine);
-  g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
-                                               FL_MESSAGE_CODEC(codec));
+  self->channel = fl_settings_channel_new(messenger);
 
   return self;
 }

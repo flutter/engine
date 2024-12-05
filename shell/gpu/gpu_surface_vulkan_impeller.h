@@ -9,15 +9,17 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/impeller/display_list/aiks_context.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "impeller/renderer/backend/vulkan/swapchain/swapchain_transients_vk.h"
 
 namespace flutter {
 
 class GPUSurfaceVulkanImpeller final : public Surface {
  public:
-  explicit GPUSurfaceVulkanImpeller(std::shared_ptr<impeller::Context> context);
+  explicit GPUSurfaceVulkanImpeller(GPUSurfaceVulkanDelegate* delegate,
+                                    std::shared_ptr<impeller::Context> context);
 
   // |Surface|
   ~GPUSurfaceVulkanImpeller() override;
@@ -26,8 +28,10 @@ class GPUSurfaceVulkanImpeller final : public Surface {
   bool IsValid() override;
 
  private:
+  GPUSurfaceVulkanDelegate* delegate_;
   std::shared_ptr<impeller::Context> impeller_context_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
+  std::shared_ptr<impeller::SwapchainTransientsVK> transients_;
   bool is_valid_ = false;
 
   // |Surface|

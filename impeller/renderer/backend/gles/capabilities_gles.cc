@@ -109,6 +109,10 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     default_glyph_atlas_format_ = PixelFormat::kR8UNormInt;
   }
 
+  if (desc->GetGlVersion().major_version >= 3) {
+    supports_texture_to_texture_blits_ = true;
+  }
+
   supports_framebuffer_fetch_ = desc->HasExtension(kFramebufferFetchExt);
 
   if (desc->HasExtension(kTextureBorderClampExt) ||
@@ -124,8 +128,12 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
   }
-
+  is_es_ = desc->IsES();
   is_angle_ = desc->IsANGLE();
+}
+
+bool CapabilitiesGLES::IsES() const {
+  return is_es_;
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -154,7 +162,7 @@ bool CapabilitiesGLES::SupportsSSBO() const {
 }
 
 bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
-  return false;
+  return supports_texture_to_texture_blits_;
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {
@@ -201,8 +209,16 @@ bool CapabilitiesGLES::IsANGLE() const {
   return is_angle_;
 }
 
+bool CapabilitiesGLES::SupportsPrimitiveRestart() const {
+  return false;
+}
+
 PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {
   return default_glyph_atlas_format_;
+}
+
+ISize CapabilitiesGLES::GetMaximumRenderPassAttachmentSize() const {
+  return max_texture_size;
 }
 
 }  // namespace impeller

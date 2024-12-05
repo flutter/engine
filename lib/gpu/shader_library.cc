@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "flutter/assets/asset_manager.h"
-#include "flutter/lib/gpu/fixtures.h"
 #include "flutter/lib/gpu/shader.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
@@ -16,7 +15,6 @@
 #include "fml/memory/ref_ptr.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/shader_types.h"
-#include "impeller/renderer/vertex_descriptor.h"
 #include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
 #include "lib/gpu/context.h"
 
@@ -165,11 +163,7 @@ static const impeller::fb::shaderbundle::BackendShader* GetShaderBackend(
       return shader->metal_desktop();
 #endif
     case impeller::Context::BackendType::kOpenGLES:
-#ifdef FML_OS_ANDROID
       return shader->opengl_es();
-#else
-      return shader->opengl_desktop();
-#endif
     case impeller::Context::BackendType::kVulkan:
       return shader->vulkan();
   }
@@ -225,7 +219,7 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
                 .byte_length =
                     static_cast<size_t>(struct_member->total_size_in_bytes()),
                 .array_elements =
-                    struct_member->array_elements() != 0
+                    struct_member->array_elements() == 0
                         ? std::optional<size_t>(std::nullopt)
                         : static_cast<size_t>(struct_member->array_elements()),
             });
@@ -256,16 +250,22 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
       }
     }
 
-    std::unordered_map<std::string, impeller::SampledImageSlot>
-        uniform_textures;
+    std::unordered_map<std::string, Shader::TextureBinding> uniform_textures;
     if (backend_shader->uniform_textures() != nullptr) {
       for (const auto& uniform : *backend_shader->uniform_textures()) {
-        uniform_textures[uniform->name()->str()] = impeller::SampledImageSlot{
+        Shader::TextureBinding texture_binding;
+        texture_binding.slot = impeller::SampledImageSlot{
             .name = uniform->name()->c_str(),
             .texture_index = static_cast<size_t>(uniform->ext_res_0()),
             .set = static_cast<size_t>(uniform->set()),
             .binding = static_cast<size_t>(uniform->binding()),
         };
+        texture_binding.metadata = impeller::ShaderMetadata{
+            .name = uniform->name()->c_str(),
+            .members = {},
+        };
+
+        uniform_textures[uniform->name()->str()] = texture_binding;
 
         descriptor_set_layouts.push_back(impeller::DescriptorSetLayout{
             static_cast<uint32_t>(uniform->binding()),

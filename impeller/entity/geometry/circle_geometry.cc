@@ -17,6 +17,8 @@ CircleGeometry::CircleGeometry(const Point& center, Scalar radius)
   FML_DCHECK(radius >= 0);
 }
 
+CircleGeometry::~CircleGeometry() = default;
+
 CircleGeometry::CircleGeometry(const Point& center,
                                Scalar radius,
                                Scalar stroke_width)
@@ -40,18 +42,14 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                  RenderPass& pass) const {
   auto& transform = entity.GetTransform();
 
-  Scalar half_width = stroke_width_ < 0
-                          ? 0.0
-                          : LineGeometry::ComputePixelHalfWidth(
-                                transform, stroke_width_,
-                                pass.GetSampleCount() == SampleCount::kCount4);
-
-  const std::shared_ptr<Tessellator>& tessellator = renderer.GetTessellator();
+  Scalar half_width = stroke_width_ < 0 ? 0.0
+                                        : LineGeometry::ComputePixelHalfWidth(
+                                              transform, stroke_width_);
 
   // We call the StrokedCircle method which will simplify to a
   // FilledCircleGenerator if the inner_radius is <= 0.
-  auto generator =
-      tessellator->StrokedCircle(transform, center_, radius_, half_width);
+  auto generator = renderer.GetTessellator().StrokedCircle(transform, center_,
+                                                           radius_, half_width);
 
   return ComputePositionGeometry(renderer, generator, entity, pass);
 }

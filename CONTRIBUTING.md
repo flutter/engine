@@ -243,6 +243,7 @@ $ ./run_tests.py --variant=host_debug_unopt_arm64 --type=engine
 | Name                                     | run_tests.py type   | Description                                                     |
 | ---------------------------------------- | ------------------- | --------------------------------------------------------------- |
 | accessibility_unittests                  | engine              |                                                                 |
+| assets_unittests                         | engine              |                                                                 |
 | client_wrapper_glfw_unittests            | engine              |                                                                 |
 | client_wrapper_unittests                 | engine              |                                                                 |
 | common_cpp_core_unittests                | engine              |                                                                 |
@@ -256,7 +257,6 @@ $ ./run_tests.py --variant=host_debug_unopt_arm64 --type=engine
 | felt                                     | n/a                 | The test runner for flutter web. See //lib/web_ui               |
 | flow_unittests                           | engine              |                                                                 |
 | flutter_tester                           | dart                | Launcher for engine dart tests.                                 |
-| fml_arc_unittests                        | engine              |                                                                 |
 | fml_unittests                            | engine              | Unit tests for //fml                                            |
 | framework_common_unittests               | engine(mac)         |                                                                 |
 | gpu_surface_metal_unittests              | engine(mac)         |                                                                 |
@@ -270,7 +270,6 @@ $ ./run_tests.py --variant=host_debug_unopt_arm64 --type=engine
 | runtime_unittests                        | engine              |                                                                 |
 | shell_unittests                          | engine(not windows) |                                                                 |
 | scenario_app                             | android             | Integration and golden tests for Android, iOS                   |
-| testing_unittests                        | engine              |                                                                 |
 | tonic_unittests                          | engine              | Unit tests for //third_party/tonic                              |
 | txt_unittests                            | engine(linux)       |                                                                 |
 | ui_unittests                             | engine              |                                                                 |

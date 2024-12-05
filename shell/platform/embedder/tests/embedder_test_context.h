@@ -72,6 +72,8 @@ class EmbedderTestContext {
 
   void SetRootSurfaceTransformation(SkMatrix matrix);
 
+  FlutterRendererConfig& GetRendererConfig();
+
   void AddIsolateCreateCallback(const fml::closure& closure);
 
   void SetSemanticsUpdateCallback2(SemanticsUpdateCallback2 update_semantics);
@@ -116,16 +118,6 @@ class EmbedderTestContext {
 
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
 
-#ifdef SHELL_ENABLE_VULKAN
-  // The TestVulkanContext destructor must be called _after_ the compositor is
-  // freed.
-  fml::RefPtr<TestVulkanContext> vulkan_context_ = nullptr;
-#endif
-
-#ifdef SHELL_ENABLE_GL
-  std::shared_ptr<TestEGLContext> egl_context_ = nullptr;
-#endif
-
   std::string assets_path_;
   ELFAOTSymbols aot_symbols_;
   std::unique_ptr<fml::Mapping> vm_snapshot_data_;
@@ -135,6 +127,7 @@ class EmbedderTestContext {
   UniqueAOTData aot_data_;
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  FlutterRendererConfig renderer_config_ = {};
   SemanticsUpdateCallback2 update_semantics_callback2_;
   SemanticsUpdateCallback update_semantics_callback_;
   SemanticsNodeCallback update_semantics_node_callback_;
@@ -169,6 +162,8 @@ class EmbedderTestContext {
 
   void SetupAOTDataIfNecessary();
 
+  virtual void SetSurface(SkISize surface_size) = 0;
+
   virtual void SetupCompositor() = 0;
 
   void FireIsolateCreateCallbacks();
@@ -183,8 +178,6 @@ class EmbedderTestContext {
       const std::function<sk_sp<SkImage>(void)>& image_callback);
 
   void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
-
-  virtual void SetupSurface(SkISize surface_size) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContext);
 };

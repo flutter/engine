@@ -12,10 +12,12 @@
 
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 
@@ -44,7 +46,7 @@ class FilterContents : public Contents {
       Sigma sigma_y,
       Entity::TileMode tile_mode = Entity::TileMode::kDecal,
       BlurStyle mask_blur_style = BlurStyle::kNormal,
-      const std::shared_ptr<Geometry>& mask_geometry = nullptr);
+      const Geometry* mask_geometry = nullptr);
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
       FilterInput::Ref input,
@@ -76,6 +78,12 @@ class FilterContents : public Contents {
       std::shared_ptr<Texture> y_texture,
       std::shared_ptr<Texture> uv_texture,
       YUVColorSpace yuv_color_space);
+
+  static std::shared_ptr<FilterContents> MakeRuntimeEffect(
+      FilterInput::Ref input,
+      std::shared_ptr<RuntimeStage> runtime_stage,
+      std::shared_ptr<std::vector<uint8_t>> uniforms,
+      std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
   FilterContents();
 
@@ -120,9 +128,6 @@ class FilterContents : public Contents {
       int32_t mip_count = 1,
       const std::string& label = "Filter Snapshot") const override;
 
-  // |Contents|
-  const FilterContents* AsFilter() const override;
-
   /// @brief  Determines the coverage of source pixels that will be needed
   ///         to produce results for the specified |output_limit| under the
   ///         specified |effect_transform|. This is essentially a reverse of
@@ -159,25 +164,6 @@ class FilterContents : public Contents {
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
-
-  /// @brief  Returns true if this filter graph doesn't perform any basis
-  ///         transforms to the filtered content. For example: Rotating,
-  ///         scaling, and skewing are all basis transforms, but
-  ///         translating is not.
-  ///
-  ///         This is useful for determining whether a filtered object's space
-  ///         is compatible enough with the parent pass space to perform certain
-  ///         subpass clipping optimizations.
-  virtual bool IsTranslationOnly() const;
-
-  /// @brief  Returns `true` if this filter does not have any `FilterInput`
-  ///         children.
-  bool IsLeaf() const;
-
-  /// @brief  Replaces the set of all leaf `FilterContents` with a new set
-  ///         of `FilterInput`s.
-  /// @see    `FilterContents::IsLeaf`
-  void SetLeafInputs(const FilterInput::Vector& inputs);
 
   /// @brief  Marks this filter chain as applying in a subpass scenario.
   ///

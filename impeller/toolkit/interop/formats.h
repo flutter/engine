@@ -9,6 +9,9 @@
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
+#include "flutter/third_party/txt/src/txt/font_style.h"
+#include "flutter/third_party/txt/src/txt/font_weight.h"
+#include "flutter/third_party/txt/src/txt/paragraph_style.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
@@ -29,6 +32,10 @@ constexpr std::optional<SkRect> ToSkiaType(const ImpellerRect* rect) {
 
 constexpr SkPoint ToSkiaType(const Point& point) {
   return SkPoint::Make(point.x, point.y);
+}
+
+constexpr SkVector ToSkiaVector(const Size& point) {
+  return SkVector::Make(point.width, point.height);
 }
 
 constexpr SkRect ToSkiaType(const Rect& rect) {
@@ -179,14 +186,13 @@ constexpr flutter::DlBlendMode ToDisplayListType(BlendMode mode) {
   return Mode::kSrcOver;
 }
 
-inline SkRRect ToSkiaType(const Rect& rect,
-                          const impeller::PathBuilder::RoundingRadii& radii) {
+inline SkRRect ToSkiaType(const Rect& rect, const RoundingRadii& radii) {
   using Corner = SkRRect::Corner;
   SkVector sk_radii[4];
-  sk_radii[Corner::kUpperLeft_Corner] = ToSkiaType(radii.top_left);
-  sk_radii[Corner::kUpperRight_Corner] = ToSkiaType(radii.top_right);
-  sk_radii[Corner::kLowerRight_Corner] = ToSkiaType(radii.bottom_right);
-  sk_radii[Corner::kLowerLeft_Corner] = ToSkiaType(radii.bottom_left);
+  sk_radii[Corner::kUpperLeft_Corner] = ToSkiaVector(radii.top_left);
+  sk_radii[Corner::kUpperRight_Corner] = ToSkiaVector(radii.top_right);
+  sk_radii[Corner::kLowerRight_Corner] = ToSkiaVector(radii.bottom_right);
+  sk_radii[Corner::kLowerLeft_Corner] = ToSkiaVector(radii.bottom_left);
   SkRRect result;
   result.setRectRadii(ToSkiaType(rect), sk_radii);
   return result;
@@ -227,6 +233,10 @@ constexpr Point ToImpellerType(const ImpellerPoint& point) {
   return Point{point.x, point.y};
 }
 
+constexpr Size ToImpellerSize(const ImpellerPoint& point) {
+  return Size{point.x, point.y};
+}
+
 constexpr Rect ToImpellerType(const ImpellerRect& rect) {
   return Rect::MakeXYWH(rect.x, rect.y, rect.width, rect.height);
 }
@@ -245,13 +255,12 @@ constexpr flutter::DlTileMode ToDisplayListType(ImpellerTileMode mode) {
   return flutter::DlTileMode::kClamp;
 }
 
-constexpr impeller::PathBuilder::RoundingRadii ToImpellerType(
-    const ImpellerRoundingRadii& radii) {
-  auto result = impeller::PathBuilder::RoundingRadii{};
-  result.top_left = ToImpellerType(radii.top_left);
-  result.bottom_left = ToImpellerType(radii.bottom_left);
-  result.top_right = ToImpellerType(radii.top_right);
-  result.bottom_right = ToImpellerType(radii.bottom_right);
+constexpr RoundingRadii ToImpellerType(const ImpellerRoundingRadii& radii) {
+  auto result = RoundingRadii{};
+  result.top_left = ToImpellerSize(radii.top_left);
+  result.bottom_left = ToImpellerSize(radii.bottom_left);
+  result.top_right = ToImpellerSize(radii.top_right);
+  result.bottom_right = ToImpellerSize(radii.bottom_right);
   return result;
 }
 
@@ -416,6 +425,68 @@ constexpr flutter::DlColor ToDisplayListType(ImpellerColor color) {
                           color.blue,                           //
                           ToDisplayListType(color.color_space)  //
   );
+}
+
+constexpr txt::FontWeight ToTxtType(ImpellerFontWeight weight) {
+  switch (weight) {
+    case kImpellerFontWeight100:
+      return txt::FontWeight::w100;
+    case kImpellerFontWeight200:
+      return txt::FontWeight::w200;
+    case kImpellerFontWeight300:
+      return txt::FontWeight::w300;
+    case kImpellerFontWeight400:
+      return txt::FontWeight::w400;
+    case kImpellerFontWeight500:
+      return txt::FontWeight::w500;
+    case kImpellerFontWeight600:
+      return txt::FontWeight::w600;
+    case kImpellerFontWeight700:
+      return txt::FontWeight::w700;
+    case kImpellerFontWeight800:
+      return txt::FontWeight::w800;
+    case kImpellerFontWeight900:
+      return txt::FontWeight::w900;
+  }
+  return txt::FontWeight::w400;
+}
+
+constexpr txt::FontStyle ToTxtType(ImpellerFontStyle style) {
+  switch (style) {
+    case kImpellerFontStyleNormal:
+      return txt::FontStyle::normal;
+    case kImpellerFontStyleItalic:
+      return txt::FontStyle::italic;
+  }
+  return txt::FontStyle::normal;
+}
+
+constexpr txt::TextAlign ToTxtType(ImpellerTextAlignment align) {
+  switch (align) {
+    case kImpellerTextAlignmentLeft:
+      return txt::TextAlign::left;
+    case kImpellerTextAlignmentRight:
+      return txt::TextAlign::right;
+    case kImpellerTextAlignmentCenter:
+      return txt::TextAlign::center;
+    case kImpellerTextAlignmentJustify:
+      return txt::TextAlign::justify;
+    case kImpellerTextAlignmentStart:
+      return txt::TextAlign::start;
+    case kImpellerTextAlignmentEnd:
+      return txt::TextAlign::end;
+  }
+  return txt::TextAlign::left;
+}
+
+constexpr txt::TextDirection ToTxtType(ImpellerTextDirection direction) {
+  switch (direction) {
+    case kImpellerTextDirectionRTL:
+      return txt::TextDirection::rtl;
+    case kImpellerTextDirectionLTR:
+      return txt::TextDirection::ltr;
+  }
+  return txt::TextDirection::ltr;
 }
 
 }  // namespace impeller::interop

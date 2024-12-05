@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/render_target_cache.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
@@ -31,7 +32,7 @@ RenderTarget RenderTargetCache::CreateOffscreen(
     const Context& context,
     ISize size,
     int mip_count,
-    const std::string& label,
+    std::string_view label,
     RenderTarget::AttachmentConfig color_attachment_config,
     std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config,
     const std::shared_ptr<Texture>& existing_color_texture,
@@ -52,10 +53,10 @@ RenderTarget RenderTargetCache::CreateOffscreen(
     const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
-      auto color0 = render_target_data.render_target.GetColorAttachments()
-                        .find(0u)
-                        ->second;
-      auto depth = render_target_data.render_target.GetDepthAttachment();
+      ColorAttachment color0 =
+          render_target_data.render_target.GetColorAttachment(0);
+      std::optional<DepthAttachment> depth =
+          render_target_data.render_target.GetDepthAttachment();
       std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreen(
           context, size, mip_count, label, color_attachment_config,
@@ -79,7 +80,7 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
     const Context& context,
     ISize size,
     int mip_count,
-    const std::string& label,
+    std::string_view label,
     RenderTarget::AttachmentConfigMSAA color_attachment_config,
     std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config,
     const std::shared_ptr<Texture>& existing_color_msaa_texture,
@@ -102,10 +103,10 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
     const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
-      auto color0 = render_target_data.render_target.GetColorAttachments()
-                        .find(0u)
-                        ->second;
-      auto depth = render_target_data.render_target.GetDepthAttachment();
+      ColorAttachment color0 =
+          render_target_data.render_target.GetColorAttachment(0);
+      std::optional<DepthAttachment> depth =
+          render_target_data.render_target.GetDepthAttachment();
       std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreenMSAA(
           context, size, mip_count, label, color_attachment_config,

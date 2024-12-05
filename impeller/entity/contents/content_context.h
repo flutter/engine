@@ -56,6 +56,11 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
+#include "impeller/entity/conical_gradient_uniform_fill.frag.h"
+#include "impeller/entity/linear_gradient_uniform_fill.frag.h"
+#include "impeller/entity/radial_gradient_uniform_fill.frag.h"
+#include "impeller/entity/sweep_gradient_uniform_fill.frag.h"
+
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
@@ -70,6 +75,7 @@
 #include "impeller/entity/vertices_uber.frag.h"
 
 #ifdef IMPELLER_ENABLE_OPENGLES
+#include "impeller/entity/texture_downsample_gles.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -91,6 +97,18 @@ using ConicalGradientFillPipeline =
 using SweepGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          SweepGradientFillFragmentShader>;
+using LinearGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         LinearGradientUniformFillFragmentShader>;
+using ConicalGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         ConicalGradientUniformFillFragmentShader>;
+using RadialGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         RadialGradientUniformFillFragmentShader>;
+using SweepGradientUniformFillPipeline =
+    RenderPipelineHandle<GradientFillVertexShader,
+                         SweepGradientUniformFillFragmentShader>;
 using LinearGradientSSBOFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientSsboFillFragmentShader>;
@@ -239,6 +257,9 @@ using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
 using TiledTextureExternalPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
+using TextureDownsampleGlesPipeline =
+    RenderPipelineHandle<TextureFillVertexShader,
+                         TextureDownsampleGlesFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
 /// Pipeline state configuration.
@@ -315,47 +336,27 @@ struct ContentContextOptions {
   bool wireframe = false;
   bool is_for_rrect_blur_clear = false;
 
-  struct Hash {
-    constexpr uint64_t operator()(const ContentContextOptions& o) const {
-      static_assert(sizeof(o.sample_count) == 1);
-      static_assert(sizeof(o.blend_mode) == 1);
-      static_assert(sizeof(o.sample_count) == 1);
-      static_assert(sizeof(o.depth_compare) == 1);
-      static_assert(sizeof(o.stencil_mode) == 1);
-      static_assert(sizeof(o.primitive_type) == 1);
-      static_assert(sizeof(o.color_attachment_pixel_format) == 1);
+  constexpr uint64_t ToKey() const {
+    static_assert(sizeof(sample_count) == 1);
+    static_assert(sizeof(blend_mode) == 1);
+    static_assert(sizeof(sample_count) == 1);
+    static_assert(sizeof(depth_compare) == 1);
+    static_assert(sizeof(stencil_mode) == 1);
+    static_assert(sizeof(primitive_type) == 1);
+    static_assert(sizeof(color_attachment_pixel_format) == 1);
 
-      return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
-             (o.wireframe ? 1llu : 0llu) << 1 |
-             (o.has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
-             (o.depth_write_enabled ? 1llu : 0llu) << 3 |
-             // enums
-             static_cast<uint64_t>(o.color_attachment_pixel_format) << 8 |
-             static_cast<uint64_t>(o.primitive_type) << 16 |
-             static_cast<uint64_t>(o.stencil_mode) << 24 |
-             static_cast<uint64_t>(o.depth_compare) << 32 |
-             static_cast<uint64_t>(o.blend_mode) << 40 |
-             static_cast<uint64_t>(o.sample_count) << 48;
-    }
-  };
-
-  struct Equal {
-    constexpr bool operator()(const ContentContextOptions& lhs,
-                              const ContentContextOptions& rhs) const {
-      return lhs.sample_count == rhs.sample_count &&
-             lhs.blend_mode == rhs.blend_mode &&
-             lhs.depth_write_enabled == rhs.depth_write_enabled &&
-             lhs.depth_compare == rhs.depth_compare &&
-             lhs.stencil_mode == rhs.stencil_mode &&
-             lhs.primitive_type == rhs.primitive_type &&
-             lhs.color_attachment_pixel_format ==
-                 rhs.color_attachment_pixel_format &&
-             lhs.has_depth_stencil_attachments ==
-                 rhs.has_depth_stencil_attachments &&
-             lhs.wireframe == rhs.wireframe &&
-             lhs.is_for_rrect_blur_clear == rhs.is_for_rrect_blur_clear;
-    }
-  };
+    return (is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
+           (wireframe ? 1llu : 0llu) << 1 |
+           (has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
+           (depth_write_enabled ? 1llu : 0llu) << 3 |
+           // enums
+           static_cast<uint64_t>(color_attachment_pixel_format) << 8 |
+           static_cast<uint64_t>(primitive_type) << 16 |
+           static_cast<uint64_t>(stencil_mode) << 24 |
+           static_cast<uint64_t>(depth_compare) << 32 |
+           static_cast<uint64_t>(blend_mode) << 40 |
+           static_cast<uint64_t>(sample_count) << 48;
+  }
 
   void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
 };
@@ -374,7 +375,7 @@ class ContentContext {
 
   bool IsValid() const;
 
-  std::shared_ptr<Tessellator> GetTessellator() const;
+  Tessellator& GetTessellator() const;
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
       ContentContextOptions opts) const {
@@ -384,6 +385,26 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetLinearGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(linear_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetRadialGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(radial_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetConicalGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(conical_gradient_uniform_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetSweepGradientUniformFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(sweep_gradient_uniform_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -446,6 +467,11 @@ class ContentContext {
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetDownsampleTextureGlesPipeline(ContentContextOptions opts) const {
+    return GetPipeline(texture_downsample_gles_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
@@ -771,7 +797,7 @@ class ContentContext {
     struct Hash {
       std::size_t operator()(const RuntimeEffectPipelineKey& key) const {
         return fml::HashCombine(key.unique_entrypoint_name,
-                                ContentContextOptions::Hash{}(key.options));
+                                key.options.ToKey());
       }
     };
 
@@ -779,7 +805,7 @@ class ContentContext {
       constexpr bool operator()(const RuntimeEffectPipelineKey& lhs,
                                 const RuntimeEffectPipelineKey& rhs) const {
         return lhs.unique_entrypoint_name == rhs.unique_entrypoint_name &&
-               ContentContextOptions::Equal{}(lhs.options, rhs.options);
+               lhs.options.ToKey() == rhs.options.ToKey();
       }
     };
   };
@@ -810,7 +836,13 @@ class ContentContext {
 
     void Set(const ContentContextOptions& options,
              std::unique_ptr<PipelineHandleT> pipeline) {
-      pipelines_[options] = std::move(pipeline);
+      uint64_t p_key = options.ToKey();
+      for (const auto& [key, pipeline] : pipelines_) {
+        if (key == p_key) {
+          return;
+        }
+      }
+      pipelines_.push_back(std::make_pair(p_key, std::move(pipeline)));
     }
 
     void SetDefault(const ContentContextOptions& options,
@@ -833,8 +865,11 @@ class ContentContext {
     }
 
     PipelineHandleT* Get(const ContentContextOptions& options) const {
-      if (auto found = pipelines_.find(options); found != pipelines_.end()) {
-        return found->second.get();
+      uint64_t p_key = options.ToKey();
+      for (const auto& [key, pipeline] : pipelines_) {
+        if (key == p_key) {
+          return pipeline.get();
+        }
       }
       return nullptr;
     }
@@ -850,10 +885,7 @@ class ContentContext {
 
    private:
     std::optional<ContentContextOptions> default_options_;
-    std::unordered_map<ContentContextOptions,
-                       std::unique_ptr<PipelineHandleT>,
-                       ContentContextOptions::Hash,
-                       ContentContextOptions::Equal>
+    std::vector<std::pair<uint64_t, std::unique_ptr<PipelineHandleT>>>
         pipelines_;
 
     Variants(const Variants&) = delete;
@@ -872,6 +904,14 @@ class ContentContext {
   mutable Variants<ConicalGradientFillPipeline>
       conical_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
+  mutable Variants<LinearGradientUniformFillPipeline>
+      linear_gradient_uniform_fill_pipelines_;
+  mutable Variants<RadialGradientUniformFillPipeline>
+      radial_gradient_uniform_fill_pipelines_;
+  mutable Variants<ConicalGradientUniformFillPipeline>
+      conical_gradient_uniform_fill_pipelines_;
+  mutable Variants<SweepGradientUniformFillPipeline>
+      sweep_gradient_uniform_fill_pipelines_;
   mutable Variants<LinearGradientSSBOFillPipeline>
       linear_gradient_ssbo_fill_pipelines_;
   mutable Variants<RadialGradientSSBOFillPipeline>
@@ -887,6 +927,8 @@ class ContentContext {
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
+  mutable Variants<TextureDownsampleGlesPipeline>
+      texture_downsample_gles_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
@@ -992,7 +1034,7 @@ class ContentContext {
                              PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
-              SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
+              SPrintF("%s V#%zu", desc.GetLabel().data(), variants_count));
         });
     std::unique_ptr<RenderPipelineHandleT> variant =
         std::make_unique<RenderPipelineHandleT>(std::move(variant_future));

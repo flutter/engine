@@ -4,12 +4,15 @@
 
 #include "flutter/testing/display_list_testing.h"
 
+#include <cstdint>
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_color_filters.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 // clang-format off
 bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b) {
@@ -35,8 +38,7 @@ bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b) {
   return true;
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -200,38 +202,11 @@ static std::ostream& operator<<(std::ostream& os, const SkRect& rect) {
             << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkRRect& rrect) {
-  return os << "SkRRect("
-            << rrect.rect() << ", "
-            << "ul: (" << rrect.radii(SkRRect::kUpperLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperLeft_Corner).fY << "), "
-            << "ur: (" << rrect.radii(SkRRect::kUpperRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperRight_Corner).fY << "), "
-            << "lr: (" << rrect.radii(SkRRect::kLowerRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerRight_Corner).fY << "), "
-            << "ll: (" << rrect.radii(SkRRect::kLowerLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerLeft_Corner).fY << ")"
-            << ")";
-}
-
 extern std::ostream& operator<<(std::ostream& os, const DlPath& path) {
   return os << "DlPath("
             << "bounds: " << path.GetSkBounds()
             // should iterate over verbs and coordinates...
             << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix& matrix) {
-  return os << "SkMatrix("
-            << "[" << matrix[0] << ", " << matrix[1] << ", " << matrix[2] << "], "
-            << "[" << matrix[3] << ", " << matrix[4] << ", " << matrix[5] << "], "
-            << "[" << matrix[6] << ", " << matrix[7] << ", " << matrix[8] << "]"
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix* matrix) {
-  if (matrix) return os << "&" << *matrix;
-  return os << "no matrix";
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkRSXform& xform) {
@@ -399,10 +374,21 @@ std::ostream& operator<<(std::ostream& os, const DlImage* image) {
   return os << "isTextureBacked: " << image->isTextureBacked() << ")";
 }
 
+std::ostream& operator<<(std::ostream& os,
+                         const flutter::DlImageFilter& filter) {
+  DisplayListStreamDispatcher(os, 0).out(filter);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const flutter::DlColorFilter& filter) {
+  DisplayListStreamDispatcher(os, 0).out(filter);
+  return os;
+}
+
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::ostream& DisplayListStreamDispatcher::startl() {
   for (int i = 0; i < cur_indent_; i++) {
@@ -458,12 +444,6 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
   }
   startl() << "setColorSource(";
   switch (source->type()) {
-    case DlColorSourceType::kColor: {
-      const DlColorColorSource* color_src = source->asColor();
-      FML_DCHECK(color_src);
-      os_ << "DlColorColorSource(" << color_src->color() << ")";
-      break;
-    }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_src = source->asImage();
       FML_DCHECK(image_src);
@@ -626,7 +606,7 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
     case DlImageFilterType::kErode: {
       const DlErodeImageFilter* erode = filter.asErode();
       FML_DCHECK(erode);
-      os_ << "DlDilateImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
+      os_ << "DlErodeImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
       break;
     }
     case DlImageFilterType::kMatrix: {
@@ -675,6 +655,14 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       startl() << ")";
       break;
     }
+    case flutter::DlImageFilterType::kRuntimeEffect: {
+      [[maybe_unused]] const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
+      FML_DCHECK(runtime_effect);
+      os_ << "DlRuntimeEffectImageFilter(";
+      os_ << runtime_effect->samplers().size() << " samplers, ";
+      os_ << runtime_effect->uniform_data()->size() << " uniform bytes)";
+      break;
+    }
   }
 }
 void DisplayListStreamDispatcher::out(const DlImageFilter* filter) {
@@ -701,12 +689,17 @@ void DisplayListStreamDispatcher::save() {
 }
 void DisplayListStreamDispatcher::saveLayer(const DlRect& bounds,
                                             const SaveLayerOptions options,
-                                            const DlImageFilter* backdrop) {
+                                            const DlImageFilter* backdrop,
+                                            std::optional<int64_t> backdrop_id) {
   startl() << "saveLayer(" << bounds << ", " << options;
   if (backdrop) {
     os_ << "," << std::endl;
     indent(10);
-    startl() << "backdrop: ";
+    if (backdrop_id.has_value()) {
+      startl() << "backdrop: " << backdrop_id.value() << ", ";
+    } else {
+      startl() << "backdrop: (no id), ";
+    }
     out(backdrop);
     outdent(10);
   } else {
@@ -794,9 +787,9 @@ void DisplayListStreamDispatcher::clipOval(const DlRect& bounds, ClipOp clip_op,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
-                         ClipOp clip_op,
-                         bool is_aa) {
+void DisplayListStreamDispatcher::clipRoundRect(const DlRoundRect& rrect,
+                                                ClipOp clip_op,
+                                                bool is_aa) {
   startl() << "clipRRect("
            << rrect << ", "
            << clip_op << ", "
@@ -846,11 +839,11 @@ void DisplayListStreamDispatcher::drawCircle(const DlPoint& center,
                                              DlScalar radius) {
   startl() << "drawCircle(" << center << ", " << radius << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawRRect(const SkRRect& rrect) {
+void DisplayListStreamDispatcher::drawRoundRect(const DlRoundRect& rrect) {
   startl() << "drawRRect(" << rrect << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawDRRect(const SkRRect& outer,
-                                             const SkRRect& inner) {
+void DisplayListStreamDispatcher::drawDiffRoundRect(const DlRoundRect& outer,
+                                                    const DlRoundRect& inner) {
   startl() << "drawDRRect(outer: " << outer << ", " << std::endl;
   startl() << "           inner: " << inner << ");" << std::endl;
 }
@@ -979,5 +972,4 @@ void DisplayListStreamDispatcher::drawShadow(const DlPath& path,
 }
 // clang-format on
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

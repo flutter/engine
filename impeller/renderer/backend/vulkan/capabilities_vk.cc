@@ -16,27 +16,39 @@ namespace impeller {
 static constexpr const char* kInstanceLayer = "ImpellerInstance";
 
 CapabilitiesVK::CapabilitiesVK(bool enable_validations,
-                               bool fatal_missing_validations) {
-  auto extensions = vk::enumerateInstanceExtensionProperties();
-  auto layers = vk::enumerateInstanceLayerProperties();
+                               bool fatal_missing_validations,
+                               bool use_embedder_extensions,
+                               std::vector<std::string> instance_extensions,
+                               std::vector<std::string> device_extensions)
+    : use_embedder_extensions_(use_embedder_extensions),
+      embedder_instance_extensions_(std::move(instance_extensions)),
+      embedder_device_extensions_(std::move(device_extensions)) {
+  if (!use_embedder_extensions_) {
+    auto extensions = vk::enumerateInstanceExtensionProperties();
+    auto layers = vk::enumerateInstanceLayerProperties();
 
-  if (extensions.result != vk::Result::eSuccess ||
-      layers.result != vk::Result::eSuccess) {
-    return;
-  }
-
-  for (const auto& ext : extensions.value) {
-    exts_[kInstanceLayer].insert(ext.extensionName);
-  }
-
-  for (const auto& layer : layers.value) {
-    const std::string layer_name = layer.layerName;
-    auto layer_exts = vk::enumerateInstanceExtensionProperties(layer_name);
-    if (layer_exts.result != vk::Result::eSuccess) {
+    if (extensions.result != vk::Result::eSuccess ||
+        layers.result != vk::Result::eSuccess) {
       return;
     }
-    for (const auto& layer_ext : layer_exts.value) {
-      exts_[layer_name].insert(layer_ext.extensionName);
+
+    for (const auto& ext : extensions.value) {
+      exts_[kInstanceLayer].insert(ext.extensionName);
+    }
+
+    for (const auto& layer : layers.value) {
+      const std::string layer_name = layer.layerName;
+      auto layer_exts = vk::enumerateInstanceExtensionProperties(layer_name);
+      if (layer_exts.result != vk::Result::eSuccess) {
+        return;
+      }
+      for (const auto& layer_ext : layer_exts.value) {
+        exts_[layer_name].insert(layer_ext.extensionName);
+      }
+    }
+  } else {
+    for (const auto& ext : embedder_instance_extensions_) {
+      exts_[kInstanceLayer].insert(ext);
     }
   }
 
@@ -239,17 +251,25 @@ static std::optional<std::set<std::string>> GetSupportedDeviceExtensions(
 std::optional<std::vector<std::string>>
 CapabilitiesVK::GetEnabledDeviceExtensions(
     const vk::PhysicalDevice& physical_device) const {
-  auto exts = GetSupportedDeviceExtensions(physical_device);
+  std::set<std::string> exts;
 
-  if (!exts.has_value()) {
-    return std::nullopt;
+  if (!use_embedder_extensions_) {
+    auto maybe_exts = GetSupportedDeviceExtensions(physical_device);
+
+    if (!maybe_exts.has_value()) {
+      return std::nullopt;
+    }
+    exts = maybe_exts.value();
+  } else {
+    exts = std::set(embedder_device_extensions_.begin(),
+                    embedder_device_extensions_.end());
   }
 
   std::vector<std::string> enabled;
 
   auto for_each_common_extension = [&](RequiredCommonDeviceExtensionVK ext) {
     auto name = GetExtensionName(ext);
-    if (exts->find(name) == exts->end()) {
+    if (exts.find(name) == exts.end()) {
       VALIDATION_LOG << "Device does not support required extension: " << name;
       return false;
     }
@@ -260,7 +280,7 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
   auto for_each_android_extension = [&](RequiredAndroidDeviceExtensionVK ext) {
 #ifdef FML_OS_ANDROID
     auto name = GetExtensionName(ext);
-    if (exts->find(name) == exts->end()) {
+    if (exts.find(name) == exts.end()) {
       VALIDATION_LOG << "Device does not support required Android extension: "
                      << name;
       return false;
@@ -272,7 +292,7 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
 
   auto for_each_optional_extension = [&](OptionalDeviceExtensionVK ext) {
     auto name = GetExtensionName(ext);
-    if (exts->find(name) != exts->end()) {
+    if (exts.find(name) != exts.end()) {
       enabled.push_back(name);
     }
     return true;
@@ -461,6 +481,10 @@ bool CapabilitiesVK::HasExtension(const std::string& ext) const {
   return false;
 }
 
+bool CapabilitiesVK::SupportsPrimitiveRestart() const {
+  return true;
+}
+
 void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
   default_color_format_ = pixel_format;
 }
@@ -524,27 +548,36 @@ bool CapabilitiesVK::SetPhysicalDevice(
     required_common_device_extensions_.clear();
     required_android_device_extensions_.clear();
     optional_device_extensions_.clear();
-    auto exts = GetSupportedDeviceExtensions(device);
-    if (!exts.has_value()) {
-      return false;
+
+    std::set<std::string> exts;
+    if (!use_embedder_extensions_) {
+      auto maybe_exts = GetSupportedDeviceExtensions(device);
+      if (!maybe_exts.has_value()) {
+        return false;
+      }
+      exts = maybe_exts.value();
+    } else {
+      exts = std::set(embedder_device_extensions_.begin(),
+                      embedder_device_extensions_.end());
     }
+
     IterateExtensions<RequiredCommonDeviceExtensionVK>([&](auto ext) -> bool {
       auto ext_name = GetExtensionName(ext);
-      if (exts->find(ext_name) != exts->end()) {
+      if (exts.find(ext_name) != exts.end()) {
         required_common_device_extensions_.insert(ext);
       }
       return true;
     });
     IterateExtensions<RequiredAndroidDeviceExtensionVK>([&](auto ext) -> bool {
       auto ext_name = GetExtensionName(ext);
-      if (exts->find(ext_name) != exts->end()) {
+      if (exts.find(ext_name) != exts.end()) {
         required_android_device_extensions_.insert(ext);
       }
       return true;
     });
     IterateExtensions<OptionalDeviceExtensionVK>([&](auto ext) -> bool {
       auto ext_name = GetExtensionName(ext);
-      if (exts->find(ext_name) != exts->end()) {
+      if (exts.find(ext_name) != exts.end()) {
         optional_device_extensions_.insert(ext);
       }
       return true;
@@ -557,6 +590,16 @@ bool CapabilitiesVK::SetPhysicalDevice(
       enabled_features
           .get<vk::PhysicalDeviceImageCompressionControlFeaturesEXT>()
           .imageCompressionControl;
+
+  max_render_pass_attachment_size_ =
+      ISize{device_properties_.limits.maxFramebufferWidth,
+            device_properties_.limits.maxFramebufferHeight};
+
+  // Molten, Vulkan on Metal, cannot support triangle fans because Metal doesn't
+  // support triangle fans.
+  // See VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452.
+  has_triangle_fans_ =
+      !HasExtension(OptionalDeviceExtensionVK::kVKKHRPortabilitySubset);
 
   return true;
 }
@@ -709,7 +752,11 @@ CapabilitiesVK::GetSupportedFRCRate(CompressionType compression_type,
 }
 
 bool CapabilitiesVK::SupportsTriangleFan() const {
-  return true;
+  return has_triangle_fans_;
+}
+
+ISize CapabilitiesVK::GetMaximumRenderPassAttachmentSize() const {
+  return max_render_pass_attachment_size_;
 }
 
 }  // namespace impeller

@@ -170,7 +170,10 @@ class CapabilitiesVK final : public Capabilities,
                              public BackendCast<CapabilitiesVK, Capabilities> {
  public:
   explicit CapabilitiesVK(bool enable_validations,
-                          bool fatal_missing_validations = false);
+                          bool fatal_missing_validations = false,
+                          bool use_embedder_extensions = false,
+                          std::vector<std::string> instance_extensions = {},
+                          std::vector<std::string> device_extensions = {});
 
   ~CapabilitiesVK();
 
@@ -242,6 +245,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsTriangleFan() const override;
 
   // |Capabilities|
+  bool SupportsPrimitiveRestart() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
@@ -252,6 +258,9 @@ class CapabilitiesVK final : public Capabilities,
 
   // |Capabilities|
   PixelFormat GetDefaultGlyphAtlasFormat() const override;
+
+  // |Capabilities|
+  ISize GetMaximumRenderPassAttachmentSize() const override;
 
   //----------------------------------------------------------------------------
   /// @return     If fixed-rate compression for non-onscreen surfaces is
@@ -287,7 +296,15 @@ class CapabilitiesVK final : public Capabilities,
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
   bool supports_texture_fixed_rate_compression_ = false;
+  ISize max_render_pass_attachment_size_ = ISize{0, 0};
+  bool has_triangle_fans_ = true;
   bool is_valid_ = false;
+
+  // The embedder.h API is responsible for providing the instance and device
+  // extensions.
+  bool use_embedder_extensions_ = false;
+  std::vector<std::string> embedder_instance_extensions_;
+  std::vector<std::string> embedder_device_extensions_;
 
   bool HasExtension(const std::string& ext) const;
 

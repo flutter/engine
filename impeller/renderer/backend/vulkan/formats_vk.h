@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <ostream>
 
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -15,6 +16,18 @@
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
+
+constexpr std::optional<PixelFormat> VkFormatToImpellerFormat(
+    vk::Format format) {
+  switch (format) {
+    case vk::Format::eR8G8B8A8Unorm:
+      return PixelFormat::kR8G8B8A8UNormInt;
+    case vk::Format::eB8G8R8A8Unorm:
+      return PixelFormat::kB8G8R8A8UNormInt;
+    default:
+      return std::nullopt;
+  }
+}
 
 constexpr vk::SampleCountFlagBits ToVKSampleCountFlagBits(SampleCount count) {
   switch (count) {
@@ -263,28 +276,21 @@ constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
   FML_UNREACHABLE();
 }
 
-constexpr vk::DescriptorType ToVKDescriptorType(DescriptorType type) {
-  switch (type) {
-    case DescriptorType::kSampledImage:
-      return vk::DescriptorType::eCombinedImageSampler;
-      break;
-    case DescriptorType::kUniformBuffer:
-      return vk::DescriptorType::eUniformBuffer;
-      break;
-    case DescriptorType::kStorageBuffer:
-      return vk::DescriptorType::eStorageBuffer;
-      break;
-    case DescriptorType::kImage:
-      return vk::DescriptorType::eSampledImage;
-      break;
-    case DescriptorType::kSampler:
-      return vk::DescriptorType::eSampler;
-      break;
-    case DescriptorType::kInputAttachment:
-      return vk::DescriptorType::eInputAttachment;
-  }
+static_assert(static_cast<int>(DescriptorType::kSampledImage) ==
+              static_cast<int>(vk::DescriptorType::eCombinedImageSampler));
+static_assert(static_cast<int>(DescriptorType::kUniformBuffer) ==
+              static_cast<int>(vk::DescriptorType::eUniformBuffer));
+static_assert(static_cast<int>(DescriptorType::kStorageBuffer) ==
+              static_cast<int>(vk::DescriptorType::eStorageBuffer));
+static_assert(static_cast<int>(DescriptorType::kImage) ==
+              static_cast<int>(vk::DescriptorType::eSampledImage));
+static_assert(static_cast<int>(DescriptorType::kSampler) ==
+              static_cast<int>(vk::DescriptorType::eSampler));
+static_assert(static_cast<int>(DescriptorType::kInputAttachment) ==
+              static_cast<int>(vk::DescriptorType::eInputAttachment));
 
-  FML_UNREACHABLE();
+constexpr vk::DescriptorType ToVKDescriptorType(DescriptorType type) {
+  return static_cast<vk::DescriptorType>(type);
 }
 
 constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
@@ -367,6 +373,21 @@ constexpr vk::PolygonMode ToVKPolygonMode(PolygonMode mode) {
       return vk::PolygonMode::eFill;
     case PolygonMode::kLine:
       return vk::PolygonMode::eLine;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr bool PrimitiveTopologySupportsPrimitiveRestart(
+    PrimitiveType primitive) {
+  switch (primitive) {
+    case PrimitiveType::kTriangleStrip:
+    case PrimitiveType::kLine:
+    case PrimitiveType::kPoint:
+    case PrimitiveType::kTriangleFan:
+      return true;
+    case PrimitiveType::kTriangle:
+    case PrimitiveType::kLineStrip:
+      return false;
   }
   FML_UNREACHABLE();
 }

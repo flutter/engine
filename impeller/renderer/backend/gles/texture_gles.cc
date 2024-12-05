@@ -11,6 +11,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
+#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -139,30 +140,61 @@ HandleType ToHandleType(TextureGLES::Type type) {
   FML_UNREACHABLE();
 }
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
-
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
-                         TextureDescriptor desc,
-                         enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
-
 std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
                                                   TextureDescriptor desc,
                                                   GLuint fbo) {
-  return std::shared_ptr<TextureGLES>(
-      new TextureGLES(std::move(reactor), desc, true, fbo));
+  auto texture = std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, fbo, std::nullopt));
+  if (!texture->IsValid()) {
+    return nullptr;
+  }
+  return texture;
 }
+
+std::shared_ptr<TextureGLES> TextureGLES::WrapTexture(
+    ReactorGLES::Ref reactor,
+    TextureDescriptor desc,
+    HandleGLES external_handle) {
+  if (external_handle.IsDead()) {
+    VALIDATION_LOG << "Cannot wrap a dead handle.";
+    return nullptr;
+  }
+  if (external_handle.GetType() != HandleType::kTexture) {
+    VALIDATION_LOG << "Cannot wrap a non-texture handle.";
+    return nullptr;
+  }
+  auto texture = std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, std::nullopt, external_handle));
+  if (!texture->IsValid()) {
+    return nullptr;
+  }
+  return texture;
+}
+
+std::shared_ptr<TextureGLES> TextureGLES::CreatePlaceholder(
+    ReactorGLES::Ref reactor,
+    TextureDescriptor desc) {
+  return TextureGLES::WrapFBO(std::move(reactor), desc, 0u);
+}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
+    : TextureGLES(std::move(reactor),  //
+                  desc,                //
+                  std::nullopt,        //
+                  std::nullopt         //
+      ) {}
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          TextureDescriptor desc,
-                         bool is_wrapped,
-                         std::optional<GLuint> fbo)
+                         std::optional<GLuint> fbo,
+                         std::optional<HandleGLES> external_handle)
     : Texture(desc),
       reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
-      handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped),
+      handle_(external_handle.has_value()
+                  ? external_handle.value()
+                  : reactor_->CreateUntrackedHandle(ToHandleType(type_))),
+      is_wrapped_(fbo.has_value() || external_handle.has_value()),
       wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
@@ -185,6 +217,9 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 // |Texture|
 TextureGLES::~TextureGLES() {
   reactor_->CollectHandle(handle_);
+  if (cached_fbo_ != GL_NONE) {
+    reactor_->GetProcTable().DeleteFramebuffers(1, &cached_fbo_);
+  }
 }
 
 // |Texture|
@@ -194,7 +229,19 @@ bool TextureGLES::IsValid() const {
 
 // |Texture|
 void TextureGLES::SetLabel(std::string_view label) {
-  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
+#ifdef IMPELLER_DEBUG
+  reactor_->SetDebugLabel(handle_, label);
+#endif  // IMPELLER_DEBUG
+}
+
+// |Texture|
+void TextureGLES::SetLabel(std::string_view label, std::string_view trailing) {
+#ifdef IMPELLER_DEBUG
+  if (reactor_->CanSetDebugLabels()) {
+    reactor_->SetDebugLabel(handle_,
+                            SPrintF("%s %s", label.data(), trailing.data()));
+  }
+#endif  // IMPELLER_DEBUG
 }
 
 // |Texture|
@@ -360,7 +407,7 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 
   const auto& gl = reactor_->GetProcTable();
-  auto handle = reactor_->GetGLHandle(handle_);
+  std::optional<GLuint> handle = reactor_->GetGLHandle(handle_);
   if (!handle.has_value()) {
     VALIDATION_LOG << "Could not initialize the contents of texture.";
     return;
@@ -434,6 +481,16 @@ bool TextureGLES::Bind() const {
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
+
+  if (fence_.has_value()) {
+    std::optional<GLsync> fence = reactor_->GetGLFence(fence_.value());
+    if (fence.has_value()) {
+      gl.WaitSync(fence.value(), 0, GL_TIMEOUT_IGNORED);
+    }
+    reactor_->CollectHandle(fence_.value());
+    fence_ = std::nullopt;
+  }
+
   switch (type_) {
     case Type::kTexture:
     case Type::kTextureMultisampled: {
@@ -451,6 +508,12 @@ bool TextureGLES::Bind() const {
   }
   InitializeContentsIfNecessary();
   return true;
+}
+
+void TextureGLES::MarkContentsInitialized() {
+  for (size_t i = 0; i < slices_initialized_.size(); i++) {
+    slices_initialized_[i] = true;
+  }
 }
 
 void TextureGLES::MarkSliceInitialized(size_t slice) const {
@@ -565,6 +628,32 @@ Scalar TextureGLES::GetYCoordScale() const {
       return -1.0;
   }
   FML_UNREACHABLE();
+}
+
+bool TextureGLES::IsWrapped() const {
+  return is_wrapped_;
+}
+
+std::optional<GLuint> TextureGLES::GetFBO() const {
+  return wrapped_fbo_;
+}
+
+void TextureGLES::SetFence(HandleGLES fence) {
+  FML_DCHECK(!fence_.has_value());
+  fence_ = fence;
+}
+
+// Visible for testing.
+std::optional<HandleGLES> TextureGLES::GetSyncFence() const {
+  return fence_;
+}
+
+void TextureGLES::SetCachedFBO(GLuint fbo) {
+  cached_fbo_ = fbo;
+}
+
+GLuint TextureGLES::GetCachedFBO() const {
+  return cached_fbo_;
 }
 
 }  // namespace impeller

@@ -722,6 +722,19 @@ void setThemeColor(ui.Color? color) {
   }
 }
 
+/// Ensure a "meta" tag with [name] and [content] is set on the page.
+void ensureMetaTag(String name, String content) {
+  final DomElement? existingTag =
+    domDocument.querySelector('meta[name=$name][content=$content]');
+
+  if (existingTag == null) {
+    final DomHTMLMetaElement meta = createDomHTMLMetaElement()
+        ..name = name
+        ..content = content;
+    domDocument.head!.append(meta);
+  }
+}
+
 bool? _ellipseFeatureDetected;
 
 /// Draws CanvasElement ellipse with fallback.
@@ -874,7 +887,7 @@ class LruCache<K extends Object, V extends Object> {
 }
 
 /// Returns the VM-compatible string for the tile mode.
-String tileModeString(ui.TileMode tileMode) {
+String tileModeString(ui.TileMode? tileMode) {
   switch (tileMode) {
     case ui.TileMode.clamp:
       return 'clamp';
@@ -884,6 +897,8 @@ String tileModeString(ui.TileMode tileMode) {
       return 'repeated';
     case ui.TileMode.decal:
       return 'decal';
+    case null:
+      return 'unspecified';
   }
 }
 

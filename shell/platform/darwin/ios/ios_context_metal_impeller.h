@@ -9,6 +9,7 @@
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "impeller/display_list/aiks_context.h"
 
 namespace impeller {
 
@@ -33,7 +34,8 @@ class IOSContextMetalImpeller final : public IOSContext {
   sk_sp<GrDirectContext> GetResourceContext() const;
 
  private:
-  fml::scoped_nsobject<FlutterDarwinContextMetalImpeller> darwin_context_metal_impeller_;
+  FlutterDarwinContextMetalImpeller* darwin_context_metal_impeller_;
+  std::shared_ptr<impeller::AiksContext> aiks_context_;
 
   // |IOSContext|
   sk_sp<GrDirectContext> CreateResourceContext() override;
@@ -42,12 +44,14 @@ class IOSContextMetalImpeller final : public IOSContext {
   std::unique_ptr<GLContextResult> MakeCurrent() override;
 
   // |IOSContext|
-  std::unique_ptr<Texture> CreateExternalTexture(
-      int64_t texture_id,
-      fml::scoped_nsobject<NSObject<FlutterTexture>> texture) override;
+  std::unique_ptr<Texture> CreateExternalTexture(int64_t texture_id,
+                                                 NSObject<FlutterTexture>* texture) override;
 
   // |IOSContext|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override;
+
+  // |IOSContext|
+  std::shared_ptr<impeller::AiksContext> GetAiksContext() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSContextMetalImpeller);
 };
