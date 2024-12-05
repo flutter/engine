@@ -229,20 +229,13 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
 
 // The callback used by a responder after the event was dispatched.
 static void responder_handle_event_callback(FlKeyboardManager* self,
-                                            FlKeyboardPendingEvent* pending,
-                                            bool handled,
-                                            gboolean is_embedder) {
+                                            FlKeyboardPendingEvent* pending) {
   g_autoptr(FlKeyboardViewDelegate) view_delegate =
       FL_KEYBOARD_VIEW_DELEGATE(g_weak_ref_get(&self->view_delegate));
   if (view_delegate == nullptr) {
     return;
   }
 
-  if (is_embedder) {
-    fl_keyboard_pending_event_mark_embedder_replied(pending, handled);
-  } else {
-    fl_keyboard_pending_event_mark_channel_replied(pending, handled);
-  }
   // All responders have replied.
   if (fl_keyboard_pending_event_is_complete(pending)) {
     g_ptr_array_remove(self->pending_responds, pending);
@@ -270,26 +263,30 @@ static void responder_handle_embedder_event_callback(bool handled,
                                                      gpointer user_data) {
   g_autoptr(FlKeyboardManagerData) data = FL_KEYBOARD_MANAGER_DATA(user_data);
 
+  fl_keyboard_pending_event_mark_embedder_replied(data->pending, handled);
+
   g_autoptr(FlKeyboardManager) self =
       FL_KEYBOARD_MANAGER(g_weak_ref_get(&data->manager));
   if (self == nullptr) {
     return;
   }
 
-  responder_handle_event_callback(self, data->pending, handled, TRUE);
+  responder_handle_event_callback(self, data->pending);
 }
 
 static void responder_handle_channel_event_callback(bool handled,
                                                     gpointer user_data) {
   g_autoptr(FlKeyboardManagerData) data = FL_KEYBOARD_MANAGER_DATA(user_data);
 
+  fl_keyboard_pending_event_mark_channel_replied(data->pending, handled);
+
   g_autoptr(FlKeyboardManager) self =
       FL_KEYBOARD_MANAGER(g_weak_ref_get(&data->manager));
   if (self == nullptr) {
     return;
   }
 
-  responder_handle_event_callback(self, data->pending, handled, FALSE);
+  responder_handle_event_callback(self, data->pending);
 }
 
 static uint16_t convert_key_to_char(FlKeyboardManager* self,
