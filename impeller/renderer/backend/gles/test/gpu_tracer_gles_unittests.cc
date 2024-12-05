@@ -12,9 +12,9 @@ namespace testing {
 
 #ifdef IMPELLER_DEBUG
 TEST(GPUTracerGLES, CanFormatFramebufferErrorMessage) {
-  auto const extensions = std::vector<const unsigned char*>{
-      reinterpret_cast<const unsigned char*>("GL_KHR_debug"),                 //
-      reinterpret_cast<const unsigned char*>("GL_EXT_disjoint_timer_query"),  //
+  auto const extensions = std::vector<const char*>{
+      "GL_KHR_debug",                 //
+      "GL_EXT_disjoint_timer_query",  //
   };
   auto mock_gles = MockGLES::Init(extensions);
   auto tracer =

@@ -59,7 +59,7 @@ class MockGLES final {
   /// invocations on this instance of |MockGLES|. As such, it should only be
   /// called once per test.
   static std::shared_ptr<MockGLES> Init(
-      const std::optional<std::vector<const unsigned char*>>& extensions =
+      const std::optional<std::vector<const char*>>& extensions =
           std::nullopt,
       const char* version_string = "OpenGL ES 3.0",
       ProcTableGLES::Resolver resolver = kMockResolverGLES);
@@ -80,6 +80,14 @@ class MockGLES final {
 
   IMockGLESImpl* GetImpl() { return impl_.get(); }
 
+  const std::vector<const char*>& GetExtensions() const {
+    return extensions_;
+  }
+
+  const char* GetVersion() const {
+    return version_;
+  }
+
  private:
   friend void RecordGLCall(const char* name);
   friend void mockGenTextures(GLsizei n, GLuint* textures);
@@ -91,6 +99,8 @@ class MockGLES final {
   ProcTableGLES proc_table_;
   std::vector<std::string> captured_calls_;
   std::unique_ptr<IMockGLESImpl> impl_;
+  std::vector<const char*> extensions_;
+  const char* version_;
 
   MockGLES(const MockGLES&) = delete;
 

@@ -21,10 +21,6 @@ static std::weak_ptr<MockGLES> g_mock_gles;
 
 static ProcTableGLES::Resolver g_resolver;
 
-static std::vector<const unsigned char*> g_extensions;
-
-static const unsigned char* g_version;
-
 // Has friend visibility into MockGLES to record calls.
 void RecordGLCall(const char* name) {
   if (auto mock_gles = g_mock_gles.lock()) {
@@ -41,22 +37,29 @@ struct CheckSameSignature<Ret(Args...), Ret(Args...)> : std::true_type {};
 // This is a stub function that does nothing/records nothing.
 void doNothing() {}
 
-auto const kMockVendor = (unsigned char*)"MockGLES";
-const auto kMockShadingLanguageVersion = (unsigned char*)"GLSL ES 1.0";
-auto const kExtensions = std::vector<const unsigned char*>{
-    (unsigned char*)"GL_KHR_debug"  //
+auto const kMockVendor = "MockGLES";
+const auto kMockShadingLanguageVersion = "GLSL ES 1.0";
+auto const kExtensions = std::vector<const char*>{
+    "GL_KHR_debug"  //
 };
 
 const unsigned char* mockGetString(GLenum name) {
   switch (name) {
     case GL_VENDOR:
-      return kMockVendor;
-    case GL_VERSION:
-      return g_version;
+      return reinterpret_cast<const unsigned char*>(kMockVendor);
+    case GL_VERSION: {
+      std::vector<const char*> extensions;
+      if (auto mock_gles = g_mock_gles.lock()) {
+        return reinterpret_cast<const unsigned char*>(mock_gles->GetVersion());
+      } else {
+        return reinterpret_cast<const unsigned char*>("");
+      }
+    }
     case GL_SHADING_LANGUAGE_VERSION:
-      return kMockShadingLanguageVersion;
+      return reinterpret_cast<const unsigned char*>(
+          kMockShadingLanguageVersion);
     default:
-      return (unsigned char*)"";
+      return reinterpret_cast<const unsigned char*>("");
   }
 }
 
@@ -64,11 +67,15 @@ static_assert(CheckSameSignature<decltype(mockGetString),  //
                                  decltype(glGetString)>::value);
 
 const unsigned char* mockGetStringi(GLenum name, GLuint index) {
+  std::vector<const char*> extensions;
+  if (auto mock_gles = g_mock_gles.lock()) {
+    extensions = mock_gles->GetExtensions();
+  }
   switch (name) {
     case GL_EXTENSIONS:
-      return g_extensions[index];
+      return reinterpret_cast<const unsigned char*>(extensions[index]);
     default:
-      return (unsigned char*)"";
+      return reinterpret_cast<const unsigned char*>("");
   }
 }
 
@@ -76,9 +83,13 @@ static_assert(CheckSameSignature<decltype(mockGetStringi),  //
                                  decltype(glGetStringi)>::value);
 
 void mockGetIntegerv(GLenum name, int* value) {
+  std::vector<const char*> extensions;
+  if (auto mock_gles = g_mock_gles.lock()) {
+    extensions = mock_gles->GetExtensions();
+  }
   switch (name) {
     case GL_NUM_EXTENSIONS: {
-      *value = g_extensions.size();
+      *value = extensions.size();
     } break;
     case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
       *value = 8;
@@ -216,22 +227,22 @@ std::shared_ptr<MockGLES> MockGLES::Init(std::unique_ptr<MockGLESImpl> impl) {
       << "MockGLES is already being used by another test.";
   auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES());
   mock_gles->impl_ = std::move(impl);
-  g_version = reinterpret_cast<const unsigned char*>("OpenGL ES 3.0");
-  g_extensions = kExtensions;
+  mock_gles->extensions_ = kExtensions;
+  mock_gles->version_ = "OpenGL ES 3.0";
   g_mock_gles = mock_gles;
   return mock_gles;
 }
 
 std::shared_ptr<MockGLES> MockGLES::Init(
-    const std::optional<std::vector<const unsigned char*>>& extensions,
+    const std::optional<std::vector<const char*>>& extensions,
     const char* version_string,
     ProcTableGLES::Resolver resolver) {
   // If we cannot obtain a lock, MockGLES is already being used elsewhere.
   FML_CHECK(g_test_lock.try_lock())
       << "MockGLES is already being used by another test.";
-  g_version = (unsigned char*)version_string;
-  g_extensions = extensions.value_or(kExtensions);
   auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES(std::move(resolver)));
+  mock_gles->extensions_ = extensions.value_or(kExtensions);
+  mock_gles->version_ = version_string;
   g_mock_gles = mock_gles;
   return mock_gles;
 }
