@@ -54,7 +54,7 @@ TEST(CapabilitiesGLES, SupportsDecalSamplerAddressModeNotOES) {
 
 TEST(CapabilitiesGLES, SupportsFramebufferFetch) {
   auto const extensions = std::vector<const char*>{
-      "GL_KHR_debug",  //
+      "GL_KHR_debug",                     //
       "GL_EXT_shader_framebuffer_fetch",  //
   };
   auto mock_gles = MockGLES::Init(extensions);

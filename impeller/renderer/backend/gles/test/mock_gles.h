@@ -107,10 +107,7 @@ class MockGLES final {
 
   explicit MockGLES(ProcTableGLES::Resolver resolver = kMockResolverGLES);
 
-  void RecordCall(const char* name) { captured_calls_.emplace_back(name); }
-
   ProcTableGLES proc_table_;
-  std::vector<std::string> captured_calls_;
   std::unique_ptr<IMockGLESImpl> impl_;
 
   MockGLES(const MockGLES&) = delete;

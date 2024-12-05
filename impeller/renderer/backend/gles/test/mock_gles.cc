@@ -23,13 +23,6 @@ static std::vector<const char*> g_extensions;
 
 static const char* g_version;
 
-// Has friend visibility into MockGLES to record calls.
-void RecordGLCall(const char* name) {
-  if (auto mock_gles = g_mock_gles.lock()) {
-    mock_gles->RecordCall(name);
-  }
-}
-
 template <typename T, typename U>
 struct CheckSameSignature : std::false_type {};
 
@@ -101,9 +94,7 @@ GLenum mockGetError() {
 static_assert(CheckSameSignature<decltype(mockGetError),  //
                                  decltype(glGetError)>::value);
 
-void mockPopDebugGroupKHR() {
-  RecordGLCall("PopDebugGroupKHR");
-}
+void mockPopDebugGroupKHR() {}
 
 static_assert(CheckSameSignature<decltype(mockPopDebugGroupKHR),  //
                                  decltype(glPopDebugGroupKHR)>::value);
@@ -111,9 +102,7 @@ static_assert(CheckSameSignature<decltype(mockPopDebugGroupKHR),  //
 void mockPushDebugGroupKHR(GLenum source,
                            GLuint id,
                            GLsizei length,
-                           const GLchar* message) {
-  RecordGLCall("PushDebugGroupKHR");
-}
+                           const GLchar* message) {}
 
 static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
@@ -185,8 +174,6 @@ void mockDeleteTextures(GLsizei size, const GLuint* queries) {
   if (auto mock_gles = g_mock_gles.lock()) {
     if (mock_gles->GetImpl()) {
       mock_gles->GetImpl()->DeleteTextures(size, queries);
-    } else {
-      RecordGLCall("glDeleteTextures");
     }
   }
 }
@@ -198,8 +185,6 @@ void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
   if (auto mock_gles = g_mock_gles.lock()) {
     if (mock_gles->GetImpl()) {
       mock_gles->GetImpl()->Uniform1fv(location, count, value);
-    } else {
-      RecordGLCall("glUniform1fv");
     }
   }
 }
@@ -210,8 +195,6 @@ void mockGenTextures(GLsizei n, GLuint* textures) {
   if (auto mock_gles = g_mock_gles.lock()) {
     if (mock_gles->GetImpl()) {
       mock_gles->GetImpl()->GenTextures(n, textures);
-    } else {
-      RecordGLCall("glGenTextures");
     }
   }
 }
@@ -226,8 +209,6 @@ void mockObjectLabelKHR(GLenum identifier,
   if (auto mock_gles = g_mock_gles.lock()) {
     if (mock_gles->GetImpl()) {
       mock_gles->GetImpl()->ObjectLabelKHR(identifier, name, length, label);
-    } else {
-      RecordGLCall("glObjectLabelKHR");
     }
   }
 }
