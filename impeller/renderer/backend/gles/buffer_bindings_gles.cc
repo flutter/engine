@@ -122,7 +122,7 @@ bool BufferBindingsGLES::ReadUniformsBindingsV3(const ProcTableGLES& gl,
 
     std::vector<GLchar> name;
     name.resize(name_length);
-    GLint length;
+    GLint length = 0;
     gl.GetActiveUniformBlockName(program, i, name_length, &length, name.data());
 
     GLuint block_index = gl.GetUniformBlockIndex(program, name.data());
@@ -434,6 +434,9 @@ bool BufferBindingsGLES::BindUniformBufferV2(
                       buffer_data     // data
         );
         continue;
+      default:
+        VALIDATION_LOG << "Invalid member size binding: " << member.size;
+        return false;
     }
   }
   return true;

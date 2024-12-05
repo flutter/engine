@@ -41,9 +41,7 @@ class DeviceBufferGLES final
 
   void Flush(std::optional<Range> range = std::nullopt) const override;
 
-  std::optional<GLuint> GetHandle() const {
-    return reactor_->GetGLHandle(handle_);
-  }
+  std::optional<GLuint> GetHandle() const;
 
  private:
   ReactorGLES::Ref reactor_;

@@ -7,7 +7,6 @@
 #include <cstring>
 #include <memory>
 
-#include "GLES3/gl3.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 
@@ -55,6 +54,10 @@ bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
   Flush(Range{offset, source_range.length});
 
   return true;
+}
+
+std::optional<GLuint> DeviceBufferGLES::GetHandle() const {
+  return reactor_->GetGLHandle(handle_);
 }
 
 void DeviceBufferGLES::Flush(std::optional<Range> range) const {
