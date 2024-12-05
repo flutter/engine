@@ -24,9 +24,14 @@
 
 namespace impeller {
 
+namespace {
+constexpr char kPaddingType = 0;
+constexpr char kFloatType = 1;
+}  // namespace
+
 // static
 BufferView RuntimeEffectContents::EmplaceVulkanUniform(
-    const std::shared_ptr<std::vector<uint8_t>>& input_data,
+    const std::shared_ptr<const std::vector<uint8_t>>& input_data,
     HostBuffer& host_buffer,
     const RuntimeUniformDescription& uniform) {
   // TODO(jonahwilliams): rewrite this to emplace directly into
@@ -34,14 +39,13 @@ BufferView RuntimeEffectContents::EmplaceVulkanUniform(
   std::vector<float> uniform_buffer;
   uniform_buffer.reserve(uniform.struct_layout.size());
   size_t uniform_byte_index = 0u;
-  for (const auto& byte_type : uniform.struct_layout) {
-    if (byte_type == 0) {
+  for (char byte_type : uniform.struct_layout) {
+    if (byte_type == kPaddingType) {
       uniform_buffer.push_back(0.f);
-    } else if (byte_type == 1) {
-      uniform_buffer.push_back(
-          reinterpret_cast<float*>(input_data->data())[uniform_byte_index++]);
     } else {
-      FML_UNREACHABLE();
+      FML_DCHECK(byte_type == kFloatType);
+      uniform_buffer.push_back(reinterpret_cast<const float*>(
+          input_data->data())[uniform_byte_index++]);
     }
   }
   size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
