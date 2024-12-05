@@ -94,7 +94,16 @@ TEST(ReactorGLES, UntrackedHandle) {
 }
 
 TEST(ReactorGLES, NameUntrackedHandle) {
-  std::shared_ptr<MockGLES> mock_gles = MockGLES::Init();
+  auto mock_gles_impl = std::make_unique<MockGLESImpl>();
+
+  EXPECT_CALL(*mock_gles_impl, GenTextures(1, _))
+      .WillOnce([](GLsizei size, GLuint* queries) { queries[0] = 1234; });
+  EXPECT_CALL(*mock_gles_impl,
+              ObjectLabelKHR(_, 1234, _, ::testing::StrEq("hello, joe!")))
+      .Times(1);
+
+  std::shared_ptr<MockGLES> mock_gles =
+      MockGLES::Init(std::move(mock_gles_impl));
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
   auto worker = std::make_shared<TestWorker>();
@@ -102,11 +111,7 @@ TEST(ReactorGLES, NameUntrackedHandle) {
   reactor->AddWorker(worker);
 
   HandleGLES handle = reactor->CreateUntrackedHandle(HandleType::kTexture);
-  mock_gles->GetCapturedCalls();
   reactor->SetDebugLabel(handle, "hello, joe!");
-  std::vector<std::string> calls = mock_gles->GetCapturedCalls();
-  EXPECT_TRUE(std::find(calls.begin(), calls.end(), "glObjectLabelKHR") !=
-              calls.end());
 }
 
 TEST(ReactorGLES, PerThreadOperationQueues) {

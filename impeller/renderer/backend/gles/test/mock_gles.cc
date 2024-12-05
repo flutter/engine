@@ -199,7 +199,13 @@ void mockObjectLabelKHR(GLenum identifier,
                         GLuint name,
                         GLsizei length,
                         const GLchar* label) {
-  RecordGLCall("glObjectLabelKHR");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->ObjectLabelKHR(identifier, name, length, label);
+    } else {
+      RecordGLCall("glObjectLabelKHR");
+    }
+  }
 }
 static_assert(CheckSameSignature<decltype(mockObjectLabelKHR),  //
                                  decltype(glObjectLabelKHR)>::value);

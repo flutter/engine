@@ -21,6 +21,10 @@ class IMockGLESImpl {
   virtual ~IMockGLESImpl() = default;
   virtual void DeleteTextures(GLsizei size, const GLuint* queries) {}
   virtual void GenTextures(GLsizei n, GLuint* textures) {}
+  virtual void ObjectLabelKHR(GLenum identifier,
+                              GLuint name,
+                              GLsizei length,
+                              const GLchar* label) {}
 };
 
 class MockGLESImpl : public IMockGLESImpl {
@@ -30,6 +34,11 @@ class MockGLESImpl : public IMockGLESImpl {
               (GLsizei size, const GLuint* queries),
               (override));
   MOCK_METHOD(void, GenTextures, (GLsizei n, GLuint* textures), (override));
+  MOCK_METHOD(
+      void,
+      ObjectLabelKHR,
+      (GLenum identifier, GLuint name, GLsizei length, const GLchar* label),
+      (override));
 };
 
 /// @brief      Provides a mocked version of the |ProcTableGLES| class.
