@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/core/runtime_types.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
@@ -14,6 +13,7 @@
 #include "fml/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "impeller/core/runtime_types.h"
 #include "shell/platform/android/context/android_context.h"
 
 namespace flutter {
