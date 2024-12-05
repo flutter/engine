@@ -114,10 +114,14 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
           static_cast<unsigned int>(info.width()) ||
       frame.y_offset + frame_info.height() >
           static_cast<unsigned int>(info.height())) {
-    FML_DLOG(ERROR) << "Decoded image at index " << image_index
-                    << " (frame index: " << frame_index
-                    << ") rejected because the destination region is not "
-                       "entirely within the destination surface.";
+    FML_DLOG(ERROR)
+        << "Decoded image at index " << image_index
+        << " (frame index: " << frame_index
+        << ") rejected because the destination region (x: " << frame.x_offset
+        << ", y: " << frame.y_offset << ", width: " << frame_info.width()
+        << ", height: " << frame_info.height()
+        << ") is not entirely within the destination surface (width: "
+        << info.width() << ", height: " << info.height() << ").";
     return false;
   }
 
@@ -642,12 +646,13 @@ bool APNGImageGenerator::RenderDefaultImage(const SkImageInfo& info,
                                             size_t row_bytes) {
   APNGImage& frame = images_[0];
   SkImageInfo frame_info = frame.codec->getInfo();
-  if (frame.x_offset + frame_info.width() >
-          static_cast<unsigned int>(info.width()) ||
-      frame.y_offset + frame_info.height() >
-          static_cast<unsigned int>(info.height())) {
-    FML_DLOG(ERROR) << "Default image rejected because the destination region "
-                       "is not entirely within the destination surface.";
+  if (frame_info.width() > info.width() ||
+      frame_info.height() > info.height()) {
+    FML_DLOG(ERROR)
+        << "Default image rejected because the destination region (width: "
+        << frame_info.width() << ", height: " << frame_info.height()
+        << ") is not entirely within the destination surface (width: "
+        << info.width() << ", height: " << info.height() << ").";
     return false;
   }
 
