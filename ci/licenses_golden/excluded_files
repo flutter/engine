@@ -182,6 +182,7 @@
 ../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/playground
+../../../flutter/impeller/renderer/backend/gles/buffer_bindings_gles_unittests.cc
 ../../../flutter/impeller/renderer/backend/gles/test
 ../../../flutter/impeller/renderer/backend/metal/allocator_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
@@ -945,11 +946,6 @@
 ../../../flutter/third_party/angle/tools
 ../../../flutter/third_party/angle/util
 ../../../flutter/third_party/benchmark
-../../../flutter/third_party/boringssl/.git
-../../../flutter/third_party/boringssl/.gitignore
-../../../flutter/third_party/boringssl/OWNERS
-../../../flutter/third_party/boringssl/README
-../../../flutter/third_party/boringssl/codereview.settings
 ../../../flutter/third_party/boringssl/src/.bazelrc
 ../../../flutter/third_party/boringssl/src/.bcr/README.md
 ../../../flutter/third_party/boringssl/src/.clang-format
@@ -1665,6 +1661,7 @@
 ../../../flutter/third_party/dart/third_party/OWNERS
 ../../../flutter/third_party/dart/third_party/binary_size
 ../../../flutter/third_party/dart/third_party/binaryen
+../../../flutter/third_party/dart/third_party/boringssl/OWNERS
 ../../../flutter/third_party/dart/third_party/clang.tar.gz.sha1
 ../../../flutter/third_party/dart/third_party/cpu_features/OWNERS
 ../../../flutter/third_party/dart/third_party/cpu_features/README.chromium
@@ -3410,6 +3407,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdhci/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdio/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.serial/meta.json

@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/sampler_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/command.h"
 
 namespace impeller {
 
@@ -179,28 +180,23 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
-                                         Allocator& transients_allocator,
-                                         const Bindings& vertex_bindings,
-                                         const Bindings& fragment_bindings) {
-  for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+bool BufferBindingsGLES::BindUniformData(
+    const ProcTableGLES& gl,
+    const std::vector<TextureAndSampler>& bound_textures,
+    const std::vector<BufferResource>& bound_buffers,
+    Range texture_range,
+    Range buffer_range) {
+  for (auto i = 0u; i < buffer_range.length; i++) {
+    if (!BindUniformBuffer(gl, bound_buffers[buffer_range.offset + i])) {
       return false;
     }
   }
-  for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
-      return false;
-    }
-  }
-
   std::optional<size_t> next_unit_index =
-      BindTextures(gl, vertex_bindings, ShaderStage::kVertex);
+      BindTextures(gl, bound_textures, texture_range, ShaderStage::kVertex);
   if (!next_unit_index.has_value()) {
     return false;
   }
-
-  if (!BindTextures(gl, fragment_bindings, ShaderStage::kFragment,
+  if (!BindTextures(gl, bound_textures, texture_range, ShaderStage::kFragment,
                     *next_unit_index)
            .has_value()) {
     return false;
@@ -262,7 +258,7 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
     size_t element_count = member.array_elements.value_or(1);
     const std::string member_key =
         CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
-    const std::unordered_map<std::string, GLint>::iterator computed_location =
+    const absl::flat_hash_map<std::string, GLint>::iterator computed_location =
         uniform_locations_.find(member_key);
     if (computed_location == uniform_locations_.end()) {
       // Uniform was not active.
@@ -275,7 +271,6 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const ShaderMetadata* metadata = buffer.GetMetadata();
   const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
@@ -391,11 +386,16 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
-    const Bindings& bindings,
+    const std::vector<TextureAndSampler>& bound_textures,
+    Range texture_range,
     ShaderStage stage,
     size_t unit_start_index) {
   size_t active_index = unit_start_index;
-  for (const auto& data : bindings.sampled_images) {
+  for (auto i = 0u; i < texture_range.length; i++) {
+    const TextureAndSampler& data = bound_textures[texture_range.offset + i];
+    if (data.stage != stage) {
+      continue;
+    }
     const auto& texture_gles = TextureGLES::Cast(*data.texture.resource);
     if (data.texture.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";
