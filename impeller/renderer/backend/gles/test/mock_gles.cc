@@ -19,8 +19,6 @@ static std::mutex g_test_lock;
 
 static std::weak_ptr<MockGLES> g_mock_gles;
 
-static ProcTableGLES::Resolver g_resolver;
-
 // Has friend visibility into MockGLES to record calls.
 void RecordGLCall(const char* name) {
   if (auto mock_gles = g_mock_gles.lock()) {

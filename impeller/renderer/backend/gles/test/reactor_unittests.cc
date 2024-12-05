@@ -49,20 +49,22 @@ TEST(ReactorGLES, CanAttachCleanupCallbacksToHandles) {
 }
 
 TEST(ReactorGLES, DeletesHandlesDuringShutdown) {
-  auto mock_gles = MockGLES::Init();
+  auto mock_gles_impl = std::make_unique<MockGLESImpl>();
+
+  EXPECT_CALL(*mock_gles_impl, GenTextures(1, _))
+      .WillOnce([](GLsizei size, GLuint* queries) { queries[0] = 1234; });
+  EXPECT_CALL(*mock_gles_impl, DeleteTextures(1, ::testing::Pointee(1234)))
+      .Times(1);
+
+  std::shared_ptr<MockGLES> mock_gles =
+      MockGLES::Init(std::move(mock_gles_impl));
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
   auto worker = std::make_shared<TestWorker>();
   auto reactor = std::make_shared<ReactorGLES>(std::move(proc_table));
   reactor->AddWorker(worker);
-
-  reactor->CreateHandle(HandleType::kTexture, 123);
-
+  reactor->CreateHandle(HandleType::kTexture);
   reactor.reset();
-
-  auto calls = mock_gles->GetCapturedCalls();
-  EXPECT_TRUE(std::find(calls.begin(), calls.end(), "glDeleteTextures") !=
-              calls.end());
 }
 
 TEST(ReactorGLES, UntrackedHandle) {
