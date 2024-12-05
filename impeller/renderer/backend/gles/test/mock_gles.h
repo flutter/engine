@@ -25,6 +25,8 @@ class IMockGLESImpl {
                               GLuint name,
                               GLsizei length,
                               const GLchar* label) {}
+  virtual void Uniform1fv(GLint location, GLsizei count, const GLfloat* value) {
+  }
 };
 
 class MockGLESImpl : public IMockGLESImpl {
@@ -39,6 +41,10 @@ class MockGLESImpl : public IMockGLESImpl {
       ObjectLabelKHR,
       (GLenum identifier, GLuint name, GLsizei length, const GLchar* label),
       (override));
+  MOCK_METHOD(void,
+              Uniform1fv,
+              (GLint location, GLsizei count, const GLfloat* value),
+              (override));
 };
 
 /// @brief      Provides a mocked version of the |ProcTableGLES| class.
@@ -59,8 +65,7 @@ class MockGLES final {
   /// invocations on this instance of |MockGLES|. As such, it should only be
   /// called once per test.
   static std::shared_ptr<MockGLES> Init(
-      const std::optional<std::vector<const char*>>& extensions =
-          std::nullopt,
+      const std::optional<std::vector<const char*>>& extensions = std::nullopt,
       const char* version_string = "OpenGL ES 3.0",
       ProcTableGLES::Resolver resolver = kMockResolverGLES);
 
@@ -80,13 +85,9 @@ class MockGLES final {
 
   IMockGLESImpl* GetImpl() { return impl_.get(); }
 
-  const std::vector<const char*>& GetExtensions() const {
-    return extensions_;
-  }
+  const std::vector<const char*>& GetExtensions() const { return extensions_; }
 
-  const char* GetVersion() const {
-    return version_;
-  }
+  const char* GetVersion() const { return version_; }
 
  private:
   friend void RecordGLCall(const char* name);

@@ -186,7 +186,13 @@ static_assert(CheckSameSignature<decltype(mockDeleteQueriesEXT),  //
                                  decltype(glDeleteQueriesEXT)>::value);
 
 void mockUniform1fv(GLint location, GLsizei count, const GLfloat* value) {
-  RecordGLCall("glUniform1fv");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->Uniform1fv(location, count, value);
+    } else {
+      RecordGLCall("glUniform1fv");
+    }
+  }
 }
 static_assert(CheckSameSignature<decltype(mockUniform1fv),  //
                                  decltype(glUniform1fv)>::value);
