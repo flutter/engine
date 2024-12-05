@@ -17,9 +17,12 @@ namespace impeller {
 ///
 class UniqueHandleGLES {
  public:
-  UniqueHandleGLES(ReactorGLES::Ref reactor, HandleType type);
+  UniqueHandleGLES(std::shared_ptr<ReactorGLES> reactor, HandleType type);
 
-  UniqueHandleGLES(ReactorGLES::Ref reactor, HandleGLES handle);
+  static UniqueHandleGLES MakeUntracked(std::shared_ptr<ReactorGLES> reactor,
+                                        HandleType type);
+
+  UniqueHandleGLES(std::shared_ptr<ReactorGLES> reactor, HandleGLES handle);
 
   ~UniqueHandleGLES();
 
@@ -34,7 +37,7 @@ class UniqueHandleGLES {
   bool IsValid() const;
 
  private:
-  ReactorGLES::Ref reactor_ = nullptr;
+  std::shared_ptr<ReactorGLES> reactor_ = nullptr;
   HandleGLES handle_ = HandleGLES::DeadHandle();
 };
 
