@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 
+#include "GLES3/gl3.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 
@@ -75,6 +76,8 @@ static GLenum ToTarget(DeviceBufferGLES::BindingType type) {
       return GL_ARRAY_BUFFER;
     case DeviceBufferGLES::BindingType::kElementArrayBuffer:
       return GL_ELEMENT_ARRAY_BUFFER;
+    case DeviceBufferGLES::BindingType::kUniformBuffer:
+      return GL_UNIFORM_BUFFER;
   }
   FML_UNREACHABLE();
 }

@@ -29,6 +29,7 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -203,8 +204,18 @@ static impeller::RuntimeStageBackend DetermineRuntimeStageBackend(
   switch (impeller_context->GetBackendType()) {
     case impeller::Context::BackendType::kMetal:
       return impeller::RuntimeStageBackend::kMetal;
-    case impeller::Context::BackendType::kOpenGLES:
-      return impeller::RuntimeStageBackend::kOpenGLES;
+    case impeller::Context::BackendType::kOpenGLES: {
+      if (impeller::ContextGLES::Cast(*impeller_context)
+              .GetReactor()
+              ->GetProcTable()
+              .GetDescription()
+              ->GetGlVersion()
+              .IsAtLeast(impeller::Version{3, 0, 0})) {
+        return impeller::RuntimeStageBackend::kOpenGLES3;
+      } else {
+        return impeller::RuntimeStageBackend::kOpenGLES;
+      }
+    }
     case impeller::Context::BackendType::kVulkan:
       return impeller::RuntimeStageBackend::kVulkan;
   }

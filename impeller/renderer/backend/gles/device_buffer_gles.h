@@ -34,11 +34,16 @@ class DeviceBufferGLES final
   enum class BindingType {
     kArrayBuffer,
     kElementArrayBuffer,
+    kUniformBuffer,
   };
 
   [[nodiscard]] bool BindAndUploadDataIfNecessary(BindingType type) const;
 
   void Flush(std::optional<Range> range = std::nullopt) const override;
+
+  std::optional<GLuint> GetHandle() const {
+    return reactor_->GetGLHandle(handle_);
+  }
 
  private:
   ReactorGLES::Ref reactor_;

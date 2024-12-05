@@ -100,6 +100,38 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
   if (!gl.IsProgram(program)) {
     return false;
   }
+  program_handle_ = program;
+  if (gl.GetDescription()->GetGlVersion().IsAtLeast(Version{3, 0, 0})) {
+    return ReadUniformsBindingsV3(gl, program);
+  }
+  return ReadUniformsBindingsV2(gl, program);
+}
+
+bool BufferBindingsGLES::ReadUniformsBindingsV3(const ProcTableGLES& gl,
+                                                GLuint program) {
+  program_handle_ = program;
+  GLint uniform_blocks = 0;
+  gl.GetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &uniform_blocks);
+  for (GLint i = 0; i < uniform_blocks; i++) {
+    GLint name_length = 0;
+    gl.GetActiveUniformBlockiv(program, i, GL_UNIFORM_BLOCK_NAME_LENGTH,
+                               &name_length);
+
+    std::vector<GLchar> name;
+    name.resize(name_length);
+    GLint length;
+    gl.GetActiveUniformBlockName(program, i, name_length, &length, name.data());
+
+    GLuint block_index = gl.GetUniformBlockIndex(program, name.data());
+    ubo_locations_[std::string{name.data(), static_cast<size_t>(length)}] =
+        std::make_pair(block_index, i);
+  }
+  use_ubo_ = true;
+  return ReadUniformsBindingsV2(gl, program);
+}
+
+bool BufferBindingsGLES::ReadUniformsBindingsV2(const ProcTableGLES& gl,
+                                                GLuint program) {
   GLint max_name_size = 0;
   gl.GetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_size);
 
@@ -138,6 +170,9 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
     auto location = gl.GetUniformLocation(program, name.data());
     if (location == -1) {
+      if (use_ubo_) {
+        continue;
+      }
       VALIDATION_LOG << "Could not query the location of an active uniform.";
       return false;
     }
@@ -183,12 +218,13 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
                                          const Bindings& vertex_bindings,
                                          const Bindings& fragment_bindings) {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view, /*force_v2=*/false)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, buffer.view)) {
+    if (!BindUniformBuffer(gl, buffer.view,
+                           /*force_v2=*/buffer.view.IsDynamic())) {
       return false;
     }
   }
@@ -274,7 +310,44 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           const BufferResource& buffer) {
+                                           const BufferResource& buffer,
+                                           bool force_v2) {
+  if (use_ubo_ && !force_v2) {
+    return BindUniformBufferV3(gl, buffer);
+  }
+  return BindUniformBufferV2(gl, buffer);
+}
+
+bool BufferBindingsGLES::BindUniformBufferV3(const ProcTableGLES& gl,
+                                             const BufferResource& buffer) {
+  const ShaderMetadata* metadata = buffer.GetMetadata();
+  const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
+  if (!device_buffer) {
+    VALIDATION_LOG << "Device buffer not found.";
+    return false;
+  }
+  const DeviceBufferGLES& device_buffer_gles =
+      DeviceBufferGLES::Cast(*device_buffer);
+
+  const auto& [block_index, binding_point] = ubo_locations_[metadata->name];
+  gl.UniformBlockBinding(program_handle_, block_index, binding_point);
+
+  if (!device_buffer_gles.BindAndUploadDataIfNecessary(
+          DeviceBufferGLES::BindingType::kUniformBuffer)) {
+    return false;
+  }
+  auto handle = device_buffer_gles.GetHandle();
+  if (!handle.has_value()) {
+    return false;
+  }
+  gl.BindBufferRange(GL_UNIFORM_BUFFER, binding_point, handle.value(),
+                     buffer.resource.GetRange().offset,
+                     buffer.resource.GetRange().length);
+  return true;
+}
+
+bool BufferBindingsGLES::BindUniformBufferV2(const ProcTableGLES& gl,
+                                             const BufferResource& buffer) {
   const ShaderMetadata* metadata = buffer.GetMetadata();
   const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
   if (!device_buffer) {
@@ -323,65 +396,44 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
           reinterpret_cast<const GLfloat*>(array_element_buffer.data());
     }
 
-    switch (member.type) {
-      case ShaderType::kFloat:
-        switch (member.size) {
-          case sizeof(Matrix):
-            gl.UniformMatrix4fv(location,       // location
-                                element_count,  // count
-                                GL_FALSE,       // normalize
-                                buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector4):
-            gl.Uniform4fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector3):
-            gl.Uniform3fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector2):
-            gl.Uniform2fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Scalar):
-            gl.Uniform1fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-        }
-        VALIDATION_LOG << "Size " << member.size
-                       << " could not be mapped ShaderType::kFloat for key: "
-                       << member.name;
-      case ShaderType::kBoolean:
-      case ShaderType::kSignedByte:
-      case ShaderType::kUnsignedByte:
-      case ShaderType::kSignedShort:
-      case ShaderType::kUnsignedShort:
-      case ShaderType::kSignedInt:
-      case ShaderType::kUnsignedInt:
-      case ShaderType::kSignedInt64:
-      case ShaderType::kUnsignedInt64:
-      case ShaderType::kAtomicCounter:
-      case ShaderType::kUnknown:
-      case ShaderType::kVoid:
-      case ShaderType::kHalfFloat:
-      case ShaderType::kDouble:
-      case ShaderType::kStruct:
-      case ShaderType::kImage:
-      case ShaderType::kSampledImage:
-      case ShaderType::kSampler:
-        VALIDATION_LOG << "Could not bind uniform buffer data for key: "
-                       << member.name << " : " << static_cast<int>(member.type);
-        return false;
+    if (member.type != ShaderType::kFloat) {
+      VALIDATION_LOG << "Could not bind uniform buffer data for key: "
+                     << member.name << " : " << static_cast<int>(member.type);
+      return false;
+    }
+
+    switch (member.size) {
+      case sizeof(Matrix):
+        gl.UniformMatrix4fv(location,       // location
+                            element_count,  // count
+                            GL_FALSE,       // normalize
+                            buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector4):
+        gl.Uniform4fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector3):
+        gl.Uniform3fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector2):
+        gl.Uniform2fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Scalar):
+        gl.Uniform1fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
     }
   }
   return true;

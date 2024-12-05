@@ -63,17 +63,32 @@ class BufferBindingsGLES {
   std::vector<std::vector<VertexAttribPointer>> vertex_attrib_arrays_;
 
   absl::flat_hash_map<std::string, GLint> uniform_locations_;
+  absl::flat_hash_map<std::string, std::pair<GLint, GLuint>> ubo_locations_;
 
   using BindingMap = absl::flat_hash_map<std::string, std::vector<GLint>>;
   BindingMap binding_map_ = {};
   GLuint vertex_array_object_ = 0;
+  GLuint program_handle_ = GL_NONE;
+  bool use_ubo_ = false;
 
   const std::vector<GLint>& ComputeUniformLocations(
       const ShaderMetadata* metadata);
 
+  bool ReadUniformsBindingsV2(const ProcTableGLES& gl, GLuint program);
+
+  bool ReadUniformsBindingsV3(const ProcTableGLES& gl, GLuint program);
+
   GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
-  bool BindUniformBuffer(const ProcTableGLES& gl, const BufferResource& buffer);
+  bool BindUniformBuffer(const ProcTableGLES& gl,
+                         const BufferResource& buffer,
+                         bool force_v2);
+
+  bool BindUniformBufferV2(const ProcTableGLES& gl,
+                           const BufferResource& buffer);
+
+  bool BindUniformBufferV3(const ProcTableGLES& gl,
+                           const BufferResource& buffer);
 
   std::optional<size_t> BindTextures(const ProcTableGLES& gl,
                                      const Bindings& bindings,
