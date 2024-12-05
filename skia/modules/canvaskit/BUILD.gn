@@ -164,11 +164,16 @@ canvaskit_wasm_lib("canvaskit") {
     "-sDYNAMIC_EXECUTION=0",
     "-sEXPORT_NAME=CanvasKitInit",
     "-sEXPORTED_FUNCTIONS=[_malloc,_free]",
+    "-sEXPORTED_RUNTIME_METHODS=HEAP8,HEAPU8,HEAP16,HEAPU16,HEAP32,HEAPF32,HEAPU32,HEAPF64",
+    "-sINCOMING_MODULE_JS_API=onRuntimeInitialized",
     "-sFORCE_FILESYSTEM=0",
     "-sFILESYSTEM=0",
     "-sMODULARIZE",
     "-sNO_EXIT_RUNTIME=1",
-    "-sINITIAL_MEMORY=128MB",
+    "-sINITIAL_MEMORY=32MB",
+
+    # Grow memory by +100% i.e. double the size each time we run out of memory.
+    "-sMEMORY_GROWTH_GEOMETRIC_STEP=1.0",
     "-sWASM",
     "-sSTRICT=1",
   ]

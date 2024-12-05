@@ -5,23 +5,23 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
 #include "flutter/flutter_vma/flutter_vma.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 
 DeviceBufferVK::DeviceBufferVK(DeviceBufferDescriptor desc,
                                std::weak_ptr<Context> context,
                                UniqueBufferVMA buffer,
-                               VmaAllocationInfo info)
+                               VmaAllocationInfo info,
+                               bool is_host_coherent)
     : DeviceBuffer(desc),
       context_(std::move(context)),
       resource_(ContextVK::Cast(*context_.lock().get()).GetResourceManager(),
                 BufferResource{
                     std::move(buffer),  //
                     info                //
-                }) {}
+                }),
+      is_host_coherent_(is_host_coherent) {}
 
 DeviceBufferVK::~DeviceBufferVK() = default;
 
@@ -48,7 +48,8 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   return true;
 }
 
-bool DeviceBufferVK::SetLabel(const std::string& label) {
+bool DeviceBufferVK::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   auto context = context_.lock();
   if (!context || !resource_->buffer.is_valid()) {
     // The context could have died at this point.
@@ -57,18 +58,29 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
 
   ::vmaSetAllocationName(resource_->buffer.get().allocator,   //
                          resource_->buffer.get().allocation,  //
-                         label.c_str()                        //
+                         label.data()                         //
   );
 
   return ContextVK::Cast(*context).SetDebugName(resource_->buffer.get().buffer,
                                                 label);
+#else
+  return true;
+#endif  // IMPELLER_DEBUG
 }
 
 void DeviceBufferVK::Flush(std::optional<Range> range) const {
+  if (is_host_coherent_) {
+    return;
+  }
   auto flush_range = range.value_or(Range{0, GetDeviceBufferDescriptor().size});
   ::vmaFlushAllocation(resource_->buffer.get().allocator,
                        resource_->buffer.get().allocation, flush_range.offset,
                        flush_range.length);
+}
+
+// Visible for testing.
+bool DeviceBufferVK::IsHostCoherent() const {
+  return is_host_coherent_;
 }
 
 void DeviceBufferVK::Invalidate(std::optional<Range> range) const {
@@ -78,7 +90,7 @@ void DeviceBufferVK::Invalidate(std::optional<Range> range) const {
                             flush_range.offset, flush_range.length);
 }
 
-bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
+bool DeviceBufferVK::SetLabel(std::string_view label, Range range) {
   // We do not have the ability to name ranges. Just name the whole thing.
   return SetLabel(label);
 }

@@ -58,10 +58,17 @@ class CommandBuffer {
 
   virtual bool IsValid() const = 0;
 
-  virtual void SetLabel(const std::string& label) const = 0;
+  virtual void SetLabel(std::string_view label) const = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief      Force execution of pending GPU commands.
+  /// @brief      Block the current thread until the GPU has completed execution
+  ///             of the commands.
+  ///
+  void WaitUntilCompleted();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Block the current thread until the GPU has completed
+  ///             scheduling execution of the commands.
   ///
   void WaitUntilScheduled();
 
@@ -101,6 +108,8 @@ class CommandBuffer {
   virtual std::shared_ptr<BlitPass> OnCreateBlitPass() = 0;
 
   [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
+
+  virtual void OnWaitUntilCompleted() = 0;
 
   virtual void OnWaitUntilScheduled() = 0;
 

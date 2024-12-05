@@ -82,6 +82,7 @@ impellerc("runtime_stages") {
   shaders = [
     "ink_sparkle.frag",
     "runtime_stage_example.frag",
+    "runtime_stage_filter_example.frag",
     "runtime_stage_simple.frag",
     "runtime_stage_position.frag",
     "gradient.frag",
@@ -103,6 +104,7 @@ test_fixtures("file_fixtures") {
   fixtures = [
     "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
     "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     "airplane.jpg",
     "bay_bridge.jpg",

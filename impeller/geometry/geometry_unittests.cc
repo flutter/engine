@@ -330,21 +330,6 @@ TEST(GeometryTest, MatrixTransformDirection) {
   }
 }
 
-TEST(GeometryTest, MatrixGetMaxBasisLength) {
-  {
-    auto m = Matrix::MakeScale({3, 1, 1});
-    ASSERT_EQ(m.GetMaxBasisLength(), 3);
-
-    m = m * Matrix::MakeSkew(0, 4);
-    ASSERT_EQ(m.GetMaxBasisLength(), 5);
-  }
-
-  {
-    auto m = Matrix::MakeScale({-3, 4, 2});
-    ASSERT_EQ(m.GetMaxBasisLength(), 4);
-  }
-}
-
 TEST(GeometryTest, MatrixGetMaxBasisLengthXY) {
   {
     auto m = Matrix::MakeScale({3, 1, 1});
@@ -1021,6 +1006,52 @@ TEST(GeometryTest, PointMin) {
   Point result = p.Min({0, 10});
   Point expected(0, 2);
   ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4IsFinite) {
+  {
+    Vector4 v;
+    ASSERT_TRUE(v.IsFinite());
+    v.x = std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.x = -std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.x = -std::numeric_limits<Scalar>::quiet_NaN();
+    ASSERT_FALSE(v.IsFinite());
+  }
+
+  {
+    Vector4 v;
+    ASSERT_TRUE(v.IsFinite());
+    v.y = std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.y = -std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.y = -std::numeric_limits<Scalar>::quiet_NaN();
+    ASSERT_FALSE(v.IsFinite());
+  }
+
+  {
+    Vector4 v;
+    ASSERT_TRUE(v.IsFinite());
+    v.z = std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.z = -std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.z = -std::numeric_limits<Scalar>::quiet_NaN();
+    ASSERT_FALSE(v.IsFinite());
+  }
+
+  {
+    Vector4 v;
+    ASSERT_TRUE(v.IsFinite());
+    v.w = std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.w = -std::numeric_limits<Scalar>::infinity();
+    ASSERT_FALSE(v.IsFinite());
+    v.w = -std::numeric_limits<Scalar>::quiet_NaN();
+    ASSERT_FALSE(v.IsFinite());
+  }
 }
 
 TEST(GeometryTest, Vector3Min) {

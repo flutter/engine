@@ -10,8 +10,8 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
-#include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
@@ -21,6 +21,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
@@ -38,11 +39,41 @@ class SurfaceContextVK;
 class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
 class CommandQueueVK;
+class DescriptorPoolVK;
+
+class IdleWaiterVK : public IdleWaiter {
+ public:
+  explicit IdleWaiterVK(std::weak_ptr<DeviceHolderVK> device_holder)
+      : device_holder_(std::move(device_holder)) {}
+
+  void WaitIdle() const override {
+    std::shared_ptr<DeviceHolderVK> strong_device_holder_ =
+        device_holder_.lock();
+    if (strong_device_holder_ && strong_device_holder_->GetDevice()) {
+      [[maybe_unused]] auto result =
+          strong_device_holder_->GetDevice().waitIdle();
+    }
+  }
+
+ private:
+  std::weak_ptr<DeviceHolderVK> device_holder_;
+};
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
  public:
+  /// Embedder Stuff
+  struct EmbedderData {
+    VkInstance instance;
+    VkPhysicalDevice physical_device;
+    VkDevice device;
+    uint32_t queue_family_index;
+    VkQueue queue;
+    std::vector<std::string> instance_extensions;
+    std::vector<std::string> device_extensions;
+  };
+
   struct Settings {
     PFN_vkGetInstanceProcAddr proc_address_callback = nullptr;
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
@@ -52,6 +83,8 @@ class ContextVK final : public Context,
     bool disable_surface_control = false;
     /// If validations are requested but cannot be enabled, log a fatal error.
     bool fatal_missing_validations = false;
+
+    std::optional<EmbedderData> embedder_data;
 
     Settings() = default;
 
@@ -108,6 +141,18 @@ class ContextVK final : public Context,
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
     return SetDebugName(GetDevice(), handle, label);
+  }
+
+  template <typename T>
+  bool SetDebugName(T handle,
+                    std::string_view label,
+                    std::string_view trailing) const {
+    if (!HasValidationLayers()) {
+      // No-op if validation layers are not enabled.
+      return true;
+    }
+    std::string combined = SPrintF("%s %s", label.data(), trailing.data());
+    return SetDebugName(GetDevice(), handle, combined);
   }
 
   template <typename T>
@@ -177,6 +222,17 @@ class ContextVK final : public Context,
   /// disabled, even if the device is capable of supporting it.
   bool GetShouldDisableSurfaceControlSwapchain() const;
 
+  // | Context |
+  bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) override;
+
+  // | Context |
+  bool FlushCommandBuffers() override;
+
+  std::shared_ptr<const IdleWaiter> GetIdleWaiter() const override {
+    return idle_waiter_vk_;
+  }
+
  private:
   struct DeviceHolderImpl : public DeviceHolderVK {
     // |DeviceHolder|
@@ -186,9 +242,17 @@ class ContextVK final : public Context,
       return physical_device;
     }
 
+    ~DeviceHolderImpl() {
+      if (!owned) {
+        instance.release();
+        device.release();
+      }
+    }
+
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;
     vk::UniqueDevice device;
+    bool owned = true;
   };
 
   std::shared_ptr<DeviceHolderImpl> device_holder_;
@@ -203,13 +267,23 @@ class ContextVK final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<ResourceManagerVK> resource_manager_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
-  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
+  std::shared_ptr<const IdleWaiter> idle_waiter_vk_;
+
+  using DescriptorPoolMap =
+      std::unordered_map<std::thread::id, std::shared_ptr<DescriptorPoolVK>>;
+
+  mutable Mutex desc_pool_mutex_;
+  mutable DescriptorPoolMap IPLR_GUARDED_BY(desc_pool_mutex_)
+      cached_descriptor_pool_;
   bool should_disable_surface_control_ = false;
+  bool should_batch_cmd_buffers_ = false;
+  std::vector<std::shared_ptr<CommandBuffer>> pending_command_buffers_;
 
   const uint64_t hash_;
 
@@ -218,9 +292,6 @@ class ContextVK final : public Context,
   ContextVK();
 
   void Setup(Settings settings);
-
-  std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
-      const;
 
   ContextVK(const ContextVK&) = delete;
 

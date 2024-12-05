@@ -7,17 +7,14 @@
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_source.h"
 #include "display_list/effects/dl_mask_filter.h"
-#include "flutter/impeller/aiks/aiks_unittests.h"
-
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/impeller/display_list/aiks_unittests.h"
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/stb/text_frame_stb.h"
-#include "impeller/typographer/backends/stb/typeface_stb.h"
-#include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 
@@ -32,6 +29,7 @@ namespace testing {
 struct TextRenderOptions {
   bool stroke = false;
   Scalar font_size = 50;
+  Scalar stroke_width = 1;
   DlColor color = DlColor::kYellow();
   SkPoint position = SkPoint::Make(100, 200);
   std::shared_ptr<DlMaskFilter> filter;
@@ -72,43 +70,9 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   DlPaint text_paint;
   text_paint.setColor(options.color);
   text_paint.setMaskFilter(options.filter);
-  text_paint.setStrokeWidth(1);
+  text_paint.setStrokeWidth(options.stroke_width);
   text_paint.setDrawStyle(options.stroke ? DlDrawStyle::kStroke
                                          : DlDrawStyle::kFill);
-  canvas.DrawTextFrame(frame, options.position.x(), options.position.y(),
-                       text_paint);
-  return true;
-}
-
-bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
-                           DisplayListBuilder& canvas,
-                           const std::string& text,
-                           const std::string& font_fixture,
-                           const TextRenderOptions& options = {}) {
-  // Draw the baseline.
-  DlPaint paint;
-  paint.setColor(DlColor::kAqua().withAlpha(255 * 0.25));
-  canvas.DrawRect(SkRect::MakeXYWH(options.position.x() - 50,
-                                   options.position.y(), 900, 10),
-                  paint);
-
-  // Mark the point at which the text is drawn.
-  paint.setColor(DlColor::kRed().withAlpha(255 * 0.25));
-  canvas.DrawCircle(options.position, 5.0, paint);
-
-  // Construct the text blob.
-  auto mapping = flutter::testing::OpenFixtureAsMapping(font_fixture.c_str());
-  if (!mapping) {
-    return false;
-  }
-  auto typeface_stb = std::make_shared<TypefaceSTB>(std::move(mapping));
-
-  auto frame = MakeTextFrameSTB(
-      typeface_stb, Font::Metrics{.point_size = options.font_size}, text);
-
-  DlPaint text_paint;
-  text_paint.setColor(options.color);
-
   canvas.DrawTextFrame(frame, options.position.x(), options.position.y(),
                        text_paint);
   return true;
@@ -159,6 +123,22 @@ TEST_P(AiksTest, CanRenderStrokedTextFrame) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, CanRenderTextStrokeWidth) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
+  builder.DrawPaint(paint);
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), builder, "LMNOP VWXYZ",
+                                     "Roboto-Medium.ttf",
+                                     {
+                                         .stroke = true,
+                                         .stroke_width = 4,
+                                     }));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
   DisplayListBuilder builder;
 
@@ -184,21 +164,6 @@ TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
-TEST_P(AiksTest, CanRenderTextFrameSTB) {
-  DisplayListBuilder builder;
-
-  DlPaint paint;
-  paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
-  builder.DrawPaint(paint);
-
-  ASSERT_TRUE(RenderTextInCanvasSTB(
-      GetContext(), builder, "the quick brown fox jumped over the lazy dog!.?",
-      "Roboto-Regular.ttf"));
-
-  SetTypographerContext(TypographerContextSTB::Make());
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -283,6 +248,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 TEST_P(AiksTest, CanRenderEmojiTextFrameWithBlur) {
   DisplayListBuilder builder;
 
+  builder.Scale(GetContentScale().x, GetContentScale().y);
   DlPaint paint;
   paint.setColor(DlColor::ARGB(1, 0.1, 0.1, 0.1));
   builder.DrawPaint(paint);
@@ -452,6 +418,30 @@ TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, CanRenderTextWithPerspectiveTransformInSublist) {
+  DisplayListBuilder text_builder;
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), text_builder, "Hello world",
+                                     "Roboto-Regular.ttf"));
+  auto text_display_list = text_builder.Build();
+
+  DisplayListBuilder builder;
+
+  Matrix matrix = Matrix::MakeRow(2.0, 0.0, 0.0, 0.0,  //
+                                  0.0, 2.0, 0.0, 0.0,  //
+                                  0.0, 0.0, 1.0, 0.0,  //
+                                  0.0, 0.002, 0.0, 1.0);
+
+  DlPaint save_paint;
+  SkRect window_bounds =
+      SkRect::MakeXYWH(0, 0, GetWindowSize().width, GetWindowSize().height);
+  builder.SaveLayer(&window_bounds, &save_paint);
+  builder.Transform(SkM44::ColMajor(matrix.m));
+  builder.DrawDisplayList(text_display_list, 1.0f);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 // This currently renders solid blue, as the support for text color sources was
 // moved into DLDispatching. Path data requires the SkTextBlobs which are not
 // used in impeller::TextFrames.
@@ -473,8 +463,8 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
       1.0,
   };
   text_paint.setColorSource(DlColorSource::MakeLinear(
-      /*start_point=*/{0, 0},            //
-      /*end_point=*/{100, 100},          //
+      /*start_point=*/DlPoint(0, 0),     //
+      /*end_point=*/DlPoint(100, 100),   //
       /*stop_count=*/2,                  //
       /*colors=*/colors.data(),          //
       /*stops=*/stops.data(),            //
@@ -489,6 +479,82 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
   ASSERT_NE(blob, nullptr);
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
   builder.DrawTextFrame(frame, 0, 0, text_paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/157885.
+TEST_P(AiksTest, DifferenceClipsMustRenderIdenticallyAcrossBackends) {
+  DisplayListBuilder builder;
+
+  DlPaint paint;
+  DlColor clear_color(1.0, 0.5, 0.5, 0.5, DlColorSpace::kSRGB);
+  paint.setColor(clear_color);
+  builder.DrawPaint(paint);
+
+  DlMatrix identity = {
+      1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+  };
+  builder.Save();
+  builder.Transform(identity);
+
+  DlRect frame = DlRect::MakeLTRB(1.0, 1.0, 1278.0, 763.0);
+  DlColor white(1.0, 1.0, 1.0, 1.0, DlColorSpace::kSRGB);
+  paint.setColor(white);
+  builder.DrawRect(frame, paint);
+
+  builder.Save();
+  builder.ClipRect(frame, DlCanvas::ClipOp::kIntersect);
+
+  DlMatrix rect_xform = {
+      0.8241262, 0.56640625, 0.0, 0.0, -0.56640625, 0.8241262, 0.0, 0.0,
+      0.0,       0.0,        1.0, 0.0, 271.1137,    489.4733,  0.0, 1.0,
+  };
+  builder.Save();
+  builder.Transform(rect_xform);
+
+  DlRect rect = DlRect::MakeLTRB(0.0, 0.0, 100.0, 100.0);
+  DlColor bluish(1.0, 0.184, 0.501, 0.929, DlColorSpace::kSRGB);
+  paint.setColor(bluish);
+  DlRoundRect rrect = DlRoundRect::MakeRectRadius(rect, 18.0);
+  builder.DrawRoundRect(rrect, paint);
+
+  builder.Save();
+  builder.ClipRect(rect, DlCanvas::ClipOp::kIntersect);
+  builder.Restore();
+
+  builder.Restore();
+
+  DlMatrix path_xform = {
+      1.0, 0.0, 0.0, 0.0, 0.0,   1.0,   0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0, 675.0, 279.5, 0.0, 1.0,
+  };
+  builder.Save();
+  builder.Transform(path_xform);
+
+  SkPath path;
+  path.moveTo(87.5, 349.5);
+  path.lineTo(25.0, 29.5);
+  path.lineTo(150.0, 118.0);
+  path.lineTo(25.0, 118.0);
+  path.lineTo(150.0, 29.5);
+  path.close();
+
+  DlColor fill_color(1.0, 1.0, 0.0, 0.0, DlColorSpace::kSRGB);
+  DlColor stroke_color(1.0, 0.0, 0.0, 0.0, DlColorSpace::kSRGB);
+  paint.setColor(fill_color);
+  paint.setDrawStyle(DlDrawStyle::kFill);
+  builder.DrawPath(DlPath(path), paint);
+
+  paint.setColor(stroke_color);
+  paint.setStrokeWidth(2.0);
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  builder.DrawPath(path, paint);
+
+  builder.Restore();
+  builder.Restore();
+  builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

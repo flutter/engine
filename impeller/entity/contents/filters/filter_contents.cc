@@ -21,12 +21,14 @@
 #include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/morphology_filter_contents.h"
+#include "impeller/entity/contents/filters/runtime_effect_filter_contents.h"
 #include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 
@@ -39,7 +41,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_y,
     Entity::TileMode tile_mode,
     FilterContents::BlurStyle mask_blur_style,
-    const std::shared_ptr<Geometry>& mask_geometry) {
+    const Geometry* mask_geometry) {
   auto blur = std::make_shared<GaussianBlurFilterContents>(
       sigma_x.sigma, sigma_y.sigma, tile_mode, mask_blur_style, mask_geometry);
   blur->SetInputs({input});
@@ -111,6 +113,19 @@ std::shared_ptr<FilterContents> FilterContents::MakeYUVToRGBFilter(
   filter->SetInputs({impeller::FilterInput::Make(y_texture),
                      impeller::FilterInput::Make(uv_texture)});
   filter->SetYUVColorSpace(yuv_color_space);
+  return filter;
+}
+
+std::shared_ptr<FilterContents> FilterContents::MakeRuntimeEffect(
+    FilterInput::Ref input,
+    std::shared_ptr<RuntimeStage> runtime_stage,
+    std::shared_ptr<std::vector<uint8_t>> uniforms,
+    std::vector<RuntimeEffectContents::TextureInput> texture_inputs) {
+  auto filter = std::make_shared<impeller::RuntimeEffectFilterContents>();
+  filter->SetInputs({std::move(input)});
+  filter->SetRuntimeStage(std::move(runtime_stage));
+  filter->SetUniforms(std::move(uniforms));
+  filter->SetTextureInputs(std::move(texture_inputs));
   return filter;
 }
 
@@ -257,43 +272,12 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
   return std::nullopt;
 }
 
-const FilterContents* FilterContents::AsFilter() const {
-  return this;
-}
-
 Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
   return Matrix();
 }
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
-}
-bool FilterContents::IsTranslationOnly() const {
-  for (auto& input : inputs_) {
-    if (!input->IsTranslationOnly()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool FilterContents::IsLeaf() const {
-  for (auto& input : inputs_) {
-    if (!input->IsLeaf()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-void FilterContents::SetLeafInputs(const FilterInput::Vector& inputs) {
-  if (IsLeaf()) {
-    inputs_ = inputs;
-    return;
-  }
-  for (auto& input : inputs_) {
-    input->SetLeafInputs(inputs);
-  }
 }
 
 void FilterContents::SetRenderingMode(Entity::RenderingMode rendering_mode) {

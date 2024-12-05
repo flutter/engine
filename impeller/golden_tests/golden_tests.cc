@@ -12,7 +12,7 @@
 #include "display_list/dl_paint.h"
 #include "display_list/effects/dl_color_source.h"
 #include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
-#include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
 #include "impeller/golden_tests/golden_digest.h"
 #include "impeller/golden_tests/metal_screenshot.h"
@@ -82,7 +82,7 @@ TEST_F(GoldenTests, ConicalGradient) {
                                 flutter::DlColor::RGBA(0, 0, 1, 1)};
   Scalar stops[2] = {0, 1};
 
-  paint.setColorSource(flutter::DlConicalGradientColorSource::MakeConical(
+  paint.setColorSource(flutter::DlColorSource::MakeConical(
       /*start_center=*/{125, 125},               //
       /*start_radius=*/125, {180, 180},          //
       /*end_radius=*/0,                          //

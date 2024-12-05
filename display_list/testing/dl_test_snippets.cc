@@ -136,14 +136,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorSource",
        {
-           {0, 96, 0, [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
-           {0, 152, 0,
+           {0, 104, 0,
+            [](DlOpReceiver& r) { r.setColorSource(kTestSource1.get()); }},
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 160, 0,
+           {0, 184, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 152, 0,
+           {0, 176, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
 
            // Reset attribute to default as last entry
@@ -177,15 +178,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter2); }},
            {0, 24, 0,
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter3); }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter1);
             }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter2);
             }},
-           {0, 64, 0,
+           {0, 88, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter3);
             }},
@@ -209,7 +210,7 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) {
               r.setImageFilter(
                   kTestBlurImageFilter1
-                      .makeWithLocalMatrix(SkMatrix::Translate(2, 2))
+                      .makeWithLocalMatrix(DlMatrix::MakeTranslation({2, 2}))
                       .get());
             }},
 
@@ -219,26 +220,32 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
       {"SetColorFilter",
        {
            {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter1); }},
-           {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter2); }},
-           {0, 40, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter3); }},
-           {0, 96, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter1);
+              r.setColorFilter(kTestBlendColorFilter1.get());
+            }},
+           {0, 40, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestBlendColorFilter2.get());
+            }},
+           {0, 40, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestBlendColorFilter3.get());
             }},
            {0, 96, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter2);
+              r.setColorFilter(kTestMatrixColorFilter1.get());
+            }},
+           {0, 96, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestMatrixColorFilter2.get());
             }},
            {0, 16, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlSrgbToLinearGammaColorFilter::kInstance.get());
+              r.setColorFilter(DlColorFilter::MakeSrgbToLinearGamma().get());
             }},
            {0, 16, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlLinearToSrgbGammaColorFilter::kInstance.get());
+              r.setColorFilter(DlColorFilter::MakeLinearToSrgbGamma().get());
             }},
 
            // Reset attribute to default as last entry
@@ -327,7 +334,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -337,7 +344,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
@@ -347,7 +354,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -357,7 +364,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect(DlRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
-           {5, 136, 3,
+           {5, 152, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
@@ -484,26 +491,26 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
        }},
       {"ClipRRect",
        {
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, true);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect.makeOffset(1, 1),
-                          DlCanvas::ClipOp::kIntersect, true);
+              r.clipRoundRect(kTestRRect.Shift(1, 1),
+                              DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, false);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kIntersect, false);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, true);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kDifference, true);
             }},
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, false);
+              r.clipRoundRect(kTestRRect, DlCanvas::ClipOp::kDifference, false);
             }},
        }},
       {"ClipPath",
@@ -543,7 +550,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
               r.clipPath(kTestPathOval, DlCanvas::ClipOp::kIntersect, true);
             }},
            // clipPath(rrect) becomes clipRRect
-           {1, 64, 0,
+           {1, 56, 0,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPathRRect, DlCanvas::ClipOp::kIntersect, true);
             }},
@@ -681,18 +688,20 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawRRect",
        {
-           {1, 56, 1, [](DlOpReceiver& r) { r.drawRRect(kTestRRect); }},
+           {1, 56, 1, [](DlOpReceiver& r) { r.drawRoundRect(kTestRRect); }},
            {1, 56, 1,
-            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.makeOffset(5, 5)); }},
+            [](DlOpReceiver& r) { r.drawRoundRect(kTestRRect.Shift(5, 5)); }},
        }},
       {"DrawDRRect",
        {
-           {1, 112, 1,
-            [](DlOpReceiver& r) { r.drawDRRect(kTestRRect, kTestInnerRRect); }},
-           {1, 112, 1,
+           {1, 104, 1,
             [](DlOpReceiver& r) {
-              r.drawDRRect(kTestRRect.makeOffset(5, 5),
-                           kTestInnerRRect.makeOffset(4, 4));
+              r.drawDiffRoundRect(kTestRRect, kTestInnerRRect);
+            }},
+           {1, 104, 1,
+            [](DlOpReceiver& r) {
+              r.drawDiffRoundRect(kTestRRect.Shift(5, 5),
+                                  kTestInnerRRect.Shift(4, 4));
             }},
        }},
       {"DrawPath",

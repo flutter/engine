@@ -6,23 +6,20 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#include "fml/task_runner.h"
-#include "impeller/base/thread_safety.h"
-#include "third_party/skia/include/core/SkRect.h"
 
 #include <Metal/Metal.h>
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/impeller/base/thread_safety.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViewsController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/platform_views_controller.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
-
-@class FlutterTouchInterceptingView;
+#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 // A UIView that acts as a clipping mask for the |ChildClippingView|.
 //
@@ -137,8 +134,7 @@
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
 @interface FlutterTouchInterceptingView : UIView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-             platformViewsController:
-                 (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController
+             platformViewsController:(FlutterPlatformViewsController*)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
 
@@ -158,6 +154,45 @@
 @interface UIView (FirstResponder)
 // Returns YES if a view or any of its descendant view is the first responder. Returns NO otherwise.
 @property(nonatomic, readonly) BOOL flt_hasFirstResponderInViewHierarchySubtree;
+@end
+
+// This recognizer delays touch events from being dispatched to the responder chain until it failed
+// recognizing a gesture.
+//
+// We only fail this recognizer when asked to do so by the Flutter framework (which does so by
+// invoking an acceptGesture method on the platform_views channel). And this is how we allow the
+// Flutter framework to delay or prevent the embedded view from getting a touch sequence.
+@interface FlutterDelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+
+// Indicates that if the `FlutterDelayingGestureRecognizer`'s state should be set to
+// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
+@property(nonatomic) BOOL shouldEndInNextTouchesEnded;
+
+// Indicates that the `FlutterDelayingGestureRecognizer`'s `touchesEnded` has been invoked without
+// setting the state to `UIGestureRecognizerStateEnded`.
+@property(nonatomic) BOOL touchedEndedWithoutBlocking;
+
+@property(nonatomic) UIGestureRecognizer* forwardingRecognizer;
+
+- (instancetype)initWithTarget:(id)target
+                        action:(SEL)action
+          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
+@end
+
+// While the FlutterDelayingGestureRecognizer is preventing touches from hitting the responder chain
+// the touch events are not arriving to the FlutterView (and thus not arriving to the Flutter
+// framework). We use this gesture recognizer to dispatch the events directly to the FlutterView
+// while during this phase.
+//
+// If the Flutter framework decides to dispatch events to the embedded view, we fail the
+// FlutterDelayingGestureRecognizer which sends the events up the responder chain. But since the
+// events are handled by the embedded view they are not delivered to the Flutter framework in this
+// phase as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
+// directly to the FlutterView.
+@interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+- (instancetype)initWithTarget:(id)target
+       platformViewsController:(FlutterPlatformViewsController*)platformViewsController;
+- (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

@@ -6,6 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_GL_H_
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+
+#include "flutter/testing/test_gl_context.h"
 #include "flutter/testing/test_gl_surface.h"
 
 namespace flutter {
@@ -28,6 +30,18 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   // |EmbedderTestContext|
   EmbedderTestContextType GetContextType() const override;
 
+  // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
+  // cause your test to fail since the ctor for this class sets
+  // `open_gl.fbo_callback_with_frame_info`. This method exists as a utility to
+  // explicitly test this behavior.
+  void SetOpenGLFBOCallBack();
+
+  // Used to explicitly set an `open_gl.present`. Using this method will cause
+  // your test to fail since the ctor for this class sets
+  // `open_gl.present_with_info`. This method exists as a utility to explicitly
+  // test this behavior.
+  void SetOpenGLPresentCallBack();
+
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that will be invoked (on the raster task
   ///             runner) when the engine asks the embedder for a new FBO ID at
@@ -39,7 +53,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   /// @param[in]  callback  The callback to set. The previous callback will be
   ///                       un-registered.
   ///
-  void SetGLGetFBOCallback(GLGetFBOCallback callback);
+  void SetGLGetFBOCallback(const GLGetFBOCallback& callback);
 
   void SetGLPopulateExistingDamageCallback(
       GLPopulateExistingDamageCallback callback);
@@ -64,23 +78,20 @@ class EmbedderTestContextGL : public EmbedderTestContext {
 
   void* GLGetProcAddress(const char* name);
 
- protected:
-  virtual void SetupCompositor() override;
-
-  void SetupCompositorUsingGLSurfaces();
-
  private:
-  // This allows the builder to access the hooks.
-  friend class EmbedderConfigBuilder;
+  // |EmbedderTestContext|
+  void SetSurface(SkISize surface_size) override;
 
+  // |EmbedderTestContext|
+  void SetupCompositor() override;
+
+  std::shared_ptr<TestEGLContext> egl_context_;
   std::unique_ptr<TestGLSurface> gl_surface_;
   size_t gl_surface_present_count_ = 0;
   std::mutex gl_callback_mutex_;
   GLGetFBOCallback gl_get_fbo_callback_;
   GLPresentCallback gl_present_callback_;
   GLPopulateExistingDamageCallback gl_populate_existing_damage_callback_;
-
-  void SetupSurface(SkISize surface_size) override;
 
   bool GLMakeCurrent();
 

@@ -164,6 +164,9 @@ typedef enum {
   kFlutterSemanticsActionSetText = 1 << 21,
   /// Request that the respective focusable widget gain input focus.
   kFlutterSemanticsActionFocus = 1 << 22,
+  /// Request that scrolls the current scrollable container to a given scroll
+  /// offset.
+  kFlutterSemanticsActionScrollToOffset = 1 << 23,
 } FlutterSemanticsAction;
 
 /// The set of properties that may be associated with a semantics node.
@@ -243,6 +246,9 @@ typedef enum {
   kFlutterSemanticsFlagHasExpandedState = 1 << 26,
   /// Whether a semantic node that hasExpandedState is currently expanded.
   kFlutterSemanticsFlagIsExpanded = 1 << 27,
+  /// The semantics node has the quality of either being "selected" or
+  /// "not selected".
+  kFlutterSemanticsFlagHasSelectedState = 1 << 28,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -1648,6 +1654,8 @@ typedef struct {
   /// A unique identifier for the task runner. If multiple task runners service
   /// tasks on the same thread, their identifiers must match.
   size_t identifier;
+  /// The callback invoked when the task runner is destroyed.
+  VoidCallback destruction_callback;
 } FlutterTaskRunnerDescription;
 
 typedef struct {

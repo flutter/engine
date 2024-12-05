@@ -93,6 +93,19 @@ class ContextGLES final : public Context,
   // |Context|
   void Shutdown() override;
 
+  // |Context|
+  bool AddTrackingFence(const std::shared_ptr<Texture>& texture) const override;
+
+  // |Context|
+  void ResetThreadLocalState() const override;
+
+  // |Context|
+  [[nodiscard]] bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) override;
+
+  // |Context|
+  [[nodiscard]] bool FlushCommandBuffers() override;
+
   ContextGLES(const ContextGLES&) = delete;
 
   ContextGLES& operator=(const ContextGLES&) = delete;

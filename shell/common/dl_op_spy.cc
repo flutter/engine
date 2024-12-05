@@ -11,6 +11,7 @@ bool DlOpSpy::did_draw() {
 }
 
 void DlOpSpy::setColor(DlColor color) {
+  color_ = color;
   if (color.isTransparent()) {
     will_draw_ = false;
   } else {
@@ -19,11 +20,8 @@ void DlOpSpy::setColor(DlColor color) {
 }
 void DlOpSpy::setColorSource(const DlColorSource* source) {
   if (!source) {
-    return;
-  }
-  const DlColorColorSource* color_source = source->asColor();
-  if (color_source && color_source->color().isTransparent()) {
-    will_draw_ = false;
+    // Restore settings based on previously set color
+    setColor(color_);
     return;
   }
   will_draw_ = true;
@@ -31,7 +29,8 @@ void DlOpSpy::setColorSource(const DlColorSource* source) {
 void DlOpSpy::save() {}
 void DlOpSpy::saveLayer(const DlRect& bounds,
                         const SaveLayerOptions options,
-                        const DlImageFilter* backdrop) {}
+                        const DlImageFilter* backdrop,
+                        std::optional<int64_t> backdrop_id) {}
 void DlOpSpy::restore() {}
 void DlOpSpy::drawColor(DlColor color, DlBlendMode mode) {
   did_draw_ |= !color.isTransparent();
@@ -59,10 +58,11 @@ void DlOpSpy::drawOval(const DlRect& bounds) {
 void DlOpSpy::drawCircle(const DlPoint& center, DlScalar radius) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawRRect(const SkRRect& rrect) {
+void DlOpSpy::drawRoundRect(const DlRoundRect& rrect) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
+void DlOpSpy::drawDiffRoundRect(const DlRoundRect& outer,
+                                const DlRoundRect& inner) {
   did_draw_ |= will_draw_;
 }
 void DlOpSpy::drawPath(const DlPath& path) {

@@ -987,8 +987,8 @@ final List<SkTileMode> _skTileModes = <SkTileMode>[
   canvasKit.TileMode.Decal,
 ];
 
-SkTileMode toSkTileMode(ui.TileMode mode) {
-  return _skTileModes[mode.index];
+SkTileMode toSkTileMode(ui.TileMode? mode) {
+  return mode == null ? canvasKit.TileMode.Clamp : _skTileModes[mode.index];
 }
 
 @JS()
@@ -2579,13 +2579,15 @@ extension SkCanvasExtension on SkCanvas {
     JSFloat32Array? bounds,
     SkImageFilter? backdrop,
     JSNumber? flags,
+    SkTileMode backdropTileMode,
   );
   void saveLayer(
     SkPaint? paint,
     Float32List? bounds,
     SkImageFilter? backdrop,
     int? flags,
-  ) => _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS);
+    SkTileMode backdropTileMode,
+  ) => _saveLayer(paint, bounds?.toJS, backdrop, flags?.toJS, backdropTileMode);
 
   external JSVoid restore();
 
@@ -2625,6 +2627,10 @@ extension SkCanvasExtension on SkCanvas {
   external JSAny _getLocalToDevice();
   List<dynamic> getLocalToDevice() => _getLocalToDevice().toObjectShallow as
       List<dynamic>;
+
+  @JS('quickReject')
+  external JSBoolean _quickReject(JSFloat32Array rect);
+  bool quickReject(Float32List rect) => _quickReject(rect.toJS).toDart;
 
   external JSVoid drawPicture(SkPicture picture);
 

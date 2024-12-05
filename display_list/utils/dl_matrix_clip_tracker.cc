@@ -92,11 +92,11 @@ void DisplayListMatrixClipState::clipOval(const DlRect& bounds,
   }
 }
 
-void DisplayListMatrixClipState::clipRRect(const SkRRect& rrect,
+void DisplayListMatrixClipState::clipRRect(const DlRoundRect& rrect,
                                            ClipOp op,
                                            bool is_aa) {
-  DlRect bounds = ToDlRect(rrect.getBounds());
-  if (rrect.isRect()) {
+  DlRect bounds = rrect.GetBounds();
+  if (rrect.IsRect()) {
     return clipRect(bounds, op, is_aa);
   }
   switch (op) {
@@ -108,27 +108,26 @@ void DisplayListMatrixClipState::clipRRect(const SkRRect& rrect,
         cull_rect_ = DlRect();
         return;
       }
-      auto upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
-      auto upper_right = rrect.radii(SkRRect::kUpperRight_Corner);
-      auto lower_left = rrect.radii(SkRRect::kLowerLeft_Corner);
-      auto lower_right = rrect.radii(SkRRect::kLowerRight_Corner);
-      DlRect safe = bounds.Expand(-std::max(upper_left.fX, lower_left.fX), 0,
-                                  -std::max(upper_right.fX, lower_right.fX), 0);
+      auto radii = rrect.GetRadii();
+      DlRect safe = bounds.Expand(
+          -std::max(radii.top_left.width, radii.bottom_left.width), 0,
+          -std::max(radii.top_right.width, radii.bottom_right.width), 0);
       adjustCullRect(safe, op, is_aa);
-      safe = bounds.Expand(0, -std::max(upper_left.fY, upper_right.fY),  //
-                           0, -std::max(lower_left.fY, lower_right.fY));
+      safe = bounds.Expand(
+          0, -std::max(radii.top_left.height, radii.top_right.height),  //
+          0, -std::max(radii.bottom_left.height, radii.bottom_right.height));
       adjustCullRect(safe, op, is_aa);
       break;
     }
   }
 }
 
-void DisplayListMatrixClipState::clipPath(const SkPath& path,
+void DisplayListMatrixClipState::clipPath(const DlPath& path,
                                           ClipOp op,
                                           bool is_aa) {
   // Map "kDifference of inverse path" to "kIntersect of the original path" and
   // map "kIntersect of inverse path" to "kDifference of the original path"
-  if (path.isInverseFillType()) {
+  if (path.IsInverseFillType()) {
     switch (op) {
       case ClipOp::kIntersect:
         op = ClipOp::kDifference;
@@ -139,8 +138,8 @@ void DisplayListMatrixClipState::clipPath(const SkPath& path,
     }
   }
 
-  DlRect bounds = ToDlRect(path.getBounds());
-  if (path.isRect(nullptr)) {
+  DlRect bounds = path.GetBounds();
+  if (path.IsRect(nullptr)) {
     return clipRect(bounds, op, is_aa);
   }
   switch (op) {
@@ -231,12 +230,12 @@ void DisplayListMatrixClipState::adjustCullRect(const DlRect& clip,
   }
 }
 
-SkRect DisplayListMatrixClipState::local_cull_rect() const {
+DlRect DisplayListMatrixClipState::GetLocalCullCoverage() const {
   if (cull_rect_.IsEmpty()) {
-    return SkRect::MakeEmpty();
+    return DlRect();
   }
   if (!is_matrix_invertable()) {
-    return SkRect::MakeEmpty();
+    return DlRect();
   }
   if (matrix_.HasPerspective2D()) {
     // We could do a 4-point long-form conversion, but since this is
@@ -247,7 +246,7 @@ SkRect DisplayListMatrixClipState::local_cull_rect() const {
   DlMatrix inverse = matrix_.Invert();
   // We eliminated perspective above so we can use the cheaper non-clipping
   // bounds transform method.
-  return ToSkRect(cull_rect_.TransformBounds(inverse));
+  return cull_rect_.TransformBounds(inverse);
 }
 
 bool DisplayListMatrixClipState::rect_covers_cull(const DlRect& content) const {
@@ -300,46 +299,39 @@ bool DisplayListMatrixClipState::oval_covers_cull(const DlRect& bounds) const {
 }
 
 bool DisplayListMatrixClipState::rrect_covers_cull(
-    const SkRRect& content) const {
-  if (content.isEmpty()) {
+    const DlRoundRect& content) const {
+  if (content.IsEmpty()) {
     return false;
   }
   if (cull_rect_.IsEmpty()) {
     return true;
   }
-  if (content.isRect()) {
-    return rect_covers_cull(content.getBounds());
+  if (content.IsRect()) {
+    return rect_covers_cull(content.GetBounds());
   }
-  if (content.isOval()) {
-    return oval_covers_cull(content.getBounds());
+  if (content.IsOval()) {
+    return oval_covers_cull(content.GetBounds());
   }
-  if (!content.isSimple()) {
+  if (!content.GetRadii().AreAllCornersSame()) {
     return false;
   }
   DlPoint corners[4];
   if (!getLocalCullCorners(corners)) {
     return false;
   }
-  auto outer = content.getBounds();
-  DlScalar x_center = outer.centerX();
-  DlScalar y_center = outer.centerY();
-  auto radii = content.getSimpleRadii();
-  DlScalar inner_x = outer.width() * 0.5f - radii.fX;
-  DlScalar inner_y = outer.height() * 0.5f - radii.fY;
-  DlScalar scale_x = 1.0 / radii.fX;
-  DlScalar scale_y = 1.0 / radii.fY;
+  auto outer = content.GetBounds();
+  auto center = outer.GetCenter();
+  auto radii = content.GetRadii().top_left;
+  auto inner = outer.GetSize() * 0.5 - radii;
+  auto scale = 1.0 / radii;
   for (auto corner : corners) {
-    if (!outer.contains(corner.x, corner.y)) {
+    if (!outer.Contains(corner)) {
       return false;
     }
-    DlScalar x_rel = std::abs(corner.x - x_center) - inner_x;
-    DlScalar y_rel = std::abs(corner.y - y_center) - inner_y;
-    if (x_rel > 0.0f && y_rel > 0.0f) {
-      x_rel *= scale_x;
-      y_rel *= scale_y;
-      if (x_rel * x_rel + y_rel * y_rel >= 1.0f) {
-        return false;
-      }
+    auto rel = (corner - center).Abs() - inner;
+    if (rel.x > 0.0f && rel.y > 0.0f &&
+        (rel * scale).GetLengthSquared() >= 1.0f) {
+      return false;
     }
   }
   return true;

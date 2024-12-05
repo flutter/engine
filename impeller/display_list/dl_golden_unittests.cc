@@ -78,11 +78,13 @@ TEST_P(DlGoldenTest, Bug147807) {
           SkRRect::MakeOval(SkRect::MakeLTRB(201.25, 10, 361.25, 170)),
           DlCanvas::ClipOp::kIntersect, true);
       SkRect save_layer_bounds = SkRect::MakeLTRB(201.25, 10, 361.25, 170);
-      DlMatrixImageFilter backdrop(SkMatrix::MakeAll(3, 0, -280,  //
-                                                     0, 3, -920,  //
-                                                     0, 0, 1),
-                                   DlImageSampling::kLinear);
-      canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, &backdrop);
+      auto backdrop =
+          DlImageFilter::MakeMatrix(DlMatrix::MakeRow(3, 0, 0.0, -280,  //
+                                                      0, 3, 0.0, -920,  //
+                                                      0, 0, 1.0, 0.0,   //
+                                                      0, 0, 0.0, 1.0),
+                                    DlImageSampling::kLinear);
+      canvas->SaveLayer(&save_layer_bounds, /*paint=*/nullptr, backdrop.get());
       {
         canvas->Translate(201.25, 10);
         auto paint = DlPaint()

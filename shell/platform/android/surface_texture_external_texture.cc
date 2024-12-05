@@ -52,7 +52,10 @@ void SurfaceTextureExternalTexture::Paint(PaintContext& context,
   if (should_process_frame) {
     ProcessFrame(context, bounds);
   }
-  FML_CHECK(state_ == AttachmentState::kAttached);
+  // If process frame failed, this may not be in attached state.
+  if (state_ != AttachmentState::kAttached) {
+    return;
+  }
 
   if (!dl_image_) {
     FML_LOG(WARNING)
@@ -67,7 +70,7 @@ void SurfaceTextureExternalTexture::DrawFrame(
     PaintContext& context,
     const SkRect& bounds,
     const DlImageSampling sampling) const {
-  auto transform = GetCurrentUVTransformation().asM33();
+  auto transform = ToDlMatrix(GetCurrentUVTransformation());
 
   // Android's SurfaceTexture transform matrix works on texture coordinate
   // lookups in the range 0.0-1.0, while Skia's Shader transform matrix works on
@@ -76,17 +79,17 @@ void SurfaceTextureExternalTexture::DrawFrame(
   // texture) is the same as a Skia transform by 2.0 (scaling 50% of the image
   // outside of the virtual "clip rect"), so we invert the incoming matrix.
 
-  SkMatrix inverted;
-  if (!transform.invert(&inverted)) {
+  if (transform.IsIdentity()) {
+    context.canvas->DrawImage(dl_image_, SkPoint{0, 0}, sampling,
+                              context.paint);
+    return;
+  }
+
+  if (!transform.IsInvertible()) {
     FML_LOG(FATAL)
         << "Invalid (not invertable) SurfaceTexture transformation matrix";
   }
-  transform = inverted;
-
-  if (transform.isIdentity()) {
-    context.canvas->DrawImage(dl_image_, {0, 0}, sampling, context.paint);
-    return;
-  }
+  transform = transform.Invert();
 
   DlAutoCanvasRestore autoRestore(context.canvas, true);
 
@@ -96,14 +99,14 @@ void SurfaceTextureExternalTexture::DrawFrame(
   context.canvas->Translate(bounds.x(), bounds.y() + bounds.height());
   context.canvas->Scale(bounds.width(), -bounds.height());
 
-  DlImageColorSource source(dl_image_, DlTileMode::kClamp, DlTileMode::kClamp,
-                            sampling, &transform);
+  auto source = DlColorSource::MakeImage(
+      dl_image_, DlTileMode::kClamp, DlTileMode::kClamp, sampling, &transform);
 
   DlPaint paintWithShader;
   if (context.paint) {
     paintWithShader = *context.paint;
   }
-  paintWithShader.setColorSource(&source);
+  paintWithShader.setColorSource(source);
   context.canvas->DrawRect(SkRect::MakeWH(1, 1), paintWithShader);
 }
 

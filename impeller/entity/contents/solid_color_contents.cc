@@ -7,7 +7,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/geometry/path.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -38,7 +37,7 @@ std::optional<Rect> SolidColorContents::GetCoverage(
     return std::nullopt;
   }
 
-  const std::shared_ptr<Geometry>& geometry = GetGeometry();
+  const Geometry* geometry = GetGeometry();
   if (geometry == nullptr) {
     return std::nullopt;
   }
@@ -68,14 +67,6 @@ bool SolidColorContents::Render(const ContentContext& renderer,
         pass.SetCommandLabel("Solid Fill");
         return true;
       });
-}
-
-std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
-                                                             Color color) {
-  auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
-  contents->SetColor(color);
-  return contents;
 }
 
 std::optional<Color> SolidColorContents::AsBackgroundColor(

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -36,7 +37,10 @@ class NoopOperation implements LayerOperation {
   }
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'NoopOperation()';
 }
 
 class BackdropFilterLayer
@@ -72,10 +76,11 @@ class BackdropFilterOperation implements LayerOperation {
   @override
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 
-  // The backdrop filter actually has an effect on the scene even if it contains
-  // no pictures, so we return true here.
   @override
-  bool get shouldDrawIfEmpty => true;
+  bool get affectsBackdrop => true;
+
+  @override
+  String toString() => 'BackdropFilterOperation(filter: $filter, mode: $mode)';
 }
 
 class ClipPathLayer
@@ -121,7 +126,10 @@ class ClipPathOperation implements LayerOperation {
   }
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ClipPathOperation(path: $path, clip: $clip)';
 }
 
 class ClipRectLayer
@@ -167,7 +175,10 @@ class ClipRectOperation implements LayerOperation {
   }
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ClipRectOperation(rect: $rect, clip: $clip)';
 }
 
 class ClipRRectLayer
@@ -213,7 +224,10 @@ class ClipRRectOperation implements LayerOperation {
   }
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ClipRRectOperation(rrect: $rrect, clip: $clip)';
 }
 
 class ColorFilterLayer
@@ -249,7 +263,10 @@ class ColorFilterOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ColorFilterOperation(filter: $filter)';
 }
 
 class ImageFilterLayer
@@ -310,7 +327,10 @@ class ImageFilterOperation implements LayerOperation {
   }
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ImageFilterOperation(filter: $filter)';
 }
 
 class OffsetLayer
@@ -350,7 +370,10 @@ class OffsetOperation implements LayerOperation {
   );
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'OffsetOperation(dx: $dx, dy: $dy)';
 }
 
 class OpacityLayer
@@ -400,7 +423,10 @@ class OpacityOperation implements LayerOperation {
   );
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'OpacityOperation(offset: $offset, alpha: $alpha)';
 }
 
 class TransformLayer
@@ -442,7 +468,10 @@ class TransformOperation implements LayerOperation {
   );
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'TransformOperation(matrix: $matrix)';
 }
 
 class ShaderMaskLayer
@@ -492,7 +521,10 @@ class ShaderMaskOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 
   @override
-  bool get shouldDrawIfEmpty => false;
+  bool get affectsBackdrop => false;
+
+  @override
+  String toString() => 'ShaderMaskOperation(shader: $shader, maskRect: $maskRect, blendMode: $blendMode)';
 }
 
 class PlatformView {
@@ -543,6 +575,22 @@ mixin PictureEngineLayer implements ui.EngineLayer {
       slice?.dispose();
     }
   }
+
+  @override
+  String toString() {
+    return 'PictureEngineLayer($operation)';
+  }
+
+  bool get isSimple {
+    if (slices.length > 1) {
+      return false;
+    }
+    final LayerSlice? singleSlice = slices.firstOrNull;
+    if (singleSlice == null || singleSlice.platformViews.isEmpty) {
+      return true;
+    }
+    return false;
+  }
 }
 
 abstract class LayerOperation {
@@ -561,7 +609,7 @@ abstract class LayerOperation {
   /// Indicates whether this operation's `pre` and `post` methods should be
   /// invoked even if it contains no pictures. (Most operations don't need to
   /// actually be performed at all if they don't contain any pictures.)
-  bool get shouldDrawIfEmpty;
+  bool get affectsBackdrop;
 }
 
 sealed class LayerDrawCommand {
@@ -697,7 +745,7 @@ class PlatformViewStyling {
   final PlatformViewClip clip;
 
   ui.Rect mapLocalToGlobal(ui.Rect rect) {
-    return position.mapLocalToGlobal(rect).intersect(clip.outerRect);
+    return position.mapLocalToGlobal(rect.intersect(clip.outerRect));
   }
 
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
@@ -924,23 +972,50 @@ class PlatformViewPathClip implements PlatformViewClip {
 }
 
 class LayerSliceBuilder {
-  factory LayerSliceBuilder() {
-    final (recorder, canvas) = debugRecorderFactory != null ? debugRecorderFactory!() : defaultRecorderFactory();
-    return LayerSliceBuilder._(recorder, canvas);
-  }
-  LayerSliceBuilder._(this.recorder, this.canvas);
-
   @visibleForTesting
-  static (ui.PictureRecorder, SceneCanvas) Function()? debugRecorderFactory;
+  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)? debugRecorderFactory;
 
-  static (ui.PictureRecorder, SceneCanvas) defaultRecorderFactory() {
+  static (ui.PictureRecorder, SceneCanvas) defaultRecorderFactory(ui.Rect rect) {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final SceneCanvas canvas = ui.Canvas(recorder, ui.Rect.largest) as SceneCanvas;
+    final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
     return (recorder, canvas);
   }
 
-  final ui.PictureRecorder recorder;
-  final SceneCanvas canvas;
+  void addPicture(ui.Offset offset, ScenePicture picture) {
+    pictures.add((picture, offset));
+    final ui.Rect pictureRect = picture.cullRect.shift(offset);
+    cullRect = cullRect?.expandToInclude(pictureRect) ?? pictureRect;
+  }
+
+  (ui.PictureRecorder, SceneCanvas) createRecorder(ui.Rect rect) =>
+    debugRecorderFactory != null ? debugRecorderFactory!(rect) : defaultRecorderFactory(rect);
+
+  LayerSlice buildWithOperation(LayerOperation operation, ui.Rect? backdropRect) {
+    final ui.Rect effectiveRect;
+    if (backdropRect != null && cullRect != null) {
+      effectiveRect = cullRect!.expandToInclude(backdropRect);
+    } else {
+      effectiveRect = backdropRect ?? cullRect ?? ui.Rect.zero;
+    }
+    final (recorder, canvas) = createRecorder(operation.mapRect(effectiveRect));
+    operation.pre(canvas);
+    for (final (picture, offset) in pictures) {
+      if (offset != ui.Offset.zero) {
+        canvas.save();
+        canvas.translate(offset.dx, offset.dy);
+        canvas.drawPicture(picture);
+        canvas.restore();
+      } else {
+        canvas.drawPicture(picture);
+      }
+    }
+    operation.post(canvas);
+    final ui.Picture picture = recorder.endRecording();
+    return LayerSlice(picture as ScenePicture, platformViews);
+  }
+
+  final List<(ScenePicture, ui.Offset)> pictures = [];
+  ui.Rect? cullRect;
   final List<PlatformView> platformViews = <PlatformView>[];
 }
 
@@ -965,6 +1040,28 @@ class LayerBuilder {
 
   final List<LayerSliceBuilder?> sliceBuilders = <LayerSliceBuilder?>[];
   final List<LayerDrawCommand> drawCommands = <LayerDrawCommand>[];
+
+  ui.Rect? getCurrentBackdropRectAtSliceIndex(int index) {
+    final parentRect = parent?.getCurrentBackdropRectAtSliceIndex(index);
+    final sliceBuilder = index < sliceBuilders.length ? sliceBuilders[index] : null;
+    final sliceRect = sliceBuilder?.cullRect;
+    final ui.Rect? combinedRect;
+    if (sliceRect != null && parentRect != null) {
+      combinedRect = parentRect.expandToInclude(sliceRect);
+    } else {
+      combinedRect = parentRect ?? sliceRect;
+    }
+    return combinedRect == null ? null : layer.operation.mapRect(combinedRect);
+  }
+
+  int getCurrentSliceCount() {
+    final parentSliceCount = parent?.getCurrentSliceCount();
+    if (parentSliceCount != null) {
+      return math.max(parentSliceCount, sliceBuilders.length);
+    } else {
+      return sliceBuilders.length;
+    }
+  }
 
   PlatformViewStyling? _memoizedPlatformViewStyling;
   PlatformViewStyling get platformViewStyling {
@@ -991,7 +1088,6 @@ class LayerBuilder {
       return existingSliceBuilder;
     }
     final LayerSliceBuilder newSliceBuilder = LayerSliceBuilder();
-    layer.operation.pre(newSliceBuilder.canvas);
     sliceBuilders[index] = newSliceBuilder;
     return newSliceBuilder;
   }
@@ -1002,16 +1098,8 @@ class LayerBuilder {
       required int sliceIndex,
   }) {
     final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(sliceIndex);
-    final SceneCanvas canvas = sliceBuilder.canvas;
-    if (offset != ui.Offset.zero) {
-      canvas.save();
-      canvas.translate(offset.dx, offset.dy);
-      canvas.drawPicture(picture);
-      canvas.restore();
-    } else {
-      canvas.drawPicture(picture);
-    }
-    drawCommands.add(PictureDrawCommand(offset, picture as ScenePicture, sliceIndex));
+    sliceBuilder.addPicture(offset, picture as ScenePicture);
+    drawCommands.add(PictureDrawCommand(offset, picture, sliceIndex));
   }
 
   void addPlatformView(
@@ -1029,7 +1117,7 @@ class LayerBuilder {
       final LayerSlice? slice = layer.slices[i];
       if (slice != null) {
         final LayerSliceBuilder sliceBuilder = getOrCreateSliceBuilderAtIndex(i);
-        sliceBuilder.canvas.drawPicture(slice.picture);
+        sliceBuilder.addPicture(ui.Offset.zero, slice.picture);
         sliceBuilder.platformViews.addAll(slice.platformViews.map((PlatformView view) {
           return PlatformView(view.viewId, view.bounds, PlatformViewStyling.combine(platformViewStyling, view.styling));
         }));
@@ -1039,14 +1127,23 @@ class LayerBuilder {
   }
 
   PictureEngineLayer sliceUp() {
-    final List<LayerSlice?> slices = sliceBuilders.map((LayerSliceBuilder? builder) {
-      if (builder == null) {
-        return null;
+    final int sliceCount = layer.operation.affectsBackdrop ? getCurrentSliceCount() : sliceBuilders.length;
+    final slices = <LayerSlice?>[];
+    for (int i = 0; i < sliceCount; i++) {
+      final ui.Rect? backdropRect;
+      if (layer.operation.affectsBackdrop) {
+        backdropRect = getCurrentBackdropRectAtSliceIndex(i);
+      } else {
+        backdropRect = null;
       }
-      layer.operation.post(builder.canvas);
-      final ScenePicture picture = builder.recorder.endRecording() as ScenePicture;
-      return LayerSlice(picture, builder.platformViews);
-    }).toList();
+      final LayerSliceBuilder? builder;
+      if (backdropRect != null) {
+        builder = getOrCreateSliceBuilderAtIndex(i);
+      } else {
+        builder = i < sliceBuilders.length ? sliceBuilders[i] : null;
+      }
+      slices.add(builder?.buildWithOperation(layer.operation, backdropRect));
+    }
     layer.slices = slices;
     return layer;
   }

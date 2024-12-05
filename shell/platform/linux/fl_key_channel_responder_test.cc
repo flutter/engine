@@ -7,93 +7,81 @@
 #include "gtest/gtest.h"
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
-#include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/testing/fl_test.h"
+#include "flutter/shell/platform/linux/testing/fl_mock_binary_messenger.h"
 
-static const char* expected_value = nullptr;
-static gboolean expected_handled = FALSE;
+typedef struct {
+  const gchar* expected_message;
+  gboolean handled;
+} KeyEventData;
 
-static FlValue* echo_response_cb(FlValue* echoed_value) {
-  gchar* text = fl_value_to_string(echoed_value);
-  EXPECT_STREQ(text, expected_value);
-  g_free(text);
+static FlValue* key_event_cb(FlMockBinaryMessenger* messenger,
+                             FlValue* message,
+                             gpointer user_data) {
+  KeyEventData* data = static_cast<KeyEventData*>(user_data);
 
-  FlValue* value = fl_value_new_map();
-  fl_value_set_string_take(value, "handled",
-                           fl_value_new_bool(expected_handled));
-  return value;
+  g_autofree gchar* message_string = fl_value_to_string(message);
+  EXPECT_STREQ(message_string, data->expected_message);
+
+  FlValue* response = fl_value_new_map();
+  fl_value_set_string_take(response, "handled",
+                           fl_value_new_bool(data->handled));
+
+  free(data);
+
+  return response;
 }
 
-static void responder_callback(bool handled, gpointer user_data) {
-  EXPECT_EQ(handled, expected_handled);
-  g_main_loop_quit(static_cast<GMainLoop*>(user_data));
-}
-
-namespace {
-// A global variable to store new event. It is a global variable so that it can
-// be returned by #fl_key_event_new_by_mock for easy use.
-FlKeyEvent _g_key_event;
-}  // namespace
-
-// Create a new #FlKeyEvent with the given information.
-//
-// This event is passed to #fl_key_responder_handle_event,
-// which assumes that the event is managed by callee.
-// Therefore #fl_key_event_new_by_mock doesn't need to
-// dynamically allocate, but reuses the same global object.
-static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
-                                            bool is_press,
-                                            guint keyval,
-                                            guint16 keycode,
-                                            GdkModifierType state,
-                                            gboolean is_modifier) {
-  _g_key_event.is_press = is_press;
-  _g_key_event.time = time_in_milliseconds;
-  _g_key_event.state = state;
-  _g_key_event.keyval = keyval;
-  _g_key_event.keycode = keycode;
-  _g_key_event.origin = nullptr;
-  return &_g_key_event;
+static void set_key_event_channel(FlMockBinaryMessenger* messenger,
+                                  const gchar* expected_message,
+                                  gboolean handled) {
+  KeyEventData* data = g_new0(KeyEventData, 1);
+  data->expected_message = expected_message;
+  data->handled = handled;
+  fl_mock_binary_messenger_set_json_message_channel(
+      messenger, "flutter/keyevent", key_event_cb, data);
 }
 
 // Test sending a letter "A";
 TEST(FlKeyChannelResponderTest, SendKeyEvent) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
-  FlKeyChannelResponderMock mock{
-      .value_converter = echo_response_cb,
-      .channel_name = "test/echo",
-  };
-  g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+  g_autoptr(FlMockBinaryMessenger) messenger = fl_mock_binary_messenger_new();
+  g_autoptr(FlKeyChannelResponder) responder =
+      fl_key_channel_responder_new(FL_BINARY_MESSENGER(messenger));
 
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop);
-  expected_value =
+  set_key_event_channel(
+      messenger,
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
-      "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = FALSE;
-
-  // Blocks here until echo_response_cb is called.
+      "modifiers: 0, unicodeScalarValues: 65}",
+      FALSE);
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      12345, TRUE, 0x04, GDK_KEY_A, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event1, 0,
+      [](bool handled, gpointer user_data) {
+        EXPECT_FALSE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
 
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(23456, false, GDK_KEY_A, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop);
-  expected_value =
+  set_key_event_channel(
+      messenger,
       "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
-      "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = FALSE;
-
-  // Blocks here until echo_response_cb is called.
+      "modifiers: 0, unicodeScalarValues: 65}",
+      FALSE);
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      23456, FALSE, 0x04, GDK_KEY_A, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event2, 0,
+      [](bool handled, gpointer user_data) {
+        EXPECT_FALSE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
+
+  fl_binary_messenger_shutdown(FL_BINARY_MESSENGER(messenger));
 }
 
 void test_lock_event(guint key_code,
@@ -101,36 +89,35 @@ void test_lock_event(guint key_code,
                      const char* up_expected) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
-  FlKeyChannelResponderMock mock{
-      .value_converter = echo_response_cb,
-      .channel_name = "test/echo",
-  };
-  g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+  g_autoptr(FlMockBinaryMessenger) messenger = fl_mock_binary_messenger_new();
+  g_autoptr(FlKeyChannelResponder) responder =
+      fl_key_channel_responder_new(FL_BINARY_MESSENGER(messenger));
 
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(12345, true, key_code, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop);
-  expected_value = down_expected;
-  expected_handled = FALSE;
-
-  // Blocks here until echo_response_cb is called.
+  set_key_event_channel(messenger, down_expected, FALSE);
+  g_autoptr(FlKeyEvent) event1 = fl_key_event_new(
+      12345, TRUE, 0x04, key_code, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event1, 0,
+      [](bool handled, gpointer user_data) {
+        EXPECT_FALSE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
 
-  expected_value = up_expected;
-  expected_handled = FALSE;
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(12346, false, key_code, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop);
-
-  // Blocks here until echo_response_cb is called.
+  set_key_event_channel(messenger, up_expected, FALSE);
+  g_autoptr(FlKeyEvent) event2 = fl_key_event_new(
+      12346, FALSE, 0x04, key_code, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event2, 0,
+      [](bool handled, gpointer user_data) {
+        EXPECT_FALSE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
+
+  fl_binary_messenger_shutdown(FL_BINARY_MESSENGER(messenger));
 }
 
 // Test sending a "NumLock" keypress.
@@ -163,52 +150,52 @@ TEST(FlKeyChannelResponderTest, SendShiftLockKeyEvent) {
 TEST(FlKeyChannelResponderTest, TestKeyEventHandledByFramework) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
-  FlKeyChannelResponderMock mock{
-      .value_converter = echo_response_cb,
-      .channel_name = "test/echo",
-  };
-  g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+  g_autoptr(FlMockBinaryMessenger) messenger = fl_mock_binary_messenger_new();
+  g_autoptr(FlKeyChannelResponder) responder =
+      fl_key_channel_responder_new(FL_BINARY_MESSENGER(messenger));
 
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop);
-  expected_handled = TRUE;
-  expected_value =
+  set_key_event_channel(
+      messenger,
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
-      "keyCode: 65, modifiers: 0, unicodeScalarValues: 65}";
-
-  // Blocks here until echo_response_cb is called.
+      "keyCode: 65, modifiers: 0, unicodeScalarValues: 65}",
+      TRUE);
+  g_autoptr(FlKeyEvent) event = fl_key_event_new(
+      12345, TRUE, 0x04, GDK_KEY_A, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event, 0,
+      [](bool handled, gpointer user_data) {
+        EXPECT_TRUE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
+
+  fl_binary_messenger_shutdown(FL_BINARY_MESSENGER(messenger));
 }
 
 TEST(FlKeyChannelResponderTest, UseSpecifiedLogicalKey) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
-  FlKeyChannelResponderMock mock{
-      .value_converter = echo_response_cb,
-      .channel_name = "test/echo",
-  };
-  g_autoptr(FlKeyResponder) responder =
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger, &mock));
+  g_autoptr(FlMockBinaryMessenger) messenger = fl_mock_binary_messenger_new();
+  g_autoptr(FlKeyChannelResponder) responder =
+      fl_key_channel_responder_new(FL_BINARY_MESSENGER(messenger));
 
-  fl_key_responder_handle_event(
-      responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
-                               static_cast<GdkModifierType>(0), false),
-      responder_callback, loop, 888);
-  expected_handled = TRUE;
-  expected_value =
+  set_key_event_channel(
+      messenger,
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
       "keyCode: 65, modifiers: 0, unicodeScalarValues: 65, "
-      "specifiedLogicalKey: 888}";
-
-  // Blocks here until echo_response_cb is called.
+      "specifiedLogicalKey: 888}",
+      TRUE);
+  g_autoptr(FlKeyEvent) event = fl_key_event_new(
+      12345, TRUE, 0x04, GDK_KEY_A, static_cast<GdkModifierType>(0), 0);
+  fl_key_channel_responder_handle_event(
+      responder, event, 888,
+      [](bool handled, gpointer user_data) {
+        EXPECT_TRUE(handled);
+        g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+      },
+      loop);
   g_main_loop_run(loop);
+
+  fl_binary_messenger_shutdown(FL_BINARY_MESSENGER(messenger));
 }

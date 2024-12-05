@@ -7,10 +7,68 @@
 #include <algorithm>
 
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 
 namespace impeller {
+
+// static
+std::optional<ReactorGLES::GLStorage> ReactorGLES::CreateGLHandle(
+    const ProcTableGLES& gl,
+    HandleType type) {
+  GLStorage handle = GLStorage{.handle = GL_NONE};
+  switch (type) {
+    case HandleType::kUnknown:
+      return std::nullopt;
+    case HandleType::kTexture:
+      gl.GenTextures(1u, &handle.handle);
+      return handle;
+    case HandleType::kBuffer:
+      gl.GenBuffers(1u, &handle.handle);
+      return handle;
+    case HandleType::kProgram:
+      return GLStorage{.handle = gl.CreateProgram()};
+    case HandleType::kRenderBuffer:
+      gl.GenRenderbuffers(1u, &handle.handle);
+      return handle;
+    case HandleType::kFrameBuffer:
+      gl.GenFramebuffers(1u, &handle.handle);
+      return handle;
+    case HandleType::kFence:
+      return GLStorage{.sync = gl.FenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)};
+  }
+  return std::nullopt;
+}
+
+// static
+bool ReactorGLES::CollectGLHandle(const ProcTableGLES& gl,
+                                  HandleType type,
+                                  ReactorGLES::GLStorage handle) {
+  switch (type) {
+    case HandleType::kUnknown:
+      return false;
+    case HandleType::kTexture:
+      gl.DeleteTextures(1u, &handle.handle);
+      return true;
+    case HandleType::kBuffer:
+      gl.DeleteBuffers(1u, &handle.handle);
+      return true;
+    case HandleType::kProgram:
+      gl.DeleteProgram(handle.handle);
+      return true;
+    case HandleType::kRenderBuffer:
+      gl.DeleteRenderbuffers(1u, &handle.handle);
+      return true;
+    case HandleType::kFrameBuffer:
+      gl.DeleteFramebuffers(1u, &handle.handle);
+      return true;
+    case HandleType::kFence:
+      gl.DeleteSync(handle.sync);
+      break;
+  }
+  return false;
+}
 
 ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
     : proc_table_(std::move(gl)) {
@@ -22,10 +80,24 @@ ReactorGLES::ReactorGLES(std::unique_ptr<ProcTableGLES> gl)
   is_valid_ = true;
 }
 
-ReactorGLES::~ReactorGLES() = default;
+ReactorGLES::~ReactorGLES() {
+  if (CanReactOnCurrentThread()) {
+    for (auto& handle : handles_) {
+      if (handle.second.name.has_value()) {
+        CollectGLHandle(*proc_table_, handle.first.GetType(),
+                        handle.second.name.value());
+      }
+    }
+    proc_table_->Flush();
+  }
+}
 
 bool ReactorGLES::IsValid() const {
   return is_valid_;
+}
+
+bool ReactorGLES::CanSetDebugLabels() const {
+  return can_set_debug_labels_;
 }
 
 ReactorGLES::WorkerID ReactorGLES::AddWorker(std::weak_ptr<Worker> worker) {
@@ -41,8 +113,10 @@ bool ReactorGLES::RemoveWorker(WorkerID worker) {
 }
 
 bool ReactorGLES::HasPendingOperations() const {
+  auto thread_id = std::this_thread::get_id();
   Lock ops_lock(ops_mutex_);
-  return !ops_.empty();
+  auto it = ops_.find(thread_id);
+  return it != ops_.end() ? !it->second.empty() : false;
 }
 
 const ProcTableGLES& ReactorGLES::GetProcTable() const {
@@ -50,7 +124,12 @@ const ProcTableGLES& ReactorGLES::GetProcTable() const {
   return *proc_table_;
 }
 
-std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+std::optional<ReactorGLES::GLStorage> ReactorGLES::GetHandle(
+    const HandleGLES& handle) const {
+  if (handle.untracked_id_.has_value()) {
+    return ReactorGLES::GLStorage{.integer = handle.untracked_id_.value()};
+  }
+
   ReaderLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
     if (found->second.pending_collection) {
@@ -58,79 +137,81 @@ std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
           << "Attempted to acquire a handle that was pending collection.";
       return std::nullopt;
     }
-    if (!found->second.name.has_value()) {
+    std::optional<ReactorGLES::GLStorage> name = found->second.name;
+    if (!name.has_value()) {
       VALIDATION_LOG << "Attempt to acquire a handle outside of an operation.";
       return std::nullopt;
     }
-    return found->second.name;
+    return name;
   }
   VALIDATION_LOG << "Attempted to acquire an invalid GL handle.";
   return std::nullopt;
 }
 
-bool ReactorGLES::AddOperation(Operation operation) {
-  if (!operation) {
-    return false;
+std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
+  if (handle.GetType() == HandleType::kFence) {
+    return std::nullopt;
   }
-  {
-    Lock ops_lock(ops_mutex_);
-    ops_.emplace_back(std::move(operation));
-  }
-  // Attempt a reaction if able but it is not an error if this isn't possible.
-  [[maybe_unused]] auto result = React();
-  return true;
-}
-
-static std::optional<GLuint> CreateGLHandle(const ProcTableGLES& gl,
-                                            HandleType type) {
-  GLuint handle = GL_NONE;
-  switch (type) {
-    case HandleType::kUnknown:
-      return std::nullopt;
-    case HandleType::kTexture:
-      gl.GenTextures(1u, &handle);
-      return handle;
-    case HandleType::kBuffer:
-      gl.GenBuffers(1u, &handle);
-      return handle;
-    case HandleType::kProgram:
-      return gl.CreateProgram();
-    case HandleType::kRenderBuffer:
-      gl.GenRenderbuffers(1u, &handle);
-      return handle;
-    case HandleType::kFrameBuffer:
-      gl.GenFramebuffers(1u, &handle);
-      return handle;
+  std::optional<ReactorGLES::GLStorage> gl_handle = GetHandle(handle);
+  if (gl_handle.has_value()) {
+    return gl_handle->handle;
   }
   return std::nullopt;
 }
 
-static bool CollectGLHandle(const ProcTableGLES& gl,
-                            HandleType type,
-                            GLuint handle) {
-  switch (type) {
-    case HandleType::kUnknown:
-      return false;
-    case HandleType::kTexture:
-      gl.DeleteTextures(1u, &handle);
-      return true;
-    case HandleType::kBuffer:
-      gl.DeleteBuffers(1u, &handle);
-      return true;
-    case HandleType::kProgram:
-      gl.DeleteProgram(handle);
-      return true;
-    case HandleType::kRenderBuffer:
-      gl.DeleteRenderbuffers(1u, &handle);
-      return true;
-    case HandleType::kFrameBuffer:
-      gl.DeleteFramebuffers(1u, &handle);
-      return true;
+std::optional<GLsync> ReactorGLES::GetGLFence(const HandleGLES& handle) const {
+  if (handle.GetType() != HandleType::kFence) {
+    return std::nullopt;
+  }
+  std::optional<ReactorGLES::GLStorage> gl_handle = GetHandle(handle);
+  if (gl_handle.has_value()) {
+    return gl_handle->sync;
+  }
+  return std::nullopt;
+}
+
+bool ReactorGLES::AddOperation(Operation operation, bool defer) {
+  if (!operation) {
+    return false;
+  }
+  auto thread_id = std::this_thread::get_id();
+  {
+    Lock ops_lock(ops_mutex_);
+    ops_[thread_id].emplace_back(std::move(operation));
+  }
+  // Attempt a reaction if able but it is not an error if this isn't possible.
+  if (!defer) {
+    [[maybe_unused]] auto result = React();
+  }
+  return true;
+}
+
+bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
+                                          const fml::closure& callback) {
+  if (handle.IsDead()) {
+    return false;
+  }
+  FML_DCHECK(!handle.untracked_id_.has_value());
+  WriterLock handles_lock(handles_mutex_);
+  if (auto found = handles_.find(handle); found != handles_.end()) {
+    found->second.callback = fml::ScopedCleanupClosure(callback);
+    return true;
   }
   return false;
 }
 
-HandleGLES ReactorGLES::CreateHandle(HandleType type) {
+HandleGLES ReactorGLES::CreateUntrackedHandle(HandleType type) {
+  FML_DCHECK(CanReactOnCurrentThread());
+  auto new_handle = HandleGLES::Create(type);
+  std::optional<ReactorGLES::GLStorage> gl_handle =
+      CreateGLHandle(GetProcTable(), type);
+  if (gl_handle.has_value()) {
+    new_handle.untracked_id_ = gl_handle.value().integer;
+  }
+  return new_handle;
+}
+
+HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   if (type == HandleType::kUnknown) {
     return HandleGLES::DeadHandle();
   }
@@ -138,18 +219,33 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type) {
   if (new_handle.IsDead()) {
     return HandleGLES::DeadHandle();
   }
+
+  std::optional<ReactorGLES::GLStorage> gl_handle;
+  if (external_handle != GL_NONE) {
+    gl_handle = ReactorGLES::GLStorage{.handle = external_handle};
+  } else if (CanReactOnCurrentThread()) {
+    gl_handle = CreateGLHandle(GetProcTable(), type);
+  }
+
   WriterLock handles_lock(handles_mutex_);
-  auto gl_handle = CanReactOnCurrentThread()
-                       ? CreateGLHandle(GetProcTable(), type)
-                       : std::nullopt;
   handles_[new_handle] = LiveHandle{gl_handle};
   return new_handle;
 }
 
 void ReactorGLES::CollectHandle(HandleGLES handle) {
-  WriterLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_collection = true;
+  if (handle.untracked_id_.has_value()) {
+    LiveHandle live_handle(GLStorage{.integer = handle.untracked_id_.value()});
+    live_handle.pending_collection = true;
+    WriterLock handles_lock(handles_mutex_);
+    handles_[handle] = std::move(live_handle);
+  } else {
+    WriterLock handles_lock(handles_mutex_);
+    if (auto found = handles_.find(handle); found != handles_.end()) {
+      if (!found->second.pending_collection) {
+        handles_to_collect_count_ += 1;
+      }
+      found->second.pending_collection = true;
+    }
   }
 }
 
@@ -159,10 +255,6 @@ bool ReactorGLES::React() {
   }
   TRACE_EVENT0("impeller", "ReactorGLES::React");
   while (HasPendingOperations()) {
-    // Both the raster thread and the IO thread can flush queued operations.
-    // Ensure that execution of the ops is serialized.
-    Lock execution_lock(ops_execution_mutex_);
-
     if (!ReactOnce()) {
       return false;
     }
@@ -184,6 +276,8 @@ static DebugResourceType ToDebugResourceType(HandleType type) {
       return DebugResourceType::kRenderBuffer;
     case HandleType::kFrameBuffer:
       return DebugResourceType::kFrameBuffer;
+    case HandleType::kFence:
+      return DebugResourceType::kFence;
   }
   FML_UNREACHABLE();
 }
@@ -199,40 +293,58 @@ bool ReactorGLES::ReactOnce() {
 bool ReactorGLES::ConsolidateHandles() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   const auto& gl = GetProcTable();
-  WriterLock handles_lock(handles_mutex_);
-  std::vector<HandleGLES> handles_to_delete;
-  for (auto& handle : handles_) {
-    // Collect dead handles.
-    if (handle.second.pending_collection) {
-      // This could be false if the handle was created and collected without
-      // use. We still need to get rid of map entry.
-      if (handle.second.name.has_value()) {
-        CollectGLHandle(gl, handle.first.type, handle.second.name.value());
+  std::vector<std::tuple<HandleGLES, std::optional<GLStorage>>>
+      handles_to_delete;
+  std::vector<std::tuple<DebugResourceType, GLint, std::string>>
+      handles_to_name;
+  {
+    WriterLock handles_lock(handles_mutex_);
+    handles_to_delete.reserve(handles_to_collect_count_);
+    handles_to_collect_count_ = 0;
+    for (auto& handle : handles_) {
+      // Collect dead handles.
+      if (handle.second.pending_collection) {
+        handles_to_delete.emplace_back(
+            std::make_tuple(handle.first, handle.second.name));
+        continue;
       }
-      handles_to_delete.push_back(handle.first);
-      continue;
-    }
-    // Create live handles.
-    if (!handle.second.name.has_value()) {
-      auto gl_handle = CreateGLHandle(gl, handle.first.type);
-      if (!gl_handle) {
-        VALIDATION_LOG << "Could not create GL handle.";
-        return false;
+      // Create live handles.
+      if (!handle.second.name.has_value()) {
+        auto gl_handle = CreateGLHandle(gl, handle.first.GetType());
+        if (!gl_handle) {
+          VALIDATION_LOG << "Could not create GL handle.";
+          return false;
+        }
+        handle.second.name = gl_handle;
       }
-      handle.second.name = gl_handle;
-    }
-    // Set pending debug labels.
-    if (handle.second.pending_debug_label.has_value()) {
-      if (gl.SetDebugLabel(ToDebugResourceType(handle.first.type),
-                           handle.second.name.value(),
-                           handle.second.pending_debug_label.value())) {
+      // Set pending debug labels.
+      if (handle.second.pending_debug_label.has_value() &&
+          handle.first.GetType() != HandleType::kFence) {
+        handles_to_name.emplace_back(std::make_tuple(
+            ToDebugResourceType(handle.first.GetType()),
+            handle.second.name.value().handle,
+            std::move(handle.second.pending_debug_label.value())));
         handle.second.pending_debug_label = std::nullopt;
       }
     }
+    for (const auto& handle_to_delete : handles_to_delete) {
+      handles_.erase(std::get<0>(handle_to_delete));
+    }
   }
-  for (const auto& handle_to_delete : handles_to_delete) {
-    handles_.erase(handle_to_delete);
+
+  for (const auto& handle : handles_to_name) {
+    gl.SetDebugLabel(std::get<0>(handle), std::get<1>(handle),
+                     std::get<2>(handle));
   }
+  for (const auto& handle : handles_to_delete) {
+    const std::optional<GLStorage>& storage = std::get<1>(handle);
+    // This could be false if the handle was created and collected without
+    // use. We still need to get rid of map entry.
+    if (storage.has_value()) {
+      CollectGLHandle(gl, std::get<0>(handle).GetType(), storage.value());
+    }
+  }
+
   return true;
 }
 
@@ -247,10 +359,11 @@ bool ReactorGLES::FlushOps() {
 
   // Do NOT hold the ops or handles locks while performing operations in case
   // the ops enqueue more ops.
-  decltype(ops_) ops;
+  decltype(ops_)::mapped_type ops;
+  auto thread_id = std::this_thread::get_id();
   {
     Lock ops_lock(ops_mutex_);
-    std::swap(ops_, ops);
+    std::swap(ops_[thread_id], ops);
   }
   for (const auto& op : ops) {
     TRACE_EVENT0("impeller", "ReactorGLES::Operation");
@@ -271,16 +384,25 @@ void ReactorGLES::SetupDebugGroups() {
   }
 }
 
-void ReactorGLES::SetDebugLabel(const HandleGLES& handle, std::string label) {
+void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
+                                std::string_view label) {
+  FML_DCHECK(handle.GetType() != HandleType::kFence);
   if (!can_set_debug_labels_) {
     return;
   }
   if (handle.IsDead()) {
     return;
   }
-  WriterLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_debug_label = std::move(label);
+  if (handle.untracked_id_.has_value()) {
+    FML_DCHECK(CanReactOnCurrentThread());
+    const auto& gl = GetProcTable();
+    gl.SetDebugLabel(ToDebugResourceType(handle.GetType()),
+                     handle.untracked_id_.value(), label);
+  } else {
+    WriterLock handles_lock(handles_mutex_);
+    if (auto found = handles_.find(handle); found != handles_.end()) {
+      found->second.pending_debug_label = label;
+    }
   }
 }
 

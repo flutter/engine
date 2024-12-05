@@ -20,17 +20,9 @@ import android.view.ViewStructure;
 import android.view.autofill.AutofillId;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
-import android.view.inputmethod.DeleteGesture;
-import android.view.inputmethod.DeleteRangeGesture;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.inputmethod.InsertGesture;
-import android.view.inputmethod.InsertModeGesture;
-import android.view.inputmethod.JoinOrSplitGesture;
-import android.view.inputmethod.RemoveSpaceGesture;
-import android.view.inputmethod.SelectGesture;
-import android.view.inputmethod.SelectRangeGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -42,9 +34,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Set;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
@@ -262,7 +252,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
     } else if (type.type == TextInputChannel.TextInputType.EMAIL_ADDRESS) {
       textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-    } else if (type.type == TextInputChannel.TextInputType.URL) {
+    } else if (type.type == TextInputChannel.TextInputType.URL
+        || type.type == TextInputChannel.TextInputType.WEB_SEARCH) {
       textType |= InputType.TYPE_TEXT_VARIATION_URI;
     } else if (type.type == TextInputChannel.TextInputType.VISIBLE_PASSWORD) {
       textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
@@ -356,29 +347,16 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
     }
 
-    EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
-    outAttrs.setSupportedHandwritingGestures(
-        Arrays.asList(
-            SelectGesture.class,
-            SelectRangeGesture.class,
-            InsertGesture.class,
-            InsertModeGesture.class,
-            DeleteGesture.class,
-            DeleteRangeGesture.class,
-            SelectRangeGesture.class,
-            JoinOrSplitGesture.class,
-            RemoveSpaceGesture.class));
-    outAttrs.setSupportedHandwritingGesturePreviews(
-        Set.of(
-            SelectGesture.class,
-            SelectRangeGesture.class,
-            DeleteGesture.class,
-            DeleteRangeGesture.class));
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    }
+    // TODO(justinmc): Scribe stylus gestures should be supported here via
+    // outAttrs.setSupportedHandwritingGestures and
+    // outAttrs.setSupportedHandwritingGesturePreviews.
+    // https://github.com/flutter/flutter/issues/156018
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            // TODO(justinmc): scribeChannel could be part of textInputChannel
-            // instead of adding a new parameter here.
             view,
             inputTarget.id,
             textInputChannel,

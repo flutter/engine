@@ -802,6 +802,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
         result.setClickable(true);
       }
+    } else {
+      // Prevent Slider to receive a regular tap which will change the value.
+      //
+      // This is needed because it causes slider to select to middle if it
+      // doesn't have a semantics tap.
+      if (semanticsNode.hasFlag(Flag.IS_SLIDER)) {
+        result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
+        result.setClickable(true);
+      }
     }
     if (semanticsNode.hasAction(Action.LONG_PRESS)) {
       if (semanticsNode.onLongPressOverride != null) {
@@ -2111,7 +2120,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     MOVE_CURSOR_FORWARD_BY_WORD(1 << 19),
     MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20),
     SET_TEXT(1 << 21),
-    FOCUS(1 << 22);
+    FOCUS(1 << 22),
+    SCROLL_TO_OFFSET(1 << 23);
 
     public final int value;
 
@@ -2158,7 +2168,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     IS_KEYBOARD_KEY(1 << 24),
     IS_CHECK_STATE_MIXED(1 << 25),
     HAS_EXPANDED_STATE(1 << 26),
-    IS_EXPANDED(1 << 27);
+    IS_EXPANDED(1 << 27),
+    HAS_SELECTED_STATE(1 << 28);
 
     final int value;
 

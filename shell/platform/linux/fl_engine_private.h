@@ -8,6 +8,7 @@
 #include <glib-object.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
@@ -21,9 +22,7 @@ G_BEGIN_DECLS
  */
 
 typedef enum {
-  // NOLINTBEGIN(readability-identifier-naming)
   FL_ENGINE_ERROR_FAILED,
-  // NOLINTEND(readability-identifier-naming)
 } FlEngineError;
 
 GQuark fl_engine_error_quark(void) G_GNUC_CONST;
@@ -115,15 +114,18 @@ FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
  * added.
  * @user_data: (closure): user data to pass to @callback.
  *
- * Asynchronously add a new view.
+ * Asynchronously add a new view. The returned view ID should not be used until
+ * this function completes.
+ *
+ * Returns: the ID for the view.
  */
-void fl_engine_add_view(FlEngine* engine,
-                        size_t width,
-                        size_t height,
-                        double pixel_ratio,
-                        GCancellable* cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer user_data);
+FlutterViewId fl_engine_add_view(FlEngine* engine,
+                                 size_t width,
+                                 size_t height,
+                                 double pixel_ratio,
+                                 GCancellable* cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data);
 
 /**
  * fl_engine_add_view_finish:
@@ -134,11 +136,11 @@ void fl_engine_add_view(FlEngine* engine,
  *
  * Completes request started with fl_engine_add_view().
  *
- * Returns: the newly added view ID or -1 on error.
+ * Returns: %TRUE on success.
  */
-FlutterViewId fl_engine_add_view_finish(FlEngine* engine,
-                                        GAsyncResult* result,
-                                        GError** error);
+gboolean fl_engine_add_view_finish(FlEngine* engine,
+                                   GAsyncResult* result,
+                                   GError** error);
 
 /**
  * fl_engine_remove_view:
@@ -166,7 +168,7 @@ void fl_engine_remove_view(FlEngine* engine,
  *
  * Completes request started with fl_engine_remove_view().
  *
- * Returns: TRUE on succcess.
+ * Returns: %TRUE on succcess.
  */
 gboolean fl_engine_remove_view_finish(FlEngine* engine,
                                       GAsyncResult* result,
@@ -414,14 +416,22 @@ gboolean fl_engine_unregister_external_texture(FlEngine* engine,
 void fl_engine_update_accessibility_features(FlEngine* engine, int32_t flags);
 
 /**
- * fl_engine_get_switches:
- * @project: an #FlEngine.
+ * fl_engine_request_app_exit:
+ * @engine: an #FlEngine.
  *
- * Determines the switches that should be passed to the Flutter engine.
- *
- * Returns: an array of switches to pass to the Flutter engine.
+ * Request the application exits.
  */
-GPtrArray* fl_engine_get_switches(FlEngine* engine);
+void fl_engine_request_app_exit(FlEngine* engine);
+
+/**
+ * fl_engine_get_mouse_cursor_handler:
+ * @engine: an #FlEngine.
+ *
+ * Gets the mouse cursor handler used by this engine.
+ *
+ * Returns: a #FlMouseCursorHandler.
+ */
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* engine);
 
 G_END_DECLS
 

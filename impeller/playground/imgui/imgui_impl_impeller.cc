@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include "fml/mapping.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/platform.h"
 #include "impeller/geometry/scalar.h"
@@ -77,8 +79,8 @@ bool ImGui_ImplImpeller_Init(
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-    auto texture_descriptor = impeller::TextureDescriptor{};
-    texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+    impeller::TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
     texture_descriptor.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
     texture_descriptor.size = {width, height};
     texture_descriptor.mip_count = 1u;
@@ -89,8 +91,20 @@ bool ImGui_ImplImpeller_Init(
               "Could not allocate ImGui font texture.");
     bd->font_texture->SetLabel("ImGui Font Texture");
 
-    [[maybe_unused]] bool uploaded = bd->font_texture->SetContents(
-        pixels, texture_descriptor.GetByteSizeOfBaseMipLevel());
+    auto command_buffer = context->CreateCommandBuffer();
+    auto blit_pass = command_buffer->CreateBlitPass();
+    auto mapping = std::make_shared<fml::NonOwnedMapping>(
+        reinterpret_cast<const uint8_t*>(pixels),
+        texture_descriptor.GetByteSizeOfBaseMipLevel());
+    auto device_buffer =
+        context->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
+
+    blit_pass->AddCopy(impeller::DeviceBuffer::AsBufferView(device_buffer),
+                       bd->font_texture);
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+
+    [[maybe_unused]] bool uploaded =
+        context->GetCommandQueue()->Submit({command_buffer}).ok();
     IM_ASSERT(uploaded &&
               "Could not upload ImGui font texture to device memory.");
   }
@@ -124,12 +138,11 @@ void ImGui_ImplImpeller_Shutdown() {
 }
 
 void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
-                                       impeller::RenderPass& render_pass) {
+                                       impeller::RenderPass& render_pass,
+                                       impeller::HostBuffer& host_buffer) {
   if (draw_data->CmdListsCount == 0) {
     return;  // Nothing to render.
   }
-  auto host_buffer = impeller::HostBuffer::Create(
-      render_pass.GetContext()->GetResourceAllocator());
 
   using VS = impeller::ImguiRasterVertexShader;
   using FS = impeller::ImguiRasterFragmentShader;
@@ -163,7 +176,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   VS::UniformBuffer uniforms;
   uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.GetSize())
                      .Translate(-display_rect.GetOrigin());
-  auto vtx_uniforms = host_buffer->EmplaceUniform(uniforms);
+  auto vtx_uniforms = host_buffer.EmplaceUniform(uniforms);
 
   size_t vertex_buffer_offset = 0;
   size_t index_buffer_offset = total_vtx_bytes;
@@ -251,14 +264,12 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             vertex_buffer_offset + pcmd->VtxOffset * sizeof(ImDrawVert);
 
         impeller::VertexBuffer vertex_buffer;
-        vertex_buffer.vertex_buffer = {
-            .buffer = buffer,
-            .range = impeller::Range(vb_start, draw_list_vtx_bytes - vb_start)};
-        vertex_buffer.index_buffer = {
-            .buffer = buffer,
-            .range = impeller::Range(
-                index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
-                pcmd->ElemCount * sizeof(ImDrawIdx))};
+        vertex_buffer.vertex_buffer = impeller::BufferView(
+            buffer, impeller::Range(vb_start, draw_list_vtx_bytes - vb_start));
+        vertex_buffer.index_buffer = impeller::BufferView(
+            buffer, impeller::Range(index_buffer_offset +
+                                        pcmd->IdxOffset * sizeof(ImDrawIdx),
+                                    pcmd->ElemCount * sizeof(ImDrawIdx)));
         vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         render_pass.SetVertexBuffer(std::move(vertex_buffer));
@@ -271,5 +282,5 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
     vertex_buffer_offset += draw_list_vtx_bytes;
     index_buffer_offset += draw_list_idx_bytes;
   }
-  host_buffer->Reset();
+  host_buffer.Reset();
 }

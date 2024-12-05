@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/render_pass.h"
 #include "fml/status.h"
+#include "impeller/base/validation.h"
+#include "impeller/core/vertex_buffer.h"
 
 namespace impeller {
 
@@ -48,11 +50,11 @@ const Matrix& RenderPass::GetOrthographicTransform() const {
   return orthographic_;
 }
 
-void RenderPass::SetLabel(std::string label) {
+void RenderPass::SetLabel(std::string_view label) {
   if (label.empty()) {
     return;
   }
-  OnSetLabel(std::move(label));
+  OnSetLabel(label);
 }
 
 bool RenderPass::AddCommand(Command&& command) {
@@ -61,17 +63,7 @@ bool RenderPass::AddCommand(Command&& command) {
     return false;
   }
 
-  if (command.scissor.has_value()) {
-    auto target_rect = IRect::MakeSize(render_target_.GetRenderTargetSize());
-    if (!target_rect.Contains(command.scissor.value())) {
-      VALIDATION_LOG << "Cannot apply a scissor that lies outside the bounds "
-                        "of the render target.";
-      return false;
-    }
-  }
-
-  if (command.vertex_buffer.vertex_count == 0u ||
-      command.instance_count == 0u) {
+  if (command.element_count == 0u || command.instance_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
     return true;
@@ -116,17 +108,98 @@ void RenderPass::SetScissor(IRect scissor) {
   pending_.scissor = scissor;
 }
 
+void RenderPass::SetElementCount(size_t count) {
+  pending_.element_count = count;
+}
+
 void RenderPass::SetInstanceCount(size_t count) {
   pending_.instance_count = count;
 }
 
 bool RenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  return pending_.BindVertices(std::move(buffer));
+  if (!SetVertexBuffer(&buffer.vertex_buffer, 1u)) {
+    return false;
+  }
+  if (!SetIndexBuffer(buffer.index_buffer, buffer.index_type)) {
+    return false;
+  }
+  SetElementCount(buffer.vertex_count);
+
+  return true;
+}
+
+bool RenderPass::SetVertexBuffer(BufferView vertex_buffer) {
+  return SetVertexBuffer(&vertex_buffer, 1);
+}
+
+bool RenderPass::SetVertexBuffer(std::vector<BufferView> vertex_buffers) {
+  return SetVertexBuffer(vertex_buffers.data(), vertex_buffers.size());
+}
+
+bool RenderPass::SetVertexBuffer(BufferView vertex_buffers[],
+                                 size_t vertex_buffer_count) {
+  if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
+    return false;
+  }
+
+  pending_.vertex_buffer_count = vertex_buffer_count;
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    pending_.vertex_buffers[i] = std::move(vertex_buffers[i]);
+  }
+  return true;
+}
+
+bool RenderPass::SetIndexBuffer(BufferView index_buffer, IndexType index_type) {
+  if (!ValidateIndexBuffer(index_buffer, index_type)) {
+    return false;
+  }
+
+  pending_.index_buffer = std::move(index_buffer);
+  pending_.index_type = index_type;
+  return true;
+}
+
+bool RenderPass::ValidateVertexBuffers(const BufferView vertex_buffers[],
+                                       size_t vertex_buffer_count) {
+  if (vertex_buffer_count > kMaxVertexBuffers) {
+    VALIDATION_LOG << "Attempted to bind " << vertex_buffer_count
+                   << " vertex buffers, but the maximum is "
+                   << kMaxVertexBuffers << ".";
+    return false;
+  }
+
+  for (size_t i = 0; i < vertex_buffer_count; i++) {
+    if (!vertex_buffers[i]) {
+      VALIDATION_LOG << "Attempted to bind an invalid vertex buffer.";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool RenderPass::ValidateIndexBuffer(const BufferView& index_buffer,
+                                     IndexType index_type) {
+  if (index_type == IndexType::kUnknown) {
+    VALIDATION_LOG << "Cannot bind an index buffer with an unknown index type.";
+    return false;
+  }
+
+  if (index_type != IndexType::kNone && !index_buffer) {
+    VALIDATION_LOG << "Attempted to bind an invalid index buffer.";
+    return false;
+  }
+
+  return true;
 }
 
 fml::Status RenderPass::Draw() {
+  pending_.bound_buffers.offset = bound_buffers_start_.value_or(0u);
+  pending_.bound_textures.offset = bound_textures_start_.value_or(0u);
   auto result = AddCommand(std::move(pending_));
   pending_ = Command{};
+  bound_textures_start_ = std::nullopt;
+  bound_buffers_start_ = std::nullopt;
   if (result) {
     return fml::Status();
   }
@@ -138,29 +211,95 @@ fml::Status RenderPass::Draw() {
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const ShaderUniformSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               BufferView view) {
-  return pending_.BindResource(stage, type, slot, metadata, view);
-}
-
-bool RenderPass::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
-    BufferView view) {
-  return pending_.BindResource(stage, type, slot, metadata, std::move(view));
+  FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
+  if (!view) {
+    return false;
+  }
+  BufferResource resouce = BufferResource(metadata, std::move(view));
+  return BindBuffer(stage, slot, std::move(resouce));
 }
 
 // |ResourceBinder|
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const SampledImageSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               std::shared_ptr<const Texture> texture,
                               const std::unique_ptr<const Sampler>& sampler) {
-  return pending_.BindResource(stage, type, slot, metadata, std::move(texture),
-                               sampler);
+  if (!sampler) {
+    return false;
+  }
+  if (!texture || !texture->IsValid()) {
+    return false;
+  }
+  TextureResource resource = TextureResource(metadata, std::move(texture));
+  return BindTexture(stage, slot, std::move(resource), sampler);
+}
+
+bool RenderPass::BindDynamicResource(ShaderStage stage,
+                                     DescriptorType type,
+                                     const ShaderUniformSlot& slot,
+                                     std::unique_ptr<ShaderMetadata> metadata,
+                                     BufferView view) {
+  FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
+  if (!view) {
+    return false;
+  }
+  BufferResource resouce =
+      BufferResource::MakeDynamic(std::move(metadata), std::move(view));
+
+  return BindBuffer(stage, slot, std::move(resouce));
+}
+
+bool RenderPass::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  if (!sampler) {
+    return false;
+  }
+  if (!texture || !texture->IsValid()) {
+    return false;
+  }
+  TextureResource resource =
+      TextureResource::MakeDynamic(std::move(metadata), std::move(texture));
+  return BindTexture(stage, slot, std::move(resource), sampler);
+}
+
+bool RenderPass::BindBuffer(ShaderStage stage,
+                            const ShaderUniformSlot& slot,
+                            BufferResource resource) {
+  if (!bound_buffers_start_.has_value()) {
+    bound_buffers_start_ = bound_buffers_.size();
+  }
+
+  pending_.bound_buffers.length++;
+  bound_buffers_.push_back(std::move(resource));
+  return true;
+}
+
+bool RenderPass::BindTexture(ShaderStage stage,
+                             const SampledImageSlot& slot,
+                             TextureResource resource,
+                             const std::unique_ptr<const Sampler>& sampler) {
+  TextureAndSampler data = TextureAndSampler{
+      .stage = stage,
+      .texture = std::move(resource),
+      .sampler = &sampler,
+  };
+
+  if (!bound_textures_start_.has_value()) {
+    bound_textures_start_ = bound_textures_.size();
+  }
+
+  pending_.bound_textures.length++;
+  bound_textures_.push_back(std::move(data));
+  return true;
 }
 
 }  // namespace impeller

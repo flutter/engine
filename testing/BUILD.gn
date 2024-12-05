@@ -23,8 +23,6 @@ source_set("testing_lib") {
     "display_list_testing.h",
     "logger_listener.cc",
     "logger_listener.h",
-    "mock_canvas.cc",
-    "mock_canvas.h",
     "post_task_sync.cc",
     "post_task_sync.h",
     "stream_capture.cc",
@@ -180,31 +178,6 @@ if (enable_unittests) {
   test_fixtures("testing_fixtures") {
     fixtures = []
   }
-
-  # The //flutter/testing library provides utility methods to other test targets.
-  # This test target tests the testing utilities.
-  executable("testing_unittests") {
-    testonly = true
-
-    sources = [ "mock_canvas_unittests.cc" ]
-
-    deps = [
-      ":skia",
-      ":testing",
-      ":testing_fixtures",
-      "//flutter/runtime:libdart",
-    ]
-
-    if (shell_enable_metal) {
-      sources += [ "test_metal_surface_unittests.cc" ]
-
-      deps += [ ":metal" ]
-    }
-
-    if (shell_enable_vulkan) {
-      deps += [ "//flutter/vulkan" ]
-    }
-  }
 }
 
 # All targets on all platforms should be able to use the Metal utilities. On
@@ -217,19 +190,22 @@ if (enable_unittests) {
 # On iOS, this is enabled to allow for Metal tests to run within a test app
 if (is_mac || is_ios) {
   source_set("metal") {
+    testonly = true
+
     if (shell_enable_metal) {
+      cflags_objc = flutter_cflags_objc
+      cflags_objcc = flutter_cflags_objcc
+
       sources = [
         "test_metal_context.h",
         "test_metal_context.mm",
-        "test_metal_surface.cc",
         "test_metal_surface.h",
+        "test_metal_surface.mm",
         "test_metal_surface_impl.h",
         "test_metal_surface_impl.mm",
       ]
-      deps = [
-        ":skia",
-        "//flutter/fml",
-      ]
+      deps = [ "//flutter/fml" ]
+      public_deps = [ ":skia" ]
 
       # Skia's Vulkan support is enabled for all platforms (except iOS), and so parts of
       # Skia's graphics context reference Vulkan symbols.
@@ -237,8 +213,6 @@ if (is_mac || is_ios) {
         deps += [ "//flutter/vulkan" ]
       }
     }
-
-    testonly = true
   }
 }
 
@@ -249,8 +223,12 @@ if (use_swiftshader) {
     testonly = true
 
     sources = [
+      "test_gl_context.cc",
+      "test_gl_context.h",
       "test_gl_surface.cc",
       "test_gl_surface.h",
+      "test_gl_utils.cc",
+      "test_gl_utils.h",
     ]
 
     deps = [
@@ -268,5 +246,26 @@ if (use_swiftshader) {
       "//flutter/third_party/angle:libGLESv2_static",
       "//flutter/third_party/swiftshader",
     ]
+  }
+}
+
+if (enable_unittests) {
+  executable("testing_unittests") {
+    testonly = true
+
+    sources = []
+    deps = [
+      ":testing_fixtures",
+      "//flutter/third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest_main",
+    ]
+
+    if (test_enable_metal) {
+      cflags_objc = flutter_cflags_objc
+      cflags_objcc = flutter_cflags_objcc
+
+      sources += [ "test_metal_surface_unittests.mm" ]
+      deps += [ ":metal" ]
+    }
   }
 }

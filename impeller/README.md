@@ -81,14 +81,6 @@ states of completion:
   framework. The render-pass optimization and pass-rewriting framework also
   resides there. This allows authoring composable 2D rendering optimizations
   (like collapsing passes, or, eliding them completely).
-* **`//impeller/aiks`**: Aiks wraps `//impeller/entity` into an API that
-  resembles Skia. This makes it easy to mechanically replace Skia calls with
-  their Impeller counterparts even though the `//impeller/entity` framework API
-  is different from Skia. This presence of this sub-framework is probably
-  short-lived as integration of Impeller into Flutter should likely happen via a
-  custom Display List implementation in `//impeller/display_list`. The
-  roadblocks to this today are graphics package agnosticism in the Display List
-  interface.
 * **`//impeller/display_list`**: The replacement for `//impeller/aiks` to serve
   in the integration of Impeller in `//flutter/flow`. This is pending graphics
   package agnosticism in the Impeller interface. This sub-framework primarily
@@ -236,6 +228,17 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
   <key>FLTEnableImpeller</key>
   <true/>
 ```
+
+## Embedding Standalone Impeller
+
+Impeller is designed to work best when used by Flutter. Most of the teams
+efforts go into being great at that use-case. But, standalone Impeller can be
+used to perform accelerated rendering in most environments without any Flutter
+dependencies.
+
+Impeller provides a standalone SDK. The SDK exposes a single-header C API with
+no platform dependencies. [Prebuilts for major platforms, documentation,
+examples, are available](toolkit/interop/README.md).
 
 ## Documentation, References, and Additional Reading
 

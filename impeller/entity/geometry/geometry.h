@@ -16,11 +16,6 @@ namespace impeller {
 
 class Tessellator;
 
-/// @brief The minimum stroke size can be less than one physical pixel because
-///        of MSAA, but no less that half a physical pixel otherwise we might
-///        not hit one of the sample positions.
-static constexpr Scalar kMinStrokeSizeMSAA = 0.5f;
-
 static constexpr Scalar kMinStrokeSize = 1.0f;
 
 struct GeometryResult {
@@ -54,41 +49,39 @@ static const GeometryResult kEmptyResult = {
 
 class Geometry {
  public:
-  static std::shared_ptr<Geometry> MakeFillPath(
+  virtual ~Geometry() {}
+
+  static std::unique_ptr<Geometry> MakeFillPath(
       const Path& path,
       std::optional<Rect> inner_rect = std::nullopt);
 
-  static std::shared_ptr<Geometry> MakeStrokePath(
+  static std::unique_ptr<Geometry> MakeStrokePath(
       const Path& path,
       Scalar stroke_width = 0.0,
       Scalar miter_limit = 4.0,
       Cap stroke_cap = Cap::kButt,
       Join stroke_join = Join::kMiter);
 
-  static std::shared_ptr<Geometry> MakeCover();
+  static std::unique_ptr<Geometry> MakeCover();
 
-  static std::shared_ptr<Geometry> MakeRect(const Rect& rect);
+  static std::unique_ptr<Geometry> MakeRect(const Rect& rect);
 
-  static std::shared_ptr<Geometry> MakeOval(const Rect& rect);
+  static std::unique_ptr<Geometry> MakeOval(const Rect& rect);
 
-  static std::shared_ptr<Geometry> MakeLine(const Point& p0,
+  static std::unique_ptr<Geometry> MakeLine(const Point& p0,
                                             const Point& p1,
                                             Scalar width,
                                             Cap cap);
 
-  static std::shared_ptr<Geometry> MakeCircle(const Point& center,
+  static std::unique_ptr<Geometry> MakeCircle(const Point& center,
                                               Scalar radius);
 
-  static std::shared_ptr<Geometry> MakeStrokedCircle(const Point& center,
+  static std::unique_ptr<Geometry> MakeStrokedCircle(const Point& center,
                                                      Scalar radius,
                                                      Scalar stroke_width);
 
-  static std::shared_ptr<Geometry> MakeRoundRect(const Rect& rect,
+  static std::unique_ptr<Geometry> MakeRoundRect(const Rect& rect,
                                                  const Size& radii);
-
-  static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
-                                                  Scalar radius,
-                                                  bool round);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,

@@ -4,8 +4,8 @@
 
 #include "impeller/toolkit/interop/surface.h"
 
-#include "impeller/aiks/aiks_context.h"
 #include "impeller/base/validation.h"
+#include "impeller/display_list/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
 #include "impeller/toolkit/interop/formats.h"
@@ -56,14 +56,16 @@ bool Surface::DrawDisplayList(const DisplayList& dl) const {
 
   auto display_list = dl.GetDisplayList();
   auto& content_context = context_->GetAiksContext().GetContentContext();
-  auto render_target = surface_->GetTargetRenderPassDescriptor();
+  auto render_target = surface_->GetRenderTarget();
 
   const auto cull_rect = IRect::MakeSize(surface_->GetSize());
   auto skia_cull_rect =
       SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 
-  return RenderToOnscreen(content_context, render_target, display_list,
-                          skia_cull_rect, /*reset_host_buffer=*/true);
+  auto result = RenderToOnscreen(content_context, render_target, display_list,
+                                 skia_cull_rect, /*reset_host_buffer=*/true);
+  context_->GetContext()->ResetThreadLocalState();
+  return result;
 }
 
 }  // namespace impeller::interop

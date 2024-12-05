@@ -84,6 +84,7 @@ static PoolVMA CreateBufferPool(VmaAllocator allocator) {
   VmaPoolCreateInfo pool_create_info = {};
   pool_create_info.memoryTypeIndex = memTypeIndex;
   pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
+  pool_create_info.minBlockCount = 1;
 
   VmaPool pool = {};
   result = vk::Result{::vmaCreatePool(allocator, &pool_create_info, &pool)};
@@ -144,6 +145,8 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   allocator_info.physicalDevice = physical_device;
   allocator_info.device = device_holder->GetDevice();
   allocator_info.instance = instance;
+  // 4 MB, matching the default used by Skia Vulkan.
+  allocator_info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
   allocator_info.pVulkanFunctions = &proc_table;
 
   VmaAllocator allocator = {};
@@ -506,7 +509,6 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
       !desc.readback) {
     allocation_info.pool = staging_buffer_pool_.get().pool;
   }
-
   VkBuffer buffer = {};
   VmaAllocation buffer_allocation = {};
   VmaAllocationInfo buffer_allocation_info = {};
@@ -517,6 +519,10 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
                                              &buffer_allocation,      //
                                              &buffer_allocation_info  //
                                              )};
+
+  auto type = memory_properties_.memoryTypes[buffer_allocation_info.memoryType];
+  bool is_host_coherent =
+      !!(type.propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent);
 
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to allocate a device buffer: "
@@ -530,8 +536,8 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
       UniqueBufferVMA{BufferVMA{allocator_.get(),      //
                                 buffer_allocation,     //
                                 vk::Buffer{buffer}}},  //
-      buffer_allocation_info                           //
-  );
+      buffer_allocation_info,                          //
+      is_host_coherent);
 }
 
 Bytes AllocatorVK::DebugGetHeapUsage() const {

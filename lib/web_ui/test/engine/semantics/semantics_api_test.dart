@@ -18,7 +18,7 @@ void main() {
 
 void testMain() {
   // This must match the number of flags in lib/ui/semantics.dart
-  const int numSemanticsFlags = 28;
+  const int numSemanticsFlags = 29;
   test('SemanticsFlag.values refers to all flags.', () async {
     expect(SemanticsFlag.values.length, equals(numSemanticsFlags));
     for (int index = 0; index < numSemanticsFlags; ++index) {
@@ -29,7 +29,7 @@ void testMain() {
   });
 
   // This must match the number of actions in lib/ui/semantics.dart
-  const int numSemanticsActions = 23;
+  const int numSemanticsActions = 24;
   test('SemanticsAction.values refers to all actions.', () async {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
     for (int index = 0; index < numSemanticsActions; ++index) {

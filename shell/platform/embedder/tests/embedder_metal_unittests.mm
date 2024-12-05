@@ -36,12 +36,11 @@ namespace testing {
 using EmbedderTest = testing::EmbedderTest;
 
 TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
-
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -65,7 +64,7 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
                                               SkISize texture_size,
                                               void* texture) {
   GrMtlTextureInfo info;
-  info.fTexture.reset([(id<MTLTexture>)texture retain]);
+  info.fTexture.retain(texture);
   GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(
       texture_size.width(), texture_size.height(), skgpu::Mipmapped::kNo, info);
 
@@ -75,8 +74,7 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
 }
 
 TEST_F(EmbedderTest, ExternalTextureMetal) {
-  EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
-      GetEmbedderContext(EmbedderTestContextType::kMetalContext));
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   const auto texture_size = SkISize::Make(800, 600);
   const int64_t texture_id = 1;
@@ -108,7 +106,7 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_texture");
-  builder.SetMetalRendererConfig(texture_size);
+  builder.SetSurface(texture_size);
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -129,10 +127,10 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
 }
 
 TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views");
 
@@ -240,12 +238,12 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
 }
 
 TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -264,10 +262,10 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
 }
 
 TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMetal) {
-  EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
-      GetEmbedderContext(EmbedderTestContextType::kMetalContext));
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
+
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
   builder.SetDartEntrypoint("texture_destruction_callback_called_without_custom_compositor");
 
   struct CollectContext {
@@ -314,10 +312,10 @@ TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMeta
 }
 
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views_with_known_scene");
 
@@ -511,9 +509,9 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
 }
 
 TEST_F(EmbedderTest, CreateInvalidBackingstoreMetalTexture) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
   builder.SetCompositor();
   builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
   builder.SetDartEntrypoint("invalid_backingstore");
@@ -566,8 +564,7 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreMetalTexture) {
 }
 
 TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
-  EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
-      GetEmbedderContext(EmbedderTestContextType::kMetalContext));
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   TestMetalContext* metal_context = context.GetTestMetalContext();
   auto metal_texture = metal_context->CreateMetalTexture(SkISize::Make(100, 100));
@@ -615,13 +612,13 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
 }
 
 TEST_F(EmbedderTest, CanRenderWithImpellerMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
 
   builder.AddCommandLineArgument("--enable-impeller");
   builder.SetDartEntrypoint("render_impeller_test");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -640,13 +637,13 @@ TEST_F(EmbedderTest, CanRenderWithImpellerMetal) {
 }
 
 TEST_F(EmbedderTest, CanRenderTextWithImpellerMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
 
   builder.AddCommandLineArgument("--enable-impeller");
   builder.SetDartEntrypoint("render_impeller_text_test");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -665,13 +662,13 @@ TEST_F(EmbedderTest, CanRenderTextWithImpellerMetal) {
 }
 
 TEST_F(EmbedderTest, CanRenderTextWithImpellerAndCompositorMetal) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
+  auto& context = GetEmbedderContext<EmbedderTestContextMetal>();
 
   EmbedderConfigBuilder builder(context);
 
   builder.AddCommandLineArgument("--enable-impeller");
   builder.SetDartEntrypoint("render_impeller_text_test");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetSurface(SkISize::Make(800, 600));
   builder.SetCompositor();
 
   builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);

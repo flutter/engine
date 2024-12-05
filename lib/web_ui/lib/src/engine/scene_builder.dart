@@ -172,6 +172,10 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   final List<SceneSlice> sceneSlices = <SceneSlice>[SceneSlice()];
 
+  // This represents the simplest case with no platform views, which is a fast path
+  // that allows us to avoid work tracking the pictures themselves.
+  bool _isSimple = true;
+
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
     // We don't plan to implement this on the web.
@@ -185,7 +189,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false
   }) {
-    final int sliceIndex = _placePicture(offset, picture as ScenePicture);
+    final int sliceIndex = _placePicture(offset, picture as ScenePicture, currentBuilder.globalPlatformViewStyling);
     currentBuilder.addPicture(
       offset,
       picture,
@@ -200,9 +204,14 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   // in the slice or it intersects with a platform view in the preceding slice. If the
   // picture intersects with a platform view in the last slice, a new slice is added at
   // the end and the picture goes in there.
-  int _placePicture(ui.Offset offset, ScenePicture picture) {
+  int _placePicture(ui.Offset offset, ScenePicture picture, PlatformViewStyling styling) {
+    if (_isSimple) {
+      // This is the fast path where there are no platform views. The picture should
+      // just be placed on the bottom (and only) slice.
+      return 0;
+    }
     final ui.Rect cullRect = picture.cullRect.shift(offset);
-    final ui.Rect mappedCullRect = currentBuilder.globalPlatformViewStyling.mapLocalToGlobal(cullRect);
+    final ui.Rect mappedCullRect = styling.mapLocalToGlobal(cullRect);
     int sliceIndex = sceneSlices.length;
     while (sliceIndex > 0) {
       final SceneSlice sliceBelow = sceneSlices[sliceIndex - 1];
@@ -213,6 +222,11 @@ class EngineSceneBuilder implements ui.SceneBuilder {
       if (sliceBelow.pictureOcclusionMap.overlaps(mappedCullRect)) {
         break;
       }
+    }
+    if (sliceIndex == 0) {
+      // Don't bother to populate the lowest occlusion map with pictures, since
+      // we never hit test against pictures in the bottom slice.
+      return sliceIndex;
     }
     if (sliceIndex == sceneSlices.length) {
       // Insert a new slice.
@@ -231,7 +245,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     double height = 0.0
   }) {
     final ui.Rect platformViewRect = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    final int sliceIndex = _placePlatformView(viewId, platformViewRect);
+    final int sliceIndex = _placePlatformView(viewId, platformViewRect, currentBuilder.globalPlatformViewStyling);
     currentBuilder.addPlatformView(
       viewId,
       bounds: platformViewRect,
@@ -246,11 +260,13 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   // or a platform view.
   int _placePlatformView(
     int viewId,
-    ui.Rect rect, {
-    PlatformViewStyling styling = const PlatformViewStyling(),
-  }) {
-    final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(currentBuilder.globalPlatformViewStyling, styling);
-    final ui.Rect globalPlatformViewRect = combinedStyling.mapLocalToGlobal(rect);
+    ui.Rect rect,
+    PlatformViewStyling styling,
+  ) {
+    // Once we add a platform view, we actually have to do proper occlusion tracking.
+    _isSimple = false;
+
+    final ui.Rect globalPlatformViewRect = styling.mapLocalToGlobal(rect);
     int sliceIndex = sceneSlices.length - 1;
     while (sliceIndex > 0) {
       final SceneSlice slice = sceneSlices[sliceIndex];
@@ -260,6 +276,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
       }
       sliceIndex--;
     }
+    sliceIndex = 0;
     final SceneSlice slice = sceneSlices[sliceIndex];
     slice.platformViewOcclusionMap.addRect(globalPlatformViewRect);
     return sliceIndex;
@@ -267,29 +284,35 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    final PictureEngineLayer placedEngineLayer = _placeRetainedLayer(retainedLayer as PictureEngineLayer);
+    final PictureEngineLayer placedEngineLayer = _placeRetainedLayer(retainedLayer as PictureEngineLayer, currentBuilder.globalPlatformViewStyling);
     currentBuilder.mergeLayer(placedEngineLayer);
   }
 
-  PictureEngineLayer _placeRetainedLayer(PictureEngineLayer retainedLayer) {
+  PictureEngineLayer _placeRetainedLayer(PictureEngineLayer retainedLayer, PlatformViewStyling styling) {
+    if (_isSimple && retainedLayer.isSimple) {
+      // There are no platform views, so we don't need to do any occlusion tracking
+      // and can simply merge the layer.
+      return retainedLayer;
+    }
     bool needsRebuild = false;
     final List<LayerDrawCommand> revisedDrawCommands = [];
+    final PlatformViewStyling combinedStyling = PlatformViewStyling.combine(styling, retainedLayer.platformViewStyling);
     for (final LayerDrawCommand command in retainedLayer.drawCommands) {
       switch (command) {
         case PictureDrawCommand(offset: final ui.Offset offset, picture: final ScenePicture picture):
-          final int sliceIndex = _placePicture(offset, picture);
+          final int sliceIndex = _placePicture(offset, picture, combinedStyling);
           if (command.sliceIndex != sliceIndex) {
             needsRebuild = true;
           }
           revisedDrawCommands.add(PictureDrawCommand(offset, picture, sliceIndex));
         case PlatformViewDrawCommand(viewId: final int viewId, bounds: final ui.Rect bounds):
-          final int sliceIndex = _placePlatformView(viewId, bounds);
+          final int sliceIndex = _placePlatformView(viewId, bounds, combinedStyling);
           if (command.sliceIndex != sliceIndex) {
             needsRebuild = true;
           }
           revisedDrawCommands.add(PlatformViewDrawCommand(viewId, bounds, sliceIndex));
         case RetainedLayerDrawCommand(layer: final PictureEngineLayer sublayer):
-          final PictureEngineLayer revisedSublayer = _placeRetainedLayer(sublayer);
+          final PictureEngineLayer revisedSublayer = _placeRetainedLayer(sublayer, combinedStyling);
           if (sublayer != revisedSublayer) {
             needsRebuild = true;
           }
@@ -336,7 +359,8 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   ui.BackdropFilterEngineLayer pushBackdropFilter(
     ui.ImageFilter filter, {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
-    ui.BackdropFilterEngineLayer? oldLayer
+    ui.BackdropFilterEngineLayer? oldLayer,
+    int? backdropId,
   }) => pushLayer<BackdropFilterLayer>(BackdropFilterLayer(BackdropFilterOperation(filter, blendMode)));
 
   @override

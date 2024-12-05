@@ -7,11 +7,11 @@
 
 #include <ostream>
 
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_receiver.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 [[nodiscard]] bool DisplayListsEQ_Verbose(const DisplayList* a,
                                           const DisplayList* b);
@@ -36,8 +36,7 @@ namespace testing {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -80,11 +79,14 @@ extern std::ostream& operator<<(std::ostream& os,
 extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DisplayListOpCategory& category);
 extern std::ostream& operator<<(std::ostream& os, const flutter::DlPath& path);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlImageFilter& type);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlColorFilter& type);
 
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
@@ -110,7 +112,8 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void save() override;
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override;
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override;
   void restore() override;
 
   void translate(DlScalar tx, DlScalar ty) override;
@@ -130,7 +133,9 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 
   void clipRect(const DlRect& rect, ClipOp clip_op, bool is_aa) override;
   void clipOval(const DlRect& bounds, ClipOp clip_op, bool is_aa) override;
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void clipRoundRect(const DlRoundRect& rrect,
+                     ClipOp clip_op,
+                     bool is_aa) override;
   void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   void drawColor(DlColor color, DlBlendMode mode) override;
@@ -143,8 +148,9 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawRect(const DlRect& rect) override;
   void drawOval(const DlRect& bounds) override;
   void drawCircle(const DlPoint& center, DlScalar radius) override;
-  void drawRRect(const SkRRect& rrect) override;
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
+  void drawRoundRect(const DlRoundRect& rrect) override;
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override;
   void drawPath(const DlPath& path) override;
   void drawArc(const DlRect& oval_bounds,
                DlScalar start_degrees,
@@ -193,6 +199,11 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
                   bool transparent_occluder,
                   DlScalar dpr) override;
 
+  void out(const DlColorFilter& filter);
+  void out(const DlColorFilter* filter);
+  void out(const DlImageFilter& filter);
+  void out(const DlImageFilter* filter);
+
  private:
   std::ostream& os_;
   int cur_indent_;
@@ -207,11 +218,6 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   std::ostream& out_array(std::string name, int count, const T array[]);
 
   std::ostream& startl();
-
-  void out(const DlColorFilter& filter);
-  void out(const DlColorFilter* filter);
-  void out(const DlImageFilter& filter);
-  void out(const DlImageFilter* filter);
 };
 
 class DisplayListGeneralReceiver : public DlOpReceiver {
@@ -257,7 +263,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlColorSourceType::kRuntimeEffect:
           RecordByType(DisplayListOpType::kSetRuntimeEffectColorSource);
           break;
-        case DlColorSourceType::kColor:
         case DlColorSourceType::kLinearGradient:
         case DlColorSourceType::kRadialGradient:
         case DlColorSourceType::kConicalGradient:
@@ -281,6 +286,7 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlImageFilterType::kCompose:
         case DlImageFilterType::kLocalMatrix:
         case DlImageFilterType::kColorFilter:
+        case DlImageFilterType::kRuntimeEffect:
           RecordByType(DisplayListOpType::kSetSharedImageFilter);
           break;
       }
@@ -369,15 +375,15 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         break;
     }
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     switch (clip_op) {
       case DlCanvas::ClipOp::kIntersect:
-        RecordByType(DisplayListOpType::kClipIntersectRRect);
+        RecordByType(DisplayListOpType::kClipIntersectRoundRect);
         break;
       case DlCanvas::ClipOp::kDifference:
-        RecordByType(DisplayListOpType::kClipDifferenceRRect);
+        RecordByType(DisplayListOpType::kClipDifferenceRoundRect);
         break;
     }
   }
@@ -397,7 +403,8 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   void save() override { RecordByType(DisplayListOpType::kSave); }
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     if (backdrop) {
       RecordByType(DisplayListOpType::kSaveLayerBackdrop);
     } else {
@@ -428,11 +435,12 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   void drawCircle(const DlPoint& center, DlScalar radius) override {
     RecordByType(DisplayListOpType::kDrawCircle);
   }
-  void drawRRect(const SkRRect& rrect) override {
-    RecordByType(DisplayListOpType::kDrawRRect);
+  void drawRoundRect(const DlRoundRect& rrect) override {
+    RecordByType(DisplayListOpType::kDrawRoundRect);
   }
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {
-    RecordByType(DisplayListOpType::kDrawDRRect);
+  void drawDiffRoundRect(const DlRoundRect& outer,
+                         const DlRoundRect& inner) override {
+    RecordByType(DisplayListOpType::kDrawDiffRoundRect);
   }
   void drawPath(const DlPath& path) override {
     RecordByType(DisplayListOpType::kDrawPath);
@@ -601,7 +609,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   uint32_t op_count_ = 0u;
 };
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 #endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
