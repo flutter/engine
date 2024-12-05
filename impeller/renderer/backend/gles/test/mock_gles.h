@@ -8,12 +8,29 @@
 #include <memory>
 #include <optional>
 
+#include "gmock/gmock.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
 namespace testing {
 
 extern const ProcTableGLES::Resolver kMockResolverGLES;
+
+class IMockGLESImpl {
+ public:
+  virtual ~IMockGLESImpl() = default;
+  virtual void DeleteTextures(GLsizei size, const GLuint* queries) {}
+  virtual void GenTextures(GLsizei n, GLuint* textures) {}
+};
+
+class MockGLESImpl : public IMockGLESImpl {
+ public:
+  MOCK_METHOD(void,
+              DeleteTextures,
+              (GLsizei size, const GLuint* queries),
+              (override));
+  MOCK_METHOD(void, GenTextures, (GLsizei n, GLuint* textures), (override));
+};
 
 /// @brief      Provides a mocked version of the |ProcTableGLES| class.
 ///
@@ -25,6 +42,8 @@ extern const ProcTableGLES::Resolver kMockResolverGLES;
 /// See `README.md` for more information.
 class MockGLES final {
  public:
+  static std::shared_ptr<MockGLES> Init(std::unique_ptr<MockGLESImpl> impl);
+
   /// @brief      Returns an initialized |MockGLES| instance.
   ///
   /// This method overwrites mocked global GLES function pointers to record
@@ -50,7 +69,7 @@ class MockGLES final {
 
   ~MockGLES();
 
-  void SetNextTexture(uint64_t next_texture) { next_texture_ = next_texture; }
+  IMockGLESImpl* GetImpl() { return impl_.get(); }
 
  private:
   friend void RecordGLCall(const char* name);
@@ -62,7 +81,7 @@ class MockGLES final {
 
   ProcTableGLES proc_table_;
   std::vector<std::string> captured_calls_;
-  std::optional<uint64_t> next_texture_;
+  std::unique_ptr<IMockGLESImpl> impl_;
 
   MockGLES(const MockGLES&) = delete;
 

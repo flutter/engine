@@ -164,7 +164,13 @@ void mockDeleteQueriesEXT(GLsizei size, const GLuint* queries) {
 }
 
 void mockDeleteTextures(GLsizei size, const GLuint* queries) {
-  RecordGLCall("glDeleteTextures");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->DeleteTextures(size, queries);
+    } else {
+      RecordGLCall("glDeleteTextures");
+    }
+  }
 }
 
 static_assert(CheckSameSignature<decltype(mockDeleteQueriesEXT),  //
@@ -177,12 +183,11 @@ static_assert(CheckSameSignature<decltype(mockUniform1fv),  //
                                  decltype(glUniform1fv)>::value);
 
 void mockGenTextures(GLsizei n, GLuint* textures) {
-  RecordGLCall("glGenTextures");
   if (auto mock_gles = g_mock_gles.lock()) {
-    std::optional<uint64_t> next_texture;
-    std::swap(mock_gles->next_texture_, next_texture);
-    if (next_texture.has_value()) {
-      textures[0] = next_texture.value();
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->GenTextures(n, textures);
+    } else {
+      RecordGLCall("glGenTextures");
     }
   }
 }
@@ -198,6 +203,18 @@ void mockObjectLabelKHR(GLenum identifier,
 }
 static_assert(CheckSameSignature<decltype(mockObjectLabelKHR),  //
                                  decltype(glObjectLabelKHR)>::value);
+
+// static
+std::shared_ptr<MockGLES> MockGLES::Init(std::unique_ptr<MockGLESImpl> impl) {
+  FML_CHECK(g_test_lock.try_lock())
+      << "MockGLES is already being used by another test.";
+  auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES());
+  mock_gles->impl_ = std::move(impl);
+  g_version = reinterpret_cast<const unsigned char*>("OpenGL ES 3.0");
+  g_extensions = kExtensions;
+  g_mock_gles = mock_gles;
+  return mock_gles;
+}
 
 std::shared_ptr<MockGLES> MockGLES::Init(
     const std::optional<std::vector<const unsigned char*>>& extensions,
