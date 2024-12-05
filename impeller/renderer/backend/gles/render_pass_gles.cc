@@ -6,18 +6,19 @@
 
 #include <cstdint>
 
-#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/command.h"
 
 namespace impeller {
 
@@ -188,9 +189,10 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
 
 [[nodiscard]] bool EncodeCommandsInReactor(
     const RenderPassData& pass_data,
-    const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
+    const std::vector<TextureAndSampler>& bound_textures,
+    const std::vector<BufferResource>& bound_buffers,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
@@ -218,7 +220,7 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   } else {
     // Create and bind an offscreen FBO.
-    auto cached_fbo = color_gles.GetCachedFBO();
+    GLuint cached_fbo = color_gles.GetCachedFBO();
     if (cached_fbo != GL_NONE) {
       fbo = cached_fbo;
       gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -289,7 +291,7 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   // Both the viewport and scissor are specified in framebuffer coordinates.
   // Impeller's framebuffer coordinate system is top left origin, but OpenGL's
   // is bottom left origin, so we convert the coordinates here.
-  auto target_size = pass_data.color_attachment->GetSize();
+  ISize target_size = pass_data.color_attachment->GetSize();
 
   //--------------------------------------------------------------------------
   /// Setup the viewport.
@@ -309,17 +311,11 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   }
 
+  CullMode current_cull_mode = CullMode::kNone;
+  WindingOrder current_winding_order = WindingOrder::kClockwise;
+  gl.FrontFace(GL_CW);
+
   for (const auto& command : commands) {
-    if (command.instance_count != 1u) {
-      VALIDATION_LOG << "GLES backend does not support instanced rendering.";
-      return false;
-    }
-
-    if (!command.pipeline) {
-      VALIDATION_LOG << "Command has no pipeline specified.";
-      return false;
-    }
-
 #ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure pop_cmd_debug_marker(
         [&gl]() { gl.PopDebugGroup(); });
@@ -401,36 +397,42 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     //--------------------------------------------------------------------------
     /// Setup culling.
     ///
-    switch (pipeline.GetDescriptor().GetCullMode()) {
-      case CullMode::kNone:
-        gl.Disable(GL_CULL_FACE);
-        break;
-      case CullMode::kFrontFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_FRONT);
-        break;
-      case CullMode::kBackFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_BACK);
-        break;
+    CullMode pipeline_cull_mode = pipeline.GetDescriptor().GetCullMode();
+    if (current_cull_mode != pipeline_cull_mode) {
+      switch (pipeline_cull_mode) {
+        case CullMode::kNone:
+          gl.Disable(GL_CULL_FACE);
+          break;
+        case CullMode::kFrontFace:
+          gl.Enable(GL_CULL_FACE);
+          gl.CullFace(GL_FRONT);
+          break;
+        case CullMode::kBackFace:
+          gl.Enable(GL_CULL_FACE);
+          gl.CullFace(GL_BACK);
+          break;
+      }
+      current_cull_mode = pipeline_cull_mode;
     }
+
     //--------------------------------------------------------------------------
     /// Setup winding order.
     ///
-    switch (pipeline.GetDescriptor().GetWindingOrder()) {
-      case WindingOrder::kClockwise:
-        gl.FrontFace(GL_CW);
-        break;
-      case WindingOrder::kCounterClockwise:
-        gl.FrontFace(GL_CCW);
-        break;
+    WindingOrder pipeline_winding_order =
+        pipeline.GetDescriptor().GetWindingOrder();
+    if (current_winding_order != pipeline_winding_order) {
+      switch (pipeline.GetDescriptor().GetWindingOrder()) {
+        case WindingOrder::kClockwise:
+          gl.FrontFace(GL_CW);
+          break;
+        case WindingOrder::kCounterClockwise:
+          gl.FrontFace(GL_CCW);
+          break;
+      }
+      current_winding_order = pipeline_winding_order;
     }
 
-    auto vertex_desc_gles = pipeline.GetBufferBindings();
-
-    if (command.index_type == IndexType::kUnknown) {
-      return false;
-    }
+    BufferBindingsGLES* vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex buffers.
@@ -456,10 +458,13 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     //--------------------------------------------------------------------------
     /// Bind uniform data.
     ///
-    if (!vertex_desc_gles->BindUniformData(gl,                        //
-                                           command.vertex_bindings,   //
-                                           command.fragment_bindings  //
-                                           )) {
+    if (!vertex_desc_gles->BindUniformData(
+            gl,                                        //
+            bound_textures,                            //
+            bound_buffers,                             //
+            /*texture_range=*/command.bound_textures,  //
+            /*buffer_range=*/command.bound_buffers     //
+            )) {
       return false;
     }
 
@@ -471,9 +476,10 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     // correct; full triangle outlines won't be drawn and disconnected
     // geometry may appear connected. However this can still be useful for
     // wireframe debug views.
-    auto mode = pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
-                    ? GL_LINE_STRIP
-                    : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
+    GLenum mode =
+        pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
+            ? GL_LINE_STRIP
+            : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
 
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
@@ -601,13 +607,18 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
         CanDiscardAttachmentWhenDone(stencil0->store_action);
   }
 
-  std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
-  auto tracer = ContextGLES::Cast(context).GetGPUTracer();
   return reactor_->AddOperation(
-      [pass_data, allocator = context.GetResourceAllocator(),
-       render_pass = std::move(shared_this), tracer](const auto& reactor) {
-        auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                              render_pass->commands_, tracer);
+      [pass_data = std::move(pass_data), render_pass = shared_from_this(),
+       tracer =
+           ContextGLES::Cast(context).GetGPUTracer()](const auto& reactor) {
+        auto result = EncodeCommandsInReactor(
+            /*pass_data=*/*pass_data,                         //
+            /*reactor=*/reactor,                              //
+            /*commands=*/render_pass->commands_,              //
+            /*bound_textures=*/render_pass->bound_textures_,  //
+            /*bound_buffers=*/render_pass->bound_buffers_,    //
+            /*tracer=*/tracer                                 //
+        );
         FML_CHECK(result)
             << "Must be able to encode GL commands without error.";
       },

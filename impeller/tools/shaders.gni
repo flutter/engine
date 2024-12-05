@@ -119,6 +119,7 @@ template("impeller_shaders") {
       require_framebuffer_fetch = require_framebuffer_fetch
       gles_language_version = 300
       is_300 = true
+      analyze = false
       if (defined(invoker.gles_exclusions)) {
         shaders = invoker.shaders - invoker.gles_exclusions
       } else {

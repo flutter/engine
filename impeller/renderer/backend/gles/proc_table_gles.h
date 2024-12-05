@@ -316,7 +316,7 @@ class ProcTableGLES {
 
   bool SetDebugLabel(DebugResourceType type,
                      GLint name,
-                     const std::string& label) const;
+                     std::string_view label) const;
 
   void PushDebugGroup(const std::string& string) const;
 
