@@ -946,7 +946,6 @@
 ../../../flutter/third_party/angle/tools
 ../../../flutter/third_party/angle/util
 ../../../flutter/third_party/benchmark
-../../../flutter/third_party/boringssl/.git
 ../../../flutter/third_party/boringssl/src/.bazelrc
 ../../../flutter/third_party/boringssl/src/.bazelversion
 ../../../flutter/third_party/boringssl/src/.bcr/README.md
