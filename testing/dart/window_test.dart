@@ -96,6 +96,13 @@ void main() {
     expect(flutterView.toString(), 'FlutterView(id: 0)');
   });
 
+  test('Brightness enum getters', () {
+    expect(Brightness.dark.isDark, true);
+    expect(Brightness.dark.isLight, false);
+    expect(Brightness.light.isDark, false);
+    expect(Brightness.light.isLight, true);
+  });
+
   test('scaleFontSize is the identity function by default when textScaleFactor = 1', () {
     expect(PlatformDispatcher.instance.scaleFontSize(0), 0.0);
     expect(PlatformDispatcher.instance.scaleFontSize(1), 1.0);
