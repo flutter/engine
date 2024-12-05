@@ -75,7 +75,8 @@ struct _FlKeyboardManagerUserData {
 
   // The owner manager.
   GWeakRef manager;
-  uint64_t sequence_id;
+
+  FlKeyboardPendingEvent* pending;
 };
 
 G_DEFINE_TYPE(FlKeyboardManagerUserData,
@@ -102,12 +103,12 @@ static void fl_keyboard_manager_user_data_init(
 // Creates a new FlKeyboardManagerUserData private class with all information.
 static FlKeyboardManagerUserData* fl_keyboard_manager_user_data_new(
     FlKeyboardManager* manager,
-    uint64_t sequence_id) {
+    FlKeyboardPendingEvent* pending) {
   FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(
       g_object_new(fl_keyboard_manager_user_data_get_type(), nullptr));
 
   g_weak_ref_init(&self->manager, manager);
-  self->sequence_id = sequence_id;
+  self->pending = FL_KEYBOARD_PENDING_EVENT(g_object_ref(pending));
   return self;
 }
 
@@ -147,9 +148,6 @@ struct _FlKeyboardManager {
   //
   // Its elements are unreferenced when removed.
   GPtrArray* pending_redispatches;
-
-  // The last sequence ID used. Increased by 1 by every use.
-  uint64_t last_sequence_id;
 
   // Record the derived layout.
   //
@@ -205,15 +203,6 @@ static gboolean g_ptr_array_find_with_equal_func1(GPtrArray* haystack,
   return FALSE;
 }
 
-// Compare a #FlKeyboardPendingEvent with the given sequence_id.
-static gboolean compare_pending_by_sequence_id(gconstpointer a,
-                                               gconstpointer b) {
-  FlKeyboardPendingEvent* pending =
-      FL_KEYBOARD_PENDING_EVENT(const_cast<gpointer>(a));
-  uint64_t sequence_id = *reinterpret_cast<const uint64_t*>(b);
-  return fl_keyboard_pending_event_get_sequence_id(pending) == sequence_id;
-}
-
 // Compare a #FlKeyboardPendingEvent with the given hash.
 static gboolean compare_pending_by_hash(gconstpointer a, gconstpointer b) {
   FlKeyboardPendingEvent* pending =
@@ -261,14 +250,7 @@ static void responder_handle_event_callback(bool handled,
     return;
   }
 
-  guint result_index = -1;
-  gboolean found = g_ptr_array_find_with_equal_func1(
-      self->pending_responds, &user_data->sequence_id,
-      compare_pending_by_sequence_id, &result_index);
-  g_return_if_fail(found);
-  FlKeyboardPendingEvent* pending = FL_KEYBOARD_PENDING_EVENT(
-      g_ptr_array_index(self->pending_responds, result_index));
-  g_return_if_fail(pending != nullptr);
+  FlKeyboardPendingEvent* pending = user_data->pending;
   if (is_embedder) {
     fl_keyboard_pending_event_mark_embedder_replied(pending, handled);
   } else {
@@ -277,15 +259,13 @@ static void responder_handle_event_callback(bool handled,
   // All responders have replied.
   if (fl_keyboard_pending_event_is_complete(pending)) {
     g_object_unref(user_data_ptr);
-    gpointer removed =
-        g_ptr_array_remove_index_fast(self->pending_responds, result_index);
-    g_return_if_fail(removed == pending);
+    g_ptr_array_remove(self->pending_responds, pending);
     bool should_redispatch =
         !fl_keyboard_pending_event_get_any_handled(pending) &&
         !fl_keyboard_view_delegate_text_filter_key_press(
             view_delegate, fl_keyboard_pending_event_get_event(pending));
     if (should_redispatch) {
-      g_ptr_array_add(self->pending_redispatches, pending);
+      g_ptr_array_add(self->pending_redispatches, g_object_ref(pending));
       FlKeyEvent* event = fl_keyboard_pending_event_get_event(pending);
       if (self->redispatch_handler != nullptr) {
         self->redispatch_handler(event, self->redispatch_handler_user_data);
@@ -296,8 +276,6 @@ static void responder_handle_event_callback(bool handled,
                          event_type == GDK_KEY_RELEASE);
         gdk_event_put(fl_key_event_get_origin(event));
       }
-    } else {
-      g_object_unref(pending);
     }
   }
 }
@@ -459,8 +437,6 @@ static void fl_keyboard_manager_init(FlKeyboardManager* self) {
   self->pending_responds = g_ptr_array_new();
   self->pending_redispatches = g_ptr_array_new_with_free_func(g_object_unref);
 
-  self->last_sequence_id = 1;
-
   self->keymap = gdk_keymap_get_for_display(gdk_display_get_default());
   self->keymap_keys_changed_cb_id = g_signal_connect_swapped(
       self->keymap, "keys-changed", G_CALLBACK(keymap_keys_changed_cb), self);
@@ -511,12 +487,11 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
     return FALSE;
   }
 
-  FlKeyboardPendingEvent* pending =
-      fl_keyboard_pending_event_new(event, ++self->last_sequence_id);
+  FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(event);
 
   g_ptr_array_add(self->pending_responds, pending);
-  FlKeyboardManagerUserData* user_data = fl_keyboard_manager_user_data_new(
-      self, fl_keyboard_pending_event_get_sequence_id(pending));
+  FlKeyboardManagerUserData* user_data =
+      fl_keyboard_manager_user_data_new(self, pending);
   uint64_t specified_logical_key = fl_keyboard_layout_get_logical_key(
       self->derived_layout, fl_key_event_get_group(event),
       fl_key_event_get_keycode(event));
