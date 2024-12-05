@@ -11,7 +11,7 @@ namespace impeller {
 UniqueHandleGLES::UniqueHandleGLES(ReactorGLES::Ref reactor, HandleType type)
     : reactor_(std::move(reactor)) {
   if (reactor_) {
-    handle_ = reactor_->CreateHandle(type);
+    handle_ = reactor_->CreateUntrackedHandle(type);
   }
 }
 
