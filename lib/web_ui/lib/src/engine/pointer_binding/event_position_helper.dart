@@ -18,9 +18,12 @@ import '../window.dart';
 /// The offset is *not* multiplied by DPR or anything else, it's the closest
 /// to what the DOM would return if we had currentTarget readily available.
 ///
-/// This needs an `eventTarget`, because the `event.target` (which is what
-/// this would really need to use) gets lost when the `event` comes from a
-/// "coalesced" event (see https://github.com/flutter/flutter/issues/155987).
+/// This takes an optional `eventTarget`, because the `event.target` may have
+/// the wrong value for "coalesced" events. See:
+///
+/// - https://github.com/flutter/flutter/issues/155987
+/// - https://github.com/flutter/flutter/issues/159804
+/// - https://g-issues.chromium.org/issues/382473107
 ///
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
@@ -70,6 +73,8 @@ ui.Offset computeEventOffsetToTarget(
 /// sent from the framework, which includes information on how to transform the
 /// underlying input element. We transform the `event.offset` points we receive
 /// using the values from the input's transform matrix.
+///
+/// See [computeEventOffsetToTarget] for more information about `eventTarget`.
 ui.Offset _computeOffsetForInputs(
   DomMouseEvent event,
   DomEventTarget eventTarget,
