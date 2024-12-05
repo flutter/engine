@@ -123,12 +123,11 @@ abstract class AccessibilityFeatures {
 
 enum Brightness {
   dark,
-
   light;
 
-  bool get isDark => this == Brightness.dark;
+  bool get isDark => this == dark;
 
-  bool get isLight => this == Brightness.light;
+  bool get isLight => this == light;
 }
 
 // Unimplemented classes.

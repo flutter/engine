@@ -1014,7 +1014,7 @@ enum Brightness {
   bool get isDark => this == dark;
 
   /// Checks if the brightness is [Brightness.light].
-  bool get isLight => this == Brightness.light;
+  bool get isLight => this == light;
 }
 
 /// Deprecated. Will be removed in a future version of Flutter.
