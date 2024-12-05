@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "impeller/core/runtime_types.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
@@ -83,6 +84,10 @@ class TestImpellerContext : public impeller::Context {
   }
 
   void Shutdown() override { did_shutdown = true; }
+
+  impeller::RuntimeStageBackend GetRuntimeStageBackend() const override {
+    return impeller::RuntimeStageBackend::kVulkan;
+  }
 
   bool did_shutdown = false;
 };
