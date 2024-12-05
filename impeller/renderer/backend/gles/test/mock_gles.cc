@@ -19,6 +19,10 @@ static std::mutex g_test_lock;
 
 static std::weak_ptr<MockGLES> g_mock_gles;
 
+static std::vector<const char*> g_extensions;
+
+static const char* g_version;
+
 // Has friend visibility into MockGLES to record calls.
 void RecordGLCall(const char* name) {
   if (auto mock_gles = g_mock_gles.lock()) {
@@ -45,14 +49,8 @@ const unsigned char* mockGetString(GLenum name) {
   switch (name) {
     case GL_VENDOR:
       return reinterpret_cast<const unsigned char*>(kMockVendor);
-    case GL_VERSION: {
-      std::vector<const char*> extensions;
-      if (auto mock_gles = g_mock_gles.lock()) {
-        return reinterpret_cast<const unsigned char*>(mock_gles->GetVersion());
-      } else {
-        return reinterpret_cast<const unsigned char*>("");
-      }
-    }
+    case GL_VERSION:
+      return reinterpret_cast<const unsigned char*>(g_version);
     case GL_SHADING_LANGUAGE_VERSION:
       return reinterpret_cast<const unsigned char*>(
           kMockShadingLanguageVersion);
@@ -65,13 +63,9 @@ static_assert(CheckSameSignature<decltype(mockGetString),  //
                                  decltype(glGetString)>::value);
 
 const unsigned char* mockGetStringi(GLenum name, GLuint index) {
-  std::vector<const char*> extensions;
-  if (auto mock_gles = g_mock_gles.lock()) {
-    extensions = mock_gles->GetExtensions();
-  }
   switch (name) {
     case GL_EXTENSIONS:
-      return reinterpret_cast<const unsigned char*>(extensions[index]);
+      return reinterpret_cast<const unsigned char*>(g_extensions[index]);
     default:
       return reinterpret_cast<const unsigned char*>("");
   }
@@ -81,13 +75,9 @@ static_assert(CheckSameSignature<decltype(mockGetStringi),  //
                                  decltype(glGetStringi)>::value);
 
 void mockGetIntegerv(GLenum name, int* value) {
-  std::vector<const char*> extensions;
-  if (auto mock_gles = g_mock_gles.lock()) {
-    extensions = mock_gles->GetExtensions();
-  }
   switch (name) {
     case GL_NUM_EXTENSIONS: {
-      *value = extensions.size();
+      *value = g_extensions.size();
     } break;
     case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
       *value = 8;
@@ -129,9 +119,10 @@ static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
 
 void mockGenQueriesEXT(GLsizei n, GLuint* ids) {
-  RecordGLCall("glGenQueriesEXT");
-  for (auto i = 0; i < n; i++) {
-    ids[i] = i + 1;
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->GenQueriesEXT(n, ids);
+    }
   }
 }
 
@@ -139,37 +130,55 @@ static_assert(CheckSameSignature<decltype(mockGenQueriesEXT),  //
                                  decltype(glGenQueriesEXT)>::value);
 
 void mockBeginQueryEXT(GLenum target, GLuint id) {
-  RecordGLCall("glBeginQueryEXT");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->BeginQueryEXT(target, id);
+    }
+  }
 }
 
 static_assert(CheckSameSignature<decltype(mockBeginQueryEXT),  //
                                  decltype(glBeginQueryEXT)>::value);
 
 void mockEndQueryEXT(GLuint id) {
-  RecordGLCall("glEndQueryEXT");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->EndQueryEXT(id);
+    }
+  }
 }
 
 static_assert(CheckSameSignature<decltype(mockEndQueryEXT),  //
                                  decltype(glEndQueryEXT)>::value);
 
 void mockGetQueryObjectuivEXT(GLuint id, GLenum target, GLuint* result) {
-  RecordGLCall("glGetQueryObjectuivEXT");
-  *result = GL_TRUE;
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->GetQueryObjectuivEXT(id, target, result);
+    }
+  }
 }
 
 static_assert(CheckSameSignature<decltype(mockGetQueryObjectuivEXT),  //
                                  decltype(glGetQueryObjectuivEXT)>::value);
 
 void mockGetQueryObjectui64vEXT(GLuint id, GLenum target, GLuint64* result) {
-  RecordGLCall("glGetQueryObjectui64vEXT");
-  *result = 1000u;
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->GetQueryObjectui64vEXT(id, target, result);
+    }
+  }
 }
 
 static_assert(CheckSameSignature<decltype(mockGetQueryObjectui64vEXT),  //
                                  decltype(glGetQueryObjectui64vEXT)>::value);
 
 void mockDeleteQueriesEXT(GLsizei size, const GLuint* queries) {
-  RecordGLCall("glDeleteQueriesEXT");
+  if (auto mock_gles = g_mock_gles.lock()) {
+    if (mock_gles->GetImpl()) {
+      mock_gles->GetImpl()->DeleteQueriesEXT(size, queries);
+    }
+  }
 }
 
 void mockDeleteTextures(GLsizei size, const GLuint* queries) {
@@ -226,13 +235,15 @@ static_assert(CheckSameSignature<decltype(mockObjectLabelKHR),  //
                                  decltype(glObjectLabelKHR)>::value);
 
 // static
-std::shared_ptr<MockGLES> MockGLES::Init(std::unique_ptr<MockGLESImpl> impl) {
+std::shared_ptr<MockGLES> MockGLES::Init(
+    std::unique_ptr<MockGLESImpl> impl,
+    const std::optional<std::vector<const char*>>& extensions) {
   FML_CHECK(g_test_lock.try_lock())
       << "MockGLES is already being used by another test.";
+  g_extensions = extensions.value_or(kExtensions);
+  g_version = "OpenGL ES 3.0";
   auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES());
   mock_gles->impl_ = std::move(impl);
-  mock_gles->extensions_ = kExtensions;
-  mock_gles->version_ = "OpenGL ES 3.0";
   g_mock_gles = mock_gles;
   return mock_gles;
 }
@@ -244,9 +255,9 @@ std::shared_ptr<MockGLES> MockGLES::Init(
   // If we cannot obtain a lock, MockGLES is already being used elsewhere.
   FML_CHECK(g_test_lock.try_lock())
       << "MockGLES is already being used by another test.";
+  g_extensions = extensions.value_or(kExtensions);
+  g_version = version_string;
   auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES(std::move(resolver)));
-  mock_gles->extensions_ = extensions.value_or(kExtensions);
-  mock_gles->version_ = version_string;
   g_mock_gles = mock_gles;
   return mock_gles;
 }

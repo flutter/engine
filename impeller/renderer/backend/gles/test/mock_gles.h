@@ -27,6 +27,14 @@ class IMockGLESImpl {
                               const GLchar* label) {}
   virtual void Uniform1fv(GLint location, GLsizei count, const GLfloat* value) {
   }
+  virtual void GenQueriesEXT(GLsizei n, GLuint* ids) {}
+  virtual void BeginQueryEXT(GLenum target, GLuint id) {}
+  virtual void EndQueryEXT(GLuint id) {}
+  virtual void GetQueryObjectuivEXT(GLuint id, GLenum target, GLuint* result) {}
+  virtual void GetQueryObjectui64vEXT(GLuint id,
+                                      GLenum target,
+                                      GLuint64* result) {}
+  virtual void DeleteQueriesEXT(GLsizei size, const GLuint* queries) {}
 };
 
 class MockGLESImpl : public IMockGLESImpl {
@@ -45,6 +53,21 @@ class MockGLESImpl : public IMockGLESImpl {
               Uniform1fv,
               (GLint location, GLsizei count, const GLfloat* value),
               (override));
+  MOCK_METHOD(void, GenQueriesEXT, (GLsizei n, GLuint* ids), (override));
+  MOCK_METHOD(void, BeginQueryEXT, (GLenum target, GLuint id), (override));
+  MOCK_METHOD(void, EndQueryEXT, (GLuint id), (override));
+  MOCK_METHOD(void,
+              GetQueryObjectuivEXT,
+              (GLuint id, GLenum target, GLuint* result),
+              (override));
+  MOCK_METHOD(void,
+              GetQueryObjectui64vEXT,
+              (GLuint id, GLenum target, GLuint64* result),
+              (override));
+  MOCK_METHOD(void,
+              DeleteQueriesEXT,
+              (GLsizei size, const GLuint* queries),
+              (override));
 };
 
 /// @brief      Provides a mocked version of the |ProcTableGLES| class.
@@ -57,7 +80,9 @@ class MockGLESImpl : public IMockGLESImpl {
 /// See `README.md` for more information.
 class MockGLES final {
  public:
-  static std::shared_ptr<MockGLES> Init(std::unique_ptr<MockGLESImpl> impl);
+  static std::shared_ptr<MockGLES> Init(
+      std::unique_ptr<MockGLESImpl> impl,
+      const std::optional<std::vector<const char*>>& extensions = std::nullopt);
 
   /// @brief      Returns an initialized |MockGLES| instance.
   ///
@@ -72,22 +97,9 @@ class MockGLES final {
   /// @brief      Returns a configured |ProcTableGLES| instance.
   const ProcTableGLES& GetProcTable() const { return proc_table_; }
 
-  /// @brief      Returns a vector of the names of all recorded calls.
-  ///
-  /// Calls are cleared after this method is called.
-  std::vector<std::string> GetCapturedCalls() {
-    std::vector<std::string> calls = captured_calls_;
-    captured_calls_.clear();
-    return calls;
-  }
-
   ~MockGLES();
 
   IMockGLESImpl* GetImpl() { return impl_.get(); }
-
-  const std::vector<const char*>& GetExtensions() const { return extensions_; }
-
-  const char* GetVersion() const { return version_; }
 
  private:
   friend void RecordGLCall(const char* name);
@@ -100,8 +112,6 @@ class MockGLES final {
   ProcTableGLES proc_table_;
   std::vector<std::string> captured_calls_;
   std::unique_ptr<IMockGLESImpl> impl_;
-  std::vector<const char*> extensions_;
-  const char* version_;
 
   MockGLES(const MockGLES&) = delete;
 
