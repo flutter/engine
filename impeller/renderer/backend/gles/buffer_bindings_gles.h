@@ -10,6 +10,7 @@
 
 #include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "impeller/core/shader_types.h"
+#include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/command.h"
@@ -80,15 +81,17 @@ class BufferBindingsGLES {
 
   GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
-  bool BindUniformBuffer(const ProcTableGLES& gl,
-                         const BufferResource& buffer,
-                         bool force_v2);
+  bool BindUniformBuffer(const ProcTableGLES& gl, const BufferResource& buffer);
 
   bool BindUniformBufferV2(const ProcTableGLES& gl,
-                           const BufferResource& buffer);
+                           const BufferView& buffer,
+                           const ShaderMetadata* metadata,
+                           const DeviceBufferGLES& device_buffer_gles);
 
   bool BindUniformBufferV3(const ProcTableGLES& gl,
-                           const BufferResource& buffer);
+                           const BufferView& buffer,
+                           const ShaderMetadata* metadata,
+                           const DeviceBufferGLES& device_buffer_gles);
 
   std::optional<size_t> BindTextures(const ProcTableGLES& gl,
                                      const Bindings& bindings,

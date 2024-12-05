@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/buffer_view.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -218,13 +220,12 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
                                          const Bindings& vertex_bindings,
                                          const Bindings& fragment_bindings) {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, buffer.view, /*force_v2=*/false)) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, buffer.view,
-                           /*force_v2=*/buffer.view.IsDynamic())) {
+    if (!BindUniformBuffer(gl, buffer.view)) {
       return false;
     }
   }
@@ -310,16 +311,7 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           const BufferResource& buffer,
-                                           bool force_v2) {
-  if (use_ubo_ && !force_v2) {
-    return BindUniformBufferV3(gl, buffer);
-  }
-  return BindUniformBufferV2(gl, buffer);
-}
-
-bool BufferBindingsGLES::BindUniformBufferV3(const ProcTableGLES& gl,
-                                             const BufferResource& buffer) {
+                                           const BufferResource& buffer) {
   const ShaderMetadata* metadata = buffer.GetMetadata();
   const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
   if (!device_buffer) {
@@ -329,10 +321,22 @@ bool BufferBindingsGLES::BindUniformBufferV3(const ProcTableGLES& gl,
   const DeviceBufferGLES& device_buffer_gles =
       DeviceBufferGLES::Cast(*device_buffer);
 
+  if (use_ubo_) {
+    return BindUniformBufferV3(gl, buffer.resource, metadata,
+                               device_buffer_gles);
+  }
+  return BindUniformBufferV2(gl, buffer.resource, metadata, device_buffer_gles);
+}
+
+bool BufferBindingsGLES::BindUniformBufferV3(
+    const ProcTableGLES& gl,
+    const BufferView& buffer,
+    const ShaderMetadata* metadata,
+    const DeviceBufferGLES& device_buffer_gles) {
   absl::flat_hash_map<std::string, std::pair<GLint, GLuint>>::iterator it =
       ubo_locations_.find(metadata->name);
   if (it == ubo_locations_.end()) {
-    return false;
+    return BindUniformBufferV2(gl, buffer, metadata, device_buffer_gles);
   }
   const auto& [block_index, binding_point] = it->second;
   gl.UniformBlockBinding(program_handle_, block_index, binding_point);
@@ -346,23 +350,17 @@ bool BufferBindingsGLES::BindUniformBufferV3(const ProcTableGLES& gl,
     return false;
   }
   gl.BindBufferRange(GL_UNIFORM_BUFFER, binding_point, handle.value(),
-                     buffer.resource.GetRange().offset,
-                     buffer.resource.GetRange().length);
+                     buffer.GetRange().offset, buffer.GetRange().length);
   return true;
 }
 
-bool BufferBindingsGLES::BindUniformBufferV2(const ProcTableGLES& gl,
-                                             const BufferResource& buffer) {
-  const ShaderMetadata* metadata = buffer.GetMetadata();
-  const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
-  if (!device_buffer) {
-    VALIDATION_LOG << "Device buffer not found.";
-    return false;
-  }
-  const DeviceBufferGLES& device_buffer_gles =
-      DeviceBufferGLES::Cast(*device_buffer);
+bool BufferBindingsGLES::BindUniformBufferV2(
+    const ProcTableGLES& gl,
+    const BufferView& buffer,
+    const ShaderMetadata* metadata,
+    const DeviceBufferGLES& device_buffer_gles) {
   const uint8_t* buffer_ptr =
-      device_buffer_gles.GetBufferData() + buffer.resource.GetRange().offset;
+      device_buffer_gles.GetBufferData() + buffer.GetRange().offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "

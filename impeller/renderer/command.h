@@ -39,8 +39,6 @@ class Resource {
   Resource(const ShaderMetadata* metadata, ResourceType p_resource)
       : resource(p_resource), metadata_(metadata) {}
 
-  bool IsDynamic() const { return !!dynamic_metadata_; }
-
   const ShaderMetadata* GetMetadata() const {
     return dynamic_metadata_ ? dynamic_metadata_.get() : metadata_;
   }
