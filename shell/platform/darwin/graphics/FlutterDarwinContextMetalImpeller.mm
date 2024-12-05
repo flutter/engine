@@ -35,15 +35,9 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
   self = [super init];
   if (self != nil) {
     _context = CreateImpellerContext(is_gpu_disabled_sync_switch);
-    if (!_context) {
-      FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
-      return nil;
-    }
+    FML_CHECK(_context) << "Could not create Metal Impeller Context.";
     id<MTLDevice> device = _context->GetMTLDevice();
-    if (!device) {
-      FML_LOG(ERROR) << "Could not acquire Metal device.";
-      return nil;
-    }
+    FML_CHECK(device) << "Could not acquire Metal device.";
 
     CVMetalTextureCacheRef textureCache;
     CVReturn cvReturn = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
@@ -53,10 +47,7 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
                                                   &textureCache  // [out] cache
     );
 
-    if (cvReturn != kCVReturnSuccess) {
-      FML_DLOG(ERROR) << "Could not create Metal texture cache.";
-      return nil;
-    }
+    FML_CHECK(cvReturn == kCVReturnSuccess) << "Could not acquire Metal device.";
     _textureCache.Reset(textureCache);
   }
   return self;
