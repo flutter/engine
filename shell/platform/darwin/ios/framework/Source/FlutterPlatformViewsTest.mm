@@ -2831,9 +2831,8 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*raster=*/GetDefaultTaskRunner(),
                                /*ui=*/GetDefaultTaskRunner(),
                                /*io=*/GetDefaultTaskRunner());
-  FlutterPlatformViewsController* flutterPlatformViewsController =
-      [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.taskRunner = GetDefaultTaskRunner();
+  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2846,17 +2845,14 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   FlutterPlatformViewsTestMockWebViewFactory* factory =
       [[FlutterPlatformViewsTestMockWebViewFactory alloc] init];
-  [flutterPlatformViewsController
-                   registerViewFactory:factory
-                                withId:@"MockWebView"
-      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockWebView", FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  [flutterPlatformViewsController
-      onMethodCall:[FlutterMethodCall
-                       methodCallWithMethodName:@"create"
-                                      arguments:@{@"id" : @2, @"viewType" : @"MockWebView"}]
-            result:result];
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall methodCallWithMethodName:@"create"
+                                        arguments:@{@"id" : @2, @"viewType" : @"MockWebView"}],
+      result);
 
   XCTAssertNotNil(gMockPlatformView);
 
@@ -2896,9 +2892,8 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*raster=*/GetDefaultTaskRunner(),
                                /*ui=*/GetDefaultTaskRunner(),
                                /*io=*/GetDefaultTaskRunner());
-  FlutterPlatformViewsController* flutterPlatformViewsController =
-      [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.taskRunner = GetDefaultTaskRunner();
+  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2911,19 +2906,16 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
-  [flutterPlatformViewsController
-                   registerViewFactory:factory
-                                withId:@"MockFlutterPlatformView"
-      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  [flutterPlatformViewsController
-      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
-                                                     arguments:@{
-                                                       @"id" : @2,
-                                                       @"viewType" : @"MockFlutterPlatformView"
-                                                     }]
-            result:result];
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
 
   XCTAssertNotNil(gMockPlatformView);
 
