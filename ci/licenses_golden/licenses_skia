@@ -1,4 +1,4 @@
-Signature: 4642a9c41e5bde12a29ae2b31a095b9c
+Signature: e76ddf14acd2186acf6dae6d8b4242d4
 
 ====================================================================================================
 LIBRARY: etc1
@@ -9787,6 +9787,8 @@ ORIGIN: ../../../flutter/third_party/skia/gm/smallcircles.cpp + ../../../flutter
 ORIGIN: ../../../flutter/third_party/skia/include/ports/SkFontMgr_android_ndk.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkPngCodecBase.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkPngCodecBase.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/encode/SkPngEncoderBase.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/encode/SkPngEncoderBase.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/transform/SkSLTransform.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
@@ -9794,6 +9796,8 @@ FILE: ../../../flutter/third_party/skia/gm/smallcircles.cpp
 FILE: ../../../flutter/third_party/skia/include/ports/SkFontMgr_android_ndk.h
 FILE: ../../../flutter/third_party/skia/src/codec/SkPngCodecBase.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkPngCodecBase.h
+FILE: ../../../flutter/third_party/skia/src/encode/SkPngEncoderBase.cpp
+FILE: ../../../flutter/third_party/skia/src/encode/SkPngEncoderBase.h
 FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorPriv.h
 FILE: ../../../flutter/third_party/skia/src/sksl/transform/SkSLTransform.cpp
 ----------------------------------------------------------------------------------------------------
