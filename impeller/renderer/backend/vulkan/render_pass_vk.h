@@ -58,8 +58,7 @@ class RenderPassVK final : public RenderPass {
                std::shared_ptr<CommandBufferVK> command_buffer);
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(const Pipeline<PipelineDescriptor>* pipeline) override;
 
   // |RenderPass|
   void SetCommandLabel(std::string_view label) override;

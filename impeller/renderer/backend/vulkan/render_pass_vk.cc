@@ -293,9 +293,8 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
 }
 
 // |RenderPass|
-void RenderPassVK::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  pipeline_ = pipeline.get();
+void RenderPassVK::SetPipeline(const Pipeline<PipelineDescriptor>* pipeline) {
+  pipeline_ = pipeline;
   if (!pipeline_) {
     return;
   }

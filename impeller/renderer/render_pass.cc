@@ -81,8 +81,7 @@ const std::shared_ptr<const Context>& RenderPass::GetContext() const {
   return context_;
 }
 
-void RenderPass::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+void RenderPass::SetPipeline(const Pipeline<PipelineDescriptor>* pipeline) {
   pending_.pipeline = pipeline;
 }
 

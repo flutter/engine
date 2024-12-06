@@ -256,7 +256,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             "ImGui draw list %d (command %d)", draw_list_i, cmd_i));
         render_pass.SetViewport(viewport);
         render_pass.SetScissor(impeller::IRect::RoundOut(clip_rect));
-        render_pass.SetPipeline(bd->pipeline);
+        render_pass.SetPipeline(bd->pipeline.get());
         VS::BindUniformBuffer(render_pass, vtx_uniforms);
         FS::BindTex(render_pass, bd->font_texture, bd->sampler);
 

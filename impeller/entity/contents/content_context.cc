@@ -569,7 +569,7 @@ void ContentContext::SetWireframe(bool wireframe) {
   wireframe_ = wireframe;
 }
 
-std::shared_ptr<Pipeline<PipelineDescriptor>>
+const Pipeline<PipelineDescriptor>*
 ContentContext::GetCachedRuntimeEffectPipeline(
     const std::string& unique_entrypoint_name,
     const ContentContextOptions& options,
@@ -580,7 +580,7 @@ ContentContext::GetCachedRuntimeEffectPipeline(
   if (it == runtime_effect_pipelines_.end()) {
     it = runtime_effect_pipelines_.insert(it, {key, create_callback()});
   }
-  return it->second;
+  return it->second.get();
 }
 
 void ContentContext::ClearCachedRuntimeEffectPipeline(

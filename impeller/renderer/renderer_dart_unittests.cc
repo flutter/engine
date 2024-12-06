@@ -235,7 +235,7 @@ class RendererDartTest : public PlaygroundTest,
       TextureVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
       TextureFS::BindTextureContents(pass, texture, sampler);
 
-      pass.SetPipeline(pipeline);
+      pass.SetPipeline(pipeline.get());
 
       if (!pass.Draw().ok()) {
         return false;

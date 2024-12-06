@@ -1696,7 +1696,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool expect_dirty = true;
-  Pipeline<PipelineDescriptor>* first_pipeline;
+  const Pipeline<PipelineDescriptor>* first_pipeline;
   std::unique_ptr<Geometry> geom = Geometry::MakeCover();
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
@@ -1723,10 +1723,10 @@ TEST_P(EntityTest, RuntimeEffect) {
     bool result = contents->Render(context, entity, pass);
 
     if (expect_dirty) {
-      EXPECT_NE(first_pipeline, pass.GetCommands().back().pipeline.get());
-      first_pipeline = pass.GetCommands().back().pipeline.get();
+      EXPECT_NE(first_pipeline, pass.GetCommands().back().pipeline);
+      first_pipeline = pass.GetCommands().back().pipeline;
     } else {
-      EXPECT_EQ(pass.GetCommands().back().pipeline.get(), first_pipeline);
+      EXPECT_EQ(pass.GetCommands().back().pipeline, first_pipeline);
     }
 
     expect_dirty = false;

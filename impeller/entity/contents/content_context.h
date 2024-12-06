@@ -377,102 +377,102 @@ class ContentContext {
 
   Tessellator& GetTessellator() const;
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
+  const Pipeline<PipelineDescriptor>* GetFastGradientPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(fast_gradient_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
+  const Pipeline<PipelineDescriptor>* GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetLinearGradientUniformFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetLinearGradientUniformFillPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_uniform_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetRadialGradientUniformFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetRadialGradientUniformFillPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_uniform_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetConicalGradientUniformFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetConicalGradientUniformFillPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(conical_gradient_uniform_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetSweepGradientUniformFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetSweepGradientUniformFillPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(sweep_gradient_uniform_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetLinearGradientSSBOFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetLinearGradientSSBOFillPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(linear_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetRadialGradientSSBOFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetRadialGradientSSBOFillPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(radial_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetConicalGradientSSBOFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetConicalGradientSSBOFillPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(conical_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetSweepGradientSSBOFillPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetSweepGradientSSBOFillPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
+  const Pipeline<PipelineDescriptor>* GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetConicalGradientFillPipeline(
+  const Pipeline<PipelineDescriptor>* GetConicalGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(conical_gradient_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurPipeline(
+  const Pipeline<PipelineDescriptor>* GetRRectBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(rrect_blur_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetSweepGradientFillPipeline(
+  const Pipeline<PipelineDescriptor>* GetSweepGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(sweep_gradient_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetSolidFillPipeline(
+  const Pipeline<PipelineDescriptor>* GetSolidFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(solid_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
+  const Pipeline<PipelineDescriptor>* GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureStrictSrcPipeline(
+  const Pipeline<PipelineDescriptor>* GetTextureStrictSrcPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_strict_src_pipelines_, opts);
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetDownsampleTextureGlesPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetDownsampleTextureGlesPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(texture_downsample_gles_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
+  const Pipeline<PipelineDescriptor>* GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
                Context::BackendType::kOpenGLES);
@@ -480,235 +480,235 @@ class ContentContext {
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
+  const Pipeline<PipelineDescriptor>* GetTiledTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
+  const Pipeline<PipelineDescriptor>* GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
+  const Pipeline<PipelineDescriptor>* GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetMorphologyFilterPipeline(
+  const Pipeline<PipelineDescriptor>* GetMorphologyFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(morphology_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetColorMatrixColorFilterPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetColorMatrixColorFilterPipeline(
+      ContentContextOptions opts) const {
     return GetPipeline(color_matrix_color_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearToSrgbFilterPipeline(
+  const Pipeline<PipelineDescriptor>* GetLinearToSrgbFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_to_srgb_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetSrgbToLinearFilterPipeline(
+  const Pipeline<PipelineDescriptor>* GetSrgbToLinearFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetClipPipeline(
+  const Pipeline<PipelineDescriptor>* GetClipPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(clip_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
+  const Pipeline<PipelineDescriptor>* GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
+  const Pipeline<PipelineDescriptor>* GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPorterDuffBlendPipeline(
+  const Pipeline<PipelineDescriptor>* GetPorterDuffBlendPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(porter_duff_blend_pipelines_, opts);
   }
 
   // Advanced blends.
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendColorPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendColorPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_color_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendColorBurnPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendColorBurnPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_colorburn_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendColorDodgePipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendColorDodgePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_colordodge_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendDarkenPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendDarkenPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_darken_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendDifferencePipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendDifferencePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_difference_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendExclusionPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendExclusionPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_exclusion_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendHardLightPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendHardLightPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_hardlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendHuePipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendHuePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_hue_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLightenPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendLightenPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_lighten_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLuminosityPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendLuminosityPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_luminosity_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendMultiplyPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendMultiplyPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_multiply_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendOverlayPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendOverlayPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_overlay_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendSaturationPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendSaturationPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_saturation_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendScreenPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendScreenPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_screen_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendSoftLightPipeline(
+  const Pipeline<PipelineDescriptor>* GetBlendSoftLightPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetDownsamplePipeline(
+  const Pipeline<PipelineDescriptor>* GetDownsamplePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_downsample_pipelines_, opts);
   }
 
   // Framebuffer Advanced Blends
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_color_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorBurnPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorDodgePipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendDarkenPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendDifferencePipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendExclusionPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendHardLightPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendHuePipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendLightenPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendLuminosityPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendMultiplyPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendOverlayPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendSaturationPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendScreenPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
+  const Pipeline<PipelineDescriptor>* GetFramebufferBlendSoftLightPipeline(
+      ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetDrawVerticesUberShader(
+  const Pipeline<PipelineDescriptor>* GetDrawVerticesUberShader(
       ContentContextOptions opts) const {
     return GetPipeline(vertices_uber_shader_, opts);
   }
@@ -761,7 +761,7 @@ class ContentContext {
   ///
   /// The create_callback is synchronously invoked exactly once if a cached
   /// pipeline is not found.
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCachedRuntimeEffectPipeline(
+  const Pipeline<PipelineDescriptor>* GetCachedRuntimeEffectPipeline(
       const std::string& unique_entrypoint_name,
       const ContentContextOptions& options,
       const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
@@ -992,14 +992,14 @@ class ContentContext {
   mutable Variants<VerticesUberShader> vertices_uber_shader_;
 
   template <class TypedPipeline>
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
+  const Pipeline<PipelineDescriptor>* GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
     TypedPipeline* pipeline = CreateIfNeeded(container, opts);
     if (!pipeline) {
       return nullptr;
     }
-    return pipeline->WaitAndGet();
+    return pipeline->WaitAndGet().get();
   }
 
   template <class RenderPipelineHandleT>
@@ -1023,7 +1023,7 @@ class ContentContext {
     // The default must always be initialized in the constructor.
     FML_CHECK(default_handle != nullptr);
 
-    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline =
         default_handle->WaitAndGet();
     if (!pipeline) {
       return nullptr;

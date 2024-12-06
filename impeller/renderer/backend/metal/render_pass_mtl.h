@@ -58,8 +58,7 @@ class RenderPassMTL final : public RenderPass {
   bool OnEncodeCommands(const Context& context) const override;
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(const Pipeline<PipelineDescriptor>* pipeline) override;
 
   // |RenderPass|
   void SetCommandLabel(std::string_view label) override;

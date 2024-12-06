@@ -71,7 +71,7 @@ BlendFilterContents::BlendFilterContents() {
 
 BlendFilterContents::~BlendFilterContents() = default;
 
-using PipelineProc = std::shared_ptr<Pipeline<PipelineDescriptor>> (
+using PipelineProc = const Pipeline<PipelineDescriptor>* (
     ContentContext::*)(ContentContextOptions) const;
 
 template <typename TPipeline>
@@ -170,7 +170,7 @@ static std::optional<Entity> AdvancedBlend(
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
-    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+    const Pipeline<PipelineDescriptor>* pipeline =
         std::invoke(pipeline_proc, renderer, options);
 
 #ifdef IMPELLER_DEBUG
