@@ -129,7 +129,9 @@ struct Command {
   size_t instance_count = 1u;
 
   //----------------------------------------------------------------------------
-  /// The vertex buffers used by the vertex shader stage.
+  /// An offset and range of vertex buffers bound for this draw call.
+  ///
+  /// The vertex buffers are stored on the render pass object.
   Range vertex_buffers;
 
   //----------------------------------------------------------------------------
