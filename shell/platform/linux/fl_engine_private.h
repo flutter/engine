@@ -259,7 +259,6 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
- * @device_kind: kind of pointing device.
  * @device: device id.
  *
  * Sends a touch up event to the engine.
@@ -269,7 +268,6 @@ void fl_engine_send_touch_up_event(FlEngine* engine,
                                    size_t timestamp,
                                    double x,
                                    double y,
-                                   FlutterPointerDeviceKind device_kind,
                                    int32_t device);
 
 /**
@@ -279,7 +277,6 @@ void fl_engine_send_touch_up_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
- * @device_kind: kind of pointing device.
  * @device: device id.
  *
  * Sends a touch down event to the engine.
@@ -289,7 +286,6 @@ void fl_engine_send_touch_down_event(FlEngine* engine,
                                      size_t timestamp,
                                      double x,
                                      double y,
-                                     FlutterPointerDeviceKind device_kind,
                                      int32_t device);
 /**
  * fl_engine_send_touch_move_event:
@@ -298,7 +294,6 @@ void fl_engine_send_touch_down_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
- * @device_kind: kind of pointing device.
  * @device: device id.
  *
  * Sends a touch move event to the engine.
@@ -308,7 +303,6 @@ void fl_engine_send_touch_move_event(FlEngine* engine,
                                      size_t timestamp,
                                      double x,
                                      double y,
-                                     FlutterPointerDeviceKind device_kind,
                                      int32_t device);
 
 /**
@@ -318,7 +312,6 @@ void fl_engine_send_touch_move_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
- * @device_kind: kind of pointing device.
  * @device: device id.
  *
  * Sends a touch add event to the engine.
@@ -328,7 +321,6 @@ void fl_engine_send_touch_add_event(FlEngine* engine,
                                     size_t timestamp,
                                     double x,
                                     double y,
-                                    FlutterPointerDeviceKind device_kind,
                                     int32_t device);
 
 /**
@@ -338,7 +330,6 @@ void fl_engine_send_touch_add_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
- * @device_kind: kind of pointing device.
  * @device: device id.
  *
  * Sends a touch remove event to the engine.
@@ -348,7 +339,6 @@ void fl_engine_send_touch_remove_event(FlEngine* engine,
                                        size_t timestamp,
                                        double x,
                                        double y,
-                                       FlutterPointerDeviceKind device_kind,
                                        int32_t device);
 
 /**
