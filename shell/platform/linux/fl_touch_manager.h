@@ -9,7 +9,6 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
-#include "flutter/shell/platform/linux/sequential_id_generator.h"
 
 G_BEGIN_DECLS
 

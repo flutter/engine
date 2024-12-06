@@ -163,7 +163,6 @@ source_set("flutter_linux_sources") {
     "fl_view_accessible.cc",
     "fl_window_state_monitor.cc",
     "key_mapping.g.cc",
-    "sequential_id_generator.cc",
   ]
 
   # Set flag to stop headers being directly included (library users should not do this)
