@@ -63,9 +63,8 @@ TEST(CapabilitiesGLES, SupportsFramebufferFetch) {
 }
 
 TEST(CapabilitiesGLES, SupportsMSAA) {
-  auto const extensions = std::vector<const unsigned char*>{
-      reinterpret_cast<const unsigned char*>(
-          "GL_EXT_multisampled_render_to_texture"),
+  auto const extensions = std::vector<const char*>{
+      "GL_EXT_multisampled_render_to_texture",
   };
   auto mock_gles = MockGLES::Init(extensions);
   auto capabilities = mock_gles->GetProcTable().GetCapabilities();
