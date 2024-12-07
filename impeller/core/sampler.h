@@ -5,9 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_SAMPLER_H_
 #define FLUTTER_IMPELLER_CORE_SAMPLER_H_
 
-#include <unordered_map>
-
-#include "impeller/base/comparable.h"
 #include "impeller/core/sampler_descriptor.h"
 
 namespace impeller {
@@ -28,11 +25,6 @@ class Sampler {
 
   Sampler& operator=(const Sampler&) = delete;
 };
-
-using SamplerMap = std::unordered_map<SamplerDescriptor,
-                                      std::unique_ptr<const Sampler>,
-                                      ComparableHash<SamplerDescriptor>,
-                                      ComparableEqual<SamplerDescriptor>>;
 
 }  // namespace impeller
 

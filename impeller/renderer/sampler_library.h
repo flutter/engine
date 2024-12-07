@@ -24,7 +24,7 @@ class SamplerLibrary {
   ///        and guarantee that the reference will continue to be valid
   ///        throughout the lifetime of the Impeller context.
   virtual const std::unique_ptr<const Sampler>& GetSampler(
-      SamplerDescriptor descriptor) = 0;
+      const SamplerDescriptor& descriptor) = 0;
 
  protected:
   SamplerLibrary();
