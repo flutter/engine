@@ -20,7 +20,7 @@ class RecordingRenderPass : public RenderPass {
   const std::vector<Command>& GetCommands() const override { return commands_; }
 
   // |RenderPass|
-  void SetPipeline(const Pipeline<PipelineDescriptor>* pipeline) override;
+  void SetPipeline(PipelineRef pipeline) override;
 
   void SetCommandLabel(std::string_view label) override;
 

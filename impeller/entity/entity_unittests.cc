@@ -15,6 +15,7 @@
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/core/raw_ptr.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
@@ -1696,7 +1697,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool expect_dirty = true;
-  const Pipeline<PipelineDescriptor>* first_pipeline;
+  const raw_ptr<Pipeline<PipelineDescriptor>*> first_pipeline;
   std::unique_ptr<Geometry> geom = Geometry::MakeCover();
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {

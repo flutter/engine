@@ -8,6 +8,7 @@
 #include <future>
 
 #include "compute_pipeline_descriptor.h"
+#include "impeller/core/raw_ptr.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/context.h"
@@ -77,6 +78,8 @@ class Pipeline {
 
   Pipeline& operator=(const Pipeline&) = delete;
 };
+
+using PipelineRef = raw_ptr<Pipeline<PipelineDescriptor>>;
 
 extern template class Pipeline<PipelineDescriptor>;
 extern template class Pipeline<ComputePipelineDescriptor>;

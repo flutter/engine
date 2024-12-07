@@ -377,102 +377,93 @@ class ContentContext {
 
   Tessellator& GetTessellator() const;
 
-  const Pipeline<PipelineDescriptor>* GetFastGradientPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetFastGradientPipeline(ContentContextOptions opts) const {
     return GetPipeline(fast_gradient_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetLinearGradientFillPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetLinearGradientFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetLinearGradientUniformFillPipeline(
+  PipelineRef GetLinearGradientUniformFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_uniform_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetRadialGradientUniformFillPipeline(
+  PipelineRef GetRadialGradientUniformFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_uniform_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetConicalGradientUniformFillPipeline(
+  PipelineRef GetConicalGradientUniformFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(conical_gradient_uniform_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetSweepGradientUniformFillPipeline(
+  PipelineRef GetSweepGradientUniformFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(sweep_gradient_uniform_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetLinearGradientSSBOFillPipeline(
+  PipelineRef GetLinearGradientSSBOFillPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(linear_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetRadialGradientSSBOFillPipeline(
+  PipelineRef GetRadialGradientSSBOFillPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(radial_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetConicalGradientSSBOFillPipeline(
+  PipelineRef GetConicalGradientSSBOFillPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(conical_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetSweepGradientSSBOFillPipeline(
+  PipelineRef GetSweepGradientSSBOFillPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetRadialGradientFillPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetRadialGradientFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetConicalGradientFillPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetConicalGradientFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(conical_gradient_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetRRectBlurPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetRRectBlurPipeline(ContentContextOptions opts) const {
     return GetPipeline(rrect_blur_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetSweepGradientFillPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetSweepGradientFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(sweep_gradient_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetSolidFillPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetSolidFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(solid_fill_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetTexturePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetTexturePipeline(ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetTextureStrictSrcPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetTextureStrictSrcPipeline(ContentContextOptions opts) const {
     return GetPipeline(texture_strict_src_pipelines_, opts);
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
-  const Pipeline<PipelineDescriptor>* GetDownsampleTextureGlesPipeline(
+  PipelineRef GetDownsampleTextureGlesPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_downsample_gles_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetTiledTextureExternalPipeline(
+  PipelineRef GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
                Context::BackendType::kOpenGLES);
@@ -480,236 +471,208 @@ class ContentContext {
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  const Pipeline<PipelineDescriptor>* GetTiledTexturePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetTiledTexturePipeline(ContentContextOptions opts) const {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetGaussianBlurPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetGaussianBlurPipeline(ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBorderMaskBlurPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBorderMaskBlurPipeline(ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetMorphologyFilterPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetMorphologyFilterPipeline(ContentContextOptions opts) const {
     return GetPipeline(morphology_filter_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetColorMatrixColorFilterPipeline(
+  PipelineRef GetColorMatrixColorFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(color_matrix_color_filter_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetLinearToSrgbFilterPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetLinearToSrgbFilterPipeline(ContentContextOptions opts) const {
     return GetPipeline(linear_to_srgb_filter_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetSrgbToLinearFilterPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetSrgbToLinearFilterPipeline(ContentContextOptions opts) const {
     return GetPipeline(srgb_to_linear_filter_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetClipPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetClipPipeline(ContentContextOptions opts) const {
     return GetPipeline(clip_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetGlyphAtlasPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetGlyphAtlasPipeline(ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetYUVToRGBFilterPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetYUVToRGBFilterPipeline(ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetPorterDuffBlendPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetPorterDuffBlendPipeline(ContentContextOptions opts) const {
     return GetPipeline(porter_duff_blend_pipelines_, opts);
   }
 
   // Advanced blends.
 
-  const Pipeline<PipelineDescriptor>* GetBlendColorPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendColorPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_color_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendColorBurnPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendColorBurnPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_colorburn_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendColorDodgePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendColorDodgePipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_colordodge_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendDarkenPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendDarkenPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_darken_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendDifferencePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendDifferencePipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_difference_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendExclusionPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendExclusionPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_exclusion_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendHardLightPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendHardLightPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_hardlight_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendHuePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendHuePipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_hue_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendLightenPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendLightenPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_lighten_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendLuminosityPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendLuminosityPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_luminosity_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendMultiplyPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendMultiplyPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_multiply_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendOverlayPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendOverlayPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_overlay_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendSaturationPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendSaturationPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_saturation_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendScreenPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendScreenPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_screen_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetBlendSoftLightPipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetBlendSoftLightPipeline(ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetDownsamplePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetDownsamplePipeline(ContentContextOptions opts) const {
     return GetPipeline(texture_downsample_pipelines_, opts);
   }
 
   // Framebuffer Advanced Blends
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorPipeline(
+  PipelineRef GetFramebufferBlendColorPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_color_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorBurnPipeline(
+  PipelineRef GetFramebufferBlendColorBurnPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendColorDodgePipeline(
+  PipelineRef GetFramebufferBlendColorDodgePipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendDarkenPipeline(
+  PipelineRef GetFramebufferBlendDarkenPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendDifferencePipeline(
+  PipelineRef GetFramebufferBlendDifferencePipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendExclusionPipeline(
+  PipelineRef GetFramebufferBlendExclusionPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendHardLightPipeline(
+  PipelineRef GetFramebufferBlendHardLightPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendHuePipeline(
-      ContentContextOptions opts) const {
+  PipelineRef GetFramebufferBlendHuePipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendLightenPipeline(
+  PipelineRef GetFramebufferBlendLightenPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendLuminosityPipeline(
+  PipelineRef GetFramebufferBlendLuminosityPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendMultiplyPipeline(
+  PipelineRef GetFramebufferBlendMultiplyPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendOverlayPipeline(
+  PipelineRef GetFramebufferBlendOverlayPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendSaturationPipeline(
+  PipelineRef GetFramebufferBlendSaturationPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendScreenPipeline(
+  PipelineRef GetFramebufferBlendScreenPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetFramebufferBlendSoftLightPipeline(
+  PipelineRef GetFramebufferBlendSoftLightPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
-  const Pipeline<PipelineDescriptor>* GetDrawVerticesUberShader(
-      ContentContextOptions opts) const {
+  PipelineRef GetDrawVerticesUberShader(ContentContextOptions opts) const {
     return GetPipeline(vertices_uber_shader_, opts);
   }
 
@@ -761,7 +724,7 @@ class ContentContext {
   ///
   /// The create_callback is synchronously invoked exactly once if a cached
   /// pipeline is not found.
-  const Pipeline<PipelineDescriptor>* GetCachedRuntimeEffectPipeline(
+  PipelineRef GetCachedRuntimeEffectPipeline(
       const std::string& unique_entrypoint_name,
       const ContentContextOptions& options,
       const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
@@ -992,14 +955,13 @@ class ContentContext {
   mutable Variants<VerticesUberShader> vertices_uber_shader_;
 
   template <class TypedPipeline>
-  const Pipeline<PipelineDescriptor>* GetPipeline(
-      Variants<TypedPipeline>& container,
-      ContentContextOptions opts) const {
+  PipelineRef GetPipeline(Variants<TypedPipeline>& container,
+                          ContentContextOptions opts) const {
     TypedPipeline* pipeline = CreateIfNeeded(container, opts);
     if (!pipeline) {
-      return nullptr;
+      return raw_ptr<Pipeline<PipelineDescriptor>>();
     }
-    return pipeline->WaitAndGet().get();
+    return raw_ptr(pipeline->WaitAndGet());
   }
 
   template <class RenderPipelineHandleT>
