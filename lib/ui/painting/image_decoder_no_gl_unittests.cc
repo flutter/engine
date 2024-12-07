@@ -187,7 +187,7 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
-TEST(ImageDecoderNoGLTest, ImepllerUnmultipliedAlphaPng) {
+TEST(ImageDecoderNoGLTest, ImpellerUnmultipliedAlphaPng) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
 #endif
