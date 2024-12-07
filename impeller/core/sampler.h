@@ -18,7 +18,7 @@ class Sampler {
  protected:
   SamplerDescriptor desc_;
 
-  explicit Sampler(SamplerDescriptor desc);
+  explicit Sampler(const SamplerDescriptor& desc);
 
  private:
   Sampler(const Sampler&) = delete;
