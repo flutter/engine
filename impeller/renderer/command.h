@@ -12,21 +12,13 @@
 
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/resource_binder.h"
 #include "impeller/core/sampler.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/core/texture.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
 
 namespace impeller {
-
-#ifdef IMPELLER_DEBUG
-#define DEBUG_COMMAND_INFO(obj, arg) obj.label = arg;
-#else
-#define DEBUG_COMMAND_INFO(obj, arg)
-#endif  // IMPELLER_DEBUG
 
 template <class T>
 class Resource {
@@ -65,19 +57,9 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 /// @brief combines the texture, sampler and sampler slot information.
 struct TextureAndSampler {
   SampledImageSlot slot;
+  ShaderStage stage;
   TextureResource texture;
   const std::unique_ptr<const Sampler>* sampler;
-};
-
-/// @brief combines the buffer resource and its uniform slot information.
-struct BufferAndUniformSlot {
-  ShaderUniformSlot slot;
-  BufferResource view;
-};
-
-struct Bindings {
-  std::vector<TextureAndSampler> sampled_images;
-  std::vector<BufferAndUniformSlot> buffers;
 };
 
 //------------------------------------------------------------------------------
@@ -94,21 +76,16 @@ struct Bindings {
 ///             referenced in commands views into buffers managed by other
 ///             allocators and resource managers.
 ///
-struct Command : public ResourceBinder {
+struct Command {
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
   ///
   std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
-  //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the vertex pipeline
-  /// stage.
-  ///
-  Bindings vertex_bindings;
-  //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the fragment pipeline
-  /// stage.
-  ///
-  Bindings fragment_bindings;
+
+  /// An offset into render pass storage where bound buffers/texture metadata is
+  /// stored.
+  Range bound_buffers = Range{0, 0};
+  Range bound_textures = Range{0, 0};
 
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------
@@ -152,13 +129,10 @@ struct Command : public ResourceBinder {
   size_t instance_count = 1u;
 
   //----------------------------------------------------------------------------
-  /// The vertex buffers used by the vertex shader stage.
-  std::array<BufferView, kMaxVertexBuffers> vertex_buffers;
-
-  //----------------------------------------------------------------------------
-  /// The number of vertex buffers in the vertex_buffers array. Must not exceed
-  /// kMaxVertexBuffers.
-  size_t vertex_buffer_count = 0u;
+  /// An offset and range of vertex buffers bound for this draw call.
+  ///
+  /// The vertex buffers are stored on the render pass object.
+  Range vertex_buffers;
 
   //----------------------------------------------------------------------------
   /// The index buffer binding used by the vertex shader stage.
@@ -174,55 +148,7 @@ struct Command : public ResourceBinder {
   /// packed in the index buffer.
   IndexType index_type = IndexType::kUnknown;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Specify the vertex and index buffer to use for this command.
-  ///
-  /// @param[in]  buffer  The vertex and index buffer definition. If possible,
-  ///             this value should be moved and not copied.
-  ///
-  /// @return     returns if the binding was updated.
-  ///
-  bool BindVertices(const VertexBuffer& buffer);
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const ShaderUniformSlot& slot,
-                    const ShaderMetadata* metadata,
-                    BufferView view) override;
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const SampledImageSlot& slot,
-                    const ShaderMetadata* metadata,
-                    std::shared_ptr<const Texture> texture,
-                    const std::unique_ptr<const Sampler>& sampler) override;
-
-  bool BindDynamicResource(ShaderStage stage,
-                           DescriptorType type,
-                           const ShaderUniformSlot& slot,
-                           std::unique_ptr<ShaderMetadata> metadata,
-                           BufferView view);
-
-  bool BindDynamicResource(ShaderStage stage,
-                           DescriptorType type,
-                           const SampledImageSlot& slot,
-                           std::unique_ptr<ShaderMetadata> metadata,
-                           std::shared_ptr<const Texture> texture,
-                           const std::unique_ptr<const Sampler>& sampler);
-
   bool IsValid() const { return pipeline && pipeline->IsValid(); }
-
- private:
-  bool BindBuffer(ShaderStage stage,
-                  const ShaderUniformSlot& slot,
-                  BufferResource resource);
-
-  bool BindTexture(ShaderStage stage,
-                   const SampledImageSlot& slot,
-                   TextureResource resource,
-                   const std::unique_ptr<const Sampler>& sampler);
 };
 
 }  // namespace impeller

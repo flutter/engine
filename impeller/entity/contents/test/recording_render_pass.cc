@@ -74,7 +74,6 @@ void RecordingRenderPass::SetInstanceCount(size_t count) {
 
 // |RenderPass|
 bool RecordingRenderPass::SetVertexBuffer(VertexBuffer buffer) {
-  pending_.BindVertices(buffer);
   if (delegate_) {
     return delegate_->SetVertexBuffer(buffer);
   }
@@ -110,7 +109,6 @@ bool RecordingRenderPass::BindResource(ShaderStage stage,
                                        const ShaderUniformSlot& slot,
                                        const ShaderMetadata* metadata,
                                        BufferView view) {
-  pending_.BindResource(stage, type, slot, metadata, view);
   if (delegate_) {
     return delegate_->BindResource(stage, type, slot, metadata, view);
   }
@@ -124,7 +122,6 @@ bool RecordingRenderPass::BindDynamicResource(
     const ShaderUniformSlot& slot,
     std::unique_ptr<ShaderMetadata> metadata,
     BufferView view) {
-  pending_.BindResource(stage, type, slot, metadata.get(), view);
   if (delegate_) {
     return delegate_->BindDynamicResource(stage, type, slot,
                                           std::move(metadata), view);
@@ -140,7 +137,6 @@ bool RecordingRenderPass::BindDynamicResource(
     std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
-  pending_.BindResource(stage, type, slot, metadata.get(), texture, sampler);
   if (delegate_) {
     return delegate_->BindDynamicResource(
         stage, type, slot, std::move(metadata), texture, sampler);
@@ -155,7 +151,6 @@ bool RecordingRenderPass::BindResource(
     const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
-  pending_.BindResource(stage, type, slot, metadata, texture, sampler);
   if (delegate_) {
     return delegate_->BindResource(stage, type, slot, metadata, texture,
                                    sampler);
