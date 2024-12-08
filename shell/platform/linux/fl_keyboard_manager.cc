@@ -281,19 +281,22 @@ static void responder_handle_channel_event_cb(GObject* object,
                                               gpointer user_data) {
   g_autoptr(FlKeyboardManagerData) data = FL_KEYBOARD_MANAGER_DATA(user_data);
 
+  g_autoptr(GError) error = nullptr;
+  gboolean handled;
+  if (!fl_key_channel_responder_handle_event_finish(
+          FL_KEY_CHANNEL_RESPONDER(object), result, &handled, &error)) {
+    if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+      g_warning("Failed to handle key event in platform: %s", error->message);
+    }
+    return;
+  }
+
   g_autoptr(FlKeyboardManager) self =
       FL_KEYBOARD_MANAGER(g_weak_ref_get(&data->manager));
   if (self == nullptr) {
     return;
   }
 
-  g_autoptr(GError) error = nullptr;
-  gboolean handled;
-  if (!fl_key_channel_responder_handle_event_finish(
-          FL_KEY_CHANNEL_RESPONDER(object), result, &handled, &error)) {
-    g_warning("Failed to handle key event in platform: %s", error->message);
-    return;
-  }
   fl_keyboard_pending_event_mark_channel_replied(data->pending, handled);
 
   responder_handle_event_callback(self, data->pending);
