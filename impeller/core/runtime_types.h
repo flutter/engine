@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -16,6 +17,7 @@ enum class RuntimeStageBackend {
   kSkSL,
   kMetal,
   kOpenGLES,
+  kOpenGLES3,
   kVulkan,
 };
 

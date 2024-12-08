@@ -5,6 +5,7 @@
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <numeric>
 #include <utility>
@@ -413,18 +414,23 @@ TypographerContextSkia::CollectNewGlyphs(
     const std::vector<std::shared_ptr<TextFrame>>& text_frames) {
   std::vector<FontGlyphPair> new_glyphs;
   std::vector<Rect> glyph_sizes;
+  size_t generation_id = atlas->GetAtlasGeneration();
+  intptr_t atlas_id = reinterpret_cast<intptr_t>(atlas.get());
   for (const auto& frame : text_frames) {
-    // TODO(jonahwilliams): unless we destroy the atlas (which we know about),
-    // we could probably guarantee that a text frame that is complete does not
-    // need to be processed unless the scale or properties changed. I'm leaving
-    // this as a future optimization.
+    auto [frame_generation_id, frame_atlas_id] =
+        frame->GetAtlasGenerationAndID();
+    if (atlas->IsValid() && frame->IsFrameComplete() &&
+        frame_generation_id == generation_id && frame_atlas_id == atlas_id &&
+        !frame->GetFrameBounds(0).is_placeholder) {
+      continue;
+    }
     frame->ClearFrameBounds();
+    frame->SetAtlasGeneration(generation_id, atlas_id);
 
     for (const auto& run : frame->GetRuns()) {
       auto metrics = run.GetFont().GetMetrics();
 
-      auto rounded_scale =
-          TextFrame::RoundScaledFontSize(frame->GetScale(), metrics.point_size);
+      auto rounded_scale = TextFrame::RoundScaledFontSize(frame->GetScale());
       ScaledFont scaled_font{.font = run.GetFont(), .scale = rounded_scale};
 
       FontGlyphAtlas* font_glyph_atlas =
@@ -566,7 +572,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (atlas_context->GetAtlasSize().height >= max_texture_height ||
       context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
-    new_atlas = std::make_shared<GlyphAtlas>(type);
+    new_atlas = std::make_shared<GlyphAtlas>(
+        type, /*initial_generation=*/last_atlas->GetAtlasGeneration() + 1);
 
     auto [update_glyphs, update_sizes] =
         CollectNewGlyphs(new_atlas, text_frames);

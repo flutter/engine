@@ -8,6 +8,8 @@
 #include <iomanip>
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/effects/dl_color_filters.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
 #include "flutter/display_list/effects/dl_image_filters.h"
 
 namespace flutter::testing {
@@ -205,19 +207,6 @@ extern std::ostream& operator<<(std::ostream& os, const DlPath& path) {
             << "bounds: " << path.GetSkBounds()
             // should iterate over verbs and coordinates...
             << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix& matrix) {
-  return os << "SkMatrix("
-            << "[" << matrix[0] << ", " << matrix[1] << ", " << matrix[2] << "], "
-            << "[" << matrix[3] << ", " << matrix[4] << ", " << matrix[5] << "], "
-            << "[" << matrix[6] << ", " << matrix[7] << ", " << matrix[8] << "]"
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix* matrix) {
-  if (matrix) return os << "&" << *matrix;
-  return os << "no matrix";
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkRSXform& xform) {
@@ -455,12 +444,6 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
   }
   startl() << "setColorSource(";
   switch (source->type()) {
-    case DlColorSourceType::kColor: {
-      const DlColorColorSource* color_src = source->asColor();
-      FML_DCHECK(color_src);
-      os_ << "DlColorColorSource(" << color_src->color() << ")";
-      break;
-    }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_src = source->asImage();
       FML_DCHECK(image_src);
