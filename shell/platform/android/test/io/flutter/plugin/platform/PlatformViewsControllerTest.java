@@ -544,7 +544,6 @@ public class PlatformViewsControllerTest {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void createPlatformViewMessage_setsAndroidViewLayoutDirection() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
-    platformViewsController.setSoftwareRendering(true);
 
     int platformViewId = 0;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
@@ -570,7 +569,6 @@ public class PlatformViewsControllerTest {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void createPlatformViewMessage_setsAndroidViewSize() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
-    platformViewsController.setSoftwareRendering(true);
 
     int platformViewId = 0;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
@@ -603,7 +601,6 @@ public class PlatformViewsControllerTest {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void createPlatformViewMessage_disablesAccessibility() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
-    platformViewsController.setSoftwareRendering(true);
 
     int platformViewId = 0;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
@@ -838,7 +835,6 @@ public class PlatformViewsControllerTest {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void resizeAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
-    platformViewsController.setSoftwareRendering(true);
 
     int platformViewId = 0;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
@@ -1358,7 +1354,6 @@ public class PlatformViewsControllerTest {
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void reattachToFlutterView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
-    platformViewsController.setSoftwareRendering(true);
 
     int platformViewId = 100;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
