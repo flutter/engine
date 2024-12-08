@@ -70,8 +70,8 @@ std::optional<Rect> VerticesSimpleBlendContents::GetCoverage(
 }
 
 void VerticesSimpleBlendContents::SetSamplerDescriptor(
-    SamplerDescriptor descriptor) {
-  descriptor_ = std::move(descriptor);
+    const SamplerDescriptor& descriptor) {
+  descriptor_ = descriptor;
 }
 
 void VerticesSimpleBlendContents::SetTileMode(Entity::TileMode tile_mode_x,

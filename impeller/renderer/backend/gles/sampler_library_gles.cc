@@ -7,6 +7,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/gles/sampler_gles.h"
 
 namespace impeller {
@@ -22,7 +23,7 @@ SamplerLibraryGLES::~SamplerLibraryGLES() = default;
 
 // |SamplerLibrary|
 const std::unique_ptr<const Sampler>& SamplerLibraryGLES::GetSampler(
-    SamplerDescriptor descriptor) {
+    const SamplerDescriptor& descriptor) {
   if (!supports_decal_sampler_address_mode_ &&
       (descriptor.width_address_mode == SamplerAddressMode::kDecal ||
        descriptor.height_address_mode == SamplerAddressMode::kDecal ||
@@ -31,13 +32,17 @@ const std::unique_ptr<const Sampler>& SamplerLibraryGLES::GetSampler(
                       "current OpenGLES backend.";
     return kNullSampler;
   }
-
-  auto found = samplers_.find(descriptor);
-  if (found != samplers_.end()) {
-    return found->second;
+  uint64_t p_key = SamplerDescriptor::ToKey(descriptor);
+  for (const auto& [key, value] : samplers_) {
+    if (key == p_key) {
+      return value;
+    }
   }
-  return (samplers_[descriptor] =
-              std::unique_ptr<SamplerGLES>(new SamplerGLES(descriptor)));
+
+  auto sampler = std::unique_ptr<SamplerGLES>(new SamplerGLES(descriptor));
+  samplers_.push_back(std::make_pair(p_key, std::move(sampler)));
+
+  return samplers_.back().second;
 }
 
 }  // namespace impeller
