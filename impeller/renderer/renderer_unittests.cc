@@ -93,7 +93,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     assert(pipeline && pipeline->IsValid());
 
     pass.SetCommandLabel("Box");
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetVertexBuffer(
         vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator()));
 
@@ -160,7 +160,7 @@ TEST_P(RendererTest, BabysFirstTriangle) {
       *context->GetResourceAllocator());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetVertexBuffer(vertex_buffer);
 
     FS::FragInfo frag_info;
@@ -255,7 +255,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     ImGui::End();
 
     pass.SetCommandLabel("Perspective Cube");
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
 
     std::array<BufferView, 2> vertex_buffers = {
         BufferView(device_buffer,
@@ -330,7 +330,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
         pass.SetCommandLabel("Box");
-        pass.SetPipeline(box_pipeline.get());
+        pass.SetPipeline(box_pipeline);
         pass.SetVertexBuffer(vertex_buffer);
 
         FS::FrameInfo frame_info;
@@ -445,7 +445,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   }
 
   r2t_pass->SetCommandLabel("Box");
-  r2t_pass->SetPipeline(box_pipeline.get());
+  r2t_pass->SetPipeline(box_pipeline);
   r2t_pass->SetVertexBuffer(vertex_buffer);
 
   FS::FrameInfo frame_info;
@@ -504,7 +504,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator(),
                                         GetContext()->GetIdleWaiter());
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetCommandLabel("InstancedDraw");
 
     VS::FrameInfo frame_info;
@@ -605,7 +605,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       pass->SetLabel("Playground Render Pass");
       {
         pass->SetCommandLabel("Image");
-        pass->SetPipeline(mipmaps_pipeline.get());
+        pass->SetPipeline(mipmaps_pipeline);
         pass->SetVertexBuffer(vertex_buffer);
 
         VS::FrameInfo frame_info;
@@ -728,7 +728,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
       pass->SetLabel("Playground Render Pass");
       {
         pass->SetCommandLabel("Image");
-        pass->SetPipeline(mipmaps_pipeline.get());
+        pass->SetPipeline(mipmaps_pipeline);
         pass->SetVertexBuffer(vertex_buffer);
 
         VS::FrameInfo frame_info;
@@ -855,7 +855,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->SetLabel("Playground Render Pass");
       {
         pass->SetCommandLabel("Image LOD");
-        pass->SetPipeline(mipmaps_pipeline.get());
+        pass->SetPipeline(mipmaps_pipeline);
         pass->SetVertexBuffer(vertex_buffer);
 
         VS::FrameInfo frame_info;
@@ -923,7 +923,7 @@ TEST_P(RendererTest, TheImpeller) {
   SinglePassCallback callback = [&](RenderPass& pass) {
     auto size = pass.GetRenderTargetSize();
 
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetCommandLabel("Impeller SDF scene");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
@@ -987,7 +987,7 @@ TEST_P(RendererTest, Planet) {
     ImGui::InputFloat("Seed Value", &seed_value);
     ImGui::End();
 
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetCommandLabel("Planet scene");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
@@ -1039,7 +1039,7 @@ TEST_P(RendererTest, ArrayUniforms) {
   SinglePassCallback callback = [&](RenderPass& pass) {
     auto size = pass.GetRenderTargetSize();
 
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetCommandLabel("Google Dots");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
@@ -1097,7 +1097,7 @@ TEST_P(RendererTest, InactiveUniforms) {
   SinglePassCallback callback = [&](RenderPass& pass) {
     auto size = pass.GetRenderTargetSize();
 
-    pass.SetPipeline(pipeline.get());
+    pass.SetPipeline(pipeline);
     pass.SetCommandLabel("Inactive Uniform");
 
     VertexBufferBuilder<VS::PerVertexData> builder;
@@ -1329,7 +1329,7 @@ TEST_P(RendererTest, StencilMask) {
       assert(pipeline && pipeline->IsValid());
 
       pass->SetCommandLabel("Box");
-      pass->SetPipeline(pipeline.get());
+      pass->SetPipeline(pipeline);
       pass->SetStencilReference(stencil_reference_read);
       pass->SetVertexBuffer(vertex_buffer);
 
@@ -1477,7 +1477,7 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
 
     // Draw the texture.
     {
-      pass.SetPipeline(texture_pipeline.get());
+      pass.SetPipeline(texture_pipeline);
       pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
       TextureVS::UniformBuffer uniforms;
@@ -1492,7 +1492,7 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
 
     // Draw the sepia toner.
     {
-      pass.SetPipeline(sepia_pipeline.get());
+      pass.SetPipeline(sepia_pipeline);
       pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
       SepiaVS::UniformBuffer uniforms;
@@ -1571,7 +1571,7 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
 
     // Draw the texture.
     {
-      pass.SetPipeline(texture_pipeline.get());
+      pass.SetPipeline(texture_pipeline);
       pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
       TextureVS::UniformBuffer uniforms;
@@ -1586,7 +1586,7 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
 
     // Draw the sepia toner.
     {
-      pass.SetPipeline(sepia_pipeline.get());
+      pass.SetPipeline(sepia_pipeline);
       pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
       SepiaVS::UniformBuffer uniforms;
@@ -1600,7 +1600,7 @@ TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
 
     // Draw the swizzle.
     {
-      pass.SetPipeline(swizzle_pipeline.get());
+      pass.SetPipeline(swizzle_pipeline);
       pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
       SwizzleVS::UniformBuffer uniforms;

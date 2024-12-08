@@ -60,6 +60,20 @@ class raw_ptr {
     return *ptr_;
   }
 
+  template <class U>
+  inline bool operator==(raw_ptr<U> const& other) const {
+#if !NDEBUG
+    FML_CHECK(weak_ptr_.lock());
+    FML_CHECK(other_.weak_ptr_.lock());
+#endif
+    return ptr_ == other.ptr_;
+  }
+
+  template <class U>
+  inline bool operator!=(raw_ptr<U> const& other) const {
+    return !(*this == other);
+  }
+
   explicit operator bool() const { return !!ptr_; }
 
  private:

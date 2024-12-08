@@ -1697,7 +1697,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool expect_dirty = true;
-  const raw_ptr<Pipeline<PipelineDescriptor>*> first_pipeline;
+  PipelineRef first_pipeline;
   std::unique_ptr<Geometry> geom = Geometry::MakeCover();
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {

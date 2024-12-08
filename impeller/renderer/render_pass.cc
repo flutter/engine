@@ -85,6 +85,11 @@ void RenderPass::SetPipeline(PipelineRef pipeline) {
   pending_.pipeline = pipeline;
 }
 
+void RenderPass::SetPipeline(
+    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+  SetPipeline(PipelineRef(pipeline));
+}
+
 void RenderPass::SetCommandLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
   pending_.label = std::string(label);

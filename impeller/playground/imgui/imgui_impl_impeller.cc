@@ -30,7 +30,6 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -256,7 +255,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
             "ImGui draw list %d (command %d)", draw_list_i, cmd_i));
         render_pass.SetViewport(viewport);
         render_pass.SetScissor(impeller::IRect::RoundOut(clip_rect));
-        render_pass.SetPipeline(bd->pipeline.get());
+        render_pass.SetPipeline(bd->pipeline);
         VS::BindUniformBuffer(render_pass, vtx_uniforms);
         FS::BindTex(render_pass, bd->font_texture, bd->sampler);
 
