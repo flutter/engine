@@ -25,6 +25,7 @@ core_cpp_client_wrapper_includes =
                     "include/flutter/standard_message_codec.h",
                     "include/flutter/standard_method_codec.h",
                     "include/flutter/texture_registrar.h",
+                    "include/flutter/windowing.h",
                   ],
                   "abspath")
 
@@ -46,6 +47,7 @@ core_cpp_client_wrapper_sources = get_path_info([
                                                   "core_implementations.cc",
                                                   "plugin_registrar.cc",
                                                   "standard_codec.cc",
+                                                  "windowing.cc",
                                                 ],
                                                 "abspath")
 
