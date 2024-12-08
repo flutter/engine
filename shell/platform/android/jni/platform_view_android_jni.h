@@ -19,6 +19,8 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #endif
 
+struct ASurfaceTransaction;
+
 namespace flutter {
 
 #if FML_OS_ANDROID
@@ -153,24 +155,11 @@ class PlatformViewAndroidJNI {
       int viewHeight,
       MutatorsStack mutators_stack) = 0;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Positions and sizes an overlay surface in hybrid composition.
-  ///
-  /// @note       Must be called from the platform thread.
-  ///
-  virtual void FlutterViewDisplayOverlaySurface(int surface_id,
-                                                int x,
-                                                int y,
-                                                int width,
-                                                int height) = 0;
+  virtual ASurfaceTransaction* createTransaction() = 0;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Initiates a frame if using hybrid composition.
-  ///
-  ///
-  /// @note       Must be called from the platform thread.
-  ///
-  virtual void FlutterViewBeginFrame() = 0;
+  virtual void swapTransaction() = 0;
+
+  virtual void applyPendingTransactions() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Indicates that the current frame ended.

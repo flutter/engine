@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "flutter/shell/platform/android/android_context_vk_impeller.h"
+#include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 #include "shell/gpu/gpu_surface_vulkan_impeller.h"
@@ -45,7 +46,9 @@ class AndroidSurfaceVKImpeller : public AndroidSurface {
   std::shared_ptr<impeller::Context> GetImpellerContext() override;
 
   // |AndroidSurface|
-  bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
+  bool SetNativeWindow(
+      fml::RefPtr<AndroidNativeWindow> window,
+      const std::shared_ptr<PlatformViewAndroidJNI> jni_facade) override;
 
  private:
   std::shared_ptr<impeller::SurfaceContextVK> surface_context_vk_;

@@ -18,6 +18,7 @@ import android.util.DisplayMetrics;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Surface;
+import android.view.SurfaceControl;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -107,15 +108,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
   // This serializes the invocation of platform message responses and the
-  // attachment and detachment of the shell holder.  This ensures that we don't
+  // attachment and detachment of the shell holder. This ensures that we don't
   // detach FlutterJNI on the platform thread while a background thread invokes
-  // a message response.  Typically accessing the shell holder happens on the
+  // a message response. Typically accessing the shell holder happens on the
   // platform thread and doesn't require locking.
   private ReentrantReadWriteLock shellHolderLock = new ReentrantReadWriteLock();
 
   // Prefer using the FlutterJNI.Factory so it's easier to test.
   public FlutterJNI() {
-    // We cache the main looper so that we can ensure calls are made on the main thread
+    // We cache the main looper so that we can ensure calls are made on the main
+    // thread
     // without consistently paying the synchronization cost of getMainLooper().
     mainLooper = Looper.getMainLooper();
   }
@@ -380,7 +382,8 @@ public class FlutterJNI {
 
   // ----- End Engine FlutterTextUtils Methods ----
 
-  // Below represents the stateful part of the FlutterJNI instances that aren't static per program.
+  // Below represents the stateful part of the FlutterJNI instances that aren't
+  // static per program.
   // Conceptually, it represents a native shell instance.
 
   @Nullable private Long nativeShellHolderId;
@@ -885,7 +888,8 @@ public class FlutterJNI {
 
   private native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
 
-  // TODO(mattcarroll): figure out what flags are supported and add javadoc about when/why/where to
+  // TODO(mattcarroll): figure out what flags are supported and add javadoc about
+  // when/why/where to
   // use this.
   @UiThread
   public void setAccessibilityFeatures(int flags) {
@@ -1138,7 +1142,8 @@ public class FlutterJNI {
       int position,
       int responseId);
 
-  // TODO(mattcarroll): differentiate between channel responses and platform responses.
+  // TODO(mattcarroll): differentiate between channel responses and platform
+  // responses.
   public void invokePlatformMessageEmptyResponseCallback(int responseId) {
     // Called on any thread.
     shellHolderLock.readLock().lock();
@@ -1160,7 +1165,8 @@ public class FlutterJNI {
   private native void nativeInvokePlatformMessageEmptyResponseCallback(
       long nativeShellHolderId, int responseId);
 
-  // TODO(mattcarroll): differentiate between channel responses and platform responses.
+  // TODO(mattcarroll): differentiate between channel responses and platform
+  // responses.
   public void invokePlatformMessageResponseCallback(
       int responseId, @NonNull ByteBuffer message, int position) {
     // Called on any thread.
@@ -1219,25 +1225,27 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
-  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
-    ensureRunningOnMainThread();
+  SurfaceControl.Transaction createTransaction() {
     if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position an overlay surface");
+      throw new RuntimeException("");
     }
-    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+    return platformViewsController.createTransaction();
   }
 
   @SuppressWarnings("unused")
-  @UiThread
-  public void onBeginFrame() {
-    ensureRunningOnMainThread();
+  void swapTransactions() {
     if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to begin the frame");
+      throw new RuntimeException("");
     }
-    platformViewsController.onBeginFrame();
+    platformViewsController.swapTransactions();
+  }
+
+  @SuppressWarnings("unused")
+  void applyTransactions() {
+    if (platformViewsController == null) {
+      throw new RuntimeException("");
+    }
+    platformViewsController.applyTransactions();
   }
 
   @SuppressWarnings("unused")
@@ -1254,7 +1262,6 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
-    ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
@@ -1296,7 +1303,8 @@ public class FlutterJNI {
       String languageCode = strings[i + 0];
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
-      // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
+      // Convert to Locales via LocaleBuilder if available (API 21+) to include
+      // scriptCode.
       Locale.Builder localeBuilder = new Locale.Builder();
       if (!languageCode.isEmpty()) {
         localeBuilder.setLanguage(languageCode);

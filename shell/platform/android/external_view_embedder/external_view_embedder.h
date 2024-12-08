@@ -80,7 +80,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
-  SkRect GetViewRect(int64_t view_id) const;
+  static SkRect GetViewRect(
+      int64_t view_id,
+      const std::unordered_map<int64_t, EmbeddedViewParams>& view_params);
 
  private:
   // The number of frames the rasterizer task runner will continue

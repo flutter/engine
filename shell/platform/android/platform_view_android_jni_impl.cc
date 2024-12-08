@@ -12,6 +12,7 @@
 #include <sstream>
 #include <utility>
 
+#include "impeller/toolkit/android/proc_table.h"
 #include "impeller/toolkit/android/shadow_realm.h"
 #include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
@@ -101,7 +102,9 @@ static jmethodID g_create_overlay_surface_method = nullptr;
 
 static jmethodID g_destroy_overlay_surfaces_method = nullptr;
 
-static jmethodID g_on_begin_frame_method = nullptr;
+static jmethodID g_swap_transaction_method = nullptr;
+
+static jmethodID g_apply_transaction_method = nullptr;
 
 static jmethodID g_on_end_frame_method = nullptr;
 
@@ -132,9 +135,7 @@ static jmethodID g_request_dart_deferred_library_method = nullptr;
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
-// static jmethodID g_on_composite_platform_view_method = nullptr;
-
-static jmethodID g_on_display_overlay_surface_method = nullptr;
+static jmethodID g_create_transaction = nullptr;
 
 static jmethodID g_overlay_surface_id_method = nullptr;
 
@@ -1106,11 +1107,17 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_on_begin_frame_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
+  g_swap_transaction_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "swapTransactions", "()V");
+  if (g_swap_transaction_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate g_swap_transaction_method";
+    return false;
+  }
 
-  if (g_on_begin_frame_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate onBeginFrame method";
+  g_apply_transaction_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "applyTransactions", "()V");
+  if (g_apply_transaction_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate g_apply_transaction_method";
     return false;
   }
 
@@ -1122,11 +1129,11 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_on_display_overlay_surface_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onDisplayOverlaySurface", "(IIIII)V");
-
-  if (g_on_display_overlay_surface_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate onDisplayOverlaySurface method";
+  g_create_transaction =
+      env->GetMethodID(g_flutter_jni_class->obj(), "createTransaction",
+                       "()Landroid/view/SurfaceControl$Transaction;");
+  if (g_create_transaction == nullptr) {
+    FML_LOG(ERROR) << "Could not locate createTransaction method";
     return false;
   }
 
@@ -1707,12 +1714,24 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
-    int surface_id,
-    int x,
-    int y,
-    int width,
-    int height) {
+ASurfaceTransaction* PlatformViewAndroidJNIImpl::createTransaction() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+
+  fml::jni::ScopedJavaLocalRef<jobject> transaction(
+      env, env->CallObjectMethod(java_object.obj(), g_create_transaction));
+
+  if (transaction.is_null()) {
+    return nullptr;
+  }
+
+  FML_CHECK(fml::jni::CheckException(env));
+  return impeller::android::GetProcTable().ASurfaceTransaction_fromJava(
+      env, transaction.obj());
+}
+
+void PlatformViewAndroidJNIImpl::swapTransaction() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1720,13 +1739,12 @@ void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
     return;
   }
 
-  env->CallVoidMethod(java_object.obj(), g_on_display_overlay_surface_method,
-                      surface_id, x, y, width, height);
+  env->CallVoidMethod(java_object.obj(), g_swap_transaction_method);
 
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
+void PlatformViewAndroidJNIImpl::applyPendingTransactions() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1734,7 +1752,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
     return;
   }
 
-  env->CallVoidMethod(java_object.obj(), g_on_begin_frame_method);
+  env->CallVoidMethod(java_object.obj(), g_apply_transaction_method);
 
   FML_CHECK(fml::jni::CheckException(env));
 }

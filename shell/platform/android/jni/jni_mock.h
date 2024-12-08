@@ -98,12 +98,11 @@ class JNIMock final : public PlatformViewAndroidJNI {
                MutatorsStack mutators_stack),
               (override));
 
-  MOCK_METHOD(void,
-              FlutterViewDisplayOverlaySurface,
-              (int surface_id, int x, int y, int width, int height),
-              (override));
+  MOCK_METHOD(ASurfaceTransaction*, createTransaction, (), (override));
 
-  MOCK_METHOD(void, FlutterViewBeginFrame, (), (override));
+  MOCK_METHOD(void, swapTransaction, (), (override));
+
+  MOCK_METHOD(void, applyPendingTransactions, (), (override));
 
   MOCK_METHOD(void, FlutterViewEndFrame, (), (override));
 
