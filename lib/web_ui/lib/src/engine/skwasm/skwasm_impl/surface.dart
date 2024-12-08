@@ -124,6 +124,25 @@ class SkwasmSurface {
     return ByteData.sublistView(output);
   }
 
+  Future<Uint8ClampedList> rasterizeImageJS(SkwasmImage image, ui.ImageByteFormat format) async {
+    final int callbackId = surfaceRasterizeImage(
+      handle,
+      image.handle,
+      format.index,
+    );
+    final int context = (await SkwasmCallbackHandler.instance.registerCallback(callbackId) as JSNumber).toDartInt;
+    final SkDataHandle dataHandle = SkDataHandle.fromAddress(context);
+    final int byteCount = skDataGetSize(dataHandle);
+    final Pointer<Uint8> dataPointer = skDataGetConstPointer(dataHandle).cast<Uint8>();
+    final Uint8ClampedList output = (JSUint8ClampedArrayData(byteCount.toJS) as JSUint8ClampedArray).toDart;
+    for (int i = 0; i < byteCount; i++) {
+      output[i] = dataPointer[i];
+    }
+    skDataDispose(dataHandle);
+    return output;
+  }
+
+
   void dispose() {
     surfaceDestroy(handle);
   }
