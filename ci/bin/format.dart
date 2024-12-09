@@ -40,6 +40,7 @@ enum MessageType {
 }
 
 enum FormatCheck {
+  dart,
   gn,
   java,
   python,
@@ -53,6 +54,8 @@ FormatCheck nameToFormatCheck(String name) {
   switch (name) {
     case 'clang':
       return FormatCheck.clang;
+    case 'dart':
+      return FormatCheck.dart;
     case 'gn':
       return FormatCheck.gn;
     case 'java':
@@ -72,6 +75,8 @@ String formatCheckToName(FormatCheck check) {
   switch (check) {
     case FormatCheck.clang:
       return 'C++/ObjC/Shader';
+    case FormatCheck.dart:
+      return 'Dart';
     case FormatCheck.gn:
       return 'GN';
     case FormatCheck.java:
@@ -138,6 +143,14 @@ abstract class FormatChecker {
           baseGitRef: baseGitRef,
           repoDir: repoDir,
           srcDir: srcDir,
+          allFiles: allFiles,
+          messageCallback: messageCallback,
+        );
+      case FormatCheck.dart:
+        return DartFormatChecker(
+          processManager: processManager,
+          baseGitRef: baseGitRef,
+          repoDir: repoDir,
           allFiles: allFiles,
           messageCallback: messageCallback,
         );
@@ -783,6 +796,91 @@ class GnFormatChecker extends FormatChecker {
           'formatting problems.');
     }
     return failed.length;
+  }
+}
+
+/// Checks the format of any .dart files using the "dart format" command.
+class DartFormatChecker extends FormatChecker {
+  DartFormatChecker({
+    super.processManager,
+    required super.baseGitRef,
+    required Directory repoDir,
+    super.allFiles,
+    super.messageCallback,
+  }) : super(
+    repoDir: repoDir,
+  ) {
+    // $ENGINE/flutter/third_party/dart/tools/sdks/dart-sdk/bin/dart
+    _dartBin = path.join(
+      repoDir.absolute.parent.path,
+      'flutter',
+      'third_party',
+      'dart',
+      'tools',
+      'sdks',
+      'dart-sdk',
+      'bin',
+      'dart',
+    );
+  }
+
+  late final String _dartBin;
+
+  @override
+  Future<bool> checkFormatting() async {
+    message('Checking Dart formatting...');
+    return (await _runDartFormat(fixing: false)) == 0;
+  }
+
+  @override
+  Future<bool> fixFormatting() async {
+    message('Fixing Dart formatting...');
+    await _runDartFormat(fixing: true);
+    // The dart formatter shouldn't fail when fixing errors.
+    return true;
+  }
+
+  Future<int> _runDartFormat({required bool fixing}) async {
+    final List<String> filesToCheck = await getFileList(<String>['*.dart']);
+
+    final List<String> cmd = <String>[
+      _dartBin,
+      'format',
+      '--set-exit-if-changed',
+      if (!fixing) '--output=none',
+      if (fixing) '--output=write',
+    ];
+    final List<WorkerJob> jobs = <WorkerJob>[];
+    for (final String file in filesToCheck) {
+      jobs.add(WorkerJob(<String>[...cmd, file]));
+    }
+    final ProcessPool dartFmt = ProcessPool(
+      processRunner: _processRunner,
+      printReport: namedReport('dart format'),
+    );
+    final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
+    reportDone();
+    final List<String> incorrect = <String>[];
+    for (final WorkerJob job in completedJobs) {
+      if (job.result.exitCode == 1) {
+        incorrect.add('  ${job.command.last}\n${job.result.output}');
+      }
+    }
+    if (incorrect.isNotEmpty) {
+      final bool plural = incorrect.length > 1;
+      if (fixing) {
+        message('Fixed ${incorrect.length} dart file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+      } else {
+        error('Found ${incorrect.length} dart file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly:');
+        stdout.writeln('To fix, run `et format`');
+        stdout.writeln();
+      }
+    } else {
+      message('All dart files formatted correctly.');
+    }
+    return incorrect.length;
   }
 }
 
