@@ -33,7 +33,6 @@ void main() {
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
   PlatformDispatcher.instance.sendPlatformMessage('waiting_for_status', data, null);
-  view.setSemanticsTreeEnabled(true);
 }
 
 /// The FlutterView into which the [Scenario]s will be rendered.
