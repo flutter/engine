@@ -519,6 +519,49 @@
             "drone_dimensions":
             [
                 "os=Mac-13|Mac-14",
+                "device_type=none",
+                "cpu=arm64"
+            ],
+            "gclient_variables":
+            {
+                "download_android_deps": false,
+                "use_rbe": true
+            },
+            "gn":
+            [
+                "--target-dir",
+                "ci/host_debug_unopt_arm64",
+                "--runtime-mode",
+                "debug",
+                "--unoptimized",
+                "--no-stripped",
+                "--no-lto",
+                "--xcode-symlinks",
+                "--asan",
+                "--rbe",
+                "--no-goma"
+            ],
+            "name": "ci/macos/host_debug_unopt_asan",
+            "description": "Builds impeller golden unit tests with asan enabled.",
+            "ninja":
+            {
+                "config": "ci/host_debug_unopt_arm64",
+                "targets":
+                [ "flutter/impeller/golden_tests:impeller_golden_tests"]
+            },
+            "properties":
+            {
+                "$flutter/osx_sdk":
+                {
+                    "sdk_version": "15a240d"
+                }
+            }
+        },
+        {
+            "cas_archive": false,
+            "drone_dimensions":
+            [
+                "os=Mac-13|Mac-14",
                 "device_type=none"
             ],
             "gclient_variables":

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/toolchain/toolchain.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/version/version.gni")
 
@@ -115,4 +116,21 @@ impeller_component("compiler_unittests") {
     ":compiler_lib",
     "//flutter/testing:testing_lib",
   ]
+}
+
+copy("copy_asan_runtime_dylib") {
+  visibility = [ "*" ]
+
+  if (host_cpu == "arm64") {
+    _libclang_base_path =
+        "$buildtools_path/mac-arm64/clang/lib/clang/18/lib/darwin/"
+  } else {
+    _libclang_base_path =
+        "$buildtools_path/mac-x64/clang/lib/clang/18/lib/darwin/"
+  }
+
+  _dylib_name = "libclang_rt.asan_osx_dynamic.dylib"
+
+  sources = [ "$_libclang_base_path/$_dylib_name" ]
+  outputs = [ "$root_out_dir/$_dylib_name" ]
 }
