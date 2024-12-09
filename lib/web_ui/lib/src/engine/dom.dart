@@ -220,6 +220,9 @@ Future<DomImageBitmap> createImageBitmap(JSAny source,
   return js_util.promiseToFuture<DomImageBitmap>(jsPromise);
 }
 
+typedef PredefinedColorSpace = String;
+
+
 @JS()
 @staticInterop
 class DomNavigator {}
@@ -1510,6 +1513,9 @@ class DomImageData {
   external factory DomImageData._empty(JSNumber sw, JSNumber sh);
 }
 
+@JS('ImageData')
+external JSFunction get imageDataConstructor;
+
 DomImageData createDomImageData(Object data, int sw, int sh) =>
     DomImageData._(data.toJSAnyShallow, sw.toJS, sh.toJS);
 DomImageData createBlankDomImageData(int sw, int sh) =>
@@ -1519,6 +1525,20 @@ extension DomImageDataExtension on DomImageData {
   @JS('data')
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
+  external int get width;
+  external int get height;
+  external PredefinedColorSpace get colorSpace;
+}
+
+@JS('Uint8ClampedArray')
+@staticInterop
+class JSUint8ClampedArrayData {
+  external factory JSUint8ClampedArrayData(JSAny any);
+}
+
+extension JSUint8ClampedArrayDataExtension on JSUint8ClampedArrayData {
+  external ExternalDartReference operator [](int index);
+  external void operator []=(int index, ExternalDartReference value);
 }
 
 @JS('ImageBitmap')
