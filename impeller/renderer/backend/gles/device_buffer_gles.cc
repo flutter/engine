@@ -128,8 +128,8 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
 // |DeviceBuffer|
 bool DeviceBufferGLES::SetLabel(std::string_view label) {
-  label_ = label;
 #ifdef IMPELLER_DEBUG
+  label_ = label;
   if (handle_.has_value()) {
     reactor_->SetDebugLabel(*handle_, label);
   }
