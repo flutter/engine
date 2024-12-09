@@ -92,8 +92,7 @@ String formatCheckToName(FormatCheck check) {
 
 List<String> formatCheckNames() {
   return FormatCheck.values
-      .map<String>((FormatCheck check) =>
-          check.toString().replaceFirst('$FormatCheck.', ''))
+      .map<String>((FormatCheck check) => check.name)
       .toList();
 }
 
@@ -847,7 +846,7 @@ class DartFormatChecker extends FormatChecker {
       _dartBin,
       'format',
       '--set-exit-if-changed',
-      if (!fixing) '--output=none',
+      if (!fixing) '--output=show',
       if (fixing) '--output=write',
     ];
     final List<WorkerJob> jobs = <WorkerJob>[];
@@ -858,23 +857,62 @@ class DartFormatChecker extends FormatChecker {
       processRunner: _processRunner,
       printReport: namedReport('dart format'),
     );
-    final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
-    reportDone();
-    final List<String> incorrect = <String>[];
-    for (final WorkerJob job in completedJobs) {
-      if (job.result.exitCode == 1) {
-        incorrect.add('  ${job.command.last}\n${job.result.output}');
+
+    Iterable<WorkerJob> incorrect;
+    if (!fixing) {
+      final Stream<WorkerJob> completedJobs = dartFmt.startWorkers(jobs);
+      final List<WorkerJob> diffJobs = <WorkerJob>[];
+      await for (final WorkerJob completedJob in completedJobs) {
+        if (completedJob.result.exitCode == 1) {
+          diffJobs.add(
+            WorkerJob(
+              <String>[
+                'git',
+                'diff',
+                '--no-index',
+                '--no-color',
+                '--ignore-cr-at-eol',
+                '--',
+                completedJob.command.last,
+                '-',
+              ],
+              stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
+            ),
+          );
+        }
       }
+      final ProcessPool diffPool = ProcessPool(
+        processRunner: _processRunner,
+        printReport: namedReport('diff'),
+      );
+      final List<WorkerJob> completedDiffs = await diffPool.runToCompletion(diffJobs);
+      incorrect = completedDiffs.where((WorkerJob job) {
+        return job.result.exitCode != 0;
+      });
+    } else {
+      final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
+      incorrect = completedJobs.where((WorkerJob job) => job.result.exitCode == 1);
     }
+
+    reportDone();
+
     if (incorrect.isNotEmpty) {
       final bool plural = incorrect.length > 1;
       if (fixing) {
-        message('Fixed ${incorrect.length} dart file${plural ? 's' : ''}'
+        message('Fixing ${incorrect.length} dart file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
       } else {
-        error('Found ${incorrect.length} dart file${plural ? 's' : ''}'
-            ' which ${plural ? 'were' : 'was'} formatted incorrectly:');
-        stdout.writeln('To fix, run `et format`');
+        error('Found ${incorrect.length} Dart file${plural ? 's' : ''}'
+            ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+        stdout.writeln('To fix, run `et format` or:');
+        stdout.writeln();
+        stdout.writeln('git apply <<DONE');
+        for (final WorkerJob job in incorrect) {
+          stdout.write(job.result.stdout
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}'));
+        }
+        stdout.writeln('DONE');
         stdout.writeln();
       }
     } else {
@@ -1242,7 +1280,8 @@ Future<int> main(List<String> arguments) async {
   parser.addMultiOption('check',
       abbr: 'c',
       allowed: formatCheckNames(),
-      defaultsTo: formatCheckNames(),
+      // TODO(goderbauer): Enable dart by default when we turned on the formatter.
+      defaultsTo: formatCheckNames()..remove(FormatCheck.dart.name),
       help: 'Specifies which checks will be performed. Defaults to all checks. '
           'May be specified more than once to perform multiple types of checks. ');
   parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
