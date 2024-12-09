@@ -911,7 +911,9 @@ class DartFormatChecker extends FormatChecker {
         for (final WorkerJob job in incorrect) {
           stdout.write(job.result.stdout
               .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
-              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}'));
+              .replaceFirst('b/-', 'b/${job.command[job.command.length - 2]}')
+              .replaceFirst(RegExp('\\+Formatted \\d+ files? \\(\\d+ changed\\) in \\d+.\\d+ seconds.\n'), '')
+          );
         }
         stdout.writeln('DONE');
         stdout.writeln();
