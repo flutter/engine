@@ -94,6 +94,9 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
   if (!handle_.has_value()) {
     handle_ = reactor_->CreateUntrackedHandle(HandleType::kBuffer);
+    if (handle_.has_value() && label_.has_value()) {
+      reactor_->SetDebugLabel(*handle_, *label_);
+    }
   }
 
   auto buffer = reactor_->GetGLHandle(*handle_);
@@ -123,12 +126,7 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
 // |DeviceBuffer|
 bool DeviceBufferGLES::SetLabel(std::string_view label) {
-#ifdef IMPELLER_DEBUG
-  FML_CHECK(handle_.has_value());
-  if (handle_.has_value()) {
-    reactor_->SetDebugLabel(*handle_, label);
-  }
-#endif  // IMPELLER_DEBUG
+  label_ = label;
   return true;
 }
 
