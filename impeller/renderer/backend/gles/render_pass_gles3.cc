@@ -21,116 +21,6 @@
 
 namespace impeller {
 
-namespace {
-
-void ConfigureBlending(const ProcTableGLES& gl,
-                       const ColorAttachmentDescriptor* color) {
-  if (color->blending_enabled) {
-    gl.Enable(GL_BLEND);
-    gl.BlendFuncSeparate(
-        ToBlendFactor(color->src_color_blend_factor),  // src color
-        ToBlendFactor(color->dst_color_blend_factor),  // dst color
-        ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
-        ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
-    );
-    gl.BlendEquationSeparate(
-        ToBlendOperation(color->color_blend_op),  // mode color
-        ToBlendOperation(color->alpha_blend_op)   // mode alpha
-    );
-  } else {
-    gl.Disable(GL_BLEND);
-  }
-
-  {
-    const auto is_set = [](ColorWriteMask mask,
-                           ColorWriteMask check) -> GLboolean {
-      return (mask & check) ? GL_TRUE : GL_FALSE;
-    };
-
-    gl.ColorMask(
-        is_set(color->write_mask, ColorWriteMaskBits::kRed),    // red
-        is_set(color->write_mask, ColorWriteMaskBits::kGreen),  // green
-        is_set(color->write_mask, ColorWriteMaskBits::kBlue),   // blue
-        is_set(color->write_mask, ColorWriteMaskBits::kAlpha)   // alpha
-    );
-  }
-}
-
-void ConfigureStencil(GLenum face,
-                      const ProcTableGLES& gl,
-                      const StencilAttachmentDescriptor& stencil,
-                      uint32_t stencil_reference) {
-  gl.StencilOpSeparate(
-      face,                                    // face
-      ToStencilOp(stencil.stencil_failure),    // stencil fail
-      ToStencilOp(stencil.depth_failure),      // depth fail
-      ToStencilOp(stencil.depth_stencil_pass)  // depth stencil pass
-  );
-  gl.StencilFuncSeparate(face,                                        // face
-                         ToCompareFunction(stencil.stencil_compare),  // func
-                         stencil_reference,                           // ref
-                         stencil.read_mask                            // mask
-  );
-  gl.StencilMaskSeparate(face, stencil.write_mask);
-}
-
-void ConfigureStencil(const ProcTableGLES& gl,
-                      const PipelineDescriptor& pipeline,
-                      uint32_t stencil_reference) {
-  if (!pipeline.HasStencilAttachmentDescriptors()) {
-    gl.Disable(GL_STENCIL_TEST);
-    return;
-  }
-
-  gl.Enable(GL_STENCIL_TEST);
-  const auto& front = pipeline.GetFrontStencilAttachmentDescriptor();
-  const auto& back = pipeline.GetBackStencilAttachmentDescriptor();
-
-  if (front.has_value() && back.has_value() && front == back) {
-    ConfigureStencil(GL_FRONT_AND_BACK, gl, *front, stencil_reference);
-    return;
-  }
-  if (front.has_value()) {
-    ConfigureStencil(GL_FRONT, gl, *front, stencil_reference);
-  }
-  if (back.has_value()) {
-    ConfigureStencil(GL_BACK, gl, *back, stencil_reference);
-  }
-}
-
-static bool BindVertexBuffer(const ProcTableGLES& gl,
-                             BufferBindingsGLES* vertex_desc_gles,
-                             const BufferView& vertex_buffer_view,
-                             size_t buffer_index) {
-  if (!vertex_buffer_view) {
-    return false;
-  }
-
-  const DeviceBuffer* vertex_buffer = vertex_buffer_view.GetBuffer();
-
-  if (!vertex_buffer) {
-    return false;
-  }
-
-  const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
-  if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
-          DeviceBufferGLES::BindingType::kArrayBuffer)) {
-    return false;
-  }
-
-  //--------------------------------------------------------------------------
-  /// Bind the vertex attributes associated with vertex buffer.
-  ///
-  if (!vertex_desc_gles->BindVertexAttributes(
-          gl, buffer_index, vertex_buffer_view.GetRange().offset)) {
-    return false;
-  }
-
-  return true;
-}
-
-}  // namespace
-
 RenderPassGLES3::RenderPassGLES3(std::shared_ptr<const Context> context,
                                  const RenderTarget& target,
                                  std::shared_ptr<ReactorGLES> reactor)
@@ -334,10 +224,8 @@ void RenderPassGLES3::ResetGLState(const ProcTableGLES& gl) {
 }
 
 // |RenderPass|
-void RenderPassGLES3::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  PipelineGLES* pipeline_gles = PipelineGLES::Cast(pipeline.get());
-  pipeline_ = pipeline_gles;
+void RenderPassGLES3::SetPipeline(PipelineRef pipeline) {
+  pipeline_ = pipeline;
 }
 
 // |RenderPass|
@@ -427,8 +315,9 @@ fml::Status RenderPassGLES3::Draw() {
     return fml::Status(fml::StatusCode::kInternal, "");
   }
 
+  const PipelineGLES& pipeline = PipelineGLES::Cast(*pipeline_);
   const auto* color_attachment =
-      pipeline_->GetDescriptor().GetLegacyCompatibleColorAttachment();
+      pipeline.GetDescriptor().GetLegacyCompatibleColorAttachment();
   if (!color_attachment) {
     VALIDATION_LOG
         << "Color attachment is too complicated for a legacy renderer.";
@@ -443,13 +332,13 @@ fml::Status RenderPassGLES3::Draw() {
   //--------------------------------------------------------------------------
   /// Setup stencil.
   ///
-  ConfigureStencil(gl, pipeline_->GetDescriptor(), stencil_reference_);
+  ConfigureStencil(gl, pipeline.GetDescriptor(), stencil_reference_);
 
   //--------------------------------------------------------------------------
   /// Configure depth.
   ///
   if (auto depth =
-          pipeline_->GetDescriptor().GetDepthStencilAttachmentDescriptor();
+          pipeline.GetDescriptor().GetDepthStencilAttachmentDescriptor();
       depth.has_value()) {
     gl.Enable(GL_DEPTH_TEST);
     gl.DepthFunc(ToCompareFunction(depth->depth_compare));
@@ -461,7 +350,7 @@ fml::Status RenderPassGLES3::Draw() {
   //--------------------------------------------------------------------------
   /// Setup culling.
   ///
-  switch (pipeline_->GetDescriptor().GetCullMode()) {
+  switch (pipeline.GetDescriptor().GetCullMode()) {
     case CullMode::kNone:
       gl.Disable(GL_CULL_FACE);
       break;
@@ -477,7 +366,7 @@ fml::Status RenderPassGLES3::Draw() {
   //--------------------------------------------------------------------------
   /// Setup winding order.
   ///
-  switch (pipeline_->GetDescriptor().GetWindingOrder()) {
+  switch (pipeline.GetDescriptor().GetWindingOrder()) {
     case WindingOrder::kClockwise:
       gl.FrontFace(GL_CW);
       break;
@@ -489,11 +378,11 @@ fml::Status RenderPassGLES3::Draw() {
   //--------------------------------------------------------------------------
   /// Bind the pipeline program.
   ///
-  if (!pipeline_->BindProgram()) {
+  if (!pipeline.BindProgram()) {
     VALIDATION_LOG << "Failed to bind pipeline program";
   }
 
-  BufferBindingsGLES* vertex_desc_gles = pipeline_->GetBufferBindings();
+  BufferBindingsGLES* vertex_desc_gles = pipeline.GetBufferBindings();
 
   //--------------------------------------------------------------------------
   /// Bind uniform data.
@@ -522,9 +411,9 @@ fml::Status RenderPassGLES3::Draw() {
   // correct; full triangle outlines won't be drawn and disconnected
   // geometry may appear connected. However this can still be useful for
   // wireframe debug views.
-  auto mode = pipeline_->GetDescriptor().GetPolygonMode() == PolygonMode::kLine
+  auto mode = pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
                   ? GL_LINE_STRIP
-                  : ToMode(pipeline_->GetDescriptor().GetPrimitiveType());
+                  : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
 
   //--------------------------------------------------------------------------
   /// Finally! Invoke the draw call.

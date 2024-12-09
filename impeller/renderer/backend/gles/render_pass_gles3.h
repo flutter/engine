@@ -12,7 +12,7 @@
 #include "flutter/impeller/renderer/render_pass.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
-#include "impeller/renderer/backend/gles/pipeline_gles.h"
+#include "impeller/renderer/backend/gles/render_pass_utils.h"
 #include "impeller/renderer/command.h"
 
 namespace impeller {
@@ -28,32 +28,6 @@ class RenderPassGLES3 final
 
  private:
   friend class CommandBufferGLES;
-
-  //------------------------------------------------------------------------------
-  /// @brief      Encapsulates data that will be needed in the reactor for the
-  ///             encoding of commands for this render pass.
-  ///
-  struct RenderPassData {
-    Viewport viewport;
-
-    Color clear_color;
-    uint32_t clear_stencil = 0u;
-    Scalar clear_depth = 1.0;
-
-    std::shared_ptr<Texture> color_attachment;
-    std::shared_ptr<Texture> depth_attachment;
-    std::shared_ptr<Texture> stencil_attachment;
-
-    bool clear_color_attachment = true;
-    bool clear_depth_attachment = true;
-    bool clear_stencil_attachment = true;
-
-    bool discard_color_attachment = true;
-    bool discard_depth_attachment = true;
-    bool discard_stencil_attachment = true;
-
-    std::string label;
-  };
 
   std::shared_ptr<ReactorGLES> reactor_;
   std::string label_;
@@ -73,7 +47,7 @@ class RenderPassGLES3 final
   size_t instance_count_ = 0;
   BufferView index_buffer_ = {};
   IndexType index_type_ = IndexType::kNone;
-  const PipelineGLES* pipeline_ = nullptr;
+  PipelineRef pipeline_;
 
   // cached state.
   GLint current_fbo_ = GL_NONE;
@@ -95,8 +69,7 @@ class RenderPassGLES3 final
   bool OnEncodeCommands(const Context& context) const override;
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(PipelineRef pipeline) override;
 
   // |RenderPass|
   void SetCommandLabel(std::string_view label) override;
