@@ -228,18 +228,6 @@ public class FlutterJNI {
   // This is set from native code via JNI.
   @Nullable private static String vmServiceUri;
 
-  private native boolean nativeGetIsSoftwareRenderingEnabled();
-
-  /**
-   * Checks launch settings for whether software rendering is requested.
-   *
-   * <p>The value is the same per program.
-   */
-  @UiThread
-  public boolean getIsSoftwareRenderingEnabled() {
-    return nativeGetIsSoftwareRenderingEnabled();
-  }
-
   /**
    * VM Service URI for the VM instance.
    *
