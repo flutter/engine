@@ -241,6 +241,8 @@ void(glDepthRange)(GLdouble n, GLdouble f);
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) \
   PROC(FenceSync);                         \
   PROC(DeleteSync);                        \
+  PROC(MapBufferRange);                    \
+  PROC(UnmapBuffer);                       \
   PROC(GetActiveUniformBlockiv);           \
   PROC(GetActiveUniformBlockName);         \
   PROC(GetUniformBlockIndex);              \

@@ -74,6 +74,7 @@ ContextGLES::ContextGLES(
   gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable(),
                                                 enable_gpu_tracing);
   command_queue_ = std::make_shared<CommandQueue>();
+  global_state_ = std::make_shared<GlobalStateGLES>();
   is_valid_ = true;
 }
 

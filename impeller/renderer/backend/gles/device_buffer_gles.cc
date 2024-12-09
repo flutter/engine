@@ -117,9 +117,17 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
   }
 
   if (dirty_range_.has_value()) {
-    auto range = dirty_range_.value();
-    gl.BufferSubData(target_type, range.offset, range.length,
-                     backing_store_->GetBuffer() + range.offset);
+    Range range = dirty_range_.value();
+    if (gl.MapBufferRange.IsAvailable()) {
+      void* data =
+          gl.MapBufferRange(target_type, range.offset, range.length,
+                            GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+      ::memcpy(data, backing_store_->GetBuffer() + range.offset, range.length);
+      gl.UnmapBuffer(target_type);
+    } else {
+      gl.BufferSubData(target_type, range.offset, range.length,
+                       backing_store_->GetBuffer() + range.offset);
+    }
     dirty_range_ = std::nullopt;
   }
 

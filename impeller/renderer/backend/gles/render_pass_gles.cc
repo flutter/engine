@@ -463,8 +463,8 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     ///
     if (!vertex_desc_gles->BindUniformData(
             gl,                                        //
-            bound_textures,                            //
-            bound_buffers,                             //
+            bound_textures.data(),                     //
+            bound_buffers.data(),                      //
             /*texture_range=*/command.bound_textures,  //
             /*buffer_range=*/command.bound_buffers     //
             )) {

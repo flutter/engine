@@ -42,9 +42,9 @@ TEST(BufferBindingsGLESTest, BindUniformData) {
   BufferView buffer_view(&device_buffer, Range(0, sizeof(float)));
   bound_buffers.push_back(BufferResource(&shader_metadata, buffer_view));
 
-  EXPECT_TRUE(bindings.BindUniformData(mock_gl->GetProcTable(), bound_textures,
-                                       bound_buffers, Range{0, 0},
-                                       Range{0, 1}));
+  EXPECT_TRUE(
+      bindings.BindUniformData(mock_gl->GetProcTable(), bound_textures.data(),
+                               bound_buffers.data(), Range{0, 0}, Range{0, 1}));
 }
 
 }  // namespace testing

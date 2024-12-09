@@ -219,8 +219,8 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindUniformData(
     const ProcTableGLES& gl,
-    const std::vector<TextureAndSampler>& bound_textures,
-    const std::vector<BufferResource>& bound_buffers,
+    const TextureAndSampler bound_textures[],
+    const BufferResource bound_buffers[],
     Range texture_range,
     Range buffer_range) {
   for (auto i = 0u; i < buffer_range.length; i++) {
@@ -444,7 +444,7 @@ bool BufferBindingsGLES::BindUniformBufferV2(
 
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
-    const std::vector<TextureAndSampler>& bound_textures,
+    const TextureAndSampler bound_textures[],
     Range texture_range,
     ShaderStage stage,
     size_t unit_start_index) {
