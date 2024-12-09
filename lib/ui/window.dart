@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+
 /// A configurable display that a [FlutterView] renders on.
 ///
 /// Use [FlutterView.display] to get the current display for that view.
