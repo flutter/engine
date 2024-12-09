@@ -125,7 +125,7 @@ std::optional<Rect> ComputeSaveLayerCoverage(
     return coverage_limit;
   }
 
-  return intersection.value();
+  return intersect_rect;
 }
 
 }  // namespace impeller
