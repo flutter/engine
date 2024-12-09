@@ -393,6 +393,15 @@ class FlutterView {
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(_NativeSemanticsUpdate update);
 
+  /// Sets whether framework starts generating semantics tree.
+  ///
+  /// This function lets platform to prepare or dispose the resource for accepting
+  /// semantics update sent through [updateSemantics].
+  void setSemanticsTreeEnabled(bool enabled) => _setSemanticsTreeEnabled(enabled);
+
+  @Native<Void Function(Bool)>(symbol: 'PlatformConfigurationNativeApi::SetSemanticsTreeEnabled')
+  external static void _setSemanticsTreeEnabled(bool update);
+
   @override
   String toString() => 'FlutterView(id: $viewId)';
 }

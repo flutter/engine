@@ -63,18 +63,6 @@ void PlatformViewIOS::SetOwnerViewController(__weak FlutterViewController* owner
     ios_surface_.reset();
     accessibility_bridge_.reset();
   }
-  if (owner_controller) {
-    accessibility_channel_ = [[FlutterBasicMessageChannel alloc]
-           initWithName:@"flutter/accessibility"
-        binaryMessenger:owner_controller.engine.binaryMessenger
-                  codec:[FlutterStandardMessageCodec sharedInstance]];
-    [accessibility_channel_ setMessageHandler:^(id message, FlutterReply reply) {
-      HandleAccessibilityMessage(message, reply);
-    }];
-  } else {
-    [accessibility_channel_ setMessageHandler:nil];
-    accessibility_channel_ = nil;
-  }
   owner_controller_ = owner_controller;
 
   // Add an observer that will clear out the owner_controller_ ivar and
@@ -119,37 +107,6 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
   };
 }
 
-void PlatformViewIOS::HandleAccessibilityMessage(__weak id message, FlutterReply reply) {
-  if (!owner_controller_) {
-    FML_LOG(WARNING) << "Could not accept accessibility message, this "
-                        "PlatformViewIOS has no ViewController.";
-  }
-  NSString* type = message[@"type"];
-  if ([type isEqualToString:@"generatingSemanticsTree"]) {
-    BOOL generating = [message[@"data"][@"generating"] boolValue];
-    if (generating) {
-      if (!accessibility_bridge_) {
-        accessibility_bridge_ = std::make_unique<AccessibilityBridge>(owner_controller_, this,
-                                                                      platform_views_controller_);
-      }
-    } else {
-      accessibility_bridge_.reset();
-    }
-    if (reply) {
-      reply(nil);
-    }
-    return;
-  }
-
-  if (accessibility_bridge_) {
-    accessibility_bridge_->HandleMessage(message, reply);
-  }
-}
-
-void PlatformViewIOS::SendAccessibilityMessage(__weak id message) {
-  [accessibility_channel_ sendMessage:message];
-}
-
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(ios_context_->CreateExternalTexture(texture_id, texture));
@@ -187,7 +144,7 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   PlatformView::SetSemanticsEnabled(enabled);
 }
 
-// |shell:PlatformView|
+// |PlatformView|
 void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
   PlatformView::SetAccessibilityFeatures(flags);
 }
@@ -201,6 +158,19 @@ void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
     accessibility_bridge_.get()->UpdateSemantics(std::move(update), actions);
     [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_];
+  }
+}
+
+// |PlatformView|
+void PlatformViewIOS::SetSemanticsTreeEnabled(bool enabled) {
+  FML_DCHECK(owner_controller_);
+  if (enabled) {
+    if (!accessibility_bridge_) {
+      accessibility_bridge_ = std::make_unique<AccessibilityBridge>(owner_controller_, this,
+                                                                    platform_views_controller_);
+    }
+  } else {
+    accessibility_bridge_.reset();
   }
 }
 

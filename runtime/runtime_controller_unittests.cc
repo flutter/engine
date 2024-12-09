@@ -35,6 +35,8 @@ class MockRuntimeDelegate : public RuntimeDelegate {
     this->actions.push_back(actions);
   }
 
+  void SetSemanticsTreeEnabled(bool enabled) override {}
+
   void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) override {}
 
@@ -83,9 +85,15 @@ class RuntimeControllerTester {
                             nullptr,
                             context_) {}
 
-  void CanUpdateSemantics(SemanticsUpdate* update) {
+  void CanUpdateSemanticsWhenSetSemanticsTreeEnabled(SemanticsUpdate* update) {
     ASSERT_TRUE(delegate_.updates.empty());
     ASSERT_TRUE(delegate_.actions.empty());
+    runtime_controller_.UpdateSemantics(update);
+    // Semantics tree is not yet enabled.
+    ASSERT_TRUE(delegate_.updates.empty());
+    ASSERT_TRUE(delegate_.actions.empty());
+
+    runtime_controller_.SetSemanticsTreeEnabled(true);
     runtime_controller_.UpdateSemantics(update);
     ASSERT_FALSE(delegate_.updates.empty());
     ASSERT_FALSE(delegate_.actions.empty());
@@ -97,7 +105,7 @@ class RuntimeControllerTester {
   RuntimeController runtime_controller_;
 };
 
-TEST_F(RuntimeControllerTest, CanUpdateSemantics) {
+TEST_F(RuntimeControllerTest, CanUpdateSemanticsWhenSetSemanticsTreeEnabled) {
   // The test is mostly setup code to get a SemanticsUpdate object.
   // The real test is in RuntimeControllerTester::CanUpdateSemantics.
   TaskRunners task_runners("test",                  // label
@@ -118,7 +126,7 @@ TEST_F(RuntimeControllerTest, CanUpdateSemantics) {
     ASSERT_FALSE(Dart_IsError(result));
     SemanticsUpdate* update = reinterpret_cast<SemanticsUpdate*>(peer);
 
-    tester->CanUpdateSemantics(update);
+    tester->CanUpdateSemanticsWhenSetSemanticsTreeEnabled(update);
     message_latch.Signal();
   };
 

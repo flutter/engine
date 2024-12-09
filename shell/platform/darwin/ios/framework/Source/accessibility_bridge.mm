@@ -52,9 +52,18 @@ AccessibilityBridge::AccessibilityBridge(
       previous_routes_({}),
       ios_delegate_(ios_delegate ? std::move(ios_delegate)
                                  : std::make_unique<DefaultIosDelegate>()),
-      weak_factory_(this) {}
+      weak_factory_(this) {
+  accessibility_channel_ = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/accessibility"
+      binaryMessenger:platform_view->GetOwnerViewController().engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
+  [accessibility_channel_ setMessageHandler:^(id message, FlutterReply reply) {
+    HandleEvent((NSDictionary*)message);
+  }];
+}
 
 AccessibilityBridge::~AccessibilityBridge() {
+  [accessibility_channel_ setMessageHandler:nil];
   clearState();
   view_controller_.viewIfLoaded.accessibilityElements = nil;
 }
@@ -65,7 +74,7 @@ UIView<UITextInput>* AccessibilityBridge::textInputView() {
 
 void AccessibilityBridge::AccessibilityObjectDidBecomeFocused(int32_t id) {
   last_focused_semantics_object_id_ = id;
-  platform_view_->SendAccessibilityMessage(@{@"type" : @"didGainFocus", @"nodeId" : @(id)});
+  [accessibility_channel_ sendMessage:@{@"type" : @"didGainFocus", @"nodeId" : @(id)}];
 }
 
 void AccessibilityBridge::AccessibilityObjectDidLoseFocus(int32_t id) {
@@ -345,19 +354,15 @@ SemanticsObject* AccessibilityBridge::FindFirstFocusable(SemanticsObject* parent
   return nil;
 }
 
-void AccessibilityBridge::HandleMessage(NSDictionary<NSString*, id>* message, FlutterReply reply) {
-  NSString* type = message[@"type"];
+void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {
+  NSString* type = annotatedEvent[@"type"];
   if ([type isEqualToString:@"announce"]) {
-    NSString* message_to_announce = message[@"data"][@"message"];
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification,
-                                                 message_to_announce);
+    NSString* message = annotatedEvent[@"data"][@"message"];
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification, message);
   }
   if ([type isEqualToString:@"focus"]) {
-    SemanticsObject* node = objects_[message[@"nodeId"]];
+    SemanticsObject* node = objects_[annotatedEvent[@"nodeId"]];
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, node);
-  }
-  if (reply) {
-    reply(nil);
   }
 }
 

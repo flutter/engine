@@ -67,11 +67,6 @@ class PlatformViewIOS final : public PlatformView {
   void SetOwnerViewController(__weak FlutterViewController* owner_controller);
 
   /**
-   * Send accessibility message to accessibility channel.
-   */
-  void SendAccessibilityMessage(__weak id message);
-
-  /**
    * Called one time per `FlutterViewController` when the `FlutterViewController`'s
    * UIView is first loaded.
    *
@@ -92,6 +87,9 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
+  // |PlatformView|
+  void SetSemanticsTreeEnabled(bool enabled) override;
+
   /** Accessor for the `IOSContext` associated with the platform view. */
   const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
 
@@ -107,11 +105,6 @@ class PlatformViewIOS final : public PlatformView {
    * Gets the accessibility bridge created in this platform view.
    */
   AccessibilityBridge* GetAccessibilityBridge() { return accessibility_bridge_.get(); }
-
-  /**
-   * Handles accessibility message from accessibility channel.
-   */
-  void HandleAccessibilityMessage(__weak id message, FlutterReply reply);
 
  private:
   /// Smart pointer for use with objective-c observers.
@@ -139,7 +132,6 @@ class PlatformViewIOS final : public PlatformView {
   ScopedObserver dealloc_view_controller_observer_;
   std::vector<std::string> platform_resolved_locale_;
   std::shared_ptr<PlatformMessageHandlerIos> platform_message_handler_;
-  FlutterBasicMessageChannel* accessibility_channel_;
 
   // |PlatformView|
   void HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) override;
