@@ -846,6 +846,7 @@ class DartFormatChecker extends FormatChecker {
       _dartBin,
       'format',
       '--set-exit-if-changed',
+      '--show=none',
       if (!fixing) '--output=show',
       if (fixing) '--output=write',
     ];
