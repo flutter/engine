@@ -305,7 +305,7 @@ TEST(SaveLayerUtilsTest, DontRoundUpCoverageWhenNotCloseToCoverageLimitWidth) {
 
   ASSERT_TRUE(coverage.has_value());
   // Size that matches coverage limit
-  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 90, 50));
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 90));
 }
 
 TEST(SaveLayerUtilsTest, DontRoundUpCoverageWhenNotCloseToCoverageLimitHeight) {
