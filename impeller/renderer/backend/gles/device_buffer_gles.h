@@ -45,8 +45,8 @@ class DeviceBufferGLES final
 
  private:
   std::shared_ptr<ReactorGLES> reactor_;
-  // Mutable for lazy evaluation.
   std::optional<std::string> label_;
+  // Mutable for lazy evaluation.
   mutable std::optional<HandleGLES> handle_;
   mutable std::shared_ptr<Allocation> backing_store_;
   mutable std::optional<Range> dirty_range_ = std::nullopt;
