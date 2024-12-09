@@ -129,7 +129,7 @@ static void record_calls(const FlutterKeyEvent* event,
 TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -215,16 +215,13 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, FALSE, &user_data);
-  clear_records(call_records);
-
-  g_object_unref(responder);
 }
 
 // Basic key presses, but uses the specified logical key if it is not 0.
 TEST(FlKeyEmbedderResponderTest, UsesSpecifiedLogicalKey) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -249,15 +246,13 @@ TEST(FlKeyEmbedderResponderTest, UsesSpecifiedLogicalKey) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 // Press Shift, key A, then release Shift, key A.
 TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -331,9 +326,6 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  clear_records(call_records);
-
-  g_object_unref(responder);
 }
 
 // Press or release Numpad 1 between presses/releases of NumLock.
@@ -347,7 +339,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
 TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -489,9 +481,6 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  clear_records(call_records);
-
-  g_object_unref(responder);
 }
 
 // Press or release digit 1 between presses/releases of Shift.
@@ -501,7 +490,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
 TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -579,9 +568,6 @@ TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  clear_records(call_records);
-
-  g_object_unref(responder);
 }
 
 // Press or release letter key between presses/releases of CapsLock.
@@ -591,7 +577,7 @@ TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
 TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -733,9 +719,6 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  clear_records(call_records);
-
-  g_object_unref(responder);
 }
 
 // Press or release letter key between presses/releases of CapsLock, on
@@ -745,7 +728,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
 TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -887,14 +870,12 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 TEST(FlKeyEmbedderResponderTest, TurnDuplicateDownEventsToRepeats) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -942,8 +923,6 @@ TEST(FlKeyEmbedderResponderTest, TurnDuplicateDownEventsToRepeats) {
   EXPECT_EQ(call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(call_records, 0));
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
@@ -951,7 +930,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
 
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -971,8 +950,6 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
   EXPECT_EQ(record->callback, nullptr);
-
-  g_object_unref(responder);
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -980,7 +957,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1093,8 +1070,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
   EXPECT_EQ(record->event->logical, kLogicalControlLeft);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
-
-  g_object_unref(responder);
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1103,7 +1078,7 @@ TEST(FlKeyEmbedderResponderTest,
      SynthesizeForDesyncPressingStateOnNonSelfEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1218,8 +1193,6 @@ TEST(FlKeyEmbedderResponderTest,
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1228,7 +1201,7 @@ TEST(FlKeyEmbedderResponderTest,
      SynthesizeForDesyncPressingStateOnRemappedEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1283,8 +1256,6 @@ TEST(FlKeyEmbedderResponderTest,
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1292,7 +1263,7 @@ TEST(FlKeyEmbedderResponderTest,
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1387,8 +1358,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
   EXPECT_EQ(record->callback, nullptr);
-
-  g_object_unref(responder);
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1396,7 +1365,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1482,8 +1451,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-
-  g_object_unref(responder);
 }
 
 // Ensures that even if the primary event is ignored (due to duplicate
@@ -1491,7 +1458,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
 TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
   int user_data = 123;  // Arbitrary user data
 
@@ -1524,8 +1491,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   EXPECT_EQ(record->event->logical, kLogicalControlLeft);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
-
-  g_object_unref(responder);
 }
 
 // This test case occurs when the following two cases collide:
@@ -1541,7 +1506,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
 TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
 
   g_expected_handled = true;
@@ -1635,8 +1600,6 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
   EXPECT_EQ(record->event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(record->event->logical, kLogicalGroupNext);
   EXPECT_EQ(record->event->synthesized, false);
-
-  g_object_unref(responder);
 }
 
 // Shift + AltLeft results in GDK event whose keyval is MetaLeft but whose
@@ -1648,7 +1611,7 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
 TEST(FlKeyEmbedderResponderTest, HandlesShiftAltLeftIsMetaLeft) {
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
-  FlKeyEmbedderResponder* responder =
+  g_autoptr(FlKeyEmbedderResponder) responder =
       fl_key_embedder_responder_new(record_calls, call_records);
 
   g_expected_handled = true;
@@ -1713,6 +1676,4 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltLeftIsMetaLeft) {
   EXPECT_EQ(record->event->physical, kPhysicalMetaLeft);
   EXPECT_EQ(record->event->logical, kLogicalMetaLeft);
   EXPECT_EQ(record->event->synthesized, false);
-
-  g_object_unref(responder);
 }
