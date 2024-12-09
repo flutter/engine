@@ -96,7 +96,7 @@ class PlatformConfigurationClient {
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
 
   //--------------------------------------------------------------------------
-  /// @brief      Notifies whether Framework starts generating semantics tree. 
+  /// @brief      Notifies whether Framework starts generating semantics tree.
   ///
   /// @param[in] enabled True if Framework starts generating semantics tree.
   ///

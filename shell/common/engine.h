@@ -162,8 +162,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     //--------------------------------------------------------------------------
     /// @brief      When the Framework starts or stop generating semantics tree,
     ///             this new information needs to be conveyed to the underlying
-    ///             platform so that they can prepare to accept semantics update.
-    ///             The engine delegates this task to the shell via this call.
+    ///             platform so that they can prepare to accept semantics
+    ///             update. The engine delegates this task to the shell via this
+    ///             call.
     ///
     /// @see        `OnEngineUpdateSemantics`
     ///
