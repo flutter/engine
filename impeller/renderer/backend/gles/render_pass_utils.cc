@@ -78,9 +78,9 @@ void ConfigureStencil(const ProcTableGLES& gl,
 }
 
 bool BindVertexBuffer(const ProcTableGLES& gl,
-                             BufferBindingsGLES* vertex_desc_gles,
-                             const BufferView& vertex_buffer_view,
-                             size_t buffer_index) {
+                      BufferBindingsGLES* vertex_desc_gles,
+                      const BufferView& vertex_buffer_view,
+                      size_t buffer_index) {
   if (!vertex_buffer_view) {
     return false;
   }
@@ -108,4 +108,4 @@ bool BindVertexBuffer(const ProcTableGLES& gl,
   return true;
 }
 
-}
+}  // namespace impeller
