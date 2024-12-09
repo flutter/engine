@@ -56,7 +56,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   void UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                        const flutter::CustomAccessibilityActionUpdates& actions);
-  void HandleMessage(NSDictionary<NSString*, id>* message, FlutterReply reply);
+  void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
   void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) override;
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
@@ -98,6 +98,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   int32_t last_focused_semantics_object_id_;
 
   NSMutableDictionary<NSNumber*, SemanticsObject*>* objects_;
+  FlutterBasicMessageChannel* accessibility_channel_;
   int32_t previous_route_id_ = 0;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;

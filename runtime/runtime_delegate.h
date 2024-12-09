@@ -33,6 +33,7 @@ class RuntimeDelegate {
 
   virtual void UpdateSemantics(SemanticsNodeUpdates update,
                                CustomAccessibilityActionUpdates actions) = 0;
+  virtual void SetSemanticsTreeEnabled(bool enabled) = 0;
 
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;

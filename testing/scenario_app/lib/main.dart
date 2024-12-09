@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'src/scenarios.dart';
-import 'src/standard_codec.dart';
 
 void main() {
   // TODO(goderbauer): Create a window if embedder doesn't provide an implicit
@@ -34,13 +33,7 @@ void main() {
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
   PlatformDispatcher.instance.sendPlatformMessage('waiting_for_status', data, null);
-  final Map<String, dynamic> enableSemantics = <String, dynamic>{
-      'type': 'generatingSemanticsTree',
-      'data': <String, dynamic> {
-        'generating': true,
-      },
-    };
-  PlatformDispatcher.instance.sendPlatformMessage('flutter/accessibility', const StandardMessageCodec().encodeMessage(enableSemantics), null);
+  view.setSemanticsTreeEnabled(true);
 }
 
 /// The FlutterView into which the [Scenario]s will be rendered.

@@ -59,7 +59,7 @@ class MockDelegate : public PlatformView::Delegate {
 
 @implementation PlatformViewIOSTest
 
-- (void)testCreate {
+- (void)testSetSemanticsTreeEnabled {
   flutter::MockDelegate mock_delegate;
   auto thread = std::make_unique<fml::Thread>("PlatformViewIOSTest");
   auto thread_task_runner = thread->GetTaskRunner();
@@ -90,11 +90,9 @@ class MockDelegate : public PlatformView::Delegate {
   thread_task_runner->PostTask([&] {
     platform_view->SetOwnerViewController(flutterViewController);
     XCTAssertFalse(platform_view->GetAccessibilityBridge());
-    platform_view->HandleAccessibilityMessage(
-        @{@"type" : @"generatingSemanticsTree", @"data" : @{@"generating" : @(YES)}}, nil);
+    platform_view->SetSemanticsTreeEnabled(true);
     XCTAssertTrue(platform_view->GetAccessibilityBridge());
-    platform_view->HandleAccessibilityMessage(
-        @{@"type" : @"generatingSemanticsTree", @"data" : @{@"generating" : @(NO)}}, nil);
+    platform_view->SetSemanticsTreeEnabled(false);
     XCTAssertFalse(platform_view->GetAccessibilityBridge());
     latch.Signal();
   });
