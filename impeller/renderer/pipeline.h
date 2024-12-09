@@ -79,6 +79,10 @@ class Pipeline {
   Pipeline& operator=(const Pipeline&) = delete;
 };
 
+/// @brief A raw ptr to a pipeline object.
+///
+/// These pipeline refs are safe to use as the context will keep the
+/// pipelines alive throughout rendering.
 using PipelineRef = raw_ptr<Pipeline<PipelineDescriptor>>;
 
 extern template class Pipeline<PipelineDescriptor>;
