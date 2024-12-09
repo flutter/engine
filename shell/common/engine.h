@@ -160,7 +160,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
         CustomAccessibilityActionUpdates actions) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      When the Framework starts or stop generating semantics tree,
+    /// @brief      When the Framework starts or stops generating semantics tree,
     ///             this new information needs to be conveyed to the underlying
     ///             platform so that they can prepare to accept semantics
     ///             update. The engine delegates this task to the shell via this

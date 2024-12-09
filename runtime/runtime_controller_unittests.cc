@@ -106,7 +106,7 @@ class RuntimeControllerTester {
 };
 
 TEST_F(RuntimeControllerTest, CanUpdateSemanticsWhenSetSemanticsTreeEnabled) {
-  // The test is mostly setup code to get a SemanticsUpdate object.
+  // The code in this test is mostly setup code to get a SemanticsUpdate object.
   // The real test is in RuntimeControllerTester::CanUpdateSemantics.
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
