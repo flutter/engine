@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:js_interop';
 
+import 'package:js/js_util.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/src/engine/initialization.dart';
@@ -14,6 +15,9 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import 'fake_asset_manager.dart';
 import 'rendering.dart';
 
+@JS('window.dartPrint')
+external set dartPrint(JSFunction f);
+
 void setUpUnitTests({
   bool withImplicitView = false,
   bool emulateTesterEnvironment = true,
@@ -21,6 +25,7 @@ void setUpUnitTests({
 }) {
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
+    // dartPrint = ((JSAny x) => print(x)).toJS;
     print('<=setUpAll');
     if (emulateTesterEnvironment) {
       ui_web.debugEmulateFlutterTesterEnvironment = true;
@@ -28,9 +33,9 @@ void setUpUnitTests({
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     debugOnlyAssetManager = fakeAssetManager;
-    print('  <=await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
+    // print('  <=await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
     await bootstrapAndRunApp(withImplicitView: withImplicitView);
-    print('  </await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
+    // print('  </await bootstrapAndRunApp(withImplicitView: $withImplicitView);');
     engine.debugOverrideJsConfiguration(<String, Object?>{
       'fontFallbackBaseUrl': 'assets/fallback_fonts/',
     }.jsify() as engine.JsFlutterConfiguration?);
@@ -57,9 +62,9 @@ void setUpUnitTests({
 
 Future<void> bootstrapAndRunApp({bool withImplicitView = false}) async {
   final Completer<void> completer = Completer<void>();
-  print('    <=await ui_web.bootstrapEngine();');
+  // print('    <=await ui_web.bootstrapEngine();');
   await ui_web.bootstrapEngine(runApp: () => completer.complete());
-  print('    </await ui_web.bootstrapEngine();');
+  // print('    </await ui_web.bootstrapEngine();');
   print('    <=await completer.future;');
   await completer.future;
   print('    </await completer.future;');

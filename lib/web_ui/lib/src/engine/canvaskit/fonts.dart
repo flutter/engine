@@ -85,10 +85,10 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
-    print('            <=await renderer.initialize();');
+    // print('            <=await renderer.initialize();');
     // Make sure CanvasKit is actually loaded
     await renderer.initialize();
-    print('            </await renderer.initialize();');
+    // print('            </await renderer.initialize();');
 
     final SkTypeface? typeface =
         canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
@@ -127,7 +127,7 @@ class SkiaFontCollection implements FlutterFontCollection {
 
     final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
     final List<(String, UnregisteredFont)> downloadedFonts = <(String, UnregisteredFont)>[];
-    print('            <=await Future.wait(pendingDownloads);');
+    // print('            <=await Future.wait(pendingDownloads);');
     for (final FontDownloadResult result in await Future.wait(pendingDownloads)) {
       if (result.font != null) {
         downloadedFonts.add((result.assetName, result.font!));
@@ -135,12 +135,12 @@ class SkiaFontCollection implements FlutterFontCollection {
         fontFailures[result.assetName] = result.error!;
       }
     }
-    print('            </await Future.wait(pendingDownloads);');
+    // print('            </await Future.wait(pendingDownloads);');
 
-    print('            <=await renderer.initialize();');
+    // print('            <=await renderer.initialize();');
     // Make sure CanvasKit is actually loaded
     await renderer.initialize();
-    print('            </await renderer.initialize();');
+    // print('            </await renderer.initialize();');
 
     final List<String> loadedFonts = <String>[];
     for (final (String assetName, UnregisteredFont unregisteredFont) in downloadedFonts) {
