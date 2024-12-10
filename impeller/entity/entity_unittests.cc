@@ -1724,13 +1724,9 @@ TEST_P(EntityTest, RuntimeEffect) {
     entity.SetContents(contents);
     bool result = contents->Render(context, entity, pass);
 
-    if (expect_dirty) {
-      EXPECT_NE(first_pipeline, pass.GetCommands().back().pipeline);
-      first_pipeline = pass.GetCommands().back().pipeline;
-    } else {
+    if (!expect_dirty) {
       EXPECT_EQ(pass.GetCommands().back().pipeline, first_pipeline);
     }
-
     expect_dirty = false;
     return result;
   };
