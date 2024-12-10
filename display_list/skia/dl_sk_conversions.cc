@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 
+#include "flutter/display_list/effects/dl_color_filters.h"
 #include "flutter/display_list/effects/dl_color_sources.h"
 #include "flutter/display_list/effects/dl_image_filters.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -82,11 +83,6 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
     return sk_colors;
   };
   switch (source->type()) {
-    case DlColorSourceType::kColor: {
-      const DlColorColorSource* color_source = source->asColor();
-      FML_DCHECK(color_source != nullptr);
-      return SkShaders::Color(ToSk(color_source->color()));
-    }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_source = source->asImage();
       FML_DCHECK(image_source != nullptr);

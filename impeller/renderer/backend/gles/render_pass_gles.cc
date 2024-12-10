@@ -6,23 +6,26 @@
 
 #include <cstdint>
 
-#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/buffer_view.h"
+#include "impeller/core/formats.h"
+#include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/command.h"
 
 namespace impeller {
 
 RenderPassGLES::RenderPassGLES(std::shared_ptr<const Context> context,
                                const RenderTarget& target,
-                               ReactorGLES::Ref reactor)
+                               std::shared_ptr<ReactorGLES> reactor)
     : RenderPass(std::move(context), target),
       reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
@@ -187,16 +190,17 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
 
 [[nodiscard]] bool EncodeCommandsInReactor(
     const RenderPassData& pass_data,
-    const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
+    const std::vector<BufferView>& vertex_buffers,
+    const std::vector<TextureAndSampler>& bound_textures,
+    const std::vector<BufferResource>& bound_buffers,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
-#endif  // IMPELLER_DEBUG
 
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
@@ -205,6 +209,7 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
   } else {
     pop_pass_debug_marker.Release();
   }
+#endif  // IMPELLER_DEBUG
 
   GLuint fbo = GL_NONE;
   TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
@@ -217,7 +222,7 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     }
   } else {
     // Create and bind an offscreen FBO.
-    auto cached_fbo = color_gles.GetCachedFBO();
+    GLuint cached_fbo = color_gles.GetCachedFBO();
     if (cached_fbo != GL_NONE) {
       fbo = cached_fbo;
       gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -285,17 +290,34 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
 
   gl.Clear(clear_bits);
 
+  // Both the viewport and scissor are specified in framebuffer coordinates.
+  // Impeller's framebuffer coordinate system is top left origin, but OpenGL's
+  // is bottom left origin, so we convert the coordinates here.
+  ISize target_size = pass_data.color_attachment->GetSize();
+
+  //--------------------------------------------------------------------------
+  /// Setup the viewport.
+  ///
+  const auto& viewport = pass_data.viewport;
+  gl.Viewport(viewport.rect.GetX(),  // x
+              target_size.height - viewport.rect.GetY() -
+                  viewport.rect.GetHeight(),  // y
+              viewport.rect.GetWidth(),       // width
+              viewport.rect.GetHeight()       // height
+  );
+  if (pass_data.depth_attachment) {
+    if (gl.DepthRangef.IsAvailable()) {
+      gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+    } else {
+      gl.DepthRange(viewport.depth_range.z_near, viewport.depth_range.z_far);
+    }
+  }
+
+  CullMode current_cull_mode = CullMode::kNone;
+  WindingOrder current_winding_order = WindingOrder::kClockwise;
+  gl.FrontFace(GL_CW);
+
   for (const auto& command : commands) {
-    if (command.instance_count != 1u) {
-      VALIDATION_LOG << "GLES backend does not support instanced rendering.";
-      return false;
-    }
-
-    if (!command.pipeline) {
-      VALIDATION_LOG << "Command has no pipeline specified.";
-      return false;
-    }
-
 #ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure pop_cmd_debug_marker(
         [&gl]() { gl.PopDebugGroup(); });
@@ -339,26 +361,24 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
       gl.Disable(GL_DEPTH_TEST);
     }
 
-    // Both the viewport and scissor are specified in framebuffer coordinates.
-    // Impeller's framebuffer coordinate system is top left origin, but OpenGL's
-    // is bottom left origin, so we convert the coordinates here.
-    auto target_size = pass_data.color_attachment->GetSize();
-
     //--------------------------------------------------------------------------
     /// Setup the viewport.
     ///
-    const auto& viewport = command.viewport.value_or(pass_data.viewport);
-    gl.Viewport(viewport.rect.GetX(),  // x
-                target_size.height - viewport.rect.GetY() -
-                    viewport.rect.GetHeight(),  // y
-                viewport.rect.GetWidth(),       // width
-                viewport.rect.GetHeight()       // height
-    );
-    if (pass_data.depth_attachment) {
-      if (gl.DepthRangef.IsAvailable()) {
-        gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
-      } else {
-        gl.DepthRange(viewport.depth_range.z_near, viewport.depth_range.z_far);
+    if (command.viewport.has_value()) {
+      gl.Viewport(viewport.rect.GetX(),  // x
+                  target_size.height - viewport.rect.GetY() -
+                      viewport.rect.GetHeight(),  // y
+                  viewport.rect.GetWidth(),       // width
+                  viewport.rect.GetHeight()       // height
+      );
+      if (pass_data.depth_attachment) {
+        if (gl.DepthRangef.IsAvailable()) {
+          gl.DepthRangef(viewport.depth_range.z_near,
+                         viewport.depth_range.z_far);
+        } else {
+          gl.DepthRange(viewport.depth_range.z_near,
+                        viewport.depth_range.z_far);
+        }
       }
     }
 
@@ -379,36 +399,42 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     //--------------------------------------------------------------------------
     /// Setup culling.
     ///
-    switch (pipeline.GetDescriptor().GetCullMode()) {
-      case CullMode::kNone:
-        gl.Disable(GL_CULL_FACE);
-        break;
-      case CullMode::kFrontFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_FRONT);
-        break;
-      case CullMode::kBackFace:
-        gl.Enable(GL_CULL_FACE);
-        gl.CullFace(GL_BACK);
-        break;
+    CullMode pipeline_cull_mode = pipeline.GetDescriptor().GetCullMode();
+    if (current_cull_mode != pipeline_cull_mode) {
+      switch (pipeline_cull_mode) {
+        case CullMode::kNone:
+          gl.Disable(GL_CULL_FACE);
+          break;
+        case CullMode::kFrontFace:
+          gl.Enable(GL_CULL_FACE);
+          gl.CullFace(GL_FRONT);
+          break;
+        case CullMode::kBackFace:
+          gl.Enable(GL_CULL_FACE);
+          gl.CullFace(GL_BACK);
+          break;
+      }
+      current_cull_mode = pipeline_cull_mode;
     }
+
     //--------------------------------------------------------------------------
     /// Setup winding order.
     ///
-    switch (pipeline.GetDescriptor().GetWindingOrder()) {
-      case WindingOrder::kClockwise:
-        gl.FrontFace(GL_CW);
-        break;
-      case WindingOrder::kCounterClockwise:
-        gl.FrontFace(GL_CCW);
-        break;
+    WindingOrder pipeline_winding_order =
+        pipeline.GetDescriptor().GetWindingOrder();
+    if (current_winding_order != pipeline_winding_order) {
+      switch (pipeline.GetDescriptor().GetWindingOrder()) {
+        case WindingOrder::kClockwise:
+          gl.FrontFace(GL_CW);
+          break;
+        case WindingOrder::kCounterClockwise:
+          gl.FrontFace(GL_CCW);
+          break;
+      }
+      current_winding_order = pipeline_winding_order;
     }
 
-    auto vertex_desc_gles = pipeline.GetBufferBindings();
-
-    if (command.index_type == IndexType::kUnknown) {
-      return false;
-    }
+    BufferBindingsGLES* vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex buffers.
@@ -417,8 +443,9 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     ///       `RenderPass::ValidateIndexBuffer` here, as validation already runs
     ///       when the vertex/index buffers are set on the command.
     ///
-    for (size_t i = 0; i < command.vertex_buffer_count; i++) {
-      if (!BindVertexBuffer(gl, vertex_desc_gles, command.vertex_buffers[i],
+    for (size_t i = 0; i < command.vertex_buffers.length; i++) {
+      if (!BindVertexBuffer(gl, vertex_desc_gles,
+                            vertex_buffers[i + command.vertex_buffers.offset],
                             i)) {
         return false;
       }
@@ -434,11 +461,13 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     //--------------------------------------------------------------------------
     /// Bind uniform data.
     ///
-    if (!vertex_desc_gles->BindUniformData(gl,                        //
-                                           *transients_allocator,     //
-                                           command.vertex_bindings,   //
-                                           command.fragment_bindings  //
-                                           )) {
+    if (!vertex_desc_gles->BindUniformData(
+            gl,                                        //
+            bound_textures,                            //
+            bound_buffers,                             //
+            /*texture_range=*/command.bound_textures,  //
+            /*buffer_range=*/command.bound_buffers     //
+            )) {
       return false;
     }
 
@@ -450,9 +479,10 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     // correct; full triangle outlines won't be drawn and disconnected
     // geometry may appear connected. However this can still be useful for
     // wireframe debug views.
-    auto mode = pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
-                    ? GL_LINE_STRIP
-                    : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
+    GLenum mode =
+        pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
+            ? GL_LINE_STRIP
+            : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
 
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
@@ -480,13 +510,6 @@ void RenderPassGLES::ResetGLState(const ProcTableGLES& gl) {
     /// Unbind vertex attribs.
     ///
     if (!vertex_desc_gles->UnbindVertexAttributes(gl)) {
-      return false;
-    }
-
-    //--------------------------------------------------------------------------
-    /// Unbind the program pipeline.
-    ///
-    if (!pipeline.UnbindProgram()) {
       return false;
     }
   }
@@ -537,9 +560,11 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   if (!render_target.HasColorAttachment(0u)) {
     return false;
   }
-  const auto& color0 = render_target.GetColorAttachments().at(0u);
-  const auto& depth0 = render_target.GetDepthAttachment();
-  const auto& stencil0 = render_target.GetStencilAttachment();
+  const ColorAttachment& color0 = render_target.GetColorAttachment(0);
+  const std::optional<DepthAttachment>& depth0 =
+      render_target.GetDepthAttachment();
+  const std::optional<StencilAttachment>& stencil0 =
+      render_target.GetStencilAttachment();
 
   auto pass_data = std::make_shared<RenderPassData>();
   pass_data->label = label_;
@@ -585,13 +610,19 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
         CanDiscardAttachmentWhenDone(stencil0->store_action);
   }
 
-  std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
-  auto tracer = ContextGLES::Cast(context).GetGPUTracer();
   return reactor_->AddOperation(
-      [pass_data, allocator = context.GetResourceAllocator(),
-       render_pass = std::move(shared_this), tracer](const auto& reactor) {
-        auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                              render_pass->commands_, tracer);
+      [pass_data = std::move(pass_data), render_pass = shared_from_this(),
+       tracer =
+           ContextGLES::Cast(context).GetGPUTracer()](const auto& reactor) {
+        auto result = EncodeCommandsInReactor(
+            /*pass_data=*/*pass_data,                         //
+            /*reactor=*/reactor,                              //
+            /*commands=*/render_pass->commands_,              //
+            /*vertex_buffers=*/render_pass->vertex_buffers_,  //
+            /*bound_textures=*/render_pass->bound_textures_,  //
+            /*bound_buffers=*/render_pass->bound_buffers_,    //
+            /*tracer=*/tracer                                 //
+        );
         FML_CHECK(result)
             << "Must be able to encode GL commands without error.";
       },
