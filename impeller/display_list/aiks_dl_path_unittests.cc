@@ -38,7 +38,7 @@ TEST_P(AiksTest, RotateColorFilteredPath) {
   arrow_head.moveTo({50, 120}).lineTo({120, 190}).lineTo({190, 120});
 
   auto filter =
-      DlBlendColorFilter::Make(DlColor::kAliceBlue(), DlBlendMode::kSrcIn);
+      DlColorFilter::MakeBlend(DlColor::kAliceBlue(), DlBlendMode::kSrcIn);
 
   DlPaint paint;
   paint.setStrokeWidth(15.0);
@@ -368,8 +368,8 @@ TEST_P(AiksTest, DrawLinesRenderCorrectly) {
                                                  DlTileMode::kMirror));
   draw(paint);
 
-  SkMatrix matrix = SkMatrix::Translate(-150, 75);
-  paint.setColorSource(std::make_shared<DlImageColorSource>(
+  DlMatrix matrix = DlMatrix::MakeTranslation({-150, 75});
+  paint.setColorSource(DlColorSource::MakeImage(
       texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
       DlImageSampling::kMipmapLinear, &matrix));
   draw(paint);

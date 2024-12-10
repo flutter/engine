@@ -103,8 +103,8 @@ static void message_cb(FlBinaryMessenger* messenger,
 static void message_response_cb(GObject* object,
                                 GAsyncResult* result,
                                 gpointer user_data) {
-  GTask* task = G_TASK(user_data);
-  g_task_return_pointer(task, result, g_object_unref);
+  g_autoptr(GTask) task = G_TASK(user_data);
+  g_task_return_pointer(task, g_object_ref(result), g_object_unref);
 }
 
 // Called when the channel handler is closed.
@@ -239,7 +239,7 @@ G_MODULE_EXPORT void fl_basic_message_channel_send(FlBasicMessageChannel* self,
       fl_message_codec_encode_message(self->codec, message, &error);
   if (data == nullptr) {
     if (task != nullptr) {
-      g_task_return_error(task, error);
+      g_task_return_error(task, g_error_copy(error));
     }
     return;
   }
@@ -257,8 +257,12 @@ G_MODULE_EXPORT FlValue* fl_basic_message_channel_send_finish(
   g_return_val_if_fail(FL_IS_BASIC_MESSAGE_CHANNEL(self), nullptr);
   g_return_val_if_fail(g_task_is_valid(result, self), nullptr);
 
-  g_autoptr(GTask) task = G_TASK(result);
-  GAsyncResult* r = G_ASYNC_RESULT(g_task_propagate_pointer(task, nullptr));
+  GTask* task = G_TASK(result);
+  g_autoptr(GAsyncResult) r =
+      G_ASYNC_RESULT(g_task_propagate_pointer(task, error));
+  if (r == nullptr) {
+    return nullptr;
+  }
 
   g_autoptr(GBytes) message =
       fl_binary_messenger_send_on_channel_finish(self->messenger, r, error);

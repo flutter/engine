@@ -9,6 +9,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/entity.h"
 #include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -395,7 +396,20 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
           pass.SetCommandLabel("Gaussian blur downsample");
           auto pipeline_options = OptionsFromPass(pass);
           pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
+#ifdef IMPELLER_ENABLE_OPENGLES
+          // The GLES backend conditionally supports decal tile mode, while
+          // decal is always supported for Vulkan and Metal.
+          if (renderer.GetDeviceCapabilities()
+                  .SupportsDecalSamplerAddressMode() ||
+              tile_mode != Entity::TileMode::kDecal) {
+            pass.SetPipeline(renderer.GetDownsamplePipeline(pipeline_options));
+          } else {
+            pass.SetPipeline(
+                renderer.GetDownsampleTextureGlesPipeline(pipeline_options));
+          }
+#else
           pass.SetPipeline(renderer.GetDownsamplePipeline(pipeline_options));
+#endif  // IMPELLER_ENABLE_OPENGLES
 
           TextureFillVertexShader::FrameInfo frame_info;
           frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
@@ -512,27 +526,33 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                              const Snapshot& input_snapshot,
                              Entity blur_entity,
                              const Geometry* geometry) {
-  auto clip_contents = std::make_shared<ClipContents>();
-  clip_contents->SetClipOperation(clip_operation);
-  clip_contents->SetGeometry(geometry);
-  Entity clipper;
-  clipper.SetContents(clip_contents);
-  auto restore = std::make_unique<ClipRestoreContents>();
   Matrix entity_transform = entity.GetTransform();
   Matrix blur_transform = blur_entity.GetTransform();
-  auto renderer = fml::MakeCopyable(
-      [blur_entity = blur_entity.Clone(), clipper = std::move(clipper),
-       restore = std::move(restore), entity_transform,
-       blur_transform](const ContentContext& renderer, const Entity& entity,
-                       RenderPass& pass) mutable {
-        bool result = true;
+
+  auto renderer =
+      fml::MakeCopyable([blur_entity = blur_entity.Clone(), clip_operation,
+                         entity_transform, blur_transform, geometry](
+                            const ContentContext& renderer,
+                            const Entity& entity, RenderPass& pass) mutable {
+        Entity clipper;
         clipper.SetClipDepth(entity.GetClipDepth());
         clipper.SetTransform(entity.GetTransform() * entity_transform);
-        result = clipper.Render(renderer, pass) && result;
+
+        auto geom_result = geometry->GetPositionBuffer(renderer, clipper, pass);
+
+        ClipContents clip_contents(geometry->GetCoverage(clipper.GetTransform())
+                                       .value_or(Rect::MakeLTRB(0, 0, 0, 0)),
+                                   /*is_axis_aligned_rect=*/false);
+        clip_contents.SetClipOperation(clip_operation);
+        clip_contents.SetGeometry(std::move(geom_result));
+
+        if (!clip_contents.Render(renderer, pass, entity.GetClipDepth())) {
+          return false;
+        }
         blur_entity.SetClipDepth(entity.GetClipDepth());
         blur_entity.SetTransform(entity.GetTransform() * blur_transform);
-        result = blur_entity.Render(renderer, pass) && result;
-        return result;
+
+        return blur_entity.Render(renderer, pass);
       });
   auto coverage =
       fml::MakeCopyable([blur_entity = std::move(blur_entity),
@@ -582,15 +602,15 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                 const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) mutable {
-            bool result = true;
             snapshot_entity.SetTransform(entity.GetTransform() *
                                          snapshot_transform);
             snapshot_entity.SetClipDepth(entity.GetClipDepth());
-            result = result && snapshot_entity.Render(renderer, pass);
+            if (!snapshot_entity.Render(renderer, pass)) {
+              return false;
+            }
             blur_entity.SetClipDepth(entity.GetClipDepth());
             blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
-            result = result && blur_entity.Render(renderer, pass);
-            return result;
+            return blur_entity.Render(renderer, pass);
           }),
           fml::MakeCopyable([blur_entity = blur_entity.Clone(),
                              blurred_transform](const Entity& entity) mutable {

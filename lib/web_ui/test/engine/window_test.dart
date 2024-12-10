@@ -239,7 +239,8 @@ Future<void> testMain() async {
       expect(ui.PlatformDispatcher.instance.onSemanticsActionEvent, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        myWindow.viewId, 0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
@@ -347,12 +348,10 @@ Future<void> testMain() async {
       'orientation': <Object?, Object?>{
         'lock': (String lockType) {
           lockCalls.add(lockType);
-          return futureToPromise(() async {
-            if (simulateError) {
-              throw Error();
-            }
-            return 0.toJS;
-          }());
+          if (simulateError) {
+            throw Error();
+          }
+          return Future<JSNumber>.value(0.toJS).toJS;
         }.toJS,
         'unlock': () {
           unlockCount += 1;

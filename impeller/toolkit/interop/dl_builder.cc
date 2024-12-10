@@ -9,8 +9,7 @@
 namespace impeller::interop {
 
 DisplayListBuilder::DisplayListBuilder(const ImpellerRect* rect)
-    : builder_(ToSkiaType(rect).value_or(
-          flutter::DisplayListBuilder::kMaxCullRect)) {}
+    : builder_(rect) {}
 
 DisplayListBuilder::~DisplayListBuilder() = default;
 
@@ -53,6 +52,11 @@ Matrix DisplayListBuilder::GetTransform() const {
 void DisplayListBuilder::SetTransform(const Matrix& matrix) {
   const auto sk_matrix = SkM44::ColMajor(matrix.m);
   builder_.SetTransform(&sk_matrix);
+}
+
+void DisplayListBuilder::Transform(const Matrix& matrix) {
+  const auto sk_matrix = SkM44::ColMajor(matrix.m);
+  builder_.Transform(&sk_matrix);
 }
 
 void DisplayListBuilder::ResetTransform() {

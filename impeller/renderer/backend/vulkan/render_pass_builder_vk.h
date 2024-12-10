@@ -8,6 +8,7 @@
 #include <map>
 #include <optional>
 
+#include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -24,11 +25,13 @@ class RenderPassBuilderVK {
 
   RenderPassBuilderVK& operator=(const RenderPassBuilderVK&) = delete;
 
-  RenderPassBuilderVK& SetColorAttachment(size_t index,
-                                          PixelFormat format,
-                                          SampleCount sample_count,
-                                          LoadAction load_action,
-                                          StoreAction store_action);
+  RenderPassBuilderVK& SetColorAttachment(
+      size_t index,
+      PixelFormat format,
+      SampleCount sample_count,
+      LoadAction load_action,
+      StoreAction store_action,
+      vk::ImageLayout current_layout = vk::ImageLayout::eUndefined);
 
   RenderPassBuilderVK& SetDepthStencilAttachment(PixelFormat format,
                                                  SampleCount sample_count,
@@ -52,10 +55,20 @@ class RenderPassBuilderVK {
   // Visible for testing.
   const std::optional<vk::AttachmentDescription>& GetDepthStencil() const;
 
+  // Visible for testing.
+  std::optional<vk::AttachmentDescription> GetColor0() const;
+
+  // Visible for testing.
+  std::optional<vk::AttachmentDescription> GetColor0Resolve() const;
+
  private:
+  std::optional<vk::AttachmentDescription> color0_;
+  std::optional<vk::AttachmentDescription> color0_resolve_;
+  std::optional<vk::AttachmentDescription> depth_stencil_;
+
+  // Color attachment 0 is stored in the field above and not in these maps.
   std::map<size_t, vk::AttachmentDescription> colors_;
   std::map<size_t, vk::AttachmentDescription> resolves_;
-  std::optional<vk::AttachmentDescription> depth_stencil_;
 };
 
 //------------------------------------------------------------------------------

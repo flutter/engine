@@ -33,6 +33,8 @@ static std::string RuntimeStageBackendToString(
       return "OpenGLES";
     case impeller::RuntimeStageBackend::kVulkan:
       return "Vulkan";
+    case impeller::RuntimeStageBackend::kOpenGLES3:
+      return "OpenGLES3";
   }
 }
 
@@ -141,6 +143,13 @@ std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
     std::shared_ptr<std::vector<uint8_t>> float_uniforms,
     const std::vector<std::shared_ptr<DlColorSource>>& children) {
   return DlColorSource::MakeRuntimeEffect(runtime_effect_, children,
+                                          std::move(float_uniforms));
+}
+
+std::shared_ptr<DlImageFilter> FragmentProgram::MakeDlImageFilter(
+    std::shared_ptr<std::vector<uint8_t>> float_uniforms,
+    const std::vector<std::shared_ptr<DlColorSource>>& children) {
+  return DlImageFilter::MakeRuntimeEffect(runtime_effect_, children,
                                           std::move(float_uniforms));
 }
 

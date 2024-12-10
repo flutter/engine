@@ -280,6 +280,63 @@ TEST(SaveLayerUtilsTest,
   EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
 }
 
+TEST(SaveLayerUtilsTest, RoundUpCoverageWhenCloseToCoverageLimit) {
+  // X varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 90, 90),  //
+      /*effect_transform=*/{},                            //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),  //
+      /*image_filter=*/nullptr                            //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 100, 100));
+}
+
+TEST(SaveLayerUtilsTest, DontRoundUpCoverageWhenNotCloseToCoverageLimitWidth) {
+  // X varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 50, 90),  //
+      /*effect_transform=*/{},                            //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),  //
+      /*image_filter=*/nullptr                            //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 90));
+}
+
+TEST(SaveLayerUtilsTest, DontRoundUpCoverageWhenNotCloseToCoverageLimitHeight) {
+  // X varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 90, 50),  //
+      /*effect_transform=*/{},                            //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),  //
+      /*image_filter=*/nullptr                            //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 90, 50));
+}
+
+TEST(SaveLayerUtilsTest,
+     DontRoundUpCoverageWhenNotCloseToCoverageLimitWidthHeight) {
+  // X varies, translation is performed on coverage.
+  auto coverage = ComputeSaveLayerCoverage(
+      /*content_coverage=*/Rect::MakeLTRB(0, 0, 50, 50),  //
+      /*effect_transform=*/{},                            //
+      /*coverage_limit=*/Rect::MakeLTRB(0, 0, 100, 100),  //
+      /*image_filter=*/nullptr                            //
+  );
+
+  ASSERT_TRUE(coverage.has_value());
+  // Size that matches coverage limit
+  EXPECT_EQ(coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
+}
+
 }  // namespace testing
 }  // namespace impeller
 

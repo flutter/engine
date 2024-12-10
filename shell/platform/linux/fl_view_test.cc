@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/fl_view_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/fl_test_gtk_logs.h"
 
@@ -83,6 +82,9 @@ TEST(FlViewTest, SecondaryView) {
         return kSuccess;
       }));
 
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
+
   FlView* secondary_view = fl_view_new_for_engine(engine);
   EXPECT_EQ(view_id, fl_view_get_id(secondary_view));
 }
@@ -103,6 +105,9 @@ TEST(FlViewTest, SecondaryViewError) {
         view_id = info->view_id;
         return kInvalidArguments;
       }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
 
   FlView* secondary_view = fl_view_new_for_engine(engine);
   EXPECT_EQ(view_id, fl_view_get_id(secondary_view));
@@ -125,6 +130,9 @@ TEST(FlViewTest, ViewDestroy) {
         g_ptr_array_add(removed_views, GINT_TO_POINTER(info->view_id));
         return kSuccess;
       }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
 
   FlView* secondary_view = fl_view_new_for_engine(engine);
 
@@ -155,6 +163,9 @@ TEST(FlViewTest, ViewDestroyError) {
       RemoveView, ([](auto engine, const FlutterRemoveViewInfo* info) {
         return kInvalidArguments;
       }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
 
   FlView* secondary_view = fl_view_new_for_engine(engine);
 
