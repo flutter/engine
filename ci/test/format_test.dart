@@ -24,7 +24,7 @@ final FileContentPair ccContentPair = FileContentPair(
 final FileContentPair hContentPair =
     FileContentPair('int\nmain\n()\n;\n', 'int main();\n');
 final FileContentPair dartContentPair = FileContentPair(
-    'enum \n\nfoo {\n  entry1,\n  entry2\n}', 'enum foo { entry1, entry2 }\n');
+    'enum \n\nfoo {\n  entry1,\n  entry2,\n}', 'enum foo { entry1, entry2 }\n');
 final FileContentPair gnContentPair = FileContentPair(
     'test\n(){testvar=true}\n', 'test() {\n  testvar = true\n}\n');
 final FileContentPair javaContentPair = FileContentPair(
