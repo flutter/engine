@@ -32,6 +32,16 @@ class FlutterViewController {
   // |dart_project| will be used to configure the engine backing this view.
   FlutterViewController(int width, int height, const DartProject& project);
 
+  // Creates a FlutterView that can be parented into a Windows View hierarchy
+  // either using HWNDs.
+  //
+  // This creates the view on an existing FlutterEngine.
+  //
+  // |dart_project| will be used to configure the engine backing this view.
+  FlutterViewController(int width,
+                        int height,
+                        std::shared_ptr<FlutterEngine> engine);
+
   virtual ~FlutterViewController();
 
   // Prevent copying.
@@ -43,6 +53,9 @@ class FlutterViewController {
 
   // Returns the engine running Flutter content in this view.
   FlutterEngine* engine() const { return engine_.get(); }
+
+  // Returns the engine running Flutter content in this view.
+  std::shared_ptr<FlutterEngine> shared_engine() const { return engine_; }
 
   // Returns the view managed by this controller.
   FlutterView* view() const { return view_.get(); }
