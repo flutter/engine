@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain/ahb/ahb_swapchain_impl_vk.h"
 
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
@@ -24,7 +25,8 @@ namespace impeller {
 /// compositor and one for the raster thread, Because the semaphore is acquired
 /// when the CPU begins working on the texture
 ///
-static constexpr const size_t kMaxPendingPresents = 3u;
+// TODO: why did I need to change this?
+static constexpr const size_t kMaxPendingPresents = 6u;
 
 static TextureDescriptor ToSwapchainTextureDescriptor(
     const android::HardwareBufferDescriptor& ahb_desc) {
@@ -43,11 +45,12 @@ static TextureDescriptor ToSwapchainTextureDescriptor(
 std::shared_ptr<AHBSwapchainImplVK> AHBSwapchainImplVK::Create(
     const std::weak_ptr<Context>& context,
     std::weak_ptr<android::SurfaceControl> surface_control,
+    const CreateTransactionCB& cb,
     const ISize& size,
     bool enable_msaa,
     size_t swapchain_image_count) {
   auto impl = std::shared_ptr<AHBSwapchainImplVK>(
-      new AHBSwapchainImplVK(context, std::move(surface_control), size,
+      new AHBSwapchainImplVK(context, std::move(surface_control), cb, size,
                              enable_msaa, swapchain_image_count));
   return impl->IsValid() ? impl : nullptr;
 }
@@ -55,11 +58,13 @@ std::shared_ptr<AHBSwapchainImplVK> AHBSwapchainImplVK::Create(
 AHBSwapchainImplVK::AHBSwapchainImplVK(
     const std::weak_ptr<Context>& context,
     std::weak_ptr<android::SurfaceControl> surface_control,
+    const CreateTransactionCB& cb,
     const ISize& size,
     bool enable_msaa,
     size_t swapchain_image_count)
     : surface_control_(std::move(surface_control)),
-      pending_presents_(std::make_shared<fml::Semaphore>(kMaxPendingPresents)) {
+      pending_presents_(std::make_shared<fml::Semaphore>(kMaxPendingPresents)),
+      cb_(cb) {
   desc_ = android::HardwareBufferDescriptor::MakeForSwapchainImage(size);
   pool_ =
       std::make_shared<AHBTexturePoolVK>(context, desc_, swapchain_image_count);
@@ -173,7 +178,7 @@ bool AHBSwapchainImplVK::Present(
     return false;
   }
 
-  android::SurfaceTransaction transaction;
+  android::SurfaceTransaction transaction = cb_();
   if (!transaction.SetContents(control.get(),               //
                                texture->GetBackingStore(),  //
                                fence->CreateFD()            //

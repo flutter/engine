@@ -34,6 +34,7 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
 std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     const std::shared_ptr<Context>& context,
     ANativeWindow* p_window,
+    const CreateTransactionCB& cb,
     bool enable_msaa) {
   TRACE_EVENT0("impeller", "CreateAndroidSwapchain");
   if (!context) {
@@ -68,9 +69,10 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
         context,             //
         window.GetHandle(),  //
-        surface,             //
-        window.GetSize(),    //
-        enable_msaa          //
+        cb,
+        surface,           //
+        window.GetSize(),  //
+        enable_msaa        //
         ));
 
     if (ahb_swapchain->IsValid()) {

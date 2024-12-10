@@ -45,7 +45,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
         jni_facade->FlutterViewCreateOverlaySurface();
 
     FML_CHECK(java_metadata->window);
-    android_surface->SetNativeWindow(java_metadata->window);
+    android_surface->SetNativeWindow(java_metadata->window, jni_facade);
 
     std::unique_ptr<Surface> surface =
         android_surface->CreateGPUSurface(gr_context);
@@ -73,6 +73,12 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
   available_layer_index_++;
   current_frame_size_ = requested_frame_size_;
   return layer;
+}
+
+void SurfacePool::TrimLayers() {
+  std::lock_guard lock(mutex_);
+  layers_.erase(layers_.begin() + available_layer_index_, layers_.end());
+  available_layer_index_ = 0;
 }
 
 void SurfacePool::RecycleLayers() {

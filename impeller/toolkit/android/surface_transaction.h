@@ -18,6 +18,19 @@ namespace impeller::android {
 class SurfaceControl;
 class HardwareBuffer;
 
+struct WrappedSurfaceTransaction {
+  ASurfaceTransaction* tx;
+  bool owned;
+
+  constexpr bool operator==(const WrappedSurfaceTransaction& other) const {
+    return other.tx == tx;
+  }
+
+  constexpr bool operator!=(const WrappedSurfaceTransaction& other) const {
+    return !(*this == other);
+  }
+};
+
 //------------------------------------------------------------------------------
 /// @brief      A wrapper for ASurfaceTransaction.
 ///             https://developer.android.com/ndk/reference/group/native-activity#asurfacetransaction
@@ -47,6 +60,10 @@ class SurfaceTransaction {
   SurfaceTransaction(const SurfaceTransaction&) = delete;
 
   SurfaceTransaction& operator=(const SurfaceTransaction&) = delete;
+
+  explicit SurfaceTransaction(ASurfaceTransaction* transaction);
+
+  using OnCompleteCallback = std::function<void(ASurfaceTransactionStats*)>;
 
   bool IsValid() const;
 
@@ -84,8 +101,6 @@ class SurfaceTransaction {
   [[nodiscard]] bool SetBackgroundColor(const SurfaceControl& control,
                                         const Color& color);
 
-  using OnCompleteCallback = std::function<void(ASurfaceTransactionStats*)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Applies the updated encoded in the transaction and invokes the
   ///             callback when the updated are complete.
@@ -102,7 +117,7 @@ class SurfaceTransaction {
   ///             indicate the application was completed however. Only the
   ///             invocation of the callback denotes transaction completion.
   ///
-  [[nodiscard]] bool Apply(OnCompleteCallback callback = nullptr);
+  [[nodiscard]] bool Apply(OnCompleteCallback callback = {});
 
   //----------------------------------------------------------------------------
   /// @brief      Set the new parent control of the given control. If the new
@@ -119,18 +134,20 @@ class SurfaceTransaction {
 
  private:
   struct UniqueASurfaceTransactionTraits {
-    static ASurfaceTransaction* InvalidValue() { return nullptr; }
+    static WrappedSurfaceTransaction InvalidValue() { return {}; }
 
-    static bool IsValid(ASurfaceTransaction* value) {
-      return value != InvalidValue();
+    static bool IsValid(const WrappedSurfaceTransaction& value) {
+      return value.tx != nullptr;
     }
 
-    static void Free(ASurfaceTransaction* value) {
-      GetProcTable().ASurfaceTransaction_delete(value);
+    static void Free(const WrappedSurfaceTransaction& value) {
+      if (value.owned && value.tx) {
+        GetProcTable().ASurfaceTransaction_delete(value.tx);
+      }
     }
   };
 
-  fml::UniqueObject<ASurfaceTransaction*, UniqueASurfaceTransactionTraits>
+  fml::UniqueObject<WrappedSurfaceTransaction, UniqueASurfaceTransactionTraits>
       transaction_;
 };
 
