@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "fml/closure.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -83,8 +84,6 @@ class ReactorGLES {
     virtual bool CanReactorReactOnCurrentThreadNow(
         const ReactorGLES& reactor) const = 0;
   };
-
-  using Ref = std::shared_ptr<ReactorGLES>;
 
   //----------------------------------------------------------------------------
   /// @brief      Create a new reactor. There are expensive and only one per
@@ -173,6 +172,16 @@ class ReactorGLES {
   ///
   HandleGLES CreateHandle(HandleType type, GLuint external_handle = GL_NONE);
 
+  /// @brief Create a handle that is not managed by `ReactorGLES`.
+  /// @details This behaves just like `CreateHandle` but it doesn't add the
+  /// handle to ReactorGLES::handles_ and the creation is executed
+  /// synchronously, so it must be called from a proper thread. The benefit of
+  /// this is that it avoid synchronization and hash table lookups when
+  /// creating/accessing the handle.
+  /// @param type The type of handle to create.
+  /// @return The reactor handle.
+  HandleGLES CreateUntrackedHandle(HandleType type);
+
   //----------------------------------------------------------------------------
   /// @brief      Collect a reactor handle.
   ///
@@ -254,8 +263,10 @@ class ReactorGLES {
     union {
       GLuint handle;
       GLsync sync;
+      uint64_t integer;
     };
   };
+  static_assert(sizeof(GLStorage) == sizeof(uint64_t));
 
   struct LiveHandle {
     std::optional<GLStorage> name;
@@ -276,14 +287,13 @@ class ReactorGLES {
   std::map<std::thread::id, std::vector<Operation>> ops_ IPLR_GUARDED_BY(
       ops_mutex_);
 
-  // Make sure the container is one where erasing items during iteration doesn't
-  // invalidate other iterators.
-  using LiveHandles = std::unordered_map<HandleGLES,
-                                         LiveHandle,
-                                         HandleGLES::Hash,
-                                         HandleGLES::Equal>;
+  using LiveHandles = absl::flat_hash_map<const HandleGLES,
+                                          LiveHandle,
+                                          HandleGLES::Hash,
+                                          HandleGLES::Equal>;
   mutable RWMutex handles_mutex_;
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
+  int32_t handles_to_collect_count_ IPLR_GUARDED_BY(handles_mutex_) = 0;
 
   mutable Mutex workers_mutex_;
   mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(

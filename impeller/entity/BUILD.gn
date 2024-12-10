@@ -199,6 +199,8 @@ impeller_component("entity") {
     "geometry/rect_geometry.h",
     "geometry/round_rect_geometry.cc",
     "geometry/round_rect_geometry.h",
+    "geometry/round_superellipse_geometry.cc",
+    "geometry/round_superellipse_geometry.h",
     "geometry/stroke_path_geometry.cc",
     "geometry/stroke_path_geometry.h",
     "geometry/superellipse_geometry.cc",
@@ -229,8 +231,6 @@ impeller_component("entity_test_helpers") {
   testonly = true
 
   sources = [
-    "contents/test/contents_test_helpers.cc",
-    "contents/test/contents_test_helpers.h",
     "contents/test/recording_render_pass.cc",
     "contents/test/recording_render_pass.h",
   ]

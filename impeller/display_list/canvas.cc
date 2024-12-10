@@ -14,6 +14,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/display_list/color_filter.h"
 #include "impeller/display_list/image_filter.h"
 #include "impeller/display_list/skia_conversions.h"
@@ -36,6 +37,7 @@
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/round_rect_geometry.h"
+#include "impeller/entity/geometry/round_superellipse_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/save_layer_utils.h"
 #include "impeller/geometry/color.h"
@@ -54,9 +56,7 @@ static bool UseColorSourceContents(
   if (vertices->HasVertexColors()) {
     return false;
   }
-  if (vertices->HasTextureCoordinates() &&
-      (!paint.color_source ||
-       paint.color_source->type() == flutter::DlColorSourceType::kColor)) {
+  if (vertices->HasTextureCoordinates() && !paint.color_source) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -314,8 +314,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
     return false;
   }
 
-  if (paint.color_source &&
-      paint.color_source->type() != flutter::DlColorSourceType::kColor) {
+  if (paint.color_source) {
     return false;
   }
 
@@ -736,8 +735,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   // Override the blend mode with kDestination in order to match the behavior
   // of Skia's SK_LEGACY_IGNORE_DRAW_VERTICES_BLEND_WITH_NO_SHADER flag, which
   // is enabled when the Flutter engine builds Skia.
-  if (!paint.color_source ||
-      paint.color_source->type() == flutter::DlColorSourceType::kColor) {
+  if (!paint.color_source) {
     blend_mode = BlendMode::kDestination;
   }
 
@@ -786,6 +784,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetEffectTransform(effect_transform);
     contents->SetTexture(texture);
     contents->SetTileMode(x_tile_mode, y_tile_mode);
+    contents->SetSamplerDescriptor(sampler_descriptor);
 
     entity.SetContents(paint.WithFilters(std::move(contents)));
     AddRenderEntityToCurrentPass(entity);
@@ -856,7 +855,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<AtlasContents>& atlas_contents,
 
 void Canvas::SetupRenderPass() {
   renderer_.GetRenderTargetCache()->Start();
-  auto color0 = render_target_.GetColorAttachments().find(0u)->second;
+  ColorAttachment color0 = render_target_.GetColorAttachment(0);
 
   auto& stencil_attachment = render_target_.GetStencilAttachment();
   auto& depth_attachment = render_target_.GetDepthAttachment();
@@ -1463,8 +1462,7 @@ void Canvas::AddRenderEntityToCurrentPass(Entity& entity, bool reuse_depth) {
       RenderTarget& render_target = render_passes_.back()
                                         .inline_pass_context->GetPassTarget()
                                         .GetRenderTarget();
-      ColorAttachment attachment =
-          render_target.GetColorAttachments().find(0u)->second;
+      ColorAttachment attachment = render_target.GetColorAttachment(0);
       // Attachment.clear color needs to be premultiplied at all times, but the
       // Color::Blend function requires unpremultiplied colors.
       attachment.clear_color = attachment.clear_color.Unpremultiply()
@@ -1591,8 +1589,7 @@ std::shared_ptr<Texture> Canvas::FlipBackdrop(Point global_pass_position,
   }
 
   if (should_use_onscreen) {
-    ColorAttachment color0 =
-        render_target_.GetColorAttachments().find(0u)->second;
+    ColorAttachment color0 = render_target_.GetColorAttachment(0);
     // When MSAA is being used, we end up overriding the entire backdrop by
     // drawing the previous pass texture, and so we don't have to clear it and
     // can use kDontCare.

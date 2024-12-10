@@ -518,7 +518,7 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  receiver.setColorFilter(kTestMatrixColorFilter1.get());
   builder.Build();
   check_defaults(builder, cull_rect);
 
@@ -940,7 +940,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 1, 0,
   };
   // clang-format on
-  DlMatrixColorFilter base_color_filter(color_matrix);
+  auto base_color_filter = DlColorFilter::MakeMatrix(color_matrix);
   // clang-format off
   const float alpha_matrix[] = {
     0, 0, 0, 0, 0,
@@ -949,7 +949,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   sk_sp<SkColorFilter> sk_alpha_color_filter =
       SkColorFilters::Matrix(alpha_matrix);
 
@@ -967,7 +967,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Now checking that a normal color filter still produces rect bounds
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&base_color_filter);
+    save_paint.setColorFilter(base_color_filter);
     builder.SaveLayer(&save_bounds, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -999,7 +999,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // save layer that modifies an unbounded region
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&alpha_color_filter);
+    save_paint.setColorFilter(alpha_color_filter);
     builder.SaveLayer(&save_bounds, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -1012,7 +1012,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // to the behavior in the previous example
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&alpha_color_filter);
+    save_paint.setColorFilter(alpha_color_filter);
     builder.SaveLayer(nullptr, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -1367,7 +1367,7 @@ TEST_F(DisplayListTest, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
   DisplayListBuilder builder;
   // This empty draw rect will not actually be inserted into the stream,
   // but the Src blend mode will be synchronized as an attribute. The
-  // saveLayer following it should not use that attribute to base its
+  // SaveLayer following it should not use that attribute to base its
   // decisions about group opacity and the draw rect after that comes
   // with its own compatible blend mode.
   builder.DrawRect(SkRect{0, 0, 0, 0},
@@ -1416,7 +1416,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   DlPaint save_paint;
   builder.SaveLayer(nullptr, &save_paint);
   builder.DrawRect(SkRect{50, 50, 100, 100}, DlPaint());
-  // This image filter should be ignored since it was not set before saveLayer
+  // This image filter should be ignored since it was not set before SaveLayer
   // And the rect drawn with it will not contribute any more area to the bounds
   DlPaint draw_paint;
   draw_paint.setImageFilter(&kTestBlurImageFilter1);
@@ -1668,7 +1668,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   DisplayListBuilder builder;
   DlPaint save_paint;
   save_paint.setColor(DlColor(SkColorSetARGB(127, 255, 255, 255)));
-  save_paint.setColorFilter(&kTestMatrixColorFilter1);
+  save_paint.setColorFilter(kTestMatrixColorFilter1);
   builder.SaveLayer(nullptr, &save_paint);
   builder.DrawRect(SkRect{10, 10, 20, 20}, DlPaint());
   builder.Restore();
@@ -1720,7 +1720,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   save_paint.setColor(DlColor(SkColorSetARGB(127, 255, 255, 255)));
   builder.SaveLayer(nullptr, &save_paint);
   DlPaint draw_paint = save_paint;
-  draw_paint.setColorFilter(&kTestMatrixColorFilter1);
+  draw_paint.setColorFilter(kTestMatrixColorFilter1);
   builder.DrawRect(SkRect{10, 10, 20, 20}, draw_paint);
   builder.Restore();
 
@@ -2510,7 +2510,7 @@ TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
   builder.DrawRect(SkRect{10, 10, 20, 20}, default_paint);
   builder.SaveLayer(nullptr, &filter_paint);
   // the following rectangle will be expanded to 50,50,60,60
-  // by the saveLayer filter during the restore operation
+  // by the SaveLayer filter during the restore operation
   builder.DrawRect(SkRect{53, 53, 57, 57}, default_paint);
   builder.Restore();
   auto display_list = builder.Build();
@@ -2671,7 +2671,7 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
       0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   // Making sure hiding a problematic ColorFilter as an ImageFilter
   // will generate the same behavior as setting it as a ColorFilter
 
@@ -3272,7 +3272,7 @@ TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
   builder.ClipRect(SkRect{50, 50, 60, 60}, ClipOp::kIntersect, false);
   builder.SaveLayer(nullptr, &filter_paint);
   // the following rectangle will be expanded to 23,23,87,87
-  // by the saveLayer filter during the restore operation
+  // by the SaveLayer filter during the restore operation
   // but it will then be clipped to 50,50,60,60
   builder.DrawRect(SkRect{53, 53, 57, 57}, default_paint);
   builder.Restore();
@@ -3862,7 +3862,7 @@ TEST_F(DisplayListTest, TransformResetSaveLayerBoundsComputationOfSimpleRect) {
   builder.SaveLayer(nullptr, nullptr);
   builder.TransformReset();
   builder.Scale(20.0f, 20.0f);
-  // Net local transform for saveLayer is Scale(2, 2)
+  // Net local transform for SaveLayer is Scale(2, 2)
   {  //
     builder.DrawRect(rect, DlPaint());
   }
@@ -3957,7 +3957,7 @@ TEST_F(DisplayListTest, FloodingSaveLayerBoundsComputationOfSimpleRect) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint save_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   save_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -3983,7 +3983,7 @@ TEST_F(DisplayListTest, NestedFloodingSaveLayerBoundsComputationOfSimpleRect) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint save_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   save_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -4016,7 +4016,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingImageFilter) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint draw_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   auto image_filter = DlImageFilter::MakeColorFilter(color_filter);
   draw_paint.setImageFilter(image_filter);
@@ -4043,7 +4043,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingColorFilter) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint draw_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   draw_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -4233,7 +4233,7 @@ TEST_F(DisplayListTest, FloodingFilteredLayerPushesRestoreOpIndex) {
     0.5f, 0.0f, 0.0f, 0.0f, 0.5f
   };
   // clang-format on
-  auto color_filter = DlMatrixColorFilter::Make(matrix);
+  auto color_filter = DlColorFilter::MakeMatrix(matrix);
   save_paint.setImageFilter(DlImageFilter::MakeColorFilter(color_filter));
   builder.SaveLayer(nullptr, &save_paint);
   int save_layer_id = DisplayListBuilderTestingLastOpIndex(builder);
@@ -4451,7 +4451,7 @@ TEST_F(DisplayListTest, MaxBlendModeInsideComplexSaveLayers) {
   builder.Restore();
 
   // Double check that kModulate is the max blend mode for the first
-  // saveLayer operations
+  // SaveLayer operations
   auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kSrc);
   ASSERT_EQ(expect, DlBlendMode::kModulate);
 
@@ -4487,8 +4487,8 @@ TEST_F(DisplayListTest, BackdropDetectionSimpleSaveLayer) {
   auto dl = builder.Build();
 
   EXPECT_TRUE(dl->root_has_backdrop_filter());
-  // The saveLayer itself, though, does not have the contains backdrop
-  // flag set because its content does not contain a saveLayer with backdrop
+  // The SaveLayer itself, though, does not have the contains backdrop
+  // flag set because its content does not contain a SaveLayer with backdrop
   SAVE_LAYER_EXPECTOR(expector);
   expector.addExpectation(
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity());
@@ -5817,7 +5817,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     };
     // clang-format on
-    auto unbounded_cf = DlMatrixColorFilter::Make(matrix);
+    auto unbounded_cf = DlColorFilter::MakeMatrix(matrix);
     // ColorFilter must modify transparent black to be "unbounded"
     ASSERT_TRUE(unbounded_cf->modifies_transparent_black());
     auto unbounded_if = DlImageFilter::MakeColorFilter(unbounded_cf);
@@ -5946,6 +5946,133 @@ TEST_F(DisplayListTest, RecordSingleLargeDisplayListOperation) {
                      DlPaint{});
 
   EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, DisplayListDetectsRuntimeEffect) {
+  const auto runtime_effect = DlRuntimeEffect::MakeSkia(
+      SkRuntimeEffect::MakeForShader(
+          SkString("vec4 main(vec2 p) { return vec4(0); }"))
+          .effect);
+  auto color_source = DlColorSource::MakeRuntimeEffect(
+      runtime_effect, {}, std::make_shared<std::vector<uint8_t>>());
+  auto image_filter = DlImageFilter::MakeRuntimeEffect(
+      runtime_effect, {}, std::make_shared<std::vector<uint8_t>>());
+
+  {
+    // Default - no runtime effects, supports group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    EXPECT_TRUE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE color source does not support group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+
+    EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE image filter does not support group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    paint.setImageFilter(image_filter);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+
+    EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE color source inside SaveLayer does not support group
+    // opacity on the SaveLayer, but does support it on the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    builder.Restore();
+
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
+  }
+
+  {
+    // Draw with RTE image filter inside SaveLayer does not support group
+    // opacity on the SaveLayer, but does support it on the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setImageFilter(image_filter);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    builder.Restore();
+
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
+  }
+
+  {
+    // Draw with RTE color source inside nested saveLayers does not support
+    // group opacity on the inner SaveLayer, but does support it on the
+    // outer SaveLayer and the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    paint.setColorSource(nullptr);
+    builder.Restore();
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setImageFilter(image_filter);
+    // Make sure these DrawRects are non-overlapping otherwise the outer
+    // SaveLayer and DisplayList will be incompatible due to overlaps
+    builder.DrawRect(DlRect::MakeLTRB(60, 60, 100, 100), paint);
+    paint.setImageFilter(nullptr);
+    builder.Restore();
+
+    builder.Restore();
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // outer SaveLayer supports group opacity
+      return options.can_distribute_opacity();
+    });
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // first inner SaveLayer does not support group opacity
+      return !options.can_distribute_opacity();
+    });
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // second inner SaveLayer does not support group opacity
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
+  }
 }
 
 }  // namespace testing

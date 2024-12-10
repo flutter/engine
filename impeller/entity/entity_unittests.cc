@@ -37,6 +37,7 @@
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/round_superellipse_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/entity/geometry/superellipse_geometry.h"
 #include "impeller/geometry/color.h"
@@ -1843,27 +1844,16 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(sizeof(FragUniforms));
   memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
-  contents->SetUniformData(uniform_data);
 
-  Entity entity;
-  entity.SetContents(contents);
+  auto buffer_view = RuntimeEffectContents::EmplaceVulkanUniform(
+      uniform_data, GetContentContext()->GetTransientsBuffer(),
+      runtime_stage->GetUniforms()[0]);
 
-  auto context = GetContentContext();
-  RenderTarget target = context->GetRenderTargetCache()->CreateOffscreen(
-      *context->GetContext(), {1, 1}, 1u);
-
-  testing::MockRenderPass pass(GetContext(), target);
-  ASSERT_TRUE(contents->Render(*context, entity, pass));
-  ASSERT_EQ(pass.GetCommands().size(), 1u);
-  const auto& command = pass.GetCommands()[0];
-  ASSERT_EQ(command.fragment_bindings.buffers.size(), 1u);
   // 16 bytes:
   //   8 bytes for iResolution
   //   4 bytes for iTime
   //   4 bytes padding
-  EXPECT_EQ(
-      command.fragment_bindings.buffers[0].view.resource.GetRange().length,
-      16u);
+  EXPECT_EQ(buffer_view.GetRange().length, 16u);
 }
 
 TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
@@ -2120,11 +2110,11 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.43f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
-  ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f, 12), 48.0f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f), 0.43f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f), 0.53f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f), 2.1f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f), 0.0f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f), 48.0f);
 }
 
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
@@ -2320,6 +2310,41 @@ TEST_P(EntityTest, DrawSuperEllipse) {
     std::unique_ptr<SuperellipseGeometry> geom =
         std::make_unique<SuperellipseGeometry>(Point{400, 400}, radius, degree,
                                                alpha, beta);
+    contents->SetColor(color);
+    contents->SetGeometry(geom.get());
+
+    Entity entity;
+    entity.SetContents(contents);
+
+    return entity.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, DrawRoundSuperEllipse) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    // UI state.
+    static float center_x = 100;
+    static float center_y = 100;
+    static float width = 900;
+    static float height = 900;
+    static float corner_radius = 300;
+    static Color color = Color::Red();
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Center X", &center_x, 0, 1000);
+    ImGui::SliderFloat("Center Y", &center_y, 0, 1000);
+    ImGui::SliderFloat("Width", &width, 0, 1000);
+    ImGui::SliderFloat("Height", &height, 0, 1000);
+    ImGui::SliderFloat("Corner radius", &corner_radius, 0, 500);
+    ImGui::End();
+
+    auto contents = std::make_shared<SolidColorContents>();
+    std::unique_ptr<RoundSuperellipseGeometry> geom =
+        std::make_unique<RoundSuperellipseGeometry>(
+            Rect::MakeOriginSize({center_x, center_y}, {width, height}),
+            corner_radius);
     contents->SetColor(color);
     contents->SetGeometry(geom.get());
 

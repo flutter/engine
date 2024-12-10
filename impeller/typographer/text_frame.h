@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
 
+#include <cstdint>
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_run.h"
 
@@ -32,7 +33,7 @@ class TextFrame {
       Point offset,
       Scalar scale);
 
-  static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
+  static Scalar RoundScaledFontSize(Scalar scale);
 
   //----------------------------------------------------------------------------
   /// @brief      The conservative bounding box for this text frame.
@@ -84,13 +85,18 @@ class TextFrame {
                        Point offset,
                        std::optional<GlyphProperties> properties);
 
+  // A generation id for the glyph atlas this text run was associated
+  // with. As long as the frame generation matches the atlas generation,
+  // the contents are guaranteed to be populated and do not need to be
+  // processed.
+  std::pair<size_t, intptr_t> GetAtlasGenerationAndID() const;
+
   TextFrame& operator=(TextFrame&& other) = default;
 
   TextFrame(const TextFrame& other) = default;
 
  private:
   friend class TypographerContextSkia;
-  friend class TypographerContextSTB;
   friend class LazyGlyphAtlas;
 
   Scalar GetScale() const;
@@ -103,14 +109,18 @@ class TextFrame {
 
   void ClearFrameBounds();
 
+  void SetAtlasGeneration(size_t value, intptr_t atlas_id);
+
   std::vector<TextRun> runs_;
   Rect bounds_;
   bool has_color_;
 
   // Data that is cached when rendering the text frame and is only
-  // valid for a single frame.
+  // valid for the current atlas generation.
   std::vector<FrameBounds> bound_values_;
   Scalar scale_ = 0;
+  size_t generation_ = 0;
+  intptr_t atlas_id_ = 0;
   Point offset_;
   std::optional<GlyphProperties> properties_;
 };

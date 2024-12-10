@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#import <WebKit/WebKit.h>
+
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -518,8 +520,7 @@ static BOOL _preparedOnce = NO;
 
 @implementation FlutterTouchInterceptingView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-             platformViewsController:
-                 (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController
+             platformViewsController:(FlutterPlatformViewsController*)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
@@ -570,6 +571,22 @@ static BOOL _preparedOnce = NO;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
       self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+
+      // On iOS 18.2, WKWebView's internal recognizer likely caches the old state of its blocking
+      // recognizers (i.e. delaying recognizer), resulting in non-tappable links. See
+      // https://github.com/flutter/flutter/issues/158961. Removing and adding back the delaying
+      // recognizer solves the problem, possibly because UIKit notifies all the recognizers related
+      // to (blocking or blocked by) this recognizer. It is not possible to inject this workaround
+      // from the web view plugin level. Right now we only observe this issue for
+      // FlutterPlatformViewGestureRecognizersBlockingPolicyEager, but we should try it if a similar
+      // issue arises for the other policy.
+      if (@available(iOS 18.2, *)) {
+        if ([self.embeddedView isKindOfClass:[WKWebView class]]) {
+          [self removeGestureRecognizer:self.delayingRecognizer];
+          [self addGestureRecognizer:self.delayingRecognizer];
+        }
+      }
+
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
       if (self.delayingRecognizer.touchedEndedWithoutBlocking) {
@@ -667,7 +684,7 @@ static BOOL _preparedOnce = NO;
   // outlives the FlutterViewController. And ForwardingGestureRecognizer is owned by a subview of
   // FlutterView, so the ForwardingGestureRecognizer never out lives FlutterViewController.
   // Therefore, `_platformViewsController` should never be nullptr.
-  fml::WeakPtr<flutter::PlatformViewsController> _platformViewsController;
+  __weak FlutterPlatformViewsController* _platformViewsController;
   // Counting the pointers that has started in one touch sequence.
   NSInteger _currentTouchPointersCount;
   // We can't dispatch events to the framework without this back pointer.
@@ -678,13 +695,12 @@ static BOOL _preparedOnce = NO;
 }
 
 - (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController {
+       platformViewsController:(FlutterPlatformViewsController*)platformViewsController {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    FML_DCHECK(platformViewsController.get() != nullptr);
-    _platformViewsController = std::move(platformViewsController);
+    FML_DCHECK(platformViewsController);
+    _platformViewsController = platformViewsController;
     _currentTouchPointersCount = 0;
   }
   return self;
@@ -692,7 +708,7 @@ static BOOL _preparedOnce = NO;
 
 - (ForwardingGestureRecognizer*)recreateRecognizerWithTarget:(id)target {
   return [[ForwardingGestureRecognizer alloc] initWithTarget:target
-                                     platformViewsController:std::move(_platformViewsController)];
+                                     platformViewsController:_platformViewsController];
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
@@ -701,7 +717,7 @@ static BOOL _preparedOnce = NO;
     // At the start of each gesture sequence, we reset the `_flutterViewController`,
     // so that all the touch events in the same sequence are forwarded to the same
     // `_flutterViewController`.
-    _flutterViewController = _platformViewsController->GetFlutterViewController();
+    _flutterViewController = _platformViewsController.flutterViewController;
   }
   [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;

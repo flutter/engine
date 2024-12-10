@@ -84,7 +84,7 @@ ReactorGLES::~ReactorGLES() {
   if (CanReactOnCurrentThread()) {
     for (auto& handle : handles_) {
       if (handle.second.name.has_value()) {
-        CollectGLHandle(*proc_table_, handle.first.type,
+        CollectGLHandle(*proc_table_, handle.first.GetType(),
                         handle.second.name.value());
       }
     }
@@ -126,6 +126,10 @@ const ProcTableGLES& ReactorGLES::GetProcTable() const {
 
 std::optional<ReactorGLES::GLStorage> ReactorGLES::GetHandle(
     const HandleGLES& handle) const {
+  if (handle.untracked_id_.has_value()) {
+    return ReactorGLES::GLStorage{.integer = handle.untracked_id_.value()};
+  }
+
   ReaderLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
     if (found->second.pending_collection) {
@@ -145,7 +149,7 @@ std::optional<ReactorGLES::GLStorage> ReactorGLES::GetHandle(
 }
 
 std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
-  if (handle.type == HandleType::kFence) {
+  if (handle.GetType() == HandleType::kFence) {
     return std::nullopt;
   }
   std::optional<ReactorGLES::GLStorage> gl_handle = GetHandle(handle);
@@ -156,7 +160,7 @@ std::optional<GLuint> ReactorGLES::GetGLHandle(const HandleGLES& handle) const {
 }
 
 std::optional<GLsync> ReactorGLES::GetGLFence(const HandleGLES& handle) const {
-  if (handle.type != HandleType::kFence) {
+  if (handle.GetType() != HandleType::kFence) {
     return std::nullopt;
   }
   std::optional<ReactorGLES::GLStorage> gl_handle = GetHandle(handle);
@@ -187,12 +191,24 @@ bool ReactorGLES::RegisterCleanupCallback(const HandleGLES& handle,
   if (handle.IsDead()) {
     return false;
   }
+  FML_DCHECK(!handle.untracked_id_.has_value());
   WriterLock handles_lock(handles_mutex_);
   if (auto found = handles_.find(handle); found != handles_.end()) {
     found->second.callback = fml::ScopedCleanupClosure(callback);
     return true;
   }
   return false;
+}
+
+HandleGLES ReactorGLES::CreateUntrackedHandle(HandleType type) {
+  FML_DCHECK(CanReactOnCurrentThread());
+  auto new_handle = HandleGLES::Create(type);
+  std::optional<ReactorGLES::GLStorage> gl_handle =
+      CreateGLHandle(GetProcTable(), type);
+  if (gl_handle.has_value()) {
+    new_handle.untracked_id_ = gl_handle.value().integer;
+  }
+  return new_handle;
 }
 
 HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
@@ -203,7 +219,6 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   if (new_handle.IsDead()) {
     return HandleGLES::DeadHandle();
   }
-  WriterLock handles_lock(handles_mutex_);
 
   std::optional<ReactorGLES::GLStorage> gl_handle;
   if (external_handle != GL_NONE) {
@@ -211,14 +226,26 @@ HandleGLES ReactorGLES::CreateHandle(HandleType type, GLuint external_handle) {
   } else if (CanReactOnCurrentThread()) {
     gl_handle = CreateGLHandle(GetProcTable(), type);
   }
+
+  WriterLock handles_lock(handles_mutex_);
   handles_[new_handle] = LiveHandle{gl_handle};
   return new_handle;
 }
 
 void ReactorGLES::CollectHandle(HandleGLES handle) {
-  WriterLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_collection = true;
+  if (handle.untracked_id_.has_value()) {
+    LiveHandle live_handle(GLStorage{.integer = handle.untracked_id_.value()});
+    live_handle.pending_collection = true;
+    WriterLock handles_lock(handles_mutex_);
+    handles_[handle] = std::move(live_handle);
+  } else {
+    WriterLock handles_lock(handles_mutex_);
+    if (auto found = handles_.find(handle); found != handles_.end()) {
+      if (!found->second.pending_collection) {
+        handles_to_collect_count_ += 1;
+      }
+      found->second.pending_collection = true;
+    }
   }
 }
 
@@ -266,41 +293,58 @@ bool ReactorGLES::ReactOnce() {
 bool ReactorGLES::ConsolidateHandles() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   const auto& gl = GetProcTable();
-  WriterLock handles_lock(handles_mutex_);
-  std::vector<HandleGLES> handles_to_delete;
-  for (auto& handle : handles_) {
-    // Collect dead handles.
-    if (handle.second.pending_collection) {
-      // This could be false if the handle was created and collected without
-      // use. We still need to get rid of map entry.
-      if (handle.second.name.has_value()) {
-        CollectGLHandle(gl, handle.first.type, handle.second.name.value());
+  std::vector<std::tuple<HandleGLES, std::optional<GLStorage>>>
+      handles_to_delete;
+  std::vector<std::tuple<DebugResourceType, GLint, std::string>>
+      handles_to_name;
+  {
+    WriterLock handles_lock(handles_mutex_);
+    handles_to_delete.reserve(handles_to_collect_count_);
+    handles_to_collect_count_ = 0;
+    for (auto& handle : handles_) {
+      // Collect dead handles.
+      if (handle.second.pending_collection) {
+        handles_to_delete.emplace_back(
+            std::make_tuple(handle.first, handle.second.name));
+        continue;
       }
-      handles_to_delete.push_back(handle.first);
-      continue;
-    }
-    // Create live handles.
-    if (!handle.second.name.has_value()) {
-      auto gl_handle = CreateGLHandle(gl, handle.first.type);
-      if (!gl_handle) {
-        VALIDATION_LOG << "Could not create GL handle.";
-        return false;
+      // Create live handles.
+      if (!handle.second.name.has_value()) {
+        auto gl_handle = CreateGLHandle(gl, handle.first.GetType());
+        if (!gl_handle) {
+          VALIDATION_LOG << "Could not create GL handle.";
+          return false;
+        }
+        handle.second.name = gl_handle;
       }
-      handle.second.name = gl_handle;
-    }
-    // Set pending debug labels.
-    if (handle.second.pending_debug_label.has_value() &&
-        handle.first.type != HandleType::kFence) {
-      if (gl.SetDebugLabel(ToDebugResourceType(handle.first.type),
-                           handle.second.name.value().handle,
-                           handle.second.pending_debug_label.value())) {
+      // Set pending debug labels.
+      if (handle.second.pending_debug_label.has_value() &&
+          handle.first.GetType() != HandleType::kFence) {
+        handles_to_name.emplace_back(std::make_tuple(
+            ToDebugResourceType(handle.first.GetType()),
+            handle.second.name.value().handle,
+            std::move(handle.second.pending_debug_label.value())));
         handle.second.pending_debug_label = std::nullopt;
       }
     }
+    for (const auto& handle_to_delete : handles_to_delete) {
+      handles_.erase(std::get<0>(handle_to_delete));
+    }
   }
-  for (const auto& handle_to_delete : handles_to_delete) {
-    handles_.erase(handle_to_delete);
+
+  for (const auto& handle : handles_to_name) {
+    gl.SetDebugLabel(std::get<0>(handle), std::get<1>(handle),
+                     std::get<2>(handle));
   }
+  for (const auto& handle : handles_to_delete) {
+    const std::optional<GLStorage>& storage = std::get<1>(handle);
+    // This could be false if the handle was created and collected without
+    // use. We still need to get rid of map entry.
+    if (storage.has_value()) {
+      CollectGLHandle(gl, std::get<0>(handle).GetType(), storage.value());
+    }
+  }
+
   return true;
 }
 
@@ -342,15 +386,23 @@ void ReactorGLES::SetupDebugGroups() {
 
 void ReactorGLES::SetDebugLabel(const HandleGLES& handle,
                                 std::string_view label) {
+  FML_DCHECK(handle.GetType() != HandleType::kFence);
   if (!can_set_debug_labels_) {
     return;
   }
   if (handle.IsDead()) {
     return;
   }
-  WriterLock handles_lock(handles_mutex_);
-  if (auto found = handles_.find(handle); found != handles_.end()) {
-    found->second.pending_debug_label = label;
+  if (handle.untracked_id_.has_value()) {
+    FML_DCHECK(CanReactOnCurrentThread());
+    const auto& gl = GetProcTable();
+    gl.SetDebugLabel(ToDebugResourceType(handle.GetType()),
+                     handle.untracked_id_.value(), label);
+  } else {
+    WriterLock handles_lock(handles_mutex_);
+    if (auto found = handles_.find(handle); found != handles_.end()) {
+      found->second.pending_debug_label = label;
+    }
   }
 }
 
