@@ -905,17 +905,19 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)addBasicEditingCommandToItems:(NSMutableArray*)items
-                               action:(NSString*)action
+                                 type:(NSString*)type
                              selector:(SEL)selector
                         suggestedMenu:(UIMenu*)suggestedMenu {
   UICommand* command = [self searchCommandWithSelector:selector element:suggestedMenu];
   if (command) {
     [items addObject:command];
+  } else {
+    FML_LOG(ERROR) << "Cannot find context menu item of type \"" << type.UTF8String << "\".";
   }
 }
 
 - (void)addAdditionalBasicCommandToItems:(NSMutableArray*)items
-                                  action:(NSString*)action
+                                    type:(NSString*)type
                                 selector:(SEL)selector
                              encodedItem:(NSDictionary<NSString*, id>*)encodedItem {
   NSString* title = encodedItem[@"title"];
@@ -926,7 +928,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                         propertyList:nil];
     [items addObject:command];
   } else {
-    FML_LOG(ERROR) << "Missing title for context menu item action \"" << action.UTF8String << "\".";
+    FML_LOG(ERROR) << "Missing title for context menu item of type \"" << type.UTF8String << "\".";
   }
 }
 
@@ -940,49 +942,47 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
   NSMutableArray* items = [NSMutableArray array];
   for (NSDictionary<NSString*, id>* encodedItem in _editMenuItems) {
-    if ([encodedItem[@"type"] isEqualToString:@"builtIn"]) {
-      NSString* action = encodedItem[@"action"];
-      if ([action isEqualToString:@"copy"]) {
-        [self addBasicEditingCommandToItems:items
-                                     action:action
-                                   selector:@selector(copy:)
-                              suggestedMenu:suggestedMenu];
-      } else if ([action isEqualToString:@"paste"]) {
-        [self addBasicEditingCommandToItems:items
-                                     action:action
-                                   selector:@selector(paste:)
-                              suggestedMenu:suggestedMenu];
-      } else if ([action isEqualToString:@"cut"]) {
-        [self addBasicEditingCommandToItems:items
-                                     action:action
-                                   selector:@selector(cut:)
-                              suggestedMenu:suggestedMenu];
-      } else if ([action isEqualToString:@"delete"]) {
-        [self addBasicEditingCommandToItems:items
-                                     action:action
-                                   selector:@selector(delete:)
-                              suggestedMenu:suggestedMenu];
-      } else if ([action isEqualToString:@"selectAll"]) {
-        [self addBasicEditingCommandToItems:items
-                                     action:action
-                                   selector:@selector(selectAll:)
-                              suggestedMenu:suggestedMenu];
-      } else if ([action isEqualToString:@"searchWeb"]) {
-        [self addAdditionalBasicCommandToItems:items
-                                        action:action
-                                      selector:@selector(handleSearchWebAction)
-                                   encodedItem:encodedItem];
-      } else if ([action isEqualToString:@"share"]) {
-        [self addAdditionalBasicCommandToItems:items
-                                        action:action
-                                      selector:@selector(handleShareAction)
-                                   encodedItem:encodedItem];
-      } else if ([action isEqualToString:@"lookUp"]) {
-        [self addAdditionalBasicCommandToItems:items
-                                        action:action
-                                      selector:@selector(handleLookUpAction)
-                                   encodedItem:encodedItem];
-      }
+    NSString* type = encodedItem[@"type"];
+    if ([type isEqualToString:@"copy"]) {
+      [self addBasicEditingCommandToItems:items
+                                     type:type
+                                 selector:@selector(copy:)
+                            suggestedMenu:suggestedMenu];
+    } else if ([type isEqualToString:@"paste"]) {
+      [self addBasicEditingCommandToItems:items
+                                     type:type
+                                 selector:@selector(paste:)
+                            suggestedMenu:suggestedMenu];
+    } else if ([type isEqualToString:@"cut"]) {
+      [self addBasicEditingCommandToItems:items
+                                     type:type
+                                 selector:@selector(cut:)
+                            suggestedMenu:suggestedMenu];
+    } else if ([type isEqualToString:@"delete"]) {
+      [self addBasicEditingCommandToItems:items
+                                     type:type
+                                 selector:@selector(delete:)
+                            suggestedMenu:suggestedMenu];
+    } else if ([type isEqualToString:@"selectAll"]) {
+      [self addBasicEditingCommandToItems:items
+                                     type:type
+                                 selector:@selector(selectAll:)
+                            suggestedMenu:suggestedMenu];
+    } else if ([type isEqualToString:@"searchWeb"]) {
+      [self addAdditionalBasicCommandToItems:items
+                                        type:type
+                                    selector:@selector(handleSearchWebAction)
+                                 encodedItem:encodedItem];
+    } else if ([type isEqualToString:@"share"]) {
+      [self addAdditionalBasicCommandToItems:items
+                                        type:type
+                                    selector:@selector(handleShareAction)
+                                 encodedItem:encodedItem];
+    } else if ([type isEqualToString:@"lookUp"]) {
+      [self addAdditionalBasicCommandToItems:items
+                                        type:type
+                                    selector:@selector(handleLookUpAction)
+                                 encodedItem:encodedItem];
     }
   }
   return [UIMenu menuWithChildren:items];

@@ -3064,9 +3064,8 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
-    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"builtIn", @"action" : @"paste"}, @{@"type" : @"builtIn", @"action" : @"copy"}
-    ];
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems =
+        @[ @{@"type" : @"paste"}, @{@"type" : @"copy"} ];
 
     BOOL shownEditMenu =
         [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items" : encodedItems}];
@@ -3126,10 +3125,8 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
-    NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"builtIn", @"action" : @"cut"}, @{@"type" : @"builtIn", @"action" : @"paste"},
-      @{@"type" : @"builtIn", @"action" : @"copy"}
-    ];
+    NSArray<NSDictionary<NSString*, id>*>* encodedItems =
+        @[ @{@"type" : @"cut"}, @{@"type" : @"paste"}, @{@"type" : @"copy"} ];
 
     BOOL shownEditMenu =
         [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect, @"items" : encodedItems}];
@@ -3208,9 +3205,8 @@ FLUTTER_ASSERT_ARC
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
     NSArray<NSDictionary<NSString*, id>*>* encodedItems = @[
-      @{@"type" : @"builtIn", @"action" : @"searchWeb", @"title" : @"Search Web"},
-      @{@"type" : @"builtIn", @"action" : @"lookUp", @"title" : @"Look Up"},
-      @{@"type" : @"builtIn", @"action" : @"share", @"title" : @"Share"}
+      @{@"type" : @"searchWeb", @"title" : @"Search Web"},
+      @{@"type" : @"lookUp", @"title" : @"Look Up"}, @{@"type" : @"share", @"title" : @"Share"}
     ];
 
     BOOL shownEditMenu =
