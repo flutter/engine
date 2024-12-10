@@ -51,6 +51,27 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
   return ret;
 }
 
+std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
+    const DlPoint start_point,
+    const DlPoint end_point,
+    uint32_t stop_count,
+    const DlScalar* colors,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed = sizeof(DlLinearGradientColorSource) +
+                  (stop_count * (sizeof(DlColor) + sizeof(float)));
+
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlLinearGradientColorSource> ret;
+  ret.reset(new (storage)
+                DlLinearGradientColorSource(start_point, end_point, stop_count,
+                                            colors, stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
     DlPoint center,
     DlScalar radius,
@@ -162,6 +183,31 @@ void DlGradientColorSourceBase::store_color_stops(void* pod,
                                                   const float* stop_data) {
   DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
   memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
+  float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
+  if (stop_data) {
+    memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
+  } else {
+    float div = stop_count_ - 1;
+    if (div <= 0) {
+      div = 1;
+    }
+    for (uint32_t i = 0; i < stop_count_; i++) {
+      stop_storage[i] = i / div;
+    }
+  }
+}
+
+void DlGradientColorSourceBase::store_color_stops(
+    void* pod,
+    const DlScalar* color_data_argb,
+    const float* stop_data) {
+  DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
+  for (uint32_t i = 0; i < stop_count_; ++i) {
+    *color_storage++ =
+        DlColor(color_data_argb[0], color_data_argb[1], color_data_argb[2],
+                color_data_argb[3], DlColorSpace::kExtendedSRGB);
+    color_data_argb += 4;
+  }
   float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
   if (stop_data) {
     memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
