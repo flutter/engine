@@ -42,7 +42,11 @@ static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 
   NSAssert([range isKindOfClass:[FlutterTextRange class]],
            @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
-  NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
+  if (textRange.location == NSNotFound) {
+    /// Avoids [crashes](https://github.com/flutter/flutter/issues/138464) from an assertion
+    /// against NSNotFound.
+    return nil;
+  }
   return [self.text substringWithRange:textRange];
 }
 
