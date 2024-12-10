@@ -54,7 +54,8 @@ FlTouchManager* fl_touch_manager_new(FlEngine* engine, FlutterViewId view_id) {
   g_weak_ref_init(&self->engine, engine);
   self->view_id = view_id;
 
-  self->number_to_id = g_hash_table_new(nullptr, nullptr);
+  self->number_to_id =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr, nullptr);
 
   self->min_touch_device_id = kMinTouchDeviceId;
 
@@ -66,9 +67,10 @@ static void ensure_touch_added(_FlTouchManager* self,
                                guint event_time,
                                gdouble x,
                                gdouble y,
-                               int32_t device) {
+                               int32_t touch_id,
+                               int32_t device_id) {
   // Check if we need to send a touch add event.
-  if (g_list_find(self->added_touch_devices, GINT_TO_POINTER(device)) !=
+  if (g_list_find(self->added_touch_devices, GINT_TO_POINTER(touch_id)) !=
       nullptr) {
     return;
   }
@@ -80,23 +82,30 @@ static void ensure_touch_added(_FlTouchManager* self,
 
   fl_engine_send_touch_add_event(engine, self->view_id,
                                  event_time * kMicrosecondsPerMillisecond, x, y,
-                                 device);
+                                 device_id);
 
   self->added_touch_devices =
-      g_list_append(self->added_touch_devices, GINT_TO_POINTER(device));
+      g_list_append(self->added_touch_devices, GINT_TO_POINTER(touch_id));
 }
 
 // Generates a unique ID to represent |number|. The generated ID is the
-// smallest available ID greater than or equal to the |min_id| specified
-// during creation of the generator.
+// smallest available ID greater than or equal to the minimum touch device ID.
 static uint32_t get_generated_id(_FlTouchManager* self, uint32_t number) {
-  auto id = g_hash_table_lookup(self->number_to_id, GINT_TO_POINTER(number));
-  if (id != nullptr) {
-    return GPOINTER_TO_UINT(id);
+  gpointer value;
+  if (g_hash_table_lookup_extended(self->number_to_id, GUINT_TO_POINTER(number),
+                                   nullptr, &value)) {
+    uint32_t id;
+    if (value == nullptr) {
+      id = 0;
+    } else {
+      id = GPOINTER_TO_UINT(value);
+    }
+    return id;
   }
-
-  while (g_hash_table_contains(self->number_to_id,
-                               GINT_TO_POINTER(self->min_touch_device_id)) &&
+  auto values = g_hash_table_get_values(self->number_to_id);
+  while (values != nullptr &&
+         g_list_find(values, GUINT_TO_POINTER(self->min_touch_device_id)) !=
+             nullptr &&
          self->min_touch_device_id < kMaxTouchDeviceId) {
     ++self->min_touch_device_id;
   }
@@ -104,8 +113,8 @@ static uint32_t get_generated_id(_FlTouchManager* self, uint32_t number) {
     self->min_touch_device_id = kMinTouchDeviceId;
   }
 
-  g_hash_table_insert(self->number_to_id, GINT_TO_POINTER(number),
-                      GINT_TO_POINTER(self->min_touch_device_id));
+  g_hash_table_insert(self->number_to_id, GUINT_TO_POINTER(number),
+                      GUINT_TO_POINTER(self->min_touch_device_id));
   return self->min_touch_device_id;
 }
 
@@ -136,6 +145,9 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
   uint32_t id = reinterpret_cast<uint64_t>(seq);
   // generate touch id from unique id
   auto touch_id = get_generated_id(self, id);
+  // get device id
+  auto device_id =
+      static_cast<int32_t>(kFlutterPointerDeviceKindTouch) << 28 | touch_id;
 
   gdouble event_x = 0.0, event_y = 0.0;
   gdk_event_get_coords(event, &event_x, &event_y);
@@ -145,7 +157,7 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
 
   guint event_time = gdk_event_get_time(event);
 
-  ensure_touch_added(self, event_time, x, y, touch_id);
+  ensure_touch_added(self, event_time, x, y, touch_id, device_id);
 
   GdkEventType touch_event_type = gdk_event_get_event_type(event);
 
@@ -153,22 +165,24 @@ void fl_touch_manager_handle_touch_event(FlTouchManager* self,
     case GDK_TOUCH_BEGIN:
       fl_engine_send_touch_down_event(engine, self->view_id,
                                       event_time * kMicrosecondsPerMillisecond,
-                                      x, y, touch_id);
+                                      x, y, device_id);
       break;
     case GDK_TOUCH_UPDATE:
       fl_engine_send_touch_move_event(engine, self->view_id,
                                       event_time * kMicrosecondsPerMillisecond,
-                                      x, y, touch_id);
+                                      x, y, device_id);
       break;
     case GDK_TOUCH_END:
       fl_engine_send_touch_up_event(engine, self->view_id,
                                     event_time * kMicrosecondsPerMillisecond, x,
-                                    y, touch_id);
+                                    y, device_id);
 
       fl_engine_send_touch_remove_event(
           engine, self->view_id, event_time * kMicrosecondsPerMillisecond, x, y,
-          touch_id);
+          device_id);
       release_number(self, id);
+      self->added_touch_devices =
+          g_list_remove(self->added_touch_devices, GINT_TO_POINTER(touch_id));
       break;
     default:
       break;
