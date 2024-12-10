@@ -819,7 +819,7 @@ class DartFormatChecker extends FormatChecker {
       'sdks',
       'dart-sdk',
       'bin',
-      'dart',
+      Platform.isWindows ? 'dart.exe' : 'dart',
     );
   }
 
