@@ -1591,7 +1591,7 @@ void testMain() {
               rect, CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0));
         });
       }
-      CkPicture picture = rectPicture(const ui.Rect.fromLTWH(0, 0, 20, 20));
+      final CkPicture picture = rectPicture(const ui.Rect.fromLTWH(0, 0, 20, 20));
 
       await createPlatformView(0, 'test-view');
 
@@ -1602,7 +1602,7 @@ void testMain() {
       await renderScene(scene);
 
       picture.dispose();
-      Map<String, int> debugCounters = Instrumentation.instance.debugCounters;
+      final Map<String, int> debugCounters = Instrumentation.instance.debugCounters;
       expect(debugCounters['Picture Created'], debugCounters['Picture Deleted']);
     });
   });
