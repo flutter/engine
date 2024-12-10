@@ -248,6 +248,7 @@ class RenderPass : public ResourceBinder {
   const ISize render_target_size_;
   const RenderTarget render_target_;
   std::vector<Command> commands_;
+  std::vector<BufferView> vertex_buffers_;
   std::vector<BufferResource> bound_buffers_;
   std::vector<TextureAndSampler> bound_textures_;
   const Matrix orthographic_;
@@ -293,6 +294,7 @@ class RenderPass : public ResourceBinder {
   Command pending_;
   std::optional<size_t> bound_buffers_start_ = std::nullopt;
   std::optional<size_t> bound_textures_start_ = std::nullopt;
+  std::optional<size_t> vertex_buffers_start_ = std::nullopt;
 };
 
 }  // namespace impeller

@@ -183,6 +183,7 @@
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/buffer_bindings_gles_unittests.cc
+../../../flutter/impeller/renderer/backend/gles/device_buffer_gles_unittests.cc
 ../../../flutter/impeller/renderer/backend/gles/test
 ../../../flutter/impeller/renderer/backend/gles/unique_handle_gles_unittests.cc
 ../../../flutter/impeller/renderer/backend/metal/allocator_mtl_unittests.mm
@@ -2805,6 +2806,7 @@
 ../../../flutter/third_party/skia/modules/canvaskit/wasm_tools/SIMD/.gitignore
 ../../../flutter/third_party/skia/modules/jetski/BUILD.bazel
 ../../../flutter/third_party/skia/modules/jetski/README
+../../../flutter/third_party/skia/modules/jsonreader/BUILD.bazel
 ../../../flutter/third_party/skia/modules/pathkit/.gitignore
 ../../../flutter/third_party/skia/modules/pathkit/BUILD.bazel
 ../../../flutter/third_party/skia/modules/pathkit/CHANGELOG.md
@@ -3398,6 +3400,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.mailbox/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network.driver/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/meta.json
