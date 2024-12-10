@@ -5,6 +5,8 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMPELLER_H_
 #define FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMPELLER_H_
 
+// NOLINTBEGIN(google-objc-function-naming)
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -2585,5 +2587,7 @@ uint32_t ImpellerParagraphGetLineCount(
     ImpellerParagraph IMPELLER_NONNULL paragraph);
 
 IMPELLER_EXTERN_C_END
+
+// NOLINTEND(google-objc-function-naming)
 
 #endif  // FLUTTER_IMPELLER_TOOLKIT_INTEROP_IMPELLER_H_

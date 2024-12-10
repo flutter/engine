@@ -27,6 +27,7 @@ int main(int argc, char const* argv[]) {
   assert(result == GLFW_TRUE);
 
   if (!glfwVulkanSupported()) {
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
     fprintf(stderr, "Vulkan is not supported on this platform.\n");
     fflush(stderr);
     return -1;
@@ -46,12 +47,14 @@ int main(int argc, char const* argv[]) {
   assert(context != NULL);
 
   ImpellerContextVulkanInfo info = {};
-  bool info_result = ImpellerContextGetVulkanInfo(context, &info);
+  [[maybe_unused]] bool info_result =
+      ImpellerContextGetVulkanInfo(context, &info);
   assert(!!info_result);
 
   if (glfwGetPhysicalDevicePresentationSupport(
           info.vk_instance, info.vk_physical_device,
           info.graphics_queue_family_index) != GLFW_TRUE) {
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
     fprintf(stderr, "Queue does not support presentation.\n");
     fflush(stderr);
     return -1;
@@ -61,6 +64,7 @@ int main(int argc, char const* argv[]) {
   VkResult error = glfwCreateWindowSurface(info.vk_instance, window, NULL,
                                            &vulkan_surface_khr);
   if (error) {
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
     fprintf(stderr, "Could not create Vulkan surface for presentation.\n");
     fflush(stderr);
     return -1;

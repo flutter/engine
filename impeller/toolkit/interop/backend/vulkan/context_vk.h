@@ -39,7 +39,7 @@ class ContextVK final : public Context {
   bool GetInfo(ImpellerContextVulkanInfo& info) const;
 
  private:
-  ContextVK(std::shared_ptr<impeller::Context> context);
+  explicit ContextVK(std::shared_ptr<impeller::Context> context);
 };
 
 }  // namespace impeller::interop

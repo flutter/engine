@@ -28,6 +28,7 @@ int main(int argc, char const* argv[]) {
   assert(result == GLFW_TRUE);
 
   if (glfwGetPlatform() != GLFW_PLATFORM_COCOA) {
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
     fprintf(stderr,
             "Metal is only available on macOS. Please try either Vulkan or "
             "OpenGL (ES).\n");
