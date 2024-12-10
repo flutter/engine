@@ -382,9 +382,8 @@ class FlutterView {
 
   /// Change the retained semantics data about this [FlutterView].
   ///
-  /// If [PlatformDispatcher.semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this [FlutterView]
-  /// changes.
+  /// This method should only be called after [setSemanticsTreeEnabled] is called with
+  /// true.
   ///
   /// This function disposes the given update, which means the semantics update
   /// cannot be used further.
@@ -392,6 +391,17 @@ class FlutterView {
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(_NativeSemanticsUpdate update);
+
+  /// Informs the engine whether the framework is generating a semantics tree.
+  ///
+  /// After this has been set to true, platforms are expected to prepare for accepting
+  /// semantics update sent via [updateSemantics]. When this is set to false, platforms
+  /// may dispose any resources associated with processing semantics as no further
+  /// semantics updates will be sent via [updateSemantics].
+  void setSemanticsTreeEnabled(bool enabled) => _setSemanticsTreeEnabled(enabled);
+
+  @Native<Void Function(Bool)>(symbol: 'PlatformConfigurationNativeApi::SetSemanticsTreeEnabled')
+  external static void _setSemanticsTreeEnabled(bool update);
 
   @override
   String toString() => 'FlutterView(id: $viewId)';
