@@ -60,7 +60,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const DlPoint start_point,
     const DlPoint end_point,
     uint32_t stop_count,
-    const DlScalar* colors,
+    const DlScalar* colors_argb,
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
