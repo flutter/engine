@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.SensitiveContentChannel;
 import io.flutter.plugin.common.MethodChannel;
 
+import io.flutter.Log;
+
 /**
  * {@link SensitiveContentPlugin} is the implementation of all functionality needed to set content
  * sensitive on a native Flutter Android {@code View}.
@@ -42,11 +44,13 @@ public class SensitiveContentPlugin
       @NonNull int contentSensitivity,
       @NonNull MethodChannel.Result result) {
     final View flutterView = mflutterActivity.findViewById(flutterViewId);
+    Log.e("CAMILLE", "flutter view ID: " + Integer.toString(flutterViewId));
     if (flutterView == null) {
       result.error("error", "Requested Flutter View to set content sensitivty of not found.", null);
     }
 
     flutterView.setContentSensitivity(contentSensitivity);
+    Log.e("CAMILLE", "set content sensitivity to: " + Integer.toString(contentSensitivity));
     result.success(null);
   }
 
