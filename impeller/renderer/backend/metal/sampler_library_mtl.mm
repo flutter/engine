@@ -16,10 +16,12 @@ SamplerLibraryMTL::~SamplerLibraryMTL() = default;
 static const std::unique_ptr<const Sampler> kNullSampler = nullptr;
 
 const std::unique_ptr<const Sampler>& SamplerLibraryMTL::GetSampler(
-    SamplerDescriptor descriptor) {
-  auto found = samplers_.find(descriptor);
-  if (found != samplers_.end()) {
-    return found->second;
+    const SamplerDescriptor& descriptor) {
+  uint64_t p_key = SamplerDescriptor::ToKey(descriptor);
+  for (const auto& [key, value] : samplers_) {
+    if (key == p_key) {
+      return value;
+    }
   }
   if (!device_) {
     return kNullSampler;
@@ -46,8 +48,8 @@ const std::unique_ptr<const Sampler>& SamplerLibraryMTL::GetSampler(
   }
   auto sampler =
       std::unique_ptr<SamplerMTL>(new SamplerMTL(descriptor, mtl_sampler));
-
-  return (samplers_[descriptor] = std::move(sampler));
+  samplers_.push_back(std::make_pair(p_key, std::move(sampler)));
+  return samplers_.back().second;
 }
 
 }  // namespace impeller
