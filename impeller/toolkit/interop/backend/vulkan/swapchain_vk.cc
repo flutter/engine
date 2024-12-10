@@ -15,7 +15,7 @@ SwapchainVK::SwapchainVK(Context& context, VkSurfaceKHR c_surface)
     return;
   }
 
-  if (c_surface == NULL) {
+  if (!c_surface) {
     VALIDATION_LOG << "Invalid surface.";
     return;
   }
@@ -23,7 +23,7 @@ SwapchainVK::SwapchainVK(Context& context, VkSurfaceKHR c_surface)
   // Creating a unique object from a raw handle requires fetching the owner
   // manually.
   auto surface = vk::UniqueSurfaceKHR(
-      c_surface,
+      vk::SurfaceKHR{c_surface},
       impeller::ContextVK::Cast(*context_->GetContext()).GetInstance());
   auto swapchain = impeller::SwapchainVK::Create(context.GetContext(),  //
                                                  std::move(surface),    //
