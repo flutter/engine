@@ -585,6 +585,11 @@ ContentContext::GetCachedRuntimeEffectPipeline(
 
 void ContentContext::ClearCachedRuntimeEffectPipeline(
     const std::string& unique_entrypoint_name) const {
+  // Pipelines may be in use by the GPU when a host reload/restart is
+  // performed. This wait idle ensures that all pending commands have
+  // completed before any pipelines are destroyed.
+  GetContext()->GetIdleWaiter()->WaitIdle();
+
   for (auto it = runtime_effect_pipelines_.begin();
        it != runtime_effect_pipelines_.end();) {
     if (it->first.unique_entrypoint_name == unique_entrypoint_name) {
