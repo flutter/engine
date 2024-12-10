@@ -103,13 +103,23 @@ static ScopedObject<Surface> CreateSharedSurface(
     Context& context,
     std::shared_ptr<impeller::Surface> shared_surface) {
   switch (backend) {
+#if IMPELLER_ENABLE_METAL
     case PlaygroundBackend::kMetal:
       return Adopt<Surface>(new SurfaceMTL(context, std::move(shared_surface)));
+#endif
+
+#if IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kOpenGLES:
       return Adopt<Surface>(
           new SurfaceGLES(context, std::move(shared_surface)));
+#endif
+
+#if IMPELLER_ENABLE_VULKAN
     case PlaygroundBackend::kVulkan:
       return Adopt<Surface>(new SurfaceVK(context, std::move(shared_surface)));
+#endif
+    default:
+      return nullptr;
   }
   FML_UNREACHABLE();
 }
@@ -137,12 +147,20 @@ static ScopedObject<Context> CreateSharedContext(
     PlaygroundBackend backend,
     std::shared_ptr<impeller::Context> shared_context) {
   switch (backend) {
+#if IMPELLER_ENABLE_METAL
     case PlaygroundBackend::kMetal:
       return ContextMTL::Create(std::move(shared_context));
+#endif
+#if IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kOpenGLES:
       return ContextGLES::Create(std::move(shared_context));
+#endif
+#if IMPELLER_ENABLE_VULKAN
     case PlaygroundBackend::kVulkan:
       return ContextVK::Create(std::move(shared_context));
+#endif
+    default:
+      return nullptr;
   }
   FML_UNREACHABLE();
 }
