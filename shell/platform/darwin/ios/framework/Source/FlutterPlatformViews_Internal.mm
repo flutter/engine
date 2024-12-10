@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#import <WebKit/WebKit.h>
+
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -510,45 +512,6 @@ static BOOL _preparedOnce = NO;
 }
 @end
 
-// This recognizer delays touch events from being dispatched to the responder chain until it failed
-// recognizing a gesture.
-//
-// We only fail this recognizer when asked to do so by the Flutter framework (which does so by
-// invoking an acceptGesture method on the platform_views channel). And this is how we allow the
-// Flutter framework to delay or prevent the embedded view from getting a touch sequence.
-@interface FlutterDelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-
-// Indicates that if the `FlutterDelayingGestureRecognizer`'s state should be set to
-// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
-@property(nonatomic) BOOL shouldEndInNextTouchesEnded;
-
-// Indicates that the `FlutterDelayingGestureRecognizer`'s `touchesEnded` has been invoked without
-// setting the state to `UIGestureRecognizerStateEnded`.
-@property(nonatomic) BOOL touchedEndedWithoutBlocking;
-
-@property(nonatomic, readonly) UIGestureRecognizer* forwardingRecognizer;
-
-- (instancetype)initWithTarget:(id)target
-                        action:(SEL)action
-          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
-@end
-
-// While the FlutterDelayingGestureRecognizer is preventing touches from hitting the responder chain
-// the touch events are not arriving to the FlutterView (and thus not arriving to the Flutter
-// framework). We use this gesture recognizer to dispatch the events directly to the FlutterView
-// while during this phase.
-//
-// If the Flutter framework decides to dispatch events to the embedded view, we fail the
-// FlutterDelayingGestureRecognizer which sends the events up the responder chain. But since the
-// events are handled by the embedded view they are not delivered to the Flutter framework in this
-// phase as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
-// directly to the FlutterView.
-@interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-- (instancetype)initWithTarget:(id)target
-       platformViewsController:
-           (fml::WeakPtr<flutter::PlatformViewsController>)platformViewsController;
-@end
-
 @interface FlutterTouchInterceptingView ()
 @property(nonatomic, weak, readonly) UIView* embeddedView;
 @property(nonatomic, readonly) FlutterDelayingGestureRecognizer* delayingRecognizer;
@@ -595,6 +558,22 @@ static BOOL _preparedOnce = NO;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
       self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+
+      // On iOS 18.2, WKWebView's internal recognizer likely caches the old state of its blocking
+      // recognizers (i.e. delaying recognizer), resulting in non-tappable links. See
+      // https://github.com/flutter/flutter/issues/158961. Removing and adding back the delaying
+      // recognizer solves the problem, possibly because UIKit notifies all the recognizers related
+      // to (blocking or blocked by) this recognizer. It is not possible to inject this workaround
+      // from the web view plugin level. Right now we only observe this issue for
+      // FlutterPlatformViewGestureRecognizersBlockingPolicyEager, but we should try it if a similar
+      // issue arises for the other policy.
+      if (@available(iOS 18.2, *)) {
+        if ([self.embeddedView isKindOfClass:[WKWebView class]]) {
+          [self removeGestureRecognizer:self.delayingRecognizer];
+          [self addGestureRecognizer:self.delayingRecognizer];
+        }
+      }
+
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
       if (self.delayingRecognizer.touchedEndedWithoutBlocking) {
