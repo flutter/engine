@@ -51,7 +51,7 @@ GloballyPositionedTextEditingStrategy _enableEditingStrategy({
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp(withImplicitView: true);
+  setUpImplicitView();
 
   const String fakeComposingText = 'ImComposingText';
 

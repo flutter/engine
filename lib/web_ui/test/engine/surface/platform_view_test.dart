@@ -10,15 +10,11 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../common/test_initialization.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp();
-
   test('importing platformViewRegistry from dart:ui is deprecated', () {
     final void Function(String) oldPrintWarning = printWarning;
 

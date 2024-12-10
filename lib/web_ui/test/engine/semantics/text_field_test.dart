@@ -36,9 +36,7 @@ void main() {
 }
 
 void testMain() {
-  setUpAll(() async {
-    await bootstrapAndRunApp(withImplicitView: true);
-  });
+  setUpImplicitView();
 
   setUp(() {
     EngineSemantics.debugResetSemantics();

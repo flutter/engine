@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:js_interop';
 
-import 'package:js/js_util.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/src/engine/initialization.dart';
@@ -57,6 +56,23 @@ void setUpUnitTests({
 
   tearDownAll(() async {
     fakeAssetManager.popAssetScope(debugFontsScope);
+  });
+}
+
+void setUpImplicitView() {
+  late engine.EngineFlutterWindow myWindow;
+
+  final engine.EnginePlatformDispatcher dispatcher = engine.EnginePlatformDispatcher.instance;
+
+  setUp(() {
+    myWindow = engine.EngineFlutterView.implicit(dispatcher, null);
+    dispatcher.viewManager.registerView(myWindow);
+  });
+
+  tearDown(() async {
+    dispatcher.viewManager.unregisterView(myWindow.viewId);
+    await myWindow.resetHistory();
+    myWindow.dispose();
   });
 }
 
