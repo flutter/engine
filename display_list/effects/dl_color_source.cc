@@ -30,6 +30,13 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeImage(
       image, horizontal_tile_mode, vertical_tile_mode, sampling, matrix);
 }
 
+namespace {
+size_t CalculateLinearGradientSize(uint32_t stop_count) {
+  return sizeof(DlLinearGradientColorSource) +
+         (stop_count * (sizeof(DlColor) + sizeof(float)));
+}
+}  // namespace
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const DlPoint start_point,
     const DlPoint end_point,
@@ -38,9 +45,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlLinearGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed = CalculateLinearGradientSize(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
@@ -59,9 +64,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlLinearGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed = CalculateLinearGradientSize(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
