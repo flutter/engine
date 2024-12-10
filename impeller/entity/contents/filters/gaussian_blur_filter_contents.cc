@@ -130,7 +130,7 @@ std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
                                     const Entity& entity,
                                     const std::optional<Rect>& coverage_hint) {
   std::optional<Snapshot> input_snapshot =
-      input->GetSnapshot("GaussianBlur", renderer, entity,
+      input->GetSnapshot(renderer, entity,
                          /*coverage_limit=*/coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;

@@ -53,7 +53,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  auto input_snapshot = inputs[0]->GetSnapshot("Morphology", renderer, entity);
+  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }

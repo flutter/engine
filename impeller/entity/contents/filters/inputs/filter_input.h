@@ -46,7 +46,6 @@ class FilterInput {
   static FilterInput::Vector Make(std::initializer_list<Variant> inputs);
 
   virtual std::optional<Snapshot> GetSnapshot(
-      const std::string& label,
       const ContentContext& renderer,
       const Entity& entity,
       std::optional<Rect> coverage_limit = std::nullopt,
