@@ -31,6 +31,9 @@ uint8_t* DeviceBufferGLES::OnGetContents() const {
   if (!reactor_) {
     return nullptr;
   }
+  if (initialized_) {
+    return reinterpret_cast<uint8_t*>(data_);
+  }
   return backing_store_->GetBuffer();
 }
 
@@ -47,8 +50,8 @@ bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
     return false;
   }
 
-  std::memmove(backing_store_->GetBuffer() + offset,
-               source + source_range.offset, source_range.length);
+  std::memmove(OnGetContents() + offset, source + source_range.offset,
+               source_range.length);
   Flush(Range{offset, source_range.length});
 
   return true;
@@ -63,6 +66,9 @@ std::optional<GLuint> DeviceBufferGLES::GetHandle() const {
 }
 
 void DeviceBufferGLES::Flush(std::optional<Range> range) const {
+  if (initialized_) {
+    return;
+  }
   if (!range.has_value()) {
     dirty_range_ = Range{
         0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())};
@@ -111,19 +117,20 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 
   gl.BindBuffer(target_type, buffer.value());
   if (!initialized_) {
-    gl.BufferData(target_type, backing_store_->GetLength().GetByteSize(),
-                  nullptr, GL_DYNAMIC_DRAW);
+    gl.BufferStorageEXT(
+        target_type, backing_store_->GetLength().GetByteSize(), nullptr,
+        GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT_EXT | GL_MAP_COHERENT_BIT_EXT);
+    data_ = gl.MapBufferRange(target_type, 0,
+                              backing_store_->GetLength().GetByteSize(),
+                              GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
     initialized_ = true;
   }
 
   if (dirty_range_.has_value()) {
     Range range = dirty_range_.value();
     if (gl.MapBufferRange.IsAvailable()) {
-      void* data =
-          gl.MapBufferRange(target_type, range.offset, range.length,
-                            GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-      ::memcpy(data, backing_store_->GetBuffer() + range.offset, range.length);
-      gl.UnmapBuffer(target_type);
+      ::memcpy(reinterpret_cast<uint8_t*>(data_) + range.offset,
+               backing_store_->GetBuffer() + range.offset, range.length);
     } else {
       gl.BufferSubData(target_type, range.offset, range.length,
                        backing_store_->GetBuffer() + range.offset);
@@ -153,6 +160,9 @@ bool DeviceBufferGLES::SetLabel(std::string_view label, Range range) {
 }
 
 const uint8_t* DeviceBufferGLES::GetBufferData() const {
+  if (initialized_) {
+    return reinterpret_cast<uint8_t*>(data_);
+  }
   return backing_store_->GetBuffer();
 }
 
@@ -160,7 +170,7 @@ void DeviceBufferGLES::UpdateBufferData(
     const std::function<void(uint8_t* data, size_t length)>&
         update_buffer_data) {
   if (update_buffer_data) {
-    update_buffer_data(backing_store_->GetBuffer(),
+    update_buffer_data(OnGetContents(),
                        backing_store_->GetLength().GetByteSize());
     Flush(Range{
         0, static_cast<size_t>(backing_store_->GetLength().GetByteSize())});

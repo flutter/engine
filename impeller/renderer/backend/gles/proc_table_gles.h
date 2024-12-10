@@ -259,6 +259,7 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(PopDebugGroupKHR);                   \
   PROC(ObjectLabelKHR);                     \
   PROC(RenderbufferStorageMultisampleEXT);  \
+  PROC(BufferStorageEXT);                   \
   PROC(GenQueriesEXT);                      \
   PROC(DeleteQueriesEXT);                   \
   PROC(GetQueryObjectui64vEXT);             \

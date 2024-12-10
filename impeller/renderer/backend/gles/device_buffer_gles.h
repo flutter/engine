@@ -51,6 +51,7 @@ class DeviceBufferGLES final
   mutable std::shared_ptr<Allocation> backing_store_;
   mutable std::optional<Range> dirty_range_ = std::nullopt;
   mutable bool initialized_ = false;
+  mutable void* data_ = nullptr;
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;
