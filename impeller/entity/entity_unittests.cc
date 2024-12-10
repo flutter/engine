@@ -1724,7 +1724,9 @@ TEST_P(EntityTest, RuntimeEffect) {
     entity.SetContents(contents);
     bool result = contents->Render(context, entity, pass);
 
-    if (!expect_dirty) {
+    if (expect_dirty) {
+      first_pipeline = pass.GetCommands().back().pipeline;
+    } else {
       EXPECT_EQ(pass.GetCommands().back().pipeline, first_pipeline);
     }
     expect_dirty = false;
@@ -1749,7 +1751,6 @@ TEST_P(EntityTest, RuntimeEffect) {
 
     ASSERT_TRUE(runtime_stage->IsDirty());
     expect_dirty = true;
-    first_pipeline = PipelineRef{nullptr};
 
     callback(*content_context, mock_pass);
   }
