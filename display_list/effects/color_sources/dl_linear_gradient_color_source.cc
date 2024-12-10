@@ -31,7 +31,7 @@ DlLinearGradientColorSource::DlLinearGradientColorSource(
     : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
       start_point_(start_point),
       end_point_(end_point) {
-  FML_CHECK(false);
+  store_color_stops(this + 1, colors, stops);
 }
 
 DlLinearGradientColorSource::DlLinearGradientColorSource(

@@ -208,7 +208,7 @@ void DlGradientColorSourceBase::store_color_stops(
                 color_data_argb[3], DlColorSpace::kExtendedSRGB);
     color_data_argb += 4;
   }
-  float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
+  float* stop_storage = reinterpret_cast<float*>(color_storage);
   if (stop_data) {
     memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
   } else {
