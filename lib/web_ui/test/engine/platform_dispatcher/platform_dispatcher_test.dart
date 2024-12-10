@@ -17,8 +17,10 @@ void main() {
 }
 
 void testMain() {
+  setUpImplicitView();
+
   setUpAll(() async {
-    await bootstrapAndRunApp(withImplicitView: true);
+    await renderer.initialize();
   });
 
   group('PlatformDispatcher', () {
