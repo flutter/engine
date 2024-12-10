@@ -288,6 +288,8 @@ IMPELLER_DEFINE_HANDLE(ImpellerSurface);
 ///
 IMPELLER_DEFINE_HANDLE(ImpellerTexture);
 
+IMPELLER_DEFINE_HANDLE(ImpellerVulkanSwapchain);
+
 //------------------------------------------------------------------------------
 // Signatures
 //------------------------------------------------------------------------------
@@ -309,6 +311,11 @@ typedef void (*ImpellerCallback)(void* IMPELLER_NULLABLE user_data);
 ///
 typedef void* IMPELLER_NULLABLE (*ImpellerProcAddressCallback)(
     const char* IMPELLER_NONNULL proc_name,
+    void* IMPELLER_NULLABLE user_data);
+
+typedef void* IMPELLER_NULLABLE (*ImpellerVulkanProcAddressCallback)(
+    void* IMPELLER_NULLABLE vulkan_instance,
+    const char* IMPELLER_NONNULL vulkan_proc_name,
     void* IMPELLER_NULLABLE user_data);
 
 //------------------------------------------------------------------------------
@@ -562,6 +569,20 @@ typedef struct ImpellerMapping {
   ImpellerCallback IMPELLER_NULLABLE on_release;
 } ImpellerMapping;
 
+typedef struct ImpellerContextVulkanSettings {
+  void* IMPELLER_NULLABLE user_data;
+  ImpellerVulkanProcAddressCallback IMPELLER_NONNULL proc_address_callback;
+  bool enable_vulkan_validation;
+} ImpellerContextVulkanSettings;
+
+typedef struct ImpellerContextVulkanInfo {
+  void* IMPELLER_NULLABLE vk_instance;
+  void* IMPELLER_NULLABLE vk_physical_device;
+  void* IMPELLER_NULLABLE vk_logical_device;
+  uint32_t graphics_queue_family_index;
+  uint32_t graphics_queue_index;
+} ImpellerContextVulkanInfo;
+
 //------------------------------------------------------------------------------
 // Version
 //------------------------------------------------------------------------------
@@ -625,6 +646,14 @@ ImpellerContextCreateOpenGLESNew(
     ImpellerProcAddressCallback IMPELLER_NONNULL gl_proc_address_callback,
     void* IMPELLER_NULLABLE gl_proc_address_callback_user_data);
 
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerContext IMPELLER_NULLABLE
+ImpellerContextCreateMetalNew(uint32_t version);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerContext IMPELLER_NULLABLE
+ImpellerContextCreateVulkanNew(
+    uint32_t version,
+    const ImpellerContextVulkanSettings* IMPELLER_NONNULL settings);
+
 //------------------------------------------------------------------------------
 /// @brief      Retain a strong reference to the object. The object can be NULL
 ///             in which case this method is a no-op.
@@ -642,6 +671,45 @@ void ImpellerContextRetain(ImpellerContext IMPELLER_NULLABLE context);
 ///
 IMPELLER_EXPORT
 void ImpellerContextRelease(ImpellerContext IMPELLER_NULLABLE context);
+
+IMPELLER_EXPORT
+bool ImpellerContextGetVulkanInfo(
+    ImpellerContext IMPELLER_NONNULL context,
+    ImpellerContextVulkanInfo* IMPELLER_NONNULL out_vulkan_info);
+
+//------------------------------------------------------------------------------
+// Vulkan Swapchain
+//------------------------------------------------------------------------------
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerVulkanSwapchain IMPELLER_NULLABLE
+ImpellerVulkanSwapchainCreateNew(
+    ImpellerContext IMPELLER_NONNULL context,
+    void* IMPELLER_NONNULL vulkan_surface_khr,
+    const ImpellerISize* IMPELLER_NONNULL surface_size);
+
+//------------------------------------------------------------------------------
+/// @brief      Retain a strong reference to the object. The object can be NULL
+///             in which case this method is a no-op.
+///
+/// @param[in]  swapchain  The swapchain.
+///
+IMPELLER_EXPORT
+void ImpellerVulkanSwapchainRetain(
+    ImpellerVulkanSwapchain IMPELLER_NULLABLE swapchain);
+
+//------------------------------------------------------------------------------
+/// @brief      Release a previously retained reference to the object. The
+///             object can be NULL in which case this method is a no-op.
+///
+/// @param[in]  swapchain  The swapchain.
+///
+IMPELLER_EXPORT
+void ImpellerVulkanSwapchainRelease(
+    ImpellerVulkanSwapchain IMPELLER_NULLABLE swapchain);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
+ImpellerVulkanSwapchainAcquireNextSurfaceNew(
+    ImpellerVulkanSwapchain IMPELLER_NONNULL swapchain);
 
 //------------------------------------------------------------------------------
 // Surface
@@ -662,10 +730,15 @@ void ImpellerContextRelease(ImpellerContext IMPELLER_NULLABLE context);
 /// @return     The surface if once can be created, NULL otherwise.
 ///
 IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
-ImpellerSurfaceCreateWrappedFBONew(ImpellerContext IMPELLER_NULLABLE context,
+ImpellerSurfaceCreateWrappedFBONew(ImpellerContext IMPELLER_NONNULL context,
                                    uint64_t fbo,
                                    ImpellerPixelFormat format,
-                                   const ImpellerISize* IMPELLER_NULLABLE size);
+                                   const ImpellerISize* IMPELLER_NONNULL size);
+
+IMPELLER_EXPORT IMPELLER_NODISCARD ImpellerSurface IMPELLER_NULLABLE
+ImpellerSurfaceCreateWrappedMetalDrawableNew(
+    ImpellerContext IMPELLER_NONNULL context,
+    void* IMPELLER_NONNULL metal_drawable);
 
 //------------------------------------------------------------------------------
 /// @brief      Retain a strong reference to the object. The object can be NULL
@@ -704,8 +777,11 @@ void ImpellerSurfaceRelease(ImpellerSurface IMPELLER_NULLABLE surface);
 ///
 IMPELLER_EXPORT
 bool ImpellerSurfaceDrawDisplayList(
-    ImpellerSurface IMPELLER_NULLABLE surface,
+    ImpellerSurface IMPELLER_NONNULL surface,
     ImpellerDisplayList IMPELLER_NONNULL display_list);
+
+IMPELLER_EXPORT
+bool ImpellerSurfacePresent(ImpellerSurface IMPELLER_NONNULL surface);
 
 //------------------------------------------------------------------------------
 // Path
