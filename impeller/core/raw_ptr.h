@@ -62,10 +62,6 @@ class raw_ptr {
 
   template <class U>
   inline bool operator==(raw_ptr<U> const& other) const {
-#if !NDEBUG
-    FML_CHECK(weak_ptr_.lock());
-    FML_CHECK(other.weak_ptr_.lock());
-#endif
     return ptr_ == other.ptr_;
   }
 
