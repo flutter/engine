@@ -246,7 +246,7 @@ class MockSamplerLibrary : public SamplerLibrary {
  public:
   MOCK_METHOD(const std::unique_ptr<const Sampler>&,
               GetSampler,
-              (SamplerDescriptor descriptor),
+              (const SamplerDescriptor& descriptor),
               (override));
 };
 
