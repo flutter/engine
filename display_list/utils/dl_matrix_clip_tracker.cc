@@ -4,8 +4,8 @@
 
 #include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
 
+#include "display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/dl_builder.h"
-#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -56,10 +56,29 @@ bool DisplayListMatrixClipState::inverseTransform(
 
 bool DisplayListMatrixClipState::mapAndClipRect(const SkRect& src,
                                                 SkRect* mapped) const {
-  DlRect dl_mapped = ToDlRect(src).TransformAndClipBounds(matrix_);
-  auto dl_intersected = dl_mapped.Intersection(cull_rect_);
-  if (dl_intersected.has_value()) {
-    *mapped = ToSkRect(dl_intersected.value());
+  DlRect src_rect = ToDlRect(src);
+  DlRect dl_mapped;
+  if (is_scale_translate_) {
+    DlPoint scale = DlPoint(matrix_.m[0], matrix_.m[5]);
+    DlPoint origin =
+        (src_rect.GetLeftTop() * scale) + DlPoint(matrix_.m[12], matrix_.m[13]);
+    DlPoint point_size = src_rect.GetSize() * scale;
+    dl_mapped =
+        DlRect::MakeOriginSize(origin, DlSize(point_size.x, point_size.y));
+  } else {
+    dl_mapped = src_rect.TransformAndClipBounds(matrix_);
+  }
+
+  std::array<DlScalar, 4> left = dl_mapped.GetLTRB();
+  std::array<DlScalar, 4> right = cull_rect_.GetLTRB();
+  DlRect dl_intersected = DlRect::MakeLTRB(std::max(left[0], right[0]),  //
+                                           std::max(left[1], right[1]),  //
+                                           std::min(left[2], right[2]),  //
+                                           std::min(left[3], right[3])   //
+  );
+
+  if (!dl_intersected.IsEmpty()) {
+    *mapped = ToSkRect(dl_intersected);
     return true;
   }
   mapped->setEmpty();
