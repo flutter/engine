@@ -29,6 +29,10 @@ static const constexpr DescriptorPoolSize kDefaultBindingSize =
 DescriptorPoolVK::DescriptorPoolVK(std::weak_ptr<const ContextVK> context)
     : context_(std::move(context)) {}
 
+void DescriptorPoolVK::Destroy() {
+  pools_.clear();
+}
+
 DescriptorPoolVK::DescriptorPoolVK(std::weak_ptr<const ContextVK> context,
                                    DescriptorCacheMap descriptor_sets,
                                    std::vector<vk::UniqueDescriptorPool> pools)
@@ -119,8 +123,14 @@ void DescriptorPoolRecyclerVK::Reclaim(
     cache.used.clear();
   }
 
-  // Move the pool to the recycled list.
+  // Move the pool to the recycled list. If more than 32 pool are
+  // cached then delete the oldest entry.
   Lock recycled_lock(recycled_mutex_);
+  if (recycled_.size() >= kMaxRecycledPools) {
+    auto& front = recycled_.front();
+    front->Destroy();
+    recycled_.erase(recycled_.begin());
+  }
   recycled_.push_back(std::make_shared<DescriptorPoolVK>(
       context_, std::move(descriptor_sets), std::move(pools)));
 }

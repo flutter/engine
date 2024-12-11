@@ -48,11 +48,15 @@ class DescriptorPoolVK {
       const ContextVK& context_vk);
 
  private:
+  friend class DescriptorPoolRecyclerVK;
+
   std::weak_ptr<const ContextVK> context_;
   DescriptorCacheMap descriptor_sets_;
   std::vector<vk::UniqueDescriptorPool> pools_;
 
   fml::Status CreateNewPool(const ContextVK& context_vk);
+
+  void Destroy();
 
   DescriptorPoolVK(const DescriptorPoolVK&) = delete;
 
