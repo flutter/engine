@@ -124,26 +124,22 @@ DlVertexPainter::DlVertexPainter(std::vector<DlPoint>& vertices_storage,
     : vertices_(vertices_storage), colors_(color_storage) {}
 
 void DlVertexPainter::DrawRect(const DlRect& rect, const DlColor& color) {
-  // Draw 6 vertices representing 2 triangles.
   auto const left = rect.GetLeft();
   auto const top = rect.GetTop();
   auto const right = rect.GetRight();
   auto const bottom = rect.GetBottom();
 
-  auto const vertices = std::array<DlPoint, 6>{
-      DlPoint(left, top),      // tl tr
-      DlPoint(right, top),     //    br
-      DlPoint(right, bottom),  //
-      DlPoint(right, bottom),  // tl
-      DlPoint(left, bottom),   // bl br
-      DlPoint(left, top)       //
-  };
-
-  FML_DCHECK(vertices.size() + colors_offset_ <= vertices_.size());
+  FML_DCHECK(6 + colors_offset_ <= vertices_.size());
   FML_DCHECK(6 + colors_offset_ <= colors_.size());
 
+  // Draw 6 vertices representing 2 triangles.
+  vertices_[vertices_offset_++] = DlPoint(left, top);      // tl tr
+  vertices_[vertices_offset_++] = DlPoint(right, top);     //    br
+  vertices_[vertices_offset_++] = DlPoint(right, bottom);  //
+  vertices_[vertices_offset_++] = DlPoint(right, bottom);  // tl
+  vertices_[vertices_offset_++] = DlPoint(left, bottom);   // bl br
+  vertices_[vertices_offset_++] = DlPoint(left, top);      //
   for (auto i = 0u; i < 6u; i++) {
-    vertices_[vertices_offset_++] = vertices[i];
     colors_[colors_offset_++] = color;
   }
 }
