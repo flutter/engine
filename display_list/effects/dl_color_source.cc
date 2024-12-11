@@ -31,8 +31,9 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeImage(
 }
 
 namespace {
-size_t CalculateLinearGradientSize(uint32_t stop_count) {
-  return sizeof(DlLinearGradientColorSource) +
+template <typename GradientColorSource>
+size_t CalculateGradientSize(uint32_t stop_count) {
+  return sizeof(GradientColorSource) +
          (stop_count * (sizeof(DlColor) + sizeof(float)));
 }
 }  // namespace
@@ -45,7 +46,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = CalculateLinearGradientSize(stop_count);
+  size_t needed =
+      CalculateGradientSize<DlLinearGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
@@ -64,7 +66,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = CalculateLinearGradientSize(stop_count);
+  size_t needed =
+      CalculateGradientSize<DlLinearGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
@@ -83,9 +86,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlRadialGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlRadialGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlRadialGradientColorSource> ret;
@@ -103,9 +105,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlRadialGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlRadialGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlRadialGradientColorSource> ret;
@@ -126,9 +127,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlConicalGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlConicalGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlConicalGradientColorSource> ret;
@@ -149,8 +149,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlConicalGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
+  size_t needed =
+      CalculateGradientSize<DlConicalGradientColorSource>(stop_count);
 
   void* storage = ::operator new(needed);
 
@@ -171,9 +171,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlSweepGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
@@ -193,9 +192,8 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlSweepGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
