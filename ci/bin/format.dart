@@ -935,6 +935,8 @@ class DartFormatChecker extends FormatChecker {
     } else {
       message('All dart files formatted correctly.');
     }
+    stdout.writeln('hhhh: $_dartBin');
+    stdout.writeln(Process.runSync(_dartBin, ['--version']).stdout);
     return incorrect.length;
   }
 }
