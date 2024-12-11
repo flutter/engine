@@ -68,9 +68,9 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
-  ret.reset(new (storage)
-                DlLinearGradientColorSource(start_point, end_point, stop_count,
-                                            colors, stops, tile_mode, matrix),
+  ret.reset(new (storage) DlLinearGradientColorSource(start_point, end_point,
+                                                      stop_count, colors_argb,
+                                                      stops, tile_mode, matrix),
             DlGradientDeleter);
   return ret;
 }
