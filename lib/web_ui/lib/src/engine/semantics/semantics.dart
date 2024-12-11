@@ -411,6 +411,9 @@ enum SemanticRoleKind {
   /// An individual tab button.
   tab,
 
+  /// Contains tab buttons.
+  tabList,
+
   /// A main content for a tab.
   tabPanel,
 
@@ -1741,6 +1744,7 @@ class SemanticsObject {
       case ui.SemanticsRole.tabPanel:
         return SemanticRoleKind.tabPanel;
       case ui.SemanticsRole.tabBar:
+        return SemanticRoleKind.tabList;
       case ui.SemanticsRole.none:
         // fallback to checking semantics properties.
     }
@@ -1785,6 +1789,7 @@ class SemanticsObject {
       SemanticRoleKind.heading => SemanticHeading(this),
       SemanticRoleKind.header => SemanticHeader(this),
       SemanticRoleKind.tab => SemanticTab(this),
+      SemanticRoleKind.tabList => SemanticTabList(this),
       SemanticRoleKind.tabPanel => SemanticTabPanel(this),
       SemanticRoleKind.generic => GenericRole(this),
     };

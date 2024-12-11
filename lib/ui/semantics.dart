@@ -309,7 +309,7 @@ class SemanticsAction {
   String toString() => 'SemanticsAction.$name';
 }
 
-/// A enum to describe the role for a semantics node.
+/// An enum to describe the role for a semantics node.
 ///
 /// The roles are translated into native accessibility roles in each platform.
 enum SemanticsRole {
@@ -317,12 +317,18 @@ enum SemanticsRole {
   none,
 
   /// A tab button.
+  ///
+  /// see also:
+  ///  * [tabBar], which is the role for containers of tab buttons.
   tab,
 
-  /// The container that contains multiple tab buttons.
+  /// Contains tab buttons.
+  ///
+  /// see also:
+  ///  * [tab], which is the role for tab buttons.
   tabBar,
 
-  /// The main desplay for a tab.
+  /// The main display for a tab.
   tabPanel,
 }
 

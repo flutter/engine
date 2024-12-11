@@ -3854,6 +3854,27 @@ void _testTabs() {
     expect(object.semanticRole?.kind, SemanticRoleKind.tabPanel);
     expect(object.element.getAttribute('role'), 'tabpanel');
   });
+
+  test('nodes with tab panel role', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        role: ui.SemanticsRole.tabBar,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.semanticRole?.kind, SemanticRoleKind.tabList);
+    expect(object.element.getAttribute('role'), 'tablist');
+  });
 }
 
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that

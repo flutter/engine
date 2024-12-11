@@ -201,20 +201,11 @@ class SemanticsFlag {
   String toString() => 'SemanticsFlag.$name';
 }
 
-/// A enum to describe the role for a semantics node.
-///
-/// The roles are translated into native accessibility roles in each platform.
+// Mirrors engine/src/flutter/lib/ui/semantics.dart
 enum SemanticsRole {
-  /// Does not represent any role.
   none,
-
-  /// A tab button.
   tab,
-
-  /// The container that contains multiple tab buttons.
   tabBar,
-
-  /// The main desplay for a tab.
   tabPanel,
 }
 
