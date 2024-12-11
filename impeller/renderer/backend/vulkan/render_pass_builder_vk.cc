@@ -129,8 +129,8 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
     vk::AttachmentReference color_ref;
     color_ref.attachment = attachments_index;
     color_ref.layout = vk::ImageLayout::eGeneral;
-    color_refs[color_index++] = color_ref;
-    attachments[attachments_index++] = color0_.value();
+    color_refs.at(color_index++) = color_ref;
+    attachments.at(attachments_index++) = color0_.value();
 
     if (color0_resolve_.has_value()) {
       vk::AttachmentReference resolve_ref;
@@ -138,6 +138,8 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
       resolve_ref.layout = vk::ImageLayout::eGeneral;
       resolve_refs.at(resolve_index++) = resolve_ref;
       attachments.at(attachments_index++) = color0_resolve_.value();
+    } else {
+      resolve_refs.at(resolve_index++) = kUnusedAttachmentReference;
     }
   }
 
@@ -154,6 +156,8 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
       resolve_ref.layout = vk::ImageLayout::eGeneral;
       resolve_refs.at(resolve_index++) = resolve_ref;
       attachments.at(attachments_index++) = found->second;
+    } else {
+      resolve_refs.at(resolve_index++) = kUnusedAttachmentReference;
     }
   }
 
@@ -170,6 +174,7 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
   subpass0.setPColorAttachments(color_refs.data());
   subpass0.setColorAttachmentCount(color_index);
   subpass0.setPResolveAttachments(resolve_refs.data());
+
   subpass0.setPDepthStencilAttachment(&depth_stencil_ref);
 
   vk::SubpassDependency self_dep;
@@ -182,7 +187,8 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
   self_dep.dependencyFlags = kSelfDependencyFlags;
 
   vk::RenderPassCreateInfo render_pass_desc;
-  render_pass_desc.setAttachments(attachments);
+  render_pass_desc.setPAttachments(attachments.data());
+  render_pass_desc.setAttachmentCount(attachments_index);
   render_pass_desc.setSubpasses(subpass0);
   render_pass_desc.setDependencies(self_dep);
 
