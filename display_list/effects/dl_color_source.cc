@@ -36,19 +36,6 @@ size_t CalculateGradientSize(uint32_t stop_count) {
   return sizeof(GradientColorSource) +
          (stop_count * (sizeof(DlColor) + sizeof(float)));
 }
-
-template <typename GradientType, typename... Args>
-std::shared_ptr<DlColorSource> MakeGradient(uint32_t stop_count,
-                                            Args&&... args) {
-  size_t needed = CalculateGradientSize<GradientType>(stop_count);
-  void* storage = ::operator new(needed);
-
-  std::shared_ptr<GradientType> ret;
-  ret.reset(new (storage) GradientType(std::forward<Args>(args)...),
-            DlGradientDeleter);
-
-  return ret;
-}
 }  // namespace
 
 std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
