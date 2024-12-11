@@ -32,13 +32,14 @@ namespace impeller {
 
 namespace {
 
+#ifdef IMPELLER_DEBUG
+
 #define _IMPELLER_BLEND_MODE_FILTER_NAME_LIST(blend_mode) \
   "Blend Filter " #blend_mode,
 
 static constexpr const char* kBlendModeFilterNames[] = {
     IMPELLER_FOR_EACH_BLEND_MODE(_IMPELLER_BLEND_MODE_FILTER_NAME_LIST)};
 
-#ifdef IMPELLER_DEBUG
 const std::string_view BlendModeToFilterString(BlendMode blend_mode) {
   return kBlendModeFilterNames[static_cast<std::underlying_type_t<BlendMode>>(
       blend_mode)];
